@@ -4,7 +4,7 @@
 
 <ul>
   <li *ngFor="let item of items">
-    {{ item.name }} ({{ item.age }} years old)
+    {{ item.name }} ({{ item.age }} {{item.id}} s years old)
     <button (click)="deleteUser(item.id)">Delete</button>
   </li>
 </ul>

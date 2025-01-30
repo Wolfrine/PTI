@@ -3,7 +3,7 @@ name: Deploy Angular App to Firebase Hosting
 on:
   push:
     branches:
-      - main  # Trigger workflow when changes are pushed to main
+      - main  # Deploy on push to main branch
 
 jobs:
   deploy:
@@ -22,13 +22,23 @@ jobs:
 
       # Step 3: Install Dependencies
       - name: Install Dependencies
-        run: cd pti-app && npm install  # Manually change directory
+        run: |
+          cd pti-app
+          npm install
 
       # Step 4: Build Angular App
       - name: Build Angular App
-        run: cd pti-app && npm run build -- --configuration production  # Manually change directory
+        run: |
+          cd pti-app
+          npm run build -- --configuration production
 
-      # Step 5: Deploy to Firebase Hosting
+      # Step 5: Debug - List Build Files
+      - name: Debug - List Build Directory
+        run: |
+          ls -l pti-app/dist/
+          ls -l pti-app/dist/pti-app || echo "dist/pti-app does not exist"
+
+      # Step 6: Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:

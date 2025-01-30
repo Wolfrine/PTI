@@ -3,7 +3,7 @@ name: Deploy Angular App to Firebase Hosting
 on:
   push:
     branches:
-      - main  # This triggers the workflow whenever changes are pushed to the main branch
+      - main  # Trigger workflow when changes are pushed to main
 
 jobs:
   deploy:
@@ -18,15 +18,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18  # Use the latest stable version
+          node-version: 18  # Use latest stable version
 
-      # Step 3: Install Angular dependencies
+      # Step 3: Install Dependencies
       - name: Install Dependencies
-        run: npm install
+        run: cd pti-app && npm install  # Manually change directory
 
       # Step 4: Build Angular App
       - name: Build Angular App
-        run: npm run build -- --configuration production
+        run: cd pti-app && npm run build -- --configuration production  # Manually change directory
 
       # Step 5: Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting

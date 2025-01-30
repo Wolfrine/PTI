@@ -3,7 +3,7 @@ name: Deploy Angular App to Firebase Hosting
 on:
   push:
     branches:
-      - main  # Deploy on push to main branch
+      - main
 
 jobs:
   deploy:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18  # Use latest stable version
+          node-version: 18
 
       # Step 3: Install Dependencies
       - name: Install Dependencies
@@ -32,11 +32,12 @@ jobs:
           cd pti-app
           npm run build -- --configuration production
 
-      # Step 5: Debug - List Build Files
+      # Step 5: Debug - List Build Directory
       - name: Debug - List Build Directory
         run: |
           ls -l pti-app/dist/
-          ls -l pti-app/dist/pti-app || echo "dist/pti-app does not exist"
+          ls -l pti-app/dist/pti-app
+          ls -l pti-app/dist/pti-app/browser || echo "dist/pti-app/browser does not exist"
 
       # Step 6: Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting

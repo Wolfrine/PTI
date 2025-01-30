@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/pti-app/browser",
+    "public": "dist/pti-app",
     "ignore": [
       "firebase.json",
       "**/.*",

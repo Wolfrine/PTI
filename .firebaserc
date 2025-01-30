@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "pti-app-2ab59"
-  }
+  },
+  "targets": {
+    "pti-app-2ab59": {
+      "hosting": {
+        "default": [
+          "pti-app-2ab59"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

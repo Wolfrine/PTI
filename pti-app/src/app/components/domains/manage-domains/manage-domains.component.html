@@ -9,10 +9,13 @@
 </div>
 
 <!-- List of Domains -->
-<ul>
+<ol>
     <li *ngFor="let domain of domains">
-        <span [style.color]="domain.color">{{ domain.name }} - {{ domain.progress }}%</span>
-        <button (click)="editDomain(domain)">Edit</button>
-        <button (click)="deleteDomain(domain.id)">Delete</button>
+        <div>
+            <div>{{ domain.name }} - {{ domain.progress }}%</div>
+            <span [style.color]="domain.color">###</span>
+            <button (click)="editDomain(domain)">Edit</button>
+            <button (click)="deleteDomain(domain.id)">Delete</button>
+        </div>
     </li>
-</ul>
+</ol>

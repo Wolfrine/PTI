@@ -1,0 +1,18 @@
+button {
+    padding: 0 6px;
+    margin: 0 8px;
+}
+
+li {
+
+    background-color: rgba(0, 0, 0, .1);
+
+    div {
+        display: flex;
+        min-width: 200px;
+    }
+}
+
+ol {
+    max-width: 400px;
+}

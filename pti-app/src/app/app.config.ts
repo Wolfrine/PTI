@@ -7,6 +7,7 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 // Import Firebase services
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
+import { provideAuth, getAuth } from '@angular/fire/auth'; // ✅ Import Auth
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideFirebaseApp(() => initializeApp(firebaseConfig)), // ✅ Initialize Firebase
-    provideFirestore(() => getFirestore()) // ✅ Provide Firestore
+    provideFirestore(() => getFirestore()), // ✅ Provide Firestore
+    provideAuth(() => getAuth()) // ✅ Add Firebase Auth (Fixes the "No provider for Auth!" error)
   ]
 };

@@ -1,16 +1,16 @@
 <div class="dashboard-container">
-    <h2>Welcome to Your Dashboard</h2>
-    <button (click)="logout()">Sign Out</button>
+  <h1>Welcome, {{ user?.displayName }}</h1>
+
+  <h2>Your Domains' Progress</h2>
+
+  <div class="chart-container">
+    <canvas baseChart
+      [data]="polarChartData"
+      [type]="'polarArea'"  
+      [options]="polarChartOptions">
+    </canvas>
+  </div>
+
+  <button (click)="goToManageDomains()">Manage Domains</button>
+  <button (click)="logout()">Logout</button>
 </div>
-
-<h1>Dashboard - Firestore Data</h1>
-
-<ul>
-    <li *ngFor="let item of items">
-        {{ item.name }} ({{ item.age }} years old)
-        <button (click)="deleteUser(item.id)">Delete</button>
-    </li>
-</ul>
-
-<button (click)="addUser()">Add User</button>
-<button (click)="logout()">Sign Out</button>

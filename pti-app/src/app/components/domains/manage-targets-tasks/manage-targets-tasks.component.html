@@ -1,30 +1,63 @@
-<h2>{{ domainName }}</h2>
-<button (click)="toggleTargetInput()">+ Add Target</button>
+<h2 class="domain-title">
+    <span>
+        <span (click)="router.navigate(['/dashboard'])">Dashboard</span> > {{ domainName }}
+    </span>
+    <!-- ✅ Add Target Button -->
+    <button (click)="toggleTargetInput()">+ Target</button>
+</h2>
 
+
+
+<!-- ✅ Target Input Form -->
 <div *ngIf="showTargetInput">
     <input type="text" [(ngModel)]="newTarget.name" placeholder="Target Name">
     <input type="date" [(ngModel)]="newTarget.deadline">
     <button (click)="addTarget()">Save</button>
 </div>
 
-<div *ngFor="let target of targets">
-    <h3>{{ target.name }} ({{ target.progress }}%)</h3>
-    <p>Deadline: {{ target.deadline }}</p>
-    <button *ngIf="target.id" (click)="toggleTaskInput(target.id)">+ Add Task</button>
+<!-- ✅ Loop through Targets -->
+<div *ngFor="let target of targets" class="target-container">
+    <!-- ✅ Display Target -->
+    <h3 class="target-title">
+        {{ target.name }} ({{ target.progress }}%)
+        <div>
+            <button (click)="editTarget(target.id)">Edit</button>
+            <button *ngIf="target.id" (click)="toggleTaskInput(target.id)">+ Task</button>
+        </div>
+    </h3>
+    <p>Target Completion Date: {{ target.deadline }}</p>
 
+    <!-- ✅ Edit Target -->
+    <div *ngIf="showEditTargetInput === target.id">
+        <input type="text" [(ngModel)]="editedTarget.name" placeholder="Edit Target Name">
+        <input type="date" [(ngModel)]="editedTarget.deadline">
+        <button (click)="saveEditedTarget(target.id)">Save</button>
+    </div>
+
+    <!-- ✅ Task Input Form -->
     <div *ngIf="showTaskInput && selectedTargetId === target.id">
         <input type="text" [(ngModel)]="newTask.name" placeholder="Task Name">
         <input type="number" [(ngModel)]="newTask.estimatedTime" placeholder="Estimated Time (hrs)">
         <button (click)="addTask(target.id)">Save</button>
     </div>
 
+    <!-- ✅ Loop through Tasks -->
     <ul>
         <li *ngFor="let task of target.tasks">
             <input type="checkbox" [(ngModel)]="task.completed" *ngIf="target.id"
                 (change)="markTaskComplete(target.id, task)">
             {{ task.name }} - {{ task.estimatedTime }} hrs
+            <button (click)="editTask(target.id, task.id)">Edit</button>
+
+            <!-- ✅ Edit Task -->
+            <div *ngIf="showEditTaskInput === task.id">
+                <input type="text" [(ngModel)]="editedTask.name" placeholder="Edit Task Name">
+                <input type="number" [(ngModel)]="editedTask.estimatedTime" placeholder="Edit Estimated Time (hrs)">
+                <button (click)="saveEditedTask(target.id, task.id)">Save</button>
+            </div>
         </li>
     </ul>
 </div>
 
-<button (click)="router.navigate(['/dashboard'])">Back</button>
+<!-- ✅ Back Button -->
+<!-- <button (click)="router.navigate(['/dashboard'])">Back</button> -->

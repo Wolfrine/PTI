@@ -71,6 +71,24 @@ export class TargetTaskService {
         if (!domainId || !targetId || !taskId) throw new Error('Domain ID, Target ID, and Task ID are required');
 
         const taskRef = doc(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}/tasks/${taskId}`);
-        await updateDoc(taskRef, { completed: true, completedTime: completedTime });
+        await updateDoc(taskRef, {
+            completed: true,
+            completedTime: completedTime,
+            completionDate: new Date(), // ✅ Store Completion Date
+        });
+    }
+
+    // ✅ Update Target Name and Deadline
+    async updateTarget(domainId: string, targetId: string, updatedData: any): Promise<void> {
+        const userId = await this.getUserId();
+        const targetRef = doc(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}`);
+        await updateDoc(targetRef, updatedData);
+    }
+
+    // ✅ Update Task Name and Estimated Time
+    async updateTask(domainId: string, targetId: string, taskId: string, updatedData: any): Promise<void> {
+        const userId = await this.getUserId();
+        const taskRef = doc(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}/tasks/${taskId}`);
+        await updateDoc(taskRef, updatedData);
     }
 }

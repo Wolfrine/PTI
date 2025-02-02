@@ -52,7 +52,7 @@ export class DashboardComponent implements OnInit {
                 min: 0,
                 max: 100, // ✅ Default value, updated dynamically
                 ticks: {
-                    stepSize: 10, // ✅ Will be updated dynamically
+                    stepSize: 5, // ✅ Will be updated dynamically
                 },
             },
         },

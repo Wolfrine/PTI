@@ -33,9 +33,15 @@ export class ManageTargetsTasksComponent implements OnInit {
     targets: Target[] = [];
     showTargetInput = false;
     showTaskInput = false;
+    showEditTargetInput: string | null = null;
+    showEditTaskInput: string | null = null;
     selectedTargetId: string | null = null;
+
     newTarget: Target = { name: '', deadline: '', progress: 0 };
+    editedTarget: Target = { name: '', deadline: '', progress: 0 };
+
     newTask: Task = { name: '', estimatedTime: 0, completed: false };
+    editedTask: Task = { name: '', estimatedTime: 0, completed: false };
 
     constructor(
         private targetTaskService: TargetTaskService,
@@ -53,9 +59,11 @@ export class ManageTargetsTasksComponent implements OnInit {
 
             // ✅ Fetch tasks for each target
             this.targets.forEach(async target => {
-                (await this.targetTaskService.getTasks(this.domainId, target.id!)).subscribe((tasks: Task[]) => {
-                    target.tasks = tasks;  // ✅ Assign tasks to each target
-                });
+                if (target.id) {
+                    (await this.targetTaskService.getTasks(this.domainId, target.id)).subscribe((tasks: Task[]) => {
+                        target.tasks = tasks;  // ✅ Assign tasks to each target
+                    });
+                }
             });
         });
     }
@@ -87,5 +95,40 @@ export class ManageTargetsTasksComponent implements OnInit {
 
     markTaskComplete(targetId: string, task: Task) {
         this.targetTaskService.completeTask(this.domainId, targetId, task.id!, task.estimatedTime);
+    }
+
+    // ✅ Edit Target
+    editTarget(targetId: string | undefined) {
+        if (!targetId) return; // ✅ Prevent undefined errors
+        this.showEditTargetInput = targetId;
+        const target = this.targets.find(t => t.id === targetId);
+        if (target) {
+            this.editedTarget = { ...target };
+        }
+    }
+
+    saveEditedTarget(targetId: string | undefined) {
+        if (!targetId) return; // ✅ Prevent undefined errors
+        this.targetTaskService.updateTarget(this.domainId, targetId, this.editedTarget).then(() => {
+            this.showEditTargetInput = null;
+        });
+    }
+
+    // ✅ Edit Task
+    editTask(targetId: string | undefined, taskId: string | undefined) {
+        if (!targetId || !taskId) return; // ✅ Prevent undefined errors
+        this.showEditTaskInput = taskId;
+        const target = this.targets.find(t => t.id === targetId);
+        const task = target?.tasks?.find(t => t.id === taskId);
+        if (task) {
+            this.editedTask = { ...task };
+        }
+    }
+
+    saveEditedTask(targetId: string | undefined, taskId: string | undefined) {
+        if (!targetId || !taskId) return; // ✅ Prevent undefined errors
+        this.targetTaskService.updateTask(this.domainId, targetId, taskId, this.editedTask).then(() => {
+            this.showEditTaskInput = null;
+        });
     }
 }

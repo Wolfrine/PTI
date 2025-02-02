@@ -15,6 +15,7 @@ import { Router } from '@angular/router';
 Chart.register(...registerables);
 
 interface Domain {
+    id: string;
     name: string;
     progress: number;
     color: string;
@@ -85,6 +86,7 @@ export class DashboardComponent implements OnInit {
 
         this.domainService.getDomains().subscribe((data) => {
             this.domains = data.map((d) => ({
+                id: d.id,
                 name: d.name,
                 progress: d.progress || 0,
                 color: d.color || '#007bff',
@@ -145,8 +147,8 @@ export class DashboardComponent implements OnInit {
         this.router.navigate(['/domains']);
     }
 
-    goToDomain(domainName: string) {
-        this.router.navigate([`/domains/${domainName}`]);
+    goToDomain(domain: { id: string; name: string }) {
+        this.router.navigate(['/domains', domain.id], { queryParams: { name: domain.name } });
     }
 
     logout() {

@@ -21,7 +21,7 @@
             <h3>Time spent in :</h3>
             <!-- Last 1 Day -->
             <div class="donut-chart-container">
-                <span>Last 1 Day</span>
+                <span>Last 24 Hrs</span>
                 <canvas baseChart [data]="donutChartDataLast1Day" [type]="'doughnut'" [options]="chartOptions">
                 </canvas>
             </div>
@@ -45,8 +45,8 @@
     <div class="domain-list">
         <h3>Your Domain's :</h3>
         <ol>
-            <li *ngFor="let domain of domains" (click)="goToDomain(domain.name)">
-                {{domain.name}}
+            <li *ngFor="let domain of domains" (click)="goToDomain(domain)">
+                {{ domain.name }}
             </li>
         </ol>
     </div>

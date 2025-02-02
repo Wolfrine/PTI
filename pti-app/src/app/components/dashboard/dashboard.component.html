@@ -1,34 +1,55 @@
-<h1>Welcome, {{ user?.displayName }}</h1>
-
-<div class="dashboard-container">
-
-    <div class="domain-summary">
-
-        <h2>Your Activity</h2>
-
-        <div class="chart-container">
-            <canvas baseChart [data]="polarChartData" [type]="'polarArea'" [options]="polarChartOptions">
-            </canvas>
-        </div>
-        <br>
-        <div>
-            <button (click)="goToManageDomains()">Add / Edit Domains</button>
-        </div>
-    </div>
-
-    <div class="period-wise-summary">
-        <p>Time spent in :</p>
-        <div>Last 1 day</div>
-        <div>Last 7 day</div>
-        <div>Last 1 month</div>
-    </div>
-</div>
-
 <div>
-    Domain List :
-    <ol>
-        <li *ngFor="let domain in domains">{{domain.name}}</li>
-    </ol>
-</div>
+    <h1>Welcome, {{ user?.displayName }}</h1>
 
-<button (click)="logout()">Logout</button>
+    <div class="dashboard-container">
+
+        <div class="domain-summary">
+
+            <h2>Your Activity</h2>
+
+            <div class="chart-container">
+                <canvas baseChart [data]="polarChartData" [type]="'polarArea'" [options]="polarChartOptions">
+                </canvas>
+            </div>
+            <br>
+            <div>
+                <button (click)="goToManageDomains()">Add / Edit Domains</button>
+            </div>
+        </div>
+
+        <div class="period-wise-summary">
+            <h3>Time spent in :</h3>
+            <!-- Last 1 Day -->
+            <div class="donut-chart-container">
+                <span>Last 1 Day</span>
+                <canvas baseChart [data]="donutChartDataLast1Day" [type]="'doughnut'" [options]="chartOptions">
+                </canvas>
+            </div>
+
+            <!-- Last 7 Days -->
+            <div class="donut-chart-container">
+                <span>Last 7 Days</span>
+                <canvas baseChart [data]="donutChartDataLast7Days" [type]="'doughnut'" [options]="chartOptions">
+                </canvas>
+            </div>
+
+            <!-- Last 1 Month -->
+            <div class="donut-chart-container">
+                <span>Last 1 Month</span>
+                <canvas baseChart [data]="donutChartDataLast1Month" [type]="'doughnut'" [options]="chartOptions">
+                </canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="domain-list">
+        <h3>Your Domain's :</h3>
+        <ol>
+            <li *ngFor="let domain of domains" (click)="goToDomain(domain.name)">
+                {{domain.name}}
+            </li>
+        </ol>
+    </div>
+
+    <button (click)="logout()">Logout</button>
+</div>

@@ -38,12 +38,14 @@ h1 {
     @media (max-width:480px) {
         width: 100%;
     }
+
+    canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
 }
 
-canvas {
-    width: 100% !important;
-    height: 100% !important;
-}
+
 
 .period-wise-summary {
     display: flex;
@@ -57,11 +59,36 @@ canvas {
         width: 100%;
     }
 
-    div {
+    .donut-chart-container {
         display: flex;
         order: 3;
         flex-grow: 3;
         border-top: 1px solid rgba(0, 0, 0, .1);
         padding: 4px;
+        justify-content: center;
+
+        canvas {
+            width: 200px !important;
+            height: 200px !important;
+        }
     }
+}
+
+h3 {
+    text-align: center;
+}
+
+ol {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    cursor: pointer;
+    padding: 6px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+li:hover {
+    background-color: rgba(0, 0, 0, 0.05);
 }

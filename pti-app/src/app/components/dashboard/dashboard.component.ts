@@ -23,7 +23,7 @@ interface Domain {
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, BaseChartDirective], // ✅ Only import BaseChartDirective
+    imports: [CommonModule, BaseChartDirective],
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.scss'],
 })
@@ -57,6 +57,21 @@ export class DashboardComponent implements OnInit {
         },
     };
 
+    // ✅ Define Donut Charts
+    donutChartType = 'doughnut';
+
+    donutChartDataLast1Day: ChartConfiguration<'doughnut'>['data'] = { labels: [], datasets: [] };
+    donutChartDataLast7Days: ChartConfiguration<'doughnut'>['data'] = { labels: [], datasets: [] };
+    donutChartDataLast1Month: ChartConfiguration<'doughnut'>['data'] = { labels: [], datasets: [] };
+
+    chartOptions: ChartOptions<'doughnut'> = {
+        responsive: true,
+        plugins: {
+            legend: { display: false }, // ✅ Hide labels for Donut Chart
+        },
+        cutout: '70%', // ✅ Ensures the inner cut is proportionate
+    };
+
     constructor(
         private domainService: DomainService,
         public authService: AuthService,
@@ -84,10 +99,8 @@ export class DashboardComponent implements OnInit {
                 100
             );
 
-            // ✅ Dynamically update step size (max / 10)
             const stepSize = Math.ceil(maxProgress / 7);
 
-            // ✅ Update chart options dynamically
             // ✅ Update chart options dynamically
             this.polarChartOptions.scales!['r']!.max = maxProgress;
             this.polarChartOptions.scales!['r']!.ticks!.stepSize = stepSize;
@@ -105,12 +118,35 @@ export class DashboardComponent implements OnInit {
             };
 
             console.log('Polar Chart Data:', JSON.stringify(this.polarChartData, null, 2));
-            console.log('Max Value:', maxProgress, '| Step Size:', stepSize);
+
+            // ✅ Donut Chart Calculation
+            this.donutChartDataLast1Day = this.generateDonutChartData(24);
+            this.donutChartDataLast7Days = this.generateDonutChartData(168);
+            this.donutChartDataLast1Month = this.generateDonutChartData(720);
         });
+    }
+
+    generateDonutChartData(maxValue: number): ChartConfiguration<'doughnut'>['data'] {
+        const totalHoursSpent = this.domains.reduce((sum, d) => sum + d.progress, 0);
+        const emptyHours = Math.max(0, maxValue - totalHoursSpent);
+
+        return {
+            labels: [...this.domains.map((d) => d.name), 'Unused Time'],
+            datasets: [
+                {
+                    data: [...this.domains.map((d) => d.progress), emptyHours],
+                    backgroundColor: [...this.domains.map((d) => d.color), '#e0e0e0'],
+                },
+            ],
+        };
     }
 
     goToManageDomains() {
         this.router.navigate(['/domains']);
+    }
+
+    goToDomain(domainName: string) {
+        this.router.navigate([`/domains/${domainName}`]);
     }
 
     logout() {

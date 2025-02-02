@@ -1,13 +1,34 @@
+<h1>Welcome, {{ user?.displayName }}</h1>
+
 <div class="dashboard-container">
-    <h1>Welcome, {{ user?.displayName }}</h1>
 
-    <h2>Your Activity</h2>
+    <div class="domain-summary">
 
-    <div class="chart-container">
-        <canvas baseChart [data]="polarChartData" [type]="'polarArea'" [options]="polarChartOptions">
-        </canvas>
+        <h2>Your Activity</h2>
+
+        <div class="chart-container">
+            <canvas baseChart [data]="polarChartData" [type]="'polarArea'" [options]="polarChartOptions">
+            </canvas>
+        </div>
+        <br>
+        <div>
+            <button (click)="goToManageDomains()">Add / Edit Domains</button>
+        </div>
     </div>
 
-    <button (click)="goToManageDomains()">Manage Domains</button>
-    <button (click)="logout()">Logout</button>
+    <div class="period-wise-summary">
+        <p>Time spent in :</p>
+        <div>Last 1 day</div>
+        <div>Last 7 day</div>
+        <div>Last 1 month</div>
+    </div>
 </div>
+
+<div>
+    Domain List :
+    <ol>
+        <li *ngFor="let domain in domains">{{domain.name}}</li>
+    </ol>
+</div>
+
+<button (click)="logout()">Logout</button>

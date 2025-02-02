@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, doc, addDoc, updateDoc, collectionData } from '@angular/fire/firestore';
+import { Firestore, collection, doc, addDoc, updateDoc, collectionData, deleteDoc } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { firstValueFrom, Observable } from 'rxjs';
 
@@ -90,5 +90,12 @@ export class TargetTaskService {
         const userId = await this.getUserId();
         const taskRef = doc(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}/tasks/${taskId}`);
         await updateDoc(taskRef, updatedData);
+    }
+
+    async deleteTask(domainId: string, targetId: string, taskId: string,): Promise<void> {
+        const userId = await this.getUserId();
+
+        const taskRef = doc(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}/tasks/${taskId}`);
+        await deleteDoc(taskRef);
     }
 }

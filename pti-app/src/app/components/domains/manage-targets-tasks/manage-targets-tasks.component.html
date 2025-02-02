@@ -19,7 +19,7 @@
 <div *ngFor="let target of targets" class="target-container">
     <!-- ✅ Display Target -->
     <h3 class="target-title">
-        {{ target.name }} ({{ target.progress }}%)
+        {{ target.name }} ({{ target.progress }}%) - {{target.totalEstimated}} - {{target.totalCompleted}}
         <div>
             <button (click)="editTarget(target.id)">Edit</button>
             <button *ngIf="target.id" (click)="toggleTaskInput(target.id)">+ Task</button>
@@ -47,7 +47,8 @@
             <input type="checkbox" [(ngModel)]="task.completed" *ngIf="target.id"
                 (change)="markTaskComplete(target.id, task)">
             {{ task.name }} - {{ task.estimatedTime }} hrs
-            <button (click)="editTask(target.id, task.id)">Edit</button>
+            <button (click)="editTask(target.id, task.id)" *ngIf="!task.completed">Edit</button>
+            <button (click)="deleteTask(target.id, task.id)" *ngIf="task.completed">Delete</button>
 
             <!-- ✅ Edit Task -->
             <div *ngIf="showEditTaskInput === task.id">

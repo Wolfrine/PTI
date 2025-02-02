@@ -8,6 +8,8 @@ interface Target {
     id?: string;
     name: string;
     deadline: string;
+    totalEstimated: number;
+    totalCompleted: number;
     progress: number;
     tasks?: Task[];
 }
@@ -37,8 +39,8 @@ export class ManageTargetsTasksComponent implements OnInit {
     showEditTaskInput: string | null = null;
     selectedTargetId: string | null = null;
 
-    newTarget: Target = { name: '', deadline: '', progress: 0 };
-    editedTarget: Target = { name: '', deadline: '', progress: 0 };
+    newTarget: Target = { name: '', deadline: '', progress: 0, totalEstimated: 0, totalCompleted: 0 };
+    editedTarget: Target = { name: '', deadline: '', progress: 0, totalEstimated: 0, totalCompleted: 0 };
 
     newTask: Task = { name: '', estimatedTime: 0, completed: false };
     editedTask: Task = { name: '', estimatedTime: 0, completed: false };
@@ -57,16 +59,23 @@ export class ManageTargetsTasksComponent implements OnInit {
         (await this.targetTaskService.getTargets(this.domainId)).subscribe((targets: Target[]) => {
             this.targets = targets;
 
-            // ✅ Fetch tasks for each target
+            // ✅ Fetch tasks and calculate progress for each target
             this.targets.forEach(async target => {
                 if (target.id) {
                     (await this.targetTaskService.getTasks(this.domainId, target.id)).subscribe((tasks: Task[]) => {
                         target.tasks = tasks;  // ✅ Assign tasks to each target
+
+                        // ✅ Calculate Target Progress
+                        target.totalEstimated = tasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
+                        target.totalCompleted = tasks.reduce((sum, task) => sum + (task.completedTime || 0), 0);
+
+                        target.progress = target.totalEstimated > 0 ? Math.round((target.totalCompleted / target.totalEstimated) * 100) : 0;
                     });
                 }
             });
         });
     }
+
 
     toggleTargetInput() {
         this.showTargetInput = !this.showTargetInput;
@@ -75,7 +84,7 @@ export class ManageTargetsTasksComponent implements OnInit {
     addTarget() {
         if (!this.newTarget.name || !this.newTarget.deadline) return;
         this.targetTaskService.addTarget(this.domainId, this.newTarget).then(() => {
-            this.newTarget = { name: '', deadline: '', progress: 0 };
+            this.newTarget = { name: '', deadline: '', progress: 0, totalEstimated: 0, totalCompleted: 0 };
             this.showTargetInput = false;
         });
     }
@@ -129,6 +138,13 @@ export class ManageTargetsTasksComponent implements OnInit {
         if (!targetId || !taskId) return; // ✅ Prevent undefined errors
         this.targetTaskService.updateTask(this.domainId, targetId, taskId, this.editedTask).then(() => {
             this.showEditTaskInput = null;
+        });
+    }
+
+    deleteTask(targetId: string | undefined, taskId: string | undefined) {
+        if (!targetId || !taskId) return; // ✅ Prevent undefined errors
+        this.targetTaskService.deleteTask(this.domainId, targetId, taskId).then(() => {
+            console.log("Task deleted");
         });
     }
 }

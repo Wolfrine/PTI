@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +10,14 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.component.scss'
 })
 
-export class AppComponent {
-  title = 'pti-app'
+export class AppComponent implements OnInit {
+  title="PTI App";
+  constructor(public authService: AuthService) {}
+
+  ngOnInit() {
+    setTimeout(() => {
+      this.authService.initGoogleOneTap(); // ✅ Delayed execution to avoid conflicts
+      this.authService.checkUserSession();
+    }, 1000); // ✅ Small delay to allow page initialization
+  }
 }

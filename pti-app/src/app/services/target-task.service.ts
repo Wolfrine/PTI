@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, doc, addDoc, updateDoc, collectionData, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, collection, doc, addDoc, updateDoc, collectionData, deleteDoc, getDocs } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { firstValueFrom, Observable } from 'rxjs';
 
@@ -98,4 +98,58 @@ export class TargetTaskService {
         const taskRef = doc(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}/tasks/${taskId}`);
         await deleteDoc(taskRef);
     }
+
+    async getCompletedTasksSince(daysAgo: number): Promise<any[]> {
+        const userId = await this.getUserId();
+        if (!userId) {
+            console.error('❌ ERROR: User not authenticated');
+            throw new Error('User not authenticated');
+        }
+        console.log(`✅ User ID: ${userId}`);
+    
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+        console.log(`🔍 Fetching tasks completed since: ${cutoffDate.toISOString()}`);
+    
+        const completedTasks: any[] = [];
+    
+        // ✅ Fetch all user domains
+        const domainsQuery = collection(this.firestore, `users/${userId}/domains`);
+        const domainsSnapshot = await getDocs(domainsQuery);
+        console.log(`📂 Found ${domainsSnapshot.docs.length} domains.`);
+    
+        for (const domainDoc of domainsSnapshot.docs) {
+            const domainId = domainDoc.id;
+            console.log(`🔹 Checking domain: ${domainId}`);
+    
+            // ✅ Fetch all targets inside this domain
+            const targetsQuery = collection(this.firestore, `users/${userId}/domains/${domainId}/targets`);
+            const targetsSnapshot = await getDocs(targetsQuery);
+            console.log(`📌 Found ${targetsSnapshot.docs.length} targets in domain ${domainId}`);
+    
+            for (const targetDoc of targetsSnapshot.docs) {
+                const targetId = targetDoc.id;
+                console.log(`  🔹 Checking target: ${targetId}`);
+    
+                // ✅ Fetch all tasks inside this target
+                const tasksQuery = collection(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}/tasks`);
+                const tasksSnapshot = await getDocs(tasksQuery);
+                console.log(`  📌 Found ${tasksSnapshot.docs.length} tasks in target ${targetId}`);
+    
+                tasksSnapshot.forEach(taskDoc => {
+                    const task = taskDoc.data();
+                    console.log(`    🔎 Task: ${taskDoc.id}, Completed: ${task['completed']}, Completion Date: ${task['completionDate']?.toDate()}`);
+    
+                    if (task['completed'] && task['completionDate'] && task['completionDate'].toDate() >= cutoffDate) {
+                        console.log(`    ✅ Task ${taskDoc.id} added to completed list`);
+                        completedTasks.push(task);
+                    }
+                });
+            }
+        }
+    
+        console.log(`✅ Total completed tasks in the last ${daysAgo} days: ${completedTasks.length}`);
+        return completedTasks;
+    }
+    
 }

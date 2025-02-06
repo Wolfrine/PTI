@@ -9,9 +9,10 @@ import {
 import { BaseChartDirective } from 'ng2-charts';
 import { DomainService } from '../../services/domain.service';
 import { AuthService } from '../../services/auth.service';
+import { TargetTaskService } from '../../services/target-task.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 import { Router } from '@angular/router';
 
-// ✅ Register required Chart.js components
 Chart.register(...registerables);
 
 interface Domain {
@@ -37,64 +38,43 @@ export class DashboardComponent implements OnInit {
     datasets: [],
   };
 
-  // ✅ Fix: Define as a string instead of ChartType
   polarChartType = 'polarArea';
-
   polarChartOptions: ChartOptions<'polarArea'> = {
     responsive: true,
-    plugins: {
-      legend: {
-        position: 'top', // ✅ Move labels to top
-      },
-    },
+    plugins: { legend: { position: 'top' } },
     scales: {
-      r: {
-        min: 0,
-        max: 100, // ✅ Default value, updated dynamically
-        ticks: {
-          stepSize: 5, // ✅ Will be updated dynamically
-        },
-      },
+      r: { min: 0, max: 100, ticks: { stepSize: 5 } },
     },
   };
 
-  // ✅ Define Donut Charts
+  // ✅ Define Donut Charts for Time-Based Tracking
   donutChartType = 'doughnut';
-
-  donutChartDataLast1Day: ChartConfiguration<'doughnut'>['data'] = {
-    labels: [],
-    datasets: [],
-  };
-  donutChartDataLast7Days: ChartConfiguration<'doughnut'>['data'] = {
-    labels: [],
-    datasets: [],
-  };
-  donutChartDataLast1Month: ChartConfiguration<'doughnut'>['data'] = {
-    labels: [],
-    datasets: [],
-  };
+  donutChartDataLast1Day!: ChartConfiguration<'doughnut'>['data'];
+  donutChartDataLast7Days!: ChartConfiguration<'doughnut'>['data'];
+  donutChartDataLast1Month!: ChartConfiguration<'doughnut'>['data'];
 
   chartOptions: ChartOptions<'doughnut'> = {
     responsive: true,
-    plugins: {
-      legend: { display: false }, // ✅ Hide labels for Donut Chart
-    },
-    cutout: '70%', // ✅ Ensures the inner cut is proportionate
+    plugins: { legend: { display: false } },
+    cutout: '70%',
   };
 
   constructor(
     private domainService: DomainService,
-    public authService: AuthService,
+    private authService: AuthService,
+    private targetTaskService: TargetTaskService,
+    private localStorageService: LocalStorageService,
     private router: Router
   ) {}
 
-  ngOnInit() {
-    this.authService.initGoogleOneTap(); // Initialize One Tap on page load
-    this.authService.checkUserSession(); // Auto-login
+  async ngOnInit() {
+    this.authService.initGoogleOneTap();
+    this.authService.checkUserSession();
     this.authService.user$.subscribe((user) => {
       this.user = user;
     });
 
+    // ✅ Fetch domain progress data
     this.domainService.getDomains().subscribe((data) => {
       this.domains = data.map((d) => ({
         id: d.id,
@@ -103,18 +83,12 @@ export class DashboardComponent implements OnInit {
         color: d.color || '#007bff',
       }));
 
-      // ✅ Assign Labels
       this.polarChartLabels = this.domains.map((d) => d.name);
-
-      // ✅ Calculate max value dynamically
       const maxProgress = Math.min(
         Math.max(...this.domains.map((d) => d.progress)) + 10,
         100
       );
-
       const stepSize = Math.ceil(maxProgress / 7);
-
-      // ✅ Update chart options dynamically
       this.polarChartOptions.scales!['r']!.max = maxProgress;
       this.polarChartOptions.scales!['r']!.ticks!.stepSize = stepSize;
 
@@ -129,34 +103,93 @@ export class DashboardComponent implements OnInit {
           },
         ],
       };
+    });
 
+    // ✅ Maintain Time-Based Data
+    const isTimeDataAvailable =
+      this.localStorageService.isTimeDataForTodayAvailable();
+    if (!isTimeDataAvailable) {
+      console.log('Fetching completed tasks to update time-spent stats...');
+      await this.updateTimeSpentData();
+    }
+
+    // ✅ Load Chart Data from Local Storage
+    this.loadDonutChartData();
+  }
+
+  async updateTimeSpentData() {
+    const completedTasks = await this.targetTaskService.getCompletedTasksSince(
+      30
+    ); // Fetch last 30 days
+    const now = new Date().getTime();
+
+    console.log(completedTasks);
+
+    let timeLast1Day = 0,
+      timeLast7Days = 0,
+      timeLast1Month = 0;
+
+    completedTasks.forEach((task) => {
+      const completedTime = task.completedTime || 0;
       console.log(
-        'Polar Chart Data:',
-        JSON.stringify(this.polarChartData, null, 2)
+        'Now :' +
+          now +
+          ' - completionDate :' +
+          new Date(task.completionDate).getTime()
       );
 
-      // ✅ Donut Chart Calculation
-      this.donutChartDataLast1Day = this.generateDonutChartData(24);
-      this.donutChartDataLast7Days = this.generateDonutChartData(168);
-      this.donutChartDataLast1Month = this.generateDonutChartData(720);
+      if (!task.completionDate?.seconds) {
+        console.warn(
+          `⚠️ Skipping task ${task.id} due to invalid completionDate`,
+          task
+        );
+        return; // Skip processing if completionDate is missing or malformed
+      }
+      const completionDate = new Date(task.completionDate.seconds * 1000);
+      const timeDiff = now - completionDate.getTime();
+      console.log('TimeDiff :' + timeDiff);
+      if (timeDiff <= 24 * 60 * 60 * 1000) timeLast1Day += completedTime;
+      if (timeDiff <= 7 * 24 * 60 * 60 * 1000) timeLast7Days += completedTime;
+      if (timeDiff <= 30 * 24 * 60 * 60 * 1000) timeLast1Month += completedTime;
     });
+
+    // ✅ Store results in Local Storage
+    this.localStorageService.setTimeSpentLastNDays(1, timeLast1Day);
+    this.localStorageService.setTimeSpentLastNDays(7, timeLast7Days);
+    this.localStorageService.setTimeSpentLastNDays(30, timeLast1Month);
+    this.localStorageService.setTimeDataForToday();
+
+    // ✅ Reload chart data
+    this.loadDonutChartData();
+  }
+
+  loadDonutChartData() {
+    this.donutChartDataLast1Day = this.generateDonutChartData(
+      24,
+      this.localStorageService.getTimeSpentLastNDays(1)
+    );
+    this.donutChartDataLast7Days = this.generateDonutChartData(
+      168,
+      this.localStorageService.getTimeSpentLastNDays(7)
+    );
+    this.donutChartDataLast1Month = this.generateDonutChartData(
+      720,
+      this.localStorageService.getTimeSpentLastNDays(30)
+    );
   }
 
   generateDonutChartData(
-    maxValue: number
+    maxValue: number,
+    timeSpent: number
   ): ChartConfiguration<'doughnut'>['data'] {
-    const totalHoursSpent = this.domains.reduce(
-      (sum, d) => sum + d.progress,
-      0
-    );
-    const emptyHours = Math.max(0, maxValue - totalHoursSpent);
+    const unusedTime = Math.max(0, maxValue - timeSpent);
 
     return {
-      labels: [...this.domains.map((d) => d.name), 'Unused Time'],
+      labels: ['Time Spent', 'Unused Time'],
       datasets: [
         {
-          data: [...this.domains.map((d) => d.progress), emptyHours],
-          backgroundColor: [...this.domains.map((d) => d.color), '#e0e0e0'],
+          data: [timeSpent, unusedTime],
+          backgroundColor: ['#007bff', '#e0e0e0'],
         },
       ],
     };

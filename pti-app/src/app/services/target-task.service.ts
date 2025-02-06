@@ -151,5 +151,19 @@ export class TargetTaskService {
         console.log(`✅ Total completed tasks in the last ${daysAgo} days: ${completedTasks.length}`);
         return completedTasks;
     }
+
+    async updateDomainProgress(domainId: string, progress: number): Promise<void> {
+        const userId = await this.getUserId();
+        if (!userId) return;
+    
+        const domainRef = doc(this.firestore, `users/${userId}/domains/${domainId}`);
+    
+        try {
+            await updateDoc(domainRef, { progress });
+            console.log(`✅ Firestore Updated: Domain ${domainId} Progress = ${progress}%`);
+        } catch (error) {
+            console.error(`❌ Error updating domain progress:`, error);
+        }
+    }
     
 }

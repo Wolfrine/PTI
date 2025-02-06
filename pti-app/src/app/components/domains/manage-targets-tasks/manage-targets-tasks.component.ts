@@ -33,6 +33,7 @@ export class ManageTargetsTasksComponent implements OnInit {
     domainId: string = '';
     domainName: string = '';
     targets: Target[] = [];
+    domainProgress: number = 0;
     showTargetInput = false;
     showTaskInput = false;
     showEditTargetInput: string | null = null;
@@ -55,25 +56,44 @@ export class ManageTargetsTasksComponent implements OnInit {
         this.domainId = this.route.snapshot.paramMap.get('domainId') || '';
         this.domainName = this.route.snapshot.queryParamMap.get('name') || '';
 
-        // ✅ Fetch targets
+        // ✅ Fetch targets & tasks
         (await this.targetTaskService.getTargets(this.domainId)).subscribe((targets: Target[]) => {
             this.targets = targets;
 
-            // ✅ Fetch tasks and calculate progress for each target
+            let totalEstimated = 0;
+            let totalCompleted = 0;
+
+            // ✅ Fetch tasks for each target
             this.targets.forEach(async target => {
                 if (target.id) {
                     (await this.targetTaskService.getTasks(this.domainId, target.id)).subscribe((tasks: Task[]) => {
-                        target.tasks = tasks;  // ✅ Assign tasks to each target
+                        target.tasks = tasks;
 
-                        // ✅ Calculate Target Progress
+                        // ✅ Calculate Progress
                         target.totalEstimated = tasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
                         target.totalCompleted = tasks.reduce((sum, task) => sum + (task.completedTime || 0), 0);
-
                         target.progress = target.totalEstimated > 0 ? Math.round((target.totalCompleted / target.totalEstimated) * 100) : 0;
+
+                        // ✅ Aggregate domain progress
+                        totalEstimated += target.totalEstimated;
+                        totalCompleted += target.totalCompleted;
+
+                        // ✅ Update Domain Progress in Firestore
+                        this.updateDomainProgress(totalEstimated, totalCompleted);
                     });
                 }
             });
         });
+    }
+
+    async updateDomainProgress(totalEstimated: number, totalCompleted: number) {
+        // ✅ Calculate domain progress
+        this.domainProgress = totalEstimated > 0 ? Math.round((totalCompleted / totalEstimated) * 100) : 0;
+
+        console.log(`📌 Calculated Domain Progress: ${this.domainProgress}%`);
+
+        // ✅ Update Firestore if progress is different
+        await this.targetTaskService.updateDomainProgress(this.domainId, this.domainProgress);
     }
 
 

@@ -85,7 +85,7 @@ export class DashboardComponent implements OnInit {
 
       this.polarChartLabels = this.domains.map((d) => d.name);
       const maxProgress = Math.min(
-        Math.max(...this.domains.map((d) => d.progress)) + 10,
+        Math.max(...this.domains.map((d) => d.progress)) + 5,
         100
       );
       const stepSize = Math.ceil(maxProgress / 7);

@@ -1,6 +1,7 @@
 <h3 class="domain-title">
     <div>
-        <div (click)="router.navigate(['/dashboard'])">Dashboard</div> > {{ domainName }}
+        <div (click)="router.navigate(['/dashboard'])">Dashboard</div> > 
+        {{ domainName }} ({{ domainProgress}}%)
     </div>
     <!-- ✅ Add Target Button -->
     <button (click)="toggleTargetInput()">+ Target</button>

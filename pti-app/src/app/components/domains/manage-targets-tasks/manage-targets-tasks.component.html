@@ -1,10 +1,10 @@
-<h2 class="domain-title">
-    <span>
-        <span (click)="router.navigate(['/dashboard'])">Dashboard</span> > {{ domainName }}
-    </span>
+<h3 class="domain-title">
+    <div>
+        <div (click)="router.navigate(['/dashboard'])">Dashboard</div> > {{ domainName }}
+    </div>
     <!-- ✅ Add Target Button -->
     <button (click)="toggleTargetInput()">+ Target</button>
-</h2>
+</h3>
 
 
 
@@ -44,11 +44,15 @@
     <!-- ✅ Loop through Tasks -->
     <ul>
         <li *ngFor="let task of target.tasks">
-            <input type="checkbox" [(ngModel)]="task.completed" *ngIf="target.id"
-                (change)="markTaskComplete(target.id, task)">
-            {{ task.name }} - {{ task.estimatedTime }} hrs
-            <button (click)="editTask(target.id, task.id)" *ngIf="!task.completed">Edit</button>
-            <button (click)="deleteTask(target.id, task.id)" *ngIf="task.completed">Delete</button>
+            <div class="task-detail">
+                <input type="checkbox" [(ngModel)]="task.completed" *ngIf="target.id"
+                    (change)="markTaskComplete(target.id, task)">
+                {{ task.name }} - {{ task.estimatedTime }} hrs
+            </div>
+            <div>
+                <button (click)="editTask(target.id, task.id)" *ngIf="!task.completed">Edit</button>
+                <button (click)="deleteTask(target.id, task.id)" *ngIf="task.completed">Delete</button>
+            </div>
 
             <!-- ✅ Edit Task -->
             <div *ngIf="showEditTaskInput === task.id">

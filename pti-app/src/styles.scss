@@ -1,1 +1,37 @@
 /* You can add global styles to this file, and also import other style files */
+// Global font size strategy
+
+html {
+    font-size: 16px; // Default (1rem = 16px)
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif; // Set default font
+    font-size: 1rem; // 16px default, responsive
+    line-height: 1.6;
+  }
+  
+  // Typography Scaling with `clamp()`
+  h1 {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+  }
+  
+  h3 {
+    font-size: clamp(1.25rem, 3vw, 2rem);
+  }
+  
+  p, span {
+    font-size: 1rem; // Always relative
+  }
+  
+  // Fluid Typography for Large Screens
+  @media (min-width: 1200px) {
+    body {
+      font-size: 1.1rem;
+    }
+  }
+  

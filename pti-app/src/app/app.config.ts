@@ -7,7 +7,8 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 // Import Firebase services
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
-import { provideAuth, getAuth } from '@angular/fire/auth'; // ✅ Import Auth
+import { provideAuth, getAuth } from '@angular/fire/auth';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'; // ✅ Import Auth
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -27,6 +28,6 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
     provideFirebaseApp(() => initializeApp(firebaseConfig)), // ✅ Initialize Firebase
     provideFirestore(() => getFirestore()), // ✅ Provide Firestore
-    provideAuth(() => getAuth()) // ✅ Add Firebase Auth (Fixes the "No provider for Auth!" error)
+    provideAuth(() => getAuth()), provideAnimationsAsync() // ✅ Add Firebase Auth (Fixes the "No provider for Auth!" error)
   ]
 };

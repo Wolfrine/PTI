@@ -3,10 +3,11 @@ import { DomainService } from '../../../services/domain.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
     selector: 'app-manage-domains',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, MatButtonModule],
     templateUrl: './manage-domains.component.html',
     styleUrl: './manage-domains.component.scss',
 })

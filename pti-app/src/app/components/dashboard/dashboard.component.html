@@ -13,33 +13,62 @@
             </div>
             <br>
             <div>
-                <button (click)="goToManageDomains()">Add / Edit Domains</button>
+                <button mat-stroked-button (click)="goToManageDomains()">Add / Edit Domains</button>
             </div>
         </div>
 
-        <div class="period-wise-summary">
-            <h3>Time invested :</h3>
-            <!-- Last 1 Day -->
-            <div class="donut-chart-container">
-                <span>Yesterday</span>
-                <canvas baseChart [data]="donutChartDataLast1Day" [type]="'doughnut'" [options]="chartOptions">
-                </canvas>
-            </div>
+        <div class="period-wise-summary-container">
+            <h3>Time invested:
+                <button mat-icon-button (click)="refreshData()">
+                    <mat-icon>refresh</mat-icon>
+                </button>
+            </h3>
 
-            <!-- Last 7 Days -->
-            <div class="donut-chart-container">
-                <span>Last 7 Days</span>
-                <canvas baseChart [data]="donutChartDataLast7Days" [type]="'doughnut'" [options]="chartOptions">
-                </canvas>
-            </div>
+            <div class="period-wise-summary">
 
-            <!-- Last 1 Month -->
-            <div class="donut-chart-container">
-                <span>Last 1 Month</span>
-                <canvas baseChart [data]="donutChartDataLast1Month" [type]="'doughnut'" [options]="chartOptions">
-                </canvas>
+
+
+
+                <div>
+                    <!-- ✅ Today's Investment -->
+                    <div class="donut-chart-container">
+                        <span>Today</span>
+                        <canvas baseChart [data]="donutChartDataToday" [type]="'doughnut'" [options]="chartOptions"
+                            [plugins]="chartPlugins">
+                        </canvas>
+                    </div>
+
+                    <!-- ✅ Yesterday -->
+                    <div class="donut-chart-container">
+                        <span>Yesterday</span>
+                        <canvas baseChart [data]="donutChartDataLast1Day" [type]="'doughnut'" [options]="chartOptions"
+                            [plugins]="chartPlugins">
+                        </canvas>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- ✅ Last 7 Days -->
+                    <div class="donut-chart-container">
+                        <span>
+                            < 7 Days</span>
+                                <canvas baseChart [data]="donutChartDataLast7Days" [type]="'doughnut'"
+                                    [options]="chartOptions" [plugins]="chartPlugins">
+                                </canvas>
+                    </div>
+
+                    <!-- ✅ Last 30 Days -->
+                    <div class="donut-chart-container">
+                        <span>
+                            < 30 Days</span>
+                                <canvas baseChart [data]="donutChartDataLast1Month" [type]="'doughnut'"
+                                    [options]="chartOptions" [plugins]="chartPlugins">
+                                </canvas>
+                    </div>
+                </div>
             </div>
         </div>
+
     </div>
 
     <div class="domain-list">
@@ -51,5 +80,7 @@
         </ol>
     </div>
 
-    <button (click)="logout()">Logout</button>
+    <div class="footer">
+        <button mat-stroked-button (click)="logout()">Logout</button>
+    </div>
 </div>

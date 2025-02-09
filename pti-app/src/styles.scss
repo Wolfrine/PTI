@@ -3,35 +3,46 @@
 
 html {
     font-size: 16px; // Default (1rem = 16px)
-  }
-  
-  body {
+}
+
+body {
     font-family: 'Inter', sans-serif; // Set default font
     font-size: 1rem; // 16px default, responsive
     line-height: 1.6;
-  }
-  
-  // Typography Scaling with `clamp()`
-  h1 {
+    padding: 8px 12px;
+}
+
+// Typography Scaling with `clamp()`
+h1 {
     font-size: clamp(2rem, 4vw, 3.5rem);
-  }
-  
-  h2 {
+}
+
+h2 {
     font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-  }
-  
-  h3 {
+}
+
+h3 {
     font-size: clamp(1.25rem, 3vw, 2rem);
-  }
-  
-  p, span {
+}
+
+p,
+span {
     font-size: 1rem; // Always relative
-  }
-  
-  // Fluid Typography for Large Screens
-  @media (min-width: 1200px) {
+}
+
+// Fluid Typography for Large Screens
+@media (min-width: 1200px) {
     body {
-      font-size: 1.1rem;
+        font-size: 1.1rem;
     }
-  }
-  
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}

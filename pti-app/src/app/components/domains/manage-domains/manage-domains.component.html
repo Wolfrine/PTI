@@ -1,17 +1,19 @@
-<h2><span (click)="router.navigate(['/dashboard'])">Dashboard</span> > Manage Domains</h2>
+<h3>
+    <div (click)="router.navigate(['/dashboard'])">Dashboard </div> > Manage Domains
+</h3>
 
 <!-- Add/Edit Domain Form -->
 <div>
     <input type="text" [(ngModel)]="domainData.name" placeholder="Domain Name" required>
     <input type="color" [(ngModel)]="domainData.color">
     <input type="number" [(ngModel)]="domainData.progress" min="0" max="100" placeholder="Progress">
-    <button (click)="addDomain()">{{ isEditing ? 'Update' : 'Add' }} Domain</button>
+    <button mat-stroked-button (click)="addDomain()">{{ isEditing ? 'Update' : 'Add' }} Domain</button>
 </div>
 
 <!-- List of Domains -->
 <ol>
     <li *ngFor="let domain of domains">
-        <div>
+        <div class="domain-list">
             <div>{{ domain.name }} - {{ domain.progress }}%</div>
             <span [style.color]="domain.color">###</span>
             <button (click)="editDomain(domain)">Edit</button>

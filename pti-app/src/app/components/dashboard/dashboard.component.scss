@@ -4,6 +4,10 @@ h2 {
     padding: 12px 0;
 }
 
+h3 {
+    text-align: center;
+}
+
 .dashboard-container {
     display: flex;
     flex-direction: row;
@@ -20,11 +24,13 @@ h2 {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 50%;
 
     padding: 0 0 12px;
 
     @media (max-width:480px) {
         border-bottom: 1px solid rgba(0, 0, 0, .2);
+        width: 100%;
     }
 }
 
@@ -45,37 +51,44 @@ h2 {
     }
 }
 
-
-
-.period-wise-summary {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    width: 500px;
-    align-items: stretch;
+.period-wise-summary-container {
+    width: 50%;
 
     @media (max-width:480px) {
         width: 100%;
     }
-
-    .donut-chart-container {
-        display: flex;
-        order: 3;
-        flex-grow: 3;
-        border-top: 1px solid rgba(0, 0, 0, .1);
-        padding: 4px;
-        justify-content: center;
-
-        canvas {
-            width: 150px !important;
-            height: 150px !important;
-        }
-    }
 }
 
-h3 {
+.period-wise-summary {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-items: stretch;
+    width: 100%;
+
+}
+
+.donut-chart-container {
+    border-top: 1px solid rgba(0, 0, 0, .1);
+    padding: 4px;
     text-align: center;
+
+    canvas {
+        width: 13em !important;
+        height: 13em !important;
+
+        @media (max-width:480px) {
+            width: 12em !important;
+            height: 12em !important;
+        }
+
+        @media (max-width:370px) {
+            width: 7em !important;
+            height: 7em !important;
+        }
+
+    }
 }
 
 ol {
@@ -91,4 +104,10 @@ li {
 
 li:hover {
     background-color: rgba(0, 0, 0, 0.05);
+}
+
+.footer {
+    margin: 36px 0;
+    padding: 12px;
+    border-top: 2px solid rgba(0, 0, 100, 0.5);
 }

@@ -1,11 +1,16 @@
-<h3 class="domain-title">
-    <div>
-        <div (click)="router.navigate(['/dashboard'])">Dashboard</div> > 
-        {{ domainName }} ({{ domainProgress}}%)
-    </div>
-    <!-- ✅ Add Target Button -->
-    <button (click)="toggleTargetInput()">+ Target</button>
-</h3>
+<div class="domain-title">
+    <h2>
+        <div>
+            <div (click)="router.navigate(['/dashboard'])">Dashboard</div> >
+            {{ domainName }} ({{ domainProgress}}%)
+        </div>
+        <!-- ✅ Add Target Button -->
+        <button (click)="toggleTargetInput()">+ Target</button>
+
+    </h2>
+    <span>Estimated : {{totalEstimated}} hrs | Completed : {{totalCompleted}} hrs | Pending : {{totalPending}} hrs
+    </span>
+</div>
 
 
 
@@ -20,13 +25,14 @@
 <div *ngFor="let target of targets" class="target-container">
     <!-- ✅ Display Target -->
     <h3 class="target-title">
-        {{ target.name }} ({{ target.progress }}%) - {{target.totalEstimated}} - {{target.totalCompleted}}
+        {{ target.name }} ({{ target.progress }}%)
         <div>
             <button (click)="editTarget(target.id)">Edit</button>
             <button *ngIf="target.id" (click)="toggleTaskInput(target.id)">+ Task</button>
         </div>
     </h3>
-    <p>Target Completion Date: {{ target.deadline }}</p>
+    <span>Target Completion Date: {{ target.deadline }}</span> ,
+    <span> Estimated : {{target.totalEstimated}} hrs - Completed : {{target.totalCompleted}} hrs</span>
 
     <!-- ✅ Edit Target -->
     <div *ngIf="showEditTargetInput === target.id">
@@ -44,7 +50,7 @@
 
     <!-- ✅ Loop through Tasks -->
     <ul>
-        <li *ngFor="let task of target.tasks">
+        <li *ngFor="let task of target.tasks" class="task">
             <div class="task-detail">
                 <input type="checkbox" [(ngModel)]="task.completed" *ngIf="target.id"
                     (change)="markTaskComplete(target.id, task)">
@@ -65,5 +71,6 @@
     </ul>
 </div>
 
-<!-- ✅ Back Button -->
-<!-- <button (click)="router.navigate(['/dashboard'])">Back</button> -->
+<div class="footer">
+    <button mat-stroked-button (click)="router.navigate(['/dashboard'])">Back</button>
+</div>

@@ -1,66 +1,83 @@
 .domain-title {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 
-  div{
-    display: inline;
-    cursor: pointer;
-  }
+    span {
+        font-size: 14px;
+        font-style: italic;
+    }
 
-  span {
-    cursor: pointer;
-    padding: 4px;
-    transition: 0.3s ease;
-  }
+    h2 {
 
-  span:hover {
-    background-color: rgba(0, 0, 0, 0.2);
-  }
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        padding: 8px 0 2px;
+        margin-bottom: 0;
+
+        div {
+            display: inline;
+            cursor: pointer;
+        }
+
+        span {
+            cursor: pointer;
+            padding: 4px;
+            transition: 0.3s ease;
+        }
+
+        span:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+    }
 }
 
+
+
 .target-container {
-  p {
-    font-style: italic;
-  }
+    span {
+        font-style: italic;
+        font-size: 14px;
+    }
 }
 
 .target-title {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 12px 0 6px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 12px 0 6px;
+    margin-bottom: 0px;
 }
 
 ul {
-  list-style: none;
-  padding: 0;
+    list-style: none;
+    padding: 0;
 
-  li {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    text-align: left;
-    transition: 0.1s ease;
-    padding: 4px;
+    li {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+        transition: 0.1s ease;
+        padding: 6px 4px 1px;
+        border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
 
-    .task-detail {
-      display: flex;
-      flex-direction: row;
-      align-items: flex-start;
+        .task-detail {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            padding-right: 4px;
 
-      input{
-        margin:7px;
-      }
+            input {
+                margin: 7px;
+            }
+        }
     }
-  }
 
-  li:hover {
-    background-color: rgb(215, 248, 250);
-  }
+    li:hover {
+        background-color: rgb(215, 248, 250);
+    }
 }

@@ -106,40 +106,40 @@ export class TargetTaskService {
             throw new Error('User not authenticated');
         }
         console.log(`✅ User ID: ${userId}`);
-    
+
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
         console.log(`🔍 Fetching tasks completed since: ${cutoffDate.toISOString()}`);
-    
+
         const completedTasks: any[] = [];
-    
+
         // ✅ Fetch all user domains
         const domainsQuery = collection(this.firestore, `users/${userId}/domains`);
         const domainsSnapshot = await getDocs(domainsQuery);
         console.log(`📂 Found ${domainsSnapshot.docs.length} domains.`);
-    
+
         for (const domainDoc of domainsSnapshot.docs) {
             const domainId = domainDoc.id;
             console.log(`🔹 Checking domain: ${domainId}`);
-    
+
             // ✅ Fetch all targets inside this domain
             const targetsQuery = collection(this.firestore, `users/${userId}/domains/${domainId}/targets`);
             const targetsSnapshot = await getDocs(targetsQuery);
             console.log(`📌 Found ${targetsSnapshot.docs.length} targets in domain ${domainId}`);
-    
+
             for (const targetDoc of targetsSnapshot.docs) {
                 const targetId = targetDoc.id;
                 console.log(`  🔹 Checking target: ${targetId}`);
-    
+
                 // ✅ Fetch all tasks inside this target
                 const tasksQuery = collection(this.firestore, `users/${userId}/domains/${domainId}/targets/${targetId}/tasks`);
                 const tasksSnapshot = await getDocs(tasksQuery);
                 console.log(`  📌 Found ${tasksSnapshot.docs.length} tasks in target ${targetId}`);
-    
+
                 tasksSnapshot.forEach(taskDoc => {
                     const task = taskDoc.data();
                     console.log(`    🔎 Task: ${taskDoc.id}, Completed: ${task['completed']}, Completion Date: ${task['completionDate']?.toDate()}`);
-    
+
                     if (task['completed'] && task['completionDate'] && task['completionDate'].toDate() >= cutoffDate) {
                         console.log(`    ✅ Task ${taskDoc.id} added to completed list`);
                         completedTasks.push(task);
@@ -147,23 +147,29 @@ export class TargetTaskService {
                 });
             }
         }
-    
+
         console.log(`✅ Total completed tasks in the last ${daysAgo} days: ${completedTasks.length}`);
         return completedTasks;
     }
 
-    async updateDomainProgress(domainId: string, progress: number): Promise<void> {
+    async updateDomainStats(domainId: string, progress: number, totalEstimated: number, totalCompleted: number, totalPending: number): Promise<void> {
         const userId = await this.getUserId();
         if (!userId) return;
-    
+
         const domainRef = doc(this.firestore, `users/${userId}/domains/${domainId}`);
-    
+
         try {
-            await updateDoc(domainRef, { progress });
-            console.log(`✅ Firestore Updated: Domain ${domainId} Progress = ${progress}%`);
+            await updateDoc(domainRef, {
+                progress,
+                totalEstimated,
+                totalCompleted,
+                totalPending
+            });
+            console.log(`✅ Firestore Updated: Domain ${domainId} - Progress: ${progress}%, Estimated: ${totalEstimated}h, Completed: ${totalCompleted}h, Pending: ${totalPending}h`);
         } catch (error) {
-            console.error(`❌ Error updating domain progress:`, error);
+            console.error(`❌ Error updating domain stats:`, error);
         }
     }
-    
+
+
 }

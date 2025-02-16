@@ -3,13 +3,15 @@
 
 html {
     font-size: 16px; // Default (1rem = 16px)
+
+    margin-bottom: 50px;
 }
 
 body {
     font-family: 'Inter', sans-serif; // Set default font
     font-size: 1rem; // 16px default, responsive
     line-height: 1.6;
-    padding: 8px 12px;
+    padding: 8px 12px 36px;
 }
 
 // Typography Scaling with `clamp()`
@@ -45,4 +47,10 @@ body {
 body {
     margin: 0;
     font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.footer {
+    margin: 36px 0;
+    padding: 12px;
+    border-top: 2px solid rgba(0, 0, 100, 0.5);
 }

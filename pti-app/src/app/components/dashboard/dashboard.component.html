@@ -75,7 +75,7 @@
         <h3>Your Domain's :</h3>
         <ol>
             <li *ngFor="let domain of domains" (click)="goToDomain(domain)">
-                {{ domain.name }}
+                {{ domain.name }} - <span>({{domain.progress}}%)</span>
             </li>
         </ol>
     </div>

@@ -39,6 +39,9 @@ export class ManageTargetsTasksComponent implements OnInit {
     showEditTargetInput: string | null = null;
     showEditTaskInput: string | null = null;
     selectedTargetId: string | null = null;
+    totalEstimated = 0;
+    totalCompleted = 0;
+    totalPending = this.totalEstimated - this.totalCompleted;
 
     newTarget: Target = { name: '', deadline: '', progress: 0, totalEstimated: 0, totalCompleted: 0 };
     editedTarget: Target = { name: '', deadline: '', progress: 0, totalEstimated: 0, totalCompleted: 0 };
@@ -56,46 +59,46 @@ export class ManageTargetsTasksComponent implements OnInit {
         this.domainId = this.route.snapshot.paramMap.get('domainId') || '';
         this.domainName = this.route.snapshot.queryParamMap.get('name') || '';
 
-        // ✅ Fetch targets & tasks
         (await this.targetTaskService.getTargets(this.domainId)).subscribe((targets: Target[]) => {
             this.targets = targets;
 
-            let totalEstimated = 0;
-            let totalCompleted = 0;
-
-            // ✅ Fetch tasks for each target
             this.targets.forEach(async target => {
                 if (target.id) {
                     (await this.targetTaskService.getTasks(this.domainId, target.id)).subscribe((tasks: Task[]) => {
                         target.tasks = tasks;
-
-                        // ✅ Calculate Progress
-                        target.totalEstimated = tasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
-                        target.totalCompleted = tasks.reduce((sum, task) => sum + (task.completedTime || 0), 0);
-                        target.progress = target.totalEstimated > 0 ? Math.round((target.totalCompleted / target.totalEstimated) * 100) : 0;
-
-                        // ✅ Aggregate domain progress
-                        totalEstimated += target.totalEstimated;
-                        totalCompleted += target.totalCompleted;
-
-                        // ✅ Update Domain Progress in Firestore
-                        this.updateDomainProgress(totalEstimated, totalCompleted);
+                        this.calculateDomainProgress(); // ✅ Recalculate Progress after tasks are loaded
                     });
                 }
             });
         });
     }
 
-    async updateDomainProgress(totalEstimated: number, totalCompleted: number) {
-        // ✅ Calculate domain progress
-        this.domainProgress = totalEstimated > 0 ? Math.round((totalCompleted / totalEstimated) * 100) : 0;
+    async calculateDomainProgress() {
+        this.totalEstimated = 0;
+        this.totalCompleted = 0;
 
-        console.log(`📌 Calculated Domain Progress: ${this.domainProgress}%`);
+        for (const target of this.targets) {
+            if (!target.tasks) continue;
 
-        // ✅ Update Firestore if progress is different
-        await this.targetTaskService.updateDomainProgress(this.domainId, this.domainProgress);
+            // ✅ Calculate Target-Level Progress
+            target.totalEstimated = target.tasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
+            target.totalCompleted = target.tasks.reduce((sum, task) => sum + (task.completedTime || 0), 0);
+            target.progress = target.totalEstimated > 0 ? Math.round((target.totalCompleted / target.totalEstimated) * 100) : 0;
+
+            // ✅ Aggregate into Domain-Level
+            this.totalEstimated += target.totalEstimated;
+            this.totalCompleted += target.totalCompleted;
+        }
+
+        // ✅ Calculate Domain Progress and Pending Time
+        this.domainProgress = this.totalEstimated > 0 ? Math.round((this.totalCompleted / this.totalEstimated) * 100) : 0;
+        this.totalPending = this.totalEstimated - this.totalCompleted;
+
+        console.log(`📌 Updated Domain Stats: Progress: ${this.domainProgress}%, Estimated: ${this.totalEstimated}h, Completed: ${this.totalCompleted}h, Pending: ${this.totalPending}h`);
+
+        // ✅ Update Firestore with all values
+        await this.targetTaskService.updateDomainStats(this.domainId, this.domainProgress, this.totalEstimated, this.totalCompleted, this.totalPending);
     }
-
 
     toggleTargetInput() {
         this.showTargetInput = !this.showTargetInput;
@@ -119,11 +122,14 @@ export class ManageTargetsTasksComponent implements OnInit {
         this.targetTaskService.addTask(this.domainId, targetId, this.newTask).then(() => {
             this.newTask = { name: '', estimatedTime: 0, completed: false };
             this.showTaskInput = false;
+            this.calculateDomainProgress(); // ✅ Recalculate after adding a task
         });
     }
 
     markTaskComplete(targetId: string, task: Task) {
-        this.targetTaskService.completeTask(this.domainId, targetId, task.id!, task.estimatedTime);
+        this.targetTaskService.completeTask(this.domainId, targetId, task.id!, task.estimatedTime).then(() => {
+            this.calculateDomainProgress(); // ✅ Recalculate after marking a task complete
+        });
     }
 
     // ✅ Edit Target
@@ -162,9 +168,10 @@ export class ManageTargetsTasksComponent implements OnInit {
     }
 
     deleteTask(targetId: string | undefined, taskId: string | undefined) {
-        if (!targetId || !taskId) return; // ✅ Prevent undefined errors
+        if (!targetId || !taskId) return;
         this.targetTaskService.deleteTask(this.domainId, targetId, taskId).then(() => {
-            console.log("Task deleted");
+            console.log("✅ Task deleted");
+            this.calculateDomainProgress(); // ✅ Recalculate after deleting a task
         });
     }
 }

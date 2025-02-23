@@ -1,0 +1,52 @@
+<div class="activity-input">
+    <h3>
+        <div (click)="router.navigate(['/dashboard'])">Dashboard </div> &nbsp; > Add New Activity
+    </h3>
+    <form [formGroup]="activityForm" (ngSubmit)="addActivity()">
+        <input formControlName="name" placeholder="Activity Name" required />
+
+        <!-- Dropdown for existing categories -->
+        <select formControlName="categoryId">
+            <option *ngFor="let category of categories" [value]="category.name">{{ category.name }}</option>
+        </select>
+
+        <!-- Input for adding new category -->
+        <input formControlName="newCategory" placeholder="New Category (if any)" />
+
+        <input type="datetime-local" formControlName="startTime" placeholder="Start Time" />
+        <input type="datetime-local" formControlName="endTime" placeholder="End Time" />
+        <textarea formControlName="notes" placeholder="Notes"></textarea>
+        <button type="submit">Add Activity</button>
+    </form>
+
+</div>
+
+<div class="activity-list">
+    <h3>Recent Activities</h3>
+    <div *ngFor="let date of groupedActivities | keyvalue : sortByDateDesc">
+        <h4>{{ date.key }}</h4> <!-- Grouped by startTime in descending order -->
+        <ul>
+            <li *ngFor="let activity of date.value">
+                {{ activity.name }} -
+                {{ activity.durationInHours || 0 }} hrs /
+                {{ activity.durationInMinutes || 0 }} mins |
+                <mat-chip color="accent">{{ activity.categoryId }}</mat-chip>
+            </li>
+        </ul>
+    </div>
+    <button (click)="loadActivities()">Load More</button>
+</div>
+
+
+<div class="report-section">
+    <h3>30-Day Activity Report</h3>
+    <button (click)="generate30DayReport()">Generate Report</button>
+
+    <div style="display: block; width: 100%; max-width: 800px; margin: auto;">
+        <canvas #activityChart></canvas>
+    </div>
+</div>
+
+<div class="footer">
+    <button mat-stroked-button (click)="router.navigate(['/dashboard'])">Back</button>
+</div>

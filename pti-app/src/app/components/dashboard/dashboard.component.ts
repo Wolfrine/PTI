@@ -247,6 +247,10 @@ export class DashboardComponent implements OnInit {
         this.router.navigate(['/domains']);
     }
 
+    goToActivties() {
+        this.router.navigate(['/activities']);
+    }
+
     goToDomain(domain: { id: string; name: string }) {
         this.router.navigate(['/domains', domain.id], {
             queryParams: { name: domain.name },

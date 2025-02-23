@@ -3,6 +3,7 @@ import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { ManageDomainsComponent } from './components/domains/manage-domains/manage-domains.component';
 import { ManageTargetsTasksComponent } from './components/domains/manage-targets-tasks/manage-targets-tasks.component';
+import { ActivityComponent } from './components/activity/activity.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -20,6 +21,11 @@ export const routes: Routes = [
     {
         path: 'domains/:domainId', // Route for specific domain targets & tasks
         component: ManageTargetsTasksComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'activities',
+        component: ActivityComponent,
         canActivate: [AuthGuard],
     },
 ];

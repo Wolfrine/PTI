@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TargetTaskService } from '../../../services/target-task.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ActivityService } from '../../../services/activity.service';
 
 interface Target {
     id?: string;
@@ -51,6 +52,7 @@ export class ManageTargetsTasksComponent implements OnInit {
 
     constructor(
         private targetTaskService: TargetTaskService,
+        private activityService: ActivityService,
         private route: ActivatedRoute,
         public router: Router
     ) { }
@@ -128,8 +130,17 @@ export class ManageTargetsTasksComponent implements OnInit {
 
     markTaskComplete(targetId: string, task: Task) {
         this.targetTaskService.completeTask(this.domainId, targetId, task.id!, task.estimatedTime).then(() => {
+            this.logCompletedTaskAsActivity(task);
             this.calculateDomainProgress(); // ✅ Recalculate after marking a task complete
         });
+    }
+
+    private async logCompletedTaskAsActivity(task: Task): Promise<void> {
+        try {
+            await this.activityService.logTaskAsActivity(task, this.domainName);
+        } catch (error) {
+            console.error('Error logging completed task as activity:', error);
+        }
     }
 
     // ✅ Edit Target

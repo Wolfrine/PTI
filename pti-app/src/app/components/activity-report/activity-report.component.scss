@@ -1,0 +1,32 @@
+.activity-report-container {
+    text-align: center;
+    width: 100%;
+    max-width: 900px;
+    /* ✅ Increased max width */
+    margin: 0 auto;
+    /* ✅ Centering */
+    padding: 10px;
+}
+
+canvas {
+    width: 100% !important;
+    /* ✅ Ensures full width on all screens */
+    height: auto !important;
+    /* ✅ Maintain aspect ratio */
+    min-height: 300px;
+    max-height: 500px;
+}
+
+/* ✅ Adjustments for smaller screens */
+@media (max-width: 600px) {
+    .activity-report-container {
+        max-width: 100%;
+        /* ✅ Full width on mobile */
+        padding: 5px;
+    }
+
+    canvas {
+        min-height: 250px;
+        max-height: 400px;
+    }
+}

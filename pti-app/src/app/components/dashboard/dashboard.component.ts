@@ -14,6 +14,7 @@ import { LocalStorageService } from '../../services/local-storage.service';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { ActivityReportComponent } from '../activity-report/activity-report.component';
 
 Chart.register(...registerables);
 
@@ -27,7 +28,7 @@ interface Domain {
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, BaseChartDirective, MatButtonModule, MatIconModule],
+    imports: [CommonModule, BaseChartDirective, MatButtonModule, MatIconModule, ActivityReportComponent],
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.scss'],
 })

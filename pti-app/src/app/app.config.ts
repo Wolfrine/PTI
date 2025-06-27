@@ -6,9 +6,10 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 
 // Import Firebase services
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore';
+import { provideFirestore, getFirestore, enableIndexedDbPersistence } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'; // ✅ Import Auth
+import { provideServiceWorker } from '@angular/service-worker';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -27,7 +28,16 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideFirebaseApp(() => initializeApp(firebaseConfig)), // ✅ Initialize Firebase
-    provideFirestore(() => getFirestore()), // ✅ Provide Firestore
-    provideAuth(() => getAuth()), provideAnimationsAsync() // ✅ Add Firebase Auth (Fixes the "No provider for Auth!" error)
+    provideFirestore(() => {
+      const firestore = getFirestore();
+      enableIndexedDbPersistence(firestore);
+      return firestore;
+    }), // ✅ Provide Firestore with offline persistence
+    provideAuth(() => getAuth()),
+    provideAnimationsAsync(),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: true,
+      registrationStrategy: 'registerWhenStable:30000'
+    })
   ]
 };

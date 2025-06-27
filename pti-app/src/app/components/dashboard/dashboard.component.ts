@@ -195,7 +195,6 @@ export class DashboardComponent implements OnInit {
         console.log(`✅ Time Spent (Last 7 Days): ${timeLast7Days}`);
         console.log(`✅ Time Spent (Last 30 Days): ${timeLast30Days}`);
 
-        // ✅ Store results in Local Storage
         this.localStorageService.setTimeSpentLastNDays(0, timeToday);
         this.localStorageService.setTimeSpentLastNDays(1, timeYesterday);
         this.localStorageService.setTimeSpentLastNDays(7, timeLast7Days);
@@ -205,7 +204,6 @@ export class DashboardComponent implements OnInit {
         // ✅ Reload chart data
         this.loadDonutChartData();
     }
-
 
     loadDonutChartData() {
         this.donutChartDataToday = this.generateDonutChartData(
@@ -260,8 +258,8 @@ export class DashboardComponent implements OnInit {
 
     async refreshData() {
         console.log("🔄 Refreshing data...");
-        await this.updateTimeSpentData(); // ✅ Fetch latest completed tasks and update local storage
-        this.loadDonutChartData(); // ✅ Reload charts with new data
+        await this.updateTimeSpentData();
+        await this.loadDonutChartData();
         console.log("✅ Data refreshed!");
     }
 

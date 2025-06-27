@@ -88,11 +88,10 @@ export class ActivityComponent implements OnInit {
     }
 
     ngAfterViewInit(): void {
-        // ✅ Load report once the chart element is available
         if (this.localStorageService.isTimeDataForTodayAvailable()) {
-            this.loadCachedReport(); // Load from local storage
+            this.loadCachedReport();
         } else {
-            this.generate30DayReport(); // Generate fresh report
+            this.generate30DayReport();
         }
     }
 
@@ -105,7 +104,7 @@ export class ActivityComponent implements OnInit {
             this.barChartData.datasets[0].data = Object.values(cachedReport).map(Number);
             this.renderChart();
         } else {
-            this.generate30DayReport(); // Fetch fresh report if cache is empty
+            this.generate30DayReport();
         }
     }
 

@@ -31,8 +31,7 @@
                                 "input": "public"
                             }
                         ],
-                        "serviceWorker": true,
-                        "ngswConfigPath": "ngsw-config.json",
+                        "serviceWorker": "ngsw-config.json",
                         "styles": [
                             "@angular/material/prebuilt-themes/magenta-violet.css",
                             "src/styles.scss"

@@ -10,6 +10,7 @@ import { provideFirestore, getFirestore, enableIndexedDbPersistence } from '@ang
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'; // ✅ Import Auth
 import { provideServiceWorker } from '@angular/service-worker';
+import { isDevMode } from '@angular/core';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -36,7 +37,7 @@ export const appConfig: ApplicationConfig = {
     provideAuth(() => getAuth()),
     provideAnimationsAsync(),
     provideServiceWorker('ngsw-worker.js', {
-      enabled: true,
+      enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'
     })
   ]

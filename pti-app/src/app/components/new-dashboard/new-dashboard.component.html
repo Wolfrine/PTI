@@ -1,0 +1,55 @@
+<mat-toolbar color="primary">
+  <span>PTI Dashboard</span>
+  <span class="spacer"></span>
+  <button mat-button (click)="logout()">Logout</button>
+</mat-toolbar>
+
+<div class="new-dashboard-container">
+  <mat-card class="welcome-card">
+    <h2>Welcome, {{ user?.displayName }}</h2>
+    <button mat-stroked-button (click)="goToManageDomains()">Add / Edit Domains</button>
+    <button mat-stroked-button (click)="goToActivties()">Add / Edit Activity</button>
+  </mat-card>
+
+  <mat-card>
+    <h3>Your Activity</h3>
+    <div class="chart-container">
+      <canvas baseChart [data]="polarChartData" [type]="'polarArea'" [options]="polarChartOptions"></canvas>
+    </div>
+  </mat-card>
+
+  <mat-card>
+    <h3>Time invested
+      <button mat-icon-button (click)="refreshData()"><mat-icon>refresh</mat-icon></button>
+    </h3>
+    <div class="period-wise-summary">
+      <div class="donut-chart-container">
+        <span>Today</span>
+        <canvas baseChart [data]="donutChartDataToday" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
+      </div>
+      <div class="donut-chart-container">
+        <span>Yesterday</span>
+        <canvas baseChart [data]="donutChartDataLast1Day" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
+      </div>
+      <div class="donut-chart-container">
+        <span>< 7 Days</span>
+        <canvas baseChart [data]="donutChartDataLast7Days" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
+      </div>
+      <div class="donut-chart-container">
+        <span>< 30 Days</span>
+        <canvas baseChart [data]="donutChartDataLast1Month" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
+      </div>
+    </div>
+  </mat-card>
+
+  <mat-card>
+    <h3>Your Domains</h3>
+    <mat-list>
+      <mat-list-item *ngFor="let domain of domains" (click)="goToDomain(domain)">
+        {{ domain.name }} - {{ domain.progress }}%
+      </mat-list-item>
+    </mat-list>
+  </mat-card>
+
+  <app-activity-report></app-activity-report>
+</div>

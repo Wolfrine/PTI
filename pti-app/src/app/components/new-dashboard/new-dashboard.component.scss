@@ -1,0 +1,26 @@
+.spacer {
+  flex: 1 1 auto;
+}
+
+.new-dashboard-container {
+  padding: 16px;
+}
+
+mat-card {
+  margin-bottom: 16px;
+}
+
+.period-wise-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.donut-chart-container {
+  text-align: center;
+  padding: 8px;
+}
+
+mat-list-item {
+  cursor: pointer;
+}

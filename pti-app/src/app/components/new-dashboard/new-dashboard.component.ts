@@ -14,6 +14,9 @@ import { LocalStorageService } from '../../services/local-storage.service';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
 import { ActivityReportComponent } from '../activity-report/activity-report.component';
 
 Chart.register(...registerables);
@@ -26,13 +29,22 @@ interface Domain {
 }
 
 @Component({
-    selector: 'app-dashboard',
+    selector: 'app-new-dashboard',
     standalone: true,
-    imports: [CommonModule, BaseChartDirective, MatButtonModule, MatIconModule, ActivityReportComponent],
-    templateUrl: './dashboard.component.html',
-    styleUrls: ['./dashboard.component.scss'],
+    imports: [
+        CommonModule,
+        BaseChartDirective,
+        MatButtonModule,
+        MatIconModule,
+        MatCardModule,
+        MatToolbarModule,
+        MatListModule,
+        ActivityReportComponent,
+    ],
+    templateUrl: './new-dashboard.component.html',
+    styleUrls: ['./new-dashboard.component.scss'],
 })
-export class DashboardComponent implements OnInit {
+export class NewDashboardComponent implements OnInit {
     user: any;
     domains: Domain[] = [];
     polarChartLabels: string[] = [];
@@ -248,10 +260,6 @@ export class DashboardComponent implements OnInit {
 
     goToActivties() {
         this.router.navigate(['/activities']);
-    }
-
-    goToNewDashboard() {
-        this.router.navigate(['/new-dashboard']);
     }
 
     goToDomain(domain: { id: string; name: string }) {

@@ -96,7 +96,7 @@ export class AuthService {
     }
 
     // ✅ Sign in with Google Popup
-    async signInWithGoogle(): Promise<void> {
+    async signInWithGoogle(redirectRoute: string = '/dashboard'): Promise<void> {
         try {
             const provider = new GoogleAuthProvider();
             const credential = await signInWithPopup(this.auth, provider);
@@ -104,7 +104,7 @@ export class AuthService {
 
             await this.storeUserInFirestore(user);
             this.userSubject.next(user);
-            this.router.navigate(['/dashboard']);
+            this.router.navigate([redirectRoute]);
         } catch (error) {
             console.error('Login Error:', error);
         }

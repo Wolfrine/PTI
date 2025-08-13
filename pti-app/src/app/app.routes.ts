@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { NewDashboardComponent } from './components/new-dashboard/new-dashboard.component';
 import { ManageDomainsComponent } from './components/domains/manage-domains/manage-domains.component';
 import { ManageTargetsTasksComponent } from './components/domains/manage-targets-tasks/manage-targets-tasks.component';
 import { ActivityComponent } from './components/activity/activity.component';
@@ -11,6 +12,11 @@ export const routes: Routes = [
     {
         path: 'dashboard',
         component: DashboardComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'new-dashboard',
+        component: NewDashboardComponent,
         canActivate: [AuthGuard],
     },
     {

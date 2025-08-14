@@ -17,6 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivityReportComponent } from '../activity-report/activity-report.component';
 
 Chart.register(...registerables);
@@ -39,6 +40,7 @@ interface Domain {
         MatCardModule,
         MatToolbarModule,
         MatListModule,
+        MatProgressBarModule,
         ActivityReportComponent,
     ],
     templateUrl: './new-dashboard.component.html',
@@ -63,11 +65,11 @@ export class NewDashboardComponent implements OnInit {
     };
 
     // ✅ Define Donut Charts for Time-Based Tracking
-    donutChartType = 'doughnut';
     donutChartDataToday!: ChartConfiguration<'doughnut'>['data']; // ✅ New Chart for Today
     donutChartDataLast1Day!: ChartConfiguration<'doughnut'>['data'];
     donutChartDataLast7Days!: ChartConfiguration<'doughnut'>['data'];
     donutChartDataLast1Month!: ChartConfiguration<'doughnut'>['data'];
+    timeChartConfigs: { label: string; data: ChartConfiguration<'doughnut'>['data'] }[] = [];
 
     chartPlugins = [{
         id: 'centerText',
@@ -234,6 +236,13 @@ export class NewDashboardComponent implements OnInit {
             720,
             this.localStorageService.getTimeSpentLastNDays(30)
         );
+
+        this.timeChartConfigs = [
+            { label: 'Today', data: this.donutChartDataToday },
+            { label: 'Yesterday', data: this.donutChartDataLast1Day },
+            { label: '< 7 Days', data: this.donutChartDataLast7Days },
+            { label: '< 30 Days', data: this.donutChartDataLast1Month },
+        ];
     }
 
 

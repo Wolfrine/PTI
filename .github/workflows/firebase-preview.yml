@@ -1,49 +1,42 @@
-name: Deploy Angular App to Firebase Hosting
+name: Deploy Preview to Firebase Hosting
 
 on:
   push:
-    branches:
+    branches-ignore:
       - main
 
 jobs:
-  deploy:
+  deploy-preview:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the latest code from GitHub
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Step 3: Install Dependencies
       - name: Install Dependencies
         run: |
           cd pti-app
           npm install
 
-      # Step 4: Build Angular App
       - name: Build Angular App
         run: |
           cd pti-app
           npm run build -- --configuration production
 
-      # Step 5: Debug - List Build Directory
-      - name: Debug - List Build Directory
-        run: |
-          ls -l pti-app/dist/
-          ls -l pti-app/dist/pti-app
-          ls -l pti-app/dist/pti-app/browser || echo "dist/pti-app/browser does not exist"
+      - name: Determine Channel ID
+        id: channel
+        run: echo "id=$(echo ${GITHUB_REF#refs/heads/} | tr '/' '-')" >> $GITHUB_OUTPUT
 
-      # Step 6: Deploy to Firebase Hosting
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase Preview Channel
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          channelId: live
+          channelId: ${{ steps.channel.outputs.id }}
+          expires: 7d
 

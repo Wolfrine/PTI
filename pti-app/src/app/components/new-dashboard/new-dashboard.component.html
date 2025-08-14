@@ -1,55 +1,69 @@
 <mat-toolbar color="primary">
+  <mat-icon>timeline</mat-icon>
   <span>PTI Dashboard</span>
   <span class="spacer"></span>
-  <button mat-button (click)="logout()">Logout</button>
+  <button mat-icon-button (click)="logout()" aria-label="Logout">
+    <mat-icon>logout</mat-icon>
+  </button>
 </mat-toolbar>
 
-<div class="new-dashboard-container">
-  <mat-card class="welcome-card">
-    <h2>Welcome, {{ user?.displayName }}</h2>
-    <button mat-stroked-button (click)="goToManageDomains()">Add / Edit Domains</button>
-    <button mat-stroked-button (click)="goToActivties()">Add / Edit Activity</button>
+<div class="dashboard-grid">
+  <mat-card class="welcome-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-card-title>Welcome, {{ user?.displayName }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-raised-button color="primary" (click)="goToManageDomains()">Add / Edit Domains</button>
+      <button mat-raised-button color="accent" (click)="goToActivties()">Add / Edit Activity</button>
+    </mat-card-actions>
   </mat-card>
 
-  <mat-card>
-    <h3>Your Activity</h3>
-    <div class="chart-container">
+  <mat-card class="activity-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-card-title>Your Activity</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="chart-container">
       <canvas baseChart [data]="polarChartData" [type]="'polarArea'" [options]="polarChartOptions"></canvas>
-    </div>
+    </mat-card-content>
   </mat-card>
 
-  <mat-card>
-    <h3>Time invested
-      <button mat-icon-button (click)="refreshData()"><mat-icon>refresh</mat-icon></button>
-    </h3>
-    <div class="period-wise-summary">
-      <div class="donut-chart-container">
-        <span>Today</span>
-        <canvas baseChart [data]="donutChartDataToday" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
+  <mat-card class="time-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-card-title>Time Invested</mat-card-title>
+      <button mat-icon-button (click)="refreshData()" aria-label="Refresh data">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="period-wise-summary">
+        <div class="donut-chart-container" *ngFor="let chart of timeChartConfigs">
+          <span>{{ chart.label }}</span>
+          <canvas baseChart [data]="chart.data" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
+        </div>
       </div>
-      <div class="donut-chart-container">
-        <span>Yesterday</span>
-        <canvas baseChart [data]="donutChartDataLast1Day" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
-      </div>
-      <div class="donut-chart-container">
-        <span>< 7 Days</span>
-        <canvas baseChart [data]="donutChartDataLast7Days" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
-      </div>
-      <div class="donut-chart-container">
-        <span>< 30 Days</span>
-        <canvas baseChart [data]="donutChartDataLast1Month" [type]="'doughnut'" [options]="chartOptions" [plugins]="chartPlugins"></canvas>
-      </div>
-    </div>
+    </mat-card-content>
   </mat-card>
 
-  <mat-card>
-    <h3>Your Domains</h3>
-    <mat-list>
-      <mat-list-item *ngFor="let domain of domains" (click)="goToDomain(domain)">
-        {{ domain.name }} - {{ domain.progress }}%
-      </mat-list-item>
-    </mat-list>
+  <mat-card class="domains-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-card-title>Your Domains</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-list>
+        <mat-list-item *ngFor="let domain of domains" (click)="goToDomain(domain)">
+          <div class="domain-item">
+            <div class="domain-info">
+              <span>{{ domain.name }}</span>
+              <span class="progress-value">{{ domain.progress }}%</span>
+            </div>
+            <mat-progress-bar mode="determinate" [value]="domain.progress"></mat-progress-bar>
+          </div>
+        </mat-list-item>
+      </mat-list>
+    </mat-card-content>
   </mat-card>
 
-  <app-activity-report></app-activity-report>
+  <mat-card class="report-card mat-elevation-z4">
+    <app-activity-report></app-activity-report>
+  </mat-card>
 </div>

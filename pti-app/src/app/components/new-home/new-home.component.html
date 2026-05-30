@@ -1,0 +1,32 @@
+<main class="home-shell">
+  <section class="home-hero">
+    <div class="home-copy">
+      <p class="eyebrow">PTI Prime Access</p>
+      <h1>Choose the operating surface</h1>
+      <p>
+        Executive command for portfolio direction, or PTI execution for time and domain work.
+      </p>
+    </div>
+
+    <section class="home-grid" aria-label="Dashboard launch tiles">
+      <article class="home-tile" *ngFor="let tile of premiumTiles" [attr.data-tile]="tile.id">
+        <span class="tile-icon">
+          <mat-icon>{{ tile.id === 'codex-command' ? 'space_dashboard' : 'analytics' }}</mat-icon>
+        </span>
+        <header>
+          <h2>{{ tile.label }}</h2>
+        </header>
+        <p>{{ tile.description }}</p>
+        <button
+          mat-flat-button
+          type="button"
+          [ngClass]="tile.tone === 'gold' ? 'gold-button' : 'blue-button'"
+          (click)="open(tile.path)"
+        >
+          Open
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </article>
+    </section>
+  </section>
+</main>

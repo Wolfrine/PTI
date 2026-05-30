@@ -96,7 +96,7 @@ export class AuthService {
     }
 
     // ✅ Sign in with Google Popup
-    async signInWithGoogle(redirectRoute: string = '/dashboard'): Promise<void> {
+    async signInWithGoogle(redirectRoute: string = '/home'): Promise<void> {
         try {
             const provider = new GoogleAuthProvider();
             const credential = await signInWithPopup(this.auth, provider);

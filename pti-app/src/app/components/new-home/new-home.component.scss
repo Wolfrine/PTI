@@ -1,0 +1,145 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #071015;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.home-shell {
+  width: 100%;
+  min-height: 100vh;
+  padding: 28px;
+  color: #f8fbfb;
+  background-image:
+    linear-gradient(90deg, rgba(3, 11, 16, 0.92), rgba(3, 11, 16, 0.6), rgba(3, 11, 16, 0.32)),
+    url('/assets/images/executive-control-room.png');
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+.home-hero {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.home-copy .eyebrow {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #f2c85b;
+}
+
+.home-copy h1 {
+  max-width: min(100%, 760px);
+  margin: 8px 0 12px;
+  font-size: clamp(2rem, 6vw, 4.6rem);
+  line-height: 0.98;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.home-copy p {
+  max-width: min(100%, 620px);
+  margin: 0;
+  color: rgba(248, 251, 251, 0.82);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.5;
+}
+
+.home-grid {
+  margin-top: 42px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  max-width: 860px;
+  min-width: 0;
+}
+
+.home-tile {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(248, 251, 251, 0.92);
+  color: #17222a;
+  min-height: 230px;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #f8fbfb;
+  background: #1c6f63;
+}
+
+.home-tile h2 {
+  margin: 14px 0 8px;
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  line-height: 1.12;
+}
+
+.home-tile p {
+  margin: 0;
+  color: #40505a;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.home-tile .gold-button {
+  margin-top: 18px;
+  align-self: flex-start;
+  background: #d2a32c !important;
+  color: #101010 !important;
+}
+
+.blue-button {
+  margin-top: 18px;
+  align-self: flex-start;
+  background: #1c6f63 !important;
+  color: #ffffff !important;
+}
+
+.home-tile button mat-icon {
+  margin-left: 6px;
+}
+
+@media (max-width: 680px) {
+  .home-shell {
+    padding: 18px;
+    align-items: end;
+    background-image:
+      linear-gradient(180deg, rgba(3, 11, 16, 0.42), rgba(3, 11, 16, 0.9) 42%, rgba(3, 11, 16, 0.96)),
+      url('/assets/images/executive-control-room.png');
+  }
+
+  .home-grid {
+    margin-top: 28px;
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .home-tile {
+    min-height: 188px;
+    padding: 16px;
+  }
+}

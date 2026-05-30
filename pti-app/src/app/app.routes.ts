@@ -6,10 +6,16 @@ import { ManageDomainsComponent } from './components/domains/manage-domains/mana
 import { ManageTargetsTasksComponent } from './components/domains/manage-targets-tasks/manage-targets-tasks.component';
 import { ActivityComponent } from './components/activity/activity.component';
 import { NewCodexCommandComponent } from './components/new-codex-command/new-codex-command.component';
+import { NewHomeComponent } from './components/new-home/new-home.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
     { path: '', component: LoginComponent },
+    {
+        path: 'home',
+        component: NewHomeComponent,
+        canActivate: [AuthGuard],
+    },
     {
         path: 'dashboard',
         component: DashboardComponent,

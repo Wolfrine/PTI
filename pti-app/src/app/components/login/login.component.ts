@@ -30,6 +30,6 @@ export class LoginComponent implements OnInit {
 
     private get redirectRoute(): string {
         const redirect = this.route.snapshot.queryParamMap.get('redirect');
-        return redirect?.startsWith('/') ? redirect : '/dashboard';
+        return redirect?.startsWith('/') ? redirect : '/home';
     }
 }

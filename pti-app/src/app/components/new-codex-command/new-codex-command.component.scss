@@ -66,6 +66,23 @@
 .portfolio-card .next-action { margin:6px 0 0; color:#22313a; }
 .portfolio-card a { color:#1c6f63; }
 
+.interaction-panel { margin-top:12px; padding-top:10px; border-top:1px solid rgba(31,42,47,.12); }
+.interaction-head { display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:8px; }
+.interaction-head strong { font-size:13px; color:#1f2933; }
+.interaction-head span,.note-meta,.empty-actions { color:#5c6870; font-size:12px; }
+.interaction-panel-row { display:grid; gap:8px; grid-template-columns:130px minmax(0,1fr); }
+.interaction-panel label { display:grid; gap:5px; color:#4b5961; font-size:12px; font-weight:700; }
+.interaction-panel select,.interaction-panel textarea { width:100%; border:1px solid rgba(31,42,47,.2); border-radius:8px; background:#fff; color:#1f2a2f; font:inherit; }
+.interaction-panel select { min-height:40px; padding:0 10px; }
+.interaction-panel textarea { resize:vertical; min-height:84px; padding:10px; }
+.interaction-actions { margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.action-list { margin-top:10px; display:grid; gap:8px; }
+.action-item { display:grid; grid-template-columns:minmax(0,1fr) 36px; gap:8px; align-items:start; padding:8px; border:1px solid rgba(31,42,47,.1); border-radius:8px; background:#f7f9fa; }
+.action-item p { margin:3px 0; color:#26333a; overflow-wrap:anywhere; }
+.action-item small { color:#5c6870; text-transform:capitalize; }
+.action-kind { color:#1c6f63; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.empty-actions { margin:8px 0 0; }
+
 .progress-card p { margin:0; }
 .progress-card small { margin-top:6px; }
 
@@ -95,4 +112,5 @@
   .brand-lockup strong{font-size:14px; max-width:180px;}
   .eyebrow{font-size:10px;}
   .section-block{padding:10px;}
+  .interaction-panel-row{grid-template-columns:1fr;}
 }

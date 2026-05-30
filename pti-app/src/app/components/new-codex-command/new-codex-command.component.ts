@@ -4,7 +4,14 @@ import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import {
+    CodexActionKind,
+    CodexProjectActionItem,
+    CodexProjectSnapshot,
+    CodexCommandNotesService,
+} from '../../services/codex-command-notes.service';
 
 type Tone = 'ok' | 'warn' | 'critical' | 'muted';
 type ProjectStatus = 'Live' | 'Active' | 'Support' | 'Control' | 'Archived' | 'Unknown';
@@ -26,6 +33,7 @@ interface WorkstreamCard {
 }
 
 interface PortfolioProject {
+    id?: string;
     name: string;
     group: string;
     status: ProjectStatus;
@@ -37,6 +45,14 @@ interface PortfolioProject {
     standing: string;
     nextAction: string;
     tone: Tone;
+}
+
+interface ProjectInteraction {
+    pendingText: string;
+    kind: CodexActionKind;
+    isSaving: boolean;
+    items: CodexProjectActionItem[];
+    error?: string;
 }
 
 interface ProgressItem {
@@ -54,7 +70,7 @@ interface CadenceStep {
 @Component({
     selector: 'app-new-codex-command',
     standalone: true,
-    imports: [CommonModule, MatButtonModule, MatIconModule, MatToolbarModule],
+    imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatToolbarModule],
     templateUrl: './new-codex-command.component.html',
     styleUrls: ['./new-codex-command.component.scss'],
 })
@@ -327,6 +343,8 @@ export class NewCodexCommandComponent implements OnInit {
 
     readonly operatingNote =
         'Mobile can drive decisions and continue visible projects; new Codex project creation still needs desktop setup.';
+    readonly projectInteractions: Record<string, ProjectInteraction> = {};
+    private actionItemsInitialized = false;
 
     get activeProjectCount(): number {
         return this.portfolioProjects.filter((project) => project.status === 'Active' || project.status === 'Live').length;
@@ -340,12 +358,19 @@ export class NewCodexCommandComponent implements OnInit {
         return this.portfolioProjects.filter((project) => project.status === 'Support' || project.status === 'Unknown').length;
     }
 
-    constructor(private authService: AuthService, private router: Router) {}
+    constructor(
+        private authService: AuthService,
+        private router: Router,
+        private projectNotesService: CodexCommandNotesService
+    ) {}
 
     ngOnInit(): void {
         this.authService.user$.subscribe((user) => {
             this.user = user;
             this.isAllowed = user?.email === this.allowedEmail;
+            if (this.isAllowed && !this.actionItemsInitialized) {
+                this.initializeProjectActionItems();
+            }
         });
     }
 
@@ -353,7 +378,87 @@ export class NewCodexCommandComponent implements OnInit {
         this.authService.signOut();
     }
 
+    goHome(): void {
+        this.router.navigate(['/home']);
+    }
+
     goToDashboard(): void {
         this.router.navigate(['/new-dashboard']);
+    }
+
+    projectId(project: PortfolioProject): string {
+        return this.getProjectId(project);
+    }
+
+    async saveProjectItem(project: PortfolioProject): Promise<void> {
+        const snapshot = this.toProjectSnapshot(project);
+        const interaction = this.projectInteractions[snapshot.id];
+        if (!interaction || interaction.isSaving || !interaction.pendingText.trim()) {
+            return;
+        }
+        interaction.isSaving = true;
+        interaction.error = undefined;
+
+        try {
+            await this.projectNotesService.addActionItem(snapshot, interaction.kind, interaction.pendingText);
+            interaction.pendingText = '';
+            interaction.kind = 'action';
+        } catch (error) {
+            interaction.error = error instanceof Error ? error.message : 'Could not save this item.';
+        } finally {
+            interaction.isSaving = false;
+        }
+    }
+
+    async completeItem(project: PortfolioProject, item: CodexProjectActionItem): Promise<void> {
+        if (!item.id) {
+            return;
+        }
+        await this.projectNotesService.markCompleted(this.getProjectId(project), item.id);
+    }
+
+    private getProjectId(project: PortfolioProject): string {
+        const raw = project.id?.trim() || project.name.toLowerCase();
+        return raw
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9]+/gi, '-')
+            .replace(/^-+|-+$/g, '')
+            .toLowerCase();
+    }
+
+    private initializeProjectActionItems(): void {
+        this.actionItemsInitialized = true;
+        this.portfolioProjects.forEach((project) => {
+            const snapshot = this.toProjectSnapshot(project);
+            this.projectInteractions[snapshot.id] = {
+                pendingText: '',
+                kind: 'action',
+                isSaving: false,
+                items: [],
+            };
+            this.projectNotesService.saveProjectSnapshot(snapshot).catch((error) => {
+                this.projectInteractions[snapshot.id].error =
+                    error instanceof Error ? error.message : 'Could not sync project snapshot.';
+            });
+            this.projectNotesService.watchActionItems(snapshot.id).subscribe((items) => {
+                this.projectInteractions[snapshot.id].items = items;
+            });
+        });
+    }
+
+    private toProjectSnapshot(project: PortfolioProject): CodexProjectSnapshot {
+        return {
+            id: this.getProjectId(project),
+            name: project.name,
+            group: project.group,
+            status: project.status,
+            branch: project.branch,
+            workingTree: project.workingTree,
+            localPath: project.localPath,
+            repo: project.repo,
+            deployment: project.deployment,
+            standing: project.standing,
+            nextAction: project.nextAction,
+        };
     }
 }

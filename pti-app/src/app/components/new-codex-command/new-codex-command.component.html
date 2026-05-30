@@ -7,7 +7,7 @@
     </div>
   </div>
   <span class="spacer"></span>
-  <button mat-button type="button" (click)="goToDashboard()">Home</button>
+  <button mat-button type="button" (click)="goHome()">Home</button>
   <button mat-button type="button" (click)="logout()">Logout</button>
 </mat-toolbar>
 
@@ -74,6 +74,60 @@
         </dl>
         <p class="standing">{{ project.standing }}</p>
         <p class="next-action"><strong>Next:</strong> {{ project.nextAction }}</p>
+
+        <section class="interaction-panel" *ngIf="projectInteractions[projectId(project)] as interaction">
+          <div class="interaction-head">
+            <strong>Action queue</strong>
+            <span>Shared with Codex MCP</span>
+          </div>
+          <div class="interaction-panel-row">
+            <label>
+              Item type
+              <select [(ngModel)]="interaction.kind" [disabled]="interaction.isSaving">
+                <option value="action">Action</option>
+                <option value="feedback">Feedback</option>
+                <option value="next_plan">Next plan</option>
+                <option value="activity">Activity</option>
+              </select>
+            </label>
+            <label class="wide-input">
+              Detail
+              <textarea
+                rows="3"
+                [disabled]="interaction.isSaving"
+                [(ngModel)]="interaction.pendingText"
+                placeholder="Add what should be discussed, planned, or picked up in Codex"
+              ></textarea>
+            </label>
+          </div>
+          <div class="interaction-actions">
+            <button mat-stroked-button type="button" (click)="saveProjectItem(project)" [disabled]="interaction.isSaving || !interaction.pendingText.trim()">
+              {{ interaction.isSaving ? 'Saving...' : 'Add item' }}
+            </button>
+            <span class="note-meta" *ngIf="interaction.error">{{ interaction.error }}</span>
+          </div>
+          <div class="action-list" *ngIf="interaction.items.length; else emptyActionList">
+            <article class="action-item" *ngFor="let item of interaction.items">
+              <div>
+                <span class="action-kind">{{ item.kind.replace('_', ' ') }}</span>
+                <p>{{ item.text }}</p>
+                <small>{{ item.status }}</small>
+              </div>
+              <button
+                mat-icon-button
+                type="button"
+                aria-label="Mark action item complete"
+                *ngIf="item.status !== 'completed'"
+                (click)="completeItem(project, item)"
+              >
+                <mat-icon>check_circle</mat-icon>
+              </button>
+            </article>
+          </div>
+          <ng-template #emptyActionList>
+            <p class="empty-actions">No tracked items yet.</p>
+          </ng-template>
+        </section>
       </article>
     </div>
   </section>

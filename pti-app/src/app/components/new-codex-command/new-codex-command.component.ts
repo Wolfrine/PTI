@@ -6,40 +6,49 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from '../../services/auth.service';
 
-interface CommandSignal {
+type Tone = 'ok' | 'warn' | 'critical' | 'muted';
+type ProjectStatus = 'Live' | 'Active' | 'Support' | 'Control' | 'Archived' | 'Unknown';
+
+interface KpiTile {
     label: string;
     value: string;
-    tone: 'ok' | 'warn' | 'critical';
+    detail: string;
+    tone: Tone;
 }
 
-interface CommandAction {
-    priority: '1' | '2' | '3';
-    title: string;
-    details: string;
-    expectedOutcome: string;
+interface WorkstreamCard {
+    lane: string;
+    focus: string;
+    standing: string;
+    nextAction: string;
+    checkpoint: string;
+    tone: Tone;
 }
 
-interface SurfaceDecision {
-    surface: 'Mobile' | 'Desktop' | 'GitHub' | 'Firebase';
-    canDo: string;
-    cannotDo: string;
-    controlOwner: string;
-}
-
-interface PortfolioRow {
+interface PortfolioProject {
     name: string;
-    class: 'Remote GitHub' | 'Local path (triage/control)';
+    group: string;
+    status: ProjectStatus;
     branch: string;
-    route: string;
-    mobileRule: string;
+    workingTree: string;
+    localPath: string;
+    repo: string;
     deployment: string;
-    status: 'Live' | 'Active' | 'Ready' | 'Archived' | 'Control';
+    standing: string;
+    nextAction: string;
+    tone: Tone;
 }
 
-interface OperatingLoopStep {
-    step: string;
+interface ProgressItem {
+    heading: string;
+    progress: string;
+    next: string;
+    tone: Tone;
+}
+
+interface CadenceStep {
+    when: string;
     action: string;
-    command: string;
 }
 
 @Component({
@@ -54,386 +63,282 @@ export class NewCodexCommandComponent implements OnInit {
     user: any;
     isAllowed = false;
 
-    readonly commandSignals: CommandSignal[] = [
+    readonly kpiTiles: KpiTile[] = [
         {
-            label: 'Platform role',
-            value: 'PTI is the hosted Codex visual command portal.',
+            label: 'Operating portfolio',
+            value: '13 local roots',
+            detail: 'PTI, GT, Central, Ops, independent products, and other labs',
             tone: 'ok',
         },
         {
-            label: 'Execution model',
-            value: 'Repo-owned changes, GitHub source-of-truth, shared command visibility.',
-            tone: 'ok',
-        },
-        {
-            label: 'Desktop control',
-            value: 'Desktop Codex creates and syncs project roots.',
+            label: 'Currently in motion',
+            value: '4 dirty roots',
+            detail: 'Central, gtop-app, growth-tutorials, GT-shared-services',
             tone: 'warn',
         },
         {
-            label: 'Mobile boundary',
-            value: 'Mobile can continue synced projects, but cannot reliably create local Codex projects.',
+            label: 'Published surfaces',
+            value: '6 detected',
+            detail: 'PTI, GTOP, Growth Tutorials, shared services, ops-forge, Orynth',
+            tone: 'ok',
+        },
+        {
+            label: 'Control rule',
+            value: 'Repo first',
+            detail: 'Every implementation starts with owning repo, branch, and deploy lane',
+            tone: 'ok',
+        },
+    ];
+
+    readonly workstreams: WorkstreamCard[] = [
+        {
+            lane: 'PTI command plane',
+            focus: 'Hosted executive dashboard and Codex operating visibility.',
+            standing: 'Live route is the shared surface for any-device review.',
+            nextAction: 'Keep PTI clean, publish through main, and verify Firebase after each dashboard change.',
+            checkpoint: 'Live',
+            tone: 'ok',
+        },
+        {
+            lane: 'Growth Tutorials build lane',
+            focus: 'gtop-app, growth-tutorials, and GT-shared-services.',
+            standing: 'Active local work exists across all three roots; branch alignment matters before edits.',
+            nextAction: 'Resolve or preserve dirty work before new implementation starts.',
+            checkpoint: 'Active',
+            tone: 'warn',
+        },
+        {
+            lane: 'Central / Aesthetic India',
+            focus: 'Central repo plus Aesthetic India active workspace.',
+            standing: 'Aesthetic India is a workspace folder under Central, not a separate git root.',
+            nextAction: 'Use Central as source of truth; do not assume a separate repo boundary.',
+            checkpoint: 'Control',
+            tone: 'warn',
+        },
+        {
+            lane: 'Independent products',
+            focus: 'NovaSaga, Novel-Encyclopedia, Orynth, StoryForge, luminar_robotics.',
+            standing: 'Mostly clean, with several support-stage products and detected deploy routes for Orynth/Novel.',
+            nextAction: 'Treat as project-specific streams; revive only with repo-level intent.',
+            checkpoint: 'Support',
+            tone: 'muted',
+        },
+    ];
+
+    readonly portfolioProjects: PortfolioProject[] = [
+        {
+            name: 'PTI',
+            group: 'Command plane',
+            status: 'Live',
+            branch: 'main',
+            workingTree: 'clean before this dashboard revision',
+            localPath: 'F:\\Workspace\\Programs\\Independent-Products\\PTI',
+            repo: 'https://github.com/Wolfrine/PTI',
+            deployment: 'pti-app-2ab59.web.app via GitHub Actions + Firebase',
+            standing: 'Primary hosted interface for Codex operating visibility.',
+            nextAction: 'Publish dashboard revision and verify route.',
+            tone: 'ok',
+        },
+        {
+            name: 'gtop-app',
+            group: 'Growth Tutorials',
+            status: 'Active',
+            branch: 'codex/new-gtop-v2-lab',
+            workingTree: 'dirty',
+            localPath: 'F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app',
+            repo: 'https://github.com/Wolfrine/gtop-app',
+            deployment: 'gtop-app.web.app and dev-gtop-app.web.app',
+            standing: 'Primary GTOP product and CI workflow hub.',
+            nextAction: 'Inspect dirty files before any new GTOP implementation.',
+            tone: 'warn',
+        },
+        {
+            name: 'growth-tutorials',
+            group: 'Growth Tutorials',
+            status: 'Active',
+            branch: 'dev-hub',
+            workingTree: 'dirty',
+            localPath: 'F:\\Workspace\\Programs\\Growth-Tutorials\\growth-tutorials',
+            repo: 'https://github.com/Wolfrine/growth-tutorials',
+            deployment: 'growth-tutorials.web.app, hub-growthtutorials.web.app, GTAI chat targets',
+            standing: 'Hub and platform repo with active local changes.',
+            nextAction: 'Confirm scope and branch before touching hub or MCP behavior.',
+            tone: 'warn',
+        },
+        {
+            name: 'GT-shared-services',
+            group: 'Growth Tutorials',
+            status: 'Active',
+            branch: 'main',
+            workingTree: 'dirty',
+            localPath: 'F:\\Workspace\\Programs\\Growth-Tutorials\\GT-shared-services',
+            repo: 'https://github.com/Wolfrine/GT-shared-services',
+            deployment: 'asia-south1 shared service API and gt-shared-service.web.app',
+            standing: 'Shared service layer; changes can affect multiple GT surfaces.',
+            nextAction: 'Review the one dirty change before service work.',
+            tone: 'warn',
+        },
+        {
+            name: 'Central / Aesthetic India',
+            group: 'Central workspace',
+            status: 'Control',
+            branch: 'main',
+            workingTree: 'dirty',
+            localPath: 'F:\\Central\\workbench\\01_active\\aesthetic-india',
+            repo: 'https://github.com/Wolfrine/Central',
+            deployment: 'repo workflow; separate publish route not detected',
+            standing: 'Visible mobile project context, but source control belongs to Central.',
+            nextAction: 'Use Central repo boundaries for commits and automation.',
+            tone: 'warn',
+        },
+        {
+            name: 'ops-forge',
+            group: 'Operations',
+            status: 'Active',
+            branch: 'main',
+            workingTree: 'clean',
+            localPath: 'F:\\Workspace\\Programs\\Codex-Operations\\ops-forge',
+            repo: 'https://github.com/Wolfrine/ops-forge',
+            deployment: 'lumio-forge Firebase project inferred from config',
+            standing: 'Process tooling and operations standardization root.',
+            nextAction: 'Use for reusable scripts and Codex operating process only.',
+            tone: 'ok',
+        },
+        {
+            name: 'Orynth',
+            group: 'Independent product',
+            status: 'Active',
+            branch: 'main',
+            workingTree: 'clean',
+            localPath: 'F:\\Workspace\\Programs\\Independent-Products\\Orynth',
+            repo: 'https://github.com/Wolfrine/Orynth',
+            deployment: 'orynth-io.web.app and dev-orynth-io.web.app',
+            standing: 'Study tracker product with detected Firebase routes.',
+            nextAction: 'Keep product work repo-specific.',
+            tone: 'ok',
+        },
+        {
+            name: 'Novel-Encyclopedia',
+            group: 'Independent product',
+            status: 'Active',
+            branch: 'main',
+            workingTree: 'clean',
+            localPath: 'F:\\Workspace\\Programs\\Independent-Products\\Novel-Encyclopedia',
+            repo: 'https://github.com/Wolfrine/Novel-Encyclopedia',
+            deployment: 'luminary-universe Firebase project from workflow',
+            standing: 'Independent knowledge/product line.',
+            nextAction: 'Revive only with explicit product scope and deploy target.',
+            tone: 'ok',
+        },
+        {
+            name: 'NovaSaga',
+            group: 'Independent product',
+            status: 'Support',
+            branch: 'main',
+            workingTree: 'clean',
+            localPath: 'F:\\Workspace\\Programs\\Independent-Products\\NovaSaga',
+            repo: 'https://github.com/Wolfrine/NovaSaga',
+            deployment: 'not detected',
+            standing: 'Worldbuilding/content product in support posture.',
+            nextAction: 'Define active outcome before implementation.',
+            tone: 'muted',
+        },
+        {
+            name: 'ChatGPT',
+            group: 'Other',
+            status: 'Unknown',
+            branch: 'main',
+            workingTree: 'clean',
+            localPath: 'F:\\Workspace\\Programs\\Other\\ChatGPT',
+            repo: 'https://github.com/Wolfrine/ChatGPT',
+            deployment: 'not detected',
+            standing: 'Conversation/export utility repo; operational role needs confirmation.',
+            nextAction: 'Classify before treating as active product work.',
+            tone: 'muted',
+        },
+        {
+            name: 'StoryForge',
+            group: 'Other',
+            status: 'Support',
+            branch: 'main',
+            workingTree: 'clean',
+            localPath: 'F:\\Workspace\\Programs\\Other\\StoryForge',
+            repo: 'https://github.com/Wolfrine/StoryForge',
+            deployment: 'not detected',
+            standing: 'Creative production/product draft stream.',
+            nextAction: 'Use only with a clear creative workflow objective.',
+            tone: 'muted',
+        },
+        {
+            name: 'luminar_robotics',
+            group: 'Other',
+            status: 'Support',
+            branch: 'main',
+            workingTree: 'clean',
+            localPath: 'F:\\Workspace\\Programs\\Other\\luminar_robotics',
+            repo: 'https://github.com/Wolfrine/luminar_robotics',
+            deployment: 'not detected',
+            standing: 'Robotics and automation R&D root.',
+            nextAction: 'Keep experiments isolated from production lanes.',
+            tone: 'muted',
+        },
+        {
+            name: 'GrowthWebsite',
+            group: 'Archived',
+            status: 'Archived',
+            branch: 'main',
+            workingTree: 'remote archived',
+            localPath: 'not present in F:\\Workspace scan',
+            repo: 'https://github.com/Wolfrine/GrowthWebsite',
+            deployment: 'archived',
+            standing: 'Historical reference only.',
+            nextAction: 'Do not use as active execution root.',
             tone: 'critical',
         },
     ];
 
-    readonly urgentActions: CommandAction[] = [
+    readonly progressItems: ProgressItem[] = [
         {
-            priority: '1',
-            title: 'Confirm owning repository',
-            details: 'Pick the remote GitHub repo before opening any implementation path.',
-            expectedOutcome: 'No wrong-root edits, no stale deployment triggers.',
+            heading: 'What projects are being worked on',
+            progress: 'PTI dashboard work is active now. GTOP, growth-tutorials, GT-shared-services, and Central have existing local changes that must be respected.',
+            next: 'Before starting new work, choose one project and inspect its dirty state.',
+            tone: 'warn',
         },
         {
-            priority: '2',
-            title: 'Sync trust boundary',
-            details: 'Mobile work is for continuation only; new roots start on desktop.',
-            expectedOutcome: 'Project discovery is stable and consistent across devices.',
+            heading: 'How work should happen',
+            progress: 'The rule is repo-first: identify owning repo, verify branch, inspect dirty state, build/test, then commit and publish through that repo lane.',
+            next: 'Use broad F drive only for discovery and control, not implementation by default.',
+            tone: 'ok',
         },
         {
-            priority: '3',
-            title: 'Lock release lane',
-            details: 'Use the repo-specific publishing route (GitHub Action, Firebase, or service flow).',
-            expectedOutcome: 'Clean production output and readable operational state.',
-        },
-    ];
-
-    readonly operatingModes: SurfaceDecision[] = [
-        {
-            surface: 'Mobile',
-            canDo: 'Inspect state, direct priorities, continue synced tasks.',
-            cannotDo: 'Create or discover new local projects reliably.',
-            controlOwner: 'Executive command, triage, and release checkpoint visibility.',
-        },
-        {
-            surface: 'Desktop',
-            canDo: 'Create/sync repo projects, refresh index, verify branch and environment.',
-            cannotDo: 'Remain the default operating surface for broad multi-repo planning.',
-            controlOwner: 'Project root trust and local reproducibility.',
-        },
-        {
-            surface: 'GitHub',
-            canDo: 'Own branches, PRs, history, tests, and release provenance.',
-            cannotDo: 'Operate without repo-level implementation ownership.',
-            controlOwner: 'Source-of-truth for decisions and audits.',
-        },
-        {
-            surface: 'Firebase',
-            canDo: 'Distribute the published command surface to any device.',
-            cannotDo: 'Expose local-only state or files that do not reproduce.',
-            controlOwner: 'Any-device operational continuity.',
+            heading: 'Project-wise progress',
+            progress: 'Live products have deploy routes; support products are clean but need an explicit outcome before being revived.',
+            next: 'Maintain this dashboard as the executive map after every major project state change.',
+            tone: 'ok',
         },
     ];
 
-    readonly portfolioMap: PortfolioRow[] = [
-        {
-            name: 'Central',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/Central',
-            mobileRule: 'Use as ecosystem control host, not default coding root.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'Empire-Planning',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/Empire-Planning',
-            mobileRule: 'Continue only when already synced on desktop.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'ChatGPT',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/ChatGPT',
-            mobileRule: 'Implementation inside the repo-specific project.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'gtop-app',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/gtop-app',
-            mobileRule: 'Primary implementation and CI hub for GT operations work.',
-            deployment: 'GitHub Actions + Firebase',
-            status: 'Active',
-        },
-        {
-            name: 'growth-tutorials',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/growth-tutorials',
-            mobileRule: 'Mobile continues only if pre-synced via desktop root.',
-            deployment: 'GitHub Actions',
-            status: 'Active',
-        },
-        {
-            name: 'GT-shared-services',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/GT-shared-services',
-            mobileRule: 'Use for service-layer work that affects shared infra.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'PTI',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/PTI',
-            mobileRule: 'Hosted command plane itself; verify build/publish health.',
-            deployment: 'GitHub Actions -> Firebase Hosting',
-            status: 'Live',
-        },
-        {
-            name: 'ops-forge',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/ops-forge',
-            mobileRule: 'Use for operations tooling and process scripts.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'NovaSaga',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/NovaSaga',
-            mobileRule: 'Resume after desktop-sync if needed for implementation.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'Novel-Encyclopedia',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/Novel-Encyclopedia',
-            mobileRule: 'Use repo-specific project for all edits.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'Orynth',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/Orynth',
-            mobileRule: 'Avoid local-only assumptions for scope changes.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'StoryForge',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/StoryForge',
-            mobileRule: 'Continue pre-synced work only.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'luminar_robotics',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/luminar_robotics',
-            mobileRule: 'Only local-synced projects should be operationally touched on mobile.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'gt_aj_app',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/gt_aj_app',
-            mobileRule: 'Keep execution in owning repo only.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'gt_aj_classes',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/gt_aj_classes',
-            mobileRule: 'Repo-specific scope is mandatory for changes.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'gt_aj_register',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/gt_aj_register',
-            mobileRule: 'Use the synced desktop project for implementation.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'gt_nj_master',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/gt_nj_master',
-            mobileRule: 'Implement only when trust path is synced.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'GrowthWebsite',
-            class: 'Remote GitHub',
-            branch: 'main',
-            route: 'https://github.com/Wolfrine/GrowthWebsite',
-            mobileRule: 'Archived portfolio reference only; no active mobile execution.',
-            deployment: 'N/A',
-            status: 'Archived',
-        },
-        {
-            name: 'Central / Aesthetic India',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Central\\workbench\\01_active\\aesthetic-india',
-            mobileRule: 'Use only after desktop sync confirms the active project.',
-            deployment: 'Repo workflow',
-            status: 'Control',
-        },
-        {
-            name: 'F:\\Central',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Central',
-            mobileRule: 'Broad F-root use only for triage and coordination.',
-            deployment: 'N/A',
-            status: 'Control',
-        },
-        {
-            name: 'gtop-app',
-            class: 'Local path (triage/control)',
-            branch: 'codex/new-gtop-v2-lab',
-            route: 'F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app',
-            mobileRule: 'Local branch context for implementation visibility.',
-            deployment: 'GitHub workflow',
-            status: 'Active',
-        },
-        {
-            name: 'growth-tutorials',
-            class: 'Local path (triage/control)',
-            branch: 'dev-hub',
-            route: 'F:\\Workspace\\Programs\\Growth-Tutorials\\growth-tutorials',
-            mobileRule: 'Use for broad system design coordination and sync checks.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'GT-shared-services',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Growth-Tutorials\\GT-shared-services',
-            mobileRule: 'Service scope only; avoid feature-domain edits here.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'ops-forge',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Codex-Operations\\ops-forge',
-            mobileRule: 'Control-plane tools and process codification.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'PTI',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Independent-Products\\PTI',
-            mobileRule: 'Desktop sync from this root drives mobile project visibility.',
-            deployment: 'Firebase Hosting',
-            status: 'Live',
-        },
-        {
-            name: 'NovaSaga',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Independent-Products\\NovaSaga',
-            mobileRule: 'Implementation and branch checks from local root.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'Novel-Encyclopedia',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Independent-Products\\Novel-Encyclopedia',
-            mobileRule: 'Use local root for deterministic branch-level decisions.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'Orynth',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Independent-Products\\Orynth',
-            mobileRule: 'Mobile commands should not redefine the coding root.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'ChatGPT',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Other\\ChatGPT',
-            mobileRule: 'Work from synced remote root with desktop trust.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'StoryForge',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Other\\StoryForge',
-            mobileRule: 'Keep mobile use to decisions and checks until sync confirmed.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
-        {
-            name: 'luminar_robotics',
-            class: 'Local path (triage/control)',
-            branch: 'main',
-            route: 'F:\\Workspace\\Programs\\Other\\luminar_robotics',
-            mobileRule: 'No project creation from mobile; continue only.',
-            deployment: 'Repo workflow',
-            status: 'Active',
-        },
+    readonly cadence: CadenceStep[] = [
+        { when: 'Start', action: 'Pick the project, repo, branch, and exact deployment lane.' },
+        { when: 'Before edit', action: 'Check dirty state and protect unrelated user changes.' },
+        { when: 'During work', action: 'Keep scope inside the owning repo and update project standing if it changes.' },
+        { when: 'Release', action: 'Build, commit, push, then verify the published route or CI result.' },
     ];
 
-    readonly operatingLoop: OperatingLoopStep[] = [
-        {
-            step: '01',
-            action: 'Classify intent',
-            command: 'Triage, implementation, automation, publish, governance.',
-        },
-        {
-            step: '02',
-            action: 'Choose surface',
-            command: 'Mobile = execute continuation; Desktop = create/sync project roots.',
-        },
-        {
-            step: '03',
-            action: 'Pick repo',
-            command: 'Use exact GitHub repository and matching branch/path.',
-        },
-        {
-            step: '04',
-            action: 'Operate',
-            command: 'Implement + test + commit via repo workflow.',
-        },
-        {
-            step: '05',
-            action: 'Publish + verify',
-            command: 'Push through repo route and confirm live portal health.',
-        },
-    ];
+    readonly operatingNote =
+        'Mobile can drive decisions and continue visible projects; new Codex project creation still needs desktop setup.';
+
+    get activeProjectCount(): number {
+        return this.portfolioProjects.filter((project) => project.status === 'Active' || project.status === 'Live').length;
+    }
+
+    get controlProjectCount(): number {
+        return this.portfolioProjects.filter((project) => project.status === 'Control').length;
+    }
+
+    get supportProjectCount(): number {
+        return this.portfolioProjects.filter((project) => project.status === 'Support' || project.status === 'Unknown').length;
+    }
 
     constructor(private authService: AuthService, private router: Router) {}
 

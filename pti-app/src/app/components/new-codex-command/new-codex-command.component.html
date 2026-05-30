@@ -1,142 +1,117 @@
 <mat-toolbar class="command-toolbar">
   <div class="brand-lockup">
-    <span class="brand-mark">CX</span>
+    <span class="brand-mark">PTI</span>
     <div>
       <span class="eyebrow">Command Portal</span>
-      <strong>PTI Operating Portal</strong>
+      <strong>Operating Dashboard</strong>
     </div>
   </div>
   <span class="spacer"></span>
-  <button mat-button type="button" (click)="goToDashboard()">PTI</button>
+  <button mat-button type="button" (click)="goToDashboard()">Home</button>
   <button mat-button type="button" (click)="logout()">Logout</button>
 </mat-toolbar>
 
 <main class="command-shell" *ngIf="isAllowed; else denied">
-  <section class="status-band">
+  <header class="kpi-strip">
     <div class="status-copy">
-      <span class="section-kicker">Executive Control Surface</span>
-      <h1>PTI hosted Codex command portal</h1>
-      <p>
-        This is the mobile-ready CEO plane for the PTI ecosystem: quick decisions, repo-owned execution routing, and
-        release-state visibility. It is a command surface, not the legacy time-tracking PTI workflow.
-      </p>
-      <p class="status-urgent" aria-live="polite">
-        <mat-icon aria-hidden="true">warning_amber</mat-icon>
-        Urgent from mobile: verify project sync status before starting work.
-      </p>
+      <span class="section-kicker">CEO operating surface</span>
+      <h1>PTI command dashboard</h1>
+      <p>Portfolio status, active work, project-wise progress, and repo execution rules across the ecosystem.</p>
+      <p class="operating-note">{{ operatingNote }}</p>
     </div>
-    <dl class="signal-matrix" aria-label="Portal signals">
-      <div *ngFor="let signal of commandSignals" class="signal" [class]="signal.tone">
-        <dt>{{ signal.label }}</dt>
-        <dd>{{ signal.value }}</dd>
-      </div>
-    </dl>
-  </section>
+    <div class="kpi-grid">
+      <article class="kpi-card" *ngFor="let tile of kpiTiles" [ngClass]="tile.tone">
+        <span class="kpi-label">{{ tile.label }}</span>
+        <strong>{{ tile.value }}</strong>
+        <small>{{ tile.detail }}</small>
+      </article>
+    </div>
+    <ul class="meta-kpi" aria-label="Portfolio summary">
+      <li><strong>{{ activeProjectCount }}</strong><span>active/live</span></li>
+      <li><strong>{{ controlProjectCount }}</strong><span>control root</span></li>
+      <li><strong>{{ supportProjectCount }}</strong><span>support/unknown</span></li>
+    </ul>
+  </header>
 
-  <section class="section-block quick-start" aria-label="Immediate decision">
+  <section class="section-block">
     <div class="section-heading">
-      <span class="section-kicker">Mobile first</span>
-      <h2>What is this, what is urgent, and what do I do now?</h2>
+      <h2>Active workstreams</h2>
+      <p>What is in motion, what it means, and the next executive checkpoint</p>
     </div>
-    <div class="quick-grid">
-      <article class="quick-card">
-        <h3>What this is</h3>
-        <p>
-          A hosted command dashboard for PTI ecosystem operations. It coordinates execution across repos and surfaces the
-          correct operating lane for every request.
-        </p>
-      </article>
-      <article class="quick-card">
-        <h3>What is urgent</h3>
-        <ol class="priority-list">
-          <li *ngFor="let action of urgentActions">
-            <span class="priority">{{ action.priority }}</span>
-            <div>
-              <strong>{{ action.title }}</strong>
-              <p>{{ action.details }}</p>
-              <small>{{ action.expectedOutcome }}</small>
-            </div>
-          </li>
-        </ol>
-      </article>
-      <article class="quick-card">
-        <h3>Next action from mobile</h3>
-        <p>Follow one loop: route intent, choose surface, pick repo, run repo workflow, confirm publish state. If a repo is not synced, switch to desktop first.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block" aria-label="Mobile versus desktop flow">
-    <div class="section-heading">
-      <span class="section-kicker">Mobile vs Desktop Decision Flow</span>
-      <h2>Route work by device capability before any change</h2>
-    </div>
-    <div class="surface-rail">
-      <article class="surface-row" *ngFor="let mode of operatingModes">
-        <header>
-          <span class="surface-name">{{ mode.surface }}</span>
+    <div class="workstream-board">
+      <article class="workstream-card" *ngFor="let stream of workstreams" [ngClass]="stream.tone">
+        <header class="workstream-head">
+          <h3>{{ stream.lane }}</h3>
+          <span>{{ stream.checkpoint }}</span>
         </header>
-        <p><strong>Do:</strong> {{ mode.canDo }}</p>
-        <p><strong>Do not:</strong> {{ mode.cannotDo }}</p>
-        <small>Control owner: {{ mode.controlOwner }}</small>
+        <p class="focus">{{ stream.focus }}</p>
+        <p class="standing">{{ stream.standing }}</p>
+        <p class="next"><strong>Next:</strong> {{ stream.nextAction }}</p>
       </article>
     </div>
   </section>
 
-  <section class="section-block" aria-label="Repository and portfolio map">
+  <section class="section-block">
     <div class="section-heading">
-      <span class="section-kicker">Portfolio map</span>
-      <h2>Remote GitHub portfolio and local control roots</h2>
+      <h2>Project portfolio</h2>
+      <p>Current standing from local roots, git remotes, detected branches, and deployment clues</p>
     </div>
-    <div class="portfolio-header">
-      <span>Category</span>
-      <span>Project</span>
-      <span>Branch / Rule</span>
-      <span>Path / URL</span>
-      <span>Mobile rule</span>
-      <span>State</span>
-      <span>Deployment</span>
-    </div>
-    <div class="portfolio-list" role="list">
-      <article class="portfolio-row" role="listitem" *ngFor="let row of portfolioMap">
-        <span class="portfolio-class">{{ row.class }}</span>
-        <span class="portfolio-name">{{ row.name }}</span>
-        <span class="portfolio-branch">Branch: {{ row.branch }}</span>
-        <span class="portfolio-route">{{ row.route }}</span>
-        <span class="portfolio-rule">{{ row.mobileRule }}</span>
-        <span class="portfolio-status" [ngClass]="row.status.toLowerCase()">{{ row.status }}</span>
-        <span class="portfolio-deploy">{{ row.deployment }}</span>
+    <div class="portfolio-matrix">
+      <article class="portfolio-card" *ngFor="let project of portfolioProjects" [ngClass]="project.tone">
+        <header class="portfolio-head">
+          <div>
+            <span class="zone">{{ project.group }}</span>
+            <h3>{{ project.name }}</h3>
+          </div>
+          <span class="status-pill" [ngClass]="project.status.toLowerCase()">{{ project.status }}</span>
+        </header>
+        <dl class="project-facts">
+          <div><dt>Branch</dt><dd>{{ project.branch }}</dd></div>
+          <div><dt>Tree</dt><dd>{{ project.workingTree }}</dd></div>
+          <div><dt>Repo</dt><dd><a [href]="project.repo" target="_blank" rel="noopener">{{ project.repo }}</a></dd></div>
+          <div><dt>Local</dt><dd>{{ project.localPath }}</dd></div>
+          <div><dt>Deploy</dt><dd>{{ project.deployment }}</dd></div>
+        </dl>
+        <p class="standing">{{ project.standing }}</p>
+        <p class="next-action"><strong>Next:</strong> {{ project.nextAction }}</p>
       </article>
     </div>
   </section>
 
-  <section class="section-block" aria-label="Operating loop">
+  <section class="section-block">
     <div class="section-heading">
-      <span class="section-kicker">Action loop</span>
-      <h2>Executive operating sequence for every request</h2>
+      <h2>Progress and rules</h2>
+      <p>The current operating model in plain project terms</p>
     </div>
-    <ol class="loop-list">
-      <li *ngFor="let loopStep of operatingLoop">
-        <span class="loop-step">{{ loopStep.step }}</span>
-        <div>
-          <strong>{{ loopStep.action }}</strong>
-          <small>{{ loopStep.command }}</small>
-        </div>
-      </li>
-    </ol>
-    <p class="loop-summary">
-      Repo-specific execution is mandatory. Broad F:\ roots are for triage/control only, not default implementation.
-    </p>
+    <div class="progress-stack">
+      <article class="progress-card" *ngFor="let item of progressItems" [ngClass]="item.tone">
+        <h3>{{ item.heading }}</h3>
+        <p>{{ item.progress }}</p>
+        <small>Next action: {{ item.next }}</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <h2>How to work</h2>
+      <p>The repeatable process for any project request</p>
+    </div>
+    <div class="cadence-list">
+      <p *ngFor="let step of cadence" class="cadence-row">
+        <strong>{{ step.when }}:</strong> {{ step.action }}
+      </p>
+    </div>
   </section>
 </main>
 
 <ng-template #denied>
   <main class="denied-shell">
     <section class="denied-panel">
-      <span class="section-kicker">Restricted portal</span>
-      <h1>Access is limited to the approved owner account.</h1>
+      <span class="section-kicker">Restricted</span>
+      <h1>Access limited to the allowed owner account.</h1>
       <p>
-        Signed in as <strong>{{ user?.email || 'unknown user' }}</strong>. The command portal is limited to
+        Signed in as <strong>{{ user?.email || 'unknown' }}</strong>. This surface is limited to
         <strong>{{ allowedEmail }}</strong>.
       </p>
       <div class="denied-actions">

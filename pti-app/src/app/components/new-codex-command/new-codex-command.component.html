@@ -3,159 +3,135 @@
     <span class="brand-mark">PTI</span>
     <div>
       <span class="eyebrow">Command Portal</span>
-      <strong>Operating Dashboard</strong>
+      <strong>CEO control room</strong>
     </div>
   </div>
   <span class="spacer"></span>
-  <button mat-button type="button" (click)="goHome()">Home</button>
-  <button mat-button type="button" (click)="logout()">Logout</button>
+  <button class="nav-action" mat-icon-button type="button" aria-label="Home" (click)="goHome()">
+    <mat-icon>home</mat-icon>
+  </button>
+  <button class="nav-action active" mat-icon-button type="button" aria-label="Open PTI dashboard" (click)="goToDashboard()">
+    <mat-icon>query_stats</mat-icon>
+  </button>
+  <button class="quiet-action" mat-button type="button" (click)="logout()">Logout</button>
 </mat-toolbar>
 
 <main class="command-shell" *ngIf="isAllowed; else denied">
-  <header class="kpi-strip">
-    <div class="status-copy">
-      <span class="section-kicker">CEO operating surface</span>
-      <h1>PTI command dashboard</h1>
-      <p>Portfolio status, active work, project-wise progress, and repo execution rules across the ecosystem.</p>
-      <p class="operating-note">{{ operatingNote }}</p>
-    </div>
-    <div class="kpi-grid">
-      <article class="kpi-card" *ngFor="let tile of kpiTiles" [ngClass]="tile.tone">
-        <span class="kpi-label">{{ tile.label }}</span>
-        <strong>{{ tile.value }}</strong>
-        <small>{{ tile.detail }}</small>
+  <header class="command-hero">
+    <section class="scan-lead" *ngIf="highestRisk as risk">
+      <span class="section-kicker">Highest-risk item</span>
+      <h1>{{ risk.name }}</h1>
+      <p>{{ risk.standing }}</p>
+      <button class="primary-command" type="button" (click)="openProject(risk)">
+        Open risk file
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </section>
+
+    <section class="decision-panel" *ngIf="highestRisk as risk">
+      <span class="section-kicker">Today's required decision</span>
+      <h2>{{ risk.nextAction }}</h2>
+      <p>Resolve the highest-risk lane before opening new implementation work.</p>
+    </section>
+
+    <section class="blocker-panel" aria-label="Active blockers">
+      <div class="blocker-heading">
+        <span class="section-kicker">Active blockers</span>
+        <strong>{{ topRisks.length }}</strong>
+      </div>
+      <button class="blocker-row" *ngFor="let project of topRisks" type="button" (click)="openProject(project)">
+        <span class="risk-dot" [ngClass]="project.tone"></span>
+        <span>
+          <strong>{{ project.name }}</strong>
+          <small>{{ project.workingTree }} / {{ project.branch }}</small>
+        </span>
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </section>
+
+    <section class="summary-rail" aria-label="Executive summary">
+      <article class="summary-item" *ngFor="let item of executiveSummary" [ngClass]="item.tone">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <small>{{ item.detail }}</small>
       </article>
-    </div>
-    <ul class="meta-kpi" aria-label="Portfolio summary">
-      <li><strong>{{ activeProjectCount }}</strong><span>active/live</span></li>
-      <li><strong>{{ controlProjectCount }}</strong><span>control root</span></li>
-      <li><strong>{{ supportProjectCount }}</strong><span>support/unknown</span></li>
-    </ul>
+    </section>
   </header>
 
   <section class="section-block">
     <div class="section-heading">
-      <h2>Active workstreams</h2>
-      <p>What is in motion, what it means, and the next executive checkpoint</p>
-    </div>
-    <div class="workstream-board">
-      <article class="workstream-card" *ngFor="let stream of workstreams" [ngClass]="stream.tone">
-        <header class="workstream-head">
-          <h3>{{ stream.lane }}</h3>
-          <span>{{ stream.checkpoint }}</span>
-        </header>
-        <p class="focus">{{ stream.focus }}</p>
-        <p class="standing">{{ stream.standing }}</p>
-        <p class="next"><strong>Next:</strong> {{ stream.nextAction }}</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="section-heading">
-      <h2>Project portfolio</h2>
-      <p>Current standing from local roots, git remotes, detected branches, and deployment clues</p>
+      <span class="section-kicker">Urgency ranked</span>
+      <h2>Active projects</h2>
+      <p>Compact cards stay scan-friendly. Open a project for metadata, feedback, action items, and updates.</p>
     </div>
     <div class="portfolio-matrix">
-      <article class="portfolio-card" *ngFor="let project of portfolioProjects" [ngClass]="project.tone">
-        <header class="portfolio-head">
-          <div>
-            <span class="zone">{{ project.group }}</span>
-            <h3>{{ project.name }}</h3>
-          </div>
-          <span class="status-pill" [ngClass]="project.status.toLowerCase()">{{ project.status }}</span>
-        </header>
-        <dl class="project-facts">
-          <div><dt>Branch</dt><dd>{{ project.branch }}</dd></div>
-          <div><dt>Tree</dt><dd>{{ project.workingTree }}</dd></div>
-          <div><dt>Repo</dt><dd><a [href]="project.repo" target="_blank" rel="noopener">{{ project.repo }}</a></dd></div>
-          <div><dt>Local</dt><dd>{{ project.localPath }}</dd></div>
-          <div><dt>Deploy</dt><dd>{{ project.deployment }}</dd></div>
-        </dl>
-        <p class="standing">{{ project.standing }}</p>
-        <p class="next-action"><strong>Next:</strong> {{ project.nextAction }}</p>
-
-        <section class="interaction-panel" *ngIf="projectInteractions[projectId(project)] as interaction">
-          <div class="interaction-head">
-            <strong>Action queue</strong>
-            <span>Shared with Codex MCP</span>
-          </div>
-          <div class="interaction-panel-row">
-            <label>
-              Item type
-              <select [(ngModel)]="interaction.kind" [disabled]="interaction.isSaving">
-                <option value="action">Action</option>
-                <option value="feedback">Feedback</option>
-                <option value="next_plan">Next plan</option>
-                <option value="activity">Activity</option>
-              </select>
-            </label>
-            <label class="wide-input">
-              Detail
-              <textarea
-                rows="3"
-                [disabled]="interaction.isSaving"
-                [(ngModel)]="interaction.pendingText"
-                placeholder="Add what should be discussed, planned, or picked up in Codex"
-              ></textarea>
-            </label>
-          </div>
-          <div class="interaction-actions">
-            <button mat-stroked-button type="button" (click)="saveProjectItem(project)" [disabled]="interaction.isSaving || !interaction.pendingText.trim()">
-              {{ interaction.isSaving ? 'Saving...' : 'Add item' }}
-            </button>
-            <span class="note-meta" *ngIf="interaction.error">{{ interaction.error }}</span>
-          </div>
-          <div class="action-list" *ngIf="interaction.items.length; else emptyActionList">
-            <article class="action-item" *ngFor="let item of interaction.items">
-              <div>
-                <span class="action-kind">{{ item.kind.replace('_', ' ') }}</span>
-                <p>{{ item.text }}</p>
-                <small>{{ item.status }}</small>
-              </div>
-              <button
-                mat-icon-button
-                type="button"
-                aria-label="Mark action item complete"
-                *ngIf="item.status !== 'completed'"
-                (click)="completeItem(project, item)"
-              >
-                <mat-icon>check_circle</mat-icon>
-              </button>
-            </article>
-          </div>
-          <ng-template #emptyActionList>
-            <p class="empty-actions">No tracked items yet.</p>
-          </ng-template>
-        </section>
+      <article class="portfolio-card" *ngFor="let project of rankedProjects" [ngClass]="project.tone">
+        <button class="card-hit" type="button" (click)="openProject(project)" [attr.aria-label]="'Open ' + project.name">
+          <header class="portfolio-head">
+            <div>
+              <span class="zone">{{ project.group }}</span>
+              <h3>{{ project.name }}</h3>
+            </div>
+            <span class="status-pill" [ngClass]="project.status.toLowerCase()">{{ project.status }}</span>
+          </header>
+          <p class="standing">{{ project.standing }}</p>
+          <dl class="compact-facts">
+            <div><dt>Branch</dt><dd>{{ project.branch }}</dd></div>
+            <div><dt>Tree</dt><dd>{{ project.workingTree }}</dd></div>
+          </dl>
+          <p class="next-action"><strong>Next:</strong> {{ project.nextAction }}</p>
+        </button>
       </article>
     </div>
   </section>
 
-  <section class="section-block">
-    <div class="section-heading">
-      <h2>Progress and rules</h2>
-      <p>The current operating model in plain project terms</p>
-    </div>
-    <div class="progress-stack">
-      <article class="progress-card" *ngFor="let item of progressItems" [ngClass]="item.tone">
-        <h3>{{ item.heading }}</h3>
-        <p>{{ item.progress }}</p>
-        <small>Next action: {{ item.next }}</small>
-      </article>
-    </div>
-  </section>
+  <section class="scan-grid lower-scan">
+    <article class="section-block distribution-block">
+      <div class="section-heading">
+        <span class="section-kicker">Portfolio distribution</span>
+        <h2>Status mix</h2>
+      </div>
+      <div class="distribution-list">
+        <div class="distribution-row" *ngFor="let slice of portfolioDistribution" [ngClass]="slice.tone">
+          <span>{{ slice.label }}</span>
+          <strong>{{ slice.count }}</strong>
+        </div>
+      </div>
+    </article>
 
-  <section class="section-block">
-    <div class="section-heading">
-      <h2>How to work</h2>
-      <p>The repeatable process for any project request</p>
-    </div>
-    <div class="cadence-list">
-      <p *ngFor="let step of cadence" class="cadence-row">
-        <strong>{{ step.when }}:</strong> {{ step.action }}
-      </p>
-    </div>
+    <article class="section-block action-queue">
+      <div class="section-heading">
+        <span class="section-kicker">Recent action queue</span>
+        <h2>Signals from project detail</h2>
+      </div>
+      <div class="queue-list" *ngIf="recentQueue.length; else emptyQueue">
+        <article class="queue-item" *ngFor="let item of recentQueue">
+          <span>{{ item.kind.replace('_', ' ') }}</span>
+          <p>{{ item.text }}</p>
+          <small>{{ item.projectName || item.projectId }} / {{ item.status.replace('_', ' ') }}</small>
+        </article>
+      </div>
+      <ng-template #emptyQueue>
+        <p class="empty-actions">No tracked project signals yet. Open a project to add the first item.</p>
+      </ng-template>
+    </article>
+
+    <article class="section-block work-rules">
+      <details open>
+        <summary>
+          <span>
+            <span class="section-kicker">Working rules</span>
+            <strong>Repo-first execution</strong>
+          </span>
+          <mat-icon>expand_more</mat-icon>
+        </summary>
+        <div class="cadence-list">
+          <p *ngFor="let step of cadence" class="cadence-row">
+            <strong>{{ step.when }}:</strong> {{ step.action }}
+          </p>
+        </div>
+      </details>
+    </article>
   </section>
 </main>
 

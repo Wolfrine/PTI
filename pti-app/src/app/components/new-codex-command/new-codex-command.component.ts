@@ -67,6 +67,23 @@ interface CadenceStep {
     action: string;
 }
 
+interface PortfolioSlice {
+    label: string;
+    count: number;
+    tone: Tone;
+}
+
+interface RecentQueueItem extends CodexProjectActionItem {
+    projectId: string;
+}
+
+interface ExecutiveSummaryItem {
+    label: string;
+    value: string;
+    detail: string;
+    tone: Tone;
+}
+
 @Component({
     selector: 'app-new-codex-command',
     standalone: true,
@@ -358,6 +375,95 @@ export class NewCodexCommandComponent implements OnInit {
         return this.portfolioProjects.filter((project) => project.status === 'Support' || project.status === 'Unknown').length;
     }
 
+    get topRisks(): PortfolioProject[] {
+        return this.portfolioProjects
+            .filter((project) => project.tone === 'warn' || project.tone === 'critical')
+            .slice(0, 3);
+    }
+
+    get highestRisk(): PortfolioProject | undefined {
+        return this.topRisks[0];
+    }
+
+    get dirtyRootCount(): number {
+        return this.portfolioProjects.filter((project) => project.workingTree.toLowerCase().includes('dirty')).length;
+    }
+
+    get publishedSurfaceCount(): number {
+        return this.portfolioProjects.filter((project) => !['not detected', 'archived'].includes(project.deployment)).length;
+    }
+
+    get executiveSummary(): ExecutiveSummaryItem[] {
+        return [
+            {
+                label: 'Active blockers',
+                value: String(this.topRisks.length),
+                detail: 'Dirty or control-sensitive roots',
+                tone: 'warn',
+            },
+            {
+                label: 'Dirty roots',
+                value: String(this.dirtyRootCount),
+                detail: 'Require branch and scope review',
+                tone: 'warn',
+            },
+            {
+                label: 'Published surfaces',
+                value: String(this.publishedSurfaceCount),
+                detail: 'Detected deploy lanes',
+                tone: 'ok',
+            },
+            {
+                label: 'Active/live',
+                value: String(this.activeProjectCount),
+                detail: 'Current execution portfolio',
+                tone: 'ok',
+            },
+        ];
+    }
+
+    get rankedProjects(): PortfolioProject[] {
+        const toneRank: Record<Tone, number> = { critical: 0, warn: 1, ok: 2, muted: 3 };
+        const statusRank: Record<ProjectStatus, number> = {
+            Live: 0,
+            Active: 1,
+            Control: 2,
+            Support: 3,
+            Unknown: 4,
+            Archived: 5,
+        };
+
+        return [...this.portfolioProjects].sort((left, right) => {
+            if (left.status === 'Archived' && right.status !== 'Archived') {
+                return 1;
+            }
+            if (right.status === 'Archived' && left.status !== 'Archived') {
+                return -1;
+            }
+            const toneDelta = toneRank[left.tone] - toneRank[right.tone];
+            return toneDelta || statusRank[left.status] - statusRank[right.status] || left.name.localeCompare(right.name);
+        });
+    }
+
+    get portfolioDistribution(): PortfolioSlice[] {
+        return [
+            { label: 'Live or active', count: this.activeProjectCount, tone: 'ok' },
+            { label: 'Needs control', count: this.controlProjectCount, tone: 'warn' },
+            { label: 'Support or unknown', count: this.supportProjectCount, tone: 'muted' },
+            {
+                label: 'Archived',
+                count: this.portfolioProjects.filter((project) => project.status === 'Archived').length,
+                tone: 'critical',
+            },
+        ];
+    }
+
+    get recentQueue(): RecentQueueItem[] {
+        return Object.entries(this.projectInteractions)
+            .flatMap(([projectId, interaction]) => interaction.items.map((item) => ({ ...item, projectId })))
+            .slice(0, 6);
+    }
+
     constructor(
         private authService: AuthService,
         private router: Router,
@@ -384,6 +490,10 @@ export class NewCodexCommandComponent implements OnInit {
 
     goToDashboard(): void {
         this.router.navigate(['/new-dashboard']);
+    }
+
+    openProject(project: PortfolioProject): void {
+        this.router.navigate(['/codex-command/projects', this.projectId(project)]);
     }
 
     projectId(project: PortfolioProject): string {

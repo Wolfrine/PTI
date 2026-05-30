@@ -6,6 +6,7 @@ import { ManageDomainsComponent } from './components/domains/manage-domains/mana
 import { ManageTargetsTasksComponent } from './components/domains/manage-targets-tasks/manage-targets-tasks.component';
 import { ActivityComponent } from './components/activity/activity.component';
 import { NewCodexCommandComponent } from './components/new-codex-command/new-codex-command.component';
+import { CodexProjectDetailComponent } from './components/codex-project-detail/codex-project-detail.component';
 import { NewHomeComponent } from './components/new-home/new-home.component';
 import { AuthGuard } from './guards/auth.guard';
 
@@ -44,6 +45,11 @@ export const routes: Routes = [
     {
         path: 'codex-command',
         component: NewCodexCommandComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'codex-command/projects/:projectId',
+        component: CodexProjectDetailComponent,
         canActivate: [AuthGuard],
     },
 ];

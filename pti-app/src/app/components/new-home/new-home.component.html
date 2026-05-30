@@ -2,31 +2,31 @@
   <section class="home-hero">
     <div class="home-copy">
       <p class="eyebrow">PTI Prime Access</p>
-      <h1>Choose the operating surface</h1>
+      <h1>Choose command mode</h1>
       <p>
-        Executive command for portfolio direction, or PTI execution for time and domain work.
+        Executive portfolio control or focused PTI operations, each tuned for fast decisions on mobile.
       </p>
     </div>
 
     <section class="home-grid" aria-label="Dashboard launch tiles">
-      <article class="home-tile" *ngFor="let tile of premiumTiles" [attr.data-tile]="tile.id">
+      <button
+        class="home-tile"
+        *ngFor="let tile of premiumTiles"
+        [attr.data-tile]="tile.id"
+        type="button"
+        (click)="open(tile.path)"
+      >
         <span class="tile-icon">
           <mat-icon>{{ tile.id === 'codex-command' ? 'space_dashboard' : 'analytics' }}</mat-icon>
         </span>
-        <header>
-          <h2>{{ tile.label }}</h2>
-        </header>
+        <span class="tile-kicker">{{ tile.id === 'codex-command' ? 'Executive scan' : 'Operations desk' }}</span>
+        <h2>{{ tile.label }}</h2>
         <p>{{ tile.description }}</p>
-        <button
-          mat-flat-button
-          type="button"
-          [ngClass]="tile.tone === 'gold' ? 'gold-button' : 'blue-button'"
-          (click)="open(tile.path)"
-        >
-          Open
+        <span class="tile-action">
+          Open surface
           <mat-icon>arrow_forward</mat-icon>
-        </button>
-      </article>
+        </span>
+      </button>
     </section>
   </section>
 </main>

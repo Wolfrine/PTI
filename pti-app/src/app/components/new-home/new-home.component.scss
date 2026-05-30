@@ -1,6 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
+  margin: -8px -12px -36px;
   background: #071015;
 }
 
@@ -9,12 +10,13 @@
 }
 
 .home-shell {
-  width: 100%;
+  width: 100vw;
+  max-width: 100vw;
   min-height: 100vh;
-  padding: 28px;
+  padding: 30px;
   color: #f8fbfb;
-  background-image:
-    linear-gradient(90deg, rgba(3, 11, 16, 0.92), rgba(3, 11, 16, 0.6), rgba(3, 11, 16, 0.32)),
+  background:
+    linear-gradient(90deg, rgba(4, 10, 14, 0.94), rgba(4, 10, 14, 0.62), rgba(4, 10, 14, 0.18)),
     url('/assets/images/executive-control-room.png');
   background-size: cover;
   background-position: center;
@@ -28,108 +30,151 @@
   max-width: 1120px;
   margin: 0 auto;
   min-width: 0;
-  overflow: hidden;
+}
+
+.home-copy .eyebrow,
+.tile-kicker {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0;
+  font-weight: 850;
 }
 
 .home-copy .eyebrow {
-  text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  font-weight: 700;
-  color: #f2c85b;
+  margin: 0;
+  color: #f0c95e;
 }
 
 .home-copy h1 {
-  max-width: min(100%, 760px);
-  margin: 8px 0 12px;
-  font-size: clamp(2rem, 6vw, 4.6rem);
-  line-height: 0.98;
-  font-weight: 800;
-  overflow-wrap: anywhere;
+  max-width: 760px;
+  margin: 10px 0 14px;
+  font-size: 64px;
+  line-height: 0.96;
+  font-weight: 850;
 }
 
 .home-copy p {
-  max-width: min(100%, 620px);
+  max-width: 620px;
   margin: 0;
-  color: rgba(248, 251, 251, 0.82);
-  font-size: clamp(1rem, 2vw, 1.2rem);
+  color: rgba(248, 251, 251, 0.78);
+  font-size: 18px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .home-grid {
-  margin-top: 42px;
+  margin-top: 44px;
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
-  max-width: 860px;
+  max-width: 920px;
   min-width: 0;
 }
 
 .home-tile {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 18px;
-  background: rgba(248, 251, 251, 0.92);
-  color: #17222a;
-  min-height: 230px;
+  min-height: 270px;
   min-width: 0;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  border-radius: 8px;
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.3);
+}
+
+.home-tile[data-tile='codex-command'] {
+  color: #f8fbfb;
+  background:
+    linear-gradient(135deg, rgba(210, 163, 44, 0.18), rgba(255, 255, 255, 0.04)),
+    rgba(14, 24, 31, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.home-tile[data-tile='pti-dashboard'] {
+  color: #152329;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(230, 241, 238, 0.9)),
+    #eef5f2;
+  border-color: rgba(28, 111, 99, 0.18);
+}
+
+.home-tile:hover {
+  transform: translateY(-2px);
 }
 
 .tile-icon {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
   display: grid;
   place-items: center;
-  color: #f8fbfb;
+}
+
+.home-tile[data-tile='codex-command'] .tile-icon {
+  color: #141105;
+  background: #d2a32c;
+}
+
+.home-tile[data-tile='pti-dashboard'] .tile-icon {
+  color: #ffffff;
   background: #1c6f63;
 }
 
 .home-tile h2 {
-  margin: 14px 0 8px;
-  font-size: clamp(1.3rem, 3vw, 1.8rem);
-  line-height: 1.12;
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.08;
+  font-weight: 850;
+  overflow-wrap: anywhere;
 }
 
 .home-tile p {
   margin: 0;
-  color: #40505a;
-  font-size: 14px;
+  color: currentColor;
+  opacity: 0.76;
+  font-size: 15px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-.home-tile .gold-button {
-  margin-top: 18px;
-  align-self: flex-start;
-  background: #d2a32c !important;
-  color: #101010 !important;
+.tile-action {
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 850;
 }
 
-.blue-button {
-  margin-top: 18px;
-  align-self: flex-start;
-  background: #1c6f63 !important;
-  color: #ffffff !important;
-}
-
-.home-tile button mat-icon {
-  margin-left: 6px;
+.tile-action mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
 }
 
 @media (max-width: 680px) {
   .home-shell {
     padding: 18px;
     align-items: end;
-    background-image:
-      linear-gradient(180deg, rgba(3, 11, 16, 0.42), rgba(3, 11, 16, 0.9) 42%, rgba(3, 11, 16, 0.96)),
+    background:
+      linear-gradient(180deg, rgba(4, 10, 14, 0.14), rgba(4, 10, 14, 0.72) 38%, #071015 84%),
       url('/assets/images/executive-control-room.png');
+    background-size: auto 100%;
+    background-position: 60% center;
+  }
+
+  .home-copy h1 {
+    font-size: 32px;
+    line-height: 1.02;
+  }
+
+  .home-copy p {
+    font-size: 15px;
   }
 
   .home-grid {
@@ -139,7 +184,11 @@
   }
 
   .home-tile {
-    min-height: 188px;
+    min-height: 190px;
     padding: 16px;
+  }
+
+  .home-tile h2 {
+    font-size: 22px;
   }
 }

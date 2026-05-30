@@ -1,0 +1,228 @@
+<main class="detail-shell" *ngIf="isAllowed; else denied">
+  <ng-container *ngIf="project; else missingProject">
+    <nav class="detail-nav" aria-label="Project detail navigation">
+      <button mat-icon-button type="button" aria-label="Back to command dashboard" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="brand-lockup">
+        <span class="brand-mark">PTI</span>
+        <div>
+          <span>Project command</span>
+          <strong>{{ project.name }}</strong>
+        </div>
+      </div>
+      <button mat-icon-button type="button" aria-label="Home" (click)="goHome()">
+        <mat-icon>home</mat-icon>
+      </button>
+    </nav>
+
+    <header class="detail-hero" [ngClass]="project.tone">
+      <div class="command-copy">
+        <span class="section-kicker">Next command</span>
+        <h1>{{ project.nextAction }}</h1>
+        <p>{{ project.name }} / {{ project.standing }}</p>
+      </div>
+      <div class="operating-state">
+        <span class="section-kicker">Operating state</span>
+        <strong>{{ project.workingTree }}</strong>
+        <div class="state-meta">
+          <span class="status-pill" [ngClass]="project.status.toLowerCase()">{{ project.status }}</span>
+          <small>{{ project.group }}</small>
+          <small>Branch {{ project.branch }}</small>
+        </div>
+      </div>
+    </header>
+
+    <details class="metadata-panel">
+      <summary>
+        <span>
+          <span class="section-kicker">Project metadata</span>
+          <strong>Repository, local path, and deployment</strong>
+        </span>
+        <mat-icon>expand_more</mat-icon>
+      </summary>
+      <dl class="metadata-list">
+        <div>
+          <dt>Repository</dt>
+          <dd><a [href]="project.repo" target="_blank" rel="noopener">{{ project.repo }}</a></dd>
+        </div>
+        <div>
+          <dt>Local path</dt>
+          <dd>{{ project.localPath }}</dd>
+        </div>
+        <div>
+          <dt>Deployment</dt>
+          <dd>{{ project.deployment }}</dd>
+        </div>
+        <div>
+          <dt>State</dt>
+          <dd>{{ project.status }} / {{ project.tone }}</dd>
+        </div>
+      </dl>
+    </details>
+
+    <section class="add-panel">
+      <div class="panel-heading">
+        <span class="section-kicker">Action intake</span>
+        <h2>Add project signal</h2>
+      </div>
+      <div class="form-grid">
+        <label>
+          Type
+          <select [(ngModel)]="form.kind" [disabled]="form.isSaving">
+            <option value="action">Action</option>
+            <option value="feedback">Feedback</option>
+            <option value="next_plan">Next plan</option>
+            <option value="activity">Activity</option>
+          </select>
+        </label>
+        <label>
+          Status
+          <select [(ngModel)]="form.status" [disabled]="form.isSaving">
+            <option value="open">Open</option>
+            <option value="discussing">Discussing</option>
+            <option value="ready_for_codex">Ready for Codex</option>
+            <option value="in_progress">In progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="completed">Completed</option>
+          </select>
+        </label>
+        <label class="wide-field">
+          Detail
+          <textarea
+            rows="4"
+            [(ngModel)]="form.text"
+            [disabled]="form.isSaving"
+            placeholder="Capture what should be discussed, planned, delegated, or completed."
+          ></textarea>
+        </label>
+      </div>
+      <div class="panel-actions">
+        <button mat-flat-button type="button" (click)="addItem()" [disabled]="form.isSaving || !form.text.trim()">
+          {{ form.isSaving ? 'Saving' : 'Add signal' }}
+        </button>
+        <span class="error-copy" *ngIf="form.error">{{ form.error }}</span>
+      </div>
+    </section>
+
+    <section class="item-grid">
+      <article class="item-column">
+        <h2>Action items</h2>
+        <ng-container *ngIf="actionItems.length; else noActions">
+          <section class="signal-card" *ngFor="let item of actionItems">
+            <ng-container *ngTemplateOutlet="itemView; context: { item: item }"></ng-container>
+          </section>
+        </ng-container>
+        <ng-template #noActions><p class="empty-copy">No action items yet.</p></ng-template>
+      </article>
+
+      <article class="item-column">
+        <h2>Feedback</h2>
+        <ng-container *ngIf="feedbackItems.length; else noFeedback">
+          <section class="signal-card" *ngFor="let item of feedbackItems">
+            <ng-container *ngTemplateOutlet="itemView; context: { item: item }"></ng-container>
+          </section>
+        </ng-container>
+        <ng-template #noFeedback><p class="empty-copy">No feedback captured yet.</p></ng-template>
+      </article>
+
+      <article class="item-column">
+        <h2>Next plan</h2>
+        <ng-container *ngIf="nextPlanItems.length; else noPlan">
+          <section class="signal-card" *ngFor="let item of nextPlanItems">
+            <ng-container *ngTemplateOutlet="itemView; context: { item: item }"></ng-container>
+          </section>
+        </ng-container>
+        <ng-template #noPlan><p class="empty-copy">No next-plan entries yet.</p></ng-template>
+      </article>
+
+      <article class="item-column">
+        <h2>Activity history</h2>
+        <ng-container *ngIf="activityItems.length; else noActivity">
+          <section class="signal-card" *ngFor="let item of activityItems">
+            <ng-container *ngTemplateOutlet="itemView; context: { item: item }"></ng-container>
+          </section>
+        </ng-container>
+        <ng-template #noActivity><p class="empty-copy">No activity entries yet.</p></ng-template>
+      </article>
+    </section>
+
+    <ng-template #itemView let-item="item">
+      <div *ngIf="editingItemId !== item.id; else editItem">
+        <div class="signal-head">
+          <span>{{ item.status.replace('_', ' ') }}</span>
+          <button mat-icon-button type="button" aria-label="Edit item" (click)="beginEdit(item)">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+        <p>{{ item.text }}</p>
+        <div class="signal-actions">
+          <button
+            mat-stroked-button
+            type="button"
+            *ngIf="item.status !== 'completed'"
+            (click)="completeItem(item)"
+          >
+            Complete
+          </button>
+        </div>
+      </div>
+      <ng-template #editItem>
+        <div class="edit-grid">
+          <label>
+            Type
+            <select [(ngModel)]="editKind">
+              <option value="action">Action</option>
+              <option value="feedback">Feedback</option>
+              <option value="next_plan">Next plan</option>
+              <option value="activity">Activity</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select [(ngModel)]="editStatus">
+              <option value="open">Open</option>
+              <option value="discussing">Discussing</option>
+              <option value="ready_for_codex">Ready for Codex</option>
+              <option value="in_progress">In progress</option>
+              <option value="blocked">Blocked</option>
+              <option value="completed">Completed</option>
+            </select>
+          </label>
+          <label class="wide-field">
+            Detail
+            <textarea rows="3" [(ngModel)]="editText"></textarea>
+          </label>
+        </div>
+        <div class="signal-actions">
+          <button mat-flat-button type="button" (click)="updateItem(item)" [disabled]="!editText.trim()">Update</button>
+          <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+        </div>
+      </ng-template>
+    </ng-template>
+  </ng-container>
+</main>
+
+<ng-template #missingProject>
+  <main class="state-shell">
+    <section class="state-panel">
+      <span class="section-kicker">Project not found</span>
+      <h1>This Codex project is not in the portfolio map.</h1>
+      <button mat-flat-button type="button" (click)="goBack()">Back to command</button>
+    </section>
+  </main>
+</ng-template>
+
+<ng-template #denied>
+  <main class="state-shell">
+    <section class="state-panel">
+      <span class="section-kicker">Restricted</span>
+      <h1>Access limited to the allowed owner account.</h1>
+      <p>Signed in as <strong>{{ user?.email || 'unknown' }}</strong>.</p>
+      <div class="panel-actions">
+        <button mat-flat-button type="button" (click)="logout()">Switch account</button>
+        <button mat-stroked-button type="button" (click)="goBack()">Back</button>
+      </div>
+    </section>
+  </main>
+</ng-template>

@@ -1,11 +1,18 @@
 <main class="login-shell">
-  <section class="login-panel">
+  <section class="login-panel" aria-label="PTI private access">
     <div class="login-brand">
       <span class="brand-mark">PTI</span>
-      <span>Prime workspace</span>
+      <span class="brand-text">Private Terminal Intelligence</span>
     </div>
-    <h1>Enter the command surface</h1>
-    <p>Sign in with your Google account to reach the CEO dashboard and the original PTI execution view.</p>
-    <button class="signin-btn" type="button" (click)="login()">Sign in with Google</button>
+    <p class="access-label">Owner access only</p>
+    <h1>Executive command room</h1>
+    <p class="login-copy">
+      Secure entry to the PTI control plane, Codex command portfolio, and daily execution surfaces.
+    </p>
+    <button class="signin-btn" type="button" (click)="login()">
+      <span>Continue with Google</span>
+      <span class="button-mark">arrow_forward</span>
+    </button>
+    <p class="security-note">Authentication is enforced before command surfaces open.</p>
   </section>
 </main>

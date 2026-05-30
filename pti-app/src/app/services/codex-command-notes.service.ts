@@ -73,7 +73,12 @@ export class CodexCommandNotesService {
     }, { merge: true });
   }
 
-  async addActionItem(project: CodexProjectSnapshot, kind: CodexActionKind, text: string): Promise<void> {
+  async addActionItem(
+    project: CodexProjectSnapshot,
+    kind: CodexActionKind,
+    text: string,
+    status: CodexActionStatus = 'open',
+  ): Promise<void> {
     const normalized = text.trim();
     if (!normalized) {
       return;
@@ -84,7 +89,7 @@ export class CodexCommandNotesService {
     await addDoc(collection(this.firestore, this.actionItemsPath(uid, project.id)), {
       kind,
       text: normalized,
-      status: 'open',
+      status,
       source: 'pti-dashboard',
       projectId: project.id,
       projectName: project.name,
@@ -98,6 +103,27 @@ export class CodexCommandNotesService {
     await updateDoc(doc(this.firestore, `${this.actionItemsPath(uid, projectId)}/${itemId}`), {
       status: 'completed',
       completedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async updateActionItem(
+    projectId: string,
+    itemId: string,
+    updates: Partial<Pick<CodexProjectActionItem, 'kind' | 'text' | 'status'>>,
+  ): Promise<void> {
+    const normalizedUpdates: Partial<Pick<CodexProjectActionItem, 'kind' | 'text' | 'status'>> = { ...updates };
+    if (typeof normalizedUpdates.text === 'string') {
+      normalizedUpdates.text = normalizedUpdates.text.trim();
+    }
+
+    if (!normalizedUpdates.kind && !normalizedUpdates.status && !normalizedUpdates.text) {
+      return;
+    }
+
+    const uid = this.requireUid();
+    await updateDoc(doc(this.firestore, `${this.actionItemsPath(uid, projectId)}/${itemId}`), {
+      ...normalizedUpdates,
       updatedAt: serverTimestamp(),
     });
   }

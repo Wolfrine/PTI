@@ -5,6 +5,7 @@ import { NewDashboardComponent } from './components/new-dashboard/new-dashboard.
 import { ManageDomainsComponent } from './components/domains/manage-domains/manage-domains.component';
 import { ManageTargetsTasksComponent } from './components/domains/manage-targets-tasks/manage-targets-tasks.component';
 import { ActivityComponent } from './components/activity/activity.component';
+import { NewCodexCommandComponent } from './components/new-codex-command/new-codex-command.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -32,6 +33,11 @@ export const routes: Routes = [
     {
         path: 'activities',
         component: ActivityComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'codex-command',
+        component: NewCodexCommandComponent,
         canActivate: [AuthGuard],
     },
 ];

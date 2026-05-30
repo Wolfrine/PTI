@@ -1,0 +1,146 @@
+<mat-toolbar class="command-toolbar">
+  <div class="brand-lockup">
+    <span class="brand-mark">CX</span>
+    <div>
+      <span class="eyebrow">Codex CEO Command</span>
+      <strong>PTI Operating Portal</strong>
+    </div>
+  </div>
+  <span class="spacer"></span>
+  <button mat-button type="button" (click)="goToDashboard()">PTI</button>
+  <button mat-button type="button" (click)="logout()">Logout</button>
+</mat-toolbar>
+
+<main class="command-shell" *ngIf="isAllowed; else denied">
+  <section class="hero-band">
+    <div class="hero-copy">
+      <span class="section-kicker">Executive system map</span>
+      <h1>One governed view for mobile Codex work, desktop setup, repos, and publishing.</h1>
+      <p>
+        PTI now acts as the hosted visual interface for Codex operations. The original PTI app stays intact,
+        while this route becomes the CEO-level command point that can be opened from any device after login.
+      </p>
+    </div>
+    <div class="signal-grid" aria-label="Operating signals">
+      <div class="signal live">
+        <span>Published surface</span>
+        <strong>Firebase</strong>
+      </div>
+      <div class="signal">
+        <span>Execution root</span>
+        <strong>Repo projects</strong>
+      </div>
+      <div class="signal warning">
+        <span>Mobile limit</span>
+        <strong>No new local projects</strong>
+      </div>
+      <div class="signal">
+        <span>Access</span>
+        <strong>{{ allowedEmail }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="strategy-strip" aria-label="CEO operating thesis">
+    <article>
+      <span class="metric">01</span>
+      <h2>Desktop creates trust</h2>
+      <p>Desktop Codex creates and syncs project roots. Mobile should only continue projects that already appear there.</p>
+    </article>
+    <article>
+      <span class="metric">02</span>
+      <h2>Repos own execution</h2>
+      <p>Every implementation starts from the repo that owns its branch, tests, deployment, and commit history.</p>
+    </article>
+    <article>
+      <span class="metric">03</span>
+      <h2>PTI hosts visibility</h2>
+      <p>PTI is the online command surface because GitHub Actions already publishes it to Firebase Hosting.</p>
+    </article>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <span class="section-kicker">Operating process</span>
+      <h2>How work moves from idea to deployed visibility</h2>
+    </div>
+    <div class="process-rail">
+      <article class="process-step" *ngFor="let step of processSteps">
+        <span class="step-number">{{ step.number }}</span>
+        <div>
+          <span class="owner">{{ step.owner }}</span>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.detail }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <span class="section-kicker">Project registry</span>
+      <h2>Current ecosystem map</h2>
+    </div>
+    <div class="project-table" role="table" aria-label="Ecosystem projects">
+      <div class="project-row header" role="row">
+        <span role="columnheader">Project</span>
+        <span role="columnheader">Role</span>
+        <span role="columnheader">Mobile operating mode</span>
+        <span role="columnheader">Publish path</span>
+      </div>
+      <article class="project-row" role="row" *ngFor="let project of projects">
+        <div class="project-name" role="cell">
+          <span class="status-pill" [class.live]="project.status === 'Live'">{{ project.status }}</span>
+          <strong>{{ project.name }}</strong>
+          <small>{{ project.path }}</small>
+          <small>Branch: {{ project.branch }}</small>
+        </div>
+        <p role="cell">{{ project.role }}</p>
+        <p role="cell">{{ project.mobileMode }}</p>
+        <p role="cell">{{ project.deployPath }}</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="split-section">
+    <div class="section-block compact">
+      <div class="section-heading">
+        <span class="section-kicker">Control rules</span>
+        <h2>Non-negotiables</h2>
+      </div>
+      <article class="rule-card" [class]="rule.tone" *ngFor="let rule of rules">
+        <h3>{{ rule.label }}</h3>
+        <p>{{ rule.detail }}</p>
+      </article>
+    </div>
+
+    <div class="section-block compact">
+      <div class="section-heading">
+        <span class="section-kicker">Connection points</span>
+        <h2>What each surface is for</h2>
+      </div>
+      <article class="mode-card" *ngFor="let mode of operatingModes">
+        <h3>{{ mode.name }}</h3>
+        <p>{{ mode.purpose }}</p>
+        <span>{{ mode.boundary }}</span>
+      </article>
+    </div>
+  </section>
+</main>
+
+<ng-template #denied>
+  <main class="denied-shell">
+    <section class="denied-panel">
+      <span class="section-kicker">Restricted portal</span>
+      <h1>Access is limited to the approved owner account.</h1>
+      <p>
+        Signed in as <strong>{{ user?.email || 'unknown user' }}</strong>. The command portal is currently
+        limited to <strong>{{ allowedEmail }}</strong>.
+      </p>
+      <div class="denied-actions">
+        <button mat-flat-button type="button" (click)="logout()">Switch account</button>
+        <button mat-stroked-button type="button" (click)="goToDashboard()">Back to PTI</button>
+      </div>
+    </section>
+  </main>
+</ng-template>

@@ -262,6 +262,10 @@ export class NewDashboardComponent implements OnInit {
         this.router.navigate(['/activities']);
     }
 
+    goToCodexCommand() {
+        this.router.navigate(['/codex-command']);
+    }
+
     goToDomain(domain: { id: string; name: string }) {
         this.router.navigate(['/domains', domain.id], {
             queryParams: { name: domain.name },

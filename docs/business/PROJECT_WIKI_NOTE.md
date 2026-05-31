@@ -107,6 +107,8 @@ Brainstorming should happen around the wiki so useful thoughts become linked not
 
 The wiki should behave like a small Wikipedia-style knowledge graph, with links between intent, problems, features, examples, decisions, and future tasks.
 
+For detailed wiki setup, raw-note handling, Wikipedia-style linking rules, and curator-skill behaviour, see `LLM_WIKI_SETUP_AND_CURATION_PROTOCOL.md`.
+
 The project wiki becomes the context base used by humans, ChatGPT, Codex, Claude, Gemini, or any other build/review agent.
 
 Before a Codex agent builds, it should be able to understand the project wiki context relevant to the requirement.

@@ -96,6 +96,19 @@ Simple rule:
 
 The `raw/` folder is the source-material layer.
 
+### Raw input source rule
+
+Raw notes do not need to come only from Codex.
+
+Any useful human or LLM discussion can produce raw notes, including ChatGPT, Claude, Gemini, Codex, direct user notes, review sessions, and product discussions.
+
+The raw layer is the capture layer. The wiki-curator skill is the refinement layer.
+
+The intended flow is:
+Any LLM / human discussion -> raw note -> Codex wiki-curator skill -> existing wiki pages updated, merged, and inline-linked.
+
+Codex should not be treated as the only source of project knowledge. Its stronger role is to apply the wiki-curator skill, preserve structure, update existing pages first, create new pages only for durable concepts, and maintain Wikipedia-style inline links.
+
 It should store summaries and extracts from:
 
 - ChatGPT discussions

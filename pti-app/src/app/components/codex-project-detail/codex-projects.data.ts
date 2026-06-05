@@ -41,8 +41,8 @@ export const CODEX_PORTFOLIO_PROJECTS: CodexPortfolioProject[] = [
     localPath: 'F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app',
     repo: 'https://github.com/Wolfrine/gtop-app',
     deployment: 'gtop-app.web.app and dev-gtop-app.web.app',
-    standing: 'PM verdict: blocked-for-execution. Product memory is strong, but builder automation is blocked by git index-lock failures.',
-    nextAction: 'Fix the git branch-switch/index-lock blocker, then resume Live Quiz control room build with production build and visual audit.',
+    standing: 'PM verdict: blocked-for-execution. GTOP is in product-memory and execution-unblock mode: practice intelligence is clearer, but builder automation cannot pass the git index-lock branch-switch step.',
+    nextAction: 'Repair the GTOP builder checkout, resume Live Quiz control room first, and run question-bank truth snapshot in parallel.',
     tone: 'critical',
   },
   {

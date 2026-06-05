@@ -135,8 +135,8 @@ export class NewCodexCommandComponent implements OnInit {
         {
             lane: 'Growth Tutorials build lane',
             focus: 'gtop-app, growth-tutorials, and GT-shared-services.',
-            standing: 'GTOP PM reports product memory is strong, but execution is blocked by git index-lock failures.',
-            nextAction: 'Unblock GTOP branch-switch/index-lock path before Live Quiz build work continues.',
+            standing: 'GTOP PM now reads this as product-memory acceleration plus blocked execution, not simple code inactivity.',
+            nextAction: 'Repair GTOP builder checkout, resume Live Quiz first, and run question-bank truth work in parallel.',
             checkpoint: 'Blocked',
             tone: 'critical',
         },
@@ -191,8 +191,8 @@ export class NewCodexCommandComponent implements OnInit {
             localPath: 'F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app',
             repo: 'https://github.com/Wolfrine/gtop-app',
             deployment: 'gtop-app.web.app and dev-gtop-app.web.app',
-            standing: 'PM verdict: blocked-for-execution. Product memory is strong, but builder automation is blocked by git index-lock failures.',
-            nextAction: 'Fix the git branch-switch/index-lock blocker, then resume Live Quiz control room build with production build and visual audit.',
+            standing: 'PM verdict: blocked-for-execution. GTOP is in product-memory and execution-unblock mode: practice intelligence is clearer, but builder automation cannot pass the git index-lock branch-switch step.',
+            nextAction: 'Repair the GTOP builder checkout, resume Live Quiz control room first, and run question-bank truth snapshot in parallel.',
             tone: 'critical',
         },
         {
@@ -354,8 +354,8 @@ export class NewCodexCommandComponent implements OnInit {
     readonly progressItems: ProgressItem[] = [
         {
             heading: 'What projects are being worked on',
-            progress: 'PM reports exist for PTI, Central/Aesthetic India, GTOP, and NovaSaga. GTOP is blocked-for-execution; Central and NovaSaga need CEO decisions.',
-            next: 'Use PM handoffs before direct repo inspection. Fix GTOP execution blocker first if build work resumes.',
+            progress: 'PM reports exist for PTI, Central/Aesthetic India, GTOP, and NovaSaga. GTOP has meaningful product-memory progress, but implementation is blocked before app edits.',
+            next: 'Use PM handoffs before direct repo inspection. For GTOP, fix the builder lane, resume Live Quiz, and assign question-bank truth work.',
             tone: 'warn',
         },
         {

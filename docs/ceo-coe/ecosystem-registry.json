@@ -48,7 +48,7 @@
       "github": "https://github.com/Wolfrine/gtop-app.git",
       "branchAtScan": "main",
       "stateAtScan": "dirty",
-      "standing": "Active GTOP app repo; inspect dirty work before changes.",
+      "standing": "Product-memory progress is strong, but implementation is blocked before app edits by GTOP builder git index-lock branch-switch failures.",
       "pmEnabled": true,
       "pmSpace": "F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app\\.pm",
       "pmActivityReason": "GTOP wiki/raw-note commits and dirty automation/app artifacts in the last 10 days."

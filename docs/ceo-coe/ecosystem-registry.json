@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "lastLocalRefreshDate": "2026-06-05",
+  "sourceOfTruth": "PTI",
+  "ceoCoeRepo": "PTI",
+  "rules": {
+    "ptiIsCeoCoe": true,
+    "opsForgeArchived": true,
+    "broadFDriveScanUsage": "discovery-only",
+    "defaultProjectRepoMode": "read-only during refresh"
+  },
+  "projects": [
+    {
+      "id": "pti",
+      "name": "PTI",
+      "role": "CEO COE / hosted command plane",
+      "status": "live",
+      "localPath": "F:\\Workspace\\Programs\\Independent-Products\\PTI",
+      "github": "https://github.com/Wolfrine/PTI.git",
+      "branchAtScan": "main",
+      "stateAtScan": "dirty",
+      "standing": "Owns dashboard, registry, instructions, tracker, and PTI MCP."
+    },
+    {
+      "id": "central-aesthetic-india",
+      "name": "Central / Aesthetic India",
+      "role": "control workspace",
+      "status": "control",
+      "localPath": "F:\\Central",
+      "activeWorkspacePath": "F:\\Central\\workbench\\01_active\\aesthetic-india",
+      "github": "https://github.com/Wolfrine/Central.git",
+      "branchAtScan": "main",
+      "stateAtScan": "dirty",
+      "standing": "Aesthetic India is visible from mobile, but source control belongs to Central."
+    },
+    {
+      "id": "gtop-app",
+      "name": "gtop-app",
+      "role": "Growth Tutorials product",
+      "status": "active",
+      "localPath": "F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app",
+      "github": "https://github.com/Wolfrine/gtop-app.git",
+      "branchAtScan": "main",
+      "stateAtScan": "dirty",
+      "standing": "Active GTOP app repo; inspect dirty work before changes."
+    },
+    {
+      "id": "growth-tutorials",
+      "name": "growth-tutorials",
+      "role": "Growth Tutorials hub/platform",
+      "status": "active",
+      "localPath": "F:\\Workspace\\Programs\\Growth-Tutorials\\growth-tutorials",
+      "github": "https://github.com/Wolfrine/growth-tutorials.git",
+      "branchAtScan": "dev-hub",
+      "stateAtScan": "dirty",
+      "standing": "Hub/platform repo with active local work."
+    },
+    {
+      "id": "gt-shared-services",
+      "name": "GT-shared-services",
+      "role": "Growth Tutorials shared services",
+      "status": "active",
+      "localPath": "F:\\Workspace\\Programs\\Growth-Tutorials\\GT-shared-services",
+      "github": "https://github.com/Wolfrine/GT-shared-services.git",
+      "branchAtScan": "main",
+      "stateAtScan": "dirty",
+      "standing": "Shared service root; changes can affect multiple GT surfaces."
+    },
+    {
+      "id": "orynth",
+      "name": "Orynth",
+      "role": "Independent product",
+      "status": "active",
+      "localPath": "F:\\Workspace\\Programs\\Independent-Products\\Orynth",
+      "github": "https://github.com/Wolfrine/Orynth.git",
+      "branchAtScan": "main",
+      "stateAtScan": "clean",
+      "standing": "Study tracker product with Firebase routes."
+    },
+    {
+      "id": "novel-encyclopedia",
+      "name": "Novel-Encyclopedia",
+      "role": "Independent product",
+      "status": "active",
+      "localPath": "F:\\Workspace\\Programs\\Independent-Products\\Novel-Encyclopedia",
+      "github": "https://github.com/Wolfrine/Novel-Encyclopedia.git",
+      "branchAtScan": "main",
+      "stateAtScan": "clean",
+      "standing": "Independent knowledge/product line."
+    },
+    {
+      "id": "novasaga",
+      "name": "NovaSaga",
+      "role": "Creative writing",
+      "status": "active",
+      "localPath": "F:\\Workspace\\NovaSaga",
+      "github": "https://github.com/Wolfrine/NovaSaga.git",
+      "branchAtScan": "main",
+      "stateAtScan": "clean",
+      "standing": "First-class novel-writing and worldbuilding workspace."
+    },
+    {
+      "id": "chatgpt",
+      "name": "ChatGPT",
+      "role": "Other / exports",
+      "status": "unknown",
+      "localPath": "F:\\Workspace\\Programs\\Other\\ChatGPT",
+      "github": "https://github.com/Wolfrine/ChatGPT.git",
+      "branchAtScan": "main",
+      "stateAtScan": "clean",
+      "standing": "Conversation/export utility repo; classify before active product work."
+    },
+    {
+      "id": "storyforge",
+      "name": "StoryForge",
+      "role": "Other / creative production",
+      "status": "support",
+      "localPath": "F:\\Workspace\\Programs\\Other\\StoryForge",
+      "github": "https://github.com/Wolfrine/StoryForge.git",
+      "branchAtScan": "main",
+      "stateAtScan": "clean",
+      "standing": "Creative production/product draft stream."
+    },
+    {
+      "id": "luminar-robotics",
+      "name": "luminar_robotics",
+      "role": "Other / R&D",
+      "status": "support",
+      "localPath": "F:\\Workspace\\Programs\\Other\\luminar_robotics",
+      "github": "https://github.com/Wolfrine/luminar_robotics.git",
+      "branchAtScan": "main",
+      "stateAtScan": "clean",
+      "standing": "Robotics and automation R&D root."
+    }
+  ],
+  "scratchRoots": [
+    {
+      "id": "local-test",
+      "name": "local-test",
+      "localPath": "F:\\Workspace\\Programs\\local-test",
+      "stateAtScan": "git-root-without-github-remote",
+      "rule": "Treat as scratch. Do not include in CEO portfolio unless explicitly promoted."
+    }
+  ],
+  "archived": [
+    {
+      "id": "ops-forge",
+      "name": "ops-forge",
+      "archivedPath": "F:\\Workspace\\Archive\\legacy\\Codex-Operations\\ops-forge",
+      "previousPath": "F:\\Workspace\\Programs\\Codex-Operations\\ops-forge",
+      "github": "https://github.com/Wolfrine/ops-forge.git",
+      "rule": "Archived legacy operations experiment. Do not use for CEO process, dashboard, MCP, or refresh work unless explicitly revived."
+    },
+    {
+      "id": "growthwebsite",
+      "name": "GrowthWebsite",
+      "archivedPath": "F:\\Workspace\\Archive\\legacy\\GrowthWebsite",
+      "github": "https://github.com/Wolfrine/GrowthWebsite",
+      "rule": "Historical reference only."
+    }
+  ]
+}

@@ -99,20 +99,20 @@ export class NewCodexCommandComponent implements OnInit {
     readonly kpiTiles: KpiTile[] = [
         {
             label: 'Operating portfolio',
-            value: '13 local roots',
-            detail: 'PTI, GT, Central, Ops, independent products, and other labs',
+            value: '11 GitHub roots',
+            detail: 'PTI, GT, Central, independent products, creative writing, and other labs',
             tone: 'ok',
         },
         {
             label: 'Currently in motion',
-            value: '4 dirty roots',
-            detail: 'Central, gtop-app, growth-tutorials, GT-shared-services',
+            value: '5 dirty roots',
+            detail: 'PTI refresh publish plus Central, gtop-app, growth-tutorials, GT-shared-services',
             tone: 'warn',
         },
         {
             label: 'Published surfaces',
             value: '6 detected',
-            detail: 'PTI, GTOP, Growth Tutorials, shared services, ops-forge, Orynth',
+            detail: 'PTI, GTOP, Growth Tutorials, shared services, Orynth, Novel',
             tone: 'ok',
         },
         {
@@ -126,9 +126,9 @@ export class NewCodexCommandComponent implements OnInit {
     readonly workstreams: WorkstreamCard[] = [
         {
             lane: 'PTI command plane',
-            focus: 'Hosted executive dashboard and Codex operating visibility.',
-            standing: 'Live route is the shared surface for any-device review.',
-            nextAction: 'Keep PTI clean, publish through main, and verify Firebase after each dashboard change.',
+            focus: 'CEO COE registry, dashboard, instructions, and Codex refresh workflow.',
+            standing: 'PTI is now the operating source of truth; ops-forge is archived legacy work.',
+            nextAction: 'Use PTI registry plus ceo-ecosystem-refresh skill before ecosystem-level work.',
             checkpoint: 'Live',
             tone: 'ok',
         },
@@ -149,8 +149,16 @@ export class NewCodexCommandComponent implements OnInit {
             tone: 'warn',
         },
         {
+            lane: 'Creative writing / NovaSaga',
+            focus: 'NovaSaga at F:\\Workspace\\NovaSaga.',
+            standing: 'First-class novel-writing and worldbuilding workspace, not an independent product lane.',
+            nextAction: 'Use NovaSaga repo as-is until the user defines the next writing or structure task.',
+            checkpoint: 'Active',
+            tone: 'ok',
+        },
+        {
             lane: 'Independent products',
-            focus: 'NovaSaga, Novel-Encyclopedia, Orynth, StoryForge, luminar_robotics.',
+            focus: 'Novel-Encyclopedia, Orynth, StoryForge, luminar_robotics.',
             standing: 'Mostly clean, with several support-stage products and detected deploy routes for Orynth/Novel.',
             nextAction: 'Treat as project-specific streams; revive only with repo-level intent.',
             checkpoint: 'Support',
@@ -161,32 +169,35 @@ export class NewCodexCommandComponent implements OnInit {
     readonly portfolioProjects: PortfolioProject[] = [
         {
             name: 'PTI',
+            id: 'pti',
             group: 'Command plane',
             status: 'Live',
             branch: 'main',
-            workingTree: 'clean before this dashboard revision',
+            workingTree: 'dirty during CEO refresh publish',
             localPath: 'F:\\Workspace\\Programs\\Independent-Products\\PTI',
             repo: 'https://github.com/Wolfrine/PTI',
             deployment: 'pti-app-2ab59.web.app via GitHub Actions + Firebase',
-            standing: 'Primary hosted interface for Codex operating visibility.',
-            nextAction: 'Publish dashboard revision and verify route.',
+            standing: 'CEO COE source of truth for registry, instructions, dashboard, and Codex refresh workflow.',
+            nextAction: 'Publish this refresh; after deploy, PTI should return to clean and remain the CEO COE.',
             tone: 'ok',
         },
         {
             name: 'gtop-app',
+            id: 'gtop-app',
             group: 'Growth Tutorials',
             status: 'Active',
-            branch: 'codex/new-gtop-v2-lab',
+            branch: 'main',
             workingTree: 'dirty',
             localPath: 'F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app',
             repo: 'https://github.com/Wolfrine/gtop-app',
             deployment: 'gtop-app.web.app and dev-gtop-app.web.app',
-            standing: 'Primary GTOP product and CI workflow hub.',
+            standing: 'Primary GTOP product repo; dirty on main with latest wiki curation commit.',
             nextAction: 'Inspect dirty files before any new GTOP implementation.',
             tone: 'warn',
         },
         {
             name: 'growth-tutorials',
+            id: 'growth-tutorials',
             group: 'Growth Tutorials',
             status: 'Active',
             branch: 'dev-hub',
@@ -200,6 +211,7 @@ export class NewCodexCommandComponent implements OnInit {
         },
         {
             name: 'GT-shared-services',
+            id: 'gt-shared-services',
             group: 'Growth Tutorials',
             status: 'Active',
             branch: 'main',
@@ -213,32 +225,35 @@ export class NewCodexCommandComponent implements OnInit {
         },
         {
             name: 'Central / Aesthetic India',
+            id: 'central-aesthetic-india',
             group: 'Central workspace',
             status: 'Control',
             branch: 'main',
             workingTree: 'dirty',
-            localPath: 'F:\\Central\\workbench\\01_active\\aesthetic-india',
+            localPath: 'F:\\Central',
             repo: 'https://github.com/Wolfrine/Central',
-            deployment: 'repo workflow; separate publish route not detected',
-            standing: 'Visible mobile project context, but source control belongs to Central.',
-            nextAction: 'Use Central repo boundaries for commits and automation.',
+            deployment: 'not detected',
+            standing: 'Control workspace is dirty and 2 commits ahead of origin; active workspace is F:\\Central\\workbench\\01_active\\aesthetic-india.',
+            nextAction: 'Inspect Central dirty/ahead state before any Aesthetic India implementation.',
             tone: 'warn',
         },
         {
-            name: 'ops-forge',
-            group: 'Operations',
-            status: 'Active',
+            name: 'ops-forge (archived)',
+            id: 'ops-forge',
+            group: 'Archived',
+            status: 'Archived',
             branch: 'main',
-            workingTree: 'clean',
-            localPath: 'F:\\Workspace\\Programs\\Codex-Operations\\ops-forge',
+            workingTree: 'archived clean',
+            localPath: 'F:\\Workspace\\Archive\\legacy\\Codex-Operations\\ops-forge',
             repo: 'https://github.com/Wolfrine/ops-forge',
-            deployment: 'lumio-forge Firebase project inferred from config',
-            standing: 'Process tooling and operations standardization root.',
-            nextAction: 'Use for reusable scripts and Codex operating process only.',
-            tone: 'ok',
+            deployment: 'archived',
+            standing: 'Legacy operations experiment. PTI is now the CEO COE and operating source of truth.',
+            nextAction: 'Do not use for current process, dashboard, MCP, or refresh work unless explicitly revived.',
+            tone: 'muted',
         },
         {
             name: 'Orynth',
+            id: 'orynth',
             group: 'Independent product',
             status: 'Active',
             branch: 'main',
@@ -252,6 +267,7 @@ export class NewCodexCommandComponent implements OnInit {
         },
         {
             name: 'Novel-Encyclopedia',
+            id: 'novel-encyclopedia',
             group: 'Independent product',
             status: 'Active',
             branch: 'main',
@@ -265,19 +281,21 @@ export class NewCodexCommandComponent implements OnInit {
         },
         {
             name: 'NovaSaga',
-            group: 'Independent product',
-            status: 'Support',
+            id: 'novasaga',
+            group: 'Creative writing',
+            status: 'Active',
             branch: 'main',
             workingTree: 'clean',
-            localPath: 'F:\\Workspace\\Programs\\Independent-Products\\NovaSaga',
+            localPath: 'F:\\Workspace\\NovaSaga',
             repo: 'https://github.com/Wolfrine/NovaSaga',
             deployment: 'not detected',
-            standing: 'Worldbuilding/content product in support posture.',
-            nextAction: 'Define active outcome before implementation.',
-            tone: 'muted',
+            standing: 'First-class novel-writing and worldbuilding workspace.',
+            nextAction: 'Use repo as-is until the user defines the next writing or structure task.',
+            tone: 'ok',
         },
         {
             name: 'ChatGPT',
+            id: 'chatgpt',
             group: 'Other',
             status: 'Unknown',
             branch: 'main',
@@ -291,6 +309,7 @@ export class NewCodexCommandComponent implements OnInit {
         },
         {
             name: 'StoryForge',
+            id: 'storyforge',
             group: 'Other',
             status: 'Support',
             branch: 'main',
@@ -304,6 +323,7 @@ export class NewCodexCommandComponent implements OnInit {
         },
         {
             name: 'luminar_robotics',
+            id: 'luminar-robotics',
             group: 'Other',
             status: 'Support',
             branch: 'main',
@@ -317,11 +337,12 @@ export class NewCodexCommandComponent implements OnInit {
         },
         {
             name: 'GrowthWebsite',
+            id: 'growthwebsite',
             group: 'Archived',
             status: 'Archived',
             branch: 'main',
             workingTree: 'remote archived',
-            localPath: 'not present in F:\\Workspace scan',
+            localPath: 'F:\\Workspace\\Archive\\legacy\\GrowthWebsite',
             repo: 'https://github.com/Wolfrine/GrowthWebsite',
             deployment: 'archived',
             standing: 'Historical reference only.',
@@ -333,7 +354,7 @@ export class NewCodexCommandComponent implements OnInit {
     readonly progressItems: ProgressItem[] = [
         {
             heading: 'What projects are being worked on',
-            progress: 'PTI dashboard work is active now. GTOP, growth-tutorials, GT-shared-services, and Central have existing local changes that must be respected.',
+            progress: 'Active dirty roots are PTI refresh publish, Central, gtop-app, growth-tutorials, and GT-shared-services. PTI now governs the CEO COE registry and refresh workflow.',
             next: 'Before starting new work, choose one project and inspect its dirty state.',
             tone: 'warn',
         },
@@ -375,10 +396,13 @@ export class NewCodexCommandComponent implements OnInit {
         return this.portfolioProjects.filter((project) => project.status === 'Support' || project.status === 'Unknown').length;
     }
 
-    get topRisks(): PortfolioProject[] {
+    get riskRoots(): PortfolioProject[] {
         return this.portfolioProjects
-            .filter((project) => project.tone === 'warn' || project.tone === 'critical')
-            .slice(0, 3);
+            .filter((project) => project.tone === 'warn' || project.tone === 'critical');
+    }
+
+    get topRisks(): PortfolioProject[] {
+        return this.riskRoots.slice(0, 3);
     }
 
     get highestRisk(): PortfolioProject | undefined {
@@ -397,8 +421,8 @@ export class NewCodexCommandComponent implements OnInit {
         return [
             {
                 label: 'Active blockers',
-                value: String(this.topRisks.length),
-                detail: 'Dirty or control-sensitive roots',
+                value: String(this.riskRoots.length),
+                detail: 'Dirty, control-sensitive, or archived-risk roots',
                 tone: 'warn',
             },
             {

@@ -11,7 +11,9 @@ This repository contains an Angular application "PTI App" for tracking time inve
 - Any UI/dashboard/page change is incomplete until it has been visually checked in browser on desktop and mobile-sized viewports.
 
 ## CEO command operating model
-- PTI is the hosted visual command surface for mobile-accessible Codex planning and portfolio review.
+- PTI is the CEO COE: the hosted visual command surface, operating registry, and instruction home for mobile-accessible Codex planning and portfolio review.
+- `ops-forge` is archived legacy work. Do not use it as an active operating root, process source, MCP source, dashboard source, or automation source unless the user explicitly revives it.
+- The canonical ecosystem registry and refresh rules live under `docs/ceo-coe/`.
 - Start every implementation by identifying the owning repo, active branch, dirty worktree state, and deploy lane.
 - Use broad F-drive scanning for discovery only; implementation should happen inside the owning repo unless a cross-repo change is explicitly required.
 - Preserve unrelated dirty files. If a repo already has user or agent changes, inspect and work around them instead of reverting.

@@ -24,11 +24,12 @@ Canonical PTI files:
 
 1. Read PTI `AGENTS.md` and the CEO COE registry/protocol files.
 2. Treat the registry as the primary project list. Use broad F-drive scanning only for discovery or stale-entry detection.
-3. For each active or controlled project, inspect local path existence, Git remote, branch, latest commit, dirty state, and ahead/behind state when practical.
-4. Compare facts against PTI dashboard data and Firestore/action-item data if access is available.
-5. Report verified facts separately from assumptions.
-6. Update only PTI-owned registry, dashboard data, docs, or tracker records unless the user explicitly asks for project-repo changes.
-7. If dashboard-facing files change, use `ui-visual-verifier` before claiming the dashboard is complete.
+3. Read latest PM handoffs from each PM-enabled repo's `.pm/outbox/` before inspecting raw project evidence.
+4. For each active or controlled project with missing or stale PM reports, inspect local path existence, Git remote, branch, latest commit, dirty state, and ahead/behind state when practical.
+5. Compare facts against PTI dashboard data and Firestore/action-item data if access is available.
+6. Report verified facts separately from assumptions.
+7. Update only PTI-owned registry, dashboard data, docs, or tracker records unless the user explicitly asks for project-repo changes.
+8. If dashboard-facing files change, use `ui-visual-verifier` before claiming the dashboard is complete.
 
 ## Read-Only Default
 

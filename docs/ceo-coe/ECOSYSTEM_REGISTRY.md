@@ -44,3 +44,16 @@ When a project is added, archived, renamed, or moved, update:
 - dashboard project data under `pti-app/src/app/components/new-codex-command/new-codex-command.component.ts`
 
 For UI/dashboard-visible changes, run the visual verification gate before claiming completion.
+
+## PM-Enabled Pilot
+
+As of 2026-06-05, PM spaces are piloted for projects with committed or modified work in the last 10 days:
+
+| Project | PM space | Activity reason |
+| --- | --- | --- |
+| PTI | `F:\Workspace\Programs\Independent-Products\PTI\.pm` | CEO COE/dashboard/wiki commits in the last 10 days. |
+| Central / Aesthetic India | `F:\Central\.pm` | Recent dirty Aesthetic India docs/assets plus Central control state. |
+| gtop-app | `F:\Workspace\Programs\Growth-Tutorials\gtop-app\.pm` | GTOP wiki/raw-note commits and dirty automation/app artifacts in the last 10 days. |
+| NovaSaga | `F:\Workspace\NovaSaga\.pm` | NovaSaga wiki/lore curation commits in the last 10 days. |
+
+PM agents may write only inside the project `.pm` directory.

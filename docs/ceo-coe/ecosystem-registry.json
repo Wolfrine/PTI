@@ -19,7 +19,10 @@
       "github": "https://github.com/Wolfrine/PTI.git",
       "branchAtScan": "main",
       "stateAtScan": "dirty",
-      "standing": "Owns dashboard, registry, instructions, tracker, and PTI MCP."
+      "standing": "Owns dashboard, registry, instructions, tracker, and PTI MCP.",
+      "pmEnabled": true,
+      "pmSpace": "F:\\Workspace\\Programs\\Independent-Products\\PTI\\.pm",
+      "pmActivityReason": "CEO COE/dashboard/wiki commits in the last 10 days."
     },
     {
       "id": "central-aesthetic-india",
@@ -31,7 +34,10 @@
       "github": "https://github.com/Wolfrine/Central.git",
       "branchAtScan": "main",
       "stateAtScan": "dirty",
-      "standing": "Aesthetic India is visible from mobile, but source control belongs to Central."
+      "standing": "Aesthetic India is visible from mobile, but source control belongs to Central.",
+      "pmEnabled": true,
+      "pmSpace": "F:\\Central\\.pm",
+      "pmActivityReason": "Recent dirty Aesthetic India docs/assets plus Central control state."
     },
     {
       "id": "gtop-app",
@@ -42,7 +48,10 @@
       "github": "https://github.com/Wolfrine/gtop-app.git",
       "branchAtScan": "main",
       "stateAtScan": "dirty",
-      "standing": "Active GTOP app repo; inspect dirty work before changes."
+      "standing": "Active GTOP app repo; inspect dirty work before changes.",
+      "pmEnabled": true,
+      "pmSpace": "F:\\Workspace\\Programs\\Growth-Tutorials\\gtop-app\\.pm",
+      "pmActivityReason": "GTOP wiki/raw-note commits and dirty automation/app artifacts in the last 10 days."
     },
     {
       "id": "growth-tutorials",
@@ -53,7 +62,8 @@
       "github": "https://github.com/Wolfrine/growth-tutorials.git",
       "branchAtScan": "dev-hub",
       "stateAtScan": "dirty",
-      "standing": "Hub/platform repo with active local work."
+      "standing": "Hub/platform repo with active local work.",
+      "pmEnabled": false
     },
     {
       "id": "gt-shared-services",
@@ -64,7 +74,8 @@
       "github": "https://github.com/Wolfrine/GT-shared-services.git",
       "branchAtScan": "main",
       "stateAtScan": "dirty",
-      "standing": "Shared service root; changes can affect multiple GT surfaces."
+      "standing": "Shared service root; changes can affect multiple GT surfaces.",
+      "pmEnabled": false
     },
     {
       "id": "orynth",
@@ -75,7 +86,8 @@
       "github": "https://github.com/Wolfrine/Orynth.git",
       "branchAtScan": "main",
       "stateAtScan": "clean",
-      "standing": "Study tracker product with Firebase routes."
+      "standing": "Study tracker product with Firebase routes.",
+      "pmEnabled": false
     },
     {
       "id": "novel-encyclopedia",
@@ -86,7 +98,8 @@
       "github": "https://github.com/Wolfrine/Novel-Encyclopedia.git",
       "branchAtScan": "main",
       "stateAtScan": "clean",
-      "standing": "Independent knowledge/product line."
+      "standing": "Independent knowledge/product line.",
+      "pmEnabled": false
     },
     {
       "id": "novasaga",
@@ -97,7 +110,10 @@
       "github": "https://github.com/Wolfrine/NovaSaga.git",
       "branchAtScan": "main",
       "stateAtScan": "clean",
-      "standing": "First-class novel-writing and worldbuilding workspace."
+      "standing": "First-class novel-writing and worldbuilding workspace.",
+      "pmEnabled": true,
+      "pmSpace": "F:\\Workspace\\NovaSaga\\.pm",
+      "pmActivityReason": "NovaSaga wiki/lore curation commits in the last 10 days."
     },
     {
       "id": "chatgpt",
@@ -108,7 +124,8 @@
       "github": "https://github.com/Wolfrine/ChatGPT.git",
       "branchAtScan": "main",
       "stateAtScan": "clean",
-      "standing": "Conversation/export utility repo; classify before active product work."
+      "standing": "Conversation/export utility repo; classify before active product work.",
+      "pmEnabled": false
     },
     {
       "id": "storyforge",
@@ -119,7 +136,8 @@
       "github": "https://github.com/Wolfrine/StoryForge.git",
       "branchAtScan": "main",
       "stateAtScan": "clean",
-      "standing": "Creative production/product draft stream."
+      "standing": "Creative production/product draft stream.",
+      "pmEnabled": false
     },
     {
       "id": "luminar-robotics",
@@ -130,7 +148,8 @@
       "github": "https://github.com/Wolfrine/luminar_robotics.git",
       "branchAtScan": "main",
       "stateAtScan": "clean",
-      "standing": "Robotics and automation R&D root."
+      "standing": "Robotics and automation R&D root.",
+      "pmEnabled": false
     }
   ],
   "scratchRoots": [

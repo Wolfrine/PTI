@@ -1,0 +1,12 @@
+{
+  "projectId": "pti",
+  "status": "live-but-dirty",
+  "health": "amber",
+  "topRisk": "PTI is becoming the CEO COE while CEO COE/PM-loop docs, registry metadata, and the PM space are still uncommitted.",
+  "ceoDecisionNeeded": "Approve or reject the PM-enabled pilot model and decide whether the current PM-loop CEO COE changes should be promoted into the official release.",
+  "recommendedNextAction": "Review and stabilize the dirty CEO COE/PM-loop changes, then verify Angular build and the token-gated MCP endpoint before treating PTI as the authoritative allocation surface.",
+  "reportPath": "F:\\Workspace\\Programs\\Independent-Products\\PTI\\.pm\\reports\\2026-06-05-pm-refresh.md",
+  "generatedAt": "2026-06-05",
+  "activityWindowStart": "2026-05-26",
+  "activityWindowEnd": "2026-06-05"
+}

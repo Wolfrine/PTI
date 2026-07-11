@@ -64,19 +64,34 @@ jobs:
         run: |
           node <<'NODE'
           const { applicationDefault, initializeApp } = require('firebase-admin/app');
-          const { getFirestore } = require('firebase-admin/firestore');
+          const { FieldValue, getFirestore } = require('firebase-admin/firestore');
 
           const projectId = process.env.FIREBASE_PROJECT_ID;
           initializeApp({ credential: applicationDefault(), projectId });
 
-          getFirestore()
-            .doc('_pti_access_checks/non_destructive_read')
-            .get()
-            .then((snapshot) => {
-              console.log(`Firebase Admin Firestore read succeeded for ${projectId}; document exists=${snapshot.exists}.`);
-            })
-            .catch((error) => {
-              console.error('Firebase Admin Firestore read failed:', error.message);
-              process.exitCode = 1;
+          async function verifyAccess() {
+            const reference = getFirestore().doc('_pti_access_checks/reversible_admin_probe');
+            await reference.set({
+              checkedAt: FieldValue.serverTimestamp(),
+              purpose: 'PTI autonomous access verification',
             });
+
+            const written = await reference.get();
+            if (!written.exists) {
+              throw new Error('Firestore probe document was not readable after write.');
+            }
+
+            await reference.delete();
+            const deleted = await reference.get();
+            if (deleted.exists) {
+              throw new Error('Firestore probe document still exists after delete.');
+            }
+
+            console.log(`Firebase Admin Firestore write, read, and delete succeeded for ${projectId}.`);
+          }
+
+          verifyAccess().catch((error) => {
+            console.error('Firebase Admin Firestore management check failed:', error.message);
+            process.exitCode = 1;
+          });
           NODE

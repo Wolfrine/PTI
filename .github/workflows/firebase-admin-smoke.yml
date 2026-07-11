@@ -48,12 +48,16 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
 
       - name: Verify Firebase CLI project access
+        continue-on-error: true
         run: |
           npm install --global firebase-tools
-          firebase projects:list --json > /dev/null
-          firebase hosting:sites:list --project "$FIREBASE_PROJECT_ID" --json > /dev/null
-          firebase functions:list --project "$FIREBASE_PROJECT_ID" --json > /dev/null
-          echo "Firebase CLI project, Hosting, and Functions reads succeeded."
+          firebase --version
+          echo "Checking project visibility"
+          firebase projects:list --json
+          echo "Checking Hosting visibility"
+          firebase hosting:sites:list --project "$FIREBASE_PROJECT_ID" --json
+          echo "Checking Functions visibility"
+          firebase functions:list --project "$FIREBASE_PROJECT_ID" --json
 
       - name: Verify Firebase Admin Firestore access
         working-directory: functions

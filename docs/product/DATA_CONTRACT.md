@@ -8,7 +8,7 @@ Date: 2026-07-11
 User-scoped operating records remain under:
 
 ```text
-users/{uid}/operatingSystem/{collection}/{documentId}
+users/{uid}/operatingSystems/default/{collection}/{documentId}
 ```
 
 Existing `users/{uid}/codexProjects` and original PTI domain/activity collections remain readable during migration. They are not the target source of truth.

@@ -25,6 +25,7 @@ jobs:
     timeout-minutes: 10
     env:
       FIREBASE_PROJECT_ID: pti-app-2ab59
+      PTI_OWNER_EMAIL: ${{ secrets.PTI_OWNER_EMAIL }}
 
     steps:
       - name: Checkout repository

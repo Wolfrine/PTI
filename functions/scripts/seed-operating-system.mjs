@@ -81,6 +81,11 @@ async function resolveTargetUid() {
     return configured;
   }
 
+  const ownerEmail = process.env.PTI_OWNER_EMAIL?.trim();
+  if (ownerEmail) {
+    return (await getAuth().getUserByEmail(ownerEmail)).uid;
+  }
+
   const userDocuments = await firestore.collection('users').limit(3).get();
   if (userDocuments.size === 1) {
     return userDocuments.docs[0].id;

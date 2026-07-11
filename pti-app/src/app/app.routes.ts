@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
@@ -46,6 +47,12 @@ export const routes: Routes = [
         path: 'codex-command',
         component: NewCodexCommandComponent,
         canActivate: [AuthGuard],
+    },
+    {
+        path: 'codex-command-preview',
+        component: NewCodexCommandComponent,
+        data: { preview: true },
+        canMatch: [() => isDevMode()],
     },
     {
         path: 'codex-command/projects/:projectId',

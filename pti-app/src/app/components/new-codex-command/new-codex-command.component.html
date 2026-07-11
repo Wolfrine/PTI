@@ -1,153 +1,196 @@
-<mat-toolbar class="command-toolbar">
-  <div class="brand-lockup">
-    <span class="brand-mark">PTI</span>
-    <div>
-      <span class="eyebrow">Command Portal</span>
-      <strong>CEO control room</strong>
-    </div>
-  </div>
-  <span class="spacer"></span>
-  <button class="nav-action" mat-icon-button type="button" aria-label="Home" (click)="goHome()">
-    <mat-icon>home</mat-icon>
-  </button>
-  <button class="nav-action active" mat-icon-button type="button" aria-label="Open PTI dashboard" (click)="goToDashboard()">
-    <mat-icon>query_stats</mat-icon>
-  </button>
-  <button class="quiet-action" mat-button type="button" (click)="logout()">Logout</button>
-</mat-toolbar>
-
-<main class="command-shell" *ngIf="isAllowed; else denied">
-  <header class="command-hero">
-    <section class="scan-lead" *ngIf="highestRisk as risk">
-      <span class="section-kicker">Highest-risk item</span>
-      <h1>{{ risk.name }}</h1>
-      <p>{{ risk.standing }}</p>
-      <button class="primary-command" type="button" (click)="openProject(risk)">
-        Open risk file
-        <mat-icon>arrow_forward</mat-icon>
+<div class="os-shell" *ngIf="data$ | async as data; else loading">
+  <aside class="nav-rail" aria-label="PTI operating system navigation">
+    <button class="brand" type="button" title="PTI home" (click)="goHome()">PTI</button>
+    <nav>
+      <button type="button" [class.active]="activeSection === 'today'" title="Today" (click)="setSection('today')">
+        <mat-icon>today</mat-icon><span>Today</span>
       </button>
-    </section>
-
-    <section class="decision-panel" *ngIf="highestRisk as risk">
-      <span class="section-kicker">Today's required decision</span>
-      <h2>{{ risk.nextAction }}</h2>
-      <p>Resolve the highest-risk lane before opening new implementation work.</p>
-    </section>
-
-    <section class="blocker-panel" aria-label="Active blockers">
-      <div class="blocker-heading">
-        <span class="section-kicker">Active blockers</span>
-        <strong>{{ topRisks.length }}</strong>
-      </div>
-      <button class="blocker-row" *ngFor="let project of topRisks" type="button" (click)="openProject(project)">
-        <span class="risk-dot" [ngClass]="project.tone"></span>
-        <span>
-          <strong>{{ project.name }}</strong>
-          <small>{{ project.workingTree }} / {{ project.branch }}</small>
-        </span>
-        <mat-icon>chevron_right</mat-icon>
+      <button type="button" [class.active]="activeSection === 'outcomes'" title="Outcomes" (click)="setSection('outcomes')">
+        <mat-icon>track_changes</mat-icon><span>Outcomes</span>
       </button>
-    </section>
+      <button type="button" [class.active]="activeSection === 'execution'" title="Execution" (click)="setSection('execution')">
+        <mat-icon>account_tree</mat-icon><span>Execution</span>
+      </button>
+      <button type="button" [class.active]="activeSection === 'agents'" title="Agents" (click)="setSection('agents')">
+        <mat-icon>hub</mat-icon><span>Agents</span>
+      </button>
+      <button type="button" [class.active]="activeSection === 'evidence'" title="Evidence" (click)="setSection('evidence')">
+        <mat-icon>fact_check</mat-icon><span>Evidence</span>
+      </button>
+    </nav>
+    <button class="rail-logout" type="button" title="Sign out" (click)="logout()"><mat-icon>logout</mat-icon></button>
+  </aside>
 
-    <section class="summary-rail" aria-label="Executive summary">
-      <article class="summary-item" *ngFor="let item of executiveSummary" [ngClass]="item.tone">
-        <span>{{ item.label }}</span>
-        <strong>{{ item.value }}</strong>
-        <small>{{ item.detail }}</small>
-      </article>
-    </section>
-  </header>
-
-  <section class="section-block">
-    <div class="section-heading">
-      <span class="section-kicker">Urgency ranked</span>
-      <h2>Active projects</h2>
-      <p>Compact cards stay scan-friendly. Open a project for metadata, feedback, action items, and updates.</p>
-    </div>
-    <div class="portfolio-matrix">
-      <article class="portfolio-card" *ngFor="let project of rankedProjects" [ngClass]="project.tone">
-        <button class="card-hit" type="button" (click)="openProject(project)" [attr.aria-label]="'Open ' + project.name">
-          <header class="portfolio-head">
-            <div>
-              <span class="zone">{{ project.group }}</span>
-              <h3>{{ project.name }}</h3>
-            </div>
-            <span class="status-pill" [ngClass]="project.status.toLowerCase()">{{ project.status }}</span>
-          </header>
-          <p class="standing">{{ project.standing }}</p>
-          <dl class="compact-facts">
-            <div><dt>Branch</dt><dd>{{ project.branch }}</dd></div>
-            <div><dt>Tree</dt><dd>{{ project.workingTree }}</dd></div>
-          </dl>
-          <p class="next-action"><strong>Next:</strong> {{ project.nextAction }}</p>
-        </button>
-      </article>
-    </div>
-  </section>
-
-  <section class="scan-grid lower-scan">
-    <article class="section-block distribution-block">
-      <div class="section-heading">
-        <span class="section-kicker">Portfolio distribution</span>
-        <h2>Status mix</h2>
-      </div>
-      <div class="distribution-list">
-        <div class="distribution-row" *ngFor="let slice of portfolioDistribution" [ngClass]="slice.tone">
-          <span>{{ slice.label }}</span>
-          <strong>{{ slice.count }}</strong>
+  <main class="os-main">
+    <header class="context-bar">
+      <div class="context-title">
+        <span class="product-mark">PTI</span>
+        <div>
+          <strong>Executive operating system</strong>
+          <small>{{ data.workspace.reviewLabel }}</small>
         </div>
       </div>
-    </article>
-
-    <article class="section-block action-queue">
-      <div class="section-heading">
-        <span class="section-kicker">Recent action queue</span>
-        <h2>Signals from project detail</h2>
+      <div class="context-metrics" aria-label="Evidence health">
+        <span class="context-chip fresh"><strong>{{ summary(data).freshSignals }}</strong> fresh</span>
+        <span class="context-chip stale"><strong>{{ summary(data).staleSignals }}</strong> stale</span>
+        <span class="context-chip conflict"><strong>{{ summary(data).conflictingSignals }}</strong> conflicts</span>
+        <span class="refresh-time">Refreshed {{ formatDate(data.workspace.lastSuccessfulRefreshAt) }}</span>
+        <span class="preview-label" *ngIf="previewMode">Evidence preview</span>
       </div>
-      <div class="queue-list" *ngIf="recentQueue.length; else emptyQueue">
-        <article class="queue-item" *ngFor="let item of recentQueue">
-          <span>{{ item.kind.replace('_', ' ') }}</span>
-          <p>{{ item.text }}</p>
-          <small>{{ item.projectName || item.projectId }} / {{ item.status.replace('_', ' ') }}</small>
+    </header>
+
+    <section class="today-band" id="today">
+      <div class="band-heading">
+        <div>
+          <span class="kicker">Executive brief</span>
+          <h1>What needs judgment now</h1>
+        </div>
+        <p>Real evidence as of {{ formatDate(data.workspace.lastSuccessfulRefreshAt) }}. Historical claims remain visibly stale.</p>
+      </div>
+
+      <div class="operating-grid">
+        <section class="operating-lane decision-lane">
+          <header><mat-icon>gavel</mat-icon><span>Decide</span><strong>{{ data.decisions.length }}</strong></header>
+          <article class="decision-row" *ngFor="let decision of data.decisions">
+            <div class="row-state" [attr.data-state]="decision.state">{{ decision.state.replace('_', ' ') }}</div>
+            <h2>{{ decision.question }}</h2>
+            <p *ngIf="decision.recommendation">Recommendation: <strong>{{ decision.recommendation }}</strong></p>
+            <p class="decision-rationale" *ngIf="decision.rationale">{{ decision.rationale }}</p>
+            <button type="button" class="text-action" (click)="setSection('evidence')">Review evidence <mat-icon>arrow_forward</mat-icon></button>
+          </article>
+        </section>
+
+        <section class="operating-lane changed-lane">
+          <header><mat-icon>change_history</mat-icon><span>Changed</span><strong>{{ materialChanges(data).length }}</strong></header>
+          <button class="signal-row" type="button" *ngFor="let signal of materialChanges(data)" (click)="inspect(signal)">
+            <span class="signal-marker" [attr.data-freshness]="signal.freshness"></span>
+            <span><strong>{{ signal.title }}</strong><small>{{ signal.claim }}</small></span>
+            <mat-icon>open_in_new</mat-icon>
+          </button>
+        </section>
+
+        <section class="operating-lane delegation-lane">
+          <header><mat-icon>send</mat-icon><span>Delegate</span><strong>{{ data.workPackets.length }}</strong></header>
+          <article class="packet-row" *ngFor="let packet of data.workPackets">
+            <div class="row-state" [attr.data-state]="packet.state">{{ packet.state.replace('_', ' ') }}</div>
+            <h2>{{ packet.title }}</h2>
+            <p>{{ packet.outputDeliveryDirection }}</p>
+            <dl><div><dt>Lane</dt><dd>{{ packet.branchPolicy }}</dd></div><div><dt>Risk</dt><dd>{{ packet.riskClass }}</dd></div></dl>
+            <button type="button" class="text-action" (click)="setSection('execution')">Open packet <mat-icon>arrow_forward</mat-icon></button>
+          </article>
+        </section>
+
+        <section class="operating-lane verify-lane">
+          <header><mat-icon>verified</mat-icon><span>Verify</span><strong>{{ data.releases.length }}</strong></header>
+          <article class="release-row" *ngFor="let release of data.releases">
+            <div class="row-state" [attr.data-state]="release.state">{{ release.state.replaceAll('_', ' ') }}</div>
+            <h2>{{ release.environment | titlecase }} release gate</h2>
+            <p *ngIf="release.evidenceRefs.length; else noEvidence">{{ release.evidenceRefs.length }} verification records attached.</p>
+            <ng-template #noEvidence><p>No release evidence attached yet. Promotion remains unavailable.</p></ng-template>
+            <button type="button" class="text-action" (click)="setSection('evidence')">Inspect gates <mat-icon>arrow_forward</mat-icon></button>
+          </article>
+        </section>
+      </div>
+    </section>
+
+    <section class="content-band" id="outcomes">
+      <div class="section-heading">
+        <div><span class="kicker">Direction</span><h2>Outcome movement</h2></div>
+        <p>Projects provide context. Outcomes carry priority, allocation, and proof.</p>
+      </div>
+      <div class="outcome-table" role="table" aria-label="Prioritized outcomes">
+        <div class="outcome-head" role="row">
+          <span>Outcome</span><span>State</span><span>Movement</span><span>Evidence</span><span>Next proof</span>
+        </div>
+        <article class="outcome-row" role="row" *ngFor="let outcome of rankedOutcomes(data)">
+          <div class="outcome-name"><strong>{{ outcome.title }}</strong><small>{{ projectName(data, outcome.projectIds[0]) }} / {{ outcome.priority }} priority</small></div>
+          <span class="state-label" [attr.data-state]="outcome.state">{{ outcome.state.replace('_', ' ') }}</span>
+          <div><strong>{{ outcome.movement }}</strong><small>{{ outcome.movementSummary }}</small></div>
+          <button class="evidence-count" type="button" (click)="inspect(outcomeSignals(data, outcome)[0])" [disabled]="!outcomeSignals(data, outcome).length">
+            {{ outcomeSignals(data, outcome).length }} sources
+          </button>
+          <p>{{ outcome.nextProofPoint }}</p>
         </article>
       </div>
-      <ng-template #emptyQueue>
-        <p class="empty-actions">No tracked project signals yet. Open a project to add the first item.</p>
-      </ng-template>
-    </article>
+    </section>
 
-    <article class="section-block work-rules">
-      <details open>
-        <summary>
-          <span>
-            <span class="section-kicker">Working rules</span>
-            <strong>Repo-first execution</strong>
-          </span>
-          <mat-icon>expand_more</mat-icon>
-        </summary>
-        <div class="cadence-list">
-          <p *ngFor="let step of cadence" class="cadence-row">
-            <strong>{{ step.when }}:</strong> {{ step.action }}
-          </p>
-        </div>
-      </details>
-    </article>
-  </section>
-</main>
+    <section class="content-band execution-band" id="execution">
+      <div class="section-heading">
+        <div><span class="kicker">Execution</span><h2>Active commitment and work packet</h2></div>
+        <p>Every executable lane is bounded by impact, discovery scope, delivery direction, and proof.</p>
+      </div>
+      <div class="execution-layout" *ngFor="let packet of data.workPackets">
+        <article class="packet-dossier">
+          <div class="dossier-title"><div><span class="state-label" [attr.data-state]="packet.state">{{ packet.state }}</span><h3>{{ packet.title }}</h3></div><strong>{{ packet.riskClass }} risk</strong></div>
+          <dl class="packet-contract">
+            <div><dt>IAC</dt><dd>{{ packet.impactAreaContext }}</dd></div>
+            <div><dt>ADS</dt><dd>{{ packet.autonomousDiscoveryScope }}</dd></div>
+            <div><dt>ODD</dt><dd>{{ packet.outputDeliveryDirection }}</dd></div>
+          </dl>
+          <div class="criteria-grid">
+            <section><h4>Acceptance</h4><ul><li *ngFor="let criterion of packet.acceptanceCriteria">{{ criterion }}</li></ul></section>
+            <section><h4>Forbidden</h4><ul><li *ngFor="let scope of packet.forbiddenScope">{{ scope }}</li></ul></section>
+          </div>
+        </article>
+        <aside class="authority-panel">
+          <span class="kicker">Authority exception</span>
+          <h3>Cloud Functions remains blocked</h3>
+          <p>The verified Firebase service account can manage Firestore and Hosting, but lacks Service Usage and Functions authority. Generic MCP deployment is also rejected on security grounds.</p>
+          <button type="button" class="secondary-action" (click)="inspect(data.signals[3])">Inspect blocker</button>
+        </aside>
+      </div>
+    </section>
 
-<ng-template #denied>
-  <main class="denied-shell">
-    <section class="denied-panel">
-      <span class="section-kicker">Restricted</span>
-      <h1>Access limited to the allowed owner account.</h1>
-      <p>
-        Signed in as <strong>{{ user?.email || 'unknown' }}</strong>. This surface is limited to
-        <strong>{{ allowedEmail }}</strong>.
-      </p>
-      <div class="denied-actions">
-        <button mat-flat-button type="button" (click)="logout()">Switch account</button>
-        <button mat-stroked-button type="button" (click)="goToDashboard()">Back to PTI</button>
+    <section class="content-band" id="agents">
+      <div class="section-heading">
+        <div><span class="kicker">Execution lanes</span><h2>Agent work</h2></div>
+        <p>Only returned evidence counts. The stopped data lane is not represented as completed work.</p>
+      </div>
+      <div class="agent-table">
+        <div class="agent-head"><span>Lane</span><span>Role</span><span>State</span><span>Evidence</span></div>
+        <article class="agent-row" *ngFor="let run of data.agentRuns">
+          <div><strong>{{ run.label }}</strong><small>{{ run.executionLane }}</small></div>
+          <span>{{ run.role.replace('_', ' ') }}</span>
+          <span class="state-label" [attr.data-state]="run.state">{{ run.state }}</span>
+          <p>{{ run.summary }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-band" id="evidence">
+      <div class="section-heading">
+        <div><span class="kicker">Provenance ledger</span><h2>Evidence and contradictions</h2></div>
+        <p>Open any record to inspect its claim, source, observed time, confidence, and contradiction state.</p>
+      </div>
+      <div class="evidence-list">
+        <button type="button" *ngFor="let signal of data.signals" (click)="inspect(signal)">
+          <span class="signal-marker" [attr.data-freshness]="signal.freshness"></span>
+          <span class="evidence-title"><strong>{{ signal.title }}</strong><small>{{ signal.sourceType.replace('_', ' ') }} / {{ formatDate(signal.observedAt) }}</small></span>
+          <span class="evidence-status" [attr.data-state]="signal.contradictionState">{{ signal.contradictionState }}</span>
+          <span>{{ signal.confidence }}</span>
+          <mat-icon>chevron_right</mat-icon>
+        </button>
       </div>
     </section>
   </main>
+
+  <div class="drawer-backdrop" *ngIf="selectedSignal" (click)="closeEvidence()"></div>
+  <aside class="evidence-drawer" *ngIf="selectedSignal as signal" aria-label="Evidence detail">
+    <header><div><span class="kicker">Evidence record</span><h2>{{ signal.title }}</h2></div><button type="button" title="Close evidence" (click)="closeEvidence()"><mat-icon>close</mat-icon></button></header>
+    <p class="evidence-claim">{{ signal.claim }}</p>
+    <dl>
+      <div><dt>Observed</dt><dd>{{ formatDate(signal.observedAt) }}</dd></div>
+      <div><dt>Freshness</dt><dd>{{ signal.freshness }}</dd></div>
+      <div><dt>Confidence</dt><dd>{{ signal.confidence }}</dd></div>
+      <div><dt>Evidence kind</dt><dd>{{ signal.evidenceKind.replace('_', ' ') }}</dd></div>
+      <div><dt>Contradiction</dt><dd>{{ signal.contradictionState }}</dd></div>
+      <div><dt>Source type</dt><dd>{{ signal.sourceType.replace('_', ' ') }}</dd></div>
+    </dl>
+    <section><h3>Source</h3><p>{{ signal.sourceUri }}</p></section>
+    <section><h3>Derivation references</h3><ul><li *ngFor="let source of signal.sourceRefs">{{ source }}</li></ul></section>
+  </aside>
+</div>
+
+<ng-template #loading>
+  <div class="loading-shell"><span class="product-mark">PTI</span><p>Loading operating evidence...</p></div>
 </ng-template>

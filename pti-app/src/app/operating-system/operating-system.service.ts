@@ -103,6 +103,11 @@ export class OperatingSystemService {
       if (!decisionSnapshot.exists()) {
         throw new Error(`Decision ${decisionId} does not exist.`);
       }
+      const decision = decisionSnapshot.data() as OperatingDecision;
+      assertLifecycleTransition('decision', decision.state, 'decided');
+      if (!decision.options.some((option) => option.id === selectedOptionId)) {
+        throw new Error(`Decision option ${selectedOptionId} does not exist.`);
+      }
 
       transaction.update(decisionRef, {
         state: 'decided',
@@ -110,6 +115,7 @@ export class OperatingSystemService {
         rationale: rationale.trim(),
         updatedAt: serverTimestamp(),
         updatedBy: 'ceo',
+        auditVersion: decision.auditVersion + 1,
       });
       transaction.set(commitmentRef, {
         ...commitment,
@@ -135,7 +141,7 @@ export class OperatingSystemService {
         eventType: 'decision_recorded',
         actor: 'ceo',
         reason: rationale.trim(),
-        fromState: decisionSnapshot.data()['state'],
+        fromState: decision.state,
         toState: 'decided',
         sourceRefs: [`decision:${decisionId}`, `commitment:${commitment.id}`],
         confidence: 'high',

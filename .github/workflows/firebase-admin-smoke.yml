@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 10
     env:
       FIREBASE_PROJECT_ID: pti-app-2ab59
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
 
     steps:
       - name: Checkout repository
@@ -44,6 +43,8 @@ jobs:
             echo "FIREBASE_SERVICE_ACCOUNT is not configured."
             exit 1
           fi
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS" >> "$GITHUB_ENV"
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
 
       - name: Verify Firebase CLI project access

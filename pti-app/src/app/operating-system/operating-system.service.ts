@@ -10,6 +10,7 @@ import {
 } from '@angular/fire/firestore';
 import { Observable, combineLatest, from, map, of, shareReplay, switchMap } from 'rxjs';
 import {
+  EvidenceEnvelope,
   OperatingAgentRun,
   OperatingAllocation,
   OperatingAuditEvent,
@@ -25,6 +26,7 @@ import {
   OperatingSystemData,
   OperatingWorkPacket,
   OperatingWorkspace,
+  assertLifecycleTransition,
 } from './operating-system.models';
 
 type OperatingCollection =
@@ -147,6 +149,90 @@ export class OperatingSystemService {
         auditVersion: 1,
       });
     });
+  }
+
+  async recordDecision(decisionId: string, selectedOptionId: string, rationale: string): Promise<void> {
+    const uid = this.requireOwner('record a decision');
+    if (!rationale.trim()) throw new Error('Decision rationale is required.');
+    const base = this.basePath(uid);
+    const decisionRef = doc(this.firestore, `${base}/decisions/${decisionId}`);
+
+    await runTransaction(this.firestore, async (transaction) => {
+      const snapshot = await transaction.get(decisionRef);
+      if (!snapshot.exists()) throw new Error(`Decision ${decisionId} does not exist.`);
+      const current = snapshot.data() as OperatingDecision;
+      assertLifecycleTransition('decision', current.state, 'decided');
+      if (!current.options.some((option) => option.id === selectedOptionId)) {
+        throw new Error(`Decision option ${selectedOptionId} does not exist.`);
+      }
+      transaction.update(decisionRef, {
+        state: 'decided', selectedOptionId, rationale: rationale.trim(),
+        updatedAt: serverTimestamp(), updatedBy: 'ceo', auditVersion: current.auditVersion + 1,
+      });
+      transaction.set(doc(this.firestore, `${base}/auditEvents/decision-${decisionId}-${Date.now()}`),
+        this.auditRecord('decision', decisionId, 'decision_recorded', rationale, current.state, 'decided'));
+    });
+  }
+
+  async transitionWorkPacket(packetId: string, toState: OperatingWorkPacket['state'], reason: string): Promise<void> {
+    await this.transitionRecord('workPackets', 'workPacket', packetId, toState, reason);
+  }
+
+  async transitionRelease(releaseId: string, toState: OperatingRelease['state'], reason: string): Promise<void> {
+    const uid = this.requireOwner('transition a release');
+    const base = this.basePath(uid);
+    const releaseRef = doc(this.firestore, `${base}/releases/${releaseId}`);
+
+    await runTransaction(this.firestore, async (transaction) => {
+      const snapshot = await transaction.get(releaseRef);
+      if (!snapshot.exists()) throw new Error(`Release ${releaseId} does not exist.`);
+      const release = snapshot.data() as OperatingRelease;
+      assertLifecycleTransition('release', release.state, toState);
+      if (toState === 'ready_for_production_approval' && (!release.evidenceRefs.length || !release.rollbackRef)) {
+        throw new Error('Production approval requires preview evidence and a rollback reference.');
+      }
+      transaction.update(releaseRef, {
+        state: toState, updatedAt: serverTimestamp(), updatedBy: 'ceo', auditVersion: release.auditVersion + 1,
+      });
+      transaction.set(doc(this.firestore, `${base}/auditEvents/release-${releaseId}-${Date.now()}`),
+        this.auditRecord('release', releaseId, 'release_transitioned', reason, release.state, toState));
+    });
+  }
+
+  private async transitionRecord(
+    collectionName: 'workPackets', entity: 'workPacket', id: string, toState: string, reason: string,
+  ): Promise<void> {
+    const uid = this.requireOwner(`transition ${entity}`);
+    if (!reason.trim()) throw new Error('A transition reason is required.');
+    const base = this.basePath(uid);
+    const recordRef = doc(this.firestore, `${base}/${collectionName}/${id}`);
+
+    await runTransaction(this.firestore, async (transaction) => {
+      const snapshot = await transaction.get(recordRef);
+      if (!snapshot.exists()) throw new Error(`${entity} ${id} does not exist.`);
+      const record = snapshot.data() as EvidenceEnvelope & { state: string };
+      assertLifecycleTransition(entity, record.state, toState);
+      transaction.update(recordRef, {
+        state: toState, updatedAt: serverTimestamp(), updatedBy: 'ceo', auditVersion: record.auditVersion + 1,
+      });
+      transaction.set(doc(this.firestore, `${base}/auditEvents/${entity}-${id}-${Date.now()}`),
+        this.auditRecord(entity, id, `${entity}_transitioned`, reason, record.state, toState));
+    });
+  }
+
+  private auditRecord(entityType: string, entityId: string, eventType: string, reason: string, fromState: string, toState: string) {
+    return {
+      schemaVersion: 2, entityType, entityId, eventType, actor: 'ceo', reason: reason.trim(), fromState, toState,
+      sourceRefs: [`${entityType}:${entityId}`], confidence: 'high', freshness: 'fresh', evidenceKind: 'real',
+      observedAt: new Date().toISOString(), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      createdBy: 'ceo', updatedBy: 'ceo', auditVersion: 1,
+    };
+  }
+
+  private requireOwner(action: string): string {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) throw new Error(`A signed-in owner is required to ${action}.`);
+    return uid;
   }
 
   private watchUserWorkspace(uid: string): Observable<OperatingSystemData> {

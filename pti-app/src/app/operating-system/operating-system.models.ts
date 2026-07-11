@@ -208,6 +208,36 @@ export interface ExecutiveSummary {
   activeRuns: number;
 }
 
+const lifecycleTransitions = {
+  decision: {
+    proposed: ['ready', 'decided', 'deferred', 'rejected'], ready: ['decided', 'deferred', 'rejected'],
+    deferred: ['ready', 'rejected'], decided: ['verified'], rejected: [], verified: [],
+  },
+  workPacket: {
+    draft: ['sealed'], sealed: ['assigned'], assigned: ['running'], running: ['submitted'],
+    submitted: ['evaluated'], evaluated: ['selected', 'rejected'], selected: ['release_ready'],
+    rejected: [], release_ready: [],
+  },
+  release: {
+    planned: ['ready_for_preview', 'blocked_by_product', 'blocked_by_evidence', 'blocked_by_quality', 'blocked_by_security', 'blocked_by_authority'],
+    ready_for_preview: ['previewed', 'blocked_by_evidence', 'blocked_by_quality', 'blocked_by_security', 'blocked_by_authority'],
+    previewed: ['ready_for_production_approval', 'blocked_by_evidence', 'blocked_by_quality', 'blocked_by_security', 'blocked_by_authority'],
+    ready_for_production_approval: ['released', 'blocked_by_evidence', 'blocked_by_quality', 'blocked_by_security', 'blocked_by_authority'],
+    blocked_by_product: ['planned'], blocked_by_evidence: ['ready_for_preview'],
+    blocked_by_quality: ['ready_for_preview'], blocked_by_security: ['ready_for_preview'],
+    blocked_by_authority: ['ready_for_preview'], released: [],
+  },
+} as const;
+
+export type LifecycleEntity = keyof typeof lifecycleTransitions;
+
+export function assertLifecycleTransition(entity: LifecycleEntity, fromState: string, toState: string): void {
+  const transitions = lifecycleTransitions[entity] as Record<string, readonly string[]>;
+  if (!transitions[fromState]?.includes(toState)) {
+    throw new Error(`Invalid ${entity} transition: ${fromState} -> ${toState}.`);
+  }
+}
+
 export function priorityScore(outcome: OperatingOutcome): number {
   const factors = outcome.priorityFactors;
   return factors.strategicValue * 3

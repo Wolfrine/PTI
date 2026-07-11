@@ -47,6 +47,10 @@ h1, h2, h3, h4, p { margin-top: 0; }
 [data-state="proposed"], [data-state="planned"], [data-state="ready"] { color: #735817; background: #f8efcf; }
 .text-action { border: 0; padding: 0; color: #145f4b; background: transparent; font-weight: 850; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 .text-action mat-icon { width: 17px; height: 17px; font-size: 17px; }
+.action-message { grid-column: 1 / -1; margin: 0; padding: 9px 13px; border-bottom: 1px solid #b8d8cd; background: #e9f5f0; color: #174f40; font-weight: 750; }
+.record-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.record-actions > button:not(.text-action) { min-height: 32px; border: 1px solid #145f4b; padding: 5px 10px; background: #145f4b; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.record-actions > button:disabled { border-color: #aeb8b5; background: #aeb8b5; cursor: not-allowed; }
 .signal-row { width: 100%; min-height: 68px; padding: 10px 12px; border: 0; border-bottom: 1px solid #e2e7e5; background: #fff; display: grid; grid-template-columns: 9px minmax(0,1fr) 18px; gap: 9px; align-items: center; text-align: left; cursor: pointer; }
 .signal-row:hover, .evidence-list button:hover { background: #f6f8f7; }
 .signal-row strong, .signal-row small { display: block; }

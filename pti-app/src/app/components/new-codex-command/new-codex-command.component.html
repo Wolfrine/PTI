@@ -49,14 +49,20 @@
       </div>
 
       <div class="operating-grid">
+        <p class="action-message" *ngIf="actionMessage" role="status">{{ actionMessage }}</p>
         <section class="operating-lane decision-lane">
-          <header><mat-icon>gavel</mat-icon><span>Decide</span><strong>{{ data.decisions.length }}</strong></header>
-          <article class="decision-row" *ngFor="let decision of data.decisions">
+          <header><mat-icon>gavel</mat-icon><span>Decide</span><strong>{{ decisionQueue(data).length }}</strong></header>
+          <article class="decision-row" *ngFor="let decision of decisionQueue(data)">
             <div class="row-state" [attr.data-state]="decision.state">{{ decision.state.replace('_', ' ') }}</div>
             <h2>{{ decision.question }}</h2>
             <p *ngIf="decision.recommendation">Recommendation: <strong>{{ decision.recommendation }}</strong></p>
             <p class="decision-rationale" *ngIf="decision.rationale">{{ decision.rationale }}</p>
-            <button type="button" class="text-action" (click)="setSection('evidence')">Review evidence <mat-icon>arrow_forward</mat-icon></button>
+            <div class="record-actions" *ngIf="!decision.selectedOptionId; else decisionEvidence">
+              <button type="button" *ngFor="let option of decision.options" [disabled]="previewMode || actionBusy" (click)="decide(decision, option.id)">
+                {{ option.label }}
+              </button>
+            </div>
+            <ng-template #decisionEvidence><button type="button" class="text-action" (click)="setSection('evidence')">Review evidence <mat-icon>arrow_forward</mat-icon></button></ng-template>
           </article>
         </section>
 
@@ -76,7 +82,12 @@
             <h2>{{ packet.title }}</h2>
             <p>{{ packet.outputDeliveryDirection }}</p>
             <dl><div><dt>Lane</dt><dd>{{ packet.branchPolicy }}</dd></div><div><dt>Risk</dt><dd>{{ packet.riskClass }}</dd></div></dl>
-            <button type="button" class="text-action" (click)="setSection('execution')">Open packet <mat-icon>arrow_forward</mat-icon></button>
+            <div class="record-actions">
+              <button type="button" *ngIf="nextPacketState(packet) as next" [disabled]="previewMode || actionBusy" (click)="advancePacket(packet)">
+                {{ next.replace('_', ' ') | titlecase }}
+              </button>
+              <button type="button" class="text-action" (click)="setSection('execution')">Inspect <mat-icon>arrow_forward</mat-icon></button>
+            </div>
           </article>
         </section>
 
@@ -87,7 +98,10 @@
             <h2>{{ release.environment | titlecase }} release gate</h2>
             <p *ngIf="release.evidenceRefs.length; else noEvidence">{{ release.evidenceRefs.length }} verification records attached.</p>
             <ng-template #noEvidence><p>No release evidence attached yet. Promotion remains unavailable.</p></ng-template>
-            <button type="button" class="text-action" (click)="setSection('evidence')">Inspect gates <mat-icon>arrow_forward</mat-icon></button>
+            <div class="record-actions">
+              <button type="button" *ngIf="release.state === 'previewed'" [disabled]="previewMode || actionBusy" (click)="requestProductionApproval(release)">Request approval</button>
+              <button type="button" class="text-action" (click)="setSection('evidence')">Inspect gates <mat-icon>arrow_forward</mat-icon></button>
+            </div>
           </article>
         </section>
       </div>

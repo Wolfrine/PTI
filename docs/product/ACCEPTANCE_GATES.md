@@ -32,6 +32,8 @@ Date: 2026-07-11
 
 - No service-account JSON, API key, token, `.env`, or private credential is committed or logged.
 - Firebase Admin operations are authenticated, scoped, reversible where possible, and auditable.
+- Firestore rules and indexes are versioned in the repository and verified with emulator tests before new client-writable collections are accepted.
+- Generic arbitrary-path MCP CRUD is not deployable. Agent tools must be owner-scoped, purpose-specific, least-privilege, and auditable.
 - Agent execution respects repository and branch boundaries.
 - Production promotion is distinct from preview deployment.
 - Missing IAM or external authority is reported as a blocker, not bypassed.
@@ -41,6 +43,7 @@ Date: 2026-07-11
 - Angular production build passes.
 - Focused unit tests cover ranking, freshness, lifecycle transitions, and derived summaries.
 - Firestore converters or typed repositories validate required fields.
+- Owner-scoped Firestore rule tests pass for allowed and denied reads/writes.
 - Migration is idempotent and produces a reconciliation report.
 - Firebase Admin read/write/delete smoke checks pass.
 - GitHub access checks pass without persisting plaintext credentials.

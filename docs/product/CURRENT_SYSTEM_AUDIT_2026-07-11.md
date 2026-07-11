@@ -111,11 +111,21 @@ Verified limitation:
 
 Therefore the documented MCP layer is code and intent, not a deployed operational capability. Cloud Functions requires a separate IAM correction. The Firestore and Hosting vertical slice can proceed independently through the verified Admin workflow.
 
+The current MCP design must not be deployed unchanged. A single shared API key authorizes generic get, list, query, create, set, update, delete, and batch operations against arbitrary valid Firestore paths and accepts caller-supplied user IDs. Segment validation is not an ownership boundary. The replacement MCP must begin with narrow, owner-scoped, read-only operating tools and explicit audit records.
+
 ### Security Unknowns
 
 - Firestore rules are not present in this repository, so deployed rule quality is not locally auditable.
 - The command component performs an additional client-side email check, but client checks are not authorization controls.
 - Production Firebase web configuration is intentionally public client configuration; it must be protected by Auth and Firestore rules.
+
+### Additional Consistency Failures
+
+- Angular action completion writes `status: completed`; the MCP completion path writes and filters a separate `completed` boolean. The two surfaces can disagree about the same record.
+- Original PTI task completion, activity creation, and aggregate updates are separate client operations rather than one atomic transaction.
+- Domain deletion does not cascade into target/task subcollections and can leave orphaned data.
+- Local analytics cache keys are not user-scoped.
+- The current frontend test suite is not healthy: the independent audit observed eight failures and one success, primarily from missing Auth/Firestore test providers. Existing CI does not run the frontend tests.
 
 ## Foundations Worth Preserving
 

@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ManageDomainsComponent } from './manage-domains.component';
+import { DomainService } from '../../../services/domain.service';
+import { of } from 'rxjs';
+import { provideRouter } from '@angular/router';
 
 describe('ManageDomainsComponent', () => {
   let component: ManageDomainsComponent;
@@ -8,7 +11,16 @@ describe('ManageDomainsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ManageDomainsComponent]
+      imports: [ManageDomainsComponent],
+      providers: [{
+        provide: DomainService,
+        useValue: {
+          getDomains: () => of([]),
+          addDomain: async () => undefined,
+          updateDomain: async () => undefined,
+          deleteDomain: async () => undefined,
+        },
+      }, provideRouter([])],
     })
     .compileComponents();
 

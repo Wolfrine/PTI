@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ActivityReportComponent } from './activity-report.component';
+import { ActivityService } from '../../services/activity.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 
 describe('ActivityReportComponent', () => {
   let component: ActivityReportComponent;
@@ -8,7 +10,18 @@ describe('ActivityReportComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ActivityReportComponent]
+      imports: [ActivityReportComponent],
+      providers: [
+        { provide: ActivityService, useValue: { fetch30DayReport: async () => ({}) } },
+        {
+          provide: LocalStorageService,
+          useValue: {
+            isTimeDataForTodayAvailable: () => false,
+            getActivityReport: () => ({}),
+            setActivityReport: () => undefined,
+          },
+        },
+      ],
     })
     .compileComponents();
 

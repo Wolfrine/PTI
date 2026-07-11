@@ -1,13 +1,13 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
     Auth,
-    signInWithPopup,
     GoogleAuthProvider,
-    signOut,
-    onAuthStateChanged,
+    authState,
     signInWithCredential,
+    signInWithPopup,
+    signOut,
 } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 
@@ -17,24 +17,85 @@ declare global {
     }
 }
 
-@Injectable({
-    providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-    private userSubject = new BehaviorSubject<any>(null);
-    user$ = this.userSubject.asObservable();
-    googleClientId = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com'; // Replace with Firebase OAuth Client ID
+    private readonly userSubject = new BehaviorSubject<any>(null);
+    readonly user$ = this.userSubject.asObservable();
+    readonly googleClientId = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com';
+    private oneTapInitialized = false;
+    private sessionInitialized = false;
 
     constructor(
-        private auth: Auth,
-        private firestore: Firestore,
-        private router: Router,
-        private ngZone: NgZone
+        private readonly auth: Auth,
+        private readonly firestore: Firestore,
+        private readonly router: Router,
     ) {
         this.checkUserSession();
     }
 
-    private oneTapInitialized = false; // ✅ Prevent duplicate One Tap calls
+    initGoogleOneTap(): void {
+        if (this.oneTapInitialized || this.userSubject.value) {
+            return;
+        }
+        this.oneTapInitialized = true;
+
+        this.loadGoogleScript()
+            .then(() => {
+                if (!window.google?.accounts) {
+                    return;
+                }
+                window.google.accounts.id.initialize({
+                    client_id: this.googleClientId,
+                    callback: (response: { credential: string }) => this.handleCredentialResponse(response),
+                    auto_select: true,
+                    cancel_on_tap_outside: false,
+                });
+                window.google.accounts.id.prompt();
+            })
+            .catch((error) => console.error('Google One Tap failed to initialize:', error));
+    }
+
+    async handleCredentialResponse(response: { credential: string }): Promise<void> {
+        try {
+            const result = await signInWithCredential(
+                this.auth,
+                GoogleAuthProvider.credential(response.credential),
+            );
+            await this.storeUserInFirestore(result.user);
+            this.userSubject.next(result.user);
+        } catch (error) {
+            console.error('Google One Tap sign-in failed:', error);
+        }
+    }
+
+    async signInWithGoogle(redirectRoute = '/home'): Promise<void> {
+        try {
+            const result = await signInWithPopup(this.auth, new GoogleAuthProvider());
+            await this.storeUserInFirestore(result.user);
+            this.userSubject.next(result.user);
+            await this.router.navigate([redirectRoute]);
+        } catch (error) {
+            console.error('Google sign-in failed:', error);
+        }
+    }
+
+    checkUserSession(): void {
+        if (this.sessionInitialized) {
+            return;
+        }
+        this.sessionInitialized = true;
+        authState(this.auth).subscribe((user) => this.userSubject.next(user ?? null));
+    }
+
+    async signOut(): Promise<void> {
+        await signOut(this.auth);
+        this.userSubject.next(null);
+        await this.router.navigate(['/']);
+    }
+
+    getUser(): Observable<any> {
+        return this.user$;
+    }
 
     private loadGoogleScript(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -54,102 +115,17 @@ export class AuthService {
         });
     }
 
-    initGoogleOneTap() {
-        if (this.oneTapInitialized || this.userSubject.value) {
-            console.log('Skipping One Tap: Already initialized or user logged in.');
-            return;
-        }
-
-        this.oneTapInitialized = true;
-
-        this.loadGoogleScript().then(() => {
-            if (window.google?.accounts) {
-                window.google.accounts.id.initialize({
-                    client_id: this.googleClientId,
-                    callback: (response: { credential: string }) => this.handleCredentialResponse(response),
-                    auto_select: true,
-                    cancel_on_tap_outside: false,
-                });
-
-                window.google.accounts.id.prompt();
-            }
-        }).catch((error) => {
-            console.error('Google One Tap failed to initialize:', error);
-        });
-    }
-
-
-
-
-    // ✅ Handle One Tap Credential Response
-    async handleCredentialResponse(response: { credential: string }) {
-        try {
-            const credential = GoogleAuthProvider.credential(response.credential);
-            const result = await signInWithCredential(this.auth, credential);
-            const user = result.user;
-
-            await this.storeUserInFirestore(user);
-            this.userSubject.next(user);
-        } catch (error) {
-            console.error('Google One Tap Sign-In Error:', error);
-        }
-    }
-
-    // ✅ Sign in with Google Popup
-    async signInWithGoogle(redirectRoute: string = '/home'): Promise<void> {
-        try {
-            const provider = new GoogleAuthProvider();
-            const credential = await signInWithPopup(this.auth, provider);
-            const user = credential.user;
-
-            await this.storeUserInFirestore(user);
-            this.userSubject.next(user);
-            this.router.navigate([redirectRoute]);
-        } catch (error) {
-            console.error('Login Error:', error);
-        }
-    }
-
-    // ✅ Store User in Firestore (Fix: Preserve `createdOn` date)
     private async storeUserInFirestore(user: any): Promise<void> {
-        const userRef = doc(this.firestore, `users/${user.uid}`);
-        const userSnapshot = await getDoc(userRef);
-
-        const userData = {
+        const userReference = doc(this.firestore, `users/${user.uid}`);
+        const userSnapshot = await getDoc(userReference);
+        await setDoc(userReference, {
             uid: user.uid,
             displayName: user.displayName,
             email: user.email,
             photoURL: user.photoURL,
             createdOn: userSnapshot.exists()
                 ? userSnapshot.data()?.['createdOn']
-                : new Date(), // ✅ Preserve createdOn if exists
-        };
-
-        await setDoc(userRef, userData, { merge: true });
-    }
-
-    // ✅ Auto Login Check
-    checkUserSession() {
-        onAuthStateChanged(this.auth, (user) => {
-            this.ngZone.run(() => { // ✅ Ensures Firebase updates inside Angular zone
-                if (user) {
-                    this.userSubject.next(user);
-                } else {
-                    this.userSubject.next(null);
-                }
-            });
-        });
-    }
-
-    // ✅ Sign out
-    async signOut(): Promise<void> {
-        await signOut(this.auth);
-        this.userSubject.next(null);
-        this.router.navigate(['/']);
-    }
-
-    // ✅ Get User as Observable
-    getUser(): Observable<any> {
-        return this.user$;
+                : new Date(),
+        }, { merge: true });
     }
 }

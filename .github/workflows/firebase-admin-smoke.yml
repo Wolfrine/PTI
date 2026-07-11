@@ -1,0 +1,97 @@
+name: Verify Firebase Admin Access
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/pti-refoundation
+    paths:
+      - .github/workflows/firebase-admin-smoke.yml
+      - functions/package.json
+      - functions/package-lock.json
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FIREBASE_PROJECT_ID: pti-app-2ab59
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install Firebase dependencies
+        run: npm ci --prefix functions
+
+      - name: Configure service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT is not configured."
+            exit 1
+          fi
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS" >> "$GITHUB_ENV"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+
+      - name: Verify Firebase CLI project access
+        continue-on-error: true
+        run: |
+          npm install --global firebase-tools
+          firebase --version
+          echo "Checking project visibility"
+          firebase projects:list --json
+          echo "Checking Hosting visibility"
+          firebase hosting:sites:list --project "$FIREBASE_PROJECT_ID" --json
+          echo "Checking Functions visibility"
+          firebase functions:list --project "$FIREBASE_PROJECT_ID" --json
+
+      - name: Verify Firebase Admin Firestore access
+        working-directory: functions
+        run: |
+          node <<'NODE'
+          const { applicationDefault, initializeApp } = require('firebase-admin/app');
+          const { FieldValue, getFirestore } = require('firebase-admin/firestore');
+
+          const projectId = process.env.FIREBASE_PROJECT_ID;
+          initializeApp({ credential: applicationDefault(), projectId });
+
+          async function verifyAccess() {
+            const reference = getFirestore().doc('_pti_access_checks/reversible_admin_probe');
+            await reference.set({
+              checkedAt: FieldValue.serverTimestamp(),
+              purpose: 'PTI autonomous access verification',
+            });
+
+            const written = await reference.get();
+            if (!written.exists) {
+              throw new Error('Firestore probe document was not readable after write.');
+            }
+
+            await reference.delete();
+            const deleted = await reference.get();
+            if (deleted.exists) {
+              throw new Error('Firestore probe document still exists after delete.');
+            }
+
+            console.log(`Firebase Admin Firestore write, read, and delete succeeded for ${projectId}.`);
+          }
+
+          verifyAccess().catch((error) => {
+            console.error('Firebase Admin Firestore management check failed:', error.message);
+            process.exitCode = 1;
+          });
+          NODE

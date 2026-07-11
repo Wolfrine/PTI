@@ -174,13 +174,32 @@ export class OperatingSystemService {
   }
 
   private watchCollection<T>(uid: string, name: OperatingCollection): Observable<T[]> {
-    return collectionData(collection(this.firestore, `${this.basePath(uid)}/${name}`), {
+    const records = collectionData(collection(this.firestore, `${this.basePath(uid)}/${name}`), {
       idField: 'id',
-    }) as Observable<T[]>;
+    });
+    return records.pipe(
+      map((items) => items.map((item) => this.normalizeFirestoreValue(item) as T)),
+    );
   }
 
   private basePath(uid: string): string {
     return `users/${uid}/operatingSystems/default`;
+  }
+
+  private normalizeFirestoreValue(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeFirestoreValue(item));
+    }
+    if (value && typeof value === 'object') {
+      const timestampCandidate = value as { toDate?: () => Date };
+      if (typeof timestampCandidate.toDate === 'function') {
+        return timestampCandidate.toDate().toISOString();
+      }
+      return Object.fromEntries(
+        Object.entries(value).map(([key, child]) => [key, this.normalizeFirestoreValue(child)]),
+      );
+    }
+    return value;
   }
 
   private emptyWorkspace(): OperatingSystemData {

@@ -73,6 +73,7 @@ batch.set(
 );
 
 await batch.commit();
+await verifyAppliedRecords(basePath);
 console.log(`Applied ${totalRecords} operating-system records and one migration report.`);
 
 async function resolveTargetUid() {
@@ -139,4 +140,20 @@ function convertTimestamps(value, key = '') {
     }
   }
   return value;
+}
+
+async function verifyAppliedRecords(basePath) {
+  const checks = [
+    firestore.doc(`${basePath}/workspace/current`).get(),
+    ...collections.flatMap((collectionName) => baseline[collectionName].map((record) => (
+      firestore.doc(`${basePath}/${collectionName}/${record.id}`).get()
+    ))),
+    firestore.doc(`${basePath}/migrationReports/baseline-2026-07-11`).get(),
+  ];
+  const snapshots = await Promise.all(checks);
+  const missingCount = snapshots.filter((snapshot) => !snapshot.exists).length;
+  if (missingCount) {
+    throw new Error(`Firestore reconciliation failed; ${missingCount} expected records are missing.`);
+  }
+  console.log(`Reconciled ${snapshots.length} expected Firestore documents after apply.`);
 }

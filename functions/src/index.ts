@@ -1,13 +1,14 @@
-import * as admin from 'firebase-admin';
+import { initializeApp } from 'firebase-admin/app';
+import { DocumentReference, FieldValue, GeoPoint, Timestamp, getFirestore } from 'firebase-admin/firestore';
 import * as functions from 'firebase-functions';
 import express, { NextFunction, Request, Response } from 'express';
 
-admin.initializeApp();
+initializeApp();
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 
-const db = admin.firestore();
+const db = getFirestore();
 const FIREBASE_MCP_TOOLSET = new Set(parseApiKeys(process.env.PTI_MCP_API_KEYS));
 
 app.use(authenticationMiddleware);
@@ -833,8 +834,8 @@ async function addAction(
     const payload = {
         ...action,
         completed: action.completed ?? false,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
     };
     await reference.set(payload);
     return { uid, projectId, id: reference.id, path: reference.path, created: true };
@@ -849,7 +850,7 @@ async function updateAction(
     const reference = db.doc(actionsDocumentPath(uid, projectId, actionId));
     await reference.update({
         ...updates,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
     });
     const snapshot = await reference.get();
     return {
@@ -871,8 +872,8 @@ async function completeAction(
     await reference.update({
         completed: complete,
         status: complete ? 'completed' : 'open',
-        completedAt: complete ? admin.firestore.FieldValue.serverTimestamp() : null,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        completedAt: complete ? FieldValue.serverTimestamp() : null,
+        updatedAt: FieldValue.serverTimestamp(),
     });
     const snapshot = await reference.get();
     return {
@@ -1006,13 +1007,13 @@ function toSafeJson(value: unknown): unknown {
     if (value === null || typeof value !== 'object') {
         return value;
     }
-    if (value instanceof admin.firestore.Timestamp) {
+    if (value instanceof Timestamp) {
         return { _type: 'timestamp', value: value.toDate().toISOString() };
     }
-    if (value instanceof admin.firestore.GeoPoint) {
+    if (value instanceof GeoPoint) {
         return { _type: 'geopoint', lat: value.latitude, lng: value.longitude };
     }
-    if (value instanceof admin.firestore.DocumentReference) {
+    if (value instanceof DocumentReference) {
         return { _type: 'documentReference', path: value.path };
     }
     if (Array.isArray(value)) {
@@ -1039,10 +1040,10 @@ function inferSchema(value: unknown, depth: number): McpSchemaValue {
             item: inferSchema(value[0], depth - 1),
         };
     }
-    if (value instanceof admin.firestore.Timestamp) {
+    if (value instanceof Timestamp) {
         return { type: 'timestamp' };
     }
-    if (value instanceof admin.firestore.GeoPoint) {
+    if (value instanceof GeoPoint) {
         return { type: 'geopoint' };
     }
     if (typeof value === 'string') {

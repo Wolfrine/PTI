@@ -1,4 +1,4 @@
-const CACHE='velum-shell-v9';
+const CACHE='velum-shell-v10';
 const SHELL=['./','./index.html','./styles.css','./interaction-upgrades.js','./zoom-failsafe.js','./bootstrap.js','./app.js','./manifest.webmanifest','./assets/icons/icon.svg'];
 
 self.addEventListener('install',event=>{
@@ -17,7 +17,7 @@ self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET') return;
   const url=new URL(request.url);
-  if(url.origin!==self.location.origin || url.pathname.startsWith('/__/') || url.pathname.startsWith('/velum-api/')) return;
+  if(url.origin!==self.location.origin || url.pathname.startsWith('/__/')) return;
 
   const networkFirst = request.mode==='navigate' || /\.(?:html|js|css|webmanifest)$/.test(url.pathname);
 

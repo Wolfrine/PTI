@@ -18,33 +18,84 @@ const token = await client.getAccessToken();
 const accessToken = typeof token === 'string' ? token : token?.token;
 if (!accessToken) throw new Error('Could not obtain Google Cloud access token.');
 
-const base = `https://identitytoolkit.googleapis.com/admin/v2/projects/${projectId}/config`;
 const headers = {
   Authorization: `Bearer ${accessToken}`,
   'Content-Type': 'application/json'
 };
 
-const currentResponse = await fetch(base, { headers });
-if (!currentResponse.ok) {
-  throw new Error(`Could not read Firebase Auth config (${currentResponse.status}): ${await currentResponse.text()}`);
-}
-const current = await currentResponse.json();
-const required = [`${siteId}.web.app`, `${siteId}.firebaseapp.com`];
-const authorizedDomains = [...new Set([...(current.authorizedDomains || []), ...required])];
+async function configureAuthorizedDomains() {
+  const base = `https://identitytoolkit.googleapis.com/admin/v2/projects/${projectId}/config`;
+  const currentResponse = await fetch(base, { headers });
+  if (!currentResponse.ok) {
+    throw new Error(`Could not read Firebase Auth config (${currentResponse.status}): ${await currentResponse.text()}`);
+  }
 
-const changed = required.some(domain => !(current.authorizedDomains || []).includes(domain));
-if (!changed) {
-  console.log('Velum Firebase Auth domains are already authorized.');
-  process.exit(0);
+  const current = await currentResponse.json();
+  const required = [`${siteId}.web.app`, `${siteId}.firebaseapp.com`];
+  const existing = current.authorizedDomains || [];
+  const authorizedDomains = [...new Set([...existing, ...required])];
+  const changed = required.some(domain => !existing.includes(domain));
+
+  if (!changed) {
+    console.log('Velum Firebase Auth domains are already authorized.');
+    return;
+  }
+
+  const patchResponse = await fetch(`${base}?updateMask=authorizedDomains`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ authorizedDomains })
+  });
+  if (!patchResponse.ok) {
+    throw new Error(`Could not update Firebase Auth config (${patchResponse.status}): ${await patchResponse.text()}`);
+  }
+
+  console.log(`Authorized Firebase Auth domains: ${required.join(', ')}`);
 }
 
-const patchResponse = await fetch(`${base}?updateMask=authorizedDomains`, {
-  method: 'PATCH',
-  headers,
-  body: JSON.stringify({ authorizedDomains })
-});
-if (!patchResponse.ok) {
-  throw new Error(`Could not update Firebase Auth config (${patchResponse.status}): ${await patchResponse.text()}`);
+async function ensureDriveApi() {
+  const serviceName = `projects/${projectId}/services/drive.googleapis.com`;
+  const serviceUrl = `https://serviceusage.googleapis.com/v1/${serviceName}`;
+  const statusResponse = await fetch(serviceUrl, { headers });
+  if (!statusResponse.ok) {
+    throw new Error(`Could not read Google Drive API status (${statusResponse.status}): ${await statusResponse.text()}`);
+  }
+
+  const status = await statusResponse.json();
+  if (status.state === 'ENABLED') {
+    console.log('Google Drive API is already enabled.');
+    return;
+  }
+
+  const enableResponse = await fetch(`${serviceUrl}:enable`, {
+    method: 'POST',
+    headers,
+    body: '{}'
+  });
+  if (!enableResponse.ok) {
+    throw new Error(`Could not enable Google Drive API (${enableResponse.status}): ${await enableResponse.text()}`);
+  }
+
+  const operation = await enableResponse.json();
+  if (!operation.name) {
+    console.log('Google Drive API enable request accepted.');
+    return;
+  }
+
+  for (let attempt = 0; attempt < 30; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const opResponse = await fetch(`https://serviceusage.googleapis.com/v1/${operation.name}`, { headers });
+    if (!opResponse.ok) continue;
+    const op = await opResponse.json();
+    if (op.error) throw new Error(`Google Drive API enable failed: ${JSON.stringify(op.error)}`);
+    if (op.done) {
+      console.log('Google Drive API enabled successfully.');
+      return;
+    }
+  }
+
+  throw new Error('Timed out while enabling Google Drive API.');
 }
 
-console.log(`Authorized Firebase Auth domains: ${required.join(', ')}`);
+await configureAuthorizedDomains();
+await ensureDriveApi();

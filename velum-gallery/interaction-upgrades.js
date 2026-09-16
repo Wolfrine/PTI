@@ -4,9 +4,14 @@
   const nativeRAF = window.requestAnimationFrame.bind(window);
   const nativeCAF = window.cancelAnimationFrame.bind(window);
 
+  const DRIFT_DURATION = 15000;
+  const TOUCH_GRACE = 8000;
+  const CONTROLS_VISIBLE_MS = 4500;
+
   let nextAutoToken = -700001;
   let manualPause = false;
   let resumeHandle = null;
+  let controlsHandle = null;
   let auto = {
     token: null,
     nativeId: null,
@@ -22,16 +27,38 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    #velumHardRefresh{position:fixed;z-index:2100;right:10px;bottom:calc(9px + env(safe-area-inset-bottom,0px));height:30px;padding:0 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(13,10,11,.62);color:rgba(255,255,255,.68);backdrop-filter:blur(16px);font:500 9px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:5px;opacity:.72;transition:.2s;touch-action:manipulation}
+    #driftView{position:fixed!important;inset:0!important;z-index:5!important;background:#000!important}
+    #driftView .drift-stage,#driftView .drift-media,#driftView .single-wrap{position:absolute!important;inset:0!important;width:100vw!important;height:100dvh!important;padding:0!important;margin:0!important}
+    #driftView .drift-image{width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important}
+    #driftView .pair-wrap{position:absolute!important;inset:0!important;width:100vw!important;height:100dvh!important;padding:0!important;gap:2px!important}
+    #driftView .pair-pane{height:100%!important;border-radius:0!important}
+    #driftView .pair-pane img{width:100%!important;height:100%!important;object-fit:cover!important}
+    #driftView .drift-hint{display:none!important}
+
+    .topbar,.bottom-nav,#driftChrome,#velumHardRefresh{transition:opacity .32s ease,transform .32s ease!important}
+    body.velum-drift-immersive:not(.velum-controls-visible) .topbar,
+    body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav,
+    body.velum-drift-immersive:not(.velum-controls-visible) #driftChrome,
+    body.velum-drift-immersive:not(.velum-controls-visible) #velumHardRefresh{
+      opacity:0!important;pointer-events:none!important
+    }
+    body.velum-drift-immersive:not(.velum-controls-visible) .topbar{transform:translateY(-10px)!important}
+    body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav{transform:translateY(12px)!important}
+    body.velum-drift-immersive.velum-controls-visible .topbar,
+    body.velum-drift-immersive.velum-controls-visible .bottom-nav,
+    body.velum-drift-immersive.velum-controls-visible #velumHardRefresh{opacity:1!important;pointer-events:auto!important;transform:none!important}
+    body.velum-drift-immersive.velum-controls-visible #driftChrome{opacity:1!important;pointer-events:auto!important;transform:none!important}
+
+    #velumHardRefresh{position:fixed;z-index:2100;right:10px;bottom:calc(9px + env(safe-area-inset-bottom,0px));height:30px;padding:0 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(13,10,11,.62);color:rgba(255,255,255,.68);backdrop-filter:blur(16px);font:500 9px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:5px;opacity:.72;touch-action:manipulation}
     #velumHardRefresh:active{opacity:1;transform:scale(.97)}
     #velumHardRefresh svg{width:12px;height:12px;stroke-width:1.9}
-    #velumAutoTimer{position:fixed;z-index:64;top:calc(60px + env(safe-area-inset-top,0px));left:18px;right:18px;height:18px;border:0;background:transparent;color:rgba(255,255,255,.72);padding:0;opacity:0;pointer-events:none;transition:opacity .25s;touch-action:manipulation}
-    #velumAutoTimer.visible{opacity:.82;pointer-events:auto}
-    #velumAutoTimer .track{position:absolute;left:0;right:42px;top:8px;height:2px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,.25)}
-    #velumAutoTimer .fill{display:block;width:100%;height:100%;transform-origin:left center;background:rgba(244,231,235,.72);transform:scaleX(1);transition:transform .08s linear}
-    #velumAutoTimer .label{position:absolute;right:0;top:1px;min-width:34px;text-align:right;font:500 9px/16px Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 1px 8px rgba(0,0,0,.8)}
-    #velumAutoTimer.paused .fill{background:rgba(214,178,162,.78)}
-    #velumAutoTimer.paused .label{color:#e2c7bb}
+
+    #velumAutoTimer{position:fixed;z-index:64;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);height:16px;border:0;background:transparent;padding:0;opacity:0;pointer-events:none;transition:opacity .25s;touch-action:manipulation}
+    #velumAutoTimer.visible{opacity:.72;pointer-events:auto}
+    #velumAutoTimer .track{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.12);overflow:hidden}
+    #velumAutoTimer .fill{display:block;width:100%;height:100%;transform-origin:left center;background:rgba(244,231,235,.74);transform:scaleX(1);transition:transform .08s linear}
+    #velumAutoTimer.paused .fill{background:rgba(214,178,162,.82)}
+
     .drift-image.velum-zooming{animation:none!important;object-fit:contain!important;max-height:none!important;will-change:transform;transform-origin:center center!important;filter:drop-shadow(0 18px 34px rgba(0,0,0,.35))}
     #driftStage.velum-inspecting{cursor:grabbing}
     @media (min-width:720px){#velumHardRefresh{right:calc(50% - 250px)}}
@@ -50,26 +77,43 @@
   timer.id = 'velumAutoTimer';
   timer.type = 'button';
   timer.setAttribute('aria-label', 'Pause or resume Drift timer');
-  timer.title = 'Tap to pause or resume auto-advance';
-  timer.innerHTML = '<span class="track"><i class="fill"></i></span><span class="label">—</span>';
+  timer.title = 'Tap the bottom edge to pause or resume auto-advance';
+  timer.innerHTML = '<span class="track"><i class="fill"></i></span>';
   document.body.appendChild(timer);
   const timerFill = timer.querySelector('.fill');
-  const timerLabel = timer.querySelector('.label');
 
   function driftVisible() {
     const drift = document.getElementById('driftView');
     const focus = document.getElementById('focusOverlay');
     const neutral = document.getElementById('neutralScreen');
     const pin = document.getElementById('velumPinGate');
+    const auth = document.getElementById('authGate');
     return Boolean(
       drift?.classList.contains('active') &&
       !focus?.classList.contains('open') &&
       !neutral?.classList.contains('open') &&
-      (!pin || pin.style.display === 'none')
+      (!pin || pin.style.display === 'none') &&
+      !auth?.classList.contains('open')
     );
   }
 
+  function syncImmersiveClass() {
+    document.body.classList.toggle('velum-drift-immersive', driftVisible());
+    if (!driftVisible()) document.body.classList.remove('velum-controls-visible');
+  }
+
+  function showControls() {
+    if (!driftVisible()) return;
+    document.body.classList.add('velum-controls-visible');
+    if (controlsHandle !== null) nativeClearTimeout(controlsHandle);
+    controlsHandle = nativeSetTimeout(() => {
+      controlsHandle = null;
+      document.body.classList.remove('velum-controls-visible');
+    }, CONTROLS_VISIBLE_MS);
+  }
+
   function paintTimer() {
+    syncImmersiveClass();
     if (!auto.callback || !driftVisible()) {
       timer.classList.remove('visible');
       return;
@@ -79,9 +123,7 @@
     const remaining = Math.max(0, auto.running ? auto.remaining - elapsed : auto.remaining);
     const ratio = auto.total > 0 ? Math.max(0, Math.min(1, remaining / auto.total)) : 0;
     timerFill.style.transform = `scaleX(${ratio})`;
-    const paused = manualPause || (!auto.running && remaining > 0);
-    timer.classList.toggle('paused', paused);
-    timerLabel.textContent = paused ? 'paused' : `${Math.max(1, Math.ceil(remaining / 1000))}s`;
+    timer.classList.toggle('paused', manualPause || (!auto.running && remaining > 0));
   }
 
   function animateTimer() {
@@ -130,7 +172,7 @@
     animateTimer();
   }
 
-  function scheduleAuto(callback, delay, args) {
+  function scheduleAuto(callback, args) {
     cancelResume();
     if (auto.nativeId !== null) nativeClearTimeout(auto.nativeId);
     if (auto.raf) nativeCAF(auto.raf);
@@ -140,8 +182,8 @@
       nativeId: null,
       callback,
       args,
-      total: delay,
-      remaining: delay,
+      total: DRIFT_DURATION,
+      remaining: DRIFT_DURATION,
       startedAt: 0,
       running: false,
       reason: '',
@@ -186,7 +228,12 @@
   window.setTimeout = function(fn, delay = 0, ...args) {
     const ms = Number(delay) || 0;
     if (typeof fn === 'function' && ms >= 6500 && ms <= 13000) {
-      return scheduleAuto(fn, ms, args);
+      return scheduleAuto(fn, args);
+    }
+    if (typeof fn === 'function' && ms === 220 && fn.name === 'goNext') {
+      pauseAuto('vote');
+      if (!manualPause) resumeAuto({ delay: TOUCH_GRACE });
+      return nativeSetTimeout(() => {}, ms);
     }
     return nativeSetTimeout(fn, ms, ...args);
   };
@@ -271,17 +318,16 @@
     zoomGesture = false;
     driftPointers.clear();
     applyDriftTransform();
-    if (resume && !manualPause) resumeAuto({ delay: 1200 });
+    if (resume && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }
 
-  driftMedia && new MutationObserver(() => resetDriftZoom()).observe(driftMedia, { childList: true });
+  if (driftMedia) {
+    new MutationObserver(() => resetDriftZoom()).observe(driftMedia, { childList: true });
+  }
 
   driftStage?.addEventListener('pointerdown', event => {
-    if (!activeDriftImage()) {
-      pauseAuto('touch');
-      return;
-    }
     pauseAuto('touch');
+    if (!activeDriftImage()) return;
     driftPointers.set(event.pointerId, {
       x: event.clientX,
       y: event.clientY,
@@ -289,7 +335,8 @@
       py: event.clientY,
       sx: event.clientX,
       sy: event.clientY,
-      at: performance.now()
+      at: performance.now(),
+      interactive: Boolean(event.target.closest?.('button,a,select,input'))
     });
     if (driftPointers.size === 2) {
       const [a, b] = [...driftPointers.values()];
@@ -348,7 +395,9 @@
     driftPointers.delete(event.pointerId);
     if (driftPointers.size < 2) pinch = null;
 
-    const isTap = moved < 14 && (now - point.at) < 420;
+    if (point.interactive) return;
+
+    const isTap = moved < 14 && (now - point.at) < 520;
     const closeToLast = Math.hypot(event.clientX - lastTapX, event.clientY - lastTapY) < 44;
     const doubleTap = isTap && closeToLast && (now - lastTapAt) < 320;
 
@@ -361,7 +410,7 @@
       lastTapAt = 0;
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (zoom <= 1.001 && !manualPause) resumeAuto({ delay: 1500 });
+      if (zoom <= 1.001 && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
       return;
     }
 
@@ -369,6 +418,11 @@
       lastTapAt = now;
       lastTapX = event.clientX;
       lastTapY = event.clientY;
+      showControls();
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (!manualPause) resumeAuto({ delay: TOUCH_GRACE });
+      return;
     }
 
     if (zoomGesture || zoom > 1.001) {
@@ -376,7 +430,7 @@
       event.stopImmediatePropagation();
       if (zoom <= 1.001) {
         zoomGesture = false;
-        if (!manualPause) resumeAuto({ delay: 1500 });
+        if (!manualPause) resumeAuto({ delay: TOUCH_GRACE });
       }
       return;
     }
@@ -387,40 +441,49 @@
       return;
     }
 
-    if (!manualPause) resumeAuto({ delay: 2200 });
+    if (!manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }
 
   driftStage?.addEventListener('pointerup', finishDriftPointer, true);
   driftStage?.addEventListener('pointercancel', event => {
     driftPointers.delete(event.pointerId);
-    if (!driftPointers.size && zoom <= 1.001 && !manualPause) resumeAuto({ delay: 1500 });
+    if (!driftPointers.size && zoom <= 1.001 && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }, true);
 
   const focusOverlay = document.getElementById('focusOverlay');
   const neutralScreen = document.getElementById('neutralScreen');
   const driftView = document.getElementById('driftView');
+  const authGate = document.getElementById('authGate');
 
   function contextChanged() {
+    syncImmersiveClass();
     const focusOpen = focusOverlay?.classList.contains('open');
     const neutralOpen = neutralScreen?.classList.contains('open');
+    const authOpen = authGate?.classList.contains('open');
     const driftActive = driftView?.classList.contains('active');
-    if (focusOpen || neutralOpen || !driftActive) pauseAuto(focusOpen ? 'focus' : neutralOpen ? 'locked' : 'browse');
-    else if (zoom <= 1.001 && !manualPause) resumeAuto({ delay: 1200 });
+    if (focusOpen || neutralOpen || authOpen || !driftActive) {
+      pauseAuto(focusOpen ? 'focus' : neutralOpen ? 'locked' : authOpen ? 'auth' : 'browse');
+    } else if (zoom <= 1.001 && !manualPause) {
+      resumeAuto({ delay: TOUCH_GRACE });
+    }
     paintTimer();
   }
 
-  [focusOverlay, neutralScreen, driftView].filter(Boolean).forEach(el => {
-    new MutationObserver(contextChanged).observe(el, { attributes: true, attributeFilter: ['class'] });
+  [focusOverlay, neutralScreen, driftView, authGate].filter(Boolean).forEach(el => {
+    new MutationObserver(contextChanged).observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
   });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pauseAuto('hidden');
-    else if (driftVisible() && zoom <= 1.001 && !manualPause) resumeAuto({ delay: 1200 });
+    else if (driftVisible() && zoom <= 1.001 && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }, true);
+
+  nativeSetTimeout(syncImmersiveClass, 0);
 
   window.__velumInteraction = {
     pause: () => pauseAuto('manual', true),
     resume: () => resumeAuto({ force: true }),
-    resetZoom: () => resetDriftZoom({ resume: true })
+    resetZoom: () => resetDriftZoom({ resume: true }),
+    showControls
   };
 })();

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#080607" />
+  <meta name="color-scheme" content="dark" />
+  <title>Velum</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <section id="authGate" class="auth-gate open" aria-live="polite">
+      <div class="auth-card">
+        <span class="auth-mark">V</span>
+        <span class="eyebrow">Local-first private gallery</span>
+        <h1 id="authTitle">Private collection</h1>
+        <p id="authCopy">Connect the Google account that owns the Drive folder.</p>
+        <button id="connectBtn" class="connect-btn">Connect Google Drive</button>
+        <small id="authStatus">Images stay in Google Drive; votes stay on this device.</small>
+      </div>
+    </section>
+    <header class="topbar">
+      <button class="brand" id="brandBtn" aria-label="Lock gallery">
+        <span class="brand-mark">V</span>
+        <span class="brand-word">velum</span>
+      </button>
+      <div class="top-actions">
+        <button class="sync-btn" id="syncBtn" aria-label="Sync Google Drive"><span id="syncLabel">Sync</span></button>
+        <button class="sync-btn" id="signOutBtn" aria-label="Disconnect Google Drive">Off</button>
+        <span class="private-dot" title="Local votes · Drive images"></span>
+        <button class="icon-btn" id="exitBtn" aria-label="Quick exit">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section id="driftView" class="view drift-view active" aria-label="Drift">
+        <div class="drift-stage" id="driftStage">
+          <div class="ambient-bg" id="ambientBg"></div>
+          <div class="vignette"></div>
+          <div class="drift-media" id="driftMedia"></div>
+          <div class="drift-hint" id="driftHint">
+            <span>↑ like</span><i></i><span>↓ less</span><i></i><span>↔ move</span>
+          </div>
+          <div class="drift-chrome" id="driftChrome">
+            <div class="chrome-meta">
+              <span class="eyebrow" id="driftEyebrow">Drift</span>
+              <span class="counter" id="driftCounter"></span>
+            </div>
+            <div class="vote-strip">
+              <button class="vote-btn down" id="downBtn" aria-label="Downvote">
+                <svg viewBox="0 0 24 24"><path d="M7 3h10v12h-4l-1 6-5-8z"/></svg>
+              </button>
+              <button class="focus-btn" id="focusBtn" aria-label="Open focus view">
+                <svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+              </button>
+              <button class="vote-btn up" id="upBtn" aria-label="Upvote">
+                <svg viewBox="0 0 24 24"><path d="M7 21h10V9h-4l-1-6-5 8z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="vote-flash" id="voteFlash"></div>
+        </div>
+      </section>
+
+      <section id="browseView" class="view browse-view" aria-label="Browse">
+        <div class="browse-head">
+          <div>
+            <span class="eyebrow">Private collection</span>
+            <h1>Browse</h1>
+          </div>
+          <label class="sort-control">
+            <span>Order</span>
+            <select id="sortSelect">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="score">Highest rated</option>
+              <option value="upvotes">Most upvoted</option>
+              <option value="downvotes">Most downvoted</option>
+              <option value="views">Most viewed</option>
+              <option value="leastViews">Least viewed</option>
+              <option value="recent">Recently viewed</option>
+              <option value="rare">Rarely seen</option>
+              <option value="random">Pure random</option>
+            </select>
+          </label>
+        </div>
+        <div id="browseGrid" class="masonry-grid"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="nav-item active" data-view="drift">
+        <svg viewBox="0 0 24 24"><path d="M4 13c3-8 7 8 10 0s6 0 6 0"/></svg>
+        <span>Drift</span>
+      </button>
+      <button class="nav-item" data-view="browse">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>
+        <span>Browse</span>
+      </button>
+    </nav>
+
+    <div id="focusOverlay" class="focus-overlay" aria-hidden="true">
+      <div class="focus-backdrop" id="focusBackdrop"></div>
+      <header class="focus-top">
+        <button class="icon-btn glass" id="focusClose" aria-label="Close focus">
+          <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <span class="focus-label">Focus</span>
+        <button class="icon-btn glass" id="focusReset" aria-label="Reset zoom">
+          <svg viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6M6 18a8 8 0 0 0 12-3M18 6A8 8 0 0 0 6 9"/></svg>
+        </button>
+      </header>
+      <div class="focus-canvas" id="focusCanvas">
+        <img id="focusImage" alt="Private gallery image" draggable="false" />
+      </div>
+      <footer class="focus-bottom">
+        <button class="focus-vote down" id="focusDown" aria-label="Downvote">
+          <svg viewBox="0 0 24 24"><path d="M7 3h10v12h-4l-1 6-5-8z"/></svg>
+        </button>
+        <div class="focus-status" id="focusStatus">pinch · drag</div>
+        <button class="focus-vote up" id="focusUp" aria-label="Upvote">
+          <svg viewBox="0 0 24 24"><path d="M7 21h10V9h-4l-1-6-5 8z"/></svg>
+        </button>
+      </footer>
+    </div>
+
+    <div id="neutralScreen" class="neutral-screen" aria-hidden="true">
+      <div class="neutral-shell">
+        <header><strong>Archive</strong><span>Local workspace</span></header>
+        <div class="neutral-search"></div>
+        <div class="neutral-row"><i></i><div><b></b><span></span></div></div>
+        <div class="neutral-row"><i></i><div><b></b><span></span></div></div>
+        <div class="neutral-row"><i></i><div><b></b><span></span></div></div>
+        <button id="returnBtn">Open archive</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

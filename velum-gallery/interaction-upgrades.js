@@ -341,7 +341,9 @@
   function finishDriftPointer(event) {
     const point = driftPointers.get(event.pointerId);
     if (!point) return;
-    const moved = Math.hypot(event.clientX - point.sx, event.clientY - point.sy);
+    const dx = event.clientX - point.sx;
+    const dy = event.clientY - point.sy;
+    const moved = Math.hypot(dx, dy);
     const now = performance.now();
     driftPointers.delete(event.pointerId);
     if (driftPointers.size < 2) pinch = null;
@@ -376,6 +378,12 @@
         zoomGesture = false;
         if (!manualPause) resumeAuto({ delay: 1500 });
       }
+      return;
+    }
+
+    const horizontalAction = Math.abs(dx) > 52;
+    const verticalAction = Math.abs(dy) > Math.abs(dx) * 1.15 && Math.abs(dy) > 52;
+    if (horizontalAction || verticalAction) {
       return;
     }
 

@@ -59,6 +59,7 @@
         }
       ],
       "rewrites": [
+        { "source": "/velum-api/**", "function": "velumMedia" },
         { "source": "**", "destination": "/index.html" }
       ]
     }

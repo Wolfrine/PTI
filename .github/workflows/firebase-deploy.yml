@@ -65,7 +65,6 @@ jobs:
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:default --non-interactive
 
       - name: Deploy Firebase Functions
-        continue-on-error: true
         env:
           FIREBASE_PROJECT_ID: pti-app-2ab59
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -77,25 +76,9 @@ jobs:
             exit 0
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          cd functions
-          node <<'NODE'
-          const {GoogleAuth} = require('google-auth-library');
-          (async () => {
-            const project = process.env.FIREBASE_PROJECT_ID;
-            const auth = new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});
-            const client = await auth.getClient();
-            const headers = await client.getRequestHeaders();
-            const url = `https://cloudfunctions.googleapis.com/v1/projects/${project}/locations/-/functions`;
-            const response = await fetch(url, {headers});
-            console.log(`Cloud Functions list probe status: ${response.status}`);
-            if (!response.ok) console.log(await response.text());
-          })().catch(error => console.error(error));
-          NODE
-          cd ..
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --non-interactive
 
       - name: Inspect Velum runtime identity
-        continue-on-error: true
         env:
           FIREBASE_PROJECT_ID: pti-app-2ab59
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -116,20 +99,18 @@ jobs:
               `https://cloudfunctions.googleapis.com/v1/projects/${project}/locations/us-central1/functions`
             ];
             for (const url of urls) {
-              try {
-                const response = await fetch(url, {headers});
-                if (!response.ok) continue;
-                const data = await response.json();
-                const functions = data.functions || [];
-                const fn = functions.find(f => String(f.name || '').toLowerCase().endsWith('/velummedia'));
-                if (!fn) continue;
-                const email = fn.serviceConfig?.serviceAccountEmail || fn.serviceAccountEmail || '';
-                console.log(`Velum runtime service account: ${email || 'not exposed'}`);
-                console.log(`Velum function resource: ${fn.name}`);
-                return;
-              } catch {}
+              const response = await fetch(url, {headers});
+              if (!response.ok) continue;
+              const data = await response.json();
+              const functions = data.functions || [];
+              const fn = functions.find(f => String(f.name || '').toLowerCase().endsWith('/velummedia'));
+              if (!fn) continue;
+              const email = fn.serviceConfig?.serviceAccountEmail || fn.serviceAccountEmail || '';
+              console.log(`Velum runtime service account: ${email || 'not exposed'}`);
+              console.log(`Velum function resource: ${fn.name}`);
+              return;
             }
-            console.log('Velum runtime service account: not found');
+            throw new Error('Velum runtime identity not found after deployment.');
           })().catch(error => { console.error(error); process.exitCode = 1; });
           NODE
 

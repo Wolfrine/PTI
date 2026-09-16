@@ -76,6 +76,7 @@ jobs:
             echo "FIREBASE_SERVICE_ACCOUNT is not configured; skipping Firebase Functions deploy."
             exit 0
           fi
+          node -e 'const c=JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON); console.log(`Firebase deploy identity: ${c.client_email || "unknown"}`)'
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --non-interactive
 

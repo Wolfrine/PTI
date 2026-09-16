@@ -2,8 +2,53 @@ const GOOGLE_CLIENT_ID = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.goo
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
 const TOKEN_KEY = 'velum-drive-token';
 const TOKEN_AT_KEY = 'velum-drive-token-at';
+const CACHED_TOKEN_KEY = 'velum-drive-token-cache';
+const CACHED_TOKEN_AT_KEY = 'velum-drive-token-at-cache';
+const TOKEN_MAX_AGE = 50 * 60 * 1000;
 const PIN_KEY = 'velum-pin-v1';
 const PIN_ITERATIONS = 180000;
+
+// Keep the ordinary Drive access token only for its natural short lifetime, but let
+// an installed PWA survive a close/reopen without immediately asking Google again.
+// App sign-out/removal of the session token also clears this short-lived backup.
+const nativeStorageSetItem = Storage.prototype.setItem;
+const nativeStorageRemoveItem = Storage.prototype.removeItem;
+
+function restoreCachedDriveToken() {
+  try {
+    const token = localStorage.getItem(CACHED_TOKEN_KEY) || '';
+    const issuedAt = Number(localStorage.getItem(CACHED_TOKEN_AT_KEY) || 0);
+    if (token && issuedAt && Date.now() - issuedAt < TOKEN_MAX_AGE) {
+      nativeStorageSetItem.call(sessionStorage, TOKEN_KEY, token);
+      nativeStorageSetItem.call(sessionStorage, TOKEN_AT_KEY, String(issuedAt));
+      return;
+    }
+    nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_KEY);
+    nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_AT_KEY);
+  } catch {}
+}
+
+restoreCachedDriveToken();
+
+Storage.prototype.setItem = function(key, value) {
+  nativeStorageSetItem.call(this, key, value);
+  if (this === sessionStorage) {
+    try {
+      if (key === TOKEN_KEY) nativeStorageSetItem.call(localStorage, CACHED_TOKEN_KEY, String(value));
+      if (key === TOKEN_AT_KEY) nativeStorageSetItem.call(localStorage, CACHED_TOKEN_AT_KEY, String(value));
+    } catch {}
+  }
+};
+
+Storage.prototype.removeItem = function(key) {
+  nativeStorageRemoveItem.call(this, key);
+  if (this === sessionStorage) {
+    try {
+      if (key === TOKEN_KEY) nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_KEY);
+      if (key === TOKEN_AT_KEY) nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_AT_KEY);
+    } catch {}
+  }
+};
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -141,7 +186,7 @@ function showPinGate({ setup = false } = {}) {
 function hasFreshSessionToken() {
   const token = sessionStorage.getItem(TOKEN_KEY);
   const issuedAt = Number(sessionStorage.getItem(TOKEN_AT_KEY) || 0);
-  return Boolean(token && Date.now() - issuedAt < 50 * 60 * 1000);
+  return Boolean(token && Date.now() - issuedAt < TOKEN_MAX_AGE);
 }
 
 function loadGoogleIdentityServices() {

@@ -7,6 +7,9 @@
       "hosting": {
         "default": [
           "pti-app-2ab59"
+        ],
+        "velum": [
+          "pti-app-2ab59-velum"
         ]
       }
     }

@@ -116,3 +116,16 @@ jobs:
 
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:velum --non-interactive
           echo "Velum URL: https://${VELUM_SITE_ID}.web.app"
+
+      - name: Authorize Velum Firebase Auth domains
+        continue-on-error: true
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          VELUM_SITE_ID: pti-app-2ab59-velum
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install --no-save google-auth-library
+          node velum-gallery/scripts/configure-firebase-auth.mjs

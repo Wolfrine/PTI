@@ -77,6 +77,21 @@ jobs:
             exit 0
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          cd functions
+          node <<'NODE'
+          const {GoogleAuth} = require('google-auth-library');
+          (async () => {
+            const project = process.env.FIREBASE_PROJECT_ID;
+            const auth = new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});
+            const client = await auth.getClient();
+            const headers = await client.getRequestHeaders();
+            const url = `https://cloudfunctions.googleapis.com/v1/projects/${project}/locations/-/functions`;
+            const response = await fetch(url, {headers});
+            console.log(`Cloud Functions list probe status: ${response.status}`);
+            if (!response.ok) console.log(await response.text());
+          })().catch(error => console.error(error));
+          NODE
+          cd ..
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --non-interactive
 
       - name: Inspect Velum runtime identity

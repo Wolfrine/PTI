@@ -81,3 +81,15 @@
 @media (max-width:420px){
   .tile-badge{top:6px;right:6px}
 }
+/* Keep primary navigation above all Drift media when temporary controls are visible. */
+body.velum-drift-immersive.velum-controls-visible .bottom-nav{
+  display:flex!important;
+  z-index:120!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+body.velum-drift-immersive.velum-controls-visible .bottom-nav .nav-item{
+  display:flex!important;
+  visibility:visible!important;
+}

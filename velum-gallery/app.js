@@ -430,6 +430,7 @@ driftStage.addEventListener('pointerup', e => {
       if (video.paused) video.play().catch(() => {});
       else video.pause();
     }
+    window.__velumInteraction?.showControls?.();
     showChrome();
     scheduleAdvance();
     return;

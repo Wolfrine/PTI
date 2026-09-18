@@ -38,11 +38,35 @@
 
     .topbar,.bottom-nav,#driftChrome,#velumHardRefresh{transition:opacity .32s ease,transform .32s ease!important}
     body.velum-drift-immersive:not(.velum-controls-visible) .topbar,
-    body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav,
     body.velum-drift-immersive:not(.velum-controls-visible) #driftChrome,
     body.velum-drift-immersive:not(.velum-controls-visible) #velumHardRefresh{opacity:0!important;pointer-events:none!important}
     body.velum-drift-immersive:not(.velum-controls-visible) .topbar{transform:translateY(-10px)!important}
-    body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav{transform:translateY(12px)!important}
+
+    /* Primary navigation remains available even in immersive Drift. */
+    body.velum-drift-immersive .bottom-nav{
+      opacity:1!important;
+      visibility:visible!important;
+      pointer-events:auto!important;
+      transform:none!important;
+      z-index:120!important;
+      height:calc(58px + env(safe-area-inset-bottom,0px))!important;
+      gap:42px!important;
+      background:linear-gradient(to top,rgba(7,5,6,.62) 12%,rgba(7,5,6,.20) 48%,rgba(7,5,6,0) 100%)!important;
+    }
+    body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav{
+      opacity:.72!important;
+    }
+    body.velum-drift-immersive .bottom-nav .nav-item{
+      display:flex!important;
+      visibility:visible!important;
+      pointer-events:auto!important;
+    }
+    body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav .nav-item{
+      color:rgba(235,222,226,.54)!important;
+    }
+    body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav .nav-item.active{
+      color:rgba(235,222,226,.82)!important;
+    }
 
     body.velum-drift-immersive.velum-controls-visible .topbar{opacity:1!important;pointer-events:none!important;transform:none!important;padding-left:12px!important;padding-right:12px!important;background:linear-gradient(to bottom,rgba(5,4,5,.58),transparent)!important}
     body.velum-drift-immersive.velum-controls-visible .topbar .brand{pointer-events:auto!important}

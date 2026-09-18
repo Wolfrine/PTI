@@ -81,21 +81,16 @@
 @media (max-width:420px){
   .tile-badge{top:6px;right:6px}
 }
-/* Keep primary navigation above all Drift media when temporary controls are visible. */
-body.velum-drift-immersive.velum-controls-visible .bottom-nav{
-  display:flex!important;
-  z-index:120!important;
-  opacity:1!important;
-  visibility:visible!important;
-  pointer-events:auto!important;
-}
-body.velum-drift-immersive.velum-controls-visible .bottom-nav .nav-item{
-  display:flex!important;
-  visibility:visible!important;
-}
 /* Browse now uses Drive thumbnails instead of full media blobs. */
 .tile .tile-media{transition:opacity .16s ease}
 .tile .tile-media:not([src]){opacity:0}
 .tile .tile-media.loaded{opacity:1}
 .tile .tile-media.no-preview{opacity:0}
 .tile-video::after{display:none}
+/* Bottom navigation is structural navigation, not transient Drift chrome. */
+.bottom-nav{
+  z-index:120!important;
+}
+.bottom-nav .nav-item{
+  pointer-events:auto!important;
+}

@@ -1,4 +1,4 @@
-const CACHE='velum-shell-v14';
+const CACHE='velum-shell-v15';
 const SHELL=['./','./index.html','./styles.css','./media-upgrades.css','./interaction-upgrades.js','./zoom-failsafe.js','./stats-upgrades.js','./bootstrap.js','./app.js','./manifest.webmanifest','./assets/icons/icon.svg'];
 
 self.addEventListener('install',event=>{

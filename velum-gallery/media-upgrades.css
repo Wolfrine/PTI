@@ -93,3 +93,9 @@ body.velum-drift-immersive.velum-controls-visible .bottom-nav .nav-item{
   display:flex!important;
   visibility:visible!important;
 }
+/* Browse now uses Drive thumbnails instead of full media blobs. */
+.tile .tile-media{transition:opacity .16s ease}
+.tile .tile-media:not([src]){opacity:0}
+.tile .tile-media.loaded{opacity:1}
+.tile .tile-media.no-preview{opacity:0}
+.tile-video::after{display:none}

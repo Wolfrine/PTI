@@ -406,6 +406,7 @@
       hourly,
       topMediaByTrackedTime: top,
       recentEvents: recent,
+      cache: window.__velumCacheSnapshot?.() || null,
       privacy: 'Drive filenames and raw Drive IDs excluded; media aliases are stable hashes for correlation between copied states.'
     };
     return `VELUM_STATE_V1\n${JSON.stringify(state)}`;

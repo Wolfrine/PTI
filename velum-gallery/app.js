@@ -52,6 +52,8 @@ let tokenIssuedAt = Number(sessionStorage.getItem('velum-drive-token-at') || 0);
 let images = [];
 let imageMap = new Map();
 let objectUrls = new Map();
+const MEDIA_CACHE_LIMIT = 40;
+const MEDIA_CACHE_MAX_BYTES = 256 * 1024 * 1024;
 let current = { type: 'single', ids: [] };
 let history = [];
 let historyIndex = -1;
@@ -190,7 +192,7 @@ async function driveFetch(url, options = {}) {
 }
 
 async function listPrivateImages() {
-  const fields = 'nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,size,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis))';
+  const fields = 'nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,size,thumbnailLink,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis))';
   const q = `'${PRIVATE_FOLDER_ID}' in parents and trashed=false`;
   const all = [];
   let pageToken = '';
@@ -222,7 +224,8 @@ async function listPrivateImages() {
       width: mediaMeta?.width || 0,
       height: mediaMeta?.height || 0,
       durationMs: Number(file.videoMediaMetadata?.durationMillis || 0),
-      size: Number(file.size || 0)
+      size: Number(file.size || 0),
+      thumbnailLink: file.thumbnailLink || ''
     };
   });
 }
@@ -255,18 +258,57 @@ async function syncDrive({ initial = false } = {}) {
   }
 }
 
+function protectedMediaIds() {
+  const protectedIds = new Set(current.ids || []);
+  document.querySelectorAll('[data-full-media-id]').forEach(el => {
+    if (el.dataset.fullMediaId) protectedIds.add(el.dataset.fullMediaId);
+  });
+  return protectedIds;
+}
+
+function trimMediaCache() {
+  const protectedIds = protectedMediaIds();
+  let totalBytes = [...objectUrls.values()].reduce((sum, entry) => sum + (entry.bytes || 0), 0);
+  if (objectUrls.size <= MEDIA_CACHE_LIMIT && totalBytes <= MEDIA_CACHE_MAX_BYTES) return;
+
+  const candidates = [...objectUrls.entries()]
+    .filter(([id]) => !protectedIds.has(id))
+    .sort((a, b) => (a[1].lastUsed || 0) - (b[1].lastUsed || 0));
+
+  for (const [id, entry] of candidates) {
+    if (objectUrls.size <= MEDIA_CACHE_LIMIT && totalBytes <= MEDIA_CACHE_MAX_BYTES) break;
+    URL.revokeObjectURL(entry.url);
+    objectUrls.delete(id);
+    totalBytes -= entry.bytes || 0;
+  }
+}
+
 async function ensureObjectUrl(id) {
-  if (objectUrls.has(id)) return objectUrls.get(id);
+  const cached = objectUrls.get(id);
+  if (cached) {
+    cached.lastUsed = Date.now();
+    return cached.url;
+  }
   const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`);
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
-  objectUrls.set(id, url);
+  objectUrls.set(id, { url, bytes: blob.size || 0, lastUsed: Date.now() });
+  trimMediaCache();
   return url;
 }
+
 function revokeObjectUrls() {
-  for (const url of objectUrls.values()) URL.revokeObjectURL(url);
+  for (const entry of objectUrls.values()) URL.revokeObjectURL(entry.url);
   objectUrls.clear();
 }
+
+window.__velumCacheSnapshot = () => ({
+  fullMediaItems: objectUrls.size,
+  fullMediaBytes: [...objectUrls.values()].reduce((sum, entry) => sum + (entry.bytes || 0), 0),
+  itemLimit: MEDIA_CACHE_LIMIT,
+  byteLimit: MEDIA_CACHE_MAX_BYTES
+});
+
 function imageById(id) { return imageMap.get(id); }
 function isVideoMedia(item) { return item?.kind === 'video'; }
 function isGifMedia(item) { return item?.kind === 'gif'; }
@@ -321,6 +363,7 @@ async function renderMoment(moment, { record = true } = {}) {
     ambientBg.style.backgroundImage = 'none';
     const video = document.createElement('video');
     video.className = 'drift-video';
+    video.dataset.fullMediaId = id;
     video.src = firstUrl;
     video.muted = true;
     video.autoplay = true;
@@ -346,6 +389,7 @@ async function renderMoment(moment, { record = true } = {}) {
     ambientBg.style.backgroundImage = `url("${firstUrl}")`;
     const img = document.createElement('img');
     img.className = 'drift-image';
+    img.dataset.fullMediaId = id;
     if (isGifMedia(meta)) img.classList.add('drift-gif');
     img.alt = '';
     img.draggable = false;
@@ -360,6 +404,7 @@ async function renderMoment(moment, { record = true } = {}) {
     counter.textContent = isGifMedia(meta) ? 'gif' : 'image';
   }
 
+  trimMediaCache();
   if (record) store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();
   scheduleAdvance();
@@ -471,37 +516,51 @@ function renderBrowse() {
   browseObserver?.disconnect();
   browseObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
       const media = entry.target;
-      browseObserver.unobserve(media);
       const item = imageById(media.dataset.id);
-      ensureObjectUrl(media.dataset.id).then(url => {
-        media.src = url;
+      if (!item) return;
+
+      if (!entry.isIntersecting) {
+        media.dataset.visible = '0';
+        media.removeAttribute('src');
+        media.classList.remove('loaded');
+        delete media.dataset.fullMediaId;
+        return;
+      }
+
+      media.dataset.visible = '1';
+      if (media.getAttribute('src')) return;
+
+      const setPreview = src => {
+        if (!media.isConnected || media.dataset.visible !== '1' || !src) return;
+        media.src = src;
         media.classList.add('loaded');
-        if (isVideoMedia(item)) {
-          media.muted = true;
-          media.playsInline = true;
-          media.preload = 'metadata';
-          const primeFrame = () => {
-            try {
-              if (Number.isFinite(media.duration) && media.duration > .05) media.currentTime = Math.min(.08, media.duration / 4);
-            } catch {}
-          };
-          if (media.readyState >= 1) primeFrame();
-          else media.addEventListener('loadedmetadata', primeFrame, { once: true });
-        }
+      };
+
+      if (item.thumbnailLink) {
+        setPreview(item.thumbnailLink);
+        return;
+      }
+
+      if (isVideoMedia(item)) {
+        media.classList.add('no-preview');
+        return;
+      }
+
+      ensureObjectUrl(item.id).then(url => {
+        if (!media.isConnected || media.dataset.visible !== '1') return;
+        media.dataset.fullMediaId = item.id;
+        setPreview(url);
       }).catch(() => {});
     });
-  }, { root: $('#browseView'), rootMargin: '320px 0px' });
+  }, { root: $('#browseView'), rootMargin: '420px 0px' });
 
   arr.forEach(item => {
     const s = stat(item);
     const tile = document.createElement('button');
     tile.className = `tile tile-${item.kind || 'image'}`;
     const ratio = item.width && item.height ? Math.max(.72, Math.min(1.65, item.height / item.width)) : 1.22;
-    const preview = isVideoMedia(item)
-      ? `<video class="tile-media tile-video" data-id="${item.id}" muted playsinline preload="metadata"></video>`
-      : `<img class="tile-media" data-id="${item.id}" alt="">`;
+    const preview = `<img class="tile-media" data-id="${item.id}" alt="">`;
     const badge = isVideoMedia(item)
       ? '<span class="tile-badge video"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5z"/></svg>Video</span>'
       : isGifMedia(item)
@@ -570,6 +629,7 @@ async function openFocus(id) {
     focusResetBtn.hidden = true;
     focusStatus.textContent = 'play · scrub · sound';
     focusBackdrop.style.backgroundImage = 'none';
+    focusVideo.dataset.fullMediaId = id;
     focusVideo.src = url;
     focusVideo.muted = false;
     focusVideo.currentTime = 0;
@@ -586,6 +646,7 @@ async function openFocus(id) {
     focusCanvas.classList.remove('video-mode');
     focusResetBtn.hidden = false;
     focusStatus.textContent = isGifMedia(item) ? 'GIF · pinch · drag' : 'pinch · drag';
+    focusImage.dataset.fullMediaId = id;
     focusImage.src = url;
     focusBackdrop.style.backgroundImage = `url("${url}")`;
     resetFocus();
@@ -599,8 +660,15 @@ function closeFocus() {
   focusVideo.pause();
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
+  focusVideo.removeAttribute('src');
+  focusVideo.removeAttribute('data-full-media-id');
+  focusVideo.load();
+  focusImage.removeAttribute('src');
+  focusImage.removeAttribute('data-full-media-id');
+  focusBackdrop.style.backgroundImage = 'none';
   focusId = null;
   pointers.clear();
+  trimMediaCache();
   if ($('#browseView').classList.contains('active')) renderBrowse();
 }
 $('#focusClose').onclick = closeFocus;

@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="media-upgrades.css" />
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -17,9 +18,9 @@
         <span class="auth-mark">V</span>
         <span class="eyebrow">Local-first private gallery</span>
         <h1 id="authTitle">Private collection</h1>
-        <p id="authCopy">Connect the Google account that owns the Drive folder.</p>
+        <p id="authCopy">Connect the Google account that owns the private media folder.</p>
         <button id="connectBtn" class="connect-btn">Connect Google Drive</button>
-        <small id="authStatus">Images stay in Google Drive; votes stay on this device.</small>
+        <small id="authStatus">Media stays in Google Drive; votes stay on this device.</small>
       </div>
     </section>
     <header class="topbar">
@@ -117,6 +118,7 @@
       </header>
       <div class="focus-canvas" id="focusCanvas">
         <img id="focusImage" alt="Private gallery image" draggable="false" />
+        <video id="focusVideo" class="focus-video" hidden controls playsinline preload="metadata" aria-label="Private gallery video"></video>
       </div>
       <footer class="focus-bottom">
         <button class="focus-vote down" id="focusDown" aria-label="Downvote">

@@ -121,7 +121,7 @@
   }
 
   function currentMediaIds() {
-    return [...document.querySelectorAll('#browseGrid img[data-id]')].map(img => img.dataset.id).filter(Boolean);
+    return [...document.querySelectorAll('#browseGrid [data-id]')].map(img => img.dataset.id).filter(Boolean);
   }
 
   function shortHash(value) {
@@ -327,7 +327,7 @@
     list.innerHTML = items.map((s, i) => `<button class="media-row" data-media="${s.id.replace(/"/g, '&quot;')}"><span class="media-rank">${i + 1}</span><span class="media-copy"><strong>${alias(s.id)}</strong><span>${mediaSubline(s)}</span></span><span class="media-value">${mediaMetric(kind, s)}</span></button>`).join('');
     list.querySelectorAll('.media-row').forEach(row => row.addEventListener('click', () => {
       const id = row.dataset.media;
-      const tileImage = [...document.querySelectorAll('#browseGrid img[data-id]')].find(img => img.dataset.id === id);
+      const tileImage = [...document.querySelectorAll('#browseGrid [data-id]')].find(img => img.dataset.id === id);
       const tile = tileImage?.closest('.tile');
       if (tile) tile.click();
       addLocalEvent({ type: 'interaction', action: 'stats-open-media', imageIds: id ? [id] : [] });

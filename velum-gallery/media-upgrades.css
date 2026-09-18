@@ -1,0 +1,83 @@
+/* Velum motion-media layer: GIFs + videos, without changing the established image experience. */
+#driftView .drift-video{
+  width:100vw!important;
+  height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  display:block!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#000;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+#driftView .drift-gif{image-rendering:auto}
+
+.tile-placeholder{position:relative;overflow:hidden;background:#100b0d}
+.tile .tile-media{
+  display:block;
+  width:100%;
+  height:100%;
+  min-height:120px;
+  object-fit:cover;
+  background:#0b0809;
+}
+.tile video.tile-media{pointer-events:none}
+.tile-badge{
+  position:absolute;
+  z-index:3;
+  top:7px;
+  right:7px;
+  min-height:22px;
+  padding:0 7px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  background:rgba(8,6,7,.62);
+  color:rgba(255,255,255,.82);
+  backdrop-filter:blur(14px);
+  font:600 7px/1 Inter,system-ui,sans-serif;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  pointer-events:none;
+}
+.tile-badge svg{width:10px;height:10px;stroke-width:1.8}
+.tile-badge.gif{padding:0 8px;color:#e7d7dc}
+.tile-video::after{opacity:.2}
+
+.focus-canvas.video-mode{
+  touch-action:manipulation!important;
+  background:#000;
+}
+.focus-canvas.video-mode #focusImage{display:none!important}
+.focus-video{
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  background:#000;
+  pointer-events:auto;
+  touch-action:manipulation;
+}
+.focus-video[hidden]{display:none!important}
+.focus-overlay:has(.focus-canvas.video-mode) .focus-backdrop{
+  background-image:none!important;
+  background:#000!important;
+  filter:none!important;
+  opacity:1!important;
+}
+.focus-overlay:has(.focus-canvas.video-mode) .focus-top,
+.focus-overlay:has(.focus-canvas.video-mode) .focus-bottom{
+  pointer-events:none;
+}
+.focus-overlay:has(.focus-canvas.video-mode) .focus-top button,
+.focus-overlay:has(.focus-canvas.video-mode) .focus-bottom button{
+  pointer-events:auto;
+}
+@media (max-width:420px){
+  .tile-badge{top:6px;right:6px}
+}

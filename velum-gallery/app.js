@@ -61,6 +61,7 @@ let viewStarted = 0;
 let wakeLock = null;
 let browseObserver = null;
 let initializedGallery = false;
+let renderSerial = 0;
 
 class EventStore {
   constructor() { this.db = null; this.memory = []; }
@@ -189,7 +190,7 @@ async function driveFetch(url, options = {}) {
 }
 
 async function listPrivateImages() {
-  const fields = 'nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,size,imageMediaMetadata(width,height))';
+  const fields = 'nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,size,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis))';
   const q = `'${PRIVATE_FOLDER_ID}' in parents and trashed=false`;
   const all = [];
   let pageToken = '';
@@ -198,19 +199,32 @@ async function listPrivateImages() {
     if (pageToken) params.set('pageToken', pageToken);
     const response = await driveFetch(`${DRIVE_API}/files?${params}`);
     const data = await response.json();
-    all.push(...(data.files || []).filter(f => f.mimeType?.startsWith('image/')));
+    all.push(...(data.files || []).filter(f =>
+      f.mimeType?.startsWith('image/') || f.mimeType?.startsWith('video/')
+    ));
     pageToken = data.nextPageToken || '';
   } while (pageToken);
-  return all.map(file => ({
-    id: file.id,
-    name: file.name,
-    mimeType: file.mimeType,
-    addedAt: Date.parse(file.createdTime || file.modifiedTime || new Date().toISOString()),
-    modifiedAt: Date.parse(file.modifiedTime || file.createdTime || new Date().toISOString()),
-    width: file.imageMediaMetadata?.width || 0,
-    height: file.imageMediaMetadata?.height || 0,
-    size: Number(file.size || 0)
-  }));
+
+  return all.map(file => {
+    const kind = file.mimeType?.startsWith('video/')
+      ? 'video'
+      : file.mimeType === 'image/gif'
+        ? 'gif'
+        : 'image';
+    const mediaMeta = kind === 'video' ? file.videoMediaMetadata : file.imageMediaMetadata;
+    return {
+      id: file.id,
+      name: file.name,
+      mimeType: file.mimeType,
+      kind,
+      addedAt: Date.parse(file.createdTime || file.modifiedTime || new Date().toISOString()),
+      modifiedAt: Date.parse(file.modifiedTime || file.createdTime || new Date().toISOString()),
+      width: mediaMeta?.width || 0,
+      height: mediaMeta?.height || 0,
+      durationMs: Number(file.videoMediaMetadata?.durationMillis || 0),
+      size: Number(file.size || 0)
+    };
+  });
 }
 
 async function syncDrive({ initial = false } = {}) {
@@ -218,18 +232,18 @@ async function syncDrive({ initial = false } = {}) {
   syncLabel.textContent = 'Syncing';
   if (initial) {
     authGate.classList.add('open');
-    setAuthMessage('Opening collection', 'Reading image metadata from your Private Google Drive folder.', 'Images remain in Google Drive.');
+    setAuthMessage('Opening collection', 'Reading media metadata from your Private Google Drive folder.', 'Media remains in Google Drive.');
   }
   try {
     const next = await listPrivateImages();
-    if (!next.length) throw new Error('No images were found in the configured Private folder, or this account cannot access it.');
+    if (!next.length) throw new Error('No supported images, GIFs, or videos were found in the configured Private folder, or this account cannot access it.');
     images = next;
     imageMap = new Map(images.map(i => [i.id, i]));
     authGate.classList.remove('open');
     if (!initializedGallery) initGallery();
     else {
       renderBrowse();
-      showToast(`${images.length} images synced`);
+      showToast(`${images.length} media synced`);
     }
   } catch (error) {
     console.error(error);
@@ -254,6 +268,9 @@ function revokeObjectUrls() {
   objectUrls.clear();
 }
 function imageById(id) { return imageMap.get(id); }
+function isVideoMedia(item) { return item?.kind === 'video'; }
+function isGifMedia(item) { return item?.kind === 'gif'; }
+function currentMediaItem() { return current.ids.length ? imageById(current.ids[0]) : null; }
 
 function weightedPick(exclude = []) {
   const explore = Math.random() < .22;
@@ -279,55 +296,71 @@ function weightedPick(exclude = []) {
 
 function chooseMoment() {
   const recent = history.slice(-4).flatMap(h => h.ids);
-  if (Math.random() < .12 && images.length > 3) {
-    const a = weightedPick(recent);
-    const b = weightedPick([...recent, a.id]);
-    return { type: 'pair', ids: [a.id, b.id] };
-  }
-  return { type: 'single', ids: [weightedPick(recent).id] };
+  const item = weightedPick(recent);
+  return { type: 'single', ids: [item.id] };
 }
 
 async function renderMoment(moment, { record = true } = {}) {
   finalizeView(false);
-  current = moment;
-  const firstUrl = await ensureObjectUrl(moment.ids[0]);
-  ambientBg.style.backgroundImage = `url("${firstUrl}")`;
+  const id = moment.ids[0];
+  const meta = imageById(id);
+  if (!meta) return;
+  current = { type: 'single', ids: [id] };
+  const serial = ++renderSerial;
+
+  clearTimeout(advanceTimer);
+  driftMedia.querySelectorAll('video').forEach(video => video.pause());
+  const firstUrl = await ensureObjectUrl(id);
+  if (serial !== renderSerial) return;
+
   driftMedia.innerHTML = '';
-  if (moment.type === 'single') {
-    const wrap = document.createElement('div');
-    wrap.className = 'single-wrap';
+  const wrap = document.createElement('div');
+  wrap.className = 'single-wrap';
+
+  if (isVideoMedia(meta)) {
+    ambientBg.style.backgroundImage = 'none';
+    const video = document.createElement('video');
+    video.className = 'drift-video';
+    video.src = firstUrl;
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.controls = false;
+    video.disablePictureInPicture = true;
+    video.setAttribute('aria-label', 'Private gallery video');
+    video.addEventListener('playing', () => {
+      store.add({ type: 'interaction', action: 'drift-video-play', imageIds: [id] });
+    }, { once: true });
+    video.addEventListener('ended', () => {
+      if (current.ids[0] !== id || !driftMedia.contains(video)) return;
+      store.add({ type: 'interaction', action: 'drift-video-complete', imageIds: [id] });
+      finalizeView(false);
+      goNext();
+    }, { once: true });
+    wrap.append(video);
+    driftMedia.append(wrap);
+    video.play().catch(() => showChrome());
+    counter.textContent = 'video';
+  } else {
+    ambientBg.style.backgroundImage = `url("${firstUrl}")`;
     const img = document.createElement('img');
     img.className = 'drift-image';
+    if (isGifMedia(meta)) img.classList.add('drift-gif');
     img.alt = '';
     img.draggable = false;
     img.src = firstUrl;
-    const meta = imageById(moment.ids[0]);
-    if (meta?.width && meta?.height) {
+    if (meta.width && meta.height) {
       const ratio = meta.width / meta.height;
       const screen = innerWidth / innerHeight;
       if (Math.abs(Math.log(ratio / screen)) > .55) img.classList.add('contained');
     }
     wrap.append(img);
     driftMedia.append(wrap);
-    counter.textContent = 'single';
-  } else {
-    const urls = await Promise.all(moment.ids.map(ensureObjectUrl));
-    const wrap = document.createElement('div');
-    wrap.className = 'pair-wrap';
-    moment.ids.forEach((id, idx) => {
-      const pane = document.createElement('div');
-      pane.className = 'pair-pane';
-      const img = document.createElement('img');
-      img.src = urls[idx];
-      img.alt = '';
-      img.draggable = false;
-      pane.append(img);
-      wrap.append(pane);
-    });
-    driftMedia.append(wrap);
-    counter.textContent = 'pair';
+    counter.textContent = isGifMedia(meta) ? 'gif' : 'image';
   }
-  if (record) moment.ids.forEach(id => store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'drift' }));
+
+  if (record) store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();
   scheduleAdvance();
   requestWake();
@@ -350,9 +383,7 @@ function finalizeView(quick) {
 }
 function vote(dir) {
   if (!current.ids.length) return;
-  const pair = current.type === 'pair';
-  if (pair) store.add({ type: `pair-${dir}`, imageIds: [...current.ids], pairKey: [...current.ids].sort().join('|') });
-  else store.add({ type: dir, imageIds: [current.ids[0]] });
+  store.add({ type: dir, imageIds: [current.ids[0]] });
   flashVote(dir);
   showToast(dir === 'up' ? 'Upvoted · saved locally' : 'Downvoted · saved locally');
   setTimeout(goNext, 220);
@@ -364,6 +395,8 @@ function flashVote(dir) {
 }
 function scheduleAdvance() {
   clearTimeout(advanceTimer);
+  advanceTimer = null;
+  if (isVideoMedia(currentMediaItem())) return;
   const delay = 7000 + Math.random() * 5000;
   advanceTimer = setTimeout(() => { finalizeView(false); goNext(); }, delay);
 }
@@ -391,7 +424,16 @@ driftStage.addEventListener('pointerup', e => {
   const dy = e.clientY - pointerStart.y;
   const dt = Date.now() - pointerStart.t;
   pointerStart = null;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) { showChrome(); scheduleAdvance(); return; }
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) {
+    const video = driftMedia.querySelector('.drift-video');
+    if (video) {
+      if (video.paused) video.play().catch(() => {});
+      else video.pause();
+    }
+    showChrome();
+    scheduleAdvance();
+    return;
+  }
   if (Math.abs(dy) > Math.abs(dx) * 1.15 && Math.abs(dy) > 52) { vote(dy < 0 ? 'up' : 'down'); return; }
   if (Math.abs(dx) > 52) { finalizeView(dt < 500); dx < 0 ? goNext() : goPrev(); }
 });
@@ -423,25 +465,52 @@ function renderBrowse() {
   if (key === 'leastViews' || key === 'rare') arr.sort((a,b) => stat(a).views-stat(b).views);
   if (key === 'recent') arr.sort((a,b) => stat(b).lastView-stat(a).lastView);
   if (key === 'random') arr.sort(() => Math.random()-.5);
+
   browseGrid.innerHTML = '';
   browseObserver?.disconnect();
   browseObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      const img = entry.target;
-      browseObserver.unobserve(img);
-      ensureObjectUrl(img.dataset.id).then(url => { img.src = url; img.classList.add('loaded'); }).catch(() => {});
+      const media = entry.target;
+      browseObserver.unobserve(media);
+      const item = imageById(media.dataset.id);
+      ensureObjectUrl(media.dataset.id).then(url => {
+        media.src = url;
+        media.classList.add('loaded');
+        if (isVideoMedia(item)) {
+          media.muted = true;
+          media.playsInline = true;
+          media.preload = 'metadata';
+          const primeFrame = () => {
+            try {
+              if (Number.isFinite(media.duration) && media.duration > .05) media.currentTime = Math.min(.08, media.duration / 4);
+            } catch {}
+          };
+          if (media.readyState >= 1) primeFrame();
+          else media.addEventListener('loadedmetadata', primeFrame, { once: true });
+        }
+      }).catch(() => {});
     });
   }, { root: $('#browseView'), rootMargin: '320px 0px' });
-  arr.forEach(img => {
-    const s = stat(img);
+
+  arr.forEach(item => {
+    const s = stat(item);
     const tile = document.createElement('button');
-    tile.className = 'tile';
-    const ratio = img.width && img.height ? Math.max(.72, Math.min(1.65, img.height / img.width)) : 1.22;
-    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}"><img data-id="${img.id}" alt=""></div><div class="tile-meta"><span>↑ ${s.directUp}</span><span>${s.views} views</span></div>`;
-    tile.onclick = () => openFocus(img.id);
+    tile.className = `tile tile-${item.kind || 'image'}`;
+    const ratio = item.width && item.height ? Math.max(.72, Math.min(1.65, item.height / item.width)) : 1.22;
+    const preview = isVideoMedia(item)
+      ? `<video class="tile-media tile-video" data-id="${item.id}" muted playsinline preload="metadata"></video>`
+      : `<img class="tile-media" data-id="${item.id}" alt="">`;
+    const badge = isVideoMedia(item)
+      ? '<span class="tile-badge video"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5z"/></svg>Video</span>'
+      : isGifMedia(item)
+        ? '<span class="tile-badge gif">GIF</span>'
+        : '';
+    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span>↑ ${s.directUp}</span><span>${s.views} views</span></div>`;
+    tile.onclick = () => openFocus(item.id);
     browseGrid.append(tile);
-    browseObserver.observe(tile.querySelector('img'));
+    const previewEl = tile.querySelector('[data-id]');
+    if (previewEl) browseObserver.observe(previewEl);
   });
 }
 sortSelect.onchange = renderBrowse;
@@ -452,28 +521,81 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('clic
   const v = btn.dataset.view;
   $('#driftView').classList.toggle('active', v === 'drift');
   $('#browseView').classList.toggle('active', v === 'browse');
-  if (v === 'browse') { finalizeView(false); clearTimeout(advanceTimer); renderBrowse(); }
-  else { viewStarted = Date.now(); scheduleAdvance(); }
+  if (v === 'browse') {
+    finalizeView(false);
+    clearTimeout(advanceTimer);
+    driftMedia.querySelector('.drift-video')?.pause();
+    renderBrowse();
+  } else {
+    viewStarted = Date.now();
+    const video = driftMedia.querySelector('.drift-video');
+    if (video) video.play().catch(() => {});
+    else scheduleAdvance();
+  }
 }));
 
 const overlay = $('#focusOverlay');
 const focusImage = $('#focusImage');
+const focusVideo = $('#focusVideo');
 const focusCanvas = $('#focusCanvas');
 const focusBackdrop = $('#focusBackdrop');
+const focusStatus = $('#focusStatus');
+const focusResetBtn = $('#focusReset');
 let focusId = null, scale = 1, tx = 0, ty = 0, pointers = new Map(), pinchStart = null;
-function applyTransform() { focusImage.style.transform = `translate3d(${tx}px,${ty}px,0) scale(${scale})`; }
-function resetFocus() { scale = 1; tx = ty = 0; applyTransform(); }
+
+function focusIsVideo() {
+  return focusCanvas.classList.contains('video-mode');
+}
+function applyTransform() {
+  if (!focusIsVideo()) focusImage.style.transform = `translate3d(${tx}px,${ty}px,0) scale(${scale})`;
+}
+function resetFocus() {
+  if (focusIsVideo()) return;
+  scale = 1;
+  tx = ty = 0;
+  applyTransform();
+}
 async function openFocus(id) {
   focusId = id;
+  const item = imageById(id);
+  if (!item) return;
   const url = await ensureObjectUrl(id);
-  focusImage.src = url;
-  focusBackdrop.style.backgroundImage = `url("${url}")`;
   resetFocus();
+
+  if (isVideoMedia(item)) {
+    focusCanvas.classList.add('video-mode');
+    focusImage.hidden = true;
+    focusVideo.hidden = false;
+    focusResetBtn.hidden = true;
+    focusStatus.textContent = 'play · scrub · sound';
+    focusBackdrop.style.backgroundImage = 'none';
+    focusVideo.src = url;
+    focusVideo.muted = false;
+    focusVideo.currentTime = 0;
+    focusVideo.addEventListener('play', () => {
+      store.add({ type: 'interaction', action: 'focus-video-play', imageIds: [id] });
+    }, { once: true });
+    focusVideo.play().catch(() => {});
+  } else {
+    focusVideo.pause();
+    focusVideo.removeAttribute('src');
+    focusVideo.load();
+    focusVideo.hidden = true;
+    focusImage.hidden = false;
+    focusCanvas.classList.remove('video-mode');
+    focusResetBtn.hidden = false;
+    focusStatus.textContent = isGifMedia(item) ? 'GIF · pinch · drag' : 'pinch · drag';
+    focusImage.src = url;
+    focusBackdrop.style.backgroundImage = `url("${url}")`;
+    resetFocus();
+  }
+
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
   store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'focus' });
 }
 function closeFocus() {
+  focusVideo.pause();
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
   focusId = null;
@@ -481,10 +603,12 @@ function closeFocus() {
   if ($('#browseView').classList.contains('active')) renderBrowse();
 }
 $('#focusClose').onclick = closeFocus;
-$('#focusReset').onclick = resetFocus;
+focusResetBtn.onclick = resetFocus;
 $('#focusUp').onclick = () => { if (focusId) { store.add({ type: 'up', imageIds: [focusId], mode: 'focus' }); showToast('Upvoted'); } };
 $('#focusDown').onclick = () => { if (focusId) { store.add({ type: 'down', imageIds: [focusId], mode: 'focus' }); showToast('Downvoted'); } };
+
 focusCanvas.addEventListener('pointerdown', e => {
+  if (focusIsVideo() || e.target?.closest?.('video')) return;
   focusCanvas.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, px: e.clientX, py: e.clientY });
   if (pointers.size === 2) {
@@ -493,22 +617,33 @@ focusCanvas.addEventListener('pointerdown', e => {
   }
 });
 focusCanvas.addEventListener('pointermove', e => {
-  if (!pointers.has(e.pointerId)) return;
+  if (focusIsVideo() || !pointers.has(e.pointerId)) return;
   const p = pointers.get(e.pointerId);
   p.px = p.x; p.py = p.y; p.x = e.clientX; p.y = e.clientY;
-  if (pointers.size === 1 && scale > 1) { tx += p.x-p.px; ty += p.y-p.py; applyTransform(); }
-  else if (pointers.size === 2) {
+  if (pointers.size === 1 && scale > 1) {
+    tx += p.x-p.px;
+    ty += p.y-p.py;
+    applyTransform();
+  } else if (pointers.size === 2) {
     const [a,b] = [...pointers.values()];
     const d = Math.hypot(a.x-b.x, a.y-b.y);
     scale = Math.max(1, Math.min(5, pinchStart.scale * (d / pinchStart.dist)));
     applyTransform();
   }
 });
-['pointerup','pointercancel'].forEach(type => focusCanvas.addEventListener(type, e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinchStart = null; }));
+['pointerup','pointercancel'].forEach(type => focusCanvas.addEventListener(type, e => {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchStart = null;
+}));
 let lastTap = 0;
-focusCanvas.addEventListener('click', () => {
+focusCanvas.addEventListener('click', e => {
+  if (focusIsVideo() || e.target?.closest?.('video')) return;
   const t = Date.now();
-  if (t-lastTap < 300) { scale = scale > 1 ? 1 : 2; tx = ty = 0; applyTransform(); }
+  if (t-lastTap < 300) {
+    scale = scale > 1 ? 1 : 2;
+    tx = ty = 0;
+    applyTransform();
+  }
   lastTap = t;
 });
 
@@ -517,8 +652,16 @@ $('#returnBtn').onclick = () => $('#neutralScreen').classList.remove('open');
 $('#brandBtn').onclick = () => $('#neutralScreen').classList.add('open');
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { clearTimeout(advanceTimer); finalizeView(false); }
-  else if ($('#driftView').classList.contains('active') && initializedGallery) { viewStarted = Date.now(); scheduleAdvance(); }
+  const video = driftMedia.querySelector('.drift-video');
+  if (document.hidden) {
+    clearTimeout(advanceTimer);
+    video?.pause();
+    finalizeView(false);
+  } else if ($('#driftView').classList.contains('active') && initializedGallery) {
+    viewStarted = Date.now();
+    if (video) video.play().catch(() => {});
+    else scheduleAdvance();
+  }
 });
 
 function initGallery() {
@@ -528,7 +671,7 @@ function initGallery() {
   historyIndex = 0;
   renderMoment(history[0]);
   renderBrowse();
-  showToast(`${images.length} images · Drive connected`);
+  showToast(`${images.length} media · Drive connected`);
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});

@@ -129,3 +129,54 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npm install --no-save google-auth-library
           node velum-gallery/scripts/configure-firebase-auth.mjs
+
+  deploy_luminary:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create and deploy Luminary secondary Hosting site
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          LUMINARY_SITE_ID: pti-app-2ab59-luminary
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT is not configured; cannot deploy Luminary."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install -g firebase-tools
+          firebase --version
+
+          if firebase hosting:sites:get "$LUMINARY_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            echo "Hosting site $LUMINARY_SITE_ID already exists."
+          else
+            echo "Creating Hosting site $LUMINARY_SITE_ID..."
+            firebase hosting:sites:create "$LUMINARY_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          fi
+
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:luminary --non-interactive
+          echo "Luminary URL: https://${LUMINARY_SITE_ID}.web.app"
+
+      - name: Authorize Luminary Firebase Auth domains
+        continue-on-error: true
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          LUMINARY_SITE_ID: pti-app-2ab59-luminary
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install --no-save google-auth-library
+          node luminary-observer/scripts/configure-firebase-auth.mjs

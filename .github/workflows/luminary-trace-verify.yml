@@ -58,6 +58,9 @@ jobs:
 
           const browser = await chromium.launch({ headless: true });
           const page = await browser.newPage();
+          await page.emulateMedia({ reducedMotion: 'reduce' });
+          page.on('console', msg => console.log('browser:', msg.type(), msg.text()));
+          page.on('pageerror', error => console.log('pageerror:', error.message));
 
           const appModule = "export function initializeApp(config){return {config};}";
           const authModule = [
@@ -130,7 +133,7 @@ jobs:
           await page.waitForSelector('.timeline-item[data-source="text"]');
 
           await page.locator('.nav-item[data-nav="discover"]').click();
-          await page.waitForSelector('.pattern-track');
+          await page.waitForSelector('.pattern-track', { timeout: 10000 });
           const sourceTicks=await page.locator('.pattern-source-tick').count();
           const unlinked=await page.getByText('NO SYNTHETIC POSITION').count();
           if(sourceTicks!==2) throw new Error('Expected 2 source-linked temporal ticks, found '+sourceTicks);

@@ -1,5 +1,7 @@
 # Luminary — Experience System v1
 
+> **Status — 2026-09-23:** The Living Instrument v1 **visual/art direction is rejected as a final design direction**. This document remains useful for product posture, capture behavior, data boundaries, accessibility/performance intent, and interaction constraints. Do **not** treat its Figma, colors, orbital geometry, glow language, typography pairing, or motion styling as the source of truth for the next redesign. Read `luminary-observer/design/` and Central design intelligence first.
+
 Figma source of truth: https://www.figma.com/design/S22P1eeLrgbEYQGRzuxvfY
 
 ## Product posture

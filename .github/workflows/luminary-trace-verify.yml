@@ -1,0 +1,149 @@
+name: Luminary Trace Verify
+
+on:
+  push:
+    branches:
+      - luminary/trace-register-v2
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check Luminary JavaScript and DOM contract
+        run: |
+          node --check luminary-observer/app.js
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('luminary-observer/index.html', 'utf8');
+          const js = fs.readFileSync('luminary-observer/app.js', 'utf8');
+          const requiredIds = [
+            'authGate','appShell','signInBtn','syncState','brandBtn','profileBtn',
+            'markBtn','markStatus','voiceBtn','textBtn','textComposer','observationText',
+            'textCount','cancelTextBtn','saveTextBtn','voicePanel','voiceState',
+            'voiceTranscript','lastCapture','timelineList','timelineEmpty',
+            'refreshTimelineBtn','refreshDiscoverBtn','patternList','patternEmpty',
+            'patternField','momentDialog','closeMomentBtn','momentHero','momentContext',
+            'momentRelations','toast'
+          ];
+          for (const id of requiredIds) {
+            if (!html.includes('id="' + id + '"')) throw new Error('Missing DOM id: ' + id);
+          }
+          if (!js.includes("const UI_VERSION = 'trace-register-v2';")) throw new Error('UI version not updated');
+          if (!js.includes("where(documentId(), 'in', ids)")) throw new Error('Source-linked pattern lookup missing');
+          if (/pattern-node|pattern-lines|field-glow|orbit-/.test(html)) throw new Error('Rejected v1 visual markup remains');
+          console.log('Luminary DOM contract OK');
+          NODE
+
+      - name: Install PTI dependencies
+        working-directory: pti-app
+        run: npm ci
+
+      - name: Build PTI Angular app
+        working-directory: pti-app
+        run: npm run build -- --configuration production
+
+      - name: Run PTI unit tests
+        working-directory: pti-app
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      - name: Install visual capture runtime
+        run: |
+          mkdir -p /tmp/luminary-visual
+          cd /tmp/luminary-visual
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Render Luminary representative surfaces
+        run: |
+          mkdir -p /tmp/luminary-visual/evidence
+          python3 -m http.server 4173 --directory luminary-observer >/tmp/luminary-http.log 2>&1 &
+          cat >/tmp/luminary-visual/capture.mjs <<'NODE'
+          import { chromium } from 'playwright';
+
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage();
+          await page.route('**/app.js', route => route.fulfill({
+            status: 200,
+            contentType: 'application/javascript',
+            body: ''
+          }));
+
+          const patternMarkup = [
+            '<div class="pattern-axis">',
+              '<div class="pattern-axis-label instrument-meta">SOURCE SPAN</div>',
+              '<div class="pattern-axis-range"><span>02 SEP 2026</span><span>23 SEP 2026</span></div>',
+            '</div>',
+            '<div class="pattern-track">',
+              '<div class="pattern-track-label"><strong>Attention recurs after context switches</strong><span>12 SUPPORTS · 7/7 SOURCE DATES</span></div>',
+              '<div class="pattern-track-line">',
+                '<i class="pattern-source-tick" style="left:7%"></i><i class="pattern-source-tick" style="left:22%"></i><i class="pattern-source-tick" style="left:43%"></i><i class="pattern-source-tick" style="left:62%"></i><i class="pattern-source-tick" style="left:85%"></i>',
+              '</div>',
+            '</div>',
+            '<div class="pattern-track">',
+              '<div class="pattern-track-label"><strong>Unhurried mornings recur with longer notes</strong><span>7 SUPPORTS · 5/5 SOURCE DATES</span></div>',
+              '<div class="pattern-track-line">',
+                '<i class="pattern-source-tick" style="left:14%"></i><i class="pattern-source-tick" style="left:49%"></i><i class="pattern-source-tick" style="left:73%"></i><i class="pattern-source-tick" style="left:92%"></i>',
+              '</div>',
+            '</div>',
+            '<div class="pattern-track">',
+              '<div class="pattern-track-label"><strong>Evening observations repeat without a stable cause</strong><span>5 SUPPORTS · 4/4 SOURCE DATES</span></div>',
+              '<div class="pattern-track-line">',
+                '<i class="pattern-source-tick" style="left:20%"></i><i class="pattern-source-tick" style="left:36%"></i><i class="pattern-source-tick" style="left:69%"></i><i class="pattern-source-tick" style="left:88%"></i>',
+              '</div>',
+            '</div>',
+            '<div class="pattern-track">',
+              '<div class="pattern-track-label"><strong>Source linkage pending</strong><span>4 SUPPORTS · SOURCE IDS NOT LINKED</span></div>',
+              '<div class="pattern-track-line"><span class="pattern-unlinked">NO SYNTHETIC POSITION</span></div>',
+            '</div>'
+          ].join('');
+
+          async function load(width, height) {
+            await page.setViewportSize({ width, height });
+            await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
+          }
+
+          async function showView(view) {
+            await page.evaluate((viewName) => {
+              document.getElementById('authGate').hidden = true;
+              document.getElementById('appShell').hidden = false;
+              document.querySelectorAll('.view').forEach(node => node.classList.toggle('active', node.dataset.view === viewName));
+              document.querySelectorAll('.nav-item').forEach(node => node.classList.toggle('active', node.dataset.nav === viewName));
+            }, view);
+          }
+
+          await load(1440, 900);
+          await page.screenshot({ path: '/tmp/luminary-visual/evidence/entry-desktop.png' });
+          await showView('observe');
+          await page.screenshot({ path: '/tmp/luminary-visual/evidence/observe-desktop.png' });
+          await showView('discover');
+          await page.evaluate((markup) => { document.getElementById('patternField').innerHTML = markup; }, patternMarkup);
+          await page.screenshot({ path: '/tmp/luminary-visual/evidence/patterns-desktop.png' });
+
+          await load(390, 844);
+          await page.screenshot({ path: '/tmp/luminary-visual/evidence/entry-mobile.png' });
+          await showView('observe');
+          await page.screenshot({ path: '/tmp/luminary-visual/evidence/observe-mobile.png' });
+          await showView('discover');
+          await page.evaluate((markup) => { document.getElementById('patternField').innerHTML = markup; }, patternMarkup);
+          await page.screenshot({ path: '/tmp/luminary-visual/evidence/patterns-mobile.png' });
+
+          await browser.close();
+          NODE
+          cd /tmp/luminary-visual
+          node capture.mjs
+
+      - name: Upload visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: luminary-trace-visual-evidence
+          path: /tmp/luminary-visual/evidence/*.png
+          retention-days: 7

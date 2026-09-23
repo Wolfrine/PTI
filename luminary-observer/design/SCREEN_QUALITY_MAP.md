@@ -4,17 +4,19 @@ Updated: 2026-09-23
 
 | Surface | Functional state | Visual state | Next action |
 |---|---|---|---|
-| Entry / auth | Working | Trace Register prototype passed | Implement representative runtime surface |
-| Observe | Working | Trace Register prototype passed | Preserve capture behavior; implement trace interaction |
-| Stream | Working | Usable but derivative | Hold; no full redesign in this pass |
-| Patterns | Working shell | Trace Register prototype passed with data guardrail | Implement source-linked temporal register; never synthesize evidence positions |
-| Moment detail | Working | Serviceable, not distinctive | Hold until runtime gate passes |
-| Profile / account | Working | Low priority | Compatibility styling only |
-| Mobile | Primary product target | Direction passed prototype gate | Recheck 390 x 844 runtime |
-| Desktop | Functional | Direction passed prototype gate | Recheck 1440 x 900 runtime |
+| Entry / auth | Working | Trace Register runtime gate passed | Accepted; preserve as proof surface |
+| Observe | Working | Trace Register runtime gate passed | Accepted; preserve capture simplicity |
+| Stream | Working | Compatible but not yet fully adapted | Next: translate raw chronology into Trace Register grammar without adding interpretation |
+| Patterns | Working | Trace Register runtime gate passed | Accepted; source-linked ticks only; never synthesize positions |
+| Moment detail | Working | Compatible, not yet fully adapted | Next: preserve raw/context/exposure boundary while adopting trace grammar |
+| Profile / account | Working | Functional compatibility styling | Low priority |
+| Mobile | Primary product target | 390 x 844 runtime gate passed | Preserve thumb reach and vertical register behavior |
+| Desktop | Functional | 1440 x 900 runtime gate passed | Preserve horizontal temporal field and contextual width |
 
 ## Priority
 
-Entry -> Observe -> Patterns runtime
--> desktop/mobile visual critic
--> only then consider Stream / Moment / Profile propagation.
+Entry / Observe / Patterns: passed
+-> Stream
+-> Moment detail
+-> re-run visual + behavior checks
+-> Account only if needed.

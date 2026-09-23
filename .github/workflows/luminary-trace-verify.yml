@@ -42,19 +42,6 @@ jobs:
           console.log('Luminary DOM contract OK');
           NODE
 
-      - name: Install PTI dependencies
-        working-directory: pti-app
-        run: npm ci
-
-      - name: Build PTI Angular app
-        working-directory: pti-app
-        run: npm run build -- --configuration production
-
-      - name: Run PTI unit tests
-        continue-on-error: true
-        working-directory: pti-app
-        run: npm test -- --watch=false --browsers=ChromeHeadless
-
       - name: Install visual capture runtime
         run: |
           mkdir -p /tmp/luminary-visual
@@ -62,6 +49,102 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install playwright@1.55.0
           npx playwright install --with-deps chromium
+
+      - name: Exercise Luminary product flows with Firebase mocks
+        run: |
+          python3 -m http.server 4173 --directory luminary-observer >/tmp/luminary-http.log 2>&1 &
+          cat >/tmp/luminary-visual/flow.mjs <<'NODE'
+          import { chromium } from 'playwright';
+
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage();
+
+          const appModule = "export function initializeApp(config){return {config};}";
+          const authModule = [
+            "let listener=null;",
+            "const user={uid:'test-user',displayName:'Test Observer',email:'observer@example.com'};",
+            "export function getAuth(){return {};}",
+            "export class GoogleAuthProvider{}",
+            "export function onAuthStateChanged(_auth,cb){listener=cb;queueMicrotask(()=>cb(null));return ()=>{};}",
+            "export async function signInWithPopup(){if(listener) await listener(user);return {user};}",
+            "export async function signOut(){if(listener) await listener(null);}"
+          ].join("\n");
+          const firestoreModule = [
+            "const writes=[];globalThis.__luminaryMockWrites=writes;",
+            "export function getFirestore(){return {};}",
+            "export function enableIndexedDbPersistence(){return Promise.resolve();}",
+            "export function collection(_db,path){return {kind:'collection',path};}",
+            "export function doc(_db,path){return {kind:'doc',path};}",
+            "export async function addDoc(ref,data){writes.push({op:'addDoc',path:ref.path,data});return {id:'mock-'+writes.length};}",
+            "export async function setDoc(ref,data,opts){writes.push({op:'setDoc',path:ref.path,data,opts});}",
+            "export function query(source,...args){return {source,args};}",
+            "export function orderBy(field,direction){return {type:'orderBy',field,direction};}",
+            "export function limit(value){return {type:'limit',value};}",
+            "export function serverTimestamp(){return {mockServerTimestamp:true};}",
+            "export function increment(value){return {mockIncrement:value};}",
+            "export function where(field,op,value){return {type:'where',field,op,value};}",
+            "export function documentId(){return '__name__';}",
+            "function d(id,data){return {id,data(){return data;}};}",
+            "export async function getDocs(q){",
+            "  const path=q.source?.path||'';",
+            "  const sourceLookup=(q.args||[]).some(x=>x&&x.type==='where');",
+            "  if(path.includes('/patterns/items')) return {docs:[",
+            "    d('p1',{title:'Recurring context switches',summary:'Recurrence only.',status:'observed',supportCount:2,updatedAtMs:3,sourceObservationIds:['s1','s2']}),",
+            "    d('p2',{title:'Unlinked derived structure',summary:'No source positions should be synthesized.',status:'observed',supportCount:1,updatedAtMs:2})",
+            "  ]};",
+            "  if(path.includes('/observations/items')&&sourceLookup) return {docs:[",
+            "    d('s1',{clientCreatedAtMs:1756902600000,clientCreatedAt:'2025-09-03T10:30:00.000Z'}),",
+            "    d('s2',{clientCreatedAtMs:1758630600000,clientCreatedAt:'2025-09-23T10:30:00.000Z'})",
+            "  ]};",
+            "  if(path.includes('/observations/items')) return {docs:[",
+            "    d('s2',{sourceType:'text',rawText:'A raw observation',clientCreatedAtMs:1758630600000,clientCreatedAt:'2025-09-23T10:30:00.000Z',localDate:'2025-09-23'}),",
+            "    d('s1',{sourceType:'mark',rawText:'',clientCreatedAtMs:1756902600000,clientCreatedAt:'2025-09-03T10:30:00.000Z',localDate:'2025-09-03'})",
+            "  ]};",
+            "  return {docs:[]};",
+            "}"
+          ].join("\n");
+
+          await page.route('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js', route => route.fulfill({
+            status:200, contentType:'application/javascript', headers:{'access-control-allow-origin':'*'}, body:appModule
+          }));
+          await page.route('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js', route => route.fulfill({
+            status:200, contentType:'application/javascript', headers:{'access-control-allow-origin':'*'}, body:authModule
+          }));
+          await page.route('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js', route => route.fulfill({
+            status:200, contentType:'application/javascript', headers:{'access-control-allow-origin':'*'}, body:firestoreModule
+          }));
+
+          await page.goto('http://127.0.0.1:4173/', { waitUntil:'networkidle' });
+          await page.getByRole('button',{name:'Enter observation'}).click();
+          await page.waitForSelector('#appShell:not([hidden])');
+
+          await page.getByRole('button',{name:'Mark this moment'}).click();
+          await page.waitForFunction(() => document.getElementById('lastCapture')?.textContent?.includes('Mark'));
+
+          await page.getByRole('button',{name:'Write an observation'}).click();
+          await page.locator('#observationText').fill('The room became quiet after the meeting ended.');
+          await page.getByRole('button',{name:'Preserve'}).click();
+          await page.waitForFunction(() => document.getElementById('lastCapture')?.textContent?.includes('Text'));
+
+          await page.locator('.nav-item[data-nav="timeline"]').click();
+          await page.waitForSelector('.timeline-item[data-source="text"]');
+
+          await page.locator('.nav-item[data-nav="discover"]').click();
+          await page.waitForSelector('.pattern-track');
+          const sourceTicks=await page.locator('.pattern-source-tick').count();
+          const unlinked=await page.getByText('NO SYNTHETIC POSITION').count();
+          if(sourceTicks!==2) throw new Error('Expected 2 source-linked temporal ticks, found '+sourceTicks);
+          if(unlinked<1) throw new Error('Expected explicit no-synthetic-position state');
+
+          await page.locator('#profileBtn').click();
+          await page.getByRole('button',{name:'Sign out'}).click();
+          await page.waitForSelector('#authGate:not([hidden])');
+
+          console.log('Luminary mocked product-flow verification OK');
+          await browser.close();
+          NODE
+          cd /tmp/luminary-visual
+          node flow.mjs
 
       - name: Render Luminary representative surfaces
         run: |

@@ -1,59 +1,163 @@
 # Luminary Design Direction
 
-Status: Reset required
+Status: Trace Register selected for representative implementation
+Updated: 2026-09-23
 
-## Product invariants to preserve
+## Product invariants
 
-Luminary is:
+Luminary remains:
 - an observation instrument, not a dashboard or gamified wellness app;
 - phone-first for capture;
 - intentionally low-priming;
-- non-interpretive inside the capture client;
-- external-agent analyzed rather than LLM-powered in-app;
+- non-interpretive during capture;
+- externally analyzed rather than LLM-powered in the client;
+- separated into raw observation, interpretation, pattern, theory and intervention;
 - calm enough for repeated use without demanding attention.
 
-The core actions remain:
-- Mark;
-- hold/speak;
-- write;
-- review raw stream;
-- inspect externally derived patterns with clear epistemic separation.
+Core actions remain Mark, hold/speak, write, raw-stream review, derived-pattern inspection and moment/context inspection.
 
-## What is *not* an invariant
+## Reference basis
 
-Do not preserve merely because v1 used it:
-- near-black field;
-- cyan/mint/violet palette;
-- glowing orbs;
-- concentric orbital geometry;
-- node-network pattern visualization;
-- premium-serif + utility-sans pairing;
-- pill CTA;
-- large rounded containers;
-- fade/scale/pulse as the primary motion language.
+See REFERENCE_PACK_V2.md.
 
-## Next exploration requirement
+The main mechanisms selected were:
+- Dear Data: observation as accumulated trace with explicit visual keys;
+- Histography: time as the persistent spatial coordinate;
+- Are.na: quiet system clarity rather than decorative UI;
+- The Pudding: graphics must correspond to evidence;
+- Long Now: duration as material;
+- Prague Quadrennial archive: temporal sequence as navigable space;
+- Daylight: calm can be light and materially quiet rather than dark-futuristic.
 
-The next visual system must answer:
+## Art direction A — Trace Register
 
-> What visual behavior would still feel recognizably Luminary if the logo and product name disappeared?
+Design thesis:
+Luminary is a continuous temporal register that changes only when something is actually observed.
 
-Potential exploration areas should be derived from references, not adopted as answers in advance. Examples of *questions* to investigate:
+Visual grammar:
+- Typography: system grotesk for primary language; compact mono for timestamps, evidence labels and instrument metadata.
+- Composition: one persistent register line / axis; information sits in margins or interrupts the axis instead of living inside repeated cards.
+- Spacing: large quiet intervals; density appears only when the record contains density.
+- Graphics: ticks, cuts, brackets and trace marks tied to real temporal or evidence relationships.
+- Color: warm mineral field, graphite text/lines, one restrained red-orange present/trace signal.
+- Interaction: Mark interrupts the register; voice and write remain secondary edge actions.
+- Motion: register continuity across state changes, current-time progression, local notch / trace after capture, evidence tracks revealing from actual source dates.
+- Desktop: horizontal time field uses width for relationship and context.
+- Mobile: the same register becomes vertical so the primary action remains thumb-reachable without turning desktop into a widened phone.
 
-- Can observation be represented as accumulation, trace, residue, lensing, interruption, sampling, or temporal change rather than “glowing consciousness”?
-- Can the interface feel quiet without becoming dark-futuristic?
-- Can derived patterns use a representation tied to longitudinal observation rather than a generic node graph?
-- How can desktop become a meaningful spatial extension of phone-first capture rather than a widened mobile shell?
+Product metaphor:
+Observation creates an irreversible trace in time. Patterns are not explanations; they are recurrence registered against the same record.
 
-## Art-direction gate
+Risks:
+- Can resemble a medical instrument, financial chart or generic timeline if labels / behavior are weak.
+- Can imply false precision if marks are synthesized.
+- Excessive micro-labels could make capture feel clinical.
 
-Before implementation:
-- 5–8 relevant real references;
-- exact mechanism learned from each;
-- at least two substantially different art-direction prototypes;
-- one-page design thesis for the selected direction;
-- anti-pattern check against Central;
-- rendered Entry + Observe + Patterns representative state;
-- independent visual-critic pass.
+Guardrails:
+- No tick is positioned from invented data.
+- Patterns without source observation dates show metadata / source-link absence rather than fabricated marks.
+- The capture screen remains simpler than the derived-pattern screen.
+- The red signal means present / observed trace only; it is not a score, risk or quality state.
 
-Do not rebuild the full application before this gate passes.
+## Art direction B — Aperture / Cut
+
+Design thesis:
+Observation is a temporary aperture into ongoing reality: the interface reveals a narrow slice without interpreting it.
+
+Visual grammar:
+- Typography: neutral sans with abrupt crop relationships.
+- Composition: slits, frames and partial reveals that change width with state.
+- Spacing: large quiet fields interrupted by one visible aperture.
+- Graphics: hard-edged masks / cuts rather than circles or glows.
+- Color: neutral field with a single material accent.
+- Interaction: Mark closes a brief aperture around the captured instant.
+- Motion: mask continuity communicates entering, observing and reviewing.
+
+Product metaphor:
+The product selects a moment without claiming to explain it.
+
+Risks:
+- The framing metaphor can itself prime what deserves attention.
+- It can read as photography / fashion art direction.
+- The Mark control can become visually clever but less immediate.
+
+Reference basis:
+Editorial crop logic and archive framing mechanisms.
+
+Decision:
+Not selected. Conceptually strong but less faithful to the product's non-priming posture.
+
+## Art direction C — Palimpsest / Residue
+
+Design thesis:
+Observations accumulate as faint residues whose overlaps become visible only with time.
+
+Visual grammar:
+- Typography: repeated text fragments / registration offsets.
+- Composition: layered imprints with clear raw-vs-derived separation.
+- Spacing: sparse initially; density emerges from accumulated records.
+- Graphics: opacity accumulation, overprint, registration marks.
+- Color: paper / ink tones with one derived-layer accent.
+- Interaction: saving leaves a faint imprint rather than a success animation.
+- Motion: new marks settle into prior residue; derived regions emerge from overlap.
+
+Product metaphor:
+Meaning is not present at capture; only residue accumulates.
+
+Risks:
+- Can become decorative, nostalgic or journal-like.
+- Layering can reduce readability and accessibility.
+- Visual darkness from overlap could be mistaken for importance or pathology.
+
+Reference basis:
+Dear Data's material trace and editorial evidence layering.
+
+Decision:
+Not selected. Too close to journal / memory aesthetics and less precise for source-linked pattern evidence.
+
+## Selected direction
+
+Trace Register is selected because it maps directly to Luminary's actual data and epistemic model:
+- raw observation already has time;
+- Mark naturally becomes a trace rather than an interpreted symbol;
+- recurrence can be shown on the same coordinate without causal edges;
+- missing source dates can be represented honestly;
+- mobile and desktop can share one grammar while changing orientation.
+
+The recognizable idea is therefore not a palette or logo:
+
+present coordinate -> observed trace -> accumulated register -> source-linked recurrence.
+
+## Representative prototype
+
+Prototype surfaces:
+- Entry;
+- Observe;
+- Patterns.
+
+Rendered in both:
+- 1440 x 900 desktop;
+- 390 x 844 mobile.
+
+Figma was attempted first, but the connected Starter plan hit its MCP tool-call limit. The fallback visual artifact is a browser-rendered HTML/CSS prototype and PNG evidence generated from it.
+
+## Motion rule
+
+Experience choreography:
+- Entry to Observe preserves the register as a continuous object.
+- Mark creates a short trace deformation / signal at the current coordinate.
+- Patterns reveal source-linked ticks along a real date range.
+
+Micro-animation may still be used for touch feedback, focus and dialog transitions, but it is not the identity.
+
+Reduced motion removes animated travel while preserving state changes.
+
+## Asset decision
+
+No generated hero imagery or decorative asset system is required. The information geometry is the product-specific visual material. Adding stock / generated imagery would weaken the observation-instrument identity.
+
+## Implementation scope
+
+Only Entry, Observe and Patterns establish the new language in this pass. Existing Stream, Moment and Account behavior remains intact and receives only compatibility styling needed to coexist with the new tokens.
+
+Do not expand the redesign further until the representative implementation is visually checked again.

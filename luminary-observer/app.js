@@ -18,11 +18,13 @@ import {
   orderBy,
   limit,
   serverTimestamp,
-  increment
+  increment,
+  where,
+  documentId
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const APP_VERSION = '0.2.0';
-const UI_VERSION = 'living-instrument-v1';
+const UI_VERSION = 'trace-register-v2';
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -244,14 +246,30 @@ function playElementEntrance(nodes, options = {}) {
 function animateObserveEntrance() {
   if (hasAnimatedInitialView || reducedMotion()) return;
   hasAnimatedInitialView = true;
+
+  const register = $('.observe-register');
+  if (register) {
+    const mobile = window.matchMedia?.('(max-width: 720px)').matches;
+    register.animate(
+      mobile
+        ? [{ clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0 0)' }]
+        : [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
+      { duration: 720, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' }
+    );
+  }
+
+  const stem = $('.mark-stem');
+  if (stem) {
+    stem.animate(
+      [{ transform: 'scaleY(0)', opacity: .25 }, { transform: 'scaleY(1)', opacity: 1 }],
+      { duration: 420, delay: 260, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' }
+    );
+  }
+
   playElementEntrance([
-    $('.observe-copy .mode-label'),
-    $('.observe-copy h2'),
-    $('.observe-copy>p:last-child'),
-    els.markBtn,
-    ...$$('.capture-button'),
+    ...$('.capture-button'),
     $('.last-capture')
-  ], { step: 70 });
+  ], { baseDelay: 340, step: 70 });
 }
 
 function animateCurrentView(view) {
@@ -284,27 +302,19 @@ function animateRenderedItems(selector) {
 
 function animatePatternField() {
   if (!els.patternField || reducedMotion()) return;
-  const nodes = $$('.pattern-node');
-  nodes.forEach((node, index) => {
-    node.animate(
+  const tracks = $('.pattern-track-line');
+  tracks.forEach((track, index) => {
+    track.animate(
       [
-        { opacity: .05, transform: 'scale(.35)' },
-        { opacity: 1, transform: 'scale(1.18)' },
-        { opacity: .88, transform: 'scale(1)' }
+        { clipPath: 'inset(0 100% 0 0)' },
+        { clipPath: 'inset(0 0 0 0)' }
       ],
       {
-        duration: 700,
-        delay: 100 + index * 85,
+        duration: 560,
+        delay: Math.min(index * 70, 350),
         easing: 'cubic-bezier(.2,.75,.25,1)',
         fill: 'both'
       }
-    );
-  });
-  const paths = $$('.pattern-lines path');
-  paths.forEach((path, index) => {
-    path.animate(
-      [{ opacity: 0 }, { opacity: 1 }],
-      { duration: 620, delay: 500 + index * 90, easing: 'ease-out', fill: 'both' }
     );
   });
 }
@@ -566,6 +576,196 @@ async function openMoment(observationId) {
   await track('moment_open', { observationId, sourceType: source });
 }
 
+function coercePatternDateMs(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function sourceFromPatternValue(value) {
+  if (typeof value === 'string' && value.trim()) {
+    return { id: value.trim(), dateMs: null };
+  }
+  if (!value || typeof value !== 'object') return null;
+  const id = value.observationId || value.sourceObservationId || value.observationID || null;
+  if (!id) return null;
+  const dateMs = coercePatternDateMs(
+    value.clientCreatedAtMs ??
+    value.observedAtMs ??
+    value.timestampMs ??
+    value.clientCreatedAt ??
+    value.observedAt ??
+    value.date
+  );
+  return { id: String(id), dateMs };
+}
+
+function extractPatternSources(pattern) {
+  const sources = [];
+  const idKeys = [
+    'sourceObservationIds',
+    'supportingObservationIds',
+    'observationIds',
+    'evidenceObservationIds'
+  ];
+  const objectKeys = [
+    'sources',
+    'evidence',
+    'supportingObservations',
+    'supportingEvents'
+  ];
+
+  idKeys.forEach((key) => {
+    if (!Array.isArray(pattern[key])) return;
+    pattern[key].forEach((value) => {
+      const source = sourceFromPatternValue(value);
+      if (source) sources.push(source);
+    });
+  });
+
+  objectKeys.forEach((key) => {
+    if (!Array.isArray(pattern[key])) return;
+    pattern[key].forEach((value) => {
+      const source = sourceFromPatternValue(value);
+      if (source) sources.push(source);
+    });
+  });
+
+  const byId = new Map();
+  sources.forEach((source) => {
+    const existing = byId.get(source.id);
+    if (!existing || (existing.dateMs == null && source.dateMs != null)) {
+      byId.set(source.id, source);
+    }
+  });
+  return [...byId.values()];
+}
+
+async function loadPatternSourceDates(patterns) {
+  const displayed = patterns.slice(0, 6);
+  const sources = displayed.flatMap(extractPatternSources);
+  const dateMap = new Map();
+
+  sources.forEach((source) => {
+    if (source.dateMs != null) dateMap.set(source.id, source.dateMs);
+  });
+
+  const unresolved = [...new Set(
+    sources
+      .filter((source) => source.dateMs == null)
+      .map((source) => source.id)
+  )].slice(0, 240);
+
+  for (let offset = 0; offset < unresolved.length; offset += 30) {
+    const ids = unresolved.slice(offset, offset + 30);
+    if (!ids.length) continue;
+    try {
+      const snapshot = await getDocs(query(
+        datasetCollection('observations'),
+        where(documentId(), 'in', ids)
+      ));
+      snapshot.docs.forEach((item) => {
+        const data = item.data();
+        const dateMs = coercePatternDateMs(data.clientCreatedAtMs ?? data.clientCreatedAt);
+        if (dateMs != null) dateMap.set(item.id, dateMs);
+      });
+    } catch (error) {
+      console.warn('Pattern source-date lookup failed', error);
+      break;
+    }
+  }
+
+  return dateMap;
+}
+
+function formatAxisDate(ms) {
+  if (!Number.isFinite(ms)) return 'DATE UNAVAILABLE';
+  return new Intl.DateTimeFormat(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(new Date(ms));
+}
+
+function renderPatternRegister(patterns, sourceDateMap) {
+  if (!els.patternField) return;
+  if (!patterns.length) {
+    els.patternField.innerHTML =
+      '<div class="pattern-register-empty">' +
+        '<span class="instrument-meta">DERIVED STRUCTURE</span>' +
+        '<span>No published pattern has entered the register yet.</span>' +
+      '</div>';
+    return;
+  }
+
+  const rows = patterns.slice(0, 6).map((pattern) => {
+    const sources = extractPatternSources(pattern);
+    const dated = sources
+      .map((source) => ({
+        id: source.id,
+        dateMs: source.dateMs ?? sourceDateMap.get(source.id) ?? null
+      }))
+      .filter((source) => source.dateMs != null);
+    return { pattern, sources, dated };
+  });
+
+  const allDates = rows.flatMap((row) => row.dated.map((source) => source.dateMs));
+  let minMs = allDates.length ? Math.min(...allDates) : null;
+  let maxMs = allDates.length ? Math.max(...allDates) : null;
+
+  if (minMs != null && maxMs != null && minMs === maxMs) {
+    minMs -= 12 * 60 * 60 * 1000;
+    maxMs += 12 * 60 * 60 * 1000;
+  }
+
+  const axisStart = minMs == null ? 'SOURCE DATES NOT LINKED' : formatAxisDate(minMs);
+  const axisEnd = maxMs == null ? 'NO TEMPORAL POSITION' : formatAxisDate(maxMs);
+
+  let html =
+    '<div class="pattern-axis">' +
+      '<div class="pattern-axis-label instrument-meta">SOURCE SPAN</div>' +
+      '<div class="pattern-axis-range"><span>' + escapeHtml(axisStart) + '</span><span>' + escapeHtml(axisEnd) + '</span></div>' +
+    '</div>';
+
+  rows.forEach((row) => {
+    const pattern = row.pattern;
+    const title = pattern.title || pattern.description || 'Observed pattern';
+    const supportCount = pattern.supportCount == null ? row.sources.length : pattern.supportCount;
+    const supportLabel = supportCount
+      ? String(supportCount) + ' SUPPORT' + (Number(supportCount) === 1 ? '' : 'S')
+      : 'SUPPORT COUNT NOT RECORDED';
+
+    const ticks = minMs == null || maxMs == null
+      ? ''
+      : row.dated.map((source) => {
+          const position = Math.max(0, Math.min(100, ((source.dateMs - minMs) / (maxMs - minMs)) * 100));
+          return '<i class="pattern-source-tick" style="left:' + position.toFixed(3) + '%" title="' +
+            escapeHtml(formatDateTime(new Date(source.dateMs).toISOString())) + '"></i>';
+        }).join('');
+
+    const linkage = row.sources.length
+      ? String(row.dated.length) + '/' + String(row.sources.length) + ' SOURCE DATES'
+      : 'SOURCE IDS NOT LINKED';
+
+    html +=
+      '<div class="pattern-track" data-pattern-id="' + escapeHtml(pattern.id) + '">' +
+        '<div class="pattern-track-label">' +
+          '<strong>' + escapeHtml(title) + '</strong>' +
+          '<span>' + escapeHtml(supportLabel + ' · ' + linkage) + '</span>' +
+        '</div>' +
+        '<div class="pattern-track-line">' +
+          ticks +
+          (row.dated.length ? '' : '<span class="pattern-unlinked">NO SYNTHETIC POSITION</span>') +
+        '</div>' +
+      '</div>';
+  });
+
+  els.patternField.innerHTML = html;
+}
+
 async function loadPatterns() {
   if (!currentUser) return;
   els.patternList.innerHTML = '';
@@ -573,9 +773,15 @@ async function loadPatterns() {
   try {
     const snapshot = await getDocs(query(datasetCollection('patterns'), orderBy('updatedAtMs', 'desc'), limit(50)));
     const patterns = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+    const sourceDates = patterns.length ? await loadPatternSourceDates(patterns) : new Map();
+
+    renderPatternRegister(patterns, sourceDates);
     els.patternList.innerHTML = patterns.map(renderPattern).join('');
     els.patternEmpty.hidden = patterns.length > 0;
-    await track('discover_loaded', { patterns: patterns.length });
+    await track('discover_loaded', {
+      patterns: patterns.length,
+      sourceDatesResolved: sourceDates.size
+    });
     animatePatternField();
     animateRenderedItems('.pattern-card');
     if (patterns.length) {
@@ -583,9 +789,13 @@ async function loadPatterns() {
     }
   } catch (error) {
     console.error(error);
+    els.patternField.innerHTML =
+      '<div class="pattern-register-empty">' +
+        '<span class="instrument-meta">DERIVED STRUCTURE</span>' +
+        '<span>The pattern register could not be loaded.</span>' +
+      '</div>';
     els.patternEmpty.textContent = 'Derived patterns could not be loaded.';
     els.patternEmpty.hidden = false;
-    animatePatternField();
   }
 }
 
@@ -722,8 +932,18 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  els.authGate.hidden = true;
-  els.appShell.hidden = false;
+  const revealAuthenticatedShell = () => {
+    els.authGate.hidden = true;
+    els.appShell.hidden = false;
+  };
+
+  if (document.startViewTransition && !reducedMotion()) {
+    const transition = document.startViewTransition(revealAuthenticatedShell);
+    await transition.finished.catch(() => {});
+  } else {
+    revealAuthenticatedShell();
+  }
+
   els.profileName.textContent = user.displayName || 'Luminary';
   els.profileEmail.textContent = user.email || '';
   setSync(navigator.onLine ? 'online' : 'busy');

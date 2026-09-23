@@ -1,6 +1,6 @@
 # Luminary Design Direction
 
-Status: Trace Register selected for representative implementation
+Status: Trace Register runtime gate passed
 Updated: 2026-09-23
 
 ## Product invariants
@@ -160,4 +160,4 @@ No generated hero imagery or decorative asset system is required. The informatio
 
 Only Entry, Observe and Patterns establish the new language in this pass. Existing Stream, Moment and Account behavior remains intact and receives only compatibility styling needed to coexist with the new tokens.
 
-Do not expand the redesign further until the representative implementation is visually checked again.
+The representative runtime has passed its visual and mocked-flow gate. The next pass may adapt Stream and Moment detail, while preserving the same evidence and exposure boundaries.

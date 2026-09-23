@@ -3,27 +3,55 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#090d12" />
+  <meta name="theme-color" content="#07101c" />
   <meta name="color-scheme" content="dark" />
-  <meta name="description" content="Luminary — minimal-influence consciousness observation." />
+  <meta name="description" content="Luminary — observer-first consciousness research." />
   <title>Luminary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <main id="authGate" class="auth-gate">
-    <div class="auth-card">
-      <div class="brand-orbit" aria-hidden="true"><span></span></div>
-      <p class="eyebrow">LUMINARY</p>
-      <h1>Observe before explaining.</h1>
-      <p class="muted">Capture naturally occurring moments with as little interference as possible.</p>
-      <button id="signInBtn" class="button primary">Continue with Google</button>
-      <p id="authError" class="status error" hidden></p>
+    <div class="entry-shell">
+      <div class="entry-top">
+        <span class="brand-sigil" aria-hidden="true"><i></i><i></i><b></b></span>
+        <span class="entry-brand">Luminary</span>
+      </div>
+
+      <div class="entry-field" aria-hidden="true">
+        <span class="field-glow field-glow-a"></span>
+        <span class="field-glow field-glow-b"></span>
+        <span class="orbit orbit-1"></span>
+        <span class="orbit orbit-2"></span>
+        <span class="orbit orbit-3"></span>
+        <span class="field-core"></span>
+      </div>
+
+      <section class="entry-copy">
+        <p class="mode-label">OBSERVE · UNDERSTAND · EVOLVE</p>
+        <h1>A quieter mind.<br>A clearer reality.</h1>
+        <p>Enter without expectation. Observe what is already there.</p>
+        <button id="signInBtn" class="entry-cta" type="button">
+          <span>Enter Luminary</span>
+          <span class="cta-arrow">↗</span>
+        </button>
+        <p id="authError" class="status error" hidden></p>
+        <small>Your observations remain yours.</small>
+      </section>
     </div>
   </main>
 
   <div id="appShell" class="app-shell" hidden>
+    <div class="global-field" aria-hidden="true">
+      <span class="global-glow g1"></span>
+      <span class="global-glow g2"></span>
+      <span class="global-grid"></span>
+    </div>
+
     <header class="topbar">
       <button id="brandBtn" class="brand" type="button" aria-label="Open Observe">
         <span class="brand-dot"></span>
@@ -31,95 +59,187 @@
       </button>
       <div class="top-actions">
         <span id="syncState" class="sync-state" title="Sync status">●</span>
-        <button id="profileBtn" class="icon-button" type="button" aria-label="Account">⋯</button>
+        <button id="profileBtn" class="icon-button" type="button" aria-label="Account">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
 
-    <section id="observeView" class="view active" data-view="observe">
+    <section id="observeView" class="view active observe-view" data-view="observe">
       <div class="observe-stage">
-        <p class="mode-label">OBSERVE</p>
+        <div class="observe-copy">
+          <p class="mode-label">OBSERVE</p>
+          <h2>Nothing to solve.<br><em>Just notice.</em></h2>
+          <p>A moment can be preserved without naming what it means.</p>
+        </div>
+
+        <div class="observe-field" aria-hidden="true">
+          <span class="field-glow"></span>
+          <span class="orbit orbit-1"></span>
+          <span class="orbit orbit-2"></span>
+          <span class="orbit orbit-3"></span>
+        </div>
+
         <button id="markBtn" class="mark-button" type="button" aria-label="Mark this moment">
+          <span class="mark-halo"></span>
+          <span class="mark-ring mark-ring-1"></span>
+          <span class="mark-ring mark-ring-2"></span>
           <span class="mark-core"></span>
           <span class="mark-copy">MARK</span>
         </button>
+
         <p id="markStatus" class="capture-status">Tap when something is worth preserving.</p>
 
         <div class="capture-actions">
           <button id="voiceBtn" class="capture-button voice" type="button">
-            <span class="capture-icon">◉</span>
-            <span class="capture-title">Hold to speak</span>
-            <span class="capture-subtitle">Release to save</span>
+            <span class="capture-icon voice-icon">
+              <i></i><i></i><i></i><i></i><i></i>
+            </span>
+            <span class="capture-text">
+              <span class="capture-title">Hold to speak</span>
+              <span class="capture-subtitle">Release to preserve</span>
+            </span>
+            <span class="capture-chevron">↗</span>
           </button>
+
           <button id="textBtn" class="capture-button" type="button">
-            <span class="capture-icon">＋</span>
-            <span class="capture-title">Write observation</span>
-            <span class="capture-subtitle">No categories or ratings</span>
+            <span class="capture-icon plus-icon">＋</span>
+            <span class="capture-text">
+              <span class="capture-title">Write an observation</span>
+              <span class="capture-subtitle">No categories. No scoring.</span>
+            </span>
+            <span class="capture-chevron">↗</span>
           </button>
         </div>
 
-        <div id="textComposer" class="composer" hidden>
+        <div id="textComposer" class="composer floating-surface" hidden>
+          <div class="composer-kicker">RAW OBSERVATION</div>
           <textarea id="observationText" rows="5" maxlength="5000" placeholder="What happened? Describe it in your own words."></textarea>
           <div class="composer-footer">
             <span id="textCount">0 / 5000</span>
             <div class="composer-buttons">
               <button id="cancelTextBtn" class="button ghost" type="button">Cancel</button>
-              <button id="saveTextBtn" class="button primary compact" type="button">Save</button>
+              <button id="saveTextBtn" class="button primary compact" type="button">Preserve</button>
             </div>
           </div>
         </div>
 
-        <div id="voicePanel" class="voice-panel" hidden>
+        <div id="voicePanel" class="voice-panel floating-surface" hidden>
+          <div class="voice-visual" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
           <div class="voice-live"><span class="pulse"></span><span id="voiceState">Listening…</span></div>
           <p id="voiceTranscript" class="voice-transcript"></p>
         </div>
 
         <section class="last-capture" aria-live="polite">
-          <span>Last capture</span>
+          <span>Last preserved</span>
           <strong id="lastCapture">None yet</strong>
         </section>
       </div>
     </section>
 
-    <section id="timelineView" class="view" data-view="timeline">
-      <div class="section-head">
+    <section id="timelineView" class="view stream-view" data-view="timeline">
+      <div class="section-head stream-head">
         <div>
-          <p class="mode-label">REVIEW</p>
-          <h2>Timeline</h2>
+          <p class="mode-label">STREAM</p>
+          <h2>What remained</h2>
+          <p>Your record, before interpretation.</p>
         </div>
-        <button id="refreshTimelineBtn" class="icon-button" type="button" aria-label="Refresh timeline">↻</button>
+        <button id="refreshTimelineBtn" class="icon-button" type="button" aria-label="Refresh stream">↻</button>
       </div>
-      <div id="timelineFilters" class="filters" role="group" aria-label="Timeline filters">
+
+      <div id="timelineFilters" class="filters" role="group" aria-label="Stream filters">
         <button class="filter active" data-filter="all">All</button>
         <button class="filter" data-filter="mark">Marks</button>
         <button class="filter" data-filter="voice">Voice</button>
         <button class="filter" data-filter="text">Text</button>
       </div>
-      <div id="timelineList" class="timeline-list"></div>
+
+      <div class="stream-rail">
+        <span class="stream-line" aria-hidden="true"></span>
+        <div id="timelineList" class="timeline-list"></div>
+      </div>
       <p id="timelineEmpty" class="empty-state" hidden>No observations yet.</p>
     </section>
 
-    <section id="discoverView" class="view" data-view="discover">
-      <div class="section-head">
+    <section id="discoverView" class="view patterns-view" data-view="discover">
+      <div class="section-head patterns-head">
         <div>
-          <p class="mode-label">DISCOVER</p>
-          <h2>Patterns</h2>
+          <p class="mode-label">PATTERNS</p>
+          <h2>Emergence</h2>
+          <p>Patterns surface only after enough reality exists.</p>
         </div>
         <button id="refreshDiscoverBtn" class="icon-button" type="button" aria-label="Refresh patterns">↻</button>
       </div>
-      <div class="discovery-note">
-        <strong>External analysis only.</strong>
-        <span>Luminary does not generate interpretations in the app. Findings written by authorized research agents appear here.</span>
+
+      <div id="patternField" class="pattern-field" aria-hidden="true">
+        <span class="pf-glow pf-a"></span>
+        <span class="pf-glow pf-b"></span>
+        <svg class="pattern-lines" viewBox="0 0 360 260" preserveAspectRatio="none">
+          <path d="M48 52 L126 88 L207 48 L298 95" />
+          <path d="M71 164 L153 127 L238 171 L311 211" />
+          <path d="M126 88 L153 127 L207 48" />
+          <path d="M153 127 L238 171" />
+        </svg>
+        <span class="pattern-node n1"></span>
+        <span class="pattern-node n2"></span>
+        <span class="pattern-node n3"></span>
+        <span class="pattern-node n4"></span>
+        <span class="pattern-node n5"></span>
+        <span class="pattern-node n6"></span>
+        <span class="pattern-node n7"></span>
+        <span class="pattern-node n8"></span>
+        <div class="pattern-field-label">DERIVED FIELD · EXTERNAL ANALYSIS</div>
       </div>
+
+      <div class="discovery-note">
+        <span class="note-signal"></span>
+        <div>
+          <strong>Not an explanation.</strong>
+          <span>These are observed structures in the dataset. Causality remains separate.</span>
+        </div>
+      </div>
+
       <div id="patternList" class="pattern-list"></div>
       <p id="patternEmpty" class="empty-state" hidden>No derived patterns have been published yet.</p>
     </section>
 
     <nav class="bottom-nav" aria-label="Luminary modes">
-      <button class="nav-item active" data-nav="observe"><span>●</span><small>Observe</small></button>
-      <button class="nav-item" data-nav="timeline"><span>≋</span><small>Timeline</small></button>
-      <button class="nav-item" data-nav="discover"><span>⌁</span><small>Discover</small></button>
+      <button class="nav-item active" data-nav="observe">
+        <span class="nav-symbol nav-observe"><i></i></span>
+        <small>Observe</small>
+      </button>
+      <button class="nav-item" data-nav="timeline">
+        <span class="nav-symbol nav-stream"><i></i><i></i><i></i></span>
+        <small>Stream</small>
+      </button>
+      <button class="nav-item" data-nav="discover">
+        <span class="nav-symbol nav-patterns"><i></i><i></i><i></i></span>
+        <small>Patterns</small>
+      </button>
     </nav>
   </div>
+
+  <dialog id="momentDialog" class="moment-dialog">
+    <div class="moment-sheet">
+      <button id="closeMomentBtn" class="moment-close" type="button" aria-label="Close moment">←</button>
+      <div class="moment-label">MOMENT</div>
+      <div id="momentHero" class="moment-hero"></div>
+
+      <section class="moment-block">
+        <div class="moment-block-label">CONTEXT</div>
+        <div id="momentContext" class="moment-context"></div>
+      </section>
+
+      <section class="moment-block">
+        <div class="moment-block-label">RELATIONS</div>
+        <div id="momentRelations" class="moment-relations"></div>
+      </section>
+
+      <p class="exposure-note">Reviewing this moment is itself logged as exposure.</p>
+    </div>
+  </dialog>
 
   <dialog id="profileDialog" class="profile-dialog">
     <div class="dialog-body">
@@ -128,7 +248,7 @@
       <p id="profileEmail" class="muted"></p>
       <div class="privacy-box">
         <strong>Observation boundary</strong>
-        <span>The app records your captures and product-usage telemetry. It does not call an AI/LLM service.</span>
+        <span>The app records captures and product-usage telemetry. It does not call an AI/LLM service.</span>
       </div>
       <div class="dialog-actions">
         <button id="closeProfileBtn" class="button ghost" type="button">Close</button>

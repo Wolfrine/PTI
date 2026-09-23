@@ -21,8 +21,9 @@ import {
   increment
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
-const APP_VERSION = '0.1.0';
-const UI_VERSION = 'observer-v1';
+const APP_VERSION = '0.2.0';
+const UI_VERSION = 'living-instrument-v1';
+
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
   authDomain: 'pti-app-2ab59.firebaseapp.com',
@@ -40,6 +41,7 @@ enableIndexedDbPersistence(db).catch(() => {});
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+
 const els = {
   authGate: $('#authGate'),
   appShell: $('#appShell'),
@@ -72,6 +74,12 @@ const els = {
   refreshDiscoverBtn: $('#refreshDiscoverBtn'),
   patternList: $('#patternList'),
   patternEmpty: $('#patternEmpty'),
+  patternField: $('#patternField'),
+  momentDialog: $('#momentDialog'),
+  closeMomentBtn: $('#closeMomentBtn'),
+  momentHero: $('#momentHero'),
+  momentContext: $('#momentContext'),
+  momentRelations: $('#momentRelations'),
   toast: $('#toast')
 };
 
@@ -89,17 +97,14 @@ let voiceInterim = '';
 let voiceActive = false;
 let lastVoiceStart = 0;
 let toastTimer = null;
+let hasAnimatedInitialView = false;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 function datasetCollection(dataset) {
   if (!currentUser) throw new Error('Not authenticated');
   return collection(db, `users/${currentUser.uid}/luminaryData/${dataset}/items`);
-}
-
-function datasetDocument(dataset, id) {
-  if (!currentUser) throw new Error('Not authenticated');
-  return doc(db, `users/${currentUser.uid}/luminaryData/${dataset}/items/${id}`);
 }
 
 function nowContext() {
@@ -216,16 +221,108 @@ function showToast(message) {
   toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800);
 }
 
+function playElementEntrance(nodes, options = {}) {
+  if (reducedMotion()) return;
+  const baseDelay = options.baseDelay ?? 0;
+  const step = options.step ?? 55;
+  nodes.filter(Boolean).forEach((node, index) => {
+    node.animate(
+      [
+        { opacity: 0, transform: 'translate3d(0,14px,0) scale(.995)' },
+        { opacity: 1, transform: 'translate3d(0,0,0) scale(1)' }
+      ],
+      {
+        duration: 460,
+        delay: baseDelay + index * step,
+        easing: 'cubic-bezier(.2,.75,.25,1)',
+        fill: 'both'
+      }
+    );
+  });
+}
+
+function animateObserveEntrance() {
+  if (hasAnimatedInitialView || reducedMotion()) return;
+  hasAnimatedInitialView = true;
+  playElementEntrance([
+    $('.observe-copy .mode-label'),
+    $('.observe-copy h2'),
+    $('.observe-copy>p:last-child'),
+    els.markBtn,
+    ...$$('.capture-button'),
+    $('.last-capture')
+  ], { step: 70 });
+}
+
+function animateCurrentView(view) {
+  const active = document.querySelector(`.view[data-view="${view}"]`);
+  if (!active || reducedMotion()) return;
+  active.classList.remove('entering');
+  void active.offsetWidth;
+  active.classList.add('entering');
+  setTimeout(() => active.classList.remove('entering'), 650);
+}
+
+function animateRenderedItems(selector) {
+  if (reducedMotion()) return;
+  const items = $$(selector);
+  items.forEach((item, index) => {
+    item.animate(
+      [
+        { opacity: 0, transform: 'translate3d(-8px,12px,0)' },
+        { opacity: 1, transform: 'translate3d(0,0,0)' }
+      ],
+      {
+        duration: 400,
+        delay: Math.min(index * 42, 420),
+        easing: 'cubic-bezier(.2,.75,.25,1)',
+        fill: 'both'
+      }
+    );
+  });
+}
+
+function animatePatternField() {
+  if (!els.patternField || reducedMotion()) return;
+  const nodes = $$('.pattern-node');
+  nodes.forEach((node, index) => {
+    node.animate(
+      [
+        { opacity: .05, transform: 'scale(.35)' },
+        { opacity: 1, transform: 'scale(1.18)' },
+        { opacity: .88, transform: 'scale(1)' }
+      ],
+      {
+        duration: 700,
+        delay: 100 + index * 85,
+        easing: 'cubic-bezier(.2,.75,.25,1)',
+        fill: 'both'
+      }
+    );
+  });
+  const paths = $$('.pattern-lines path');
+  paths.forEach((path, index) => {
+    path.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 620, delay: 500 + index * 90, easing: 'ease-out', fill: 'both' }
+    );
+  });
+}
+
 async function handleMark() {
   els.markBtn.disabled = true;
   els.markStatus.textContent = 'Preserving this moment…';
   const pressedAt = Date.now();
   try {
     await saveObservation('mark', '', { interactionLatencyMs: Date.now() - pressedAt });
-    els.markStatus.textContent = 'Marked.';
-    showToast('Moment marked');
+    els.markStatus.textContent = 'Preserved.';
+    els.markBtn.classList.remove('saved');
+    void els.markBtn.offsetWidth;
+    els.markBtn.classList.add('saved');
+    showToast('Moment preserved');
     setTimeout(() => {
-      if (els.markStatus.textContent === 'Marked.') els.markStatus.textContent = 'Tap when something is worth preserving.';
+      els.markBtn.classList.remove('saved');
+      if (els.markStatus.textContent === 'Preserved.') els.markStatus.textContent = 'Tap when something is worth preserving.';
     }, 1500);
   } finally {
     els.markBtn.disabled = false;
@@ -239,6 +336,15 @@ function openComposer() {
   textDirty = false;
   els.observationText.value = '';
   updateTextCount();
+  if (!reducedMotion()) {
+    els.textComposer.animate(
+      [
+        { opacity: 0, transform: 'translate3d(0,18px,0) scale(.985)' },
+        { opacity: 1, transform: 'translate3d(0,0,0) scale(1)' }
+      ],
+      { duration: 360, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' }
+    );
+  }
   requestAnimationFrame(() => els.observationText.focus());
   track('text_composer_open');
 }
@@ -262,7 +368,7 @@ async function saveTextObservation() {
     textSavedSinceOpen = true;
     await track('text_capture_saved', { textLength: value.length });
     closeComposer('saved');
-    showToast('Observation saved');
+    showToast('Observation preserved');
   } finally {
     els.saveTextBtn.disabled = false;
   }
@@ -323,6 +429,15 @@ function startVoiceCapture(event) {
   els.voiceState.textContent = 'Listening…';
   els.voicePanel.hidden = false;
   els.voiceBtn.classList.add('active');
+  if (!reducedMotion()) {
+    els.voicePanel.animate(
+      [
+        { opacity: 0, transform: 'translate3d(0,14px,0) scale(.985)' },
+        { opacity: 1, transform: 'translate3d(0,0,0) scale(1)' }
+      ],
+      { duration: 300, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' }
+    );
+  }
   track('voice_capture_start');
   try {
     recognition.start();
@@ -349,7 +464,7 @@ async function finishVoiceCapture() {
     showToast('No speech captured');
     return;
   }
-  els.voiceState.textContent = 'Saving…';
+  els.voiceState.textContent = 'Preserving…';
   try {
     await saveObservation('voice', transcript, {
       captureDurationMs: durationMs,
@@ -358,7 +473,7 @@ async function finishVoiceCapture() {
     });
     await track('voice_capture_saved', { durationMs, textLength: transcript.length });
     els.voicePanel.hidden = true;
-    showToast('Voice observation saved');
+    showToast('Voice observation preserved');
   } catch {
     els.voiceState.textContent = 'Save failed';
   }
@@ -375,7 +490,7 @@ async function loadTimeline() {
     await track('timeline_loaded', { items: timelineItems.length });
   } catch (error) {
     console.error(error);
-    els.timelineEmpty.textContent = 'Timeline could not be loaded.';
+    els.timelineEmpty.textContent = 'Stream could not be loaded.';
     els.timelineEmpty.hidden = false;
   }
 }
@@ -384,24 +499,71 @@ function renderTimeline() {
   const items = timelineFilter === 'all'
     ? timelineItems
     : timelineItems.filter((item) => item.sourceType === timelineFilter);
+
   els.timelineList.innerHTML = items.map(renderTimelineItem).join('');
   els.timelineEmpty.textContent = 'No observations yet.';
   els.timelineEmpty.hidden = items.length > 0;
+  animateRenderedItems('.timeline-item');
 }
 
 function renderTimelineItem(item) {
   const source = item.sourceType || 'observation';
   const time = item.clientCreatedAt ? formatDateTime(item.clientCreatedAt) : 'Unknown time';
+  const sourceAttr = escapeHtml(source);
   if (source === 'mark') {
-    return `<article class="timeline-item" data-observation-id="${escapeHtml(item.id)}">
+    return `<article class="timeline-item" data-source="${sourceAttr}" data-observation-id="${escapeHtml(item.id)}">
       <div class="timeline-meta"><span>MARK</span><span>${escapeHtml(time)}</span></div>
       <div class="timeline-mark">Moment preserved</div>
     </article>`;
   }
-  return `<article class="timeline-item" data-observation-id="${escapeHtml(item.id)}">
+  return `<article class="timeline-item" data-source="${sourceAttr}" data-observation-id="${escapeHtml(item.id)}">
     <div class="timeline-meta"><span>${escapeHtml(source.toUpperCase())}</span><span>${escapeHtml(time)}</span></div>
     <p class="timeline-body">${escapeHtml(item.rawText || '')}</p>
   </article>`;
+}
+
+async function openMoment(observationId) {
+  const item = timelineItems.find((entry) => entry.id === observationId);
+  if (!item || !els.momentDialog) return;
+
+  const source = item.sourceType || 'observation';
+  const time = item.clientCreatedAt ? formatDateTime(item.clientCreatedAt) : 'Unknown time';
+  const raw = source === 'mark'
+    ? '<div class="moment-mark-hero">Moment preserved</div>'
+    : `<div class="moment-raw">${escapeHtml(item.rawText || '')}</div>`;
+
+  els.momentHero.innerHTML = `
+    <div class="moment-time-row"><span>${escapeHtml(time)}</span><span>${escapeHtml(source)}</span></div>
+    ${raw}
+  `;
+
+  const contextRows = [
+    ['Captured as', capitalize(source)],
+    ['Local date', item.localDate || 'Not recorded'],
+    ['Timezone', item.timezone || 'Not recorded'],
+    ['Capture version', item.uiVersion || item.appVersion || 'Earlier version']
+  ];
+  els.momentContext.innerHTML = contextRows.map(([label, value]) => `
+    <div class="context-card"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>
+  `).join('');
+
+  els.momentRelations.innerHTML = `
+    <div class="relation-card">
+      <strong>No assumed causality</strong>
+      <span>Explicit relationships will appear here only when they are stored as separate research records.</span>
+    </div>
+  `;
+
+  els.momentDialog.showModal();
+  playElementEntrance([
+    els.momentHero,
+    ...els.momentContext.children,
+    ...els.momentRelations.children,
+    $('.exposure-note')
+  ], { baseDelay: 60, step: 55 });
+
+  await logExposure('raw_observation_reviewed', { observationId, sourceType: source, surface: 'moment_detail' });
+  await track('moment_open', { observationId, sourceType: source });
 }
 
 async function loadPatterns() {
@@ -414,6 +576,8 @@ async function loadPatterns() {
     els.patternList.innerHTML = patterns.map(renderPattern).join('');
     els.patternEmpty.hidden = patterns.length > 0;
     await track('discover_loaded', { patterns: patterns.length });
+    animatePatternField();
+    animateRenderedItems('.pattern-card');
     if (patterns.length) {
       await logExposure('derived_patterns_viewed', { patternIds: patterns.map((p) => p.id), count: patterns.length });
     }
@@ -421,6 +585,7 @@ async function loadPatterns() {
     console.error(error);
     els.patternEmpty.textContent = 'Derived patterns could not be loaded.';
     els.patternEmpty.hidden = false;
+    animatePatternField();
   }
 }
 
@@ -433,21 +598,40 @@ function renderPattern(pattern) {
   return `<article class="pattern-card" data-pattern-id="${escapeHtml(pattern.id)}">
     <h3>${escapeHtml(title)}</h3>
     <p>${escapeHtml(summary)}</p>
-    <div class="pattern-foot"><span>${escapeHtml(status)}</span>${confidence ? `<span>${escapeHtml(confidence)}</span>` : ''}${support ? `<span>${escapeHtml(support)}</span>` : ''}</div>
+    <div class="pattern-foot">
+      <span>${escapeHtml(status)}</span>
+      ${confidence ? `<span>${escapeHtml(confidence)}</span>` : ''}
+      ${support ? `<span>${escapeHtml(support)}</span>` : ''}
+    </div>
   </article>`;
 }
 
 async function switchView(view, source = 'nav') {
   if (!['observe', 'timeline', 'discover'].includes(view)) return;
-  currentView = view;
-  $$('.view').forEach((node) => node.classList.toggle('active', node.dataset.view === view));
-  $$('.nav-item').forEach((node) => node.classList.toggle('active', node.dataset.nav === view));
+
+  const commitSwitch = async () => {
+    currentView = view;
+    $$('.view').forEach((node) => node.classList.toggle('active', node.dataset.view === view));
+    $$('.nav-item').forEach((node) => node.classList.toggle('active', node.dataset.nav === view));
+  };
+
+  if (document.startViewTransition && !reducedMotion()) {
+    const transition = document.startViewTransition(commitSwitch);
+    await transition.finished.catch(() => {});
+  } else {
+    await commitSwitch();
+  }
+
+  animateCurrentView(view);
   await track('view_open', { view, source });
+
   if (view === 'timeline') {
-    await logExposure('raw_history_reviewed', { surface: 'timeline' });
+    await logExposure('raw_history_reviewed', { surface: 'stream' });
     await loadTimeline();
   }
-  if (view === 'discover') await loadPatterns();
+  if (view === 'discover') {
+    await loadPatterns();
+  }
 }
 
 function bindEvents() {
@@ -464,10 +648,12 @@ function bindEvents() {
       els.signInBtn.disabled = false;
     }
   });
+
   els.markBtn.addEventListener('click', handleMark);
   els.textBtn.addEventListener('click', openComposer);
   els.cancelTextBtn.addEventListener('click', () => closeComposer('cancel'));
   els.saveTextBtn.addEventListener('click', saveTextObservation);
+
   els.observationText.addEventListener('input', () => {
     textDirty = els.observationText.value.trim().length > 0;
     updateTextCount();
@@ -487,12 +673,23 @@ function bindEvents() {
   els.brandBtn.addEventListener('click', () => switchView('observe', 'brand'));
   els.refreshTimelineBtn.addEventListener('click', () => loadTimeline());
   els.refreshDiscoverBtn.addEventListener('click', () => loadPatterns());
+
   $$('#timelineFilters .filter').forEach((node) => node.addEventListener('click', () => {
     timelineFilter = node.dataset.filter;
     $$('#timelineFilters .filter').forEach((item) => item.classList.toggle('active', item === node));
     renderTimeline();
     track('timeline_filter', { filter: timelineFilter });
   }));
+
+  els.timelineList.addEventListener('click', (event) => {
+    const item = event.target.closest('.timeline-item');
+    if (item?.dataset.observationId) openMoment(item.dataset.observationId);
+  });
+
+  els.closeMomentBtn?.addEventListener('click', () => els.momentDialog.close());
+  els.momentDialog?.addEventListener('click', (event) => {
+    if (event.target === els.momentDialog) els.momentDialog.close();
+  });
 
   els.profileBtn.addEventListener('click', () => {
     els.profileDialog.showModal();
@@ -524,13 +721,16 @@ onAuthStateChanged(auth, async (user) => {
     els.appShell.hidden = true;
     return;
   }
+
   els.authGate.hidden = true;
   els.appShell.hidden = false;
   els.profileName.textContent = user.displayName || 'Luminary';
   els.profileEmail.textContent = user.email || '';
   setSync(navigator.onLine ? 'online' : 'busy');
+
   sessionId = crypto.randomUUID();
   sessionStartedAt = Date.now();
+
   await setDoc(doc(db, `users/${user.uid}/luminaryData/appMeta`), {
     uid: user.uid,
     email: user.email || null,
@@ -540,11 +740,14 @@ onAuthStateChanged(auth, async (user) => {
     lastOpenedAt: serverTimestamp(),
     lastOpenedClientAt: new Date().toISOString()
   }, { merge: true }).catch(() => {});
+
   await track('session_start', {
     referrer: document.referrer || null,
     standalone: window.matchMedia?.('(display-mode: standalone)').matches || false,
     speechRecognitionSupported: Boolean(SpeechRecognition)
   });
+
+  requestAnimationFrame(animateObserveEntrance);
 });
 
 function formatTime(iso) {
@@ -578,5 +781,18 @@ function escapeHtml(value) {
 bindEvents();
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  let reloadingForWorker = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadingForWorker) return;
+    reloadingForWorker = true;
+    location.reload();
+  });
+
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+      await registration.update();
+    } catch {}
+  });
 }

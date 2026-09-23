@@ -39,3 +39,20 @@ Decision:
 - Pass Trace Register into a limited three-surface runtime implementation.
 - Do not yet propagate a full redesign to Stream, Moment or Account.
 - Re-run visual review on the actual branch implementation before expansion.
+
+
+## 2026-09-23 — Runtime visual gate passed
+
+Decision:
+- Trace Register passes the second, runtime-level visual critic.
+- Entry, Observe and Patterns are accepted as the visual-system proof surfaces.
+- Preserve the evidence contract: a temporal mark is drawn only from recorded observation time or explicitly linked source evidence.
+- Preserve the semantic use of the red trace: present / observed event only, never score, risk, confidence or importance.
+- Permit the next implementation pass to adapt Stream and Moment detail to the same grammar.
+- Do not mechanically copy the Entry headline scale, mono labels or register line onto every surface.
+
+Verification:
+- Real app.js browser flow with Firebase mocks passed sign-in, Mark, text capture, Stream, Patterns/source-date resolution and sign-out.
+- Static JS / DOM contract passed.
+- Production PTI build passed.
+- Root Angular unit tests remain baseline-failing because Auth / Firestore providers are absent from those test harnesses; no Luminary code path is implicated by those failures.

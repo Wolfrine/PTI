@@ -110,6 +110,7 @@ jobs:
           async function load(width, height) {
             await page.setViewportSize({ width, height });
             await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(950);
           }
 
           async function showView(view) {

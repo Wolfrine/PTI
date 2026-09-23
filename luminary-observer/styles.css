@@ -89,11 +89,14 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--trace);outli
 }
 .entry-constraint{position:absolute;top:max(38px,env(safe-area-inset-top));right:4vw;color:var(--muted)}
 .entry-register,.observe-register{position:absolute;pointer-events:none}
+.entry-register .register-axis,.observe-register .register-axis{view-transition-name:luminary-register}
+::view-transition-group(luminary-register){animation-duration:.42s;animation-timing-function:var(--ease)}
 .entry-register{
   left:10vw;
   right:0;
   top:49%;
   height:1px;
+  animation:registerDrawH .78s var(--ease) both;
 }
 .register-axis{position:absolute;inset:0;background:var(--ink)}
 .register-ticks{position:absolute}
@@ -111,7 +114,11 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--trace);outli
   width:2px;
   height:72px;
   background:var(--trace);
+  animation:presentSet .34s .48s ease-out both;
 }
+@keyframes registerDrawH{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes registerDrawV{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes presentSet{from{opacity:0;transform:scaleY(.15)}to{opacity:1;transform:scaleY(1)}}
 .entry-copy{
   position:absolute;
   left:10vw;
@@ -640,6 +647,7 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
     bottom:0;
     width:1px;
     height:auto;
+    animation-name:registerDrawV;
   }
   .entry-register .register-axis{inset:0}
   .entry-register .register-ticks{

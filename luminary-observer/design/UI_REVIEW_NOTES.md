@@ -71,3 +71,58 @@ PASS to limited representative implementation, with a required second check on t
 
 ### Next gate
 Implement Entry, Observe and Patterns only, then render mobile and desktop again. Expansion to Stream / Moment / Account requires the runtime render to retain the concept.
+
+
+## Review — 2026-09-23 — Trace Register runtime gate
+
+Evidence:
+- Actual branch HTML/CSS rendered in Chromium at 1440 x 900 and 390 x 844.
+- Entry capture was repeated after the register-entry choreography had settled; the evidence therefore represents the resting composition rather than a transient animation frame.
+- Static JavaScript syntax and DOM-contract checks passed.
+- Mocked-browser product-flow verification passed using the real app.js: sign-in state transition, Mark, text capture, Stream load, source-linked Patterns rendering, explicit no-synthetic-position handling and sign-out.
+- No production Firestore records were written by the test.
+- PTI production Angular build passed.
+- The pre-existing Angular unit suite still reports 8 failures / 1 success because its test modules do not provide Auth / Firestore. These failures are outside luminary-observer and were reproduced without changing those specs.
+
+### Central Visual Critic — runtime
+
+1. What is the single recognizable visual idea?
+The observation register: a continuous temporal coordinate that becomes a trace at capture and an evidence track at pattern review.
+
+2. Could this page belong to another AI/startup/wellness product if the logo were changed?
+Not plausibly without changing the central geometry and behavior. The remaining adjacency is to scientific / archival instruments, which is intentional and more product-relevant than the rejected AI-futurist vocabulary.
+
+3. Which three decisions look most AI-generated?
+- The oversized Entry headline.
+- Deliberately large negative-space fields.
+- Mono micro-labels plus one red accent.
+They are retained only where they perform structural work. They should not be copied indiscriminately to later screens.
+
+4. Is hierarchy created through composition or merely font size?
+Composition. The axis creates the field; present / trace interrupts it; secondary capture actions sit at the edge; Patterns puts evidence on the axis and explanation beneath it.
+
+5. Is imagery / geometry participating in structure?
+Yes. No decorative hero imagery is required. The same geometry communicates present time, capture state and longitudinal evidence.
+
+6. Does motion communicate something?
+Yes. Entry draws the register into place; authentication preserves register continuity where supported; Mark creates a trace deformation; pattern tracks reveal their temporal extent. Reduced-motion removes travel while retaining the state change.
+
+7. Does desktop use space meaningfully?
+Yes. Desktop width becomes temporal context. Observe is not a centered mobile card, and Patterns uses the full horizontal span for recurrence.
+
+8. Is Patterns uniquely Luminary?
+Yes, within the current product scope. Recurrence is source-linked to observation dates, no causal edges are drawn, and missing linkage is rendered as "NO SYNTHETIC POSITION" rather than invented geometry.
+
+9. What remains memorable after looking away?
+A warm mineral field crossed by a thin register, with one red interruption marking the observed present.
+
+10. Outcome
+PASS.
+
+### Runtime weaknesses retained for later refinement
+- Compact pattern labels can truncate; the detailed cards remain the full textual reading layer.
+- On mobile Entry the vertical register deliberately passes through the headline field. It remains legible, but should not become a general typography effect.
+- The register must remain a meaningful coordinate rather than becoming decorative chrome on every future screen.
+
+### Next implementation step
+Propagate Trace Register carefully to Stream and Moment detail, using actual observation timestamps and existing exposure rules. Account remains low priority. Do not add new metaphors.

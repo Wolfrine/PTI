@@ -1,11 +1,11 @@
 {
   "name": "Luminary",
   "short_name": "Luminary",
-  "description": "Minimal-influence consciousness observation and longitudinal research capture.",
+  "description": "Observer-first consciousness research and longitudinal capture.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#090d12",
-  "theme_color": "#090d12",
+  "background_color": "#050a11",
+  "theme_color": "#07101c",
   "icons": [
     {
       "src": "assets/icon.svg",

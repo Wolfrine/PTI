@@ -127,7 +127,10 @@ jobs:
             if(await page.locator('#lastSpecimenSlot .material-v6').count()!==1) throw new Error('Last preserved V6 material missing');
 
             await page.locator('.nav-item[data-nav="timeline"]:visible').click();
-            await page.waitForSelector('.timeline-item');
+            await page.waitForTimeout(1200);
+            const timelineCount=await page.locator('.timeline-item').count();
+            const emptyText=await page.locator('#timelineEmpty').textContent().catch(()=>null);
+            if(!timelineCount) throw new Error('Stream did not render. pageErrors='+errors.join(' | ')+' empty='+emptyText+' view='+await page.locator('#timelineView').getAttribute('class'));
             if(await page.locator('.v5-stream-node .material-v6').count()<6) throw new Error('Stream generated materials missing');
             await page.screenshot({path:'/tmp/luminary-v6/evidence/'+label+'-stream.png',fullPage:true});
 

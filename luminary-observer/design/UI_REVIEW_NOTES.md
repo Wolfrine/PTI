@@ -342,3 +342,35 @@ Mobile keeps the same Imprint semantics without copying the desktop spatial arra
 This is the first direction that preserves V2's accepted premium foundations while giving the visual object and motion a source-grounded meaning.
 
 Do not deploy or add V4 to the PWA version selector until owner reviews the motion evidence.
+
+
+## Review — 2026-09-24 — V6 Generated Material
+
+Scope:
+- V2 typography, palette, spacing and restrained composition remain the chassis.
+- Replaced procedural specimen rendering with actual image-generated material assets.
+- Real observation data controls chronology, source-type lanes, pattern grouping and object continuity.
+- Image generation provides material richness only; it does not invent data relationships.
+
+Perceptual mapping:
+- source type -> stable horizontal lane in Stream;
+- chronology -> vertical position;
+- pattern membership -> common region/proximity;
+- selection -> figure/ground emphasis;
+- raw/derived separation -> composition and containment;
+- generated material -> object tactility/depth, not semantics.
+
+Visual audit:
+- Desktop Entry: pass.
+- Desktop Observe: pass.
+- Desktop Stream: pass; source-type lanes are legible and data-bound.
+- Desktop Patterns: pass; grouping is perceptible before reading and selected pattern is explicit.
+- Mobile Observe: pass.
+- Mobile Patterns: pass for PWA scrolling; fixed nav overlay in full-page screenshots is expected browser-capture behavior.
+
+Correction from V5:
+- no arbitrary pseudo-random semantic position;
+- no procedural SVG used as a substitute for generated visual material;
+- generated cluster art is confined to non-data Entry atmosphere, not evidence regions.
+
+Outcome: PASS FOR PRODUCTION.

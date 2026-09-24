@@ -1,4 +1,4 @@
-const CACHE = 'luminary-shell-v3';
+const CACHE = 'luminary-shell-v4';
 const SHELL = [
   './',
   './index.html',

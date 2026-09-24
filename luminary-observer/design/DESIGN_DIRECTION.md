@@ -1,7 +1,7 @@
 # Luminary Design Direction
 
-Status: Trace Register runtime gate passed
-Updated: 2026-09-23
+Status: Trace Register established across core journey
+Updated: 2026-09-24
 
 ## Product invariants
 
@@ -158,6 +158,15 @@ No generated hero imagery or decorative asset system is required. The informatio
 
 ## Implementation scope
 
-Only Entry, Observe and Patterns establish the new language in this pass. Existing Stream, Moment and Account behavior remains intact and receives only compatibility styling needed to coexist with the new tokens.
+Trace Register is now established across:
+- Entry;
+- Observe;
+- Stream;
+- Patterns;
+- Moment detail.
 
-The representative runtime has passed its visual and mocked-flow gate. The next pass may adapt Stream and Moment detail, while preserving the same evidence and exposure boundaries.
+Stream uses recorded observation timestamps as a navigational register above raw chronology.
+Moment uses the selected observation's recorded local time as a focal trace within a 24-hour local-day register and exposes only factual neighboring raw records.
+Account remains intentionally functional and low-priority; it does not need a decorative redesign merely for visual completeness.
+
+The core experience has passed desktop/mobile mocked-flow and visual checks. Future work should be driven by actual usage/research needs rather than adding another visual metaphor.

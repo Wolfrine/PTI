@@ -216,3 +216,25 @@ See:
 - design/prototypes/v4-meaningful-motion.html
 
 No production registration before owner motion review.
+
+
+## V6 — Generated Material
+
+Latest direction:
+- retain V2 premium foundations;
+- use actual generated mineral/membrane material for visual richness;
+- keep all semantic geometry deterministic and evidence-bound.
+
+Core rule:
+**Image generation supplies material. Code and data supply truth.**
+
+Stream:
+- vertical = chronology;
+- horizontal lanes = Mark / Voice / Text.
+
+Patterns:
+- common region = actual supporting observations;
+- non-supporting observations remain peripheral/quiet;
+- no causal lines.
+
+Status: passed desktop/mobile runtime visual audit and ready for production.

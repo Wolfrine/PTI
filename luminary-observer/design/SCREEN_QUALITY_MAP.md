@@ -1,22 +1,23 @@
 # Luminary Screen Quality Map
 
-Updated: 2026-09-23
+Updated: 2026-09-24
 
 | Surface | Functional state | Visual state | Next action |
 |---|---|---|---|
-| Entry / auth | Working | Trace Register runtime gate passed | Accepted; preserve as proof surface |
-| Observe | Working | Trace Register runtime gate passed | Accepted; preserve capture simplicity |
-| Stream | Working | Compatible but not yet fully adapted | Next: translate raw chronology into Trace Register grammar without adding interpretation |
-| Patterns | Working | Trace Register runtime gate passed | Accepted; source-linked ticks only; never synthesize positions |
-| Moment detail | Working | Compatible, not yet fully adapted | Next: preserve raw/context/exposure boundary while adopting trace grammar |
-| Profile / account | Working | Functional compatibility styling | Low priority |
-| Mobile | Primary product target | 390 x 844 runtime gate passed | Preserve thumb reach and vertical register behavior |
-| Desktop | Functional | 1440 x 900 runtime gate passed | Preserve horizontal temporal field and contextual width |
+| Entry / auth | Working | Trace Register passed | Preserve |
+| Observe | Working | Trace Register passed | Preserve capture simplicity |
+| Stream | Working | Trace Register extension passed | Preserve raw-only chronology and timestamp-bound register |
+| Patterns | Working | Trace Register passed | Preserve source-linked ticks only; never synthesize positions |
+| Moment detail | Working | Trace Register extension passed | Preserve local-day register, raw neighbors and exposure boundary |
+| Profile / account | Working | Functional compatibility styling | Low priority; no redesign required unless product need emerges |
+| Mobile | Primary product target | Entry/Observe/Stream/Patterns/Moment checked | Preserve full-screen Moment and thumb-reachable capture |
+| Desktop | Functional | Entry/Observe/Stream/Patterns/Moment checked | Preserve contextual width and Moment-over-Stream continuity |
 
-## Priority
+## Current state
 
-Entry / Observe / Patterns: passed
--> Stream
--> Moment detail
--> re-run visual + behavior checks
--> Account only if needed.
+The core user journey now shares one stable visual grammar:
+
+Entry -> Observe -> Stream -> Moment
+                 -> Patterns
+
+Account remains deliberately utility-level rather than being over-designed.

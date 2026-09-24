@@ -1,10 +1,11 @@
 const UI_VERSIONS = [
-  { id: 'perceptual-specimens-v5', label: 'Perceptual Specimens v5', badge: 'Latest', theme: '#f2efe6' },
+  { id: 'generated-material-v6', label: 'Generated Material v6', badge: 'Latest', theme: '#f2efe6' },
+  { id: 'perceptual-specimens-v5', label: 'Perceptual Specimens v5', badge: 'Previous', theme: '#f2efe6' },
   { id: 'meaningful-motion-v4', label: 'Meaningful Motion v4', badge: 'Previous', theme: '#f2efe6' },
   { id: 'trace-register-v2.1', label: 'Trace Register v2.1', badge: 'Previous', theme: '#f2efe6' },
   { id: 'intuitive-capture-v3', label: 'Intuitive Capture v3', badge: 'Previous', theme: '#f4f2ed' }
 ];
-const LATEST_UI_VERSION = 'perceptual-specimens-v5';
+const LATEST_UI_VERSION = 'generated-material-v6';
 const STORAGE_KEY = 'luminary.uiVersion';
 
 const known = new Set(UI_VERSIONS.map((version) => version.id));

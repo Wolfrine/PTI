@@ -276,3 +276,69 @@ Do not solve this by reintroducing abstract geometry. Improve:
 - subtle product-specific continuity between a saved moment and its later supporting evidence.
 
 Owner should review the representative visuals before any runtime implementation.
+
+
+## Review — 2026-09-24 — V4 Meaningful Motion study
+
+Scope:
+- Retained V2 typography, palette, sizing, whitespace and overall composition.
+- Replaced the abstract Trace Register hero geometry.
+- Introduced one learned visual object: **Moment Imprint**.
+- Prototype only; not registered as a production PWA version.
+
+Evidence:
+- Desktop: Observe / Stream / Patterns stills.
+- Mobile: Observe / Stream / Patterns stills.
+- Desktop + mobile motion recordings.
+- Reduced-motion behavior implemented.
+
+### Layered assessment
+
+**Typography — RETAIN**
+V2 scale, compact metadata treatment and restrained hierarchy continue to carry premium quality.
+
+**Color — RETAIN**
+Warm mineral field + graphite + restrained warm trace remains stronger than V3's flatter product-app styling.
+
+**Sizing / spacing — RETAIN**
+Large quiet field and disciplined proportions remain useful.
+
+**Composition — RETAIN / REFINE**
+Observe preserves V2's asymmetric desktop composition. Stream and Patterns use width for evidence rather than a decorative coordinate system.
+
+**Affordance — REFINE**
+The Mark action keeps V2's visual restraint but now explicitly says "Mark moment · one tap". It is clearer, but owner review is still required to confirm first-glance affordance.
+
+**Visual object — CANDIDATE PASS**
+Moment Imprint has a concrete referent: exactly one stored raw observation.
+It is created through capture, appears in Stream, expands to raw context, and appears as Pattern evidence.
+
+**Motion grammar — CANDIDATE PASS**
+1. Mark -> imprint transfer -> Last Preserved explains persistence.
+2. Stream imprint -> detail imprint preserves object identity while exposing raw context.
+3. Pattern source imprints reveal before their excerpts, making evidence visibly precede interpretation.
+
+The animation is no longer "premium motion" for its own sake; each movement corresponds to a state/data relationship.
+
+**Patterns — STRONGEST IMPROVEMENT**
+The derived statement is primary.
+Supporting source moments are visually subordinate but directly adjacent.
+No timelines, nodes or causal edges are required.
+
+**Responsive — PASS FOR PROTOTYPE**
+Mobile keeps the same Imprint semantics without copying the desktop spatial arrangement.
+
+### Remaining risks
+
+1. The Moment Imprint is deliberately minimal. It may need richer state treatment to become memorable without becoming decorative.
+2. "MARK" may still inherit some ambiguity from V2 despite the clearer subtitle and motion.
+3. Patterns currently proves one statement well; multi-pattern density needs design only after this direction is accepted.
+4. Motion evidence must be owner-reviewed as motion. Static screenshots are insufficient to accept this direction.
+
+### Outcome
+
+**ITERATE / OWNER REVIEW**
+
+This is the first direction that preserves V2's accepted premium foundations while giving the visual object and motion a source-grounded meaning.
+
+Do not deploy or add V4 to the PWA version selector until owner reviews the motion evidence.

@@ -23,8 +23,8 @@ import {
   documentId
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
-const APP_VERSION = '0.2.0';
-const UI_VERSION = 'trace-register-v2';
+const APP_VERSION = '0.2.1';
+const UI_VERSION = 'trace-register-v2.1';
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',

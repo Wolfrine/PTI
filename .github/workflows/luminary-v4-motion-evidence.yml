@@ -1,0 +1,93 @@
+name: Luminary V4 Motion Evidence
+
+on:
+  push:
+    branches:
+      - luminary/v4-meaningful-motion
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright
+        run: |
+          mkdir -p /tmp/luminary-v4
+          cd /tmp/luminary-v4
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Render screenshots and motion recordings
+        run: |
+          python3 -m http.server 4173 --directory luminary-observer/design/prototypes >/tmp/luminary-v4-http.log 2>&1 &
+          mkdir -p /tmp/luminary-v4/evidence
+          cat >/tmp/luminary-v4/render.mjs <<'NODE'
+          import { chromium } from 'playwright';
+          import fs from 'fs';
+
+          const url='http://127.0.0.1:4173/v4-meaningful-motion.html';
+          const browser=await chromium.launch({headless:true});
+
+          async function stills(label,width,height){
+            const page=await browser.newPage({viewport:{width,height}});
+            await page.goto(url,{waitUntil:'networkidle'});
+            await page.screenshot({path:'/tmp/luminary-v4/evidence/'+label+'-observe.png'});
+            await page.locator('[data-view="stream"]:visible').click();
+            await page.screenshot({path:'/tmp/luminary-v4/evidence/'+label+'-stream.png',fullPage:true});
+            await page.locator('[data-view="patterns"]:visible').click();
+            await page.waitForTimeout(700);
+            await page.screenshot({path:'/tmp/luminary-v4/evidence/'+label+'-patterns.png',fullPage:true});
+            await page.close();
+          }
+
+          await stills('desktop',1440,900);
+          await stills('mobile',390,844);
+
+          for (const [label,width,height] of [['desktop',1440,900],['mobile',390,844]]) {
+            const dir='/tmp/luminary-v4/video-'+label;
+            fs.mkdirSync(dir,{recursive:true});
+            const context=await browser.newContext({
+              viewport:{width,height},
+              recordVideo:{dir,size:{width,height}}
+            });
+            const page=await context.newPage();
+            await page.goto(url,{waitUntil:'networkidle'});
+            await page.waitForTimeout(800);
+
+            // Capture -> imprint transfer.
+            await page.locator('#markButton').click();
+            await page.waitForTimeout(1500);
+
+            // Same imprint language in Stream.
+            await page.locator('[data-view="stream"]:visible').click();
+            await page.waitForTimeout(650);
+            await page.locator('.moment-row').first().click();
+            await page.waitForTimeout(900);
+
+            // Meaning-first Pattern -> source evidence reveal.
+            await page.locator('[data-view="patterns"]:visible').click();
+            await page.waitForTimeout(1500);
+            await page.locator('#replayEvidence').click();
+            await page.waitForTimeout(1200);
+
+            await context.close();
+            const video=fs.readdirSync(dir).find(name=>name.endsWith('.webm'));
+            if(video) fs.copyFileSync(dir+'/'+video,'/tmp/luminary-v4/evidence/'+label+'-motion.webm');
+          }
+
+          await browser.close();
+          NODE
+          cd /tmp/luminary-v4
+          node render.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: luminary-v4-motion-evidence
+          path: /tmp/luminary-v4/evidence/*
+          retention-days: 7

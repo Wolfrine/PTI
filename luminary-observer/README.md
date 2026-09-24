@@ -40,3 +40,18 @@ v0.1 uses the browser's SpeechRecognition implementation when available and stor
 ## Firebase
 Hosting target: `luminary`
 Hosting site ID: `pti-app-2ab59-luminary`
+
+
+## UI experience versions
+
+Luminary uses one shared application/data runtime with selectable presentation layers.
+
+Current versions:
+- `intuitive-capture-v3` — latest and default for devices without an explicit preference.
+- `trace-register-v2.1` — previous experience retained for comparison.
+
+The active version can be changed from **Profile → Experience version**. The preference is stored locally on the device and the PWA reloads the selected presentation layer.
+
+Version switching does **not** move or duplicate Firestore data. Auth, observations, telemetry, exposures, patterns and research boundaries remain shared. Each capture/telemetry event records the active `uiVersion` so usage can be compared across experiences.
+
+Version assets live under `versions/`; `version-loader.js` selects the presentation layer before the shared `app.js` runtime initializes.

@@ -949,8 +949,20 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
   .timeline-mark{font-size:12px}
   .bottom-nav{grid-template-columns:repeat(3,1fr)}
   .nav-item{gap:7px}
-  .moment-dialog{width:calc(100vw - 18px);max-height:94dvh}
-  .moment-sheet{padding:18px 20px 24px;max-height:92dvh}
+  .moment-dialog{
+    width:100vw;
+    height:100dvh;
+    max-width:none;
+    max-height:none;
+    margin:0;
+    border:0;
+    box-shadow:none;
+  }
+  .moment-sheet{
+    height:100%;
+    max-height:none;
+    padding:max(18px,env(safe-area-inset-top)) 20px max(28px,env(safe-area-inset-bottom));
+  }
   .moment-raw,.moment-mark-hero{font-size:22px}
   .moment-mark-hero{min-height:98px;gap:20px}
   .moment-trace{height:62px}

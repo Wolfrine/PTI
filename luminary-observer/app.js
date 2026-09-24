@@ -600,16 +600,15 @@ function renderStreamRegister(items) {
 
   if (intuitiveExperience()) {
     if (!dated.length) {
-      els.streamRegister.innerHTML = '<span>No dated observations in this view.</span>';
-      if (els.streamRange) els.streamRange.textContent = 'No dated range';
+      els.streamRegister.innerHTML =
+        '<span>No dated observations in this view.</span><strong id="streamRange">No dated range</strong>';
       return;
     }
     const minMs = Math.min(...dated.map((entry) => entry.ms));
     const maxMs = Math.max(...dated.map((entry) => entry.ms));
     els.streamRegister.innerHTML =
       '<span>' + escapeHtml(String(items.length) + ' observation' + (items.length === 1 ? '' : 's') + ' visible') + '</span>' +
-      '<strong>' + escapeHtml(formatAxisDate(minMs) + ' — ' + formatAxisDate(maxMs)) + '</strong>';
-    if (els.streamRange) els.streamRange.textContent = formatAxisDate(minMs) + ' — ' + formatAxisDate(maxMs);
+      '<strong id="streamRange">' + escapeHtml(formatAxisDate(minMs) + ' — ' + formatAxisDate(maxMs)) + '</strong>';
     return;
   }
 

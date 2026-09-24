@@ -72,6 +72,8 @@ const els = {
   lastCapture: $('#lastCapture'),
   timelineList: $('#timelineList'),
   timelineEmpty: $('#timelineEmpty'),
+  streamRegister: $('#streamRegister'),
+  streamRange: $('#streamRange'),
   refreshTimelineBtn: $('#refreshTimelineBtn'),
   refreshDiscoverBtn: $('#refreshDiscoverBtn'),
   patternList: $('#patternList'),
@@ -80,7 +82,9 @@ const els = {
   momentDialog: $('#momentDialog'),
   closeMomentBtn: $('#closeMomentBtn'),
   momentHero: $('#momentHero'),
+  momentRegister: $('#momentRegister'),
   momentContext: $('#momentContext'),
+  momentNeighbors: $('#momentNeighbors'),
   momentRelations: $('#momentRelations'),
   toast: $('#toast')
 };
@@ -489,6 +493,146 @@ async function finishVoiceCapture() {
   }
 }
 
+function observationTimeMs(item) {
+  return coercePatternDateMs(item?.clientCreatedAtMs ?? item?.clientCreatedAt);
+}
+
+function observationDayKey(item) {
+  if (item?.localDate) return String(item.localDate);
+  const ms = observationTimeMs(item);
+  if (!Number.isFinite(ms)) return 'unknown-date';
+  const d = new Date(ms);
+  return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+}
+
+function formatDayKey(dayKey) {
+  const match = String(dayKey || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return String(dayKey || 'DATE UNKNOWN').toUpperCase();
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return new Intl.DateTimeFormat(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(date).toUpperCase();
+}
+
+function observationLocalMinute(item) {
+  const ms = observationTimeMs(item);
+  if (!Number.isFinite(ms)) return null;
+
+  const offset = Number(item?.timezoneOffsetMinutes);
+  if (Number.isFinite(offset)) {
+    const local = new Date(ms - offset * 60_000);
+    return local.getUTCHours() * 60 + local.getUTCMinutes() + local.getUTCSeconds() / 60;
+  }
+
+  const local = new Date(ms);
+  return local.getHours() * 60 + local.getMinutes() + local.getSeconds() / 60;
+}
+
+function formatObservationLocalTime(item) {
+  const ms = observationTimeMs(item);
+  if (!Number.isFinite(ms)) return 'TIME UNKNOWN';
+
+  const offset = Number(item?.timezoneOffsetMinutes);
+  if (Number.isFinite(offset)) {
+    const local = new Date(ms - offset * 60_000);
+    return String(local.getUTCHours()).padStart(2, '0') + ':' + String(local.getUTCMinutes()).padStart(2, '0');
+  }
+
+  if (item?.timezone) {
+    try {
+      const parts = new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: item.timezone
+      }).formatToParts(new Date(ms));
+      const hour = parts.find((part) => part.type === 'hour')?.value;
+      const minute = parts.find((part) => part.type === 'minute')?.value;
+      if (hour && minute) return hour + ':' + minute;
+    } catch {}
+  }
+
+  const local = new Date(ms);
+  return String(local.getHours()).padStart(2, '0') + ':' + String(local.getMinutes()).padStart(2, '0');
+}
+
+function formatGap(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return 'gap unavailable';
+  if (ms < 60_000) return Math.max(1, Math.round(ms / 1000)) + ' sec';
+  if (ms < 3_600_000) return Math.round(ms / 60_000) + ' min';
+  if (ms < 86_400_000) {
+    const hours = Math.floor(ms / 3_600_000);
+    const minutes = Math.round((ms % 3_600_000) / 60_000);
+    return minutes ? hours + ' hr ' + minutes + ' min' : hours + ' hr';
+  }
+  const days = Math.floor(ms / 86_400_000);
+  const hours = Math.round((ms % 86_400_000) / 3_600_000);
+  return hours ? days + ' d ' + hours + ' hr' : days + ' d';
+}
+
+function renderStreamRegister(items) {
+  if (!els.streamRegister) return;
+  const dated = items
+    .map((item) => ({ item, ms: observationTimeMs(item) }))
+    .filter((entry) => Number.isFinite(entry.ms));
+
+  if (!dated.length) {
+    els.streamRegister.innerHTML =
+      '<div class="stream-register-empty">' +
+        '<span class="instrument-meta">RAW TEMPORAL REGISTER</span>' +
+        '<span>No dated observations in this view.</span>' +
+      '</div>';
+    if (els.streamRange) els.streamRange.textContent = 'NO DATED RANGE';
+    return;
+  }
+
+  const minMs = Math.min(...dated.map((entry) => entry.ms));
+  const maxMs = Math.max(...dated.map((entry) => entry.ms));
+  const span = Math.max(1, maxMs - minMs);
+  const ticks = dated.map(({ item, ms }) => {
+    const position = minMs === maxMs ? 50 : ((ms - minMs) / span) * 100;
+    const source = item.sourceType || 'observation';
+    const label = source.toUpperCase() + ' · ' + formatDayKey(observationDayKey(item)) + ' · ' + formatObservationLocalTime(item);
+    return '<button class="stream-register-tick" type="button" data-source="' + escapeHtml(source) +
+      '" data-observation-id="' + escapeHtml(item.id) + '" style="left:' + position.toFixed(3) +
+      '%" aria-label="' + escapeHtml(label) + '"><span aria-hidden="true"></span></button>';
+  }).join('');
+
+  els.streamRegister.innerHTML =
+    '<div class="stream-register-head">' +
+      '<span class="instrument-meta">RAW TEMPORAL REGISTER</span>' +
+      '<span class="instrument-meta">' + dated.length + ' DATED / ' + items.length + ' VISIBLE</span>' +
+    '</div>' +
+    '<div class="stream-register-axis">' +
+      '<span class="stream-register-line" aria-hidden="true"></span>' +
+      ticks +
+    '</div>' +
+    '<div class="stream-register-range instrument-meta">' +
+      '<span>' + escapeHtml(formatAxisDate(minMs)) + '</span>' +
+      '<span>' + escapeHtml(formatAxisDate(maxMs)) + '</span>' +
+    '</div>';
+
+  if (els.streamRange) {
+    els.streamRange.textContent = formatAxisDate(minMs).toUpperCase() + ' — ' + formatAxisDate(maxMs).toUpperCase();
+  }
+
+  if (!reducedMotion()) {
+    $('.stream-register-line')?.animate(
+      [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
+      { duration: 520, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' }
+    );
+    $$('.stream-register-tick').forEach((tick, index) => {
+      tick.animate(
+        [{ opacity: 0, transform: 'translateX(-50%) scaleY(.2)' }, { opacity: 1, transform: 'translateX(-50%) scaleY(1)' }],
+        { duration: 260, delay: Math.min(index * 12, 280), easing: 'ease-out', fill: 'both' }
+      );
+    });
+  }
+}
+
 async function loadTimeline() {
   if (!currentUser) return;
   els.timelineList.innerHTML = '';
@@ -502,6 +646,7 @@ async function loadTimeline() {
     console.error(error);
     els.timelineEmpty.textContent = 'Stream could not be loaded.';
     els.timelineEmpty.hidden = false;
+    renderStreamRegister([]);
   }
 }
 
@@ -510,7 +655,24 @@ function renderTimeline() {
     ? timelineItems
     : timelineItems.filter((item) => item.sourceType === timelineFilter);
 
-  els.timelineList.innerHTML = items.map(renderTimelineItem).join('');
+  const dayCounts = new Map();
+  items.forEach((item) => {
+    const key = observationDayKey(item);
+    dayCounts.set(key, (dayCounts.get(key) || 0) + 1);
+  });
+
+  let previousDay = null;
+  els.timelineList.innerHTML = items.map((item) => {
+    const day = observationDayKey(item);
+    const header = day !== previousDay
+      ? '<div class="timeline-day-label"><span>' + escapeHtml(formatDayKey(day)) + '</span><span class="instrument-meta">' +
+        escapeHtml(String(dayCounts.get(day) || 0)) + ' RECORD' + ((dayCounts.get(day) || 0) === 1 ? '' : 'S') + '</span></div>'
+      : '';
+    previousDay = day;
+    return header + renderTimelineItem(item);
+  }).join('');
+
+  renderStreamRegister(items);
   els.timelineEmpty.textContent = 'No observations yet.';
   els.timelineEmpty.hidden = items.length > 0;
   animateRenderedItems('.timeline-item');
@@ -518,18 +680,92 @@ function renderTimeline() {
 
 function renderTimelineItem(item) {
   const source = item.sourceType || 'observation';
-  const time = item.clientCreatedAt ? formatDateTime(item.clientCreatedAt) : 'Unknown time';
+  const time = formatObservationLocalTime(item);
   const sourceAttr = escapeHtml(source);
+  const timeMs = observationTimeMs(item);
+  const timeAttr = Number.isFinite(timeMs) ? String(timeMs) : '';
+
   if (source === 'mark') {
-    return `<article class="timeline-item" data-source="${sourceAttr}" data-observation-id="${escapeHtml(item.id)}">
-      <div class="timeline-meta"><span>MARK</span><span>${escapeHtml(time)}</span></div>
-      <div class="timeline-mark">Moment preserved</div>
-    </article>`;
+    return '<article class="timeline-item" data-source="' + sourceAttr + '" data-observation-id="' + escapeHtml(item.id) +
+      '" data-time-ms="' + escapeHtml(timeAttr) + '">' +
+      '<div class="timeline-meta"><span>MARK</span><span>' + escapeHtml(time) + '</span></div>' +
+      '<div class="timeline-mark">Moment preserved</div>' +
+    '</article>';
   }
-  return `<article class="timeline-item" data-source="${sourceAttr}" data-observation-id="${escapeHtml(item.id)}">
-    <div class="timeline-meta"><span>${escapeHtml(source.toUpperCase())}</span><span>${escapeHtml(time)}</span></div>
-    <p class="timeline-body">${escapeHtml(item.rawText || '')}</p>
-  </article>`;
+
+  return '<article class="timeline-item" data-source="' + sourceAttr + '" data-observation-id="' + escapeHtml(item.id) +
+    '" data-time-ms="' + escapeHtml(timeAttr) + '">' +
+    '<div class="timeline-meta"><span>' + escapeHtml(source.toUpperCase()) + '</span><span>' + escapeHtml(time) + '</span></div>' +
+    '<p class="timeline-body">' + escapeHtml(item.rawText || '') + '</p>' +
+  '</article>';
+}
+
+function renderMomentRegister(item) {
+  if (!els.momentRegister) return;
+  const selectedMinute = observationLocalMinute(item);
+  const dayKey = observationDayKey(item);
+
+  if (selectedMinute == null) {
+    els.momentRegister.innerHTML =
+      '<div class="moment-register-empty"><span class="instrument-meta">LOCAL DAY REGISTER</span><span>Capture time unavailable.</span></div>';
+    return;
+  }
+
+  const sameDay = timelineItems
+    .filter((entry) => observationDayKey(entry) === dayKey && observationLocalMinute(entry) != null)
+    .sort((a, b) => observationLocalMinute(a) - observationLocalMinute(b));
+
+  const ticks = sameDay.map((entry) => {
+    const minute = observationLocalMinute(entry);
+    const position = Math.max(0, Math.min(100, (minute / 1440) * 100));
+    const selected = entry.id === item.id;
+    const source = entry.sourceType || 'observation';
+    return '<span class="moment-day-tick' + (selected ? ' selected' : '') + '" data-source="' + escapeHtml(source) +
+      '" style="left:' + position.toFixed(3) + '%" title="' + escapeHtml(formatObservationLocalTime(entry) + ' · ' + source) + '"></span>';
+  }).join('');
+
+  els.momentRegister.innerHTML =
+    '<div class="moment-register-head">' +
+      '<span class="instrument-meta">LOCAL DAY REGISTER</span>' +
+      '<span class="instrument-meta">' + escapeHtml(formatDayKey(dayKey)) + '</span>' +
+    '</div>' +
+    '<div class="moment-day-axis">' +
+      '<span class="moment-day-line" aria-hidden="true"></span>' +
+      '<span class="moment-midday" aria-hidden="true"></span>' +
+      ticks +
+    '</div>' +
+    '<div class="moment-day-labels instrument-meta"><span>00:00</span><span>12:00</span><span>24:00</span></div>';
+}
+
+function renderMomentNeighbors(item) {
+  if (!els.momentNeighbors) return;
+  const selectedMs = observationTimeMs(item);
+  const ordered = timelineItems
+    .map((entry) => ({ entry, ms: observationTimeMs(entry) }))
+    .filter((entry) => Number.isFinite(entry.ms))
+    .sort((a, b) => a.ms - b.ms);
+
+  const index = ordered.findIndex(({ entry }) => entry.id === item.id);
+  const before = index > 0 ? ordered[index - 1] : null;
+  const after = index >= 0 && index < ordered.length - 1 ? ordered[index + 1] : null;
+
+  const renderNeighbor = (label, neighbor) => {
+    if (!neighbor) {
+      return '<div class="moment-neighbor empty"><span class="instrument-meta">' + label +
+        '</span><strong>No ' + (label === 'BEFORE' ? 'earlier' : 'later') + ' observation in the loaded record.</strong></div>';
+    }
+    const source = neighbor.entry.sourceType || 'observation';
+    const summary = source === 'mark' ? 'Moment preserved' : (neighbor.entry.rawText || 'Raw observation');
+    const gap = Number.isFinite(selectedMs) ? formatGap(Math.abs(neighbor.ms - selectedMs)) : 'gap unavailable';
+    return '<div class="moment-neighbor">' +
+      '<span class="instrument-meta">' + label + '</span>' +
+      '<strong>' + escapeHtml(formatDayKey(observationDayKey(neighbor.entry)) + ' · ' + formatObservationLocalTime(neighbor.entry) + ' · ' + source.toUpperCase()) + '</strong>' +
+      '<p>' + escapeHtml(summary) + '</p>' +
+      '<small class="instrument-meta">' + escapeHtml(gap.toUpperCase() + ' FROM SELECTED') + '</small>' +
+    '</div>';
+  };
+
+  els.momentNeighbors.innerHTML = renderNeighbor('BEFORE', before) + renderNeighbor('AFTER', after);
 }
 
 async function openMoment(observationId) {
@@ -537,40 +773,45 @@ async function openMoment(observationId) {
   if (!item || !els.momentDialog) return;
 
   const source = item.sourceType || 'observation';
-  const time = item.clientCreatedAt ? formatDateTime(item.clientCreatedAt) : 'Unknown time';
+  const day = formatDayKey(observationDayKey(item));
+  const localTime = formatObservationLocalTime(item);
   const raw = source === 'mark'
-    ? '<div class="moment-mark-hero">Moment preserved</div>'
-    : `<div class="moment-raw">${escapeHtml(item.rawText || '')}</div>`;
+    ? '<div class="moment-mark-hero"><span class="moment-trace" aria-hidden="true"></span><span>Moment preserved</span></div>'
+    : '<div class="moment-raw">' + escapeHtml(item.rawText || '') + '</div>';
 
-  els.momentHero.innerHTML = `
-    <div class="moment-time-row"><span>${escapeHtml(time)}</span><span>${escapeHtml(source)}</span></div>
-    ${raw}
-  `;
+  els.momentHero.innerHTML =
+    '<div class="moment-time-row"><span>' + escapeHtml(day + ' · ' + localTime) + '</span><span>' + escapeHtml(source) + '</span></div>' +
+    raw;
 
   const contextRows = [
     ['Captured as', capitalize(source)],
-    ['Local date', item.localDate || 'Not recorded'],
+    ['Local date', item.localDate || observationDayKey(item) || 'Not recorded'],
+    ['Local time', localTime],
     ['Timezone', item.timezone || 'Not recorded'],
     ['Capture version', item.uiVersion || item.appVersion || 'Earlier version']
   ];
-  els.momentContext.innerHTML = contextRows.map(([label, value]) => `
-    <div class="context-card"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>
-  `).join('');
+  els.momentContext.innerHTML = contextRows.map(([label, value]) =>
+    '<div class="context-card"><strong>' + escapeHtml(label) + '</strong><span>' + escapeHtml(value) + '</span></div>'
+  ).join('');
 
-  els.momentRelations.innerHTML = `
-    <div class="relation-card">
-      <strong>No assumed causality</strong>
-      <span>Explicit relationships will appear here only when they are stored as separate research records.</span>
-    </div>
-  `;
+  renderMomentRegister(item);
+  renderMomentNeighbors(item);
+
+  els.momentRelations.innerHTML =
+    '<div class="relation-card">' +
+      '<strong>No assumed causality</strong>' +
+      '<span>Explicit relationships appear here only when they exist as separate research records. Temporal proximity above is context, not explanation.</span>' +
+    '</div>';
 
   els.momentDialog.showModal();
   playElementEntrance([
     els.momentHero,
+    els.momentRegister,
     ...els.momentContext.children,
+    ...els.momentNeighbors.children,
     ...els.momentRelations.children,
     $('.exposure-note')
-  ], { baseDelay: 60, step: 55 });
+  ], { baseDelay: 40, step: 45 });
 
   await logExposure('raw_observation_reviewed', { observationId, sourceType: source, surface: 'moment_detail' });
   await track('moment_open', { observationId, sourceType: source });
@@ -894,6 +1135,18 @@ function bindEvents() {
   els.timelineList.addEventListener('click', (event) => {
     const item = event.target.closest('.timeline-item');
     if (item?.dataset.observationId) openMoment(item.dataset.observationId);
+  });
+
+  els.streamRegister?.addEventListener('click', (event) => {
+    const tick = event.target.closest('.stream-register-tick');
+    if (!tick?.dataset.observationId) return;
+    const item = els.timelineList.querySelector('[data-observation-id="' + CSS.escape(tick.dataset.observationId) + '"]');
+    if (!item) return;
+    item.classList.remove('register-focus');
+    item.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
+    requestAnimationFrame(() => item.classList.add('register-focus'));
+    setTimeout(() => item.classList.remove('register-focus'), 1200);
+    track('stream_register_seek', { observationId: tick.dataset.observationId });
   });
 
   els.closeMomentBtn?.addEventListener('click', () => els.momentDialog.close());

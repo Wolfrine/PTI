@@ -80,3 +80,20 @@ Verification:
 
 Reason:
 This extends the selected visual language using existing raw timestamp data instead of adding decorative or interpretive UI.
+
+
+## 2026-09-24 — Reject Trace Register as primary art direction
+
+Decision:
+- Do not continue propagating Trace Register as the identity of Luminary.
+- Preserve only useful implementation lessons:
+  - evidence-bound geometry;
+  - no synthetic temporal positions;
+  - mobile/desktop may use different compositions;
+  - raw observation and derived interpretation remain separated.
+- Remove the assumption that temporal geometry itself should make Luminary recognizable.
+- The next direction must prioritize immediate affordance, emotional clarity and plain-language meaning before distinctiveness.
+- No new design is to be merged/deployed to production until the owner sees representative visual evidence first.
+
+Reason:
+Production review showed that the design was original but not intuitive or emotionally legible.

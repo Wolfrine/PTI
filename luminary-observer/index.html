@@ -125,6 +125,18 @@
         <button class="filter" data-filter="text">Text</button>
       </div>
 
+      <div id="streamRegister" class="stream-register" aria-label="Temporal register of raw observations">
+        <div class="stream-register-empty">
+          <span class="instrument-meta">RAW TEMPORAL REGISTER</span>
+          <span>Waiting for observations.</span>
+        </div>
+      </div>
+
+      <div class="stream-log-head">
+        <span class="instrument-meta">RAW RECORD</span>
+        <span id="streamRange" class="instrument-meta">NO RANGE YET</span>
+      </div>
+
       <div class="stream-rail">
         <span class="stream-line" aria-hidden="true"></span>
         <div id="timelineList" class="timeline-list"></div>
@@ -179,10 +191,16 @@
       <button id="closeMomentBtn" class="moment-close" type="button" aria-label="Close moment">←</button>
       <div class="moment-label instrument-meta">MOMENT / RAW</div>
       <div id="momentHero" class="moment-hero"></div>
+      <div id="momentRegister" class="moment-register" aria-label="Selected observation within its local day"></div>
 
       <section class="moment-block">
         <div class="moment-block-label instrument-meta">CONTEXT</div>
         <div id="momentContext" class="moment-context"></div>
+      </section>
+
+      <section class="moment-block">
+        <div class="moment-block-label instrument-meta">NEARBY IN RAW RECORD</div>
+        <div id="momentNeighbors" class="moment-neighbors"></div>
       </section>
 
       <section class="moment-block">

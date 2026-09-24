@@ -38,9 +38,9 @@ jobs:
             const page=await browser.newPage({viewport:{width,height}});
             await page.goto(url,{waitUntil:'networkidle'});
             await page.screenshot({path:'/tmp/luminary-v4/evidence/'+label+'-observe.png'});
-            await page.locator('[data-view="stream"]:visible').click();
+            await page.evaluate(()=>document.querySelector('.tab[data-view="stream"]').click());
             await page.screenshot({path:'/tmp/luminary-v4/evidence/'+label+'-stream.png',fullPage:true});
-            await page.locator('[data-view="patterns"]:visible').click();
+            await page.evaluate(()=>document.querySelector('.tab[data-view="patterns"]').click());
             await page.waitForTimeout(700);
             await page.screenshot({path:'/tmp/luminary-v4/evidence/'+label+'-patterns.png',fullPage:true});
             await page.close();
@@ -65,13 +65,13 @@ jobs:
             await page.waitForTimeout(1500);
 
             // Same imprint language in Stream.
-            await page.locator('[data-view="stream"]:visible').click();
+            await page.evaluate(()=>document.querySelector('.tab[data-view="stream"]').click());
             await page.waitForTimeout(650);
             await page.locator('.moment-row').first().click();
             await page.waitForTimeout(900);
 
             // Meaning-first Pattern -> source evidence reveal.
-            await page.locator('[data-view="patterns"]:visible').click();
+            await page.evaluate(()=>document.querySelector('.tab[data-view="patterns"]').click());
             await page.waitForTimeout(1500);
             await page.locator('#replayEvidence').click();
             await page.waitForTimeout(1200);

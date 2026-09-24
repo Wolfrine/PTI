@@ -1,0 +1,181 @@
+name: Luminary Trace Extension Verify
+
+on:
+  push:
+    branches:
+      - luminary/trace-register-v2
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Static Luminary contract checks
+        run: |
+          node --check luminary-observer/app.js
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('luminary-observer/index.html', 'utf8');
+          const js = fs.readFileSync('luminary-observer/app.js', 'utf8');
+          const requiredIds = [
+            'authGate','appShell','signInBtn','syncState','brandBtn','profileBtn',
+            'markBtn','voiceBtn','textBtn','timelineList','timelineEmpty','streamRegister',
+            'streamRange','patternList','patternEmpty','patternField','momentDialog',
+            'momentHero','momentRegister','momentContext','momentNeighbors','momentRelations','toast'
+          ];
+          for (const id of requiredIds) {
+            if (!html.includes('id="' + id + '"')) throw new Error('Missing DOM id: ' + id);
+          }
+          if (!js.includes("const UI_VERSION = 'trace-register-v2.1';")) throw new Error('UI version mismatch');
+          if (!js.includes("renderStreamRegister(items)")) throw new Error('Stream register renderer missing');
+          if (!js.includes("renderMomentRegister(item)")) throw new Error('Moment register renderer missing');
+          if (!js.includes("renderMomentNeighbors(item)")) throw new Error('Moment raw-context renderer missing');
+          console.log('Static contract OK');
+          NODE
+
+      - name: Install visual verification runtime
+        run: |
+          mkdir -p /tmp/luminary-verify
+          cd /tmp/luminary-verify
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Exercise flows and render evidence
+        run: |
+          python3 -m http.server 4173 --directory luminary-observer >/tmp/luminary-http.log 2>&1 &
+          mkdir -p /tmp/luminary-verify/evidence
+          cat >/tmp/luminary-verify/verify.mjs <<'NODE'
+          import { chromium } from 'playwright';
+
+          const appModule = "export function initializeApp(config){return {config};}";
+          const authModule = [
+            "let listener=null;",
+            "const user={uid:'test-user',displayName:'Test Observer',email:'observer@example.com'};",
+            "export function getAuth(){return {};}",
+            "export class GoogleAuthProvider{}",
+            "export function onAuthStateChanged(_auth,cb){listener=cb;queueMicrotask(()=>cb(null));return ()=>{};}",
+            "export async function signInWithPopup(){if(listener) await listener(user);return {user};}",
+            "export async function signOut(){if(listener) await listener(null);}"
+          ].join("\n");
+
+          const observationData = {
+            s5:{sourceType:'text',rawText:'The room became quiet after the meeting ended.',clientCreatedAtMs:1790170800000,clientCreatedAt:'2026-09-23T08:20:00.000Z',localDate:'2026-09-23',timezone:'Asia/Kolkata',timezoneOffsetMinutes:-330,uiVersion:'trace-register-v2.1'},
+            s4:{sourceType:'mark',rawText:'',clientCreatedAtMs:1790154000000,clientCreatedAt:'2026-09-23T03:40:00.000Z',localDate:'2026-09-23',timezone:'Asia/Kolkata',timezoneOffsetMinutes:-330,uiVersion:'trace-register-v2.1'},
+            s3:{sourceType:'voice',rawText:'Noticed attention returning after a context switch.',clientCreatedAtMs:1790136900000,clientCreatedAt:'2026-09-22T22:55:00.000Z',localDate:'2026-09-23',timezone:'Asia/Kolkata',timezoneOffsetMinutes:-330,uiVersion:'trace-register-v2.1'},
+            s2:{sourceType:'text',rawText:'A slower evening observation.',clientCreatedAtMs:1790087700000,clientCreatedAt:'2026-09-22T09:15:00.000Z',localDate:'2026-09-22',timezone:'Asia/Kolkata',timezoneOffsetMinutes:-330,uiVersion:'trace-register-v2.1'},
+            s1:{sourceType:'mark',rawText:'',clientCreatedAtMs:1789911000000,clientCreatedAt:'2026-09-20T08:10:00.000Z',localDate:'2026-09-20',timezone:'Asia/Kolkata',timezoneOffsetMinutes:-330,uiVersion:'trace-register-v2.1'}
+          };
+
+          const firestoreModule = [
+            "const writes=[];globalThis.__luminaryMockWrites=writes;",
+            "const observations=" + JSON.stringify(observationData) + ";",
+            "export function getFirestore(){return {};}",
+            "export function enableIndexedDbPersistence(){return Promise.resolve();}",
+            "export function collection(_db,path){return {kind:'collection',path};}",
+            "export function doc(_db,path){return {kind:'doc',path};}",
+            "export async function addDoc(ref,data){writes.push({op:'addDoc',path:ref.path,data});return {id:'mock-'+writes.length};}",
+            "export async function setDoc(ref,data,opts){writes.push({op:'setDoc',path:ref.path,data,opts});}",
+            "export function query(source,...args){return {source,args};}",
+            "export function orderBy(field,direction){return {type:'orderBy',field,direction};}",
+            "export function limit(value){return {type:'limit',value};}",
+            "export function serverTimestamp(){return {mockServerTimestamp:true};}",
+            "export function increment(value){return {mockIncrement:value};}",
+            "export function where(field,op,value){return {type:'where',field,op,value};}",
+            "export function documentId(){return '__name__';}",
+            "function d(id,data){return {id,data(){return data;}};}",
+            "export async function getDocs(q){",
+            " const path=q.source?.path||'';",
+            " const lookup=(q.args||[]).find(x=>x&&x.type==='where');",
+            " if(path.includes('/patterns/items')) return {docs:[",
+            "  d('p1',{title:'Attention recurs after context switches',summary:'Recurrence across dated source observations.',status:'observed',supportCount:3,updatedAtMs:3,sourceObservationIds:['s1','s3','s5']}),",
+            "  d('p2',{title:'Source linkage pending',summary:'Pattern exists without source identifiers.',status:'observed',supportCount:2,updatedAtMs:2})",
+            " ]};",
+            " if(path.includes('/observations/items')&&lookup){",
+            "  const ids=lookup.value||[];return {docs:ids.filter(id=>observations[id]).map(id=>d(id,observations[id]))};",
+            " }",
+            " if(path.includes('/observations/items')) return {docs:['s5','s4','s3','s2','s1'].map(id=>d(id,observations[id]))};",
+            " return {docs:[]};",
+            "}"
+          ].join("\n");
+
+          async function createPage(browser, width, height) {
+            const page = await browser.newPage({ viewport: { width, height } });
+            await page.emulateMedia({ reducedMotion: 'reduce' });
+            page.on('pageerror', error => console.log('pageerror:', error.message));
+            await page.route('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js', route => route.fulfill({
+              status:200,contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:appModule
+            }));
+            await page.route('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js', route => route.fulfill({
+              status:200,contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:authModule
+            }));
+            await page.route('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js', route => route.fulfill({
+              status:200,contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:firestoreModule
+            }));
+            await page.goto('http://127.0.0.1:4173/', { waitUntil:'networkidle' });
+            return page;
+          }
+
+          async function exercise(page, prefix) {
+            await page.screenshot({path:'/tmp/luminary-verify/evidence/'+prefix+'-entry.png'});
+            await page.getByRole('button',{name:'Enter observation'}).click();
+            await page.waitForSelector('#appShell:not([hidden])');
+            await page.screenshot({path:'/tmp/luminary-verify/evidence/'+prefix+'-observe.png'});
+
+            await page.locator('.nav-item[data-nav="timeline"]').click();
+            await page.waitForSelector('.stream-register-tick');
+            const tickCount=await page.locator('.stream-register-tick').count();
+            if(tickCount!==5) throw new Error('Expected 5 stream register ticks, found '+tickCount);
+            const timelineCount=await page.locator('.timeline-item').count();
+            if(timelineCount!==5) throw new Error('Expected 5 raw timeline items, found '+timelineCount);
+
+            await page.locator('.stream-register-tick[data-observation-id="s3"]').click();
+            await page.waitForFunction(()=>document.querySelector('.timeline-item[data-observation-id="s3"]')?.classList.contains('register-focus'));
+            await page.screenshot({path:'/tmp/luminary-verify/evidence/'+prefix+'-stream.png',fullPage:true});
+
+            await page.locator('.timeline-item[data-observation-id="s4"]').click();
+            await page.waitForSelector('#momentDialog[open]');
+            if(await page.locator('.moment-day-tick').count()!==3) throw new Error('Moment day register should contain 3 dated events');
+            if(await page.locator('.moment-day-tick.selected').count()!==1) throw new Error('Moment selected trace missing');
+            if(await page.locator('.moment-neighbor').count()!==2) throw new Error('Before/after raw context missing');
+            await page.waitForFunction(()=>globalThis.__luminaryMockWrites?.some(w=>w.path?.includes('/exposures/items')&&w.data?.kind==='raw_observation_reviewed'));
+            await page.screenshot({path:'/tmp/luminary-verify/evidence/'+prefix+'-moment.png'});
+
+            await page.locator('#closeMomentBtn').click();
+            await page.locator('.nav-item[data-nav="discover"]').click();
+            await page.waitForSelector('.pattern-track');
+            if(await page.locator('.pattern-source-tick').count()!==3) throw new Error('Expected 3 source-linked pattern ticks');
+            if(await page.getByText('NO SYNTHETIC POSITION').count()<1) throw new Error('Unlinked pattern must refuse synthetic position');
+            await page.screenshot({path:'/tmp/luminary-verify/evidence/'+prefix+'-patterns.png',fullPage:true});
+
+            await page.locator('#profileBtn').click();
+            await page.getByRole('button',{name:'Sign out'}).click();
+            await page.waitForSelector('#authGate:not([hidden])');
+          }
+
+          const browser = await chromium.launch({ headless:true });
+          const desktop = await createPage(browser,1440,900);
+          await exercise(desktop,'desktop');
+          await desktop.close();
+          const mobile = await createPage(browser,390,844);
+          await exercise(mobile,'mobile');
+          await mobile.close();
+          await browser.close();
+          console.log('Luminary Trace Register extension verification OK');
+          NODE
+          cd /tmp/luminary-verify
+          node verify.mjs
+
+      - name: Upload visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: luminary-trace-extension-evidence
+          path: /tmp/luminary-verify/evidence/*.png
+          retention-days: 7

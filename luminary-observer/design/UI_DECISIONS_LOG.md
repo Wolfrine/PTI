@@ -56,3 +56,27 @@ Verification:
 - Static JS / DOM contract passed.
 - Production PTI build passed.
 - Root Angular unit tests remain baseline-failing because Auth / Firestore providers are absent from those test harnesses; no Luminary code path is implicated by those failures.
+
+
+## 2026-09-24 — Extend Trace Register to Stream and Moment
+
+Decision:
+- Stream receives a timestamp-derived overview register plus the existing raw chronology.
+- The overview is navigational, not analytical: selecting a tick seeks the source record.
+- Raw records are grouped by recorded local date; no inferred category, score or semantic cluster is introduced.
+- Moment receives a 24-hour local-day register using the captured timestamp and timezone offset.
+- Same-day neighboring marks are contextual reference points only.
+- The immediately previous and next loaded raw observations are shown as factual temporal context.
+- Temporal proximity is explicitly not treated as a relationship or causal claim.
+- Desktop Moment remains contextual over Stream; mobile Moment is a full-screen detail state.
+- Existing moment-review exposure logging is preserved unchanged.
+
+Verification:
+- Static JavaScript / DOM contract passed.
+- Real app.js mocked-browser flow passed on desktop and mobile.
+- Verified Stream register tick count and source seeking.
+- Verified Moment selected trace, same-day trace count, before/after raw context and raw_observation_reviewed exposure write.
+- Verified Patterns still renders only source-linked temporal positions.
+
+Reason:
+This extends the selected visual language using existing raw timestamp data instead of adding decorative or interpretive UI.

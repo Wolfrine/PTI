@@ -1,0 +1,143 @@
+<main id="authGate" class="auth-gate v5-auth">
+  <section class="entry-stage v5-entry-stage" aria-labelledby="entryTitle">
+    <div class="instrument-brand"><span class="brand-rule" aria-hidden="true"></span><span>LUMINARY</span></div>
+    <p class="entry-constraint instrument-meta">OBSERVATION BEFORE INTERPRETATION</p>
+
+    <div class="entry-copy">
+      <p class="mode-label">ENTRY / OBSERVE</p>
+      <h1 id="entryTitle">A moment becomes something you can see again.</h1>
+      <p>Capture first. Each observation becomes a visual specimen that can later accumulate, recur, and remain traceable to its raw source.</p>
+    </div>
+
+    <aside id="entrySpecimenField" class="entry-specimen-field" aria-hidden="true">
+      <div class="entry-specimen-caption instrument-meta">OBSERVATION MATERIAL</div>
+      <div class="entry-specimen-demo demo-a"></div>
+      <div class="entry-specimen-demo demo-b"></div>
+      <div class="entry-specimen-demo demo-c"></div>
+      <div class="entry-specimen-demo demo-d"></div>
+      <p>One visual family. Different source states. Same object identity through the product.</p>
+    </aside>
+
+    <button id="signInBtn" class="entry-cta" type="button"><span>ENTER OBSERVATION</span><span aria-hidden="true">→</span></button>
+    <p id="authError" class="status error entry-error" hidden></p>
+    <small class="entry-privacy instrument-meta">YOUR OBSERVATIONS REMAIN YOURS</small>
+  </section>
+</main>
+
+<div id="appShell" class="app-shell" hidden>
+  <header class="topbar">
+    <button id="brandBtn" class="brand" type="button" aria-label="Open Observe"><span class="brand-rule" aria-hidden="true"></span><span>LUMINARY</span></button>
+    <div class="top-actions">
+      <span id="syncState" class="sync-state" title="Sync status" aria-label="Sync status"></span>
+      <button id="profileBtn" class="icon-button" type="button" aria-label="Account"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <section id="observeView" class="view active observe-view" data-view="observe">
+    <div class="observe-stage v5-observe-stage">
+      <div class="observe-copy">
+        <p class="mode-label">OBSERVE / NOW</p>
+        <h2>Nothing to solve</h2>
+        <p>Preserve the moment without naming what it means.</p>
+      </div>
+
+      <div class="v5-capture-field">
+        <div class="v5-capture-halo" aria-hidden="true"></div>
+        <button id="markBtn" class="v5-mark-button" type="button" aria-label="Mark this moment">
+          <span id="markSpecimenSeed" class="v5-mark-specimen" aria-hidden="true"></span>
+          <span class="v5-mark-label">MARK</span>
+          <span class="v5-mark-sub instrument-meta">MOMENT · ONE TAP</span>
+        </button>
+        <p id="markStatus" class="v5-capture-status">Tap when something is worth preserving.</p>
+      </div>
+
+      <div class="capture-actions">
+        <button id="voiceBtn" class="capture-button voice" type="button"><span class="capture-title">Hold to speak</span><span class="capture-meta instrument-meta">VOICE</span></button>
+        <button id="textBtn" class="capture-button" type="button"><span class="capture-title">Write an observation</span><span class="capture-meta instrument-meta">TEXT</span></button>
+      </div>
+
+      <div id="textComposer" class="composer floating-surface" hidden>
+        <div class="composer-kicker instrument-meta">RAW OBSERVATION</div>
+        <textarea id="observationText" rows="5" maxlength="5000" placeholder="What happened? Describe it in your own words."></textarea>
+        <div class="composer-footer"><span id="textCount" class="instrument-meta">0 / 5000</span><div class="composer-buttons"><button id="cancelTextBtn" class="button ghost" type="button">Cancel</button><button id="saveTextBtn" class="button primary compact" type="button">Preserve</button></div></div>
+      </div>
+
+      <div id="voicePanel" class="voice-panel floating-surface" hidden>
+        <div class="voice-live"><span class="pulse" aria-hidden="true"></span><span id="voiceState">Listening…</span></div>
+        <p id="voiceTranscript" class="voice-transcript"></p>
+      </div>
+
+      <section class="last-capture v5-last-capture" aria-live="polite">
+        <span class="instrument-meta">LAST PRESERVED</span>
+        <strong id="lastCapture">None yet</strong>
+        <div id="lastSpecimenSlot" class="last-specimen-slot"><span class="instrument-meta">NO SPECIMEN YET</span></div>
+      </section>
+    </div>
+  </section>
+
+  <section id="timelineView" class="view stream-view v5-stream-view" data-view="timeline">
+    <div class="section-head stream-head">
+      <div><p class="mode-label">STREAM / RAW</p><h2>What remained</h2><p>Raw observations stay readable, but they also accumulate as visible objects across time.</p></div>
+      <button id="refreshTimelineBtn" class="icon-button refresh-button" type="button" aria-label="Refresh stream">↻</button>
+    </div>
+
+    <div id="timelineFilters" class="filters" role="group" aria-label="Stream filters">
+      <button class="filter active" data-filter="all">All</button><button class="filter" data-filter="mark">Marks</button><button class="filter" data-filter="voice">Voice</button><button class="filter" data-filter="text">Text</button>
+    </div>
+
+    <div class="v5-stream-grid">
+      <div id="streamRegister" class="v5-stream-field" aria-live="polite">
+        <div class="v5-field-caption"><span class="instrument-meta">ACCUMULATION FIELD</span><strong id="streamRange">NO RANGE YET</strong></div>
+        <div class="v5-field-empty">Your visual record will appear here.</div>
+      </div>
+      <div class="v5-stream-list">
+        <div id="timelineList" class="timeline-list"></div>
+        <p id="timelineEmpty" class="empty-state" hidden>No observations yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="discoverView" class="view patterns-view v5-patterns-view" data-view="discover">
+    <div class="section-head patterns-head">
+      <div><p class="mode-label">PATTERNS / DERIVED</p><h2>What repeats</h2><p>Plain-language recurrence with the real source objects visibly gathered beside it.</p></div>
+      <button id="refreshDiscoverBtn" class="icon-button refresh-button" type="button" aria-label="Refresh patterns">↻</button>
+    </div>
+
+    <div class="v5-pattern-grid">
+      <div id="patternList" class="v5-pattern-list"></div>
+      <div id="patternField" class="v5-pattern-field" aria-live="polite"><div class="v5-field-empty">Waiting for source-linked patterns.</div></div>
+    </div>
+    <p id="patternEmpty" class="empty-state" hidden>No derived patterns have been published yet.</p>
+
+    <div class="discovery-note"><strong>PATTERN, NOT EXPLANATION</strong><span>Grouping shows recurrence among supporting observations. It does not claim causality.</span></div>
+  </section>
+
+  <nav class="bottom-nav" aria-label="Luminary modes">
+    <button class="nav-item active" data-nav="observe"><span class="nav-key instrument-meta">01</span><small>Observe</small></button>
+    <button class="nav-item" data-nav="timeline"><span class="nav-key instrument-meta">02</span><small>Stream</small></button>
+    <button class="nav-item" data-nav="discover"><span class="nav-key instrument-meta">03</span><small>Patterns</small></button>
+  </nav>
+</div>
+
+<dialog id="momentDialog" class="moment-dialog">
+  <div class="moment-sheet">
+    <button id="closeMomentBtn" class="moment-close" type="button" aria-label="Close moment">←</button>
+    <div class="moment-label instrument-meta">MOMENT / RAW</div>
+    <div id="momentHero" class="moment-hero"></div>
+    <div id="momentRegister" class="moment-register-v4"></div>
+    <section class="moment-block"><div class="moment-block-label instrument-meta">CONTEXT</div><div id="momentContext" class="moment-context"></div></section>
+    <section class="moment-block"><div class="moment-block-label instrument-meta">NEARBY IN RAW RECORD</div><div id="momentNeighbors" class="moment-neighbors"></div></section>
+    <section class="moment-block"><div class="moment-block-label instrument-meta">RELATIONS</div><div id="momentRelations" class="moment-relations"></div></section>
+    <p class="exposure-note">Reviewing this moment is itself logged as exposure.</p>
+  </div>
+</dialog>
+
+<dialog id="profileDialog" class="profile-dialog">
+  <div class="dialog-body">
+    <p class="mode-label">ACCOUNT</p><h3 id="profileName">Luminary</h3><p id="profileEmail" class="muted"></p>
+    <div class="privacy-box"><strong>Observation boundary</strong><span>The app records captures and product-usage telemetry. It does not call an AI/LLM service.</span></div>
+    <div id="versionControls" class="version-controls"></div>
+    <div class="dialog-actions"><button id="closeProfileBtn" class="button ghost" type="button">Close</button><button id="signOutBtn" class="button danger" type="button">Sign out</button></div>
+  </div>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>

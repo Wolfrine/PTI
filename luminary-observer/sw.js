@@ -1,4 +1,4 @@
-const CACHE = 'luminary-shell-v6';
+const CACHE = 'luminary-shell-v7';
 const SHELL = [
   './',
   './index.html',
@@ -6,6 +6,8 @@ const SHELL = [
   './app.js',
   './manifest.webmanifest',
   './assets/icon.svg',
+  './versions/perceptual-specimens-v5.html',
+  './versions/perceptual-specimens-v5.css',
   './versions/meaningful-motion-v4.html',
   './versions/meaningful-motion-v4.css',
   './versions/intuitive-capture-v3.html',

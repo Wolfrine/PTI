@@ -1437,7 +1437,7 @@ function renderPattern(pattern) {
   const support = supportCount == null ? '' : supportCount + ' supporting moment' + (supportCount === 1 ? '' : 's');
 
   if (visualSpecimenExperience()) {
-    return '<article class="pattern-card" data-pattern-id="' + escapeHtml(pattern.id) + '">' +
+    return '<article class="pattern-card" data-pattern-id="' + escapeHtml(pattern.id) + '" data-selected="' + (pattern.id === selectedV5PatternId ? 'true' : 'false') + '">' +
       '<div class="pattern-main">' +
         '<p class="pattern-kicker">Observed pattern</p>' +
         '<h3>' + escapeHtml(title) + '</h3>' +
@@ -1623,6 +1623,9 @@ function bindEvents() {
     const patternCard = event.target.closest('.pattern-card[data-pattern-id]');
     if (visualSpecimenExperience() && patternCard?.dataset.patternId) {
       selectedV5PatternId = patternCard.dataset.patternId;
+      $('.pattern-card[data-pattern-id]').forEach((card) => {
+        card.dataset.selected = card.dataset.patternId === selectedV5PatternId ? 'true' : 'false';
+      });
       renderPatternRegister(currentPatterns, new Map());
       track('pattern_visual_select', { patternId: selectedV5PatternId });
       return;

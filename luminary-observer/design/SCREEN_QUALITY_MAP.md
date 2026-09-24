@@ -2,22 +2,17 @@
 
 Updated: 2026-09-24
 
-| Surface | Functional state | Visual state | Next action |
+| Surface | Production state | v3 prototype state | Next action |
 |---|---|---|---|
-| Entry / auth | Working | Trace Register passed | Preserve |
-| Observe | Working | Trace Register passed | Preserve capture simplicity |
-| Stream | Working | Trace Register extension passed | Preserve raw-only chronology and timestamp-bound register |
-| Patterns | Working | Trace Register passed | Preserve source-linked ticks only; never synthesize positions |
-| Moment detail | Working | Trace Register extension passed | Preserve local-day register, raw neighbors and exposure boundary |
-| Profile / account | Working | Functional compatibility styling | Low priority; no redesign required unless product need emerges |
-| Mobile | Primary product target | Entry/Observe/Stream/Patterns/Moment checked | Preserve full-screen Moment and thumb-reachable capture |
-| Desktop | Functional | Entry/Observe/Stream/Patterns/Moment checked | Preserve contextual width and Moment-over-Stream continuity |
+| Entry / auth | Trace Register currently live | Intuitive prototype rendered | Owner visual review before implementation |
+| Observe | Trace Register currently live | Primary action substantially clearer | Refine capture feel / imprint behavior |
+| Stream | Trace Register currently live | Not prototyped yet | Hold until Entry/Observe/Patterns accepted |
+| Patterns | Trace Register currently live | Plain-language-first prototype rendered | Owner visual review; refine evidence continuity |
+| Moment detail | Trace Register currently live | Not prototyped yet | Hold |
+| Profile / account | Functional | Not in v3 scope | Hold |
+| Mobile | Current production Trace Register | v3 representative screens rendered | Owner review |
+| Desktop | Current production Trace Register | v3 representative screens rendered | Owner review |
 
-## Current state
+## Gate
 
-The core user journey now shares one stable visual grammar:
-
-Entry -> Observe -> Stream -> Moment
-                 -> Patterns
-
-Account remains deliberately utility-level rather than being over-designed.
+No v3 runtime implementation or production merge until the owner accepts the representative direction.

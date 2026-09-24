@@ -1139,6 +1139,19 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
   opacity:.5;
   background-image:linear-gradient(rgba(27,28,25,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(27,28,25,.025) 1px,transparent 1px)
 }
+.v6-entry-stage .entry-specimen-field::after{
+  content:"";
+  position:absolute;
+  right:-6%;bottom:-13%;
+  width:58%;height:58%;
+  background-image:url('../assets/v6-material-cluster.webp');
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:center;
+  opacity:.09;
+  filter:saturate(.65);
+  pointer-events:none
+}
 
 .material-v6{display:inline-grid;place-items:center;position:relative;overflow:visible}
 .material-v6-body{
@@ -1233,19 +1246,7 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
   border-radius:50%;
   pointer-events:none;
 }
-.v5-pattern-field::before{
-  content:"";
-  position:absolute;
-  right:-4%;bottom:-12%;
-  width:52%;height:52%;
-  background-image:url('../assets/v6-material-cluster.webp');
-  background-size:contain;
-  background-repeat:no-repeat;
-  background-position:center;
-  opacity:.10;
-  filter:saturate(.65);
-  pointer-events:none
-}
+.v5-pattern-field::before{display:none}
 .v5-pattern-node{border:0;background:transparent;padding:0}
 .v5-pattern-node.support{transform:none}
 .v5-pattern-node.support .material-v6-body{filter:brightness(1.02) drop-shadow(0 16px 28px rgba(73,55,35,.11))}
@@ -1268,4 +1269,16 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
   .v5-stream-field::after{word-spacing:46px}
   .v5-pattern-field{min-height:410px}
   .v5-pattern-field::after{width:68%;height:56%;left:8%;top:20%}
+}
+
+.v5-pattern-list .pattern-card[data-selected="true"]{
+  position:relative;
+  padding-left:18px
+}
+.v5-pattern-list .pattern-card[data-selected="true"]::before{
+  content:"";
+  position:absolute;
+  left:0;top:25px;
+  width:2px;height:34px;
+  background:var(--trace)
 }

@@ -512,7 +512,7 @@ function animateV4ImprintTransfer(sourceType, iso) {
 
 function animateV4PatternEvidence() {
   if (!meaningfulMotionExperience() || reducedMotion()) return;
-  $('.pattern-source').forEach((source, index) => {
+  document.querySelectorAll('.pattern-source').forEach((source, index) => {
     const imprint = source.querySelector('.source-imprint');
     const text = source.querySelector('span');
     imprint?.animate(
@@ -1656,7 +1656,7 @@ function bindEvents() {
     const patternCard = event.target.closest('.pattern-card[data-pattern-id]');
     if (visualSpecimenExperience() && patternCard?.dataset.patternId) {
       selectedV5PatternId = patternCard.dataset.patternId;
-      $('.pattern-card[data-pattern-id]').forEach((card) => {
+      document.querySelectorAll('.pattern-card[data-pattern-id]').forEach((card) => {
         card.dataset.selected = card.dataset.patternId === selectedV5PatternId ? 'true' : 'false';
       });
       renderPatternRegister(currentPatterns, new Map());

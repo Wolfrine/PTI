@@ -1056,3 +1056,10 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
   .pattern-evidence{margin-top:22px;padding-left:15px}
   .pattern-source{grid-template-columns:96px 1fr}
 }
+
+.pattern-source{cursor:pointer}
+.pattern-source:hover{background:rgba(27,28,25,.025)}
+.source-imprint{position:relative;padding-left:14px}
+.source-imprint::before{content:"";position:absolute;left:0;top:1px;width:2px;height:20px;background:var(--trace)}
+.source-imprint.voice::before{height:15px;background:var(--ink)}
+.source-imprint.text::before{height:11px;background:var(--ink)}

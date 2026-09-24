@@ -184,3 +184,32 @@ PASS.
 ### Extension result
 
 Trace Register now holds across Entry, Observe, Stream, Patterns and Moment without adding a second metaphor. Account remains intentionally low-priority functional chrome.
+
+
+## Owner review — 2026-09-24 — Trace Register rejected
+
+Owner feedback:
+- "still nothing intuitive"
+- "Don't know what to make of it."
+- "Don't know what to feel."
+- "Strange pattern and layout but nothing meaningful."
+
+Diagnosis:
+- Trace Register solved the generic-AI problem but over-corrected into conceptual art direction.
+- The interface asked the user to decode the visual system before the product became obvious.
+- Time geometry became the protagonist instead of capture.
+- The page communicated rigor but not a clear emotional state.
+- Patterns emphasized representation before meaning; the user saw lines/ticks before understanding the actual recurring observation.
+- Mono micro-labels, sparse fields and evidence registers made the product feel clinical.
+- Distinctiveness was achieved by unfamiliarity rather than by a familiar interaction executed in a product-specific way.
+
+New rule:
+> Product identity must never cost immediate affordance.
+
+For Luminary, a first-time user should understand within seconds:
+1. I can mark this moment.
+2. I can add voice or text if I want.
+3. Later I can review what happened.
+4. Patterns are plain-language observations about recurrence, not abstract graphics.
+
+Trace Register may remain only as a secondary evidence device where it genuinely clarifies chronology. It is rejected as the primary visual metaphor.

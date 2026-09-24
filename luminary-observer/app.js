@@ -23,12 +23,14 @@ import {
   documentId
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
-const APP_VERSION = '0.3.0';
-const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'intuitive-capture-v3';
+const APP_VERSION = '0.4.0';
+const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'meaningful-motion-v4';
 const UI_VERSIONS = window.__LUMINARY_UI_VERSIONS__ || [];
-const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'intuitive-capture-v3';
+const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'meaningful-motion-v4';
 const UI_STORAGE_KEY = window.__LUMINARY_UI_STORAGE_KEY__ || 'luminary.uiVersion';
 const intuitiveExperience = () => UI_VERSION === 'intuitive-capture-v3';
+const meaningfulMotionExperience = () => UI_VERSION === 'meaningful-motion-v4';
+const meaningFirstExperience = () => intuitiveExperience() || meaningfulMotionExperience();
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -257,12 +259,12 @@ function animateObserveEntrance() {
   if (hasAnimatedInitialView || reducedMotion()) return;
   hasAnimatedInitialView = true;
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     playElementEntrance([
       els.markBtn,
-      ...$$('.capture-button'),
+      ...$('.capture-button'),
       $('.last-capture')
-    ], { step: 65 });
+    ], { step: meaningfulMotionExperience() ? 45 : 65 });
     return;
   }
 
@@ -320,7 +322,7 @@ function animateRenderedItems(selector) {
 }
 
 function animatePatternField() {
-  if (!els.patternField || reducedMotion() || intuitiveExperience()) return;
+  if (!els.patternField || reducedMotion() || meaningFirstExperience()) return;
   const tracks = $$('.pattern-track-line');
   tracks.forEach((track, index) => {
     track.animate(
@@ -598,7 +600,7 @@ function renderStreamRegister(items) {
     .map((item) => ({ item, ms: observationTimeMs(item) }))
     .filter((entry) => Number.isFinite(entry.ms));
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     if (!dated.length) {
       els.streamRegister.innerHTML =
         '<span>No dated observations in this view.</span><strong id="streamRange">No dated range</strong>';
@@ -738,7 +740,7 @@ function renderMomentRegister(item) {
   const selectedMinute = observationLocalMinute(item);
   const dayKey = observationDayKey(item);
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     const sameDayCount = timelineItems.filter((entry) => observationDayKey(entry) === dayKey).length;
     const localTime = formatObservationLocalTime(item);
     els.momentRegister.innerHTML =
@@ -989,7 +991,7 @@ function formatAxisDate(ms) {
 function renderPatternRegister(patterns, sourceDateMap) {
   if (!els.patternField) return;
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     els.patternField.innerHTML = patterns.length
       ? '<span>' + escapeHtml(String(patterns.length)) + ' published pattern' + (patterns.length === 1 ? '' : 's') + '. Open supporting moments to inspect the raw evidence.</span>'
       : '<span>No published patterns yet.</span>';
@@ -1109,7 +1111,7 @@ function renderPattern(pattern) {
   const supportCount = pattern.supportCount == null ? null : Number(pattern.supportCount);
   const support = supportCount == null ? '' : supportCount + ' supporting moment' + (supportCount === 1 ? '' : 's');
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     const sourceRefs = extractPatternSources(pattern);
     const evidence = sourceRefs.slice(0, 3).map((source) => {
       const detail = patternSourceDetails.get(source.id) || source;
@@ -1119,8 +1121,9 @@ function renderPattern(pattern) {
       const text = sourceType === 'mark'
         ? 'Moment preserved'
         : (detail.rawText || 'Supporting raw observation');
-      return '<div class="pattern-source">' +
-        '<time>' + escapeHtml(date) + '</time>' +
+      const sourceClass = sourceType === 'voice' ? ' voice' : sourceType === 'text' ? ' text' : ' mark';
+      return '<div class="pattern-source" data-source="' + escapeHtml(sourceType) + '">' +
+        '<time class="source-imprint' + sourceClass + '">' + escapeHtml(date) + '</time>' +
         '<span>' + escapeHtml(text) + '</span>' +
       '</div>';
     }).join('');

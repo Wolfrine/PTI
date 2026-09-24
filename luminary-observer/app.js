@@ -23,12 +23,14 @@ import {
   documentId
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
-const APP_VERSION = '0.3.0';
-const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'intuitive-capture-v3';
+const APP_VERSION = '0.4.0';
+const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'meaningful-motion-v4';
 const UI_VERSIONS = window.__LUMINARY_UI_VERSIONS__ || [];
-const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'intuitive-capture-v3';
+const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'meaningful-motion-v4';
 const UI_STORAGE_KEY = window.__LUMINARY_UI_STORAGE_KEY__ || 'luminary.uiVersion';
 const intuitiveExperience = () => UI_VERSION === 'intuitive-capture-v3';
+const meaningfulMotionExperience = () => UI_VERSION === 'meaningful-motion-v4';
+const meaningFirstExperience = () => intuitiveExperience() || meaningfulMotionExperience();
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -257,12 +259,12 @@ function animateObserveEntrance() {
   if (hasAnimatedInitialView || reducedMotion()) return;
   hasAnimatedInitialView = true;
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     playElementEntrance([
       els.markBtn,
-      ...$$('.capture-button'),
+      ...$('.capture-button'),
       $('.last-capture')
-    ], { step: 65 });
+    ], { step: meaningfulMotionExperience() ? 45 : 65 });
     return;
   }
 
@@ -320,7 +322,7 @@ function animateRenderedItems(selector) {
 }
 
 function animatePatternField() {
-  if (!els.patternField || reducedMotion() || intuitiveExperience()) return;
+  if (!els.patternField || reducedMotion() || meaningFirstExperience()) return;
   const tracks = $$('.pattern-track-line');
   tracks.forEach((track, index) => {
     track.animate(
@@ -338,25 +340,100 @@ function animatePatternField() {
   });
 }
 
+function setV4LastImprint(sourceType, iso) {
+  if (!meaningfulMotionExperience()) return;
+  const slot = $('#lastImprintSlot');
+  if (!slot) return;
+  const type = sourceType === 'voice' ? 'voice' : sourceType === 'text' ? 'text' : 'mark';
+  const label = sourceType === 'mark' ? 'Mark' : capitalize(sourceType);
+  slot.innerHTML = '<span class="imprint-chip ' + type + '">' + escapeHtml(formatTime(iso) + ' · ' + label) + '</span>';
+}
+
+function animateV4ImprintTransfer(sourceType, iso) {
+  if (!meaningfulMotionExperience()) return;
+  const slot = $('#lastImprintSlot');
+  if (!slot) return;
+
+  if (reducedMotion()) {
+    setV4LastImprint(sourceType, iso);
+    return;
+  }
+
+  const source = els.markBtn?.getBoundingClientRect();
+  const target = slot.getBoundingClientRect();
+  if (!source || !target) {
+    setV4LastImprint(sourceType, iso);
+    return;
+  }
+
+  const flying = document.createElement('div');
+  flying.className = 'flying-imprint-v4';
+  flying.textContent = formatTime(iso) + ' · Mark';
+  document.body.appendChild(flying);
+
+  const sx = source.left + source.width / 2;
+  const sy = source.top + source.height * .5;
+  const tx = target.right - 60;
+  const ty = target.top + 14;
+  flying.style.left = sx + 'px';
+  flying.style.top = sy + 'px';
+
+  const finalTransform = 'translate(' + (tx - sx - 42) + 'px,' + (ty - sy - 12) + 'px) scale(.92)';
+  const animation = flying.animate([
+    { transform: 'translate(-50%,-50%) scale(.45)', opacity: 0 },
+    { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .18 },
+    { transform: finalTransform, opacity: .94 }
+  ], {
+    duration: 560,
+    easing: 'cubic-bezier(.2,.78,.25,1)',
+    fill: 'forwards'
+  });
+
+  animation.finished
+    .catch(() => {})
+    .finally(() => {
+      flying.remove();
+      setV4LastImprint(sourceType, iso);
+    });
+}
+
+function animateV4PatternEvidence() {
+  if (!meaningfulMotionExperience() || reducedMotion()) return;
+  $('.pattern-source').forEach((source, index) => {
+    const imprint = source.querySelector('.source-imprint');
+    const text = source.querySelector('span');
+    imprint?.animate(
+      [{ opacity: 0, transform: 'translateX(-10px)' }, { opacity: 1, transform: 'translateX(0)' }],
+      { duration: 260, delay: 90 + Math.min(index * 100, 500), easing: 'cubic-bezier(.2,.78,.25,1)', fill: 'both' }
+    );
+    text?.animate(
+      [{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'translateX(0)' }],
+      { duration: 280, delay: 150 + Math.min(index * 100, 500), easing: 'cubic-bezier(.2,.78,.25,1)', fill: 'both' }
+    );
+  });
+}
+
 async function handleMark() {
   els.markBtn.disabled = true;
   els.markStatus.textContent = 'Preserving this moment…';
   const pressedAt = Date.now();
+  const capturedIso = new Date(pressedAt).toISOString();
   try {
     await saveObservation('mark', '', { interactionLatencyMs: Date.now() - pressedAt });
-    els.markStatus.textContent = 'Preserved.';
+    els.markStatus.textContent = meaningfulMotionExperience() ? 'Preserved in your raw record.' : 'Preserved.';
     els.markBtn.classList.remove('saved');
     void els.markBtn.offsetWidth;
     els.markBtn.classList.add('saved');
+    if (meaningfulMotionExperience()) animateV4ImprintTransfer('mark', capturedIso);
     showToast('Moment preserved');
     setTimeout(() => {
       els.markBtn.classList.remove('saved');
-      if (els.markStatus.textContent === 'Preserved.') {
+      if (els.markStatus.textContent === 'Preserved.' || els.markStatus.textContent === 'Preserved in your raw record.') {
         els.markStatus.textContent = intuitiveExperience()
           ? 'One tap. Nothing else required.'
           : 'Tap when something is worth preserving.';
       }
-    }, 1500);
+    }, meaningfulMotionExperience() ? 1200 : 1500);
   } finally {
     els.markBtn.disabled = false;
   }
@@ -598,7 +675,7 @@ function renderStreamRegister(items) {
     .map((item) => ({ item, ms: observationTimeMs(item) }))
     .filter((entry) => Number.isFinite(entry.ms));
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     if (!dated.length) {
       els.streamRegister.innerHTML =
         '<span>No dated observations in this view.</span><strong id="streamRange">No dated range</strong>';
@@ -738,7 +815,7 @@ function renderMomentRegister(item) {
   const selectedMinute = observationLocalMinute(item);
   const dayKey = observationDayKey(item);
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     const sameDayCount = timelineItems.filter((entry) => observationDayKey(entry) === dayKey).length;
     const localTime = formatObservationLocalTime(item);
     els.momentRegister.innerHTML =
@@ -989,7 +1066,7 @@ function formatAxisDate(ms) {
 function renderPatternRegister(patterns, sourceDateMap) {
   if (!els.patternField) return;
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     els.patternField.innerHTML = patterns.length
       ? '<span>' + escapeHtml(String(patterns.length)) + ' published pattern' + (patterns.length === 1 ? '' : 's') + '. Open supporting moments to inspect the raw evidence.</span>'
       : '<span>No published patterns yet.</span>';
@@ -1088,12 +1165,13 @@ async function loadPatterns() {
     });
     animatePatternField();
     animateRenderedItems('.pattern-card');
+    animateV4PatternEvidence();
     if (patterns.length) {
       await logExposure('derived_patterns_viewed', { patternIds: patterns.map((p) => p.id), count: patterns.length });
     }
   } catch (error) {
     console.error(error);
-    els.patternField.innerHTML = intuitiveExperience()
+    els.patternField.innerHTML = meaningFirstExperience()
       ? '<span>Patterns could not be loaded.</span>'
       : '<div class="pattern-register-empty"><span class="instrument-meta">DERIVED STRUCTURE</span><span>The pattern register could not be loaded.</span></div>';
     els.patternEmpty.textContent = 'Derived patterns could not be loaded.';
@@ -1109,7 +1187,7 @@ function renderPattern(pattern) {
   const supportCount = pattern.supportCount == null ? null : Number(pattern.supportCount);
   const support = supportCount == null ? '' : supportCount + ' supporting moment' + (supportCount === 1 ? '' : 's');
 
-  if (intuitiveExperience()) {
+  if (meaningFirstExperience()) {
     const sourceRefs = extractPatternSources(pattern);
     const evidence = sourceRefs.slice(0, 3).map((source) => {
       const detail = patternSourceDetails.get(source.id) || source;
@@ -1119,8 +1197,9 @@ function renderPattern(pattern) {
       const text = sourceType === 'mark'
         ? 'Moment preserved'
         : (detail.rawText || 'Supporting raw observation');
-      return '<div class="pattern-source">' +
-        '<time>' + escapeHtml(date) + '</time>' +
+      const sourceClass = sourceType === 'voice' ? ' voice' : sourceType === 'text' ? ' text' : ' mark';
+      return '<div class="pattern-source" data-source="' + escapeHtml(sourceType) + '" data-observation-id="' + escapeHtml(source.id) + '">' +
+        '<time class="source-imprint' + sourceClass + '">' + escapeHtml(date) + '</time>' +
         '<span>' + escapeHtml(text) + '</span>' +
       '</div>';
     }).join('');
@@ -1272,6 +1351,15 @@ function bindEvents() {
     requestAnimationFrame(() => item.classList.add('register-focus'));
     setTimeout(() => item.classList.remove('register-focus'), 1200);
     track('stream_register_seek', { observationId: tick.dataset.observationId });
+  });
+
+  els.patternList?.addEventListener('click', async (event) => {
+    const source = event.target.closest('.pattern-source[data-observation-id]');
+    if (!source?.dataset.observationId) return;
+    const observationId = source.dataset.observationId;
+    if (!timelineItems.some((item) => item.id === observationId)) await loadTimeline();
+    await openMoment(observationId);
+    track('pattern_source_open', { observationId });
   });
 
   els.closeMomentBtn?.addEventListener('click', () => els.momentDialog.close());

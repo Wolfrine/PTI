@@ -1,6 +1,6 @@
 # Luminary Design Direction
 
-Status: Trace Register rejected by owner; v3 re-derivation active
+Status: V4 Meaningful Motion candidate — owner review required
 Updated: 2026-09-24
 
 ## Product invariants
@@ -183,3 +183,36 @@ The next system reverses the priority order used by Trace Register:
 5. advanced evidence visualization only when useful.
 
 The user must not need to understand Luminary's visual metaphor in order to use Luminary.
+
+
+## V4 candidate — V2 foundations + Moment Imprint
+
+V4 does not replace V2's successful foundation.
+
+Retain:
+- typography;
+- warm mineral / graphite / trace palette;
+- sizing and whitespace;
+- restrained surface treatment;
+- asymmetric desktop composition.
+
+Replace:
+- Trace Register as the primary visual metaphor;
+- decorative/abstract temporal geometry;
+- motion that only draws or reveals the interface.
+
+Candidate product object:
+**Moment Imprint** — one visual object equals one raw observation.
+
+Continuity:
+capture -> Last Preserved -> Stream -> Moment -> Pattern evidence.
+
+Motion rule:
+An object moves only because its product state or information context changed.
+
+See:
+- V4_LAYERED_AUDIT.md
+- MOTION_REFERENCE_PACK_V4.md
+- design/prototypes/v4-meaningful-motion.html
+
+No production registration before owner motion review.

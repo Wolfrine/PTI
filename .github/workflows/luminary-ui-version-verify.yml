@@ -124,7 +124,7 @@ jobs:
           await page.waitForFunction(()=>globalThis.__luminaryMockWrites?.some(w=>w.path?.includes('/observations/items')&&w.data?.uiVersion==='intuitive-capture-v3'));
 
           // V3 patterns are sentence/evidence first.
-          await page.locator('.nav-item[data-nav="discover"]').first().click();
+          await page.locator('.nav-item[data-nav="discover"]:visible').click();
           await page.waitForSelector('.pattern-card');
           if(await page.locator('.pattern-source').count()<3) throw new Error('V3 supporting evidence did not render');
           if(await page.locator('.pattern-track-line').count()!==0) throw new Error('V3 unexpectedly rendered Trace geometry');
@@ -148,7 +148,7 @@ jobs:
           await page.waitForSelector('.pattern-track-line');
 
           // Same Firestore namespace, different UI version telemetry/capture.
-          await page.locator('.nav-item[data-nav="observe"]').first().click();
+          await page.locator('.nav-item[data-nav="observe"]:visible').click();
           await page.getByRole('button',{name:'Mark this moment'}).click();
           await page.waitForFunction(()=>globalThis.__luminaryMockWrites?.some(w=>w.path?.includes('/observations/items')&&w.data?.uiVersion==='trace-register-v2.1'));
 

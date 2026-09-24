@@ -114,6 +114,7 @@ jobs:
 
             await page.getByRole('button',{name:'Enter observation'}).click();
             await page.waitForSelector('#appShell:not([hidden])');
+            await page.waitForTimeout(850);
             if(await page.locator('#markSpecimenSeed .material-v6').count()!==1) throw new Error('Observe material missing');
             await page.screenshot({path:'/tmp/luminary-v6/evidence/'+label+'-observe.png',fullPage:true});
 
@@ -123,6 +124,7 @@ jobs:
 
             await page.locator('.nav-item[data-nav="timeline"]:visible').click();
             await page.waitForSelector('.timeline-item');
+            await page.waitForTimeout(650);
             if(await page.locator('.v5-stream-node .material-v6').count()<6) throw new Error('Stream material field missing');
             const marks=await page.locator('.v5-stream-node .material-v6.mark').evaluateAll(ns=>ns.map(n=>n.parentElement.style.left));
             const voices=await page.locator('.v5-stream-node .material-v6.voice').evaluateAll(ns=>ns.map(n=>n.parentElement.style.left));
@@ -132,6 +134,7 @@ jobs:
 
             await page.locator('.nav-item[data-nav="discover"]:visible').click();
             await page.waitForSelector('.pattern-card');
+            await page.waitForTimeout(650);
             if(await page.locator('.v5-pattern-node.support .material-v6').count()<3) throw new Error('Pattern material field missing');
             await page.screenshot({path:'/tmp/luminary-v6/evidence/'+label+'-patterns.png',fullPage:true});
 

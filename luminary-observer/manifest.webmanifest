@@ -4,8 +4,8 @@
   "description": "Observer-first consciousness research and longitudinal capture.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#050a11",
-  "theme_color": "#07101c",
+  "background_color": "#f2efe6",
+  "theme_color": "#f2efe6",
   "icons": [
     {
       "src": "assets/icon.svg",

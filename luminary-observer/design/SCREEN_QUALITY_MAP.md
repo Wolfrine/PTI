@@ -1,25 +1,23 @@
 # Luminary Screen Quality Map
 
-Updated: 2026-09-23
+Updated: 2026-09-24
 
 | Surface | Functional state | Visual state | Next action |
 |---|---|---|---|
-| Entry / auth | Working | Rejected direction | Re-conceptualize first; prototype before code |
-| Observe | Working | Rejected direction | Preserve capture behavior; redesign interaction metaphor |
-| Stream | Working | Usable but derivative | Revisit after core language is selected |
-| Patterns | Working shell | Strongest generic-AI failure | Replace generic glowing-node representation |
-| Moment detail | Working | Serviceable, not distinctive | Refit to new system after core language passes |
-| Profile / account | Working | Low priority | Keep functional until global language stabilizes |
-| Mobile | Primary product target | Needs new art direction | First-class review target |
-| Desktop | Functional | Mostly widened mobile | Design a real spatial adaptation |
+| Entry / auth | Working | Trace Register passed | Preserve |
+| Observe | Working | Trace Register passed | Preserve capture simplicity |
+| Stream | Working | Trace Register extension passed | Preserve raw-only chronology and timestamp-bound register |
+| Patterns | Working | Trace Register passed | Preserve source-linked ticks only; never synthesize positions |
+| Moment detail | Working | Trace Register extension passed | Preserve local-day register, raw neighbors and exposure boundary |
+| Profile / account | Working | Functional compatibility styling | Low priority; no redesign required unless product need emerges |
+| Mobile | Primary product target | Entry/Observe/Stream/Patterns/Moment checked | Preserve full-screen Moment and thumb-reachable capture |
+| Desktop | Functional | Entry/Observe/Stream/Patterns/Moment checked | Preserve contextual width and Moment-over-Stream continuity |
 
-## Priority
+## Current state
 
-Do not polish all screens in parallel.
+The core user journey now shares one stable visual grammar:
 
-```text
-Entry -> Observe -> Patterns representative state
-     -> visual critic
-     -> choose/refine system
-     -> propagate to Stream/Moment/Profile
-```
+Entry -> Observe -> Stream -> Moment
+                 -> Patterns
+
+Account remains deliberately utility-level rather than being over-designed.

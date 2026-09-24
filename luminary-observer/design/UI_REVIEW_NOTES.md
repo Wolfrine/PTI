@@ -126,3 +126,61 @@ PASS.
 
 ### Next implementation step
 Propagate Trace Register carefully to Stream and Moment detail, using actual observation timestamps and existing exposure rules. Account remains low priority. Do not add new metaphors.
+
+
+## Review — 2026-09-24 — Stream + Moment extension
+
+Evidence:
+- Real app.js executed in Chromium with deterministic Firebase mocks at 1440 x 900 and 390 x 844.
+- Stream register used five real mocked observation timestamps spanning 20–23 Sep.
+- Register seek scrolled to the corresponding raw record without opening or reinterpreting it.
+- Moment opened from a raw Mark, preserved the existing raw-observation exposure write, rendered three same-day timestamps on a local-day register, and showed the factual immediately-before / immediately-after records.
+- Source-linked Patterns behavior remained intact.
+- Mobile Moment was changed from a reduced desktop dialog to a full-screen detail state.
+- No production Firestore records were written.
+
+### Visual critic — Stream
+
+Recognizable idea:
+A time-bound overview sits above the raw record; every tick is caused by an observation timestamp and leads back to the original record.
+
+Generic-risk check:
+A timeline is not unique by itself. The Luminary-specific behavior is the combination of raw-only chronology, no scoring, Mark-as-trace, source-bound positioning, and direct return from geometry to the underlying observation.
+
+Hierarchy:
+Desktop uses the full horizontal span for temporal context and separates it from the raw reading layer. Mobile keeps the register compact and lets the raw record remain the dominant reading surface.
+
+What could become generic:
+- using a timeline simply as decoration;
+- adding charts, counts or density claims that are not necessary for review;
+- turning the raw stream into dashboard analytics.
+
+Outcome:
+PASS.
+
+### Visual critic — Moment
+
+Recognizable idea:
+One observation is isolated as a focal trace inside its actual local day, while nearby raw observations remain explicitly temporal context rather than relationships.
+
+Desktop:
+A contextual overlay preserves visible continuity with the Stream behind it.
+
+Mobile:
+A full-screen detail state is more intentional than a scaled-down desktop modal and preserves readable context.
+
+Epistemic check:
+- nearby-before / nearby-after is derived only from record order and timestamps;
+- the Relations section still states that temporal proximity is not causality;
+- opening the moment still logs review exposure.
+
+What could become generic:
+- the desktop overlay remains a conventional interaction shell;
+- the identity therefore comes from the local-day register and evidence hierarchy, not the modal itself.
+
+Outcome:
+PASS.
+
+### Extension result
+
+Trace Register now holds across Entry, Observe, Stream, Patterns and Moment without adding a second metaphor. Account remains intentionally low-priority functional chrome.

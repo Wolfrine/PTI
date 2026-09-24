@@ -1,11 +1,15 @@
-const CACHE = 'luminary-shell-v4';
+const CACHE = 'luminary-shell-v5';
 const SHELL = [
   './',
   './index.html',
-  './styles.css',
+  './version-loader.js',
   './app.js',
   './manifest.webmanifest',
-  './assets/icon.svg'
+  './assets/icon.svg',
+  './versions/intuitive-capture-v3.html',
+  './versions/intuitive-capture-v3.css',
+  './versions/trace-register-v2.1.html',
+  './versions/trace-register-v2.1.css'
 ];
 
 self.addEventListener('install', (event) => {

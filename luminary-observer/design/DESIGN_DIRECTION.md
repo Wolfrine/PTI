@@ -1,6 +1,6 @@
 # Luminary Design Direction
 
-Status: Trace Register established across core journey
+Status: Trace Register rejected by owner; v3 re-derivation active
 Updated: 2026-09-24
 
 ## Product invariants
@@ -170,3 +170,16 @@ Moment uses the selected observation's recorded local time as a focal trace with
 Account remains intentionally functional and low-priority; it does not need a decorative redesign merely for visual completeness.
 
 The core experience has passed desktop/mobile mocked-flow and visual checks. Future work should be driven by actual usage/research needs rather than adding another visual metaphor.
+
+
+## V3 re-derivation principle
+
+The next system reverses the priority order used by Trace Register:
+
+1. obvious action;
+2. obvious meaning;
+3. calm emotional tone;
+4. product-specific identity;
+5. advanced evidence visualization only when useful.
+
+The user must not need to understand Luminary's visual metaphor in order to use Luminary.

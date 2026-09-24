@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Luminary v3 intuition-first prototype</title>
+<style>
+:root{
+  --bg:#f4f2ed;--panel:#fbfaf7;--ink:#20221f;--muted:#71736d;--line:#d8d5cc;
+  --accent:#d55d45;--accent-soft:#f0d5cc;
+  font-family:"Segoe UI",Inter,system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}
+body{min-height:100vh}.screen{min-height:100vh;background:radial-gradient(circle at 72% 18%,rgba(255,255,255,.9),transparent 27%),linear-gradient(180deg,#f7f5f0,#f2efe8)}
+button{font:inherit;color:inherit}.brand{font-size:12px;font-weight:760;letter-spacing:.15em;text-transform:uppercase}.kicker{font-size:12px;font-weight:650;color:var(--muted)}
+.app-header{height:68px;border-bottom:1px solid rgba(32,34,31,.09);display:flex;align-items:center;justify-content:space-between;padding:0 34px;background:rgba(247,245,240,.94)}
+.header-actions{display:flex;gap:22px;font-size:13px;color:var(--muted)}.nav.active{font-weight:700;color:var(--ink)}
+/* entry */
+.entry{display:grid;grid-template-rows:72px 1fr;padding:0 5vw 5vh}.entry-top{display:flex;align-items:center;justify-content:space-between}.privacy{font-size:12px;color:var(--muted)}
+.entry-main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(420px,.75fr);gap:9vw;align-items:center;max-width:1380px;width:100%;margin:0 auto}
+.entry-copy{max-width:690px}.entry-copy h1{margin:12px 0 20px;font-size:clamp(64px,7.1vw,108px);line-height:.9;letter-spacing:-.065em;font-weight:700}.entry-copy p{max-width:540px;font-size:18px;line-height:1.55;color:var(--muted);margin:0 0 34px}
+.start{border:0;background:var(--ink);color:white;padding:16px 22px;min-width:190px;min-height:54px;border-radius:12px;font-weight:700;box-shadow:0 8px 26px rgba(32,34,31,.12)}
+.entry-notes{display:flex;gap:18px;margin-top:24px;color:var(--muted);font-size:12px}.entry-notes span+span:before{content:"·";margin-right:18px}
+.capture-demo{background:rgba(251,250,247,.95);border:1px solid rgba(32,34,31,.08);box-shadow:0 24px 70px rgba(38,38,31,.09);border-radius:26px;padding:32px;min-height:540px;display:flex;flex-direction:column}
+.demo-top{display:flex;justify-content:space-between;align-items:center}.demo-top strong{font-size:18px}.demo-top span{font-size:12px;color:var(--muted)}
+.demo-copy{margin-top:64px}.demo-copy h2{font-size:36px;line-height:1;letter-spacing:-.04em;margin:0 0 8px}.demo-copy p{font-size:14px;color:var(--muted);margin:0}
+.demo-mark-wrap{flex:1;display:grid;place-items:center}.demo-mark{width:180px;height:180px;border-radius:28px;border:0;background:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;box-shadow:0 18px 50px rgba(32,34,31,.18);position:relative}
+.demo-mark:after{content:"";position:absolute;bottom:-8px;width:54px;height:8px;border-radius:8px;background:var(--accent)}.demo-mark strong{font-size:23px}.demo-mark small{margin-top:7px;color:#c9cbc5;font-size:12px}
+.demo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.demo-action{border:1px solid var(--line);background:transparent;border-radius:12px;padding:14px 15px;text-align:left}.demo-action b{display:block;font-size:14px;margin-bottom:3px}.demo-action small{font-size:11px;color:var(--muted)}
+/* observe */
+.observe-layout{min-height:calc(100vh - 68px);display:grid;grid-template-columns:260px minmax(430px,700px) 260px;justify-content:center;gap:5vw;padding:52px 34px 92px}
+.observe-side{padding-top:8px}.observe-side h3{font-size:14px;margin:0 0 10px}.observe-side p{font-size:13px;line-height:1.5;color:var(--muted);margin:0;max-width:220px}
+.capture-center{text-align:center;align-self:center}.capture-center h1{font-size:54px;letter-spacing:-.055em;line-height:.96;margin:14px 0 12px}.capture-center>p{font-size:15px;color:var(--muted);margin:0 0 42px}
+.mark-control{display:inline-flex;width:230px;height:230px;border:0;border-radius:36px;background:var(--ink);color:white;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 24px 60px rgba(32,34,31,.16);position:relative}
+.mark-control:after{content:"";position:absolute;bottom:-8px;width:58px;height:8px;background:var(--accent);border-radius:8px}.mark-control strong{font-size:30px}.mark-control small{margin-top:8px;color:#cfd0cb;font-size:13px}
+.mark-help{font-size:12px;color:var(--muted);margin:24px 0 34px}.capture-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:520px;margin:0 auto}
+.option{border:1px solid var(--line);background:rgba(251,250,247,.8);border-radius:14px;padding:17px 18px;text-align:left;min-height:72px}.option strong{font-size:15px;display:block;margin-bottom:4px}.option span{font-size:12px;color:var(--muted)}
+.last{align-self:end;border-top:1px solid var(--line);padding-top:14px}.last span{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.last strong{font-size:13px}
+/* patterns */
+.patterns-wrap{max-width:1160px;margin:0 auto;padding:62px 36px 110px}.patterns-head{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:80px;align-items:end;padding-bottom:32px;border-bottom:1px solid var(--line)}
+.patterns-head h1{font-size:64px;letter-spacing:-.055em;line-height:.94;margin:9px 0 0}.patterns-head p{font-size:14px;line-height:1.55;color:var(--muted);margin:0}
+.pattern{display:grid;grid-template-columns:1.15fr .85fr;gap:70px;padding:38px 0;border-bottom:1px solid var(--line)}.eyebrow{font-size:11px;color:var(--accent);font-weight:750;text-transform:uppercase;letter-spacing:.08em}
+.pattern-main h2{font-size:31px;line-height:1.12;letter-spacing:-.035em;margin:10px 0 12px;max-width:600px}.pattern-main p{font-size:14px;line-height:1.55;color:var(--muted);margin:0;max-width:590px}.support{margin-top:17px;font-size:13px;font-weight:650}.support span{font-weight:400;color:var(--muted)}
+.evidence{border-left:3px solid var(--accent-soft);padding-left:22px}.evidence-title{font-size:12px;font-weight:700;margin-bottom:13px}.moment{display:grid;grid-template-columns:105px 1fr;gap:14px;padding:10px 0;border-top:1px solid rgba(216,213,204,.7)}.moment:first-of-type{border-top:0}.moment time{font-size:11px;color:var(--muted)}.moment span{font-size:12px;line-height:1.4}.view-link{display:inline-block;margin-top:13px;font-size:12px;font-weight:700}
+.note{margin-top:34px;padding:20px 22px;background:#ebe8df;border-radius:14px;font-size:13px;line-height:1.5;color:var(--muted)}.note strong{color:var(--ink)}
+@media(max-width:760px){
+  .entry{padding:0 22px 26px;grid-template-rows:64px 1fr}.entry-top .privacy{font-size:10px}.entry-main{display:block;align-self:center}.entry-copy{padding-top:44px}.entry-copy h1{font-size:54px;max-width:340px;margin-top:8px}.entry-copy p{font-size:15px;max-width:330px;margin-bottom:28px}.entry-notes{display:block;line-height:1.9}.entry-notes span{display:block}.entry-notes span+span:before{display:none}.capture-demo{display:none}.start{width:100%;min-height:56px}
+  .app-header{height:60px;padding:0 18px}.header-actions{gap:16px;font-size:12px}
+  .observe-layout{min-height:calc(100vh - 60px);display:flex;flex-direction:column;padding:30px 20px 82px}.observe-side{padding:0}.observe-side h3{font-size:12px;margin-bottom:4px}.observe-side p{font-size:11px}.capture-center{flex:1;display:flex;flex-direction:column;justify-content:center;padding:22px 0}.capture-center h1{font-size:38px}.capture-center>p{font-size:13px;margin-bottom:30px}.mark-control{width:188px;height:188px;border-radius:30px}.mark-control strong{font-size:25px}.mark-control small{font-size:12px}.mark-help{font-size:11px;margin:20px 0 26px}.capture-options{width:100%;gap:9px}.option{padding:14px 13px;min-height:67px}.option strong{font-size:13px}.option span{font-size:10px}.last{align-self:stretch}
+  .patterns-wrap{padding:34px 20px 84px}.patterns-head{display:block;padding-bottom:24px}.patterns-head h1{font-size:43px;margin-bottom:16px}.patterns-head p{font-size:13px}.pattern{display:block;padding:28px 0}.pattern-main h2{font-size:25px}.pattern-main p{font-size:13px}.evidence{margin-top:24px;padding-left:16px}.moment{grid-template-columns:90px 1fr}.note{font-size:12px;padding:17px 16px}
+}
+</style>
+</head>
+<body>
+<section id="entry" class="screen entry" hidden>
+  <div class="entry-top"><div class="brand">Luminary</div><div class="privacy">Private observation · no in-app AI</div></div>
+  <div class="entry-main"><div class="entry-copy">
+    <div class="kicker">Observation before interpretation</div>
+    <h1>Capture first.<br>Understand later.</h1>
+    <p>Mark a moment in one tap. Add your voice or words only when you want. Luminary keeps the raw record separate from whatever you learn from it later.</p>
+    <button class="start">Start observing</button>
+    <div class="entry-notes"><span>No prompts</span><span>No scores</span><span>No streaks</span></div>
+  </div><div class="capture-demo">
+    <div class="demo-top"><strong>Observe</strong><span>10:31</span></div>
+    <div class="demo-copy"><h2>No explanation needed.</h2><p>Preserve the moment as it is.</p></div>
+    <div class="demo-mark-wrap"><button class="demo-mark"><strong>Mark moment</strong><small>Save this instant</small></button></div>
+    <div class="demo-actions"><button class="demo-action"><b>Speak</b><small>Hold to capture voice</small></button><button class="demo-action"><b>Write</b><small>Add a raw observation</small></button></div>
+  </div></div>
+</section>
+<section id="observe" class="screen" hidden>
+  <header class="app-header"><div class="brand">Luminary</div><div class="header-actions"><span class="nav active">Observe</span><span class="nav">Stream</span><span class="nav">Patterns</span></div></header>
+  <main class="observe-layout">
+    <aside class="observe-side"><h3>Observe</h3><p>Capture without categorising or explaining what happened.</p></aside>
+    <section class="capture-center"><div class="kicker">Right now</div><h1>No explanation needed.</h1><p>Preserve the moment as it is.</p>
+      <button class="mark-control"><strong>Mark moment</strong><small>Save this instant</small></button>
+      <div class="mark-help">One tap. Nothing else required.</div>
+      <div class="capture-options"><button class="option"><strong>Hold to speak</strong><span>Release to save the transcript</span></button><button class="option"><strong>Write</strong><span>Add a raw observation</span></button></div>
+    </section>
+    <aside class="last"><span>Last preserved</span><strong>Mark · 10:24</strong></aside>
+  </main>
+</section>
+<section id="patterns" class="screen" hidden>
+  <header class="app-header"><div class="brand">Luminary</div><div class="header-actions"><span class="nav">Observe</span><span class="nav">Stream</span><span class="nav active">Patterns</span></div></header>
+  <main class="patterns-wrap"><section class="patterns-head"><div><div class="kicker">Derived from your record</div><h1>What repeats</h1></div><p>Patterns are observations made across your dataset by external analysis. They describe recurrence; they do not explain why it happened.</p></section>
+    <div class="pattern">
+      <div class="pattern-main"><div class="eyebrow">Observed pattern</div><h2>Attention often returns after a context switch.</h2><p>Several observations describe attention becoming clearer shortly after switching environments or tasks.</p><div class="support">12 supporting moments <span>across 9 days</span></div></div>
+      <aside class="evidence"><div class="evidence-title">Supporting moments</div><div class="moment"><time>Sep 03 · 10:20</time><span>Marked after leaving a long meeting.</span></div><div class="moment"><time>Sep 08 · 16:10</time><span>Voice observation after moving to a different room.</span></div><div class="moment"><time>Sep 21 · 11:42</time><span>Text observation following a task switch.</span></div><span class="view-link">View all 12 moments →</span></aside>
+    </div>
+    <div class="pattern">
+      <div class="pattern-main"><div class="eyebrow">Observed pattern</div><h2>Unhurried mornings tend to produce longer observations.</h2><p>Longer text and voice captures recur on mornings with fewer immediate transitions between activities.</p><div class="support">7 supporting moments <span>across 6 days</span></div></div>
+      <aside class="evidence"><div class="evidence-title">Supporting moments</div><div class="moment"><time>Sep 05 · 08:14</time><span>Long-form note before the first scheduled task.</span></div><div class="moment"><time>Sep 14 · 09:02</time><span>Voice capture during an unscheduled morning.</span></div><div class="moment"><time>Sep 22 · 08:37</time><span>Longer text observation before travel.</span></div><span class="view-link">View all 7 moments →</span></aside>
+    </div>
+    <div class="note"><strong>Pattern, not explanation.</strong> These statements describe structure found in recorded moments. Causality, theory and intervention remain separate layers.</div>
+  </main>
+</section>
+<script>
+const view=new URLSearchParams(location.search).get('view')||'entry';
+for(const id of ['entry','observe','patterns']) document.getElementById(id).hidden=id!==view;
+</script>
+</body></html>

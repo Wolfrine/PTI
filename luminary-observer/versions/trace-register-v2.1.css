@@ -978,3 +978,8 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}
 }
+
+.version-controls{margin-top:22px;padding-top:16px;border-top:1px solid var(--hair)}
+.version-controls label{display:block;margin-bottom:7px;font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.version-controls select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:0;background:var(--field);color:var(--ink);padding:0 12px;font:12px var(--sans)}
+.version-controls small{display:block;margin-top:7px;color:var(--quiet);font-size:10px;line-height:1.4}

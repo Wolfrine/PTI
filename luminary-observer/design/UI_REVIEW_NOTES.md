@@ -184,3 +184,95 @@ PASS.
 ### Extension result
 
 Trace Register now holds across Entry, Observe, Stream, Patterns and Moment without adding a second metaphor. Account remains intentionally low-priority functional chrome.
+
+
+## Owner review — 2026-09-24 — Trace Register rejected
+
+Owner feedback:
+- "still nothing intuitive"
+- "Don't know what to make of it."
+- "Don't know what to feel."
+- "Strange pattern and layout but nothing meaningful."
+
+Diagnosis:
+- Trace Register solved the generic-AI problem but over-corrected into conceptual art direction.
+- The interface asked the user to decode the visual system before the product became obvious.
+- Time geometry became the protagonist instead of capture.
+- The page communicated rigor but not a clear emotional state.
+- Patterns emphasized representation before meaning; the user saw lines/ticks before understanding the actual recurring observation.
+- Mono micro-labels, sparse fields and evidence registers made the product feel clinical.
+- Distinctiveness was achieved by unfamiliarity rather than by a familiar interaction executed in a product-specific way.
+
+New rule:
+> Product identity must never cost immediate affordance.
+
+For Luminary, a first-time user should understand within seconds:
+1. I can mark this moment.
+2. I can add voice or text if I want.
+3. Later I can review what happened.
+4. Patterns are plain-language observations about recurrence, not abstract graphics.
+
+Trace Register may remain only as a secondary evidence device where it genuinely clarifies chronology. It is rejected as the primary visual metaphor.
+
+
+## Review — 2026-09-24 — v3 Moment Capture prototype
+
+Evidence:
+- Entry / Observe / Patterns rendered at 1440 x 900 and 390 x 844.
+- Prototype only; no runtime code replaced and no production deployment made.
+
+### What improved
+
+- The primary action is understandable without learning a visual grammar.
+- Entry explains the product in normal language and previews the actual capture interaction instead of showing abstract art.
+- Observe has one unmistakable action: "Mark moment".
+- Speak and Write read as optional capture depth, not equivalent competing modes.
+- Patterns lead with the recurring statement itself; evidence is subordinate and source-readable.
+- Mobile uses normal composition rather than rotating a conceptual coordinate system.
+
+### Visual critic
+
+1. Single recognizable idea:
+A calm capture tool where saving a moment leaves a small warm imprint. The imprint is identity; it does not control the entire layout.
+
+2. Logo-swap test:
+The general UI could belong to another thoughtful capture product. That is an acceptable improvement over forced unfamiliarity, but Luminary still needs one or two stronger product-specific behaviors during implementation.
+
+3. Three model-default risks:
+- large editorial Entry headline;
+- warm-neutral premium minimalism;
+- dark rounded primary capture control.
+These are intentionally familiar, but must not become the entire brand.
+
+4. Hierarchy:
+Created mainly by action priority and content order rather than exotic composition.
+
+5. Geometry:
+Secondary. It no longer makes claims the user must decode.
+
+6. Motion:
+Not yet the identity. The intended meaningful motion is the capture imprint: action -> confirmation -> preserved trace.
+
+7. Desktop:
+Uses extra width to preview the real capture surface on Entry and to show pattern evidence beside the statement.
+
+8. Patterns:
+Meaning is substantially clearer because the sentence precedes evidence. No legend is needed.
+
+9. Memorability:
+Currently moderate: the capture imprint is the candidate memorable behavior, but static renders do not yet prove it.
+
+10. Outcome:
+ITERATE, not deploy.
+
+### Main remaining issue
+
+The prototype is now intuitive, but it may be too safe / generic and still needs a more specific emotional character.
+
+Do not solve this by reintroducing abstract geometry. Improve:
+- material/tactile feel of capture;
+- the action-to-imprint transition;
+- typography pacing;
+- subtle product-specific continuity between a saved moment and its later supporting evidence.
+
+Owner should review the representative visuals before any runtime implementation.

@@ -80,3 +80,37 @@ Verification:
 
 Reason:
 This extends the selected visual language using existing raw timestamp data instead of adding decorative or interpretive UI.
+
+
+## 2026-09-24 — Reject Trace Register as primary art direction
+
+Decision:
+- Do not continue propagating Trace Register as the identity of Luminary.
+- Preserve only useful implementation lessons:
+  - evidence-bound geometry;
+  - no synthetic temporal positions;
+  - mobile/desktop may use different compositions;
+  - raw observation and derived interpretation remain separated.
+- Remove the assumption that temporal geometry itself should make Luminary recognizable.
+- The next direction must prioritize immediate affordance, emotional clarity and plain-language meaning before distinctiveness.
+- No new design is to be merged/deployed to production until the owner sees representative visual evidence first.
+
+Reason:
+Production review showed that the design was original but not intuitive or emotionally legible.
+
+
+## 2026-09-24 — Make UI versions selectable inside one PWA
+
+Decision:
+- Luminary remains one PWA, one auth flow and one Firestore data model.
+- Presentation layers are versioned independently from the application/data runtime.
+- Profile exposes **Experience version**.
+- `intuitive-capture-v3` is the latest/default when no local preference exists.
+- `trace-register-v2.1` remains selectable for direct comparison.
+- The user's chosen version persists locally on that device.
+- Switching UI version reloads presentation only; it never copies, migrates or forks observations.
+- Captures and telemetry continue recording the active `uiVersion` for later comparison.
+- Both experience templates/styles are included in the service-worker shell so switching remains compatible with installed-PWA use.
+
+Reason:
+The owner wants to evaluate evolving Luminary experiences in the actual PWA rather than through separate preview deployments, while retaining immediate access to prior versions.

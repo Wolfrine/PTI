@@ -9,18 +9,20 @@ This repository contains an Angular application "PTI App" for tracking time inve
 - Run `npm test` and `npm run build` before committing.
 - The login flow stays unchanged; provide links to Material redesigns (e.g., `new-dashboard`) from authenticated pages like the existing dashboard.
 - Any UI/dashboard/page change is incomplete until it has been visually checked in browser on desktop and mobile-sized viewports.
-
+- If the task depends on visual judgment, route implementation through a rendered-browser/Codex loop rather than treating Chat-generated code as visually accepted. Correct known material defects and rerender before completion.
 
 ### Shared design protocol
 
 For any UI, UX, layout, styling, landing-page, dashboard, motion, or visual-quality work:
 
-1. Read the shared design operating standard in `Wolfrine/Central/design/README.md` and `Wolfrine/Central/design/UI_AGENT_PROTOCOL.md`.
+1. Read the shared design operating standard in `Wolfrine/Central/design/README.md`, `Wolfrine/Central/design/UI_AGENT_PROTOCOL.md`, and `Wolfrine/Central/design/EXECUTION_ROUTING.md`.
 2. Read the nearest repo-local `design/` memory before changing visuals.
-3. For L3/L4 or high-ambition work, do not start implementation from adjectives alone. Build a compact reference pack from real examples and consult Central design intelligence, anti-patterns, failures and evaluation guidance.
-4. Produce materially different art-direction candidates before committing to a new high-ambition visual language.
-5. Review actual desktop/mobile renders. Build success and code review do not establish visual quality.
-6. Save meaningful acceptance/rejection decisions back into repo-local design memory.
+3. Route by evidence needed: deterministic edits may use Chat + GitHub; visually judged implementation should use Codex/browser; Work is for larger research/audit before implementation.
+4. For L3/L4 or high-ambition work, do not start implementation from adjectives alone. Build a compact reference pack from real examples and consult Central design intelligence, anti-patterns, failures and evaluation guidance.
+5. Produce materially different art-direction candidates before committing to a new high-ambition visual language.
+6. Review actual desktop/mobile renders. Build success and code review do not establish visual quality.
+7. Save meaningful acceptance/rejection decisions back into repo-local design memory.
+8. Keep the project contract compact; do not make every implementation agent read the full Central design corpus.
 
 For Luminary specifically, `luminary-observer/design/` is the current design-governance source. The Living Instrument v1 visual direction is a rejected exploration. Preserve valid product/data constraints, but do not extend its dark-glow/orbit/network styling by default.
 

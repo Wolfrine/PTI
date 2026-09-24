@@ -140,8 +140,10 @@ jobs:
             await page.screenshot({path:'/tmp/luminary-v6/evidence/'+label+'-patterns.png',fullPage:true});
 
             await page.locator('.pattern-card[data-pattern-id="p2"]').click();
-            await page.waitForTimeout(180);
-            if(!(await page.locator('#patternField').innerText()).includes('Short marks recur')) throw new Error('Pattern selection failed');
+            await page.waitForTimeout(300);
+            const p2Selected=await page.locator('.pattern-card[data-pattern-id="p2"]').getAttribute('data-selected');
+            const patternText=await page.locator('#patternField').textContent();
+            if(p2Selected!=='true' || !patternText.includes('Short marks recur')) throw new Error('Pattern selection failed. selected='+p2Selected+' text='+patternText+' errors='+errors.join(' | '));
             await page.locator('.v5-pattern-node[data-observation-id="s5"]').click();
             await page.waitForSelector('#momentDialog[open]');
             if(await page.locator('#momentHero .material-v6').count()!==1) throw new Error('Moment V6 material missing');

@@ -598,6 +598,21 @@ function renderStreamRegister(items) {
     .map((item) => ({ item, ms: observationTimeMs(item) }))
     .filter((entry) => Number.isFinite(entry.ms));
 
+  if (intuitiveExperience()) {
+    if (!dated.length) {
+      els.streamRegister.innerHTML = '<span>No dated observations in this view.</span>';
+      if (els.streamRange) els.streamRange.textContent = 'No dated range';
+      return;
+    }
+    const minMs = Math.min(...dated.map((entry) => entry.ms));
+    const maxMs = Math.max(...dated.map((entry) => entry.ms));
+    els.streamRegister.innerHTML =
+      '<span>' + escapeHtml(String(items.length) + ' observation' + (items.length === 1 ? '' : 's') + ' visible') + '</span>' +
+      '<strong>' + escapeHtml(formatAxisDate(minMs) + ' — ' + formatAxisDate(maxMs)) + '</strong>';
+    if (els.streamRange) els.streamRange.textContent = formatAxisDate(minMs) + ' — ' + formatAxisDate(maxMs);
+    return;
+  }
+
   if (!dated.length) {
     els.streamRegister.innerHTML =
       '<div class="stream-register-empty">' +
@@ -723,6 +738,15 @@ function renderMomentRegister(item) {
   if (!els.momentRegister) return;
   const selectedMinute = observationLocalMinute(item);
   const dayKey = observationDayKey(item);
+
+  if (intuitiveExperience()) {
+    const sameDayCount = timelineItems.filter((entry) => observationDayKey(entry) === dayKey).length;
+    const localTime = formatObservationLocalTime(item);
+    els.momentRegister.innerHTML =
+      '<span>Captured ' + escapeHtml(formatDayKey(dayKey)) + ' at ' + escapeHtml(localTime) + '.</span> ' +
+      '<span>' + escapeHtml(String(sameDayCount)) + ' raw observation' + (sameDayCount === 1 ? '' : 's') + ' recorded that day.</span>';
+    return;
+  }
 
   if (selectedMinute == null) {
     els.momentRegister.innerHTML =
@@ -860,7 +884,13 @@ function sourceFromPatternValue(value) {
     value.observedAt ??
     value.date
   );
-  return { id: String(id), dateMs };
+  return {
+    id: String(id),
+    dateMs,
+    rawText: value.rawText || value.text || value.sourceText || null,
+    sourceType: value.sourceType || value.type || null,
+    localDate: value.localDate || null
+  };
 }
 
 function extractPatternSources(pattern) {
@@ -908,19 +938,17 @@ async function loadPatternSourceDates(patterns) {
   const displayed = patterns.slice(0, 6);
   const sources = displayed.flatMap(extractPatternSources);
   const dateMap = new Map();
+  patternSourceDetails = new Map();
 
   sources.forEach((source) => {
     if (source.dateMs != null) dateMap.set(source.id, source.dateMs);
+    patternSourceDetails.set(source.id, { ...source });
   });
 
-  const unresolved = [...new Set(
-    sources
-      .filter((source) => source.dateMs == null)
-      .map((source) => source.id)
-  )].slice(0, 240);
+  const sourceIds = [...new Set(sources.map((source) => source.id))].slice(0, 240);
 
-  for (let offset = 0; offset < unresolved.length; offset += 30) {
-    const ids = unresolved.slice(offset, offset + 30);
+  for (let offset = 0; offset < sourceIds.length; offset += 30) {
+    const ids = sourceIds.slice(offset, offset + 30);
     if (!ids.length) continue;
     try {
       const snapshot = await getDocs(query(
@@ -931,9 +959,18 @@ async function loadPatternSourceDates(patterns) {
         const data = item.data();
         const dateMs = coercePatternDateMs(data.clientCreatedAtMs ?? data.clientCreatedAt);
         if (dateMs != null) dateMap.set(item.id, dateMs);
+        patternSourceDetails.set(item.id, {
+          id: item.id,
+          dateMs,
+          rawText: data.rawText || '',
+          sourceType: data.sourceType || 'observation',
+          localDate: data.localDate || null,
+          timezone: data.timezone || null,
+          timezoneOffsetMinutes: data.timezoneOffsetMinutes
+        });
       });
     } catch (error) {
-      console.warn('Pattern source-date lookup failed', error);
+      console.warn('Pattern source-detail lookup failed', error);
       break;
     }
   }
@@ -952,6 +989,14 @@ function formatAxisDate(ms) {
 
 function renderPatternRegister(patterns, sourceDateMap) {
   if (!els.patternField) return;
+
+  if (intuitiveExperience()) {
+    els.patternField.innerHTML = patterns.length
+      ? '<span>' + escapeHtml(String(patterns.length)) + ' published pattern' + (patterns.length === 1 ? '' : 's') + '. Open supporting moments to inspect the raw evidence.</span>'
+      : '<span>No published patterns yet.</span>';
+    return;
+  }
+
   if (!patterns.length) {
     els.patternField.innerHTML =
       '<div class="pattern-register-empty">' +
@@ -1049,11 +1094,9 @@ async function loadPatterns() {
     }
   } catch (error) {
     console.error(error);
-    els.patternField.innerHTML =
-      '<div class="pattern-register-empty">' +
-        '<span class="instrument-meta">DERIVED STRUCTURE</span>' +
-        '<span>The pattern register could not be loaded.</span>' +
-      '</div>';
+    els.patternField.innerHTML = intuitiveExperience()
+      ? '<span>Patterns could not be loaded.</span>'
+      : '<div class="pattern-register-empty"><span class="instrument-meta">DERIVED STRUCTURE</span><span>The pattern register could not be loaded.</span></div>';
     els.patternEmpty.textContent = 'Derived patterns could not be loaded.';
     els.patternEmpty.hidden = false;
   }
@@ -1063,17 +1106,52 @@ function renderPattern(pattern) {
   const title = pattern.title || pattern.description || 'Observed pattern';
   const summary = pattern.summary || pattern.statement || pattern.description || '';
   const status = pattern.status || 'observed';
-  const confidence = pattern.confidence == null ? '' : `confidence ${pattern.confidence}`;
-  const support = pattern.supportCount == null ? '' : `${pattern.supportCount} supporting events`;
-  return `<article class="pattern-card" data-pattern-id="${escapeHtml(pattern.id)}">
-    <h3>${escapeHtml(title)}</h3>
-    <p>${escapeHtml(summary)}</p>
-    <div class="pattern-foot">
-      <span>${escapeHtml(status)}</span>
-      ${confidence ? `<span>${escapeHtml(confidence)}</span>` : ''}
-      ${support ? `<span>${escapeHtml(support)}</span>` : ''}
-    </div>
-  </article>`;
+  const confidence = pattern.confidence == null ? '' : 'confidence ' + pattern.confidence;
+  const supportCount = pattern.supportCount == null ? null : Number(pattern.supportCount);
+  const support = supportCount == null ? '' : supportCount + ' supporting moment' + (supportCount === 1 ? '' : 's');
+
+  if (intuitiveExperience()) {
+    const sourceRefs = extractPatternSources(pattern);
+    const evidence = sourceRefs.slice(0, 3).map((source) => {
+      const detail = patternSourceDetails.get(source.id) || source;
+      const dateMs = detail.dateMs ?? source.dateMs;
+      const date = Number.isFinite(dateMs) ? formatDateTime(new Date(dateMs).toISOString()) : 'Date unavailable';
+      const sourceType = detail.sourceType || 'observation';
+      const text = sourceType === 'mark'
+        ? 'Moment preserved'
+        : (detail.rawText || 'Supporting raw observation');
+      return '<div class="pattern-source">' +
+        '<time>' + escapeHtml(date) + '</time>' +
+        '<span>' + escapeHtml(text) + '</span>' +
+      '</div>';
+    }).join('');
+
+    return '<article class="pattern-card" data-pattern-id="' + escapeHtml(pattern.id) + '">' +
+      '<div class="pattern-main">' +
+        '<p class="pattern-kicker">Observed pattern</p>' +
+        '<h3>' + escapeHtml(title) + '</h3>' +
+        '<p>' + escapeHtml(summary) + '</p>' +
+        '<div class="pattern-foot">' +
+          (support ? '<span>' + escapeHtml(support) + '</span>' : '') +
+          (confidence ? '<span>' + escapeHtml(confidence) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<aside class="pattern-evidence">' +
+        '<strong>Supporting moments</strong>' +
+        (evidence || '<div class="pattern-source-empty">Source moments are not linked yet. No evidence position is invented.</div>') +
+      '</aside>' +
+    '</article>';
+  }
+
+  return '<article class="pattern-card" data-pattern-id="' + escapeHtml(pattern.id) + '">' +
+    '<h3>' + escapeHtml(title) + '</h3>' +
+    '<p>' + escapeHtml(summary) + '</p>' +
+    '<div class="pattern-foot">' +
+      '<span>' + escapeHtml(status) + '</span>' +
+      (confidence ? '<span>' + escapeHtml(confidence) + '</span>' : '') +
+      (support ? '<span>' + escapeHtml(support) + '</span>' : '') +
+    '</div>' +
+  '</article>';
 }
 
 async function switchView(view, source = 'nav') {
@@ -1104,7 +1182,36 @@ async function switchView(view, source = 'nav') {
   }
 }
 
+function setupVersionControls() {
+  if (!els.versionControls || !UI_VERSIONS.length) return;
+
+  const options = UI_VERSIONS.map((version) => {
+    const suffix = version.id === LATEST_UI_VERSION ? ' — Latest' : '';
+    return '<option value="' + escapeHtml(version.id) + '"' + (version.id === UI_VERSION ? ' selected' : '') + '>' +
+      escapeHtml(version.label + suffix) +
+    '</option>';
+  }).join('');
+
+  els.versionControls.innerHTML =
+    '<label for="experienceVersion">Experience version</label>' +
+    '<select id="experienceVersion">' + options + '</select>' +
+    '<small>Switches the interface only. Your account, observations and research data stay the same.</small>';
+
+  $('#experienceVersion')?.addEventListener('change', async (event) => {
+    const next = event.target.value;
+    if (!UI_VERSIONS.some((version) => version.id === next) || next === UI_VERSION) return;
+
+    await track('ui_version_selected', { from: UI_VERSION, to: next }).catch(() => {});
+    localStorage.setItem(UI_STORAGE_KEY, next);
+
+    const url = new URL(location.href);
+    url.searchParams.delete('ui');
+    location.replace(url.toString());
+  });
+}
+
 function bindEvents() {
+  setupVersionControls();
   els.signInBtn.addEventListener('click', async () => {
     els.signInBtn.disabled = true;
     els.authError.hidden = true;

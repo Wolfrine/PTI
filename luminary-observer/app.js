@@ -936,7 +936,7 @@ function renderStreamRegister(items) {
       [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
       { duration: 520, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' }
     );
-    $$$('.stream-register-tick').forEach((tick, index) => {
+    $('.stream-register-tick').forEach((tick, index) => {
       tick.animate(
         [{ opacity: 0, transform: 'translateX(-50%) scaleY(.2)' }, { opacity: 1, transform: 'translateX(-50%) scaleY(1)' }],
         { duration: 260, delay: Math.min(index * 12, 280), easing: 'ease-out', fill: 'both' }
@@ -1530,8 +1530,8 @@ async function switchView(view, source = 'nav') {
 
   const commitSwitch = async () => {
     currentView = view;
-    $$$('.view').forEach((node) => node.classList.toggle('active', node.dataset.view === view));
-    $$$('.nav-item').forEach((node) => node.classList.toggle('active', node.dataset.nav === view));
+    $('.view').forEach((node) => node.classList.toggle('active', node.dataset.view === view));
+    $('.nav-item').forEach((node) => node.classList.toggle('active', node.dataset.nav === view));
   };
 
   if (document.startViewTransition && !reducedMotion()) {
@@ -1617,14 +1617,14 @@ function bindEvents() {
     if (event.buttons) stopVoiceCapture(event);
   });
 
-  $$$('.nav-item').forEach((node) => node.addEventListener('click', () => switchView(node.dataset.nav)));
+  $('.nav-item').forEach((node) => node.addEventListener('click', () => switchView(node.dataset.nav)));
   els.brandBtn.addEventListener('click', () => switchView('observe', 'brand'));
   els.refreshTimelineBtn.addEventListener('click', () => loadTimeline());
   els.refreshDiscoverBtn.addEventListener('click', () => loadPatterns());
 
-  $$$('#timelineFilters .filter').forEach((node) => node.addEventListener('click', () => {
+  $('#timelineFilters .filter').forEach((node) => node.addEventListener('click', () => {
     timelineFilter = node.dataset.filter;
-    $$$('#timelineFilters .filter').forEach((item) => item.classList.toggle('active', item === node));
+    $('#timelineFilters .filter').forEach((item) => item.classList.toggle('active', item === node));
     renderTimeline();
     track('timeline_filter', { filter: timelineFilter });
   }));

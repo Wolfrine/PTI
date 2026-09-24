@@ -23,14 +23,15 @@ import {
   documentId
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
-const APP_VERSION = '0.4.0';
-const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'meaningful-motion-v4';
+const APP_VERSION = '0.5.0';
+const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'perceptual-specimens-v5';
 const UI_VERSIONS = window.__LUMINARY_UI_VERSIONS__ || [];
-const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'meaningful-motion-v4';
+const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'perceptual-specimens-v5';
 const UI_STORAGE_KEY = window.__LUMINARY_UI_STORAGE_KEY__ || 'luminary.uiVersion';
 const intuitiveExperience = () => UI_VERSION === 'intuitive-capture-v3';
 const meaningfulMotionExperience = () => UI_VERSION === 'meaningful-motion-v4';
-const meaningFirstExperience = () => intuitiveExperience() || meaningfulMotionExperience();
+const perceptualExperience = () => UI_VERSION === 'perceptual-specimens-v5';
+const meaningFirstExperience = () => intuitiveExperience() || meaningfulMotionExperience() || perceptualExperience();
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -112,9 +113,108 @@ let lastVoiceStart = 0;
 let toastTimer = null;
 let hasAnimatedInitialView = false;
 let patternSourceDetails = new Map();
+let currentPatterns = [];
+let selectedV5PatternId = null;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+function v5Hash(value) {
+  let hash = 2166136261;
+  const text = String(value ?? 'specimen');
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function v5Rand(seed) {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6D2B79F5;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function v5BlobPath(width, height, seed) {
+  const rand = v5Rand(seed);
+  const points = [];
+  const steps = 10;
+  const cx = width / 2;
+  const cy = height / 2;
+  const rx = width * .34;
+  const ry = height * .30;
+  for (let i = 0; i < steps; i++) {
+    const angle = (Math.PI * 2 / steps) * i - Math.PI / 2;
+    const radial = .86 + rand() * .28;
+    points.push([
+      cx + Math.cos(angle) * rx * radial,
+      cy + Math.sin(angle) * ry * (.88 + rand() * .25)
+    ]);
+  }
+  let path = 'M ' + points[0][0].toFixed(1) + ' ' + points[0][1].toFixed(1);
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length];
+    const mx = (p1[0] + p2[0]) / 2;
+    const my = (p1[1] + p2[1]) / 2;
+    path += ' Q ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+  }
+  return path + ' Z';
+}
+
+function v5SpecimenMarkup(sourceType = 'mark', seed = 'specimen', size = 76) {
+  const type = sourceType === 'voice' ? 'voice' : sourceType === 'text' ? 'text' : 'mark';
+  const width = Math.max(52, Number(size) || 76);
+  const height = Math.round(width * .84);
+  const seedNum = v5Hash(seed + ':' + type);
+  const uid = 'v5-' + seedNum.toString(36) + '-' + width;
+  const outer = v5BlobPath(width, height, seedNum);
+  const shadow = v5BlobPath(width, height, seedNum ^ 0xabc123);
+  const crease = type === 'mark'
+    ? 'M ' + (width * .5).toFixed(1) + ' ' + (height * .18).toFixed(1) + ' L ' + (width * .5).toFixed(1) + ' ' + (height * .77).toFixed(1)
+    : type === 'voice'
+      ? 'M ' + (width * .27).toFixed(1) + ' ' + (height * .56).toFixed(1) + ' Q ' + (width * .5).toFixed(1) + ' ' + (height * .24).toFixed(1) + ' ' + (width * .73).toFixed(1) + ' ' + (height * .57).toFixed(1)
+      : 'M ' + (width * .28).toFixed(1) + ' ' + (height * .44).toFixed(1) + ' Q ' + (width * .5).toFixed(1) + ' ' + (height * .66).toFixed(1) + ' ' + (width * .72).toFixed(1) + ' ' + (height * .4).toFixed(1);
+  const vein = 'M ' + (width * .25).toFixed(1) + ' ' + (height * .52).toFixed(1) + ' Q ' + (width * .42).toFixed(1) + ' ' + (height * .36).toFixed(1) + ' ' + (width * .68).toFixed(1) + ' ' + (height * .48).toFixed(1);
+  const start = type === 'mark' ? '#fffdf9' : type === 'voice' ? '#fbfdfc' : '#fcfcf8';
+  const end = type === 'mark' ? '#ecd6cf' : type === 'voice' ? '#dbe3df' : '#e3e6df';
+  return '<span class="specimen-v5 ' + type + '" style="width:' + width + 'px;height:' + height + 'px">' +
+    '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" aria-hidden="true">' +
+      '<defs><linearGradient id="' + uid + '-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + start + '"/><stop offset="100%" stop-color="' + end + '"/></linearGradient></defs>' +
+      '<path class="s-shadow" d="' + shadow + '"/>' +
+      '<path class="s-outer" fill="url(#' + uid + '-g)" d="' + outer + '"/>' +
+      '<path class="s-vein" d="' + vein + '"/>' +
+      '<path class="s-crease" d="' + crease + '"/>' +
+    '</svg></span>';
+}
+
+function setupV5StaticVisuals() {
+  if (!perceptualExperience()) return;
+  const seed = $('#markSpecimenSeed');
+  if (seed) seed.innerHTML = v5SpecimenMarkup('mark', 'live-mark', 108);
+  const demos = [
+    ['.demo-a', 'mark', 'entry-mark', 170],
+    ['.demo-b', 'voice', 'entry-voice', 132],
+    ['.demo-c', 'text', 'entry-text', 150],
+    ['.demo-d', 'mark', 'entry-mark-small', 100]
+  ];
+  demos.forEach(([selector, type, id, size]) => {
+    const node = $(selector);
+    if (node) node.innerHTML = v5SpecimenMarkup(type, id, size);
+  });
+}
+
+function setV5LastSpecimen(sourceType, observationId, iso) {
+  if (!perceptualExperience()) return;
+  const slot = $('#lastSpecimenSlot');
+  if (!slot) return;
+  slot.innerHTML = v5SpecimenMarkup(sourceType, observationId || iso || 'last', 106);
+}
 
 function datasetCollection(dataset) {
   if (!currentUser) throw new Error('Not authenticated');
@@ -207,6 +307,8 @@ async function saveObservation(sourceType, rawText = '', extra = {}) {
     els.lastCapture.textContent = sourceType === 'mark'
       ? `Mark · ${formatTime(payload.clientCreatedAt)}`
       : `${capitalize(sourceType)} · ${formatTime(payload.clientCreatedAt)}`;
+    if (els.lastCapture) els.lastCapture.dataset.observationId = ref.id;
+    if (perceptualExperience()) setV5LastSpecimen(sourceType, ref.id, payload.clientCreatedAt);
     return ref.id;
   } catch (error) {
     setSync('error');
@@ -425,6 +527,11 @@ async function handleMark() {
     void els.markBtn.offsetWidth;
     els.markBtn.classList.add('saved');
     if (meaningfulMotionExperience()) animateV4ImprintTransfer('mark', capturedIso);
+    if (perceptualExperience()) {
+      const refId = await Promise.resolve();
+      const latestId = els.lastCapture?.dataset?.observationId || capturedIso;
+      setV5LastSpecimen('mark', latestId, capturedIso);
+    }
     showToast('Moment preserved');
     setTimeout(() => {
       els.markBtn.classList.remove('saved');
@@ -675,6 +782,31 @@ function renderStreamRegister(items) {
     .map((item) => ({ item, ms: observationTimeMs(item) }))
     .filter((entry) => Number.isFinite(entry.ms));
 
+  if (perceptualExperience()) {
+    if (!items.length) {
+      els.streamRegister.innerHTML = '<div class="v5-field-caption"><span class="instrument-meta">ACCUMULATION FIELD</span><strong id="streamRange">NO RANGE YET</strong></div><div class="v5-field-empty">Your visual record will appear here.</div>';
+      return;
+    }
+    const dated = items.map((item) => ({ item, ms: observationTimeMs(item) })).filter((entry) => Number.isFinite(entry.ms));
+    const minMs = dated.length ? Math.min(...dated.map((entry) => entry.ms)) : 0;
+    const maxMs = dated.length ? Math.max(...dated.map((entry) => entry.ms)) : 1;
+    const span = Math.max(1, maxMs - minMs);
+    const nodes = items.slice(0, 40).map((item, index) => {
+      const ms = observationTimeMs(item);
+      const normalized = Number.isFinite(ms) ? (maxMs - ms) / span : index / Math.max(1, items.length - 1);
+      const hash = v5Hash(item.id);
+      const left = 18 + (hash % 67);
+      const top = 17 + Math.max(0, Math.min(1, normalized)) * 68;
+      const size = item.sourceType === 'mark' ? 82 : item.sourceType === 'voice' ? 76 : 72;
+      return '<button class="v5-stream-node" type="button" data-observation-id="' + escapeHtml(item.id) + '" style="left:' + left + '%;top:' + top.toFixed(2) + '%" aria-label="Open raw observation">' +
+        v5SpecimenMarkup(item.sourceType, item.id, size) +
+      '</button>';
+    }).join('');
+    const range = dated.length ? formatAxisDate(minMs) + ' — ' + formatAxisDate(maxMs) : 'DATE RANGE UNAVAILABLE';
+    els.streamRegister.innerHTML = '<div class="v5-field-caption"><span class="instrument-meta">ACCUMULATION FIELD</span><strong id="streamRange">' + escapeHtml(range) + '</strong></div>' + nodes;
+    return;
+  }
+
   if (meaningFirstExperience()) {
     if (!dated.length) {
       els.streamRegister.innerHTML =
@@ -795,6 +927,16 @@ function renderTimelineItem(item) {
   const timeMs = observationTimeMs(item);
   const timeAttr = Number.isFinite(timeMs) ? String(timeMs) : '';
 
+  if (perceptualExperience()) {
+    const specimen = v5SpecimenMarkup(source, item.id, source === 'mark' ? 58 : 54);
+    const body = source === 'mark' ? 'Moment preserved' : (item.rawText || '');
+    return '<article class="timeline-item" data-source="' + sourceAttr + '" data-observation-id="' + escapeHtml(item.id) +
+      '" data-time-ms="' + escapeHtml(timeAttr) + '">' +
+      '<div class="timeline-meta"><span class="v5-list-specimen">' + specimen + '<span>' + escapeHtml(time) + '</span></span></div>' +
+      '<div class="timeline-body">' + escapeHtml(body) + '</div>' +
+    '</article>';
+  }
+
   if (source === 'mark') {
     return '<article class="timeline-item" data-source="' + sourceAttr + '" data-observation-id="' + escapeHtml(item.id) +
       '" data-time-ms="' + escapeHtml(timeAttr) + '">' +
@@ -894,9 +1036,14 @@ async function openMoment(observationId) {
   const source = item.sourceType || 'observation';
   const day = formatDayKey(observationDayKey(item));
   const localTime = formatObservationLocalTime(item);
-  const raw = source === 'mark'
-    ? '<div class="moment-mark-hero"><span class="moment-trace" aria-hidden="true"></span><span>Moment preserved</span></div>'
-    : '<div class="moment-raw">' + escapeHtml(item.rawText || '') + '</div>';
+  const raw = perceptualExperience()
+    ? '<div class="v5-moment-specimen">' + v5SpecimenMarkup(source, item.id, 104) + '<div>' +
+        '<div class="instrument-meta">' + escapeHtml(source.toUpperCase()) + '</div>' +
+        '<div class="moment-raw" style="border:0;margin:4px 0 0;padding:0">' + escapeHtml(source === 'mark' ? 'Moment preserved' : (item.rawText || '')) + '</div>' +
+      '</div></div>'
+    : source === 'mark'
+      ? '<div class="moment-mark-hero"><span class="moment-trace" aria-hidden="true"></span><span>Moment preserved</span></div>'
+      : '<div class="moment-raw">' + escapeHtml(item.rawText || '') + '</div>';
 
   els.momentHero.innerHTML =
     '<div class="moment-time-row"><span>' + escapeHtml(day + ' · ' + localTime) + '</span><span>' + escapeHtml(source) + '</span></div>' +
@@ -1066,6 +1213,34 @@ function formatAxisDate(ms) {
 function renderPatternRegister(patterns, sourceDateMap) {
   if (!els.patternField) return;
 
+  if (perceptualExperience()) {
+    if (!patterns.length) {
+      els.patternField.innerHTML = '<div class="v5-field-empty">Waiting for source-linked patterns.</div>';
+      return;
+    }
+    const selected = patterns.find((pattern) => pattern.id === selectedV5PatternId) || patterns[0];
+    selectedV5PatternId = selected.id;
+    const support = new Set(extractPatternSources(selected).map((source) => source.id));
+    const all = [...patternSourceDetails.values()].slice(0, 28);
+    const nodes = all.map((detail, index) => {
+      const isSupport = support.has(detail.id);
+      const hash = v5Hash(detail.id);
+      const supportIndex = [...support].indexOf(detail.id);
+      const left = isSupport ? 22 + (supportIndex % 3) * 18 + Math.floor(supportIndex / 3) * 6 : 62 + (hash % 25);
+      const top = isSupport ? 24 + (supportIndex % 4) * 13 : 18 + ((hash >>> 5) % 66);
+      const sourceType = detail.sourceType || 'mark';
+      const cls = isSupport ? 'support' : 'dim';
+      return '<button class="v5-pattern-node ' + cls + '" type="button" data-observation-id="' + escapeHtml(detail.id) + '" style="left:' + left + '%;top:' + top + '%" aria-label="Open supporting moment">' +
+        v5SpecimenMarkup(sourceType, detail.id, isSupport ? 84 : 64) +
+      '</button>';
+    }).join('');
+    els.patternField.innerHTML =
+      '<div class="v5-pattern-caption">SOURCE OBJECTS · ' + escapeHtml(String(support.size)) + ' SUPPORTING</div>' +
+      nodes +
+      '<div class="v5-pattern-title"><strong>' + escapeHtml(selected.title || selected.description || 'Observed pattern') + '</strong><span>' + escapeHtml(selected.summary || selected.statement || selected.description || '') + '</span></div>';
+    return;
+  }
+
   if (meaningFirstExperience()) {
     els.patternField.innerHTML = patterns.length
       ? '<span>' + escapeHtml(String(patterns.length)) + ' published pattern' + (patterns.length === 1 ? '' : 's') + '. Open supporting moments to inspect the raw evidence.</span>'
@@ -1154,6 +1329,8 @@ async function loadPatterns() {
   try {
     const snapshot = await getDocs(query(datasetCollection('patterns'), orderBy('updatedAtMs', 'desc'), limit(50)));
     const patterns = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+    currentPatterns = patterns;
+    if (!selectedV5PatternId && patterns.length) selectedV5PatternId = patterns[0].id;
     const sourceDates = patterns.length ? await loadPatternSourceDates(patterns) : new Map();
 
     renderPatternRegister(patterns, sourceDates);
@@ -1186,6 +1363,17 @@ function renderPattern(pattern) {
   const confidence = pattern.confidence == null ? '' : 'confidence ' + pattern.confidence;
   const supportCount = pattern.supportCount == null ? null : Number(pattern.supportCount);
   const support = supportCount == null ? '' : supportCount + ' supporting moment' + (supportCount === 1 ? '' : 's');
+
+  if (perceptualExperience()) {
+    return '<article class="pattern-card" data-pattern-id="' + escapeHtml(pattern.id) + '">' +
+      '<div class="pattern-main">' +
+        '<p class="pattern-kicker">Observed pattern</p>' +
+        '<h3>' + escapeHtml(title) + '</h3>' +
+        '<p>' + escapeHtml(summary) + '</p>' +
+        '<div class="pattern-foot">' + (support ? '<span>' + escapeHtml(support) + '</span>' : '') + '</div>' +
+      '</div>' +
+    '</article>';
+  }
 
   if (meaningFirstExperience()) {
     const sourceRefs = extractPatternSources(pattern);
@@ -1342,6 +1530,12 @@ function bindEvents() {
   });
 
   els.streamRegister?.addEventListener('click', (event) => {
+    const specimenNode = event.target.closest('.v5-stream-node[data-observation-id]');
+    if (specimenNode?.dataset.observationId) {
+      openMoment(specimenNode.dataset.observationId);
+      track('stream_visual_open', { observationId: specimenNode.dataset.observationId });
+      return;
+    }
     const tick = event.target.closest('.stream-register-tick');
     if (!tick?.dataset.observationId) return;
     const item = els.timelineList.querySelector('[data-observation-id="' + CSS.escape(tick.dataset.observationId) + '"]');
@@ -1354,12 +1548,28 @@ function bindEvents() {
   });
 
   els.patternList?.addEventListener('click', async (event) => {
+    const patternCard = event.target.closest('.pattern-card[data-pattern-id]');
+    if (perceptualExperience() && patternCard?.dataset.patternId) {
+      selectedV5PatternId = patternCard.dataset.patternId;
+      renderPatternRegister(currentPatterns, new Map());
+      track('pattern_visual_select', { patternId: selectedV5PatternId });
+      return;
+    }
     const source = event.target.closest('.pattern-source[data-observation-id]');
     if (!source?.dataset.observationId) return;
     const observationId = source.dataset.observationId;
     if (!timelineItems.some((item) => item.id === observationId)) await loadTimeline();
     await openMoment(observationId);
     track('pattern_source_open', { observationId });
+  });
+
+  els.patternField?.addEventListener('click', async (event) => {
+    const node = event.target.closest('.v5-pattern-node[data-observation-id]');
+    if (!node?.dataset.observationId) return;
+    const observationId = node.dataset.observationId;
+    if (!timelineItems.some((item) => item.id === observationId)) await loadTimeline();
+    await openMoment(observationId);
+    track('pattern_visual_source_open', { observationId, patternId: selectedV5PatternId });
   });
 
   els.closeMomentBtn?.addEventListener('click', () => els.momentDialog.close());
@@ -1464,6 +1674,7 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+setupV5StaticVisuals();
 bindEvents();
 
 if ('serviceWorker' in navigator) {

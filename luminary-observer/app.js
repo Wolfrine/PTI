@@ -23,8 +23,12 @@ import {
   documentId
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
-const APP_VERSION = '0.2.1';
-const UI_VERSION = 'trace-register-v2.1';
+const APP_VERSION = '0.3.0';
+const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'intuitive-capture-v3';
+const UI_VERSIONS = window.__LUMINARY_UI_VERSIONS__ || [];
+const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'intuitive-capture-v3';
+const UI_STORAGE_KEY = window.__LUMINARY_UI_STORAGE_KEY__ || 'luminary.uiVersion';
+const intuitiveExperience = () => UI_VERSION === 'intuitive-capture-v3';
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -55,6 +59,7 @@ const els = {
   profileDialog: $('#profileDialog'),
   profileName: $('#profileName'),
   profileEmail: $('#profileEmail'),
+  versionControls: $('#versionControls'),
   closeProfileBtn: $('#closeProfileBtn'),
   signOutBtn: $('#signOutBtn'),
   markBtn: $('#markBtn'),
@@ -104,6 +109,7 @@ let voiceActive = false;
 let lastVoiceStart = 0;
 let toastTimer = null;
 let hasAnimatedInitialView = false;
+let patternSourceDetails = new Map();
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -251,6 +257,15 @@ function animateObserveEntrance() {
   if (hasAnimatedInitialView || reducedMotion()) return;
   hasAnimatedInitialView = true;
 
+  if (intuitiveExperience()) {
+    playElementEntrance([
+      els.markBtn,
+      ...$$('.capture-button'),
+      $('.last-capture')
+    ], { step: 65 });
+    return;
+  }
+
   const register = $('.observe-register');
   if (register) {
     const mobile = window.matchMedia?.('(max-width: 720px)').matches;
@@ -271,7 +286,7 @@ function animateObserveEntrance() {
   }
 
   playElementEntrance([
-    ...$('.capture-button'),
+    ...$$('.capture-button'),
     $('.last-capture')
   ], { baseDelay: 340, step: 70 });
 }
@@ -305,8 +320,8 @@ function animateRenderedItems(selector) {
 }
 
 function animatePatternField() {
-  if (!els.patternField || reducedMotion()) return;
-  const tracks = $('.pattern-track-line');
+  if (!els.patternField || reducedMotion() || intuitiveExperience()) return;
+  const tracks = $$('.pattern-track-line');
   tracks.forEach((track, index) => {
     track.animate(
       [
@@ -336,7 +351,11 @@ async function handleMark() {
     showToast('Moment preserved');
     setTimeout(() => {
       els.markBtn.classList.remove('saved');
-      if (els.markStatus.textContent === 'Preserved.') els.markStatus.textContent = 'Tap when something is worth preserving.';
+      if (els.markStatus.textContent === 'Preserved.') {
+        els.markStatus.textContent = intuitiveExperience()
+          ? 'One tap. Nothing else required.'
+          : 'Tap when something is worth preserving.';
+      }
     }, 1500);
   } finally {
     els.markBtn.disabled = false;

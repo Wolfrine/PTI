@@ -1282,34 +1282,3 @@ dialog::backdrop{background:rgba(27,28,25,.36)}
   width:2px;height:34px;
   background:var(--trace)
 }
-
-/* V6 sprite binding: actual generated material asset */
-.material-v6-body{
-  background-image:url('../assets/v6-material-sprite.webp')!important;
-  background-size:400% 100%!important;
-  background-repeat:no-repeat!important;
-}
-.material-v6.mark .material-v6-body{background-position:0% 50%!important}
-.material-v6.voice .material-v6-body{background-position:33.333% 50%!important}
-.material-v6.text .material-v6-body{background-position:0% 50%!important}
-.v6-entry-stage .entry-specimen-field::after{
-  background-image:url('../assets/v6-material-sprite.webp')!important;
-  background-size:400% 100%!important;
-  background-position:100% 50%!important;
-  background-repeat:no-repeat!important;
-}
-.v5-pattern-field::before{
-  display:block!important;
-  content:""!important;
-  position:absolute!important;
-  width:44%!important;
-  aspect-ratio:1/1!important;
-  right:5%!important;
-  top:8%!important;
-  background-image:url('../assets/v6-material-sprite.webp')!important;
-  background-size:400% 100%!important;
-  background-position:100% 50%!important;
-  background-repeat:no-repeat!important;
-  opacity:.13!important;
-  pointer-events:none!important;
-}

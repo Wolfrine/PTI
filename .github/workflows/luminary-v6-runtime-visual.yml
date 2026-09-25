@@ -26,9 +26,10 @@ jobs:
           const css=fs.readFileSync('luminary-observer/versions/generated-material-v6.css','utf8');
           const html=fs.readFileSync('luminary-observer/versions/generated-material-v6.html','utf8');
           if(!loader.includes("LATEST_UI_VERSION = 'generated-material-v6'")) throw new Error('V6 not latest');
-          if(!fs.existsSync('luminary-observer/assets/v6-material-sprite.webp')) throw new Error('Generated sprite missing');
-          if(!sw.includes('./assets/v6-material-sprite.webp')) throw new Error('Sprite not cached');
-          if(css.includes('v6-material-mark.webp')||css.includes('v6-material-cluster.webp')) throw new Error('Stale V6 asset refs');
+          if(!fs.existsSync('luminary-observer/assets/v6-material-mark.webp')) throw new Error('Generated mark material missing');
+          if(!fs.existsSync('luminary-observer/assets/v6-material-cluster.webp')) throw new Error('Generated cluster material missing');
+          if(!sw.includes('./assets/v6-material-mark.webp')||!sw.includes('./assets/v6-material-cluster.webp')) throw new Error('Generated materials not cached');
+          if(!css.includes('v6-material-mark.webp')||!css.includes('v6-material-cluster.webp')) throw new Error('Generated material refs missing');
           for(const id of ['authGate','appShell','signInBtn','markBtn','voiceBtn','textBtn','timelineList','streamRegister','patternList','patternField','profileDialog','versionControls','momentDialog','momentHero','momentContext','momentNeighbors','momentRelations','toast']){
             if(!html.includes('id="'+id+'"')) throw new Error('Missing '+id);
           }

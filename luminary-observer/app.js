@@ -319,7 +319,7 @@ async function saveObservation(sourceType, rawText = '', extra = {}) {
       ? `Mark · ${formatTime(payload.clientCreatedAt)}`
       : `${capitalize(sourceType)} · ${formatTime(payload.clientCreatedAt)}`;
     if (els.lastCapture) els.lastCapture.dataset.observationId = ref.id;
-    if (perceptualExperience()) setV5LastSpecimen(sourceType, ref.id, payload.clientCreatedAt);
+    if (visualSpecimenExperience() && !(generatedMaterialExperience() && sourceType === 'mark')) setV5LastSpecimen(sourceType, ref.id, payload.clientCreatedAt);
     return ref.id;
   } catch (error) {
     setSync('error');
@@ -375,7 +375,7 @@ function animateObserveEntrance() {
   if (meaningFirstExperience()) {
     playElementEntrance([
       els.markBtn,
-      ...$('.capture-button'),
+      ...$$('.capture-button'),
       $('.last-capture')
     ], { step: meaningfulMotionExperience() ? 45 : 65 });
     return;
@@ -512,7 +512,7 @@ function animateV4ImprintTransfer(sourceType, iso) {
 
 function animateV4PatternEvidence() {
   if (!meaningfulMotionExperience() || reducedMotion()) return;
-  $('.pattern-source').forEach((source, index) => {
+  document.querySelectorAll('.pattern-source').forEach((source, index) => {
     const imprint = source.querySelector('.source-imprint');
     const text = source.querySelector('span');
     imprint?.animate(
@@ -523,6 +523,38 @@ function animateV4PatternEvidence() {
       [{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'translateX(0)' }],
       { duration: 280, delay: 150 + Math.min(index * 100, 500), easing: 'cubic-bezier(.2,.78,.25,1)', fill: 'both' }
     );
+  });
+}
+
+function animateV6MaterialTransfer(sourceType, observationId, iso) {
+  if (!generatedMaterialExperience()) return;
+  const source = $('#markSpecimenSeed .material-v6');
+  const slot = $('#lastSpecimenSlot');
+  if (!source || !slot || reducedMotion()) {
+    setV5LastSpecimen(sourceType, observationId, iso);
+    return;
+  }
+
+  const from = source.getBoundingClientRect();
+  const to = slot.getBoundingClientRect();
+  const flying = document.createElement('div');
+  flying.className = 'v6-flying-material';
+  flying.innerHTML = v5SpecimenMarkup(sourceType, observationId || iso || 'transfer', 138);
+  flying.style.left = (from.left + from.width / 2 - 69) + 'px';
+  flying.style.top = (from.top + from.height / 2 - 58) + 'px';
+  document.body.appendChild(flying);
+
+  const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+  const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+  const animation = flying.animate([
+    { transform:'translate(0,0) scale(.72)', opacity:0 },
+    { transform:'translate(0,0) scale(1)', opacity:1, offset:.18 },
+    { transform:'translate(' + dx + 'px,' + dy + 'px) scale(.82)', opacity:.94 }
+  ], { duration:620, easing:'cubic-bezier(.2,.78,.25,1)', fill:'forwards' });
+
+  animation.finished.catch(() => {}).finally(() => {
+    flying.remove();
+    setV5LastSpecimen(sourceType, observationId, iso);
   });
 }
 
@@ -540,7 +572,8 @@ async function handleMark() {
     if (meaningfulMotionExperience()) animateV4ImprintTransfer('mark', capturedIso);
     if (visualSpecimenExperience()) {
       const latestId = els.lastCapture?.dataset?.observationId || capturedIso;
-      setV5LastSpecimen('mark', latestId, capturedIso);
+      if (generatedMaterialExperience()) animateV6MaterialTransfer('mark', latestId, capturedIso);
+      else setV5LastSpecimen('mark', latestId, capturedIso);
     }
     showToast('Moment preserved');
     setTimeout(() => {
@@ -1623,7 +1656,7 @@ function bindEvents() {
     const patternCard = event.target.closest('.pattern-card[data-pattern-id]');
     if (visualSpecimenExperience() && patternCard?.dataset.patternId) {
       selectedV5PatternId = patternCard.dataset.patternId;
-      $('.pattern-card[data-pattern-id]').forEach((card) => {
+      document.querySelectorAll('.pattern-card[data-pattern-id]').forEach((card) => {
         card.dataset.selected = card.dataset.patternId === selectedV5PatternId ? 'true' : 'false';
       });
       renderPatternRegister(currentPatterns, new Map());

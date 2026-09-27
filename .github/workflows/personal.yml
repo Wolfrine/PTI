@@ -36,7 +36,7 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     env:
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/personal-firebase.json
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/pti-personal-${{ github.run_id }}.json
       FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
     steps:
       - uses: actions/checkout@v4

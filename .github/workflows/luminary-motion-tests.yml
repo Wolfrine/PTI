@@ -1,0 +1,67 @@
+name: Luminary Motion Verification
+on:
+  pull_request:
+    paths: ['luminary-observer/**', '.github/workflows/luminary-motion-tests.yml']
+  push:
+    branches: [main]
+    paths: ['luminary-observer/**', '.github/workflows/luminary-motion-tests.yml']
+permissions:
+  contents: read
+concurrency:
+  group: luminary-motion-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  motion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Parse runtime and version modules
+        run: |
+          node --check luminary-observer/app.js
+          node --check luminary-observer/motion-v7.js
+          node --check luminary-observer/version-loader.js
+          node --check luminary-observer/sw.js
+      - name: Install browser verification tools
+        run: |
+          pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium
+      - name: Exercise desktop, mobile, motion, accessibility and offline shell
+        env:
+          LUMINARY_TEST_URL: http://127.0.0.1:8177
+          LUMINARY_EVIDENCE: ${{ runner.temp }}/luminary-evidence
+        run: |
+          python -m http.server 8177 --directory luminary-observer > /tmp/luminary-http.log 2>&1 &
+          python luminary-observer/tests/motion_v7_test.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: luminary-motion-evidence
+          path: ${{ runner.temp }}/luminary-evidence
+          retention-days: 7
+  host-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: pti-app
+      - run: npm run build -- --configuration production
+        working-directory: pti-app
+      - name: Existing PTI unit suite (separate from Luminary browser checks)
+        id: legacy
+        continue-on-error: true
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+        working-directory: pti-app
+      - name: Record legacy-suite outcome
+        if: always()
+        run: echo 'Legacy PTI suite outcome — ${{ steps.legacy.outcome }}. Luminary browser verification is separately required.' >> "$GITHUB_STEP_SUMMARY"

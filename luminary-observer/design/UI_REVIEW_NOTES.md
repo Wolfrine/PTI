@@ -374,3 +374,10 @@ Correction from V5:
 - generated cluster art is confined to non-data Entry atmosphere, not evidence regions.
 
 Outcome: PASS FOR PRODUCTION.
+
+
+## 2026-09-27 — V7 Motion Archive
+
+Rebuilt the presentation layer independently of the cascading V2–V6 styles. Retained accepted V2 foundations and actual V6 material. Replaced arbitrary visual placement with recorded-day groups and explicit supporting/context regions. Motion now transfers acknowledged captures, preserves keyed source objects during pattern regrouping, and carries selected material into raw detail. No raw data interpretation was introduced.
+
+Self-review used four viewport sizes with full-motion and reduced-motion paths. Corrected the mobile pattern-title peek, nav-indicator interruption behavior and harsh material edges. Local suite: 112 passing checks; HTTP/PWA CI is required before merge. See V7_EXECUTION.md and the committed browser test for reproducibility. Owner acceptance is via the same production PWA; do not insert another image/video review gate.

@@ -1,6 +1,11 @@
+<!-- Current execution contract supersedes historical prototype-only gates below. -->
+# Current direction — Motion Archive V7
+
+Owner review happens in the production PWA, not via files or preview approval. V2 typography, palette and restraint are retained; motion and responsive composition are implemented in independent V7 files. Previous versions remain selectable. See `V7_EXECUTION.md` for mechanism, scope and verification.
+
 # Luminary Design Direction
 
-Status: V4 Meaningful Motion candidate — owner review required
+Status: V7 Motion Archive — implemented for production PWA review
 Updated: 2026-09-24
 
 ## Product invariants

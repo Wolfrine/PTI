@@ -15,10 +15,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: luminary/v7-motion
-      - name: Apply locally verified source patch
+      - name: Apply locally verified application source patch
         run: |
           set -euo pipefail
-          if [ ! -f .github/v7-payload/004.b64 ]; then echo 'Awaiting complete patch'; exit 0; fi
+          if [ ! -f .github/v7-payload/004.b64 ]; then echo 'No pending patch'; exit 0; fi
           python3 - <<'PY'
           import base64, gzip, hashlib, pathlib
           data=''.join(p.read_text().strip() for p in sorted(pathlib.Path('.github/v7-payload').glob('*.b64')))
@@ -26,11 +26,11 @@ jobs:
           assert hashlib.sha256(patch).hexdigest()=='a4d313ce81c78fc5d72b7dfb940bc3fc19f9af20571b779b024c286c1269907d'
           pathlib.Path('/tmp/v7.patch').write_bytes(patch)
           PY
-          git apply --check /tmp/v7.patch
-          git apply /tmp/v7.patch
+          git apply --check --include='luminary-observer/*' /tmp/v7.patch
+          git apply --include='luminary-observer/*' /tmp/v7.patch
           node --check luminary-observer/app.js
           node --check luminary-observer/motion-v7.js
-          git rm -r .github/v7-payload .github/workflows/luminary-v7-workbench.yml
-          git add luminary-observer .github/workflows/firebase-deploy.yml .github/workflows/luminary-motion-tests.yml
+          git rm -r .github/v7-payload
+          git add luminary-observer
           git -c user.name='Luminary development' -c user.email='development@users.noreply.github.com' commit -m 'feat(luminary): implement V7 motion archive and browser verification'
           git push origin HEAD:luminary/v7-motion

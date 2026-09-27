@@ -1,0 +1,47 @@
+name: Personal integration diagnostics
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/personal-diagnostics.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Snapshot tracked implementation only
+        run: |
+          mkdir -p personal-diagnostics
+          git archive --format=tar.gz HEAD > personal-diagnostics/source.tar.gz
+      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts
+      - name: Read existing default database release and capability metadata
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {createRequire} from 'node:module';
+          import {writeFileSync} from 'node:fs';
+          const require=createRequire(process.cwd()+'/personal-functions/package.json');
+          const {initializeApp,cert}=require('firebase-admin/app');
+          const app=initializeApp({credential:cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON))});
+          const token=(await app.options.credential.getAccessToken()).access_token;
+          const project='pti-app-2ab59';
+          async function get(url){const r=await fetch(url,{headers:{Authorization:`Bearer ${token}`}}); const b=await r.json();if(!r.ok)throw new Error(`${r.status}: ${b.error?.message}`);return b;}
+          const db=await get(`https://firestore.googleapis.com/v1/projects/${project}/databases/(default)`);
+          const release=await get(`https://firebaserules.googleapis.com/v1/projects/${project}/releases/cloud.firestore`);
+          const rules=await get(`https://firebaserules.googleapis.com/v1/${release.rulesetName}`);
+          writeFileSync('personal-diagnostics/default-rules.json',JSON.stringify({database:db.name,location:db.locationId,release,rules},null,2));
+          console.log('Existing default database and live rules read successfully; no data or permissions changed.');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: personal-integration-diagnostics
+          path: personal-diagnostics/
+          retention-days: 3

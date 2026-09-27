@@ -1,10 +1,1 @@
-{
-  "name": "pti-personal-runtime",
-  "private": true,
-  "version": "0.1.0",
-  "main": "index.cjs",
-  "engines": {"node": "22"},
-  "scripts": {"test": "node --test ../personal-harness/core.test.mjs", "build": "node ../personal-harness/build.mjs"},
-  "dependencies": {"firebase-admin": "12.7.0", "firebase-functions": "6.1.0", "fast-xml-parser": "4.5.3"},
-  "devDependencies": {"playwright": "1.55.0"}
-}
+{"name":"pti-personal-runtime","private":true,"version":"0.1.0","main":"index.cjs","engines":{"node":"22"},"scripts":{"test":"node --test ../personal-harness/core.test.mjs","build":"node ../personal-harness/build.mjs"},"dependencies":{"firebase-admin":"14.5.0","firebase-functions":"7.4.0","fast-xml-parser":"5.11.1"},"devDependencies":{"playwright":"1.55.0"}}

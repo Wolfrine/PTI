@@ -2,7 +2,12 @@ import { XMLParser } from 'fast-xml-parser';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { DEFAULT_SETTINGS, selectEdition, canonicalUrl } from './core.mjs';
-const require=createRequire(import.meta.url);const {db,now}=require('./runtime.cjs');
+const dryRun=process.argv.includes('--dry-run');
+if(!dryRun){
+const activation=await fetch('https://pti-app-2ab59-personal.web.app/runtime-status.json',{cache:'no-store',signal:AbortSignal.timeout(15000)});
+if(!activation.ok || !(await activation.json()).cloudReady){console.log('SKIPPED: private runtime is not activated; no account data was accessed.');process.exit(0);}
+}
+const require=createRequire(import.meta.url);const {db,now}=dryRun?{db:null,now:()=>new Date().toISOString()}:require('./runtime.cjs');
 const SOURCES=[
  {name:'MIT News · AI',url:'https://news.mit.edu/rss/topic/artificial-intelligence2',topic:'AI & agents',region:'global'},
  {name:'MIT News · Robotics',url:'https://news.mit.edu/rss/topic/robotics',topic:'Robotics',region:'global'},
@@ -18,6 +23,7 @@ const parser=new XMLParser({ignoreAttributes:false,processEntities:true});
 async function sourceItems(source){
  const response=await fetch(source.url,{headers:{'User-Agent':'PTI-Personal/0.1 (RSS reader; source links retained)'},signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error(`HTTP ${response.status}`);
  const raw=await response.text();if(raw.length>3000000)throw new Error('Feed too large.');
+ if(/<!DOCTYPE|<!ENTITY/i.test(raw))throw new Error('DTD/entity declarations are not accepted.');
  const xml=parser.parse(raw);let items=xml.rss?.channel?.item||xml.feed?.entry||[];if(!Array.isArray(items))items=[items];
  return items.slice(0,40).map(item=>{
  const title=text(item.title);const links=Array.isArray(item.link)?item.link:[item.link];const link=links.find(l=>typeof l==='string'||l?.['@_rel']==='alternate')||links[0];const url=canonicalUrl(typeof link==='string'?link:link?.['@_href']);const publishedAt=new Date(item.pubDate||item.published||item.updated||'invalid');
@@ -31,6 +37,7 @@ async function sourceItems(source){
 }
 const settled=await Promise.allSettled(SOURCES.map(sourceItems));const candidates=settled.flatMap(r=>r.status==='fulfilled'?r.value:[]);const failures=settled.flatMap((r,i)=>r.status==='rejected'?[`${SOURCES[i].name}: ${r.reason.message}`]:[]);
 console.log(JSON.stringify({sources:SOURCES.length,succeeded:SOURCES.length-failures.length,candidates:candidates.length,sourceFailures:failures}));
+if(dryRun){const edition=selectEdition(candidates,DEFAULT_SETTINGS);console.log(JSON.stringify({publicSourceCheck:'passed',items:edition.items.length,topics:[...new Set(edition.items.map(i=>i.topic))],regions:edition.items.map(i=>i.region),privateDataAccess:false}));process.exit(0);}
 const day=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}),runId=`collector-${Date.now()}`;
 let catalogPublished=false;
 try{const edition=selectEdition(candidates,DEFAULT_SETTINGS);await db.doc('catalog/current').set({...edition,createdAt:now(),sourceFailures:failures});catalogPublished=true;}catch(e){console.error('Shared catalogue retained:',e.message);}

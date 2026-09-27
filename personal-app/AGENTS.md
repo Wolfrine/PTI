@@ -1,0 +1,1 @@
+Read ../personal-harness/README.md, ../personal-harness/state.json and design/README.md. This app is isolated from PTI, Velum and Luminary. Preserve the explicit preview/cloud distinction in boot.mjs. No passive tracking, no in-app LLM calls, no private records in GitHub. Test actual mobile and desktop renders before deployment.

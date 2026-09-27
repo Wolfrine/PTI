@@ -6,3 +6,5 @@ personal-functions/package-lock.json
 personal-functions/.env*
 firebase-debug*.log
 firestore-debug*.log
+firebase.personal-preview.json
+personal-activation-report.json

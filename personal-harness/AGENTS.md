@@ -1,0 +1,1 @@
+Read README.md and state.json. PTI is the home; Central is a reference only. Never weaken an existing app's data boundary to bypass cloud activation. Actual CI/deployment records override status prose. Keep updates compact. Do not add another framework or duplicate the design corpus.

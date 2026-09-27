@@ -86,7 +86,8 @@ def setup(browser,w=390,h=844,reduced=False,sw=False):
  page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.add_init_script(SPEECH)
  for file,body in [('firebase-app.js',APP),('firebase-auth.js',AUTH),('firebase-firestore.js',DB)]:
-  page.route('https://www.gstatic.com/firebasejs/10.14.1/'+file,lambda route,b=body:route.fulfill(status=200,content_type='application/javascript',headers={'access-control-allow-origin':'*'},body=b))
+  # Playwright supplies both route and request; keep the bound module body separate.
+  page.route('https://www.gstatic.com/firebasejs/10.14.1/'+file,lambda route,request,b=body:route.fulfill(status=200,content_type='application/javascript',headers={'access-control-allow-origin':'*'},body=b))
  return context,page,errors
 
 def enter(page,version='motion-archive-v7'):

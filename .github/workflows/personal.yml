@@ -66,9 +66,22 @@ jobs:
         run: |
           set -euo pipefail
           for file in app.mjs core.mjs boot.mjs sw.js runtime-status.json; do
-            curl --fail --retry 3 --silent --show-error "https://pti-app-2ab59-personal.web.app/$file?release=$GITHUB_SHA" -o /tmp/personal-live
-            cmp ".personal-dist/$file" /tmp/personal-live
+            matched=false
+            for attempt in $(seq 1 24); do
+              if curl --fail --retry 2 --max-time 20 --silent --show-error -H 'Cache-Control: no-cache' "https://pti-app-2ab59-personal.web.app/$file?release=$GITHUB_SHA&attempt=$attempt" -o /tmp/personal-live && cmp -s ".personal-dist/$file" /tmp/personal-live; then
+                matched=true
+                echo "PASS live $file matches this build"
+                break
+              fi
+              echo "Waiting for Hosting propagation: $file, attempt $attempt"
+              sleep 5
+            done
+            if [ "$matched" != true ]; then
+              echo "Live file did not converge: $file"
+              exit 1
+            fi
           done
+          node -e "const fs=require('fs'),p='personal-activation-report.json',r=JSON.parse(fs.readFileSync(p));r.hostingVerifiedAt=new Date().toISOString();r.commit=process.env.GITHUB_SHA;r.liveFiles=['app.mjs','core.mjs','boot.mjs','sw.js','runtime-status.json'];fs.writeFileSync(p,JSON.stringify(r,null,2))"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

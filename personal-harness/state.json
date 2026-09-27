@@ -2,11 +2,33 @@
   "project": "PTI personal intelligence",
   "base": "Wolfrine/PTI",
   "firstApp": "personal-app",
-  "status": "cloud-activation-blocked",
-  "verified": ["14 contract tests", "served-module browser flows at 1440, 768 and 390px", "new-app scaffold and overwrite protection"],
-  "blocker": "Existing deployment credential received HTTP 403 creating named Firestore database personal. Do not fall back to shared default data or attempt another credential.",
-  "deployment": "Preview deploys separately. runtime-status.json is false until backend deployment and live authorization/MCP checks pass.",
-  "next": "Read the latest personal-activation-report artifact. Owner creates the named Native-mode database in the existing location or grants the narrow missing capability. Rerun deployment; verify real publication; then connect an external reviewing agent.",
-  "notEnabled": ["external reasoning agent connection", "Spotify/YouTube ingestion", "passive activity tracking"],
-  "statusSource": ".github/workflows/personal.yml actual run results"
+  "architecture": {
+    "database": "(default)",
+    "project": "pti-app-2ab59",
+    "namespace": "users/{uid}/personalData/workspace",
+    "ui": "Direct Firebase Auth/Firestore PWA",
+    "backend": "Existing Daily Intelligence Briefing task through scoped Firestore MCP"
+  },
+  "status": "default-database-integration; deployment evidence is authoritative",
+  "localVerification": [
+    "16 contract tests",
+    "module syntax checks",
+    "static build"
+  ],
+  "activationGate": [
+    "browser flows at 1440, 768 and 390px",
+    "live owner/other-user/anonymous authorization tests",
+    "Hosting file comparison"
+  ],
+  "agentConnection": {
+    "ready": false,
+    "blocker": "Existing Firebase Functions MCP is not deployed: project is on Spark and its API-key secret is absent. Scoped adapter needs an authenticated host plus task connection. No billing upgrade performed."
+  },
+  "notEnabled": [
+    "duplicate source collector",
+    "in-app LLM calls",
+    "Spotify/YouTube ingestion",
+    "passive activity tracking"
+  ],
+  "statusSource": ".github/workflows/personal.yml actual results and personal-activation-report artifact"
 }

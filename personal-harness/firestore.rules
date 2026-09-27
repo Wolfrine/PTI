@@ -2,11 +2,16 @@ rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
   function owner(uid) { return request.auth != null && request.auth.uid == uid; }
-  match /catalog/{document} { allow read: if request.auth != null; allow write: if false; }
+  // Preserve the live legacy policy without allowing it to overlap Personal.
+  match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'users'; }
   match /users/{uid} {
+   allow read, write: if request.auth != null;
+   match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData'; }
+  }
+  match /users/{uid}/personalData/workspace {
    allow read: if owner(uid);
    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['settings','paused','preferenceVersion','generation','updatedAt']) && request.resource.data.paused is bool && request.resource.data.generation is string && request.resource.data.generation.size() <= 80 && request.resource.data.preferenceVersion is int && request.resource.data.settings is map && request.resource.data.settings.keys().hasOnly(['topics','geography','direction','itemCount']) && request.resource.data.settings.direction is string && request.resource.data.settings.direction.size() <= 2000 && request.resource.data.settings.topics is list && request.resource.data.settings.topics.size() > 0 && request.resource.data.settings.topics.size() <= 4 && request.resource.data.settings.topics.hasOnly(['AI & agents','Science','Business','Robotics']) && request.resource.data.settings.geography in ['balanced','india','global'] && request.resource.data.settings.itemCount == 5 && request.resource.data.updatedAt is string;
-   allow delete: if false;
+   allow delete: if owner(uid);
    match /captures/{id} {
     allow read, delete: if owner(uid);
     allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['text','kind','threadId','url','articleId','articleTitle','createdAt']) && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 12000 && request.resource.data.kind in ['thought','question','link'] && request.resource.data.threadId is string && request.resource.data.threadId.size() <= 100 && request.resource.data.url is string && request.resource.data.url.size() <= 2000 && request.resource.data.articleId is string && request.resource.data.articleId.size() <= 100 && request.resource.data.articleTitle is string && request.resource.data.articleTitle.size() <= 300 && request.resource.data.createdAt is string;
@@ -17,10 +22,15 @@ service cloud.firestore {
    }
    match /feedback/{id} {
     allow read, delete: if owner(uid);
-    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['itemId','reaction','source','topic','createdAt']) && request.resource.data.itemId == id && request.resource.data.reaction in ['useful','known','less','explore'] && request.resource.data.source is string && request.resource.data.source.size() <= 150 && request.resource.data.topic in ['AI & agents','Science','Business','Robotics'] && request.resource.data.createdAt is string;
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['itemId','reaction','source','topic','createdAt','note','itemTitle','url']) && request.resource.data.itemId == id && request.resource.data.get('note','') is string && request.resource.data.get('note','').size() <= 2000 && request.resource.data.get('itemTitle','') is string && request.resource.data.get('itemTitle','').size() <= 300 && request.resource.data.get('url','') is string && request.resource.data.get('url','').size() <= 2000 && request.resource.data.reaction in ['useful','known','less','explore','thought'] && request.resource.data.source is string && request.resource.data.source.size() <= 150 && request.resource.data.topic in ['AI & agents','Science','Business','Robotics'] && request.resource.data.createdAt is string;
    }
-   match /editions/{id} { allow read: if owner(uid); allow write: if false; }
-   match /runs/{id} { allow read: if owner(uid); allow write: if false; }
+   match /editions/{id} { allow read, delete: if owner(uid); allow create, update: if false; }
+   match /runs/{id} { allow read, delete: if owner(uid); allow create, update: if false; }
+   match /agentKeys/{id} {
+    allow read, delete: if owner(uid);
+    allow create: if owner(uid) && id.matches('[a-f0-9]{64}') && request.resource.data.keys().hasOnly(['scope','createdAt','expiresAt']) && request.resource.data.scope == 'news' && request.resource.data.createdAt == request.time && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt > request.time && request.resource.data.expiresAt <= request.time + duration.value(30, 'd');
+    allow update: if false;
+   }
   }
   match /{document=**} { allow read, write: if false; }
  }

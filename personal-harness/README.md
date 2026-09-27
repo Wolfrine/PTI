@@ -1,23 +1,22 @@
 # PTI personal harness
 
-PTI is the permanent home for rapid, personal PWAs. Central supplies design guidance only. Preserve PTI, Velum and Luminary. No new master repository, duplicate wiki or in-app model API.
+PTI is the permanent home for rapid personal PWAs. Central is a design reference only. Preserve PTI, Velum and Luminary. No new database, master repo, duplicate collector or in-app model API.
 
-## Start here
-- First app: `personal-app/` (Today, Capture, Threads). Its local visual contract is `personal-app/design/README.md`.
-- Runtime: `personal-functions/`; isolated Firestore database `personal` inside existing project `pti-app-2ab59`. Existing default database/rules/functions/Hosting targets are not replaced.
-- Deploy: `.github/workflows/personal.yml` with `firebase.personal.json`. Only deploy after tests. Failed source collection retains the previous valid edition.
-- New app: `node personal-harness/create-app.mjs <slug> "App name"`. Complete the generated contract before implementing/deploying. Shared infrastructure does not require identical interfaces.
-- Test: `node --test personal-harness/core.test.mjs`; build: `node personal-harness/build.mjs`; browser checks: `node personal-harness/browser-test.mjs` after installing `personal-functions` dependencies and Playwright Chromium.
+## Architecture
+- UI: `personal-app/` — Today, Capture, Threads and controls. Google sign-in and direct Firestore SDK; no server function required for saving, export or deletion.
+- Data: existing project `pti-app-2ab59`, database `(default)`, private root `users/{uid}/personalData/workspace`. Never overwrite or recursively delete `users/{uid}`.
+- Intelligence backend: the existing **Daily Intelligence Briefing** scheduled ChatGPT agent, not GitHub cron. It researches news, reads declared direction and explicit feedback through the scoped MCP, then publishes a validated edition. Read `agent.md` for its contract.
+- MCP adapter: `personal-functions/index.cjs`; `personal_health`, `personal_context`, `personal_publish`. No arbitrary paths; captures excluded. Article thoughts reach the agent only when explicitly shared as feedback. Keys are owner-scoped, expiring and revocable.
+- Deployment: `.github/workflows/personal.yml` verifies contracts, browser flows, real client authorization and live Hosting files. It updates the existing rules release; it never creates a database or enables billing. UI readiness and MCP readiness are separate.
 
-## Boundaries
-User records are private runtime data, never GitHub content. Declared direction is authoritative; explicit source feedback influences selection within it. Original captures, declared settings and published interpretations remain separate. No passive browsing/music surveillance, ad SDK, confidential employer data or in-app LLM calls. Credentials are never logged or committed. Provider terms still apply.
+## Start and test
+`node personal-harness/create-app.mjs <slug> "App name"` creates an undeployed starter. Complete its purpose, data permissions, distinct interface and acceptance tests before deploying. Shared infrastructure does not imply identical screens.
 
-## Current loop
-Daily GitHub source collector at approximately 08:00 Asia/Kolkata: allowlisted RSS → canonical-URL deduplication → dated candidates → topic/geography constraints → bounded explicit source feedback → validated five-item edition. It is a deterministic source collector, not an LLM. It does not interpret free-text directions or check the truth of a publisher's claims. The interface says so. Inadequate sources fail visibly rather than fabricating content. Region labels describe source scope, not necessarily the event location.
+Run `node --test personal-harness/core.test.mjs`, then `node personal-harness/build.mjs`. Browser checks: install `personal-functions` dependencies and Playwright Chromium, then `node personal-harness/browser-test.mjs`.
 
-An external reviewing agent can use the separate account-scoped MCP endpoint `/mcp`. The owner creates a 30-day key in Settings; connecting it to an external host is a separate step. Available tools: `personal_health`, `personal_context`, `personal_publish`. Context excludes captures and includes only opted-in question titles. Publication checks current settings version/generation and paused state in a transaction. No arbitrary paths or generic Firestore writes. Read `agent.md` only for that task.
+## Boundaries and status
+Private records and credentials never belong in GitHub or public logs. Declared goals are authoritative; feedback changes selection, not the goals. No passive surveillance, advertising SDK, confidential employer data or inferred sensitive identity. Provider terms still apply.
 
-## Release and next steps
-First release implements capture, questions, explicit feedback, direction editing, pause, export, deletion, scoped MCP, source collection and deployment/security/browser checks. Keep actual run/deployment results as the status source; a workflow file alone is not proof of execution.
+Rules preserve the reviewed legacy access policy outside Personal and exclude Personal from that broad policy. A changed live ruleset must be reviewed rather than overwritten blindly. Failed publication retains the previous edition; a task prompt is not evidence of a successful MCP call.
 
-Next: connect and test an external reasoning agent through the scoped endpoint; improve evidence-based curation; create a second distinct research experience from a demonstrated need. Spotify/YouTube and cross-app personal profiling are not enabled. Existing general PTI MCP is not redirected into this database.
+The current Firebase project is on Spark; the existing Functions MCP deployment is blocked and its API-key secret is absent. This release does not upgrade billing. The scoped adapter still needs an authenticated host and connection to the scheduled agent. Check the actual deployment artifact and MCP health before claiming the full loop works.

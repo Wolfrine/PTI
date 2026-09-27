@@ -23,7 +23,7 @@ jobs:
       - run: npm audit --prefix personal-functions --omit=dev --audit-level=high
       - run: node --test personal-harness/core.test.mjs
       - run: node personal-harness/build.mjs
-      - run: node --check personal-app/app.mjs && node --check personal-functions/index.cjs && node --check personal-functions/curate.mjs
+      - run: node --check personal-app/app.mjs && node --check personal-functions/index.cjs && node --check personal-functions/provision.mjs && node --check personal-functions/verify.mjs
       - run: personal-functions/node_modules/.bin/playwright install --with-deps chromium
       - run: node personal-harness/browser-test.mjs
       - uses: actions/upload-artifact@v4
@@ -32,67 +32,43 @@ jobs:
           name: personal-browser-evidence
           path: personal-qa/
           retention-days: 7
-  source-check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts
-      - run: node personal-harness/build.mjs
-      - run: node personal-functions/curate.mjs --dry-run
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: verify
     runs-on: ubuntu-latest
     env:
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/pti-personal-${{ github.run_id }}.json
-      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Configure credentials
+      - name: Configure existing deployment credential
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           set -euo pipefail
-          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo 'Missing existing Firebase deployment credential.'; exit 1; }
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
       - run: npm install --prefix personal-functions --omit=dev --ignore-scripts && npm install -g firebase-tools@15.31.0
       - run: node personal-harness/build.mjs
-      - name: Publish explicit preview without private backend
-        run: |
-          set -euo pipefail
-          node personal-harness/preview.mjs
-          if test -f firebase.personal-preview.json; then
-            if ! firebase hosting:sites:get pti-app-2ab59-personal --project pti-app-2ab59 --non-interactive >/dev/null 2>&1; then
-              firebase hosting:sites:create pti-app-2ab59-personal --project pti-app-2ab59 --non-interactive
-            fi
-            firebase deploy --config firebase.personal-preview.json --project pti-app-2ab59 --only hosting --non-interactive
-          fi
-      - name: Provision isolated data boundary and authorize sign-in
+      - name: Update reviewed rules on existing default database and preserve Auth domains
         run: node personal-functions/provision.mjs
-      - name: Deploy Personal rules and functions only
-        run: firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only firestore,functions:personal --non-interactive
-      - name: Deploy Personal Hosting site only
+      - name: Verify real owner-only client access with temporary test users
+        run: node personal-functions/verify.mjs
+      - name: Enable UI independently of the MCP host
+        run: |
+          node -e "require('fs').writeFileSync('.personal-dist/runtime-status.json',JSON.stringify({cloudReady:true,database:'(default)',agentReady:false,agentReason:'MCP server connection is pending. The Firebase project is on Spark; no billing upgrade has been made.',verifiedAt:new Date().toISOString()}))"
+      - name: Deploy Personal Hosting only
+        run: firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only hosting --non-interactive
+      - name: Verify live files match this commit
         run: |
           set -euo pipefail
-          if ! firebase hosting:sites:get pti-app-2ab59-personal --project pti-app-2ab59 --non-interactive >/dev/null 2>&1; then
-            firebase hosting:sites:create pti-app-2ab59-personal --project pti-app-2ab59 --non-interactive
-          fi
-          firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only hosting --non-interactive
-      - name: Live authorization and MCP checks
-        run: |
-          sleep 15
-          node personal-functions/verify.mjs
-      - name: Enable cloud UI only after live verification
-        run: |
-          node -e "require('fs').writeFileSync('.personal-dist/runtime-status.json', JSON.stringify({cloudReady:true,verifiedAt:new Date().toISOString()}))"
-          firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only hosting --non-interactive
-      - name: Publish initial source edition
-        run: node personal-functions/curate.mjs
+          for file in app.mjs core.mjs boot.mjs sw.js runtime-status.json; do
+            curl --fail --retry 3 --silent --show-error "https://pti-app-2ab59-personal.web.app/$file?release=$GITHUB_SHA" -o /tmp/personal-live
+            cmp ".personal-dist/$file" /tmp/personal-live
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

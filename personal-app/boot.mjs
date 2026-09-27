@@ -4,6 +4,7 @@ try {
   const response = await fetch('/runtime-status.json', { cache: 'no-store', signal: AbortSignal.timeout(6000) });
   if (response.ok) runtime = await response.json();
 } catch { runtime.reason = 'Cloud status is unavailable. The sample works without saving personal data.'; }
+globalThis.PERSONAL_RUNTIME = runtime;
 const sample = new URLSearchParams(location.search).get('demo') === '1';
 if (!runtime.cloudReady) {
   document.addEventListener('click', event => {

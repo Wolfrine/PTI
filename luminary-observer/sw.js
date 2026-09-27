@@ -1,9 +1,12 @@
-const CACHE = 'luminary-shell-v10';
+const CACHE = 'luminary-shell-v11';
 const SHELL = [
   './',
   './index.html',
   './version-loader.js',
   './app.js',
+  './motion-v7.js',
+  './versions/motion-archive-v7.html',
+  './versions/motion-archive-v7.css',
   './manifest.webmanifest',
   './assets/icon.svg',
   './versions/generated-material-v6.html',
@@ -31,7 +34,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith('luminary-shell-') && key !== CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -44,10 +47,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request, { cache: 'no-store' })
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {});
+        }
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+      .catch(() => caches.match(event.request).then(async (cached) => cached ||
+        (event.request.mode === 'navigate' ? await caches.match('./index.html') : Response.error())))
   );
 });

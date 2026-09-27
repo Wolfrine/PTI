@@ -1,3 +1,4 @@
+import { createMotionArchive } from './motion-v7.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {
   getAuth,
@@ -14,6 +15,7 @@ import {
   doc,
   setDoc,
   getDocs,
+  getDoc,
   query,
   orderBy,
   limit,
@@ -23,10 +25,12 @@ import {
   documentId
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
-const APP_VERSION = '0.6.0';
-const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'generated-material-v6';
+const APP_VERSION = '0.7.0';
+const motionArchiveExperience = () => UI_VERSION === 'motion-archive-v7';
+let v7 = null;
+const UI_VERSION = window.__LUMINARY_UI_VERSION__ || 'motion-archive-v7';
 const UI_VERSIONS = window.__LUMINARY_UI_VERSIONS__ || [];
-const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'generated-material-v6';
+const LATEST_UI_VERSION = window.__LUMINARY_LATEST_UI_VERSION__ || 'motion-archive-v7';
 const UI_STORAGE_KEY = window.__LUMINARY_UI_STORAGE_KEY__ || 'luminary.uiVersion';
 const intuitiveExperience = () => UI_VERSION === 'intuitive-capture-v3';
 const meaningfulMotionExperience = () => UI_VERSION === 'meaningful-motion-v4';
@@ -319,6 +323,11 @@ async function saveObservation(sourceType, rawText = '', extra = {}) {
       ? `Mark · ${formatTime(payload.clientCreatedAt)}`
       : `${capitalize(sourceType)} · ${formatTime(payload.clientCreatedAt)}`;
     if (els.lastCapture) els.lastCapture.dataset.observationId = ref.id;
+    if (v7) {
+      const item = {id: ref.id, ...payload};
+      timelineItems = [item, ...timelineItems.filter(row => row.id !== ref.id)].slice(0, 120);
+      v7.saved(item);
+    }
     if (visualSpecimenExperience() && !(generatedMaterialExperience() && sourceType === 'mark')) setV5LastSpecimen(sourceType, ref.id, payload.clientCreatedAt);
     return ref.id;
   } catch (error) {
@@ -349,6 +358,7 @@ function showToast(message) {
 }
 
 function playElementEntrance(nodes, options = {}) {
+  if (v7) return;
   if (reducedMotion()) return;
   const baseDelay = options.baseDelay ?? 0;
   const step = options.step ?? 55;
@@ -369,6 +379,7 @@ function playElementEntrance(nodes, options = {}) {
 }
 
 function animateObserveEntrance() {
+  if (v7) { v7.enterObserve(); return; }
   if (hasAnimatedInitialView || reducedMotion()) return;
   hasAnimatedInitialView = true;
 
@@ -407,6 +418,7 @@ function animateObserveEntrance() {
 }
 
 function animateCurrentView(view) {
+  if (v7) { v7.viewChanged(view); return; }
   const active = document.querySelector(`.view[data-view="${view}"]`);
   if (!active || reducedMotion()) return;
   active.classList.remove('entering');
@@ -416,6 +428,7 @@ function animateCurrentView(view) {
 }
 
 function animateRenderedItems(selector) {
+  if (v7) return;
   if (reducedMotion()) return;
   const items = $$(selector);
   items.forEach((item, index) => {
@@ -435,6 +448,7 @@ function animateRenderedItems(selector) {
 }
 
 function animatePatternField() {
+  if (v7) return;
   if (!els.patternField || reducedMotion() || meaningFirstExperience()) return;
   const tracks = $$('.pattern-track-line');
   tracks.forEach((track, index) => {
@@ -581,9 +595,11 @@ async function handleMark() {
       if (els.markStatus.textContent === 'Preserved.' || els.markStatus.textContent === 'Preserved in your raw record.') {
         els.markStatus.textContent = intuitiveExperience()
           ? 'One tap. Nothing else required.'
-          : 'Tap when something is worth preserving.';
+          : v7 ? 'One tap. Nothing else required.' : 'Tap when something is worth preserving.';
       }
     }, meaningfulMotionExperience() ? 1200 : 1500);
+  } catch (error) {
+    els.markStatus.textContent = 'Not saved. Try again.';
   } finally {
     els.markBtn.disabled = false;
   }
@@ -596,7 +612,8 @@ function openComposer() {
   textDirty = false;
   els.observationText.value = '';
   updateTextCount();
-  if (!reducedMotion()) {
+  if (v7) v7.sheetOpened();
+  if (!v7 && !reducedMotion()) {
     els.textComposer.animate(
       [
         { opacity: 0, transform: 'translate3d(0,18px,0) scale(.985)' },
@@ -614,6 +631,7 @@ function closeComposer(reason = 'cancel') {
     track('text_capture_abandoned', { reason, textLength: els.observationText.value.trim().length });
   }
   els.textComposer.hidden = true;
+  if (v7) { v7.sheetClosed(); els.textBtn.focus(); }
   els.observationText.value = '';
   textDirty = false;
   updateTextCount();
@@ -629,6 +647,8 @@ async function saveTextObservation() {
     await track('text_capture_saved', { textLength: value.length });
     closeComposer('saved');
     showToast('Observation preserved');
+  } catch (error) {
+    showToast('Not saved. Your text is still here.');
   } finally {
     els.saveTextBtn.disabled = false;
   }
@@ -654,6 +674,7 @@ function setupSpeechRecognition() {
     }
     voiceInterim = interim;
     els.voiceTranscript.textContent = `${voiceFinal}${voiceInterim}`.trim();
+    if (v7) v7.voiceText(els.voiceTranscript.textContent);
   };
   rec.onerror = (event) => {
     if (event.error !== 'aborted' && event.error !== 'no-speech') {
@@ -687,9 +708,10 @@ function startVoiceCapture(event) {
   lastVoiceStart = Date.now();
   els.voiceTranscript.textContent = '';
   els.voiceState.textContent = 'Listening…';
+  if (v7) v7.voiceText('');
   els.voicePanel.hidden = false;
   els.voiceBtn.classList.add('active');
-  if (!reducedMotion()) {
+  if (!v7 && !reducedMotion()) {
     els.voicePanel.animate(
       [
         { opacity: 0, transform: 'translate3d(0,14px,0) scale(.985)' },
@@ -704,6 +726,7 @@ function startVoiceCapture(event) {
   } catch (error) {
     voiceActive = false;
     els.voiceBtn.classList.remove('active');
+    els.voicePanel.hidden = true;
     showToast('Voice capture could not start');
   }
 }
@@ -820,6 +843,7 @@ function formatGap(ms) {
 }
 
 function renderStreamRegister(items) {
+  if (v7) return;
   if (!els.streamRegister) return;
   const dated = items
     .map((item) => ({ item, ms: observationTimeMs(item) }))
@@ -947,7 +971,7 @@ function renderStreamRegister(items) {
 
 async function loadTimeline() {
   if (!currentUser) return;
-  els.timelineList.innerHTML = '';
+  if (!v7) els.timelineList.innerHTML = '';
   els.timelineEmpty.hidden = true;
   try {
     const snapshot = await getDocs(query(datasetCollection('observations'), orderBy('clientCreatedAtMs', 'desc'), limit(120)));
@@ -966,6 +990,8 @@ function renderTimeline() {
   const items = timelineFilter === 'all'
     ? timelineItems
     : timelineItems.filter((item) => item.sourceType === timelineFilter);
+
+  if (v7) { v7.renderStream(items); return; }
 
   const dayCounts = new Map();
   items.forEach((item) => {
@@ -1023,6 +1049,7 @@ function renderTimelineItem(item) {
 }
 
 function renderMomentRegister(item) {
+  if (v7) { els.momentRegister.textContent = ''; return; }
   if (!els.momentRegister) return;
   const selectedMinute = observationLocalMinute(item);
   const dayKey = observationDayKey(item);
@@ -1100,8 +1127,14 @@ function renderMomentNeighbors(item) {
 }
 
 async function openMoment(observationId) {
-  const item = timelineItems.find((entry) => entry.id === observationId);
-  if (!item || !els.momentDialog) return;
+  let item = timelineItems.find((entry) => entry.id === observationId);
+  if (!item && currentUser && typeof observationId === 'string' && !observationId.includes('/')) {
+    try {
+      const snapshot = await getDoc(doc(db, `users/${currentUser.uid}/luminaryData/observations/items/${observationId}`));
+      if (snapshot.exists()) item = {id: snapshot.id, ...snapshot.data()};
+    } catch (error) { console.warn('Source observation could not be read', error); }
+  }
+  if (!item || !els.momentDialog) { showToast('This source moment is unavailable.'); return; }
 
   const source = item.sourceType || 'observation';
   const day = formatDayKey(observationDayKey(item));
@@ -1139,7 +1172,8 @@ async function openMoment(observationId) {
       '<span>Explicit relationships appear here only when they exist as separate research records. Temporal proximity above is context, not explanation.</span>' +
     '</div>';
 
-  els.momentDialog.showModal();
+  if (!els.momentDialog.open) els.momentDialog.showModal();
+  if (v7) v7.moment(item);
   playElementEntrance([
     els.momentHero,
     els.momentRegister,
@@ -1253,6 +1287,7 @@ async function loadPatternSourceDates(patterns) {
         const dateMs = coercePatternDateMs(data.clientCreatedAtMs ?? data.clientCreatedAt);
         if (dateMs != null) dateMap.set(item.id, dateMs);
         patternSourceDetails.set(item.id, {
+          ...data, resolved: true,
           id: item.id,
           dateMs,
           rawText: data.rawText || '',
@@ -1429,7 +1464,7 @@ function renderPatternRegister(patterns, sourceDateMap) {
 
 async function loadPatterns() {
   if (!currentUser) return;
-  els.patternList.innerHTML = '';
+  if (!v7) els.patternList.innerHTML = '';
   els.patternEmpty.hidden = true;
   try {
     const snapshot = await getDocs(query(datasetCollection('patterns'), orderBy('updatedAtMs', 'desc'), limit(50)));
@@ -1438,8 +1473,12 @@ async function loadPatterns() {
     if (!selectedV5PatternId && patterns.length) selectedV5PatternId = patterns[0].id;
     const sourceDates = patterns.length ? await loadPatternSourceDates(patterns) : new Map();
 
-    renderPatternRegister(patterns, sourceDates);
-    els.patternList.innerHTML = patterns.map(renderPattern).join('');
+    if (v7) {
+      await v7.renderPatterns(patterns, patternSourceDetails);
+    } else {
+      renderPatternRegister(patterns, sourceDates);
+      els.patternList.innerHTML = patterns.map(renderPattern).join('');
+    }
     els.patternEmpty.hidden = patterns.length > 0;
     await track('discover_loaded', {
       patterns: patterns.length,
@@ -1534,7 +1573,7 @@ async function switchView(view, source = 'nav') {
     $$('.nav-item').forEach((node) => node.classList.toggle('active', node.dataset.nav === view));
   };
 
-  if (document.startViewTransition && !reducedMotion()) {
+  if (!v7 && document.startViewTransition && !reducedMotion()) {
     const transition = document.startViewTransition(commitSwitch);
     await transition.finished.catch(() => {});
   } else {
@@ -1610,7 +1649,12 @@ function bindEvents() {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') saveTextObservation();
   });
 
-  els.voiceBtn.addEventListener('pointerdown', startVoiceCapture);
+  els.voiceBtn.addEventListener('pointerdown', (event) => {
+    els.voiceBtn.setPointerCapture?.(event.pointerId);
+    startVoiceCapture(event);
+  });
+  els.voiceBtn.addEventListener('keydown', (event) => { if (!event.repeat && (event.key === ' ' || event.key === 'Enter')) startVoiceCapture(event); });
+  els.voiceBtn.addEventListener('keyup', (event) => { if (event.key === ' ' || event.key === 'Enter') stopVoiceCapture(event); });
   els.voiceBtn.addEventListener('pointerup', stopVoiceCapture);
   els.voiceBtn.addEventListener('pointercancel', stopVoiceCapture);
   els.voiceBtn.addEventListener('pointerleave', (event) => {
@@ -1708,9 +1752,38 @@ function bindEvents() {
   });
 }
 
+async function resolveV7Sources(pattern) {
+  const refs = extractPatternSources(pattern);
+  const ids = refs.map(source => source.id).filter(id => typeof id === 'string' && !id.includes('/') && !patternSourceDetails.get(id)?.resolved).slice(0, 240);
+  const uid = currentUser?.uid;
+  if (!uid) return new Map();
+  for (let index = 0; index < ids.length; index += 30) {
+    try {
+      const snapshot = await getDocs(query(datasetCollection('observations'), where(documentId(), 'in', ids.slice(index,index+30))));
+      if (currentUser?.uid !== uid) return new Map();
+      snapshot.docs.forEach(item => {
+        const data = item.data();
+        patternSourceDetails.set(item.id, { ...data, id: item.id, resolved: true, dateMs: observationTimeMs(data) });
+      });
+    } catch (error) { console.warn('Some pattern sources could not be loaded', error); break; }
+  }
+  return new Map(patternSourceDetails);
+}
+
+if (motionArchiveExperience()) {
+  v7 = createMotionArchive({
+    escape: escapeHtml, capitalize, timeMs: observationTimeMs, localTime: formatObservationLocalTime,
+    dayKey: observationDayKey, dayLabel: formatDayKey, sources: extractPatternSources,
+    resolveSources: resolveV7Sources, openMoment, closeComposer: () => closeComposer('cancel'), track
+  });
+}
+
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (!user) {
+    if (v7) v7.reset();
+    timelineItems = [];
+    patternSourceDetails.clear();
     els.authGate.hidden = false;
     els.appShell.hidden = true;
     return;
@@ -1721,7 +1794,7 @@ onAuthStateChanged(auth, async (user) => {
     els.appShell.hidden = false;
   };
 
-  if (document.startViewTransition && !reducedMotion()) {
+  if (!v7 && document.startViewTransition && !reducedMotion()) {
     const transition = document.startViewTransition(revealAuthenticatedShell);
     await transition.finished.catch(() => {});
   } else {
@@ -1752,6 +1825,13 @@ onAuthStateChanged(auth, async (user) => {
   });
 
   requestAnimationFrame(animateObserveEntrance);
+  if (v7) {
+    const uid = user.uid;
+    try {
+      const recent = await getDocs(query(datasetCollection('observations'), orderBy('clientCreatedAtMs','desc'), limit(1)));
+      if (currentUser?.uid === uid && recent.docs[0]) v7.setLast({id: recent.docs[0].id, ...recent.docs[0].data()});
+    } catch { /* Capture stays usable if recent metadata cannot be read. */ }
+  }
 });
 
 function formatTime(iso) {
@@ -1787,17 +1867,17 @@ bindEvents();
 
 if ('serviceWorker' in navigator) {
   let reloadingForWorker = false;
-
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloadingForWorker) return;
+    if (reloadingForWorker || textDirty || voiceActive || els.markBtn.disabled || els.saveTextBtn.disabled) return;
     reloadingForWorker = true;
     location.reload();
   });
-
-  window.addEventListener('load', async () => {
+  const registerShell = async () => {
     try {
       const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
       await registration.update();
-    } catch {}
-  });
+    } catch (error) { console.warn('Offline shell registration deferred', error); }
+  };
+  if (document.readyState === 'complete') registerShell();
+  else window.addEventListener('load', registerShell, {once:true});
 }

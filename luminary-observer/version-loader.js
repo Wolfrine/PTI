@@ -1,16 +1,18 @@
 const UI_VERSIONS = [
-  { id: 'generated-material-v6', label: 'Generated Material v6', badge: 'Latest', theme: '#f2efe6' },
+  { id: 'motion-archive-v7', label: 'Motion Archive v7', badge: 'Latest', theme: '#f2efe6' },
+  { id: 'generated-material-v6', label: 'Generated Material v6', badge: 'Previous', theme: '#f2efe6' },
   { id: 'perceptual-specimens-v5', label: 'Perceptual Specimens v5', badge: 'Previous', theme: '#f2efe6' },
   { id: 'meaningful-motion-v4', label: 'Meaningful Motion v4', badge: 'Previous', theme: '#f2efe6' },
   { id: 'trace-register-v2.1', label: 'Trace Register v2.1', badge: 'Previous', theme: '#f2efe6' },
   { id: 'intuitive-capture-v3', label: 'Intuitive Capture v3', badge: 'Previous', theme: '#f4f2ed' }
 ];
-const LATEST_UI_VERSION = 'generated-material-v6';
+const LATEST_UI_VERSION = 'motion-archive-v7';
 const STORAGE_KEY = 'luminary.uiVersion';
 
 const known = new Set(UI_VERSIONS.map((version) => version.id));
 const queryVersion = new URLSearchParams(location.search).get('ui');
-const storedVersion = localStorage.getItem(STORAGE_KEY);
+let storedVersion = null;
+try { storedVersion = localStorage.getItem(STORAGE_KEY); } catch {}
 const selectedVersion = known.has(queryVersion)
   ? queryVersion
   : known.has(storedVersion)
@@ -30,7 +32,13 @@ const stylesheet = document.createElement('link');
 stylesheet.rel = 'stylesheet';
 stylesheet.href = './versions/' + selectedVersion + '.css';
 stylesheet.id = 'experienceStylesheet';
+const styleReady = new Promise((resolve, reject) => {
+  stylesheet.onload = resolve;
+  stylesheet.onerror = () => reject(new Error('Experience stylesheet unavailable'));
+});
 document.head.appendChild(stylesheet);
+// Layout measurements for motion are made only after the selected sheet is active.
+styleReady.catch(() => {});
 
 async function loadExperience(versionId) {
   const response = await fetch('./versions/' + versionId + '.html', { cache: 'no-store' });
@@ -40,7 +48,8 @@ async function loadExperience(versionId) {
 
 const root = document.getElementById('versionRoot');
 try {
-  root.innerHTML = await loadExperience(selectedVersion);
+  const [template] = await Promise.all([loadExperience(selectedVersion), styleReady]);
+  root.innerHTML = template;
 } catch (error) {
   console.error(error);
   if (selectedVersion !== 'trace-register-v2.1') {

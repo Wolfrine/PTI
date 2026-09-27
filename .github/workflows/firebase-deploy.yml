@@ -168,6 +168,18 @@ jobs:
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:luminary --non-interactive
           echo "Luminary URL: https://${LUMINARY_SITE_ID}.web.app"
 
+      - name: Verify deployed Luminary source and visual assets
+        run: |
+          set -euo pipefail
+          origin="https://pti-app-2ab59-luminary.web.app"
+          for file in version-loader.js motion-v7.js versions/motion-archive-v7.html versions/motion-archive-v7.css assets/v6-material-mark.webp sw.js; do
+            target="$(mktemp)"
+            curl --fail --retry 3 --silent --show-error "$origin/$file?release=$GITHUB_SHA" -o "$target"
+            cmp "luminary-observer/$file" "$target"
+            rm "$target"
+          done
+          echo "Live Luminary V7 files match commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Authorize Luminary Firebase Auth domains
         continue-on-error: true
         env:

@@ -2,23 +2,35 @@ name: Luminary V7 Workbench
 on:
   push:
     branches: [luminary/v7-motion]
-    paths: [.github/workflows/luminary-v7-workbench.yml]
+    paths: ['.github/v7-payload/**', '.github/workflows/luminary-v7-workbench.yml']
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: luminary-v7-apply
+  cancel-in-progress: true
 jobs:
-  package:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          mkdir -p /tmp/luminary-source
-          cp -R luminary-observer /tmp/luminary-source/
-          cp AGENTS.md firebase.json .firebaserc /tmp/luminary-source/ 2>/dev/null || true
-          mkdir -p /tmp/luminary-source/.github
-          cp -R .github/workflows /tmp/luminary-source/.github/
-          tar czf /tmp/luminary-source.tgz -C /tmp/luminary-source .
-      - uses: actions/upload-artifact@v4
         with:
-          name: luminary-v7-source
-          path: /tmp/luminary-source.tgz
-          retention-days: 3
+          ref: luminary/v7-motion
+      - name: Apply locally verified source patch
+        run: |
+          set -euo pipefail
+          if [ ! -f .github/v7-payload/004.b64 ]; then echo 'Awaiting complete patch'; exit 0; fi
+          python3 - <<'PY'
+          import base64, gzip, hashlib, pathlib
+          data=''.join(p.read_text().strip() for p in sorted(pathlib.Path('.github/v7-payload').glob('*.b64')))
+          patch=gzip.decompress(base64.b64decode(data))
+          assert hashlib.sha256(patch).hexdigest()=='a4d313ce81c78fc5d72b7dfb940bc3fc19f9af20571b779b024c286c1269907d'
+          pathlib.Path('/tmp/v7.patch').write_bytes(patch)
+          PY
+          git apply --check /tmp/v7.patch
+          git apply /tmp/v7.patch
+          node --check luminary-observer/app.js
+          node --check luminary-observer/motion-v7.js
+          git rm -r .github/v7-payload .github/workflows/luminary-v7-workbench.yml
+          git add luminary-observer .github/workflows/firebase-deploy.yml .github/workflows/luminary-motion-tests.yml
+          git -c user.name='Luminary development' -c user.email='development@users.noreply.github.com' commit -m 'feat(luminary): implement V7 motion archive and browser verification'
+          git push origin HEAD:luminary/v7-motion

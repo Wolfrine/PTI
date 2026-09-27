@@ -1,0 +1,72 @@
+name: Personal PWA · test and deploy
+on:
+  push:
+    branches: [main]
+    paths: ['personal-app/**', 'personal-harness/**', 'personal-functions/**', 'firebase.personal.json', '.github/workflows/personal.yml']
+  pull_request:
+    paths: ['personal-app/**', 'personal-harness/**', 'personal-functions/**', 'firebase.personal.json', '.github/workflows/personal.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: personal-deploy-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --prefix personal-functions --ignore-scripts
+      - run: node --test personal-harness/core.test.mjs
+      - run: node personal-harness/build.mjs
+      - run: node --check personal-app/app.mjs && node --check personal-functions/index.cjs && node --check personal-functions/curate.mjs
+      - run: personal-functions/node_modules/.bin/playwright install --with-deps chromium
+      - run: node personal-harness/browser-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: personal-browser-evidence
+          path: personal-qa/
+          retention-days: 7
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/personal-firebase.json
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Configure credentials
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo 'Missing existing Firebase deployment credential.'; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts && npm install -g firebase-tools@14.17.0
+      - run: node personal-harness/build.mjs
+      - name: Provision isolated data boundary and authorize sign-in
+        run: node personal-functions/provision.mjs
+      - name: Deploy Personal rules and functions only
+        run: firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only firestore,functions:personal --non-interactive
+      - name: Deploy Personal Hosting site only
+        run: |
+          set -euo pipefail
+          if ! firebase hosting:sites:get pti-app-2ab59-personal --project pti-app-2ab59 --non-interactive >/dev/null 2>&1; then
+            firebase hosting:sites:create pti-app-2ab59-personal --project pti-app-2ab59 --non-interactive
+          fi
+          firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only hosting --non-interactive
+      - name: Live authorization and MCP checks
+        run: |
+          sleep 15
+          node personal-functions/verify.mjs
+      - name: Publish initial source edition
+        run: node personal-functions/curate.mjs
+      - name: Remove temporary credential
+        if: always()
+        run: rm -f "$GOOGLE_APPLICATION_CREDENTIALS"

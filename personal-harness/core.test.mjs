@@ -1,0 +1,18 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {safeUrl,canonicalUrl,validateSettings,validateEdition,selectEdition,DEFAULT_SETTINGS,TOPICS} from './core.mjs';
+const now=Date.parse('2026-09-27T04:00:00Z');
+const items=Array.from({length:20},(_,i)=>({id:`item${i}`,title:`Item ${i}`,summary:'Evidence summary.',why:'Declared topic match.',source:`Source ${i%4}`,url:`https://example.com/${i}`,publishedAt:new Date(now-i*10000).toISOString(),topic:TOPICS[i%4],region:i%3?'global':'india'}));
+test('reject executable and credentialed URLs',()=>{assert.equal(safeUrl('javascript:alert(1)'),'');assert.equal(safeUrl('https://secret@example.com'),'');assert.equal(safeUrl('data:text/html,x'),'');});
+test('canonical links remove tracking',()=>assert.equal(canonicalUrl('https://example.com/a/?utm_source=x#p'),'https://example.com/a'));
+test('require a declared topic',()=>assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,topics:[]})));
+test('reject unsupported preference expansion',()=>assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,topics:['Politics']})));
+test('deduplicate declared topics',()=>assert.equal(validateSettings({...DEFAULT_SETTINGS,topics:[TOPICS[0],TOPICS[0]]}).topics.length,1));
+test('five items and all topic allocations',()=>{const e=selectEdition(items,DEFAULT_SETTINGS,[],[],now);assert.equal(e.items.length,5);assert.equal(new Set(e.items.map(i=>i.topic)).size,4);});
+test('prior edition items are not recycled',()=>{const e=selectEdition(items,DEFAULT_SETTINGS,[],['item0','item1'],now);assert(!e.items.some(i=>['item0','item1'].includes(i.id)));});
+test('explicit negative feedback excludes the item',()=>assert(!selectEdition(items,DEFAULT_SETTINGS,[{itemId:'item0',reaction:'less'}],[],now).items.some(i=>i.id==='item0')));
+test('insufficient sources fail instead of fabricating',()=>assert.throws(()=>selectEdition(items.slice(0,3),DEFAULT_SETTINGS,[],[],now)));
+test('duplicates cannot fill a five-item edition',()=>assert.throws(()=>validateEdition({items:Array(5).fill(items[0])},now)));
+test('future publication dates are rejected',()=>assert.throws(()=>validateEdition({items:items.slice(0,5).map(i=>({...i,publishedAt:'2099-01-01'}))},now)));
+test('source feedback never rewrites declared topics',()=>{const s=structuredClone(DEFAULT_SETTINGS);selectEdition(items,s,[{source:'Source 1',reaction:'less'}],[],now);assert.deepEqual(s,DEFAULT_SETTINGS);});
+test('selection explains rules-based limits',()=>assert.match(selectEdition(items,DEFAULT_SETTINGS,[],[],now).explanation,/not an AI-written/));
+test('all source URLs survive validation',()=>{const e=validateEdition({items:items.slice(0,5)},now);assert(e.items.every(i=>i.url.startsWith('https://')));});

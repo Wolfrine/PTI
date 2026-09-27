@@ -1,0 +1,8 @@
+.personal-dist/
+personal-qa/
+personal-functions/node_modules/
+personal-functions/core.mjs
+personal-functions/package-lock.json
+personal-functions/.env*
+firebase-debug*.log
+firestore-debug*.log

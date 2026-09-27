@@ -1,0 +1,15 @@
+import {createServer} from 'node:http';import {readFile,mkdir} from 'node:fs/promises';import path from 'node:path';import assert from 'node:assert/strict';
+const {chromium}=await import('../personal-functions/node_modules/playwright/index.mjs');
+const root=path.resolve('.personal-dist');await mkdir('personal-qa',{recursive:true});
+const server=createServer(async(req,res)=>{try{const pathname=new URL(req.url,'http://localhost').pathname;const relative=pathname==='/'?'index.html':pathname.slice(1);if(relative.includes('..'))throw Error();const body=await readFile(path.join(root,relative));const ext=path.extname(relative);res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webmanifest':'application/manifest+json'})[ext]||'application/octet-stream');res.end(body);}catch{res.statusCode=404;res.end('Not found');}});await new Promise(r=>server.listen(8765,'127.0.0.1',r));
+const browser=await chromium.launch({headless:true});
+try{for(const [name,width,height] of [['desktop',1440,1000],['mobile',390,844],['tablet',768,1024]]){
+ const page=await browser.newPage({viewport:{width,height}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/?demo=1');await page.waitForSelector('.story');
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name} horizontal overflow`);
+ await page.screenshot({path:`personal-qa/${name}-today.png`,fullPage:true});
+ await page.getByRole('button',{name:'Useful',exact:true}).first().click();assert.equal(await page.getByRole('button',{name:'Useful',exact:true}).first().getAttribute('aria-pressed'),'true');
+ await page.locator('[data-view="capture"]').first().click();await page.locator('#thought').fill('Synthetic browser check.');await page.getByRole('button',{name:'Keep this thought',exact:true}).click();await page.getByText('Synthetic browser check.',{exact:true}).waitFor();await page.screenshot({path:`personal-qa/${name}-capture.png`,fullPage:true});
+ await page.locator('[data-view="threads"]').first().click();await page.getByRole('button',{name:'Start a thread',exact:true}).click();await page.locator('input[name="title"]').fill('Can a thought become an experiment?');await page.getByRole('button',{name:'Start thread',exact:true}).click();await page.getByText('Can a thought become an experiment?',{exact:true}).waitFor();await page.screenshot({path:`personal-qa/${name}-threads.png`,fullPage:true});
+ await page.getByRole('button',{name:'Direction and privacy',exact:true}).click();assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`personal-qa/${name}-settings.png`,fullPage:true});assert.deepEqual(errors,[]);await page.close();console.log(`PASS ${name}: rendered routes, feedback, capture, threads, overflow and runtime checks`);
+}}finally{await browser.close();await new Promise(r=>server.close(r));}

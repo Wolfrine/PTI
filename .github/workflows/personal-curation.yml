@@ -1,0 +1,33 @@
+name: Personal · daily source collection
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: personal-source-collection
+  cancel-in-progress: false
+jobs:
+  curate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/personal-firebase.json
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Configure existing deployment credential
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts
+      - run: node personal-harness/build.mjs
+      - run: node personal-functions/curate.mjs
+      - name: Remove temporary credential
+        if: always()
+        run: rm -f "$GOOGLE_APPLICATION_CREDENTIALS"

@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+  match /catalog/{document} { allow read: if request.auth != null; allow write: if false; }
+  match /users/{uid} {
+   allow read: if owner(uid);
+   allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['settings','paused','preferenceVersion','generation','updatedAt']) && request.resource.data.paused is bool && request.resource.data.generation is string && request.resource.data.generation.size() <= 80 && request.resource.data.preferenceVersion is int && request.resource.data.settings is map && request.resource.data.settings.keys().hasOnly(['topics','geography','direction','itemCount']) && request.resource.data.settings.direction is string && request.resource.data.settings.direction.size() <= 2000 && request.resource.data.settings.topics is list && request.resource.data.settings.topics.size() > 0 && request.resource.data.settings.topics.size() <= 4 && request.resource.data.settings.topics.hasOnly(['AI & agents','Science','Business','Robotics']) && request.resource.data.settings.geography in ['balanced','india','global'] && request.resource.data.settings.itemCount == 5 && request.resource.data.updatedAt is string;
+   allow delete: if false;
+   match /captures/{id} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['text','kind','threadId','url','articleId','articleTitle','createdAt']) && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 12000 && request.resource.data.kind in ['thought','question','link'] && request.resource.data.threadId is string && request.resource.data.threadId.size() <= 100 && request.resource.data.url is string && request.resource.data.url.size() <= 2000 && request.resource.data.articleId is string && request.resource.data.articleId.size() <= 100 && request.resource.data.articleTitle is string && request.resource.data.articleTitle.size() <= 300 && request.resource.data.createdAt is string;
+   }
+   match /threads/{id} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['title','shareWithAgent','createdAt']) && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 300 && request.resource.data.shareWithAgent is bool && request.resource.data.createdAt is string;
+   }
+   match /feedback/{id} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['itemId','reaction','source','topic','createdAt']) && request.resource.data.itemId == id && request.resource.data.reaction in ['useful','known','less','explore'] && request.resource.data.source is string && request.resource.data.source.size() <= 150 && request.resource.data.topic in ['AI & agents','Science','Business','Robotics'] && request.resource.data.createdAt is string;
+   }
+   match /editions/{id} { allow read: if owner(uid); allow write: if false; }
+   match /runs/{id} { allow read: if owner(uid); allow write: if false; }
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}

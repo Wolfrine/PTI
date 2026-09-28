@@ -1,0 +1,7 @@
+[mcp_servers.pti_firestore]
+command = "node"
+args = ["tools/pti-mcp/dist/index.js"]
+cwd = "."
+env_vars = ["GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_PROJECT", "PTI_FIREBASE_PROJECT_ID", "PTI_MCP_ACTOR", "PTI_MCP_TASK_REF"]
+required = false
+startup_timeout_sec = 15

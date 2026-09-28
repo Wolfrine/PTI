@@ -38,6 +38,11 @@ jobs:
       - name: Build Functions
         run: npm run build --prefix functions
 
+      - name: Validate repo-local PTI MCP
+        run: |
+          npm install --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
+          npm run build --prefix tools/pti-mcp
+
       - name: Configure Functions Runtime Environment
         env:
           PTI_MCP_API_KEYS_VALUE: ${{ secrets.PTI_MCP_API_KEYS }}
@@ -64,16 +69,21 @@ jobs:
           firebase --version
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:default --non-interactive
 
-      - name: Deploy Firebase Functions MCP
+      - name: Deploy optional Firebase Functions MCP
         continue-on-error: true
         env:
           FIREBASE_PROJECT_ID: pti-app-2ab59
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PTI_MCP_API_KEYS_VALUE: ${{ secrets.PTI_MCP_API_KEYS }}
         run: |
           set -euo pipefail
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "FIREBASE_SERVICE_ACCOUNT is not configured; skipping Firebase Functions deploy."
+            exit 0
+          fi
+          if [ -z "$PTI_MCP_API_KEYS_VALUE" ]; then
+            echo "PTI_MCP_API_KEYS is absent; skipping optional remote MCP. Repo-local STDIO MCP remains the primary agent path."
             exit 0
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
@@ -192,3 +202,78 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npm install --no-save google-auth-library
           node luminary-observer/scripts/configure-firebase-auth.mjs
+
+  deploy_sefpo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate SEFPO static assets
+        run: |
+          node --input-type=module --check < sefpo-lab/app.js
+          node --check sefpo-lab/sw.js
+
+      - name: Create and deploy SEFPO secondary Hosting site
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          SEFPO_SITE_ID: pti-app-2ab59-sefpo
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT is not configured; cannot deploy SEFPO."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install -g firebase-tools
+          firebase --version
+
+          if firebase hosting:sites:get "$SEFPO_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            echo "Hosting site $SEFPO_SITE_ID already exists."
+          else
+            echo "Creating Hosting site $SEFPO_SITE_ID..."
+            firebase hosting:sites:create "$SEFPO_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          fi
+
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:sefpo --non-interactive
+          echo "SEFPO URL: https://$SEFPO_SITE_ID.web.app"
+
+      - name: Verify deployed SEFPO assets
+        run: |
+          set -euo pipefail
+          origin="https://pti-app-2ab59-sefpo.web.app"
+          for file in index.html app.js styles.css manifest.webmanifest sw.js; do
+            matched=false
+            for attempt in $(seq 1 18); do
+              target="$(mktemp)"
+              if curl --fail --silent --show-error -H 'Cache-Control: no-cache' "$origin/$file?release=$GITHUB_SHA&attempt=$attempt" -o "$target" && cmp -s "sefpo-lab/$file" "$target"; then
+                matched=true
+                rm "$target"
+                break
+              fi
+              rm -f "$target"
+              sleep 5
+            done
+            test "$matched" = true
+          done
+
+      - name: Authorize SEFPO Firebase Auth domains
+        continue-on-error: true
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          SEFPO_SITE_ID: pti-app-2ab59-sefpo
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install --no-save google-auth-library
+          node sefpo-lab/scripts/configure-firebase-auth.mjs

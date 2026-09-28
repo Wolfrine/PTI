@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f1ea">
+  <meta name="description" content="SEFPO Lab — structured empirical knowledge in PTI.">
+  <title>SEFPO Lab</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <a class="brand" href="#" data-view="home" aria-label="SEFPO home">
+        <span class="brand-mark">S</span>
+        <span><strong>SEFPO</strong><small>Lab · PTI</small></span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-item active" data-view="home"><span>⌂</span>Overview</button>
+        <button class="nav-item" data-view="explorer"><span>⌘</span>Explorer</button>
+        <button class="nav-item" data-view="inbox"><span>＋</span>Inbox</button>
+        <button class="nav-item" data-view="review"><span>✓</span>Review</button>
+      </nav>
+      <div class="rail-foot">
+        <div class="connection"><i id="connectionDot"></i><span id="connectionText">Local shell</span></div>
+        <button id="signOutBtn" class="text-button hidden">Sign out</button>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="viewEyebrow">KNOWLEDGE SYSTEM</p>
+          <h1 id="viewTitle">Structured mechanisms, not documents.</h1>
+        </div>
+        <div class="top-actions">
+          <button id="signInBtn" class="secondary">Sign in</button>
+          <button id="newUnitBtn" class="primary" disabled>New SEFPO</button>
+        </div>
+      </header>
+
+      <section id="authGate" class="auth-gate">
+        <div class="auth-copy">
+          <span class="kicker">S · E · F · P · O</span>
+          <h2>A compact empirical unit for an agent-maintained world model.</h2>
+          <p>Sign in with the existing PTI account. Canonical knowledge stays in Firestore; agents consume compact context packets and incremental change records.</p>
+          <button id="gateSignInBtn" class="primary">Continue with Google</button>
+        </div>
+        <div class="model-card" aria-label="SEFPO model">
+          <div class="model-row"><b>S</b><span>Subject</span><small>what exists</small></div>
+          <div class="model-row"><b>E</b><span>Event</span><small>what changes</small></div>
+          <div class="model-row"><b>F</b><span>Factors</span><small>what influences it</small></div>
+          <div class="model-row"><b>P</b><span>Process</span><small>how it happens</small></div>
+          <div class="model-row"><b>O</b><span>Output</span><small>what results</small></div>
+        </div>
+      </section>
+
+      <div id="appSurface" class="hidden">
+        <section class="view active" data-page="home">
+          <div class="hero">
+            <div>
+              <p class="kicker">CURRENT KNOWLEDGE STATE</p>
+              <h2 id="heroLine">Nothing has been modelled yet.</h2>
+              <p id="heroSub">Capture an observation or create the first structured unit.</p>
+            </div>
+            <div class="hero-sequence" aria-hidden="true">
+              <span>S</span><i></i><span>E</span><i></i><span>F</span><i></i><span>P</span><i></i><span>O</span>
+            </div>
+          </div>
+
+          <div class="stats">
+            <article><span>Units</span><strong id="statUnits">0</strong><small id="statValidated">0 validated</small></article>
+            <article><span>Entities</span><strong id="statEntities">0</strong><small>shared concepts</small></article>
+            <article><span>Relations</span><strong id="statEdges">0</strong><small>explicit links</small></article>
+            <article><span>Review</span><strong id="statReview">0</strong><small>draft / disputed</small></article>
+          </div>
+
+          <div class="split">
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">RECENT</p><h3>Knowledge units</h3></div><button class="text-button" data-view="explorer">Open explorer</button></div>
+              <div id="recentUnits" class="unit-list empty-state">No units yet.</div>
+            </section>
+            <section class="panel change-panel">
+              <div class="panel-head"><div><p class="eyebrow">DELTA</p><h3>Latest changes</h3></div></div>
+              <div id="changeList" class="change-list empty-state">No changes yet.</div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" data-page="explorer">
+          <div class="workspace">
+            <section class="browse">
+              <div class="search-row">
+                <label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="Search subjects, events, factors, processes, outputs…"></label>
+                <select id="statusFilter" aria-label="Filter by status">
+                  <option value="all">All states</option>
+                  <option value="validated">Validated</option>
+                  <option value="draft">Draft</option>
+                  <option value="disputed">Disputed</option>
+                </select>
+              </div>
+              <div id="explorerList" class="unit-list empty-state">No units yet.</div>
+            </section>
+            <aside id="detailPanel" class="detail-panel">
+              <div class="detail-empty">
+                <span class="detail-glyph">S→O</span>
+                <h3>Select a knowledge unit</h3>
+                <p>The canonical SEFPO, evidence, context packet and relations appear here.</p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" data-page="inbox">
+          <div class="inbox-layout">
+            <section class="capture-card">
+              <p class="eyebrow">RAW CAPTURE</p>
+              <h2>Save first. Structure later.</h2>
+              <textarea id="inboxText" maxlength="12000" placeholder="Observation, idea, URL, claim, question, fragment…"></textarea>
+              <div class="capture-actions">
+                <input id="inboxSource" type="url" placeholder="Optional source URL">
+                <button id="saveInboxBtn" class="primary">Add to inbox</button>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><p class="eyebrow">UNPROCESSED</p><h3>Inbox</h3></div><span id="inboxCount" class="count">0</span></div>
+              <div id="inboxList" class="inbox-list empty-state">Nothing waiting.</div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" data-page="review">
+          <section class="review-head">
+            <div><p class="eyebrow">HUMAN CONTROL</p><h2>Validate the model, not the prose.</h2><p>Drafts and disputed mechanisms remain visible until reviewed.</p></div>
+            <div class="review-legend"><span><i class="dot draft"></i>Draft</span><span><i class="dot disputed"></i>Disputed</span></div>
+          </section>
+          <div id="reviewList" class="review-grid empty-state">Nothing needs review.</div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="unitDialog">
+    <form id="unitForm" method="dialog">
+      <div class="dialog-head">
+        <div><p class="eyebrow">NEW KNOWLEDGE UNIT</p><h2>Model the mechanism</h2></div>
+        <button type="button" id="closeDialog" class="icon-button" aria-label="Close">×</button>
+      </div>
+      <label>Title<input name="title" maxlength="180" required placeholder="Effect of caffeine on alertness"></label>
+      <div class="five-grid">
+        <label><span><b>S</b> Subject</span><textarea name="subject" required placeholder="Human nervous system"></textarea></label>
+        <label><span><b>E</b> Event</span><textarea name="event" required placeholder="Caffeine consumed"></textarea></label>
+        <label><span><b>F</b> Factors</span><textarea name="factors" required placeholder="Dose&#10;Sleep debt&#10;Tolerance"></textarea></label>
+        <label><span><b>P</b> Process</span><textarea name="process" required placeholder="Adenosine receptor antagonism alters neural activity"></textarea></label>
+        <label><span><b>O</b> Output</span><textarea name="output" required placeholder="Increased alertness"></textarea></label>
+      </div>
+      <div class="form-row">
+        <label>Evidence URL<input name="evidenceUrl" type="url" placeholder="https://…"></label>
+        <label>Confidence<input name="confidence" type="number" min="0" max="1" step="0.05" value="0.50"></label>
+      </div>
+      <label>Scope / conditions<textarea name="scope" placeholder="Population, environment, time or boundary conditions"></textarea></label>
+      <div class="dialog-actions">
+        <span>Saved as <strong>draft</strong>. Validation is separate.</span>
+        <button class="primary" value="default">Create unit</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 # PTI MCP Firebase Function
 
+> **Current access lanes:** the repo-local STDIO server at `tools/pti-mcp/` is the primary Codex/agent path and mirrors the working GTOP architecture. This Firebase Function is an optional remote HTTP MCP. It needs a Functions-capable Firebase plan plus `PTI_MCP_API_KEYS`; PTI being on Spark is why this endpoint has not been a reliable agent connection.
+
 This function exposes a JSON-RPC MCP-compatible endpoint at `/mcp` with bearer-token authentication.
 
 ## Environment

@@ -5,6 +5,10 @@ on:
     paths:
       - 'sefpo-lab/**'
       - 'tools/pti-mcp/**'
+      - 'tools/pti-mcp-runner/**'
+      - 'personal-functions/provision.mjs'
+      - '.github/workflows/pti-mcp-access.yml'
+      - '.github/workflows/sefpo-release.yml'
       - '.codex/config.toml'
       - 'firebase.json'
       - '.firebaserc'
@@ -28,6 +32,8 @@ jobs:
           node --input-type=module --check < sefpo-lab/app.js
           node --check sefpo-lab/sw.js
           node --check sefpo-lab/scripts/configure-firebase-auth.mjs
+          node --check tools/pti-mcp-runner/client.mjs
+          node --check personal-functions/provision.mjs
           node -e "JSON.parse(require('fs').readFileSync('firebase.json')); JSON.parse(require('fs').readFileSync('.firebaserc')); JSON.parse(require('fs').readFileSync('sefpo-lab/manifest.webmanifest'))"
       - name: Build repo-local PTI MCP
         run: |

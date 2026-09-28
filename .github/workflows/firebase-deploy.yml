@@ -217,7 +217,7 @@ jobs:
 
       - name: Validate SEFPO static assets
         run: |
-          node --check sefpo-lab/app.js
+          node --input-type=module --check < sefpo-lab/app.js
           node --check sefpo-lab/sw.js
 
       - name: Create and deploy SEFPO secondary Hosting site

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
-import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, getFirestore, type Query, type Transaction } from "firebase-admin/firestore";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -70,7 +70,7 @@ function slug(value: string): string {
       .slice(0, 72) || "entity"
   );
 }
-function updateToken(value?: FirebaseFirestore.Timestamp): string | null {
+function updateToken(value?: Timestamp): string | null {
   if (!value) return null;
   return `${value.seconds}:${String(value.nanoseconds).padStart(9, "0")}`;
 }
@@ -80,8 +80,14 @@ function timestampFromToken(value: string): Timestamp {
   return new Timestamp(Number(match[1]), Number(match[2]));
 }
 function serialize(value: unknown): unknown {
-  if (value instanceof Timestamp) return value.toDate().toISOString();
   if (value instanceof Date) return value.toISOString();
+  if (
+    value &&
+    typeof value === "object" &&
+    "seconds" in value &&
+    "nanoseconds" in value &&
+    typeof (value as { toDate?: unknown }).toDate === "function"
+  ) return (value as Timestamp).toDate().toISOString();
   if (Array.isArray(value)) return value.map(serialize);
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
@@ -91,6 +97,9 @@ function serialize(value: unknown): unknown {
   }
   return value;
 }
+function serializeRecord(value: Record<string, unknown> | undefined): Record<string, unknown> {
+  return serialize(value || {}) as Record<string, unknown>;
+}
 async function snapshot(path: string): Promise<Record<string, unknown> | null> {
   const item = await db.doc(assertDocumentPath(path)).get();
   if (!item.exists) return null;
@@ -99,7 +108,7 @@ async function snapshot(path: string): Promise<Record<string, unknown> | null> {
     path: item.ref.path,
     updateTime: item.updateTime?.toDate().toISOString() || null,
     updateToken: updateToken(item.updateTime),
-    ...serialize(item.data()),
+    ...serializeRecord(item.data()),
   } as Record<string, unknown>;
 }
 async function audit(
@@ -192,7 +201,7 @@ server.registerTool(
     annotations: readOnly,
   },
   async ({ collectionPath, filters, orderBy, limit }) => {
-    let q: FirebaseFirestore.Query = db.collection(assertCollectionPath(collectionPath));
+    let q: Query = db.collection(assertCollectionPath(collectionPath));
     for (const filter of filters) q = q.where(filter.field, filter.op, filter.value);
     if (orderBy) q = q.orderBy(orderBy.field, orderBy.direction);
     const result = await q.limit(boundedLimit(limit)).get();
@@ -202,7 +211,7 @@ server.registerTool(
         path: item.ref.path,
         updateTime: item.updateTime.toDate().toISOString(),
         updateToken: updateToken(item.updateTime),
-        ...serialize(item.data()),
+        ...serializeRecord(item.data()),
       })),
     );
   },
@@ -332,7 +341,7 @@ server.registerTool(
   async ({ uid, query: needleInput, status, limit }) => {
     const take = boundedLimit(limit, 50);
     const scan = Math.min(Math.max(take * 5, 50), 250);
-    let q: FirebaseFirestore.Query = db.collection(bucket(uid, "units")).orderBy("updatedAt", "desc").limit(scan);
+    let q: Query = db.collection(bucket(uid, "units")).orderBy("updatedAt", "desc").limit(scan);
     const result = await q.get();
     const needle = needleInput.trim().toLowerCase();
     const items = result.docs
@@ -556,7 +565,7 @@ server.registerTool(
     const before = await snapshot(unitPath);
     if (!before) throw new Error("SEFPO unit not found.");
     const updatedAt = new Date().toISOString();
-    await db.runTransaction(async (tx) => {
+    await db.runTransaction(async (tx: Transaction) => {
       const current = await tx.get(unitRef);
       if (!current.exists || updateToken(current.updateTime) !== input.expectedUpdateToken)
         throw new Error("SEFPO unit changed after it was read. Fetch fresh context and retry.");

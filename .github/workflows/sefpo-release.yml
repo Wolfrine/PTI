@@ -5,6 +5,11 @@ on:
     branches: [codex/sefpo-release]
     paths:
       - 'sefpo-lab/release-request.json'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'sefpo-lab/release-request.json'
 
 permissions:
   contents: read
@@ -15,7 +20,12 @@ concurrency:
 
 jobs:
   release:
-    if: github.repository == 'Wolfrine/PTI' && !github.event.created && !github.event.deleted && !github.event.forced
+    if: >-
+      github.repository == 'Wolfrine/PTI' &&
+      (
+        (github.event_name == 'push' && !github.event.created && !github.event.deleted && !github.event.forced) ||
+        (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'codex/sefpo-release' && github.event.pull_request.head.repo.full_name == github.repository)
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

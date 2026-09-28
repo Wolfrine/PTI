@@ -1,5 +1,7 @@
 # SEFPO Lab
 
+**Implementation: v0.1 · 2026-09-28**
+
 A small PTI-hosted PWA for testing whether structured, persistent empirical knowledge is more useful to humans and agents than document-first memory.
 
 ## Principle

@@ -16,18 +16,9 @@
         {
           "source": "/**",
           "headers": [
-            {
-              "key": "Access-Control-Allow-Origin",
-              "value": "*"
-            },
-            {
-              "key": "Access-Control-Allow-Credentials",
-              "value": "true"
-            },
-            {
-              "key": "Set-Cookie",
-              "value": "SameSite=None; Secure"
-            }
+            { "key": "Access-Control-Allow-Origin", "value": "*" },
+            { "key": "Access-Control-Allow-Credentials", "value": "true" },
+            { "key": "Set-Cookie", "value": "SameSite=None; Secure" }
           ]
         }
       ],
@@ -38,14 +29,8 @@
         "**/node_modules/**"
       ],
       "rewrites": [
-        {
-          "source": "/mcp",
-          "function": "mcp"
-        },
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
+        { "source": "/mcp", "function": "mcp" },
+        { "source": "**", "destination": "/index.html" }
       ]
     },
     {
@@ -61,35 +46,20 @@
         {
           "source": "/**",
           "headers": [
-            {
-              "key": "Referrer-Policy",
-              "value": "no-referrer"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            }
+            { "key": "Referrer-Policy", "value": "no-referrer" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "DENY" }
           ]
         },
         {
           "source": "/index.html",
           "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
           ]
         }
       ],
       "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
+        { "source": "**", "destination": "/index.html" }
       ]
     },
     {
@@ -105,39 +75,21 @@
         {
           "source": "/**",
           "headers": [
-            {
-              "key": "Referrer-Policy",
-              "value": "no-referrer"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            },
-            {
-              "key": "Permissions-Policy",
-              "value": "camera=(), geolocation=(), microphone=(self)"
-            }
+            { "key": "Referrer-Policy", "value": "no-referrer" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "DENY" },
+            { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=(self)" }
           ]
         },
         {
           "source": "/index.html",
           "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
           ]
         }
       ],
       "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
+        { "source": "**", "destination": "/index.html" }
       ]
     },
     {
@@ -154,48 +106,27 @@
         {
           "source": "/**",
           "headers": [
-            {
-              "key": "Referrer-Policy",
-              "value": "no-referrer"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            },
-            {
-              "key": "Permissions-Policy",
-              "value": "camera=(), geolocation=(), microphone=()"
-            }
+            { "key": "Referrer-Policy", "value": "no-referrer" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "DENY" },
+            { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=()" }
           ]
         },
         {
           "source": "/index.html",
           "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
           ]
         },
         {
           "source": "/sw.js",
           "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
+            { "key": "Cache-Control", "value": "no-cache" }
           ]
         }
       ],
       "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
+        { "source": "**", "destination": "/index.html" }
       ]
     }
   ]

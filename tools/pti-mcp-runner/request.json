@@ -1,11 +1,8 @@
 {
   "schemaVersion": 1,
-  "requestId": "template-do-not-run",
-  "purpose": "Template only; replace with a fresh user-directed PTI MCP request.",
-  "expiresAt": "2026-01-01T00:00:00Z",
-  "mode": "read",
-  "kind": "call",
-  "calls": [
-    { "name": "pti_health", "arguments": {} }
-  ]
+  "requestId": "20260928-pti-live-crud-check-01",
+  "purpose": "Verify user-authorized live PTI Firestore create, update, read and delete access through the same MCP execution pattern already used by GTOP, using only a temporary connection-check document and cleaning it up.",
+  "expiresAt": "2026-09-28T18:00:00Z",
+  "mode": "write",
+  "kind": "verify"
 }

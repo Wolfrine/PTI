@@ -16,8 +16,12 @@ const source=await readFile('personal-harness/firestore.rules','utf8');
 const previous=old.source?.files;
 if(previous?.length!==1)throw new Error('Unexpected multi-file live rules; inspect before updating.');
 const priorHash=digest(previous[0].content),targetHash=digest(source);
-const approvedPrevious='00e383c39716729a89dca55839ec3503da4cc4cbd3f191560d78c356bb53dc2a';
-if(priorHash!==targetHash&&priorHash!==approvedPrevious)throw new Error('Live rules changed since review. Refusing to overwrite another change.');
+const approvedPrevious=new Set(['00e383c39716729a89dca55839ec3503da4cc4cbd3f191560d78c356bb53dc2a']);
+if(process.env.APPROVED_PREVIOUS_RULES_FILE){
+ const approvedSource=await readFile(process.env.APPROVED_PREVIOUS_RULES_FILE,'utf8');
+ approvedPrevious.add(digest(approvedSource));
+}
+if(priorHash!==targetHash&&!approvedPrevious.has(priorHash))throw new Error('Live rules changed since review. Refusing to overwrite another change.');
 const report={project,database:'(default)',namespace:'users/{uid}/personalData/workspace',location:db.locationId,previousRuleset:release.rulesetName,previousSourceHash:priorHash,sourceHash:targetHash,checkedAt:new Date().toISOString(),databaseCreated:false};
 await writeFile('personal-activation-report.json',JSON.stringify(report,null,2));
 if(priorHash!==targetHash){

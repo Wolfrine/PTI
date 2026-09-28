@@ -25,7 +25,7 @@ jobs:
           node-version: 20
       - name: Validate static PWA
         run: |
-          node --check sefpo-lab/app.js
+          node --input-type=module --check < sefpo-lab/app.js
           node --check sefpo-lab/sw.js
           node --check sefpo-lab/scripts/configure-firebase-auth.mjs
           node -e "JSON.parse(require('fs').readFileSync('firebase.json')); JSON.parse(require('fs').readFileSync('.firebaserc')); JSON.parse(require('fs').readFileSync('sefpo-lab/manifest.webmanifest'))"

@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "requestId": "template-do-not-run",
+  "deploy": false,
+  "purpose": "Template only. A fresh authorized release request changes deploy to true."
+}

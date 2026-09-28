@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "requestId": "template-do-not-run",
+  "purpose": "Template only; replace with a fresh user-directed PTI MCP request.",
+  "expiresAt": "2026-01-01T00:00:00Z",
+  "mode": "read",
+  "kind": "call",
+  "calls": [
+    { "name": "pti_health", "arguments": {} }
+  ]
+}

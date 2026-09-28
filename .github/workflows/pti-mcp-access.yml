@@ -1,0 +1,50 @@
+name: PTI MCP access
+
+on:
+  push:
+    branches: [codex/pti-mcp-access]
+    paths:
+      - 'tools/pti-mcp-runner/request.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pti-mcp-access
+  cancel-in-progress: false
+
+jobs:
+  request:
+    if: github.repository == 'Wolfrine/PTI' && !github.event.created && !github.event.deleted && !github.event.forced
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build PTI MCP and validate adapter
+        run: |
+          npm install --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
+          npm run build --prefix tools/pti-mcp
+          node --check tools/pti-mcp-runner/client.mjs
+      - name: Authenticate using existing Firebase deployment identity
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+      - name: Execute committed PTI MCP request
+        env:
+          PTI_FIREBASE_PROJECT_ID: pti-app-2ab59
+          PTI_MCP_ACTOR: '${{ github.actor }} through PTI MCP'
+          PTI_MCP_TASK_REF: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        run: node tools/pti-mcp-runner/client.mjs tools/pti-mcp-runner/request.json pti-mcp-results/result.json
+      - name: Save private MCP results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pti-mcp-result-${{ github.run_id }}
+          path: pti-mcp-results/result.json
+          if-no-files-found: warn
+          retention-days: 1

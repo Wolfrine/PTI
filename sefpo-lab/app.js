@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import { getFirestore, collection, doc, getDocs, query, orderBy, limit, setDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import { getFirestore, collection, doc, getDocs, query, orderBy, limit, setDoc, writeBatch, arrayUnion } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 const FIREBASE_CONFIG={
   apiKey:'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -201,7 +201,7 @@ async function createUnit(form){
   batch.set(unitRef,unit);
   batch.set(doc(root,'context',unitId),contextPacket(unit));
   for(const entity of [{id:subjectEntity.entityId,label:subject,role:'subject'},...factorObjects.map(x=>({id:x.entityId,label:x.label,role:'factor'})),...outputObjects.map(x=>({id:x.entityId,label:x.label,role:'output'}))]){
-    batch.set(doc(root,'entities',entity.id),{label:entity.label,normalized:entity.label.toLowerCase(),roles:[entity.role],updatedAt},{merge:true});
+    batch.set(doc(root,'entities',entity.id),{label:entity.label,normalized:entity.label.toLowerCase(),roles:arrayUnion(entity.role),updatedAt},{merge:true});
   }
   if(evidenceRef)batch.set(evidenceRef,{type:'url',url:evidenceUrl,unitId,label:title,stance:'supports',createdAt:updatedAt});
   batch.set(doc(collection(root,'changes')),{objectType:'unit',objectId:unitId,change:'created',label:`Created · ${title}`,revision:1,changedAt:updatedAt,actor:'human-ui'});

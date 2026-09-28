@@ -161,7 +161,7 @@ server.registerTool(
     const collections = documentPath
       ? await db.doc(assertDocumentPath(documentPath)).listCollections()
       : await db.listCollections();
-    return json(collections.map((item) => item.path));
+    return json(collections.map((item: any) => item.path));
   },
 );
 
@@ -206,7 +206,7 @@ server.registerTool(
     if (orderBy) q = q.orderBy(orderBy.field, orderBy.direction);
     const result = await q.limit(boundedLimit(limit)).get();
     return json(
-      result.docs.map((item) => ({
+      result.docs.map((item: any) => ({
         id: item.id,
         path: item.ref.path,
         updateTime: item.updateTime.toDate().toISOString(),
@@ -297,7 +297,7 @@ server.registerTool(
       }
     }
     await batch.commit();
-    await audit("firestore_batch_write", writes.map((item) => item.path).join(", "), before, null, { writes });
+    await audit("firestore_batch_write", writes.map((item: any) => item.path).join(", "), before, null, { writes });
     return message(`Committed ${writes.length} Firestore writes.`);
   },
 );
@@ -345,7 +345,7 @@ server.registerTool(
     const result = await q.get();
     const needle = needleInput.trim().toLowerCase();
     const items = result.docs
-      .map((item) => ({ id: item.id, ...item.data() }))
+      .map((item: any) => ({ id: item.id, ...item.data() }))
       .filter((item: Record<string, unknown>) => !status || item["status"] === status)
       .filter((item: Record<string, unknown>) => !needle || String(item["searchText"] || item["title"] || "").toLowerCase().includes(needle))
       .slice(0, take)
@@ -394,8 +394,8 @@ server.registerTool(
         revision: unit["revision"], updatedAt: unit["updatedAt"], updateToken: unit["updateToken"],
       },
       edges: [
-        ...outgoing.docs.map((item) => ({ id: item.id, ...item.data() })),
-        ...incoming.docs.map((item) => ({ id: item.id, ...item.data() })),
+        ...outgoing.docs.map((item: any) => ({ id: item.id, ...item.data() })),
+        ...incoming.docs.map((item: any) => ({ id: item.id, ...item.data() })),
       ],
       evidence: evidence.filter(Boolean),
     });
@@ -423,7 +423,7 @@ server.registerTool(
       .limit(boundedLimit(limit, 200))
       .get();
     return json({
-      items: result.docs.map((item) => ({ id: item.id, ...item.data() })),
+      items: result.docs.map((item: any) => ({ id: item.id, ...item.data() })),
       nextCursor: result.docs.at(-1)?.data()?.["changedAt"] || since,
     });
   },

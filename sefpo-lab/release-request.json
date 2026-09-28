@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "requestId": "20260929-sefpo-production-release-01",
+  "requestId": "20260929-sefpo-production-release-02",
   "deploy": true,
   "purpose": "Publish the reviewed SEFPO owner-scoped Firestore rules to the existing PTI default database, deploy the SEFPO PWA to its Firebase Hosting site, authorize sign-in domains, and verify live assets."
 }

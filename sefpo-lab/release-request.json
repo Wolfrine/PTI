@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "requestId": "template-do-not-run",
-  "deploy": false,
-  "purpose": "Template only. A fresh authorized release request changes deploy to true."
+  "requestId": "20260929-sefpo-production-release-03",
+  "deploy": true,
+  "purpose": "Publish the reviewed SEFPO owner-scoped Firestore rules to the existing PTI default database, deploy the SEFPO PWA to its Firebase Hosting site, authorize sign-in domains, and verify live assets."
 }

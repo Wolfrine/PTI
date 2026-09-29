@@ -115,10 +115,11 @@ document.addEventListener('submit',async event=>{
 });
 document.addEventListener('change',event=>{
  if(event.target.id==='reflection-day'){ui.reflectionDay=event.target.value;render();}
- if(event.target.id==='source-images'){ui.loadImages=event.target.checked;try{sessionStorage.setItem('personal-source-images',ui.loadImages?'on':'off');}catch{}notice(ui.loadImages?'Source images enabled for this session.':'External images disabled. Concept sketches will be shown.');}
+ if(event.target.id==='source-images'){ui.loadImages=event.target.checked;try{sessionStorage.setItem('personal-source-images',ui.loadImages?'on':'off');}catch{}render();notice(ui.loadImages?'Story images enabled for this session.':'Images disabled. No replacement illustrations are generated.');}
 });
 document.addEventListener('toggle',event=>{const id=event.target.dataset?.expand;if(id){if(event.target.open)ui.expanded.add(id);else ui.expanded.delete(id);}},true);
-document.addEventListener('error',event=>{if(event.target.matches?.('[data-story-image]')){const figure=event.target.closest('figure');event.target.remove();const label=figure?.querySelector('[data-visual-label]');if(label)label.textContent='Concept sketch · source image unavailable';}},true);
+document.addEventListener('load',event=>{if(event.target.matches?.('[data-story-image]')){const status=event.target.closest('figure')?.querySelector('.image-availability');if(status)status.hidden=true;}},true);
+document.addEventListener('error',event=>{if(event.target.matches?.('[data-story-image]')){const figure=event.target.closest('figure');event.target.remove();if(!figure)return;figure.style.aspectRatio='auto';figure.style.minHeight='110px';const label=figure.querySelector('[data-visual-label]'),credit=figure.querySelector('[data-visual-credit]'),status=figure.querySelector('.image-availability');if(label)label.textContent='Image unavailable';if(credit)credit.textContent='No substitute illustration';if(status){status.hidden=false;status.textContent='The image could not be loaded. Reload to retry.';}}},true);
 window.addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(['today','capture','threads','reflection','settings'].includes(v)){ui.view=v;render();}});
 window.addEventListener('offline',()=>notice('Offline. Unsaved text remains here; saving requires a connection.'));
 window.addEventListener('online',()=>notice('Connection restored. You can retry saving.'));

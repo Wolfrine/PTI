@@ -48,6 +48,11 @@ jobs:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           token_format: access_token
       - uses: google-github-actions/setup-gcloud@v2
+      - name: Verify real owner-scoped app reads and temporary MCP CRUD
+        run: |
+          npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
+          npm run build --prefix tools/pti-mcp
+          node tools/pti-mcp/scripts/verify-data.mjs
       - name: Check existing billing prerequisite without changing it
         run: |
           set -euo pipefail

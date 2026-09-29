@@ -4,3 +4,4 @@
 **/.env*
 **/*credentials*.json
 **/*service-account*.json
+gha-creds-*.json

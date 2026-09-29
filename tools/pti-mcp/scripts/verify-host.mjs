@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 const origin = process.env.PUBLIC_ORIGIN;
 assert(origin);
-const get = async path => { const response = await fetch(origin + path); assert.equal(response.status, 200, path); return response.json(); };
+const get = async path => { const response = await fetch(origin + path, { signal: AbortSignal.timeout(30000) }); assert.equal(response.status, 200, path); return response.json(); };
 assert.equal((await get('/health')).service, 'pti-firestore-mcp');
 const oauth = await get('/.well-known/oauth-authorization-server');
-assert.equal(oauth.issuer, origin);
+assert.equal(new URL(oauth.issuer).href, new URL(origin).href);
 assert(oauth.code_challenge_methods_supported.includes('S256'));
 const metadata = await get('/.well-known/oauth-protected-resource/mcp');
 assert.equal(metadata.resource, `${origin}/mcp`);
-const unauth = await fetch(`${origin}/mcp`, { method: 'POST' });
+const unauth = await fetch(`${origin}/mcp`, { method: 'POST', signal: AbortSignal.timeout(30000) });
 assert.equal(unauth.status, 401);
 assert(unauth.headers.get('www-authenticate').includes('resource_metadata'));
 console.log('HTTPS discovery, PKCE metadata and unauthenticated access rejection passed. User OAuth connection still required.');

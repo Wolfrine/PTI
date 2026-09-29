@@ -22,7 +22,8 @@
   ],
   "agentConnection": {
     "ready": false,
-    "blocker": "Shared OAuth MCP implemented in tools/pti-mcp. Live billing check passed on 2026-09-29. Deployment is blocked only by missing artifactregistry.repositories.uploadArtifacts on the existing asia-east1/firebaseapphosting-images repository. Grant repository-scoped Artifact Registry Writer to the existing Firebase deployment identity; then deploy and connect ChatGPT. No plugin connection has been verified."
+    "blocker": "Shared OAuth MCP deployed on 2026-09-29. Repository upload permission is resolved. ChatGPT OAuth connection and authenticated plugin tool verification are pending.",
+    "serverReady": true
   },
   "notEnabled": [
     "duplicate source collector",

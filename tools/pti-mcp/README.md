@@ -12,7 +12,7 @@ One server for PTI, Luminary, Personal / Daily Intelligence and SEFPO, using the
 
 The HTTP service uses the same OAuth/Cloud Run architecture as GTOP's working hosted connector (GTOP PR #47), with account ownership enforced for every hosted tool. Google sign-in uses the existing PTI Firebase Auth project. Only `PTI_MCP_ALLOWED_EMAILS` can connect. PKCE, one-use codes, rotating refresh tokens, replay detection, revocation and persistent grants protect the connection.
 
-Intended endpoint: `https://pti-firestore-mcp-185802494856.asia-south1.run.app/mcp`.
+Hosted endpoint: `https://pti-firestore-mcp-185802494856.asia-south1.run.app/mcp`.
 
 Deployment: `.github/workflows/pti-hosted-mcp.yml` builds/tests, checks existing billing, isolates the OAuth namespace, deploys and verifies HTTPS discovery. It never enables billing or creates a Firestore database. Cloud Run needs active project billing and the existing deployment identity needs Cloud Run/Artifact Registry permissions. A green build alone does not mean the plugin is connected.
 
@@ -28,15 +28,8 @@ After successful deployment: ChatGPT → Plugins → + → name **PTI Apps**, de
 
 Verify locally: `npm run build && npm test`; also `node --test ../../personal-harness/core.test.mjs`.
 
-## Current deployment blocker (29 September 2026)
+## Deployment status
 
-Live billing and Cloud Run deployment permissions passed. The existing Firebase identity can read the existing image repository but lacks image-upload permission. An owner can grant **Artifact Registry Writer only on that repository**:
+Deployed on 29 September 2026 after the owner granted repository-scoped Artifact Registry Writer to the existing Firebase deployment identity on `asia-east1/firebaseapphosting-images`. Image upload, OAuth record isolation, sign-in origin registration and Cloud Run deployment succeeded. No new key, database or billing change was required.
 
-```bash
-gcloud artifacts repositories add-iam-policy-binding firebaseapphosting-images \
-  --project=pti-app-2ab59 --location=asia-east1 \
-  --member=serviceAccount:firebase-adminsdk-fbsvc@pti-app-2ab59.iam.gserviceaccount.com \
-  --role=roles/artifactregistry.writer
-```
-
-Then rerun the failed `PTI shared MCP` deployment job. No new key, database, billing change or project-wide administrator role is required. Until deployment and OAuth linking succeed, do not claim the ChatGPT plugin is installed.
+Use the latest `PTI shared MCP` workflow result as deployment evidence. ChatGPT OAuth linking is separate; verify authenticated tools before claiming the plugin is connected.

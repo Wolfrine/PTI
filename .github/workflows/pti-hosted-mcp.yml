@@ -56,6 +56,13 @@ jobs:
             echo '::error::PTI has no active billing. Cloud Run deployment requires the owner to enable billing; this workflow never changes the billing plan.'
             exit 1
           fi
+      - name: Inspect existing deployment resources and permissions
+        env:
+          ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
+        run: |
+          gcloud artifacts repositories list --project="$PROJECT" --location=all --format='table(name,format)' || true
+          gcloud run services list --project="$PROJECT" --platform=managed --format='table(metadata.name,region,status.url)' || true
+          node tools/pti-mcp/scripts/check-permissions.mjs
       - name: Prepare Cloud Run and versioned image
         env:
           ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'

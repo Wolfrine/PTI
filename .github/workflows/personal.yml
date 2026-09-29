@@ -21,9 +21,9 @@ jobs:
           node-version: 22
       - run: npm install --prefix personal-functions --ignore-scripts
       - run: npm audit --prefix personal-functions --omit=dev --audit-level=high
-      - run: node --test personal-harness/core.test.mjs
+      - run: node --test personal-harness/*.test.mjs
       - run: node personal-harness/build.mjs
-      - run: node --check personal-app/app.mjs && node --check personal-functions/index.cjs && node --check personal-functions/provision.mjs && node --check personal-functions/verify.mjs
+      - run: node --check personal-app/app.mjs && node --check personal-app/views.mjs && node --check personal-functions/index.cjs && node --check personal-functions/provision.mjs && node --check personal-functions/verify.mjs
       - run: personal-functions/node_modules/.bin/playwright install --with-deps chromium
       - run: node personal-harness/browser-test.mjs
       - uses: actions/upload-artifact@v4
@@ -57,15 +57,15 @@ jobs:
         run: node personal-functions/provision.mjs
       - name: Verify real owner-only client access with temporary test users
         run: node personal-functions/verify.mjs
-      - name: Enable UI independently of the MCP host
+      - name: Enable verified UI independently of connected-agent state
         run: |
-          node -e "require('fs').writeFileSync('.personal-dist/runtime-status.json',JSON.stringify({cloudReady:true,database:'(default)',agentReady:false,agentReason:'Shared PTI MCP connection is pending. Check the PTI shared MCP deployment and ChatGPT connection status.',verifiedAt:new Date().toISOString()}))"
+          node -e "require('fs').writeFileSync('.personal-dist/runtime-status.json',JSON.stringify({cloudReady:true,database:'(default)',agentReady:null,agentReason:'Account-scoped agent execution is evidenced by published Firestore run records, not this UI deployment.',verifiedAt:new Date().toISOString()}))"
       - name: Deploy Personal Hosting only
         run: firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only hosting --non-interactive
       - name: Verify live files match this commit
         run: |
           set -euo pipefail
-          for file in app.mjs core.mjs boot.mjs sw.js runtime-status.json; do
+          for file in app.mjs views.mjs style.css core.mjs boot.mjs sw.js runtime-status.json; do
             matched=false
             for attempt in $(seq 1 24); do
               if curl --fail --retry 2 --max-time 20 --silent --show-error -H 'Cache-Control: no-cache' "https://pti-app-2ab59-personal.web.app/$file?release=$GITHUB_SHA&attempt=$attempt" -o /tmp/personal-live && cmp -s ".personal-dist/$file" /tmp/personal-live; then
@@ -81,7 +81,7 @@ jobs:
               exit 1
             fi
           done
-          node -e "const fs=require('fs'),p='personal-activation-report.json',r=JSON.parse(fs.readFileSync(p));r.hostingVerifiedAt=new Date().toISOString();r.commit=process.env.GITHUB_SHA;r.liveFiles=['app.mjs','core.mjs','boot.mjs','sw.js','runtime-status.json'];fs.writeFileSync(p,JSON.stringify(r,null,2))"
+          node -e "const fs=require('fs'),p='personal-activation-report.json',r=JSON.parse(fs.readFileSync(p));r.hostingVerifiedAt=new Date().toISOString();r.commit=process.env.GITHUB_SHA;r.liveFiles=['app.mjs','views.mjs','style.css','core.mjs','boot.mjs','sw.js','runtime-status.json'];fs.writeFileSync(p,JSON.stringify(r,null,2))"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

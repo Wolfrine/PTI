@@ -7,29 +7,12 @@
     "project": "pti-app-2ab59",
     "namespace": "users/{uid}/personalData/workspace",
     "ui": "Direct Firebase Auth/Firestore PWA",
-    "backend": "Existing Daily Intelligence Briefing task through scoped Firestore MCP"
+    "backend": "Existing Daily Intelligence Briefing task through scoped PTI MCP"
   },
-  "status": "default-database-integration; deployment evidence is authoritative",
-  "localVerification": [
-    "16 contract tests",
-    "module syntax checks",
-    "static build"
-  ],
-  "activationGate": [
-    "browser flows at 1440, 768 and 390px",
-    "live owner/other-user/anonymous authorization tests",
-    "Hosting file comparison"
-  ],
-  "agentConnection": {
-    "ready": false,
-    "blocker": "Shared OAuth MCP deployed on 2026-09-29. Repository upload permission is resolved. ChatGPT OAuth connection and authenticated plugin tool verification are pending.",
-    "serverReady": true
-  },
-  "notEnabled": [
-    "duplicate source collector",
-    "in-app LLM calls",
-    "Spotify/YouTube ingestion",
-    "passive activity tracking"
-  ],
-  "statusSource": ".github/workflows/personal.yml actual results and personal-activation-report artifact"
+  "status": "evidence-visuals-reflection implementation; CI and live publication verification required",
+  "localVerification": ["20 new evidence/reflection contract tests", "bundled actual-module browser checks at 1440, 768, 390 and 360px", "mobile masthead correction and rerender"],
+  "activationGate": ["all contract tests", "served-module browser flows", "live owner/other-user/anonymous checks including reflections", "Hosting file comparison", "MCP schemaVersion 2 and real reflection publish/readback"],
+  "agentConnection": {"ready": true, "verified": "account-scoped context and news publication observed 2026-09-29; new reflection deployment checked separately"},
+  "notEnabled": ["duplicate collector", "in-app LLM calls", "Spotify/YouTube ingestion", "passive activity tracking"],
+  "statusSource": "actual GitHub workflow outcomes and private Firestore run records"
 }

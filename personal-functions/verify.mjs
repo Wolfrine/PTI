@@ -15,7 +15,6 @@ async function login(uid){await auth.createUser({uid});const token=await auth.cr
 try{
  const [a,b]=await Promise.all(uids.map(login));const root=`users/${uids[0]}/personalData/workspace`;
  const profile={settings:structuredClone(DEFAULT_SETTINGS),paused:false,preferenceVersion:1,generation:suffix,updatedAt:now()};
- // Rule release propagation is asynchronous. Never enable the UI before all checks pass.
  let owner;for(let i=0;i<20;i++){owner=await client(root,a,'PATCH',profile);if(owner.ok)break;await new Promise(r=>setTimeout(r,3000));}
  pass('owner profile write',owner.ok);
  pass('owner profile read',(await client(root,a)).ok);
@@ -45,8 +44,15 @@ try{
  pass('other user edition read denied',(await client(root+'/editions/probe',b)).status===403);
  pass('owner can delete their edition',(await client(root+'/editions/probe',a,'DELETE')).ok);
  pass('owner can delete personal capture',(await client(root+'/captures/probe',a,'DELETE')).ok);
+ await db.doc(root+'/reflections/probe').set({createdAt:now(),synthetic:true});
+ let reflectionRead;for(let i=0;i<20;i++){reflectionRead=await client(root+'/reflections/probe',a);if(reflectionRead.ok)break;await new Promise(r=>setTimeout(r,3000));}
+ pass('owner can read agent reflection',reflectionRead.ok);
+ pass('other user reflection denied',(await client(root+'/reflections/probe',b)).status===403);
+ pass('anonymous reflection denied',(await client(root+'/reflections/probe',null)).status===403);
+ pass('client reflection forgery denied',(await client(root+'/reflections/forged',a,'PATCH',{createdAt:now()})).status===403);
+ pass('owner can delete reflection',(await client(root+'/reflections/probe',a,'DELETE')).ok);
  const report=JSON.parse(await readFile('personal-activation-report.json','utf8'));
- report.clientChecks=checks;report.clientVerifiedAt=now();report.agentReady=false;report.agentReason='MCP hosting/connection is not active. The app and default Firestore are independent of it.';
+ report.clientChecks=checks;report.clientVerifiedAt=now();report.mcpVerified=false;report.agentReason='This test verifies client rules, not the connected MCP session. Consult actual agent publication records.';
  await writeFile('personal-activation-report.json',JSON.stringify(report,null,2));
  console.log(JSON.stringify({passed:checks.length,database:'(default)',scope:'temporary synthetic users; personal namespace only',mcpVerified:false}));
 }finally{

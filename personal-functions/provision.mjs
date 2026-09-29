@@ -16,7 +16,8 @@ const source=await readFile('personal-harness/firestore.rules','utf8');
 const previous=old.source?.files;
 if(previous?.length!==1)throw new Error('Unexpected multi-file live rules; inspect before updating.');
 const priorHash=digest(previous[0].content),targetHash=digest(source);
-const approvedPrevious=new Set(['44c427751ccb98cde0fc8cad8f02e4445ce3e856c81087a202c1d49363eaa5f4','00e383c39716729a89dca55839ec3503da4cc4cbd3f191560d78c356bb53dc2a']);
+// Last entry is the reviewed OAuth-isolated rules in commit 3c4f30a, before adding owner-readable reflections.
+const approvedPrevious=new Set(['44c427751ccb98cde0fc8cad8f02e4445ce3e856c81087a202c1d49363eaa5f4','00e383c39716729a89dca55839ec3503da4cc4cbd3f191560d78c356bb53dc2a','5c3cd9cdff141cf9a1536311cb16c68d0742c32b5d8df86878bcc7292b4fc442']);
 if(process.env.APPROVED_PREVIOUS_RULES_FILE){
  const approvedSource=await readFile(process.env.APPROVED_PREVIOUS_RULES_FILE,'utf8');
  approvedPrevious.add(digest(approvedSource));
@@ -28,7 +29,6 @@ if(priorHash!==targetHash){
  const ruleset=await request(`${api}/projects/${project}/rulesets`,'POST',{source:{files:[{name:'firestore.rules',content:source}]}});
  const latest=await request(releaseUrl);
  if(latest.rulesetName!==release.rulesetName)throw new Error('Rule release changed during verification; no release update attempted.');
- // Update the EXISTING release; do not request releases.create or databases.create.
  await request(releaseUrl,'PATCH',{release:{name:release.name,rulesetName:ruleset.name},updateMask:'rulesetName'});
  report.ruleset=ruleset.name;
 }else report.ruleset=release.rulesetName;

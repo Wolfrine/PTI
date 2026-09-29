@@ -30,6 +30,7 @@ service cloud.firestore {
     allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['itemId','reaction','source','topic','createdAt','note','itemTitle','url']) && request.resource.data.itemId == id && request.resource.data.get('note','') is string && request.resource.data.get('note','').size() <= 2000 && request.resource.data.get('itemTitle','') is string && request.resource.data.get('itemTitle','').size() <= 300 && request.resource.data.get('url','') is string && request.resource.data.get('url','').size() <= 2000 && request.resource.data.reaction in ['useful','known','less','explore','thought'] && request.resource.data.source is string && request.resource.data.source.size() <= 150 && request.resource.data.topic in ['AI & agents','Science','Business','Robotics'] && request.resource.data.createdAt is string;
    }
    match /editions/{id} { allow read, delete: if owner(uid); allow create, update: if false; }
+   match /reflections/{id} { allow read, delete: if owner(uid); allow create, update: if false; }
    match /runs/{id} { allow read, delete: if owner(uid); allow create, update: if false; }
    match /agentKeys/{id} {
     allow read, delete: if owner(uid);

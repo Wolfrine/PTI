@@ -12,6 +12,8 @@ One server for PTI, Luminary, Personal / Daily Intelligence and SEFPO, using the
 
 The HTTP service uses the same OAuth/Cloud Run architecture as GTOP's working hosted connector (GTOP PR #47), with account ownership enforced for every hosted tool. Google sign-in uses the existing PTI Firebase Auth project. Only `PTI_MCP_ALLOWED_EMAILS` can connect. PKCE, one-use codes, rotating refresh tokens, replay detection, revocation and persistent grants protect the connection.
 
+Connections have no time limit and remain active until revoked. Hourly access tokens refresh automatically; there is no periodic reconnection requirement imposed by this server.
+
 Hosted endpoint: `https://pti-firestore-mcp-185802494856.asia-south1.run.app/mcp`.
 
 Deployment: `.github/workflows/pti-hosted-mcp.yml` builds/tests, checks existing billing, isolates the OAuth namespace, deploys and verifies HTTPS discovery. It never enables billing or creates a Firestore database. Cloud Run needs active project billing and the existing deployment identity needs Cloud Run/Artifact Registry permissions. A green build alone does not mean the plugin is connected.

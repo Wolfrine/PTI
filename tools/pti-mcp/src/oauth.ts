@@ -8,12 +8,14 @@ import { type AuthStore, type RecordValue, secret, digest, now } from './auth-st
 
 export const MCP_SCOPE = 'pti:apps';
 const ACCESS_SECONDS = 3600;
-const SESSION_SECONDS = 90 * 86400;
 export type UserIdentity = { uid: string; email: string; authenticatedAt: number };
 export type CheckUser = (uid: string, authenticatedAt: number) => Promise<void>;
-const valid = (v: RecordValue | undefined): v is RecordValue => !!v && Number(v.expiresAt) > now();
-function checked(v: RecordValue | undefined): RecordValue {
-  if (!valid(v)) throw new InvalidGrantError('Grant is expired, consumed, or unknown');
+// Only durable connection/refresh records can explicitly opt out of expiry.
+// Browser requests, authorization codes and access tokens always expire.
+const valid = (v: RecordValue | undefined, persistent = false): v is RecordValue => !!v &&
+  ((persistent && v.expiresAt === null) || (typeof v.expiresAt === 'number' && Number.isFinite(v.expiresAt) && v.expiresAt > now()));
+function checked(v: RecordValue | undefined, persistent = false): RecordValue {
+  if (!valid(v, persistent)) throw new InvalidGrantError('Grant is expired, consumed, or unknown');
   return v;
 }
 export class PtiOAuthProvider implements OAuthServerProvider {
@@ -79,9 +81,9 @@ export class PtiOAuthProvider implements OAuthServerProvider {
   }
   private async exchange(kind: string, key: string, client: OAuthClientInformationFull, redirectUri?: string, scopes?: string[], resource?: URL): Promise<OAuthTokens> {
     this.target(resource);
-    const grant = checked(await this.store.get(kind, key));
+    const grant = checked(await this.store.get(kind, key), kind === 'refresh');
     const validate = (v: RecordValue) => {
-      checked(v);
+      checked(v, kind === 'refresh');
       if (v.clientId !== client.client_id) throw new InvalidGrantError('Client does not match');
       if (kind === 'codes' && redirectUri !== v.redirectUri) throw new InvalidGrantError('Redirect URI does not match');
       if (scopes?.some(s => !(v.scopes as string[]).includes(s))) throw new InvalidScopeError('Scope cannot be increased');
@@ -89,17 +91,17 @@ export class PtiOAuthProvider implements OAuthServerProvider {
     validate(grant);
     await this.checkUser(String(grant.uid), Number(grant.authenticatedAt));
     const sessionId = kind === 'codes' ? secret() : String(grant.sessionId);
-    const session = kind === 'codes' ? { expiresAt: now() + SESSION_SECONDS, revoked: false } : await this.store.get('sessions', sessionId);
-    if (!valid(session) || session.revoked) throw new InvalidGrantError('Session revoked or expired');
+    const session = kind === 'codes' ? { expiresAt: null, revoked: false } : await this.store.get('sessions', sessionId);
+    if (!valid(session, true) || session.revoked) throw new InvalidGrantError('Session revoked or expired');
     const access = secret(), refresh = secret();
     const base = { clientId: grant.clientId, uid: grant.uid, email: grant.email,
       authenticatedAt: grant.authenticatedAt, scopes: this.scopes(scopes || grant.scopes as string[]), sessionId,
       resource: this.resource };
     const writes: { kind: string; key: string; value: RecordValue }[] = [
       { kind: 'access', key: access, value: { ...base, expiresAt: now() + ACCESS_SECONDS } },
-      { kind: 'refresh', key: refresh, value: { ...base, expiresAt: Number(session.expiresAt) } },
-      // Retain the hash of each refresh grant until session expiry so replay revokes the family.
-      { kind: 'spent', key, value: { sessionId, clientId: client.client_id, expiresAt: Number(session.expiresAt) } },
+      { kind: 'refresh', key: refresh, value: { ...base, expiresAt: session.expiresAt } },
+      // Keep spent hashes for the connection's lifetime so replay still revokes it.
+      { kind: 'spent', key, value: { sessionId, clientId: client.client_id, expiresAt: session.expiresAt } },
     ];
     if (kind === 'codes') writes.push({ kind: 'sessions', key: sessionId, value: session });
     try { await this.store.consume(kind, key, validate, writes); }
@@ -111,7 +113,7 @@ export class PtiOAuthProvider implements OAuthServerProvider {
   }
   async exchangeRefreshToken(client: OAuthClientInformationFull, refresh: string, scopes?: string[], resource?: URL) {
     const previous = await this.store.get('spent', refresh);
-    if (previous?.clientId === client.client_id && valid(previous)) {
+    if (previous?.clientId === client.client_id && valid(previous, true)) {
       await this.store.put('sessions', String(previous.sessionId), { revoked: true, expiresAt: previous.expiresAt });
       throw new InvalidGrantError('Refresh token replay detected; reconnect the client');
     }
@@ -121,7 +123,7 @@ export class PtiOAuthProvider implements OAuthServerProvider {
     const grant = await this.store.get('access', token);
     if (!valid(grant) || grant.resource !== this.resource) throw new InvalidTokenError('Invalid access token');
     const session = await this.store.get('sessions', String(grant.sessionId));
-    if (!valid(session) || session.revoked) throw new InvalidTokenError('Session expired or revoked');
+    if (!valid(session, true) || session.revoked) throw new InvalidTokenError('Session expired or revoked');
     try { await this.checkUser(String(grant.uid), Number(grant.authenticatedAt)); }
     catch { throw new InvalidTokenError('Administrator access has been revoked'); }
     return { token, clientId: String(grant.clientId), scopes: grant.scopes as string[],
@@ -129,7 +131,6 @@ export class PtiOAuthProvider implements OAuthServerProvider {
   }
   async revokeToken(client: OAuthClientInformationFull, request: OAuthTokenRevocationRequest) {
     const grant = await this.store.get('access', request.token) || await this.store.get('refresh', request.token) || await this.store.get('spent', request.token);
-    if (grant?.clientId === client.client_id) await this.store.put('sessions', String(grant.sessionId), { revoked: true, expiresAt: now() + SESSION_SECONDS });
+    if (grant?.clientId === client.client_id) await this.store.put('sessions', String(grant.sessionId), { revoked: true, expiresAt: null });
   }
 }
-

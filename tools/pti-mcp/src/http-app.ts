@@ -35,7 +35,7 @@ export function createHttpApp(options: {
     res.type('html').send(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Connect PTI Firestore</title>
 <style nonce="${nonce}">body{font:18px system-ui;max-width:620px;margin:12vh auto;padding:24px;color:#182637}button{font:inherit;padding:14px;background:#174aa6;color:white;border:0;border-radius:8px;cursor:pointer}#status{white-space:pre-wrap}</style>
 <h1>Connect PTI Firestore</h1><p><strong>${escape(String(pending.clientName))}</strong> is requesting access to read, create, update and delete your PTI app data on your behalf.</p>
-<p>Only the approved PTI account can connect. Tools access that account’s app data. Access expires after 90 days and can be revoked.</p>
+<p>Only the approved PTI account can connect. Tools access that account’s app data. Access has no time limit and continues until revoked.</p>
 <button id="connect">Sign in with Google and allow access</button><p id="status" role="status"></p>
 <script type="module" nonce="${nonce}">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
@@ -83,4 +83,3 @@ button.onclick=async()=>{button.disabled=true;try{
   app.use(errors);
   return app;
 }
-

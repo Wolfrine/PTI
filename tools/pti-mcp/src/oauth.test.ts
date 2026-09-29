@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Server } from 'node:http';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Response } from 'express';
@@ -19,7 +19,7 @@ class MemoryStore implements AuthStore {
   }
 }
 const servers: Server[]=[];
-afterEach(async()=>{await Promise.all(servers.splice(0).map(s=>new Promise<void>(resolve=>s.close(()=>resolve()))));});
+afterEach(async()=>{vi.restoreAllMocks();await Promise.all(servers.splice(0).map(s=>new Promise<void>(resolve=>s.close(()=>resolve()))));});
 async function fixture() {
   let admin=true;
   const store=new MemoryStore();
@@ -75,6 +75,36 @@ describe('Persistent OAuth authorization',()=>{
     f.removeAdmin();await expect(f.provider.verifyAccessToken(token.access_token)).rejects.toThrow();
     await expect(f.provider.exchangeRefreshToken(f.client,token.refresh_token!)).rejects.toThrow();
   });
+  it('keeps the connection renewable after ten years and revocable at any time',async()=>{
+    const f=await fixture(),started=Date.now();
+    const first=await f.provider.exchangeAuthorizationCode(f.client,await f.code(),undefined,f.client.redirect_uris[0]);
+    vi.spyOn(Date,'now').mockReturnValue(started+3650*86400000);
+    await expect(f.provider.verifyAccessToken(first.access_token)).rejects.toThrow();
+    const next=await f.provider.exchangeRefreshToken(f.client,first.refresh_token!);
+    expect((await f.provider.verifyAccessToken(next.access_token)).extra?.uid).toBe('admin');
+    await f.provider.revokeToken(f.client,{token:next.refresh_token!});
+    await expect(f.provider.verifyAccessToken(next.access_token)).rejects.toThrow();
+    await expect(f.provider.exchangeRefreshToken(f.client,next.refresh_token!)).rejects.toThrow();
+  });
+  it('continues detecting refresh replay beyond the former 90-day limit',async()=>{
+    const f=await fixture(),started=Date.now();
+    const first=await f.provider.exchangeAuthorizationCode(f.client,await f.code(),undefined,f.client.redirect_uris[0]);
+    const next=await f.provider.exchangeRefreshToken(f.client,first.refresh_token!);
+    vi.spyOn(Date,'now').mockReturnValue(started+365*86400000);
+    await expect(f.provider.exchangeRefreshToken(f.client,first.refresh_token!)).rejects.toThrow('replay');
+    await expect(f.provider.exchangeRefreshToken(f.client,next.refresh_token!)).rejects.toThrow();
+  });
+  it('does not allow access tokens or pending browser requests to opt out of expiry',async()=>{
+    const f=await fixture();
+    const pending=(await f.store.get('pending',f.requestId))!;
+    await f.store.put('pending',f.requestId,{...pending,expiresAt:null});
+    await expect(f.finish()).rejects.toThrow();
+    await f.store.put('pending',f.requestId,pending);
+    const token=await f.provider.exchangeAuthorizationCode(f.client,await f.code(),undefined,f.client.redirect_uris[0]);
+    const grant=(await f.store.get('access',token.access_token))!;
+    await f.store.put('access',token.access_token,{...grant,expiresAt:null});
+    await expect(f.provider.verifyAccessToken(token.access_token)).rejects.toThrow();
+  });
   it('rejects expired access tokens and revokes the whole connection',async()=>{
     const f=await fixture();const token=await f.provider.exchangeAuthorizationCode(f.client,await f.code(),undefined,f.client.redirect_uris[0]);
     const grant=(await f.store.get('access',token.access_token))!;
@@ -105,4 +135,3 @@ describe('Persistent OAuth authorization',()=>{
     const badOrigin=await fetch(`${base}/mcp`,{method:'POST',headers:{Authorization:`Bearer ${tokens.access_token}`,Origin:'https://attacker.example'}});expect(badOrigin.status).toBe(403);
   });
 });
-

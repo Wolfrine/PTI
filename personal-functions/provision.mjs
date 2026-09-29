@@ -16,7 +16,7 @@ const source=await readFile('personal-harness/firestore.rules','utf8');
 const previous=old.source?.files;
 if(previous?.length!==1)throw new Error('Unexpected multi-file live rules; inspect before updating.');
 const priorHash=digest(previous[0].content),targetHash=digest(source);
-const approvedPrevious=new Set(['00e383c39716729a89dca55839ec3503da4cc4cbd3f191560d78c356bb53dc2a']);
+const approvedPrevious=new Set(['44c427751ccb98cde0fc8cad8f02e4445ce3e856c81087a202c1d49363eaa5f4','00e383c39716729a89dca55839ec3503da4cc4cbd3f191560d78c356bb53dc2a']);
 if(process.env.APPROVED_PREVIOUS_RULES_FILE){
  const approvedSource=await readFile(process.env.APPROVED_PREVIOUS_RULES_FILE,'utf8');
  approvedPrevious.add(digest(approvedSource));

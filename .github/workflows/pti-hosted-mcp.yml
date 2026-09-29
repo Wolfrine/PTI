@@ -1,0 +1,86 @@
+name: PTI shared MCP
+on:
+  push:
+    branches: [main, codex/pti-shared-mcp]
+    paths: ['tools/pti-mcp/**', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+  pull_request:
+    paths: ['tools/pti-mcp/**', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+permissions:
+  contents: read
+concurrency:
+  group: pti-hosted-mcp-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/pti-mcp/package-lock.json
+      - run: npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
+      - run: npm run build --prefix tools/pti-mcp && npm test --prefix tools/pti-mcp
+      - run: node --test personal-harness/core.test.mjs
+  deploy:
+    if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PROJECT: pti-app-2ab59
+      REGION: asia-south1
+      SERVICE: pti-firestore-mcp
+      PUBLIC_ORIGIN: https://pti-firestore-mcp-185802494856.asia-south1.run.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          token_format: access_token
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Check existing billing prerequisite without changing it
+        run: |
+          set -euo pipefail
+          enabled="$(gcloud billing projects describe "$PROJECT" --format='value(billingEnabled)')"
+          if [ "$enabled" != 'True' ]; then
+            echo '::error::PTI has no active billing. Cloud Run deployment requires the owner to enable billing; this workflow never changes the billing plan.'
+            exit 1
+          fi
+      - name: Prepare Cloud Run and versioned image
+        env:
+          ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
+        run: |
+          set -euo pipefail
+          gcloud services enable run.googleapis.com artifactregistry.googleapis.com --project="$PROJECT" --quiet
+          if ! gcloud artifacts repositories describe pti-mcp --project="$PROJECT" --location="$REGION" >/dev/null 2>&1; then
+            gcloud artifacts repositories create pti-mcp --project="$PROJECT" --location="$REGION" --repository-format=docker --quiet
+          fi
+          printf '%s' "$ACCESS_TOKEN" | docker login -u oauth2accesstoken --password-stdin "https://$REGION-docker.pkg.dev"
+          docker build -f tools/pti-mcp/Dockerfile -t "$REGION-docker.pkg.dev/$PROJECT/pti-mcp/$SERVICE:$GITHUB_SHA" .
+          docker push "$REGION-docker.pkg.dev/$PROJECT/pti-mcp/$SERVICE:$GITHUB_SHA"
+      - name: Isolate OAuth records and register sign-in origin
+        env:
+          ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
+        run: node tools/pti-mcp/scripts/prepare-host.mjs
+      - name: Deploy account-scoped MCP
+        run: |
+          set -euo pipefail
+          identity="$(gcloud auth list --filter=status:ACTIVE --format='value(account)')"
+          gcloud run deploy "$SERVICE" --project="$PROJECT" --region="$REGION" \
+            --image="$REGION-docker.pkg.dev/$PROJECT/pti-mcp/$SERVICE:$GITHUB_SHA" \
+            --service-account="$identity" \
+            --set-env-vars="PTI_FIREBASE_PROJECT_ID=$PROJECT,PTI_MCP_PUBLIC_URL=$PUBLIC_ORIGIN,PTI_MCP_ALLOWED_EMAILS=schttewary@gmail.com" \
+            --allow-unauthenticated --ingress=all --port=8080 --memory=512Mi --cpu=1 \
+            --min-instances=0 --max-instances=2 --concurrency=40 --timeout=120 --quiet
+      - name: Verify public connection and authentication boundary
+        run: node tools/pti-mcp/scripts/verify-host.mjs

@@ -13,7 +13,8 @@ await Promise.all([server.connect(a), client.connect(b)]);
 const call = async (name, args) => {
   const result = await client.callTool({ name, arguments: args });
   assert(!result.isError, `${name} failed`);
-  return JSON.parse(result.content.find(x => x.type === 'text').text);
+  const text = result.content.find(x => x.type === 'text').text;
+  try { return JSON.parse(text); } catch { return text; }
 };
 const path = `users/${user.uid}/mcpConnectionChecks/${randomUUID()}`;
 let created = false;

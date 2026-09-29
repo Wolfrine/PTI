@@ -59,7 +59,7 @@ jobs:
         run: node personal-functions/verify.mjs
       - name: Enable UI independently of the MCP host
         run: |
-          node -e "require('fs').writeFileSync('.personal-dist/runtime-status.json',JSON.stringify({cloudReady:true,database:'(default)',agentReady:false,agentReason:'MCP server connection is pending. The Firebase project is on Spark; no billing upgrade has been made.',verifiedAt:new Date().toISOString()}))"
+          node -e "require('fs').writeFileSync('.personal-dist/runtime-status.json',JSON.stringify({cloudReady:true,database:'(default)',agentReady:false,agentReason:'Shared PTI MCP connection is pending. Check the PTI shared MCP deployment and ChatGPT connection status.',verifiedAt:new Date().toISOString()}))"
       - name: Deploy Personal Hosting only
         run: firebase deploy --config firebase.personal.json --project pti-app-2ab59 --only hosting --non-interactive
       - name: Verify live files match this commit

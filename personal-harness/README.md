@@ -6,7 +6,7 @@ PTI is the permanent home for rapid personal PWAs. Central is a design reference
 - UI: `personal-app/` — Today, Capture, Threads and controls. Google sign-in and direct Firestore SDK; no server function required for saving, export or deletion.
 - Data: existing project `pti-app-2ab59`, database `(default)`, private root `users/{uid}/personalData/workspace`. Never overwrite or recursively delete `users/{uid}`.
 - Intelligence backend: the existing **Daily Intelligence Briefing** scheduled ChatGPT agent, not GitHub cron. It researches news, reads declared direction and explicit feedback through the scoped MCP, then publishes a validated edition. Read `agent.md` for its contract.
-- MCP adapter: `personal-functions/index.cjs`; `personal_health`, `personal_context`, `personal_publish`. No arbitrary paths; captures excluded. Article thoughts reach the agent only when explicitly shared as feedback. Keys are owner-scoped, expiring and revocable.
+- Shared MCP: `tools/pti-mcp/`; the older standalone adapter remains in `personal-functions/index.cjs`. `personal_health`, `personal_context`, `personal_publish`. No arbitrary paths; captures excluded. Article thoughts reach the agent only when explicitly shared as feedback. Keys are owner-scoped, expiring and revocable.
 - Deployment: `.github/workflows/personal.yml` verifies contracts, browser flows, real client authorization and live Hosting files. It updates the existing rules release; it never creates a database or enables billing. UI readiness and MCP readiness are separate.
 
 ## Start and test
@@ -19,4 +19,4 @@ Private records and credentials never belong in GitHub or public logs. Declared 
 
 Rules preserve the reviewed legacy access policy outside Personal and exclude Personal from that broad policy. A changed live ruleset must be reviewed rather than overwritten blindly. Failed publication retains the previous edition; a task prompt is not evidence of a successful MCP call.
 
-The current Firebase project is on Spark; the existing Functions MCP deployment is blocked and its API-key secret is absent. This release does not upgrade billing. The scoped adapter still needs an authenticated host and connection to the scheduled agent. Check the actual deployment artifact and MCP health before claiming the full loop works.
+The live billing check passed on 2026-09-29. Shared MCP hosting is currently blocked by image-upload permission on the existing container repository. See `tools/pti-mcp/README.md` for the exact repository-scoped grant. Hosting and the ChatGPT/task connection still require verification; database access alone does not establish the full loop.

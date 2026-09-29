@@ -22,7 +22,7 @@ export function createHttpApp(options: {
     res.set({ 'Cache-Control':'no-store', 'Referrer-Policy':'no-referrer', 'X-Content-Type-Options':'nosniff', 'X-Frame-Options':'DENY' });
     next();
   });
-  app.get('/health', (_req,res) => res.json({ service:'pti-firestore-mcp', version:'1.1.0', status:'ok' }));
+  app.get('/health', (_req,res) => res.json({ service:'pti-firestore-mcp', version:'0.2.0', status:'ok' }));
   app.use(mcpAuthRouter({ provider, issuerUrl:new URL(provider.origin), resourceServerUrl:new URL(provider.resource),
     scopesSupported:[MCP_SCOPE], resourceName:'PTI Firestore', clientRegistrationOptions:{clientSecretExpirySeconds:0} }));
   app.get('/consent', async (req,res) => {

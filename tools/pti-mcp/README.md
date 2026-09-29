@@ -27,3 +27,16 @@ After successful deployment: ChatGPT → Plugins → + → name **PTI Apps**, de
 - Authentication keys and OAuth storage cannot be read or changed by data tools. Audit records are server-managed.
 
 Verify locally: `npm run build && npm test`; also `node --test ../../personal-harness/core.test.mjs`.
+
+## Current deployment blocker (29 September 2026)
+
+Live billing and Cloud Run deployment permissions passed. The existing Firebase identity can read the existing image repository but lacks image-upload permission. An owner can grant **Artifact Registry Writer only on that repository**:
+
+```bash
+gcloud artifacts repositories add-iam-policy-binding firebaseapphosting-images \
+  --project=pti-app-2ab59 --location=asia-east1 \
+  --member=serviceAccount:firebase-adminsdk-fbsvc@pti-app-2ab59.iam.gserviceaccount.com \
+  --role=roles/artifactregistry.writer
+```
+
+Then rerun the failed `PTI shared MCP` deployment job. No new key, database, billing change or project-wide administrator role is required. Until deployment and OAuth linking succeed, do not claim the ChatGPT plugin is installed.

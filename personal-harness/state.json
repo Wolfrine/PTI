@@ -22,7 +22,7 @@
   ],
   "agentConnection": {
     "ready": false,
-    "blocker": "Existing Firebase Functions MCP is not deployed: project is on Spark and its API-key secret is absent. Scoped adapter needs an authenticated host plus task connection. No billing upgrade performed."
+    "blocker": "Shared OAuth MCP implemented in tools/pti-mcp. Live billing check passed on 2026-09-29. Deployment is blocked only by missing artifactregistry.repositories.uploadArtifacts on the existing asia-east1/firebaseapphosting-images repository. Grant repository-scoped Artifact Registry Writer to the existing Firebase deployment identity; then deploy and connect ChatGPT. No plugin connection has been verified."
   },
   "notEnabled": [
     "duplicate source collector",

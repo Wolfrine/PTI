@@ -16,7 +16,15 @@ Existing fields: id, title, summary, why, action, source, url, publishedAt, topi
 
 `evidence={classification,sources:[{label,url,kind}],basis,limitations}`. Classification: official-announcement, research-result, reported-claim, verified-event, analysis. Source kind: primary, independent, secondary. Use independent only for genuinely separate evidence. No confidence scores that conflate provenance with truth.
 
-`image={kind,url,sourcePageUrl,alt,credit,note}`. Prefer a relevant verified source image whose use is permitted. Use original source page and credit; diagram/CAD/preprint visuals are labelled accurately. When no suitable source image exists, use an image-generation-capable agent to create an editorial illustration and persist the actual asset at a verified HTTPS URL, label generated. Never fabricate a URL or an event photograph. If generation/asset publication is unavailable, use `kind=concept` with no URL: the app displays an explicitly labelled native concept sketch, not a claim that an image model ran. Legacy imageUrl remains supported. Do not strip signed image query parameters.
+## Mandatory story-image policy
+`image={kind,url,sourcePageUrl,alt,credit,note}`.
+- First use a relevant verified original source image whose use is permitted. Preserve its source page and credit; label diagrams/CAD/research figures accurately.
+- When no suitable source image exists, use the current native ChatGPT Image Gen tool to create a standalone editorial illustration for that specific story. Do not select a legacy generator or an alternative provider. Record a precise model version only when the tool actually supplies it; do not invent a version label.
+- SVG, canvas, CSS, Python/Pillow drawings, stock placeholders, and native concept sketches are NOT substitutes for Image Gen. This prohibition concerns story illustrations, not ordinary interface icons.
+- Inspect the generated result. Reject unrelated dashboard mockups, fabricated event photos, invented charts and unsupported visual claims. Never crop a rejected dashboard and misrepresent it as a dedicated story illustration.
+- Persist the actual inspected asset, verify its HTTPS URL, then publish `kind=generated`, accurate alt text, `credit=OpenAI Image Gen`, and a note distinguishing illustration from evidence. Resize/compress the actual generated raster for delivery; do not redraw it in code.
+- New editions require a usable source or Image Gen image for every story. If generation, upload or inspection fails, retain the previous complete edition and report the specific image failure. Do not silently downgrade to `kind=concept`, claim all visuals complete, or fabricate an asset URL. Existing broken/unavailable images get an honest text-only availability state, never a coded replacement.
+- Keep signed image query parameters intact. Legacy imageUrl remains readable for existing source assets. Do not insert private feedback into image prompts or public assets.
 
 ## Reflection contract
 `reflection={date,status,summary,sourceRefs,observations,followUps,adjustments,limitation}`.

@@ -9,10 +9,22 @@
     "ui": "Direct Firebase Auth/Firestore PWA",
     "backend": "Existing Daily Intelligence Briefing task through scoped PTI MCP"
   },
-  "status": "evidence-visuals-reflection implementation; CI and live publication verification required",
-  "localVerification": ["20 new evidence/reflection contract tests", "bundled actual-module browser checks at 1440, 768, 390 and 360px", "mobile masthead correction and rerender"],
-  "activationGate": ["all contract tests", "served-module browser flows", "live owner/other-user/anonymous checks including reflections", "Hosting file comparison", "MCP schemaVersion 2 and real reflection publish/readback"],
-  "agentConnection": {"ready": true, "verified": "account-scoped context and news publication observed 2026-09-29; new reflection deployment checked separately"},
+  "status": "editorial redesign, evidence trails and daily reflections deployed and live-verified",
+  "releaseEvidence": {
+    "implementationCommit": "fa13bbaaac575c79b4956a51b45bc2d98537d07f",
+    "personalWorkflowRun": 36556503570,
+    "mcpWorkflowRun": 36556503452,
+    "bothDeployments": "success",
+    "contractTests": 36,
+    "clientAuthorizationChecks": 26,
+    "browserWidths": [1440, 768, 390, 360],
+    "liveHostingFilesMatch": true,
+    "mcpContextSchemaVersion": 2,
+    "editionAndReflectionPublishReadback": "verified 2026-09-29",
+    "existingDailyTaskUpdated": "evidence metadata, source/generated/concept provenance, prior-day reflection and publication verification; schedule preserved"
+  },
+  "agentConnection": {"ready": true, "verified": "authenticated context and atomic edition/reflection publication succeeded; read-back matched"},
+  "remaining": ["Image-model output must pass relevance review and actual asset publication before use; native concept sketches remain the honest fallback when no usable generated asset is available."],
   "notEnabled": ["duplicate collector", "in-app LLM calls", "Spotify/YouTube ingestion", "passive activity tracking"],
-  "statusSource": "actual GitHub workflow outcomes and private Firestore run records"
+  "statusSource": "actual GitHub workflow outcomes and private Firestore run records; no personal content stored here"
 }

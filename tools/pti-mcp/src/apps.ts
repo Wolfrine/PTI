@@ -1,0 +1,11 @@
+// Add future apps here; all use the same server and account connection.
+export function appCatalog(uid = '{uid}') {
+  const user = `users/${uid}`;
+  return [
+    { id: 'pti', name: 'PTI / CEO workspace', url: 'https://pti-app-2ab59.web.app', storage: 'firestore', access: 'read-write', collections: ['domains', 'activities', 'activity-categories', 'codexProjects'].map(p => `${user}/${p}`), tools: ['firestore_query', 'firestore_get_document', 'firestore_create_document', 'firestore_update_document'], notes: 'Domains contain targets/tasks; codexProjects contain actionItems. Preserve existing schemas.' },
+    { id: 'luminary', name: 'Luminary', url: 'https://pti-app-2ab59-luminary.web.app', storage: 'firestore', access: 'read-write', root: `${user}/luminaryData`, collections: ['observations', 'usageDaily'].map(p => `${user}/luminaryData/${p}/items`), tools: ['firestore_list_collections', 'firestore_query', 'firestore_get_document', 'firestore_create_document', 'firestore_update_document'], notes: 'Inspect the live collection schema before writes.' },
+    { id: 'personal', name: 'Personal / Daily Intelligence', url: 'https://pti-app-2ab59-personal.web.app', storage: 'firestore', access: 'read-write', root: `${user}/personalData/workspace`, collections: ['captures', 'threads', 'feedback', 'editions', 'runs'].map(p => `${user}/personalData/workspace/${p}`), tools: ['personal_context', 'personal_publish'], notes: 'Scheduled news work must use personal_context/personal_publish. These respect pause, explicit sharing, selected topics and context version. Captures are excluded from news context.' },
+    { id: 'sefpo', name: 'SEFPO Lab', url: 'https://pti-app-2ab59-sefpo.web.app', storage: 'firestore', access: 'read-write', root: `${user}/sefpoData/workspace`, tools: ['sefpo_search', 'sefpo_get_context', 'sefpo_changes_since', 'sefpo_create_draft', 'sefpo_set_status', 'sefpo_link_units', 'sefpo_capture_inbox'] },
+    { id: 'velum', name: 'Velum', url: 'https://pti-app-2ab59-velum.web.app', storage: 'google-drive-and-browser', access: 'external-connection-required', tools: [], notes: 'Images remain in Google Drive; votes and view history remain in this browser’s IndexedDB. This MCP cannot read those stores. No Firestore mirror exists.' },
+  ];
+}

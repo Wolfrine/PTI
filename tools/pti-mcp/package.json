@@ -1,21 +1,30 @@
 {
   "name": "@pti/firestore-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "bin": { "pti-firestore-mcp": "dist/index.js" },
+  "bin": {
+    "pti-firestore-mcp": "dist/index.js"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "build": "tsc -p tsconfig.json && cp ../../personal-harness/core.mjs dist/personal-core.mjs",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "start:http": "node dist/http.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "firebase-admin": "^14.2.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "express": "5.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "@types/express": "5.0.3",
+    "vitest": "^4.1.10"
   },
-  "overrides": { "uuid": "^11.1.1" }
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
 }

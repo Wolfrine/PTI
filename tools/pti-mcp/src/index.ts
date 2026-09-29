@@ -2,7 +2,9 @@
 import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
 import { FieldValue, Timestamp, getFirestore, type Query, type Transaction } from "firebase-admin/firestore";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { assertPath, assertUser } from "./access.js";
+import { appCatalog } from "./apps.js";
+import { registerPersonalTools } from "./personal.js";
 import { z } from "zod";
 
 const projectId =
@@ -12,12 +14,13 @@ const projectId =
 if (!getApps().length) initializeApp({ credential: applicationDefault(), projectId });
 
 const db = getFirestore();
-const actor = process.env.PTI_MCP_ACTOR || "pti-agent";
-const taskReference = process.env.PTI_MCP_TASK_REF || null;
+export function createMcpServer(context: { uid?: string; email?: string; actor?: string; taskReference?: string; transport?: string } = {}) {
+const actor = context.actor || process.env.PTI_MCP_ACTOR || "pti-agent";
+const taskReference = context.taskReference || process.env.PTI_MCP_TASK_REF || null;
 
 const server = new McpServer(
-  { name: "pti-firestore", version: "0.1.0" },
-  { capabilities: { tools: {} } },
+  { name: "pti-firestore", version: "0.2.0" },
+  { capabilities: { tools: {} }, instructions: "Start with pti_apps_list to discover apps, storage and supported access. Hosted tools are restricted to your connected PTI account. Use personal_context/personal_publish for Daily Intelligence, preserving pause and feedback preferences. Velum media and local votes require its separate Drive/browser connection. Read documents before updating; use update tokens." },
 );
 
 const readOnly = { readOnlyHint: true, destructiveHint: false };
@@ -31,26 +34,9 @@ const message = (value: string) => ({
   content: [{ type: "text" as const, text: value }],
 });
 
-function normalizePath(value: string): string {
-  return value.trim().replace(/^\/+|\/+$/g, "").replace(/\/{2,}/g, "/");
-}
-function assertDocumentPath(value: string): string {
-  const path = normalizePath(value);
-  if (!path || path.split("/").length % 2 !== 0)
-    throw new Error(`Expected Firestore document path, received "${value}".`);
-  return path;
-}
-function assertCollectionPath(value: string): string {
-  const path = normalizePath(value);
-  if (!path || path.split("/").length % 2 !== 1)
-    throw new Error(`Expected Firestore collection path, received "${value}".`);
-  return path;
-}
-function assertUid(value: string): string {
-  const uid = value.trim();
-  if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) throw new Error("Invalid Firebase uid.");
-  return uid;
-}
+function assertDocumentPath(value: string): string { return assertPath(value, 'document', context.uid); }
+function assertCollectionPath(value: string): string { return assertPath(value, 'collection', context.uid); }
+function assertUid(value: string): string { return assertUser(value, context.uid); }
 function boundedLimit(value?: number, max = 100): number {
   return Math.min(Math.max(Math.floor(value || 50), 1), max);
 }
@@ -104,11 +90,11 @@ async function snapshot(path: string): Promise<Record<string, unknown> | null> {
   const item = await db.doc(assertDocumentPath(path)).get();
   if (!item.exists) return null;
   return {
+    ...serializeRecord(item.data()),
     id: item.id,
     path: item.ref.path,
     updateTime: item.updateTime?.toDate().toISOString() || null,
     updateToken: updateToken(item.updateTime),
-    ...serializeRecord(item.data()),
   } as Record<string, unknown>;
 }
 async function audit(
@@ -134,7 +120,7 @@ server.registerTool(
   "pti_health",
   {
     title: "PTI Firestore health",
-    description: "Verify repo-local PTI MCP and target Firebase project.",
+    description: "Verify PTI MCP, current account and target Firebase project.",
     inputSchema: {},
     annotations: readOnly,
   },
@@ -144,7 +130,8 @@ server.registerTool(
       service: "pti-firestore",
       projectId,
       database: "(default)",
-      transport: "stdio",
+      transport: context.transport || "stdio",
+      uid: context.uid || null,
       sefpoNamespace: "users/{uid}/sefpoData/workspace",
     }),
 );
@@ -158,10 +145,11 @@ server.registerTool(
     annotations: readOnly,
   },
   async ({ documentPath }) => {
+    if (!documentPath && context.uid) return json([`users/${context.uid}`]);
     const collections = documentPath
       ? await db.doc(assertDocumentPath(documentPath)).listCollections()
       : await db.listCollections();
-    return json(collections.map((item: any) => item.path));
+    return json(collections.map((item: any) => item.path).filter((path: string) => { try { assertCollectionPath(path); return true; } catch { return false; } }));
   },
 );
 
@@ -207,11 +195,11 @@ server.registerTool(
     const result = await q.limit(boundedLimit(limit)).get();
     return json(
       result.docs.map((item: any) => ({
+        ...serializeRecord(item.data()),
         id: item.id,
         path: item.ref.path,
         updateTime: item.updateTime.toDate().toISOString(),
         updateToken: updateToken(item.updateTime),
-        ...serializeRecord(item.data()),
       })),
     );
   },
@@ -649,5 +637,26 @@ server.registerTool(
   },
 );
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+server.registerTool("pti_apps_list", {
+  title: "Discover PTI apps", description: "List every registered PTI app, its data location, access capabilities and limitations.",
+  inputSchema: {}, annotations: readOnly,
+}, async () => json({ projectId, database: "(default)", uid: context.uid || null, apps: appCatalog(context.uid) }));
+server.registerTool("pti_app_context", {
+  title: "Get PTI app data map", description: "Get an app's canonical collections and specialized tools before querying or changing its data.",
+  inputSchema: { appId: z.string(), uid: z.string().optional() }, annotations: readOnly,
+}, async ({ appId, uid }) => {
+  const owner = context.uid || (uid ? assertUid(uid) : undefined);
+  if (uid) assertUid(uid);
+  const app = appCatalog(owner).find(app => app.id === appId);
+  if (!app) throw new Error("Unknown app; call pti_apps_list.");
+  return json(app);
+});
+registerPersonalTools(server, db, context.uid, audit);
+return server;
+}
+
+import { pathToFileURL } from "node:url";
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
+  await createMcpServer().connect(new StdioServerTransport());
+}

@@ -49,18 +49,26 @@ export function normalizeEmail(input) {
   const orderId = /ORDER\s*ID\s*[:#-]?\s*(\d{5,30})/i.exec(text)?.[1];
   const restaurantName = clean(input.subject?.replace(/^Your Zomato order from\s*/i, '') || '');
   const total = /Total\s+paid\s*[-–:]?\s*(?:₹|Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)/i.exec(text);
-  const items = lines.flatMap(line => {
+  const rawItems = lines.flatMap(line => {
     const m = /^(\d{1,3})\s*[Xx×]\s+(.{1,300})$/.exec(line);
     if (!m) return [];
     const sourceName = clean(m[2]), name = canonicalName(sourceName);
     return [{ dishId: entityId(name), name, sourceName, quantity: +m[1], ...classifyDish(name) }];
   });
+  const groupedItems = new Map();
+  for (const item of rawItems) {
+    const existing = groupedItems.get(item.dishId);
+    if (existing) existing.quantity += item.quantity;
+    else groupedItems.set(item.dishId, { ...item });
+  }
+  const items = [...groupedItems.values()];
   if (!orderId || !restaurantName || !items.length || !total) throw new Error('Incomplete receipt; keep for review instead of inventing values.');
   const receivedAt = new Date(input.receivedAt).toISOString();
-  const ri = lines.findIndex(line => line === restaurantName);
-  const outlet = ri >= 0 && !/^\d+\s*[Xx×]/.test(lines[ri + 1] || '') ? (lines[ri + 1] || '').slice(0, 500) : '';
+  const ri = lines.findLastIndex(line => line === restaurantName);
+  const candidate = lines[ri + 1] || '';
+  const outlet = ri >= 0 && !/^(?:\d+\s*[Xx×]|was delivered|delivered|order id)/i.test(candidate) ? candidate.slice(0, 500) : '';
   const status = /cancelled|canceled/i.test(text) ? 'cancelled' : /\bDelivered\b/i.test(text) ? 'delivered' : 'unknown';
-  return { schemaVersion: SCHEMA_VERSION, id: `zomato-${orderId}`, provider: 'zomato', orderId, restaurantId: entityId(restaurantName), restaurantName, outlet, items, total: +total[1].replace(/,/g, ''), currency: 'INR', receivedAt, context: localContext(receivedAt), status, source: { gmailMessageId: input.gmailMessageId, subject: input.subject, sender: 'noreply@zomato.com', url: `https://mail.google.com/mail/u/0/#all/${input.gmailMessageId}`, extraction: 'receipt-body-v1' }, importedAt: input.importedAt || new Date().toISOString() };
+  return { schemaVersion: SCHEMA_VERSION, id: `zomato-${orderId}`, provider: 'zomato', orderId, restaurantId: entityId(restaurantName), restaurantName, outlet, items, total: +total[1].replace(/,/g, ''), currency: 'INR', receivedAt, context: localContext(receivedAt), status, source: { gmailMessageId: input.gmailMessageId, subject: input.subject, sender: 'noreply@zomato.com', url: `https://mail.google.com/mail/u/0/#all/${input.gmailMessageId}`, extraction: 'receipt-body-v2', ...(rawItems.length > items.length ? { originalItems: rawItems } : {}) }, importedAt: input.importedAt || new Date().toISOString() };
 }
 const average = values => values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 export function tasteProfile(orders, feedback = []) {
@@ -69,10 +77,11 @@ export function tasteProfile(orders, feedback = []) {
   for (const order of rows) {
     const restaurant = restaurants.get(order.restaurantId) || { id: order.restaurantId, name: order.restaurantName, outlet: order.outlet, count: 0, totals: [], lastAt: order.receivedAt };
     restaurant.count++; restaurant.totals.push(order.total); restaurants.set(restaurant.id, restaurant);
-    const cuisineSeen = new Set(), tagSeen = new Set();
+    const cuisineSeen = new Set(), tagSeen = new Set(), dishSeen = new Set();
     for (const item of order.items) {
       const dish = dishes.get(item.dishId) || { id: item.dishId, name: item.name, count: 0, quantity: 0, lastAt: order.receivedAt, cuisine: item.cuisine, tags: item.tags, restaurantIds: new Set() };
-      dish.count++; dish.quantity += item.quantity; dish.restaurantIds.add(order.restaurantId); dishes.set(dish.id, dish);
+      if (!dishSeen.has(item.dishId)) dish.count++;
+      dishSeen.add(item.dishId); dish.quantity += item.quantity; dish.restaurantIds.add(order.restaurantId); dishes.set(dish.id, dish);
       cuisineSeen.add(item.cuisine); item.tags.forEach(t => tagSeen.add(t));
     }
     cuisineSeen.forEach(c => cuisines.set(c, (cuisines.get(c) || 0) + 1));
@@ -82,7 +91,7 @@ export function tasteProfile(orders, feedback = []) {
   const sort = list => list.sort((a, b) => b.count - a.count || (a.name || '').localeCompare(b.name || ''));
   return { orderCount: rows.length, totalPaid: rows.reduce((a, o) => a + o.total, 0), averagePaid: average(rows.map(o => o.total)), firstAt: rows.at(-1)?.receivedAt, lastAt: rows[0]?.receivedAt, dishes: sort([...dishes.values()].map(d => ({ ...d, restaurantIds: [...d.restaurantIds] }))), restaurants: sort([...restaurants.values()].map(r => ({ ...r, averagePaid: average(r.totals) }))), cuisines: sort([...cuisines].map(([name, count]) => ({ name, count }))), tags: sort([...tags].map(([name, count]) => ({ name, count }))), contexts: sort([...contexts].map(([name, count]) => ({ name, count }))), feedbackCount: feedback.length, recentCuisines: rows.slice(0, 3).map(o => [...new Set(o.items.map(i => i.cuisine))]) };
 }
-export function mealKey(order) { return `${order.restaurantId}__${order.items.map(i => i.dishId).sort().join('_')}`; }
+export function mealKey(order) { return `${order.restaurantId}__${[...new Set(order.items.map(i => i.dishId))].sort().join('_')}`; }
 export function recommend(orders, feedback = [], context = {}) {
   const { mood = 'Comfort', hunger = 'Regular', budget = 0, now = new Date().toISOString(), vegetarian = true } = context;
   const rows = orders.filter(o => o.status === 'delivered'), profile = tasteProfile(rows, feedback), current = localContext(now);

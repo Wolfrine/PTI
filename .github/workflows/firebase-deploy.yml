@@ -35,20 +35,35 @@ jobs:
           npm run build -- --configuration production
 
       - name: Validate and bundle Morsel
+        id: morsel_bundle
         run: |
           node --test food-app/core.test.mjs
           node --check food-app/app.mjs
+          before='${{ github.event.before }}'
+          visual_changed=true
+          if git cat-file -e "$before^{commit}" 2>/dev/null; then
+            changed="$(git diff --name-only "$before" "$GITHUB_SHA" -- food-app)"
+            visual_changed=false
+            while IFS= read -r file; do
+              case "$file" in
+                ''|food-app/core.mjs|food-app/core.test.mjs|food-app/design/*|food-app/scripts/verify-live.mjs) ;;
+                *) visual_changed=true ;;
+              esac
+            done <<< "$changed"
+          fi
+          echo "visual_changed=$visual_changed" >> "$GITHUB_OUTPUT"
           mkdir -p pti-app/dist/pti-app/browser/food
           cp food-app/{index.html,styles.css,app.mjs,core.mjs,sample.mjs,phone.html,icon.svg,sw.js,manifest.webmanifest} pti-app/dist/pti-app/browser/food/
           cp -R food-app/assets pti-app/dist/pti-app/browser/food/
 
       - name: Verify Morsel desktop and mobile interactions
+        if: steps.morsel_bundle.outputs.visual_changed == 'true'
         run: |
           npm install --prefix personal-functions --ignore-scripts --no-audit --no-fund
           personal-functions/node_modules/.bin/playwright install --with-deps chromium
           node food-app/scripts/browser-check.mjs
       - name: Save Morsel visual evidence
-        if: always()
+        if: always() && steps.morsel_bundle.outputs.visual_changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: morsel-visual-evidence

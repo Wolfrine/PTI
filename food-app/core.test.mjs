@@ -17,3 +17,8 @@ test('Cancelled orders cannot influence taste; quantity does not multiply affini
 test('Never feedback and budget are hard exclusions', () => {
  const o=normalizeEmail(email); assert.equal(recommend([o],[{targetKey:mealKey(o),reaction:'never'}]).choices.length,0); assert.equal(recommend([o],[],{budget:500}).choices.length,0); assert.equal(recommend([],[]).choices.length,0);
 });
+test('Receipt header variants and repeated dish lines preserve the real outlet and one order signal', () => {
+ const o=normalizeEmail({...email,text:'ORDER ID: 123456789\nTest Veg &amp; Co\nwas delivered in just\n22 minutes\nTest Veg &amp; Co\nShop 6, Sector 35, Kharghar\n1 X Paneer Chilly\n1 X Paneer Chilly\nTotal paid - ₹972.03'});
+ assert.equal(o.outlet,'Shop 6, Sector 35, Kharghar');assert.equal(o.items.length,1);assert.equal(o.items[0].quantity,2);assert.equal(o.source.originalItems.length,2);
+ const legacy={...o,items:o.source.originalItems};assert.equal(tasteProfile([legacy]).dishes[0].count,1);assert.equal(mealKey(legacy),mealKey(o));
+});

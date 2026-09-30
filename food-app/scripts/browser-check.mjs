@@ -10,7 +10,9 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 try{for(const [name,width,height] of [['desktop',1440,1100],['mobile',390,844],['small-mobile',320,740]]){
  const page=await browser.newPage({viewport:{width,height}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8766/?sample=1',{waitUntil:'networkidle'});
- assert.equal(await page.locator('.choice').count(),3);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ assert.equal(await page.locator('.choice').count(),3);
+ console.log(name,await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(e=>e.className)})));
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  await page.screenshot({path:`food-qa/${name}.png`,fullPage:true});
  await page.getByRole('button',{name:'Spicy',exact:true}).click();await page.getByRole('button',{name:'Why this fits'}).first().click();
  await page.getByRole('button',{name:'Loved',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Loved',exact:true}).getAttribute('aria-pressed'),'true');

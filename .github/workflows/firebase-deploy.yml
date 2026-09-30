@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: |
             pti-app/package-lock.json
@@ -63,7 +63,7 @@ jobs:
 
       - name: Validate repo-local PTI MCP
         run: |
-          npm install --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
+          npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
           npm run build --prefix tools/pti-mcp
 
       - name: Configure Functions Runtime Environment

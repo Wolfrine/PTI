@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#163d31"><meta name="description" content="Your own food memory. Choose what feels right, with Morsel inside PTI.">
+ <title>Morsel · Your food memory</title><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+ <header class="topbar"><a class="wordmark" href="#tonight" aria-label="Morsel home"><span class="mark" aria-hidden="true">m<span>•</span></span>morsel<span class="byline">by PTI</span></a>
+ <nav aria-label="Main navigation"><button data-view="tonight" class="active">Tonight</button><button data-view="taste">Taste</button><button data-view="history">History</button><button data-view="discover">Discover</button></nav>
+ <div class="account"><a class="pti-link" href="/home">PTI</a><button id="authButton" class="account-button">Sign in</button></div></header>
+ <main id="main" tabindex="-1">
+  <div class="page-meta"><span id="greeting">Your table, your taste.</span><button id="memoryStatus" class="text-button">Connect your food memory</button></div>
+  <section class="view active" data-page="tonight" aria-label="Food choices">
+   <div class="decision-stage">
+    <div class="decision-copy"><p class="eyebrow">A LITTLE HELP WITH DINNER</p><h1>What feels<br><span>right?</span></h1><div id="moods" class="mood-grid" aria-label="Choose a food mood"></div>
+    <div class="context-controls"><label>Appetite<select id="hunger"><option>Small</option><option selected>Regular</option><option>High</option></select></label><label>Past basket budget<select id="budget"><option value="0">Any</option><option value="500">Up to ₹500</option><option value="1000">Up to ₹1,000</option><option value="1500">Up to ₹1,500</option><option value="2500">Up to ₹2,500</option></select></label></div></div>
+    <div class="meal-stage" id="mealStage"><div class="mood-label"><span>ON THE MENU IN YOUR MIND</span><strong id="moodWord">Comfort</strong></div><div class="meal-art"><img src="./assets/meal.webp" alt="Original pixel illustration of a vegetarian paneer and noodle meal" width="1024" height="1024"><div class="steam" aria-hidden="true"><i></i><i></i><i></i></div></div><div class="art-caption"><span class="pixel-cursor" aria-hidden="true"></span><span id="moodCaption">Warm. Familiar. Unhurried.</span><button id="motionButton" class="motion-button" aria-pressed="false" aria-label="Pause motion">Ⅱ</button></div></div>
+   </div>
+   <div class="section-heading"><div><p class="eyebrow">A FEW GOOD DIRECTIONS</p><h2 id="choiceHeading">For you, right now.</h2></div><span id="choiceMeta">Your history is the starting point</span></div>
+   <div id="choices" class="choices" aria-live="polite"></div>
+   <div class="under-table"><div class="memory-strip" id="memoryStrip"></div><div class="last-meal" id="lastMeal"></div></div>
+  </section>
+  <section class="view" data-page="taste" aria-label="Taste profile"><div class="interior-title"><p class="eyebrow">THE THINGS YOU COME BACK TO</p><h1>Your taste,<br><span>taking shape.</span></h1><p>Patterns from receipts. Your feedback adds meaning.</p></div><div id="tasteContent"></div></section>
+  <section class="view" data-page="history" aria-label="Order history"><div class="interior-title"><p class="eyebrow">YOUR FOOD MEMORY</p><h1>Every meal<br><span>has a place.</span></h1></div><div class="history-controls"><label class="search-label">Find a dish or restaurant<input id="historySearch" type="search" placeholder="Paneer, pizza, Udupi…"></label><label>Status<select id="historyStatus"><option value="all">All receipts</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></label></div><div id="historyList"></div><button id="moreHistory" class="secondary" hidden>Show more</button></section>
+  <section class="view" data-page="discover" aria-label="Food discovery"><div class="interior-title"><p class="eyebrow">A SMALL STEP OUTSIDE THE USUAL</p><h1>Same you.<br><span>New flavours.</span></h1><p>Vegetarian directions to investigate. Menus and restaurant availability need checking.</p></div><div id="discoveryList"></div></section>
+ </main>
+ <footer class="site-footer"><span>Personal food memory · Morsel / PTI</span><button id="settingsButton" class="text-button">Memory & connections</button></footer>
+ <dialog id="detailDialog" class="detail-dialog"><button class="close-dialog" aria-label="Close details">×</button><div id="detailContent"></div></dialog>
+ <dialog id="settingsDialog" class="settings-dialog"><button class="close-dialog" aria-label="Close settings">×</button><p class="eyebrow">MEMORY & CONNECTIONS</p><h2>A memory you own.</h2><div id="settingsContent"></div></dialog>
+ <div id="toast" class="toast" role="status"></div>
+ <script type="module" src="./app.mjs"></script>
+</body></html>

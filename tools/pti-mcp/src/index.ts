@@ -4,6 +4,7 @@ import { FieldValue, Timestamp, getFirestore, type Query, type Transaction } fro
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { assertPath, assertUser } from "./access.js";
 import { appCatalog } from "./apps.js";
+import { registerFoodTools } from "./food.js";
 import { registerPersonalTools } from "./personal.js";
 import { z } from "zod";
 
@@ -652,6 +653,7 @@ server.registerTool("pti_app_context", {
   return json(app);
 });
 registerPersonalTools(server, db, context.uid, audit);
+registerFoodTools(server, db, context.uid);
 return server;
 }
 

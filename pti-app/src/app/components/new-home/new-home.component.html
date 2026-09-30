@@ -17,9 +17,9 @@
         (click)="open(tile.path)"
       >
         <span class="tile-icon">
-          <mat-icon>{{ tile.id === 'codex-command' ? 'space_dashboard' : 'analytics' }}</mat-icon>
+          <mat-icon>{{ tile.id === 'morsel' ? 'restaurant' : tile.id === 'codex-command' ? 'space_dashboard' : 'analytics' }}</mat-icon>
         </span>
-        <span class="tile-kicker">{{ tile.id === 'codex-command' ? 'Executive scan' : 'Operations desk' }}</span>
+        <span class="tile-kicker">{{ tile.id === 'morsel' ? 'Personal food' : tile.id === 'codex-command' ? 'Executive scan' : 'Operations desk' }}</span>
         <h2>{{ tile.label }}</h2>
         <p>{{ tile.description }}</p>
         <span class="tile-action">

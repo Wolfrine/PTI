@@ -2,9 +2,9 @@ name: PTI shared MCP
 on:
   push:
     branches: [main, codex/pti-shared-mcp]
-    paths: ['tools/pti-mcp/**', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'food-app/core.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
   pull_request:
-    paths: ['tools/pti-mcp/**', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'food-app/core.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
 permissions:
   contents: read
 concurrency:

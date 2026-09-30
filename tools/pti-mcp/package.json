@@ -7,7 +7,7 @@
     "pti-firestore-mcp": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp ../../personal-harness/core.mjs dist/personal-core.mjs",
+    "build": "tsc -p tsconfig.json && cp ../../personal-harness/core.mjs dist/personal-core.mjs && cp ../../food-app/core.mjs dist/food-core.mjs",
     "start": "node dist/index.js",
     "test": "vitest run",
     "start:http": "node dist/http.js"

@@ -11,9 +11,9 @@ describe('Shared PTI account boundary', () => {
     expect(assertPath('users/owner/luminaryData/observations/items/a', 'document', 'owner')).toContain('/owner/');
     expect(() => assertUser('other', 'owner')).toThrow();
   });
-  it('discovers all five apps without misrepresenting browser/Drive data', () => {
+  it('discovers all six apps without misrepresenting browser/Drive data', () => {
     const apps = appCatalog('owner');
-    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'velum']);
+    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'food', 'velum']);
     expect(apps.find(x => x.id === 'velum')?.access).toBe('external-connection-required');
     expect(apps.find(x => x.id === 'personal')?.root).toBe('users/owner/personalData/workspace');
   });

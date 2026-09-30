@@ -1,0 +1,4 @@
+// Fictional public sample. Never bundle private receipt history into Hosting.
+import { normalizeEmail } from './core.mjs';
+const basket=(id,restaurant,items,date)=>normalizeEmail({gmailMessageId:`a0b0c0d0e0f0${id}`,from:'noreply@zomato.com',subject:'Your Zomato order from '+restaurant,receivedAt:date,text:`ORDER ID: 999999${id}\nDelivered\n${restaurant}\nFictional sample outlet\n${items.map(n=>'1 X '+n).join('\n')}\nTotal paid - ₹650.00`});
+export const sample={orders:[basket('01','The Green Table',['Paneer Tikka','Butter Naan'],'2026-09-20T15:00:00Z'),basket('02','Little Noodle House',['Schezwan Noodles','Chilli Paneer'],'2026-09-23T15:20:00Z'),basket('03','The Green Table',['Paneer Tikka','Butter Naan'],'2026-09-01T14:20:00Z'),basket('04','Dosa Corner',['Idli','Masala Dosa'],'2026-09-25T07:20:00Z')],feedback:[],settings:{vegetarian:true,ingestionPaused:false}};

@@ -6,12 +6,25 @@ service cloud.firestore {
   match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'users' && collection != '_ptiMcpAuth' && collection != 'mcpAuditLog'; }
   match /users/{uid} {
    allow read, write: if request.auth != null;
-   match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData'; }
+   match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData'; }
   }
   // SEFPO is private to its signed-in owner. Agent writes use Admin SDK through PTI MCP.
   match /users/{uid}/sefpoData/workspace {
    allow read, write: if owner(uid);
    match /{collection}/{document=**} { allow read, write: if owner(uid); }
+  }
+  // Morsel receipts and derived entities are agent-written; only owner feedback/settings are client writable.
+  match /users/{uid}/foodData/workspace {
+   allow read: if owner(uid);
+   allow create: if owner(uid) && request.resource.data.keys().hasOnly(['schemaVersion','vegetarian','ingestionPaused','updatedAt']) && request.resource.data.get('vegetarian',true) is bool && request.resource.data.get('ingestionPaused',false) is bool;
+   allow update: if owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vegetarian','ingestionPaused','updatedAt']) && request.resource.data.get('vegetarian',true) is bool && request.resource.data.get('ingestionPaused',false) is bool && request.resource.data.updatedAt is string;
+   match /orders/{id} { allow read: if owner(uid); allow write: if false; }
+   match /dishes/{id} { allow read: if owner(uid); allow write: if false; }
+   match /restaurants/{id} { allow read: if owner(uid); allow write: if false; }
+   match /feedback/{id} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['id','targetKey','reaction','note','mood','orderId','createdAt']) && request.resource.data.id == id && request.resource.data.targetKey is string && request.resource.data.targetKey.size() > 0 && request.resource.data.targetKey.size() <= 4000 && request.resource.data.reaction in ['loved','good','okay','never'] && request.resource.data.note is string && request.resource.data.note.size() <= 1000 && request.resource.data.mood in ['Comfort','Light','Spicy','Indulgent','Familiar','Explore','Quick','Proper meal'] && request.resource.data.createdAt is string;
+   }
   }
   match /users/{uid}/personalData/workspace {
    allow read: if owner(uid);

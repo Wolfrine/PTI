@@ -22,6 +22,7 @@ interface LandingOption {
 })
 export class NewHomeComponent {
   readonly premiumTiles: LandingOption[] = [
+    { id: 'morsel', label: 'Morsel · Food memory', description: 'Your Zomato history, personal taste and a little help choosing the next meal.', path: '/food/', tone: 'gold' },
     {
       id: 'codex-command',
       label: 'CEO Command Dashboard',
@@ -41,6 +42,7 @@ export class NewHomeComponent {
   constructor(private readonly router: Router) {}
 
   open(path: string): void {
+    if (path === '/food/') { window.location.assign(path); return; }
     this.router.navigate([path]);
   }
 }

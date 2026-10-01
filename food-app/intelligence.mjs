@@ -1,9 +1,22 @@
-import {clean, entityId, classifyDish, localContext, mealKey, tasteProfile} from './core.mjs';
+import {clean, canonicalName, entityId, classifyDish, localContext, mealKey, tasteProfile} from './core.mjs';
 
 export const SIGNALS = ['smoky','spicy','tangy','crispy','soft','rich','lighter','paneer','cheese','noodles','rice','bread'];
 export const MOOD_SIGNALS = {Comfort:['soft'],Light:['lighter'],Spicy:['spicy'],Indulgent:['rich'],Familiar:[],Explore:[],Quick:[], 'Proper meal':[]};
 const unique = xs => [...new Set(xs)];
 const age = (date, now) => Math.max(0,(+new Date(now)-+new Date(date))/86400000);
+// Receipt IDs stay intact. Only equivalent presentation brackets are folded;
+// portion words/numbers remain, so a half/full or 150g/300g dish stays distinct.
+export const dishIdentity = name => canonicalName(name).toLowerCase().replace(/[()[\]{}]/g,' ').replace(/\s+/g,' ').trim();
+const containsDish = (candidate,id) => candidate.dishId===id || candidate.aliases?.includes(id);
+function basketBlocked(items,restaurantId,keys){
+ const identities=items.map(i=>i.identity||dishIdentity(i.name)).sort().join('|');
+ return keys.some(key=>{
+  const prefix=restaurantId+'__';if(!key.startsWith(prefix))return false;
+  const ids=key.slice(prefix.length).split('_');if(ids.length!==items.length)return false;
+  const matches=ids.map(id=>items.find(i=>containsDish(i,id)));
+  return matches.every(Boolean)&&matches.map(i=>i.identity||dishIdentity(i.name)).sort().join('|')===identities;
+ });
+}
 const tokenRules = {
  smoky:/smok|tandoor|tikka|grill|barbecue|bbq/i, spicy:/spic|chilli|chilly|schezwan|heat|fiery|hot\b/i,
  tangy:/tang|bright|chaat|bhel|lemon|sour|refresh/i, crispy:/crisp|crunch|fried|toast|vada|puri|dosa/i,
@@ -43,7 +56,7 @@ export function interpretCraving(text='', controls={}) {
  const understood=[...resolved.map(x=>`Want ${x}`),...exclusions.map(x=>`No ${x} today`),`${diners} diner${diners>1?'s':''}`,mode, ...((price?+price[1]:+controls.budget)>0?[`Budget ₹${price?+price[1]:+controls.budget}`]:[])];
  return {raw,wants:resolved,avoid:exclusions,diners:Math.min(6,Math.max(1,diners)),budget:price?+price[1]:+controls.budget||0,mode,novelty,hunger:/very hungry|starving|big meal/i.test(positive)?'High':controls.hunger||'Regular',mood:controls.mood||'Comfort',otherWants:controls.otherWants||[],understood,
   question:!raw||Object.entries(tokenRules).some(([signal,re])=>['crispy','soft','tangy','smoky'].includes(signal)&&re.test(positive))||(controls.wants||[]).some(x=>['crispy','soft','tangy','smoky'].includes(x))?null:{text:'Which direction sounds better?',options:[{label:'Warm & soft',signal:'soft'},{label:'Crisp & bright',signal:'crispy'}]},
-  interpretation:'Food-word interpretation. Edit the cues below if I missed your meaning.'};
+  interpretation:'Here’s what I heard. Change any cue that doesn’t feel right.'};
 }
 export function interpretNote(note='') {
  const out=[];
@@ -81,15 +94,15 @@ export function learnedTaste(orders=[], learning=[], preferences=[], now=new Dat
 export function dishCandidates(orders=[],research=[],now=new Date().toISOString()){
  const map=new Map();
  for(const o of orders.filter(o=>o.status==='delivered'))for(const item of o.items){
-  const id=`${o.restaurantId}__${item.dishId}`;const old=map.get(id);
-  if(old){old.count++;if(o.receivedAt>old.lastAt)old.lastAt=o.receivedAt;old.orderIds.push(o.id);continue;}
-  map.set(id,{id,dishId:item.dishId,name:item.name,restaurantId:o.restaurantId,restaurant:o.restaurantName,outlet:o.outlet,knowledge:foodKnowledge(item.name),vegetarian:item.vegetarian,count:1,lastAt:o.receivedAt,orderIds:[o.id],source:'receipt',sourceUrl:o.source?.url||'',price:null,checkedAt:null,listed:false});
+  const identity=dishIdentity(item.name),key=`${o.restaurantId}__${identity}`,id=`${o.restaurantId}__${item.dishId}`;const old=map.get(key);
+  if(old){if(!old.orderIds.includes(o.id)){old.count++;old.orderIds.push(o.id)}if(o.receivedAt>old.lastAt)old.lastAt=o.receivedAt;old.aliases=unique([...old.aliases,item.dishId]);continue;}
+  map.set(key,{id,dishId:item.dishId,identity,aliases:[item.dishId],name:item.name,restaurantId:o.restaurantId,restaurant:o.restaurantName,outlet:o.outlet,knowledge:foodKnowledge(item.name),vegetarian:item.vegetarian,count:1,lastAt:o.receivedAt,orderIds:[o.id],source:'receipt',sourceUrl:o.source?.url||'',price:null,checkedAt:null,listed:false});
  }
  for(const venue of research){
   if(!venue.id||!venue.url||!venue.checkedAt)continue;
   for(const item of venue.items||[]){
-   const dishId=entityId(item.name),id=`${venue.id}__${dishId}`;const prior=map.get(id);
-   map.set(id,{...prior,id,dishId,name:item.name,restaurantId:venue.id,restaurant:venue.name,outlet:venue.outlet||'',knowledge:foodKnowledge(item.name),vegetarian:typeof item.vegetarian==='boolean'?item.vegetarian:prior?.vegetarian??null,count:prior?.count||0,lastAt:prior?.lastAt||null,orderIds:prior?.orderIds||[],source:'menu',sourceUrl:venue.url,price:Number.isFinite(item.price)?item.price:null,checkedAt:venue.checkedAt,listed:age(venue.checkedAt,now)<=14,mode:venue.mode||'both',sourceNote:venue.note||''});
+   const dishId=entityId(item.name),identity=dishIdentity(item.name),key=`${venue.id}__${identity}`,id=`${venue.id}__${dishId}`;const prior=map.get(key);
+   map.set(key,{...prior,id,dishId,identity,aliases:unique([...(prior?.aliases||[]),dishId]),name:item.name,restaurantId:venue.id,restaurant:venue.name,outlet:venue.outlet||'',knowledge:foodKnowledge(item.name),vegetarian:typeof item.vegetarian==='boolean'?item.vegetarian:prior?.vegetarian??null,count:prior?.count||0,lastAt:prior?.lastAt||null,orderIds:prior?.orderIds||[],source:'menu',sourceUrl:venue.url,price:Number.isFinite(item.price)?item.price:null,checkedAt:venue.checkedAt,listed:age(venue.checkedAt,now)<=14,mode:venue.mode||'both',sourceNote:venue.note||''});
   }
  }
  return [...map.values()].map(d=>({...d,price:d.listed?d.price:null}));
@@ -109,7 +122,7 @@ function dishScore(d,intent,taste,now){
   if(intent.wants.includes(signal))score+=4;
   if(intent.otherWants.includes(signal))score+=2;
  }
- const own=taste.evidence.filter(e=>e.dishId===d.dishId&&(e.restaurantId?e.restaurantId===d.restaurantId:true));
+ const own=taste.evidence.filter(e=>containsDish(d,e.dishId)&&(e.restaurantId?e.restaurantId===d.restaurantId:true));
  const current=localContext(now);
  score+=own.reduce((n,e)=>n+e.weight*(e.mood===intent.mood?1.3:1)*(e.receiptContext?.dayPart===current.dayPart?1.1:1),0);
  if(d.lastAt&&age(d.lastAt,now)<10)score-=2;
@@ -126,7 +139,7 @@ export function mealStudio({orders=[],feedback=[],learning=[],preferences=[],res
  const neverDishes=new Set(learning.filter(l=>l.eaten&&l.reason!=='other'&&l.reaction==='never').map(l=>`${l.restaurantId||''}__${l.dishId}`));
  const blockedBaskets=feedback.filter(f=>f.reaction==='never').map(f=>f.targetKey);
  const available=dishCandidates(orders,research,now).filter(d=>{
-  if((context.vegetarian!==false&&d.vegetarian===false)||recentDenied.has(d.dishId)||neverDishes.has(`${d.restaurantId}__${d.dishId}`))return false;
+  if((context.vegetarian!==false&&d.vegetarian===false)||d.aliases.some(id=>recentDenied.has(id)||neverDishes.has(`${d.restaurantId}__${id}`)))return false;
   if(deniedSignals.some(s=>d.knowledge.signals.includes(s)))return false;
   if((intent.mode==='dine-in'&&d.mode==='delivery')||(intent.mode==='delivery'&&d.mode==='dine-in'))return false;
   if(intent.budget&&d.price!==null&&d.price>intent.budget)return false;
@@ -140,35 +153,43 @@ export function mealStudio({orders=[],feedback=[],learning=[],preferences=[],res
  const compose=(main,mode,anchor=null)=>{
   const sides=available.filter(s=>compatible(main,s));
   const side=sides.find(s=>!intent.budget||main.price===null||s.price===null||main.price+s.price<=intent.budget);
-  const useSide=side&&(main.knowledge.family==='curry'||(intent.hunger==='High'||intent.diners>1));
+  const useSide=side&&(['curry','bread'].includes(main.knowledge.family)||(intent.hunger==='High'||intent.diners>1));
   const items=[{...main,slot:'anchor'},...(useSide?[{...side,slot:side.knowledge.family==='bread'?'accompaniment':'contrast'}]:[])];
   const key=`${main.restaurantId}__${items.map(i=>i.dishId).sort().join('_')}`;
-  if(blockedBaskets.includes(key))return null;
+  if(basketBlocked(items,main.restaurantId,blockedBaskets))return null;
   const signals=unique(items.flatMap(i=>i.knowledge.signals));
   const known=items.every(i=>i.count>0),priced=items.every(i=>i.price!==null&&i.listed);
   const total=priced?items.reduce((n,i)=>n+i.price,0):null;
   const shared=anchor?signals.filter(s=>anchor.signals.includes(s)):[];
-  const confirmed=items.flatMap(i=>taste.evidence.filter(e=>e.dishId===i.dishId&&(!e.restaurantId||e.restaurantId===i.restaurantId)));
+  const confirmed=items.flatMap(i=>taste.evidence.filter(e=>containsDish(i,e.dishId)&&(!e.restaurantId||e.restaurantId===i.restaurantId)));
+  const enjoyed=confirmed.filter(e=>['loved','good'].includes(e.reaction)).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+  const remembered=enjoyed?`You ${enjoyed.reaction==='loved'?'loved':'enjoyed'} ${enjoyed.name}.`:confirmed.length?`You’ve told me how ${confirmed[0].name} worked for you.`:null;
   const companion=intent.otherWants.length?intent.otherWants.filter(s=>signals.includes(s)):[];
-  const reasons=[...intent.wants.filter(s=>signals.includes(s)).map(s=>`Keeps the ${s} direction you asked for.`),...(confirmed.length?[`${confirmed.length} confirmed dish reaction${confirmed.length>1?'s':''} informed this meal.`]:known?['Built from dishes in your receipts; enjoyment is still unconfirmed.']:['Uses a sourced menu listing; this is an exploration.']),...(mode==='twist'&&shared.length?[`Preserves ${shared.slice(0,2).join(' + ')} while changing the main dish.`]:[]),...(main.recentCuisineOrders>=2?[`This cuisine appears in ${main.recentCuisineOrders} of your recent receipts; the other directions offer a break.`]:[]),...(intent.diners>1&&companion.length?[`Also includes your companion’s ${companion.join(' + ')} direction.`]:[]),...(useSide?[`Pairs ${main.name} with ${side.name} at the same restaurant.`]:[])];
+  const reasons=[...(remembered?[remembered]:[]),...intent.wants.filter(s=>signals.includes(s)).map(s=>`Keeps the ${s} direction you asked for.`),...(!confirmed.length?(known?['You’ve ordered these dishes before; tell me how they worked for you.']:['A new direction from a sourced menu.']):[]),...(mode==='twist'&&shared.length?[`Preserves ${shared.slice(0,2).join(' + ')} while changing the main dish.`]:[]),...(main.recentCuisineOrders>=2?[`This cuisine appears in ${main.recentCuisineOrders} of your recent receipts; the other directions offer a break.`]:[]),...(intent.diners>1&&companion.length?[`Also includes your companion’s ${companion.join(' + ')} direction.`]:[]),...(useSide?[`Pairs ${main.name} with ${side.name} at the same restaurant.`]:[])];
   const tradeoffs=[...(!priced?['Current basket price needs checking.']:['Listed item prices; taxes, delivery and portion sizes need checking.']),...(!items.every(i=>i.vegetarian===true)?['Confirm vegetarian ingredients.']:[]),...(intent.mode==='dine-in'?['Confirm dine-in service and menu; delivery listings may differ.']:[]),...(intent.diners>1?[`Designed for ${intent.diners} diners; choose quantities after checking portions.`]:[]),...(intent.diners>1&&intent.otherWants.length&&!companion.length?['Your companion’s cue is not covered; swap or add a dish.']:[]),...(main.knowledge.family==='curry'&&!useSide?['An accompaniment is not in the available evidence; add one after checking the menu.']:[]),...(items.some(i=>!i.listed)?['Historical or ageing evidence; check the current menu.']:['Menu listing checked; availability at your address is not confirmed.'])];
   return {id:entityId(mode+key),targetKey:key,mode,restaurant:main.restaurant,restaurantId:main.restaurantId,outlet:main.outlet,items,signals,total,known,reasons,tradeoffs,sourceUrl:main.sourceUrl,checkedAt:main.checkedAt,experiment:mode==='twist'||mode==='explore'?{keep:shared.slice(0,2),change:main.name,question:`Did ${main.name} work for you?`}:null,score:items.reduce((n,i)=>n+i.score,0)};
  };
  const pick=(rows,mode,anchor)=>rows.map(d=>compose(d,mode,anchor)).find(Boolean)||null;
  const familiar=pick([...mains.filter(d=>d.count>0),...mains.filter(d=>!d.count)],'familiar');
- const used=new Set(familiar?.items.map(i=>i.dishId)||[]);
- const twist=pick(mains.filter(d=>!used.has(d.dishId)&&d.knowledge.signals.some(s=>familiar?.signals.includes(s))),'twist',familiar);
- twist?.items.forEach(i=>used.add(i.dishId));
- const remaining=mains.filter(d=>!used.has(d.dishId));
+ const used=new Set(familiar?.items.map(i=>i.identity)||[]);
+ const adjacent=mains.filter(d=>!used.has(d.identity)&&d.knowledge.signals.some(s=>familiar?.signals.includes(s)));
+ // A deliberate twist keeps a sensory bridge but prefers a different format.
+ // Otherwise repeated high-frequency variants crowd out useful alternatives.
+ const anchorFamily=familiar?.items[0].knowledge.family;
+ const twist=pick([...adjacent.filter(d=>d.knowledge.family!==anchorFamily),...adjacent.filter(d=>d.knowledge.family===anchorFamily)],'twist',familiar);
+ twist?.items.forEach(i=>used.add(i.identity));
+ const remaining=mains.filter(d=>!used.has(d.identity));
  const explore=pick([...remaining.filter(d=>!d.count),...remaining.filter(d=>d.count)],'explore',familiar);
  const plans=[familiar,twist,explore].filter(Boolean);
+ const focused=context.focusDishId?available.find(d=>d.id===context.focusDishId):null;
+ const focusedPlan=focused?compose(focused,focused.count?'familiar':'explore',familiar):null;
  const cues=[];
  const current=localContext(now),matching=orders.filter(o=>o.status==='delivered'&&o.context?.dayPart===current.dayPart);
  if(context.proactive&&matching.length>=4)cues.push({title:`A ${current.dayPart} direction`,text:`${matching.length} receipts arrived around ${current.dayPart}. Use this as a starting point, then tell me what feels right.`});
  const overdue=sessions.filter(s=>s.status==='receipt-linked'&&!learning.some(l=>l.orderId===s.linkedOrderId&&l.eaten));
  if(overdue.length)cues.push({title:'A little feedback goes a long way',text:'A chosen meal has a matching receipt. Tell me which dishes you ate.',orderId:overdue[0].linkedOrderId});
  const ritual=memories.find(m=>m.occasion==='weekend'&&current.dayType==='weekend');if(ritual)cues.push({title:ritual.title,text:ritual.note,orderId:ritual.orderId});
- return {intent,taste,plans,candidates:available,insights:cues,profile:tasteProfile(orders,feedback),note:plans.length?'Food qualities use name hints. Edit your cues and inspect sources.':'No evidence-backed meal fits these exclusions. Try changing one cue; your exclusions remain respected.'};
+ return {intent,taste,plans,focusedPlan,candidates:available,insights:cues,profile:tasteProfile(orders,feedback),note:plans.length?'Food qualities use name hints. Edit your cues and inspect sources.':'No evidence-backed meal fits these exclusions. Try changing one cue; your exclusions remain respected.'};
 }
 export function swapMeal(plan,candidateId,candidates,intent){
  const candidate=candidates.find(c=>c.id===candidateId);if(!candidate||candidate.restaurantId!==plan.restaurantId)throw new Error('Choose a dish from this restaurant.');
@@ -177,6 +198,23 @@ export function swapMeal(plan,candidateId,candidates,intent){
  const priced=items.every(i=>i.price!==null&&i.listed),total=priced?items.reduce((n,i)=>n+i.price,0):null;
  if(intent.budget&&total!==null&&total>intent.budget)throw new Error('This combination exceeds your listed-price budget.');
  return {...plan,items,signals:unique(items.flatMap(i=>i.knowledge.signals)),total,targetKey:`${plan.restaurantId}__${items.map(i=>i.dishId).sort().join('_')}`,reasons:[`You chose ${candidate.name} as the anchor.`,...intent.wants.filter(s=>candidate.knowledge.signals.includes(s)).map(s=>`Keeps the ${s} direction you asked for.`)],experiment:{keep:plan.signals.filter(s=>candidate.knowledge.signals.includes(s)),change:candidate.name,question:`Did ${candidate.name} work for you?`}};
+}
+export function restoreMealSession(session,studio,feedback=[]){
+ const reject=reason=>({plan:null,reason});
+ if(session?.status!=='chosen'||!Array.isArray(session.dishIds)||!session.dishIds.length||session.dishIds.length>4)return reject('This direction is no longer editable.');
+ const dishes=session.dishIds.map(id=>studio.candidates.find(d=>d.restaurantId===session.restaurantId&&containsDish(d,id)));
+ if(dishes.some(d=>!d))return reject('This saved meal does not fit the current cues or available evidence. Change a cue to revisit it.');
+ if(new Set(dishes.map(d=>d.identity)).size!==dishes.length)return reject('This direction contains duplicate versions of the same dish.');
+ const main=dishes[0];if(['accompaniment','finish'].includes(main.knowledge.role))return reject('This direction needs a main dish before editing.');
+ // The user already chose this combination. Automatic pairing heuristics must
+ // not replace or reject an explicitly added side when restoring that choice.
+ const items=dishes.map((d,i)=>({...d,dishId:session.dishIds[i],name:session.itemNames?.[i]||d.name,slot:i===0?'anchor':d.knowledge.role==='accompaniment'?'accompaniment':'contrast'}));
+ if(basketBlocked(items,main.restaurantId,feedback.filter(f=>f.reaction==='never').map(f=>f.targetKey)))return reject('You asked not to suggest this combination again.');
+ const total=items.every(i=>i.price!==null&&i.listed)?items.reduce((n,i)=>n+i.price,0):null;
+ if(studio.intent.budget&&total!==null&&total>studio.intent.budget)return reject('This saved combination exceeds your current listed-price budget.');
+ const signals=unique(items.flatMap(i=>i.knowledge.signals)),targetKey=`${main.restaurantId}__${items.map(i=>i.dishId).sort().join('_')}`;
+ const tradeoffs=[total===null?'Current basket price needs checking.':'Listed item prices; taxes, delivery and portion sizes need checking.',...(!items.every(i=>i.vegetarian===true)?['Confirm vegetarian ingredients.']:[]),...(studio.intent.diners>1?[`Designed for ${studio.intent.diners} diners; choose quantities after checking portions.`]:[]),...(studio.intent.mode==='dine-in'?['Confirm dine-in service and menu; delivery listings may differ.']:[]),items.some(i=>!i.listed)?'Historical or ageing evidence; check the current menu.':'Menu listing checked; availability at your address is not confirmed.'];
+ return {plan:{id:session.id,targetKey,mode:'familiar',restaurant:main.restaurant,restaurantId:main.restaurantId,outlet:main.outlet,items,signals,total,known:items.every(i=>i.count>0),reasons:['Your saved dishes, kept together.',...studio.intent.wants.filter(s=>signals.includes(s)).map(s=>`Keeps the ${s} direction you asked for.`)],tradeoffs,sourceUrl:main.sourceUrl,checkedAt:main.checkedAt,experiment:session.experiment||null,score:items.reduce((n,i)=>n+i.score,0)},reason:null};
 }
 export function matchingSession(order,sessions){
  const hits=sessions.filter(s=>s.status==='chosen'&&s.restaurantId===order.restaurantId&&s.dishIds?.length&&s.dishIds.every(id=>order.items.some(i=>i.dishId===id))&&+new Date(order.receivedAt)>=+new Date(s.createdAt)&&age(s.createdAt,order.receivedAt)<=2);

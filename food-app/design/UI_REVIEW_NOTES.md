@@ -1,5 +1,17 @@
 # Morsel UI review
 
+## Current accepted experience — 2026-10-01
+
+The living food atelier redesign passed six substantive designer–critic cycles at **8.00/10**, with all six Central dimensions rated 8. The full cycle record is [REDESIGN_REVIEW.md](REDESIGN_REVIEW.md); it supersedes the earlier hero-led visual acceptance below.
+
+Reviewed real-history local renders at 1440×1100, 390×844 and 320×740, plus editing, saved-result continuity, exact discovery, explicit preferences, receipt drafts, source inspection, keyboard and recovery states. The first phone meal action is inside the viewport; saved meals preserve identity and edit the existing session. Only changed food pieces animate. Reduced motion and pause preserve navigation and editing.
+
+Corrected hidden modal save/settings/validation errors, false unsaved toggle state, misleading no-result pagination and focus lost on receipt rerender. Failed writes retain drafts; failed removal retains the memory; retry is visible. Semantic receipt aliases do not repeat as separate directions or bypass exclusions, while original stored IDs and portion distinctions remain intact. Explicitly added sides survive saved-meal editing.
+
+Functional checks: 22 food-model tests and 16 related Personal core checks pass; 18 MCP checks pass. The standalone browser journey passes desktop and both phones, including exact saved edits and preserved notes/focus. Private recovery evidence and fixtures stay outside Git. Angular production build passes; the unchanged scaffold test runner is blocked by Chrome launch restrictions in this execution environment and is not counted as passing. Release verification remains a separate final step.
+
+Accepted limits: name-based sensory heuristics, illustrative family sprites, incomplete menu prices/portions, a long historical journal and restrained motion. No current availability, calibrated affinity or observed user feeling is claimed. The existing Gmail trigger needs a genuine future event to demonstrate a fresh end-to-end delivery; this redesign does not create an autonomous Dot.
+
 Reviewed rendered release a7474bb at 1440×1100, 390×844 and 320×740. Desktop keeps controls and three decisions together. The 390px layout now introduces the first choice in the initial viewport. The smallest layout stacks all controls and decisions without horizontal page overflow. Meal artwork, mood label and caption no longer overlap.
 
 Playwright passed mood selection, recommendation explanations, explicit feedback, receipt details, Taste, Discover and motion control at all three sizes. Six receipt/ranking tests and sixteen MCP tests pass. Follow-up verification waits for finite animations before capturing secondary views and checks navigation while motion is paused. Continuous scene motion pauses independently of view entrance so new views remain visible.

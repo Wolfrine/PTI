@@ -1,4 +1,4 @@
-const CACHE='morsel-shell-v3';
+const CACHE='morsel-shell-v4';
 const BASE=new URL('./',self.location.href).pathname;
 const FILES=['index.html','styles.css','app.mjs','core.mjs','intelligence.mjs','places.mjs','icon.svg','assets/meal.webp','manifest.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>BASE+f))).then(()=>self.skipWaiting())));

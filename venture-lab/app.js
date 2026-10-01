@@ -91,7 +91,7 @@ function renderOverview(){
   if(latestRun){$('#runStatus').innerHTML=`<span>LAST RUN</span><strong>${esc(latestRun.status||'completed')} · ${esc(ago(latestRun.completedAt||latestRun.startedAt))}</strong>`;}
 }
 function filteredDiscoveries(){const q=$('#discoverySearch').value.trim().toLowerCase(),s=$('#discoveryStatus').value;return state.discoveries.filter(d=>(s==='all'||(d.status||'new')===s)&&(!q||JSON.stringify(d).toLowerCase().includes(q)));}
-function renderDiscoveries(){const rows=filteredDiscoveries();$('#discoveryList').classList.toggle('empty-state',!rows.length);$('#discoveryList').innerHTML=rows.length?rows.map((d,i)=>discoveryCard(d,i)).join(''):'No matching discoveries.';renderDiscoveryDetail();}
+function renderDiscoveries(){const rows=filteredDiscoveries();$('#discoveryList').classList.toggle('empty-state',!rows.length);$('#discoveryList').innerHTML=rows.length?rows.map((d,i)=>discoveryCard(d,i)).join(''):'No matching discoveries.';document.querySelector('.workspace')?.classList.toggle('has-selection',!!selectedDiscovery);renderDiscoveryDetail();}
 function renderDiscoveryDetail(){
   const d=state.discoveries.find(x=>x.id===selectedDiscovery);if(!d){$('#discoveryDetail').innerHTML='<div class="detail-empty"><b>Signal → Study</b><p>Select a market signal. Its evidence, buyer, traction and our angle will open as a research dossier.</p></div>';return;}
   const sources=(d.sources||[]).length?d.sources:(d.sourceUrl?[{url:d.sourceUrl,title:'Primary source',publisher:'source'}]:[]);
@@ -114,7 +114,7 @@ function renderPatterns(){
   $('#patternGrid').innerHTML=state.patterns.length?state.patterns.map(p=>`<article class="pattern-card"><div class="pattern-count">${esc((p.discoveryIds||[]).length||'—')}<small>SIGNALS</small></div><div><p class="eyebrow">CROSS-SIGNAL THESIS</p><h3>${esc(p.title||'Untitled pattern')}</h3><p>${esc(p.thesis||p.summary||'')}</p><div class="pattern-meta">${tags(p.tags||[])}</div></div><div class="pattern-implication"><span>COMMERCIAL IMPLICATION</span><p>${esc(p.implication||'Not derived yet.')}</p></div></article>`).join(''):'No patterns yet.';
 }
 function filteredOpportunities(){const q=$('#opportunitySearch').value.trim().toLowerCase(),s=$('#opportunityStatus').value;return state.opportunities.filter(o=>(s==='all'||(o.status||'candidate')===s)&&(!q||JSON.stringify(o).toLowerCase().includes(q)));}
-function renderOpportunities(){const rows=filteredOpportunities();$('#opportunityList').classList.toggle('empty-state',!rows.length);$('#opportunityList').innerHTML=rows.length?rows.map((o,i)=>opportunityCard(o,i)).join(''):'No matching opportunities.';renderOpportunityDetail();}
+function renderOpportunities(){const rows=filteredOpportunities();$('#opportunityList').classList.toggle('empty-state',!rows.length);$('#opportunityList').innerHTML=rows.length?rows.map((o,i)=>opportunityCard(o,i)).join(''):'No matching opportunities.';document.querySelector('.opportunity-layout')?.classList.toggle('has-selection',!!selectedOpportunity);renderOpportunityDetail();}
 function renderOpportunityDetail(){
   const o=state.opportunities.find(x=>x.id===selectedOpportunity);if(!o){$('#opportunityDetail').innerHTML='<div class="detail-empty"><b>Evidence → Entry</b><p>Select an entry to inspect its buyer, offer, repeatability, route to market and provenance.</p></div>';return;}
   const provenance=(o.derivedFrom||[]).map(id=>state.discoveries.find(d=>d.id===id)).filter(Boolean);
@@ -148,8 +148,8 @@ $('#captureBtn').addEventListener('click',()=>$('#captureDialog').showModal());$
 $('#captureForm').addEventListener('submit',e=>{e.preventDefault();captureSignal(e.currentTarget).catch(err=>toast(String(err.message||err).slice(0,180)));});
 $('#discoverySearch').addEventListener('input',renderDiscoveries);$('#discoveryStatus').addEventListener('change',renderDiscoveries);$('#opportunitySearch').addEventListener('input',renderOpportunities);$('#opportunityStatus').addEventListener('change',renderOpportunities);
 document.addEventListener('click',e=>{
-  const d=e.target.closest('[data-discovery]');if(d){selectedDiscovery=d.dataset.discovery;showView('discoveries');renderDiscoveries();return;}
-  const o=e.target.closest('[data-opportunity]');if(o){selectedOpportunity=o.dataset.opportunity;showView('opportunities');renderOpportunities();return;}
+  const d=e.target.closest('[data-discovery]');if(d){selectedDiscovery=d.dataset.discovery;showView('discoveries');renderDiscoveries();if(innerWidth<=820)requestAnimationFrame(()=>$('#discoveryDetail').scrollIntoView({block:'start'}));return;}
+  const o=e.target.closest('[data-opportunity]');if(o){selectedOpportunity=o.dataset.opportunity;showView('opportunities');renderOpportunities();if(innerWidth<=820)requestAnimationFrame(()=>$('#opportunityDetail').scrollIntoView({block:'start'}));return;}
   const ds=e.target.closest('[data-discovery-status]');if(ds){updateDiscoveryStatus(ds.dataset.discoveryStatus).catch(err=>toast(String(err.message||err).slice(0,180)));return;}
   const os=e.target.closest('[data-opportunity-status]');if(os){updateOpportunityStatus(os.dataset.opportunityStatus).catch(err=>toast(String(err.message||err).slice(0,180)));}
 });

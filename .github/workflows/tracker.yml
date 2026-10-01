@@ -50,8 +50,8 @@ jobs:
           else
             firebase hosting:sites:create "$TRACKER_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
           fi
-      - name: Deploy owner-only rules and tracker PWA
-        run: firebase deploy --config firebase.tracker.json --project "$FIREBASE_PROJECT_ID" --only firestore:rules,hosting --non-interactive
+      - name: Deploy tracker PWA
+        run: firebase deploy --config firebase.tracker.json --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive
       - name: Authorize Firebase Auth domain
         run: node tracker-app/scripts/configure-firebase-auth.mjs
       - name: Verify live assets match commit

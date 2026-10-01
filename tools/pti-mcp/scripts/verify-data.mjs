@@ -20,8 +20,8 @@ const path = `users/${user.uid}/mcpConnectionChecks/${randomUUID()}`;
 let created = false;
 try {
   const catalog = await call('pti_apps_list', {});
-  assert.equal(catalog.apps.length, 7);
-  for (const collection of ['domains', 'luminaryData/observations/items', 'personalData/workspace/feedback', 'sefpoData/workspace/units', 'ventureData/workspace/discoveries', 'foodData/workspace/orders']) {
+  assert.equal(catalog.apps.length, 8);
+  for (const collection of ['domains', 'luminaryData/observations/items', 'personalData/workspace/feedback', 'sefpoData/workspace/units', 'ventureData/workspace/discoveries', 'foodData/workspace/orders', 'trackerData/workspace/events']) {
     await call('firestore_query', { collectionPath: `users/${user.uid}/${collection}`, limit: 1 });
   }
   const first = await call('firestore_create_document', { path, data: { connectionCheck: true, stage: 'created' } });
@@ -43,7 +43,7 @@ try {
   const receipt = food.recentOrders[0];
   const dedupe = await call('food_ingest_email', {gmailMessageId:receipt.source.gmailMessageId,from:'noreply@zomato.com',subject:receipt.source.subject,receivedAt:receipt.receivedAt,text:`ORDER ID: ${receipt.orderId}\nDelivered\n${receipt.restaurantName}\n${receipt.items.map(i=>`${i.quantity} X ${i.name}`).join('\n')}\nTotal paid - ₹${receipt.total}`});
   assert.equal(dedupe.duplicate,true);
-  console.log('PASS: seven-app discovery, six real app collection reads, shared meal model, food tool discovery and duplicate receipt rejection, owner-scoped create/update/read/delete and deletion verification. No private records printed.');
+  console.log('PASS: eight-app discovery, seven real app collection reads, shared meal model, food tool discovery and duplicate receipt rejection, owner-scoped create/update/read/delete and deletion verification. No private records printed.');
 } finally {
   if (created) {
     const remaining = await call('firestore_get_document', { path });

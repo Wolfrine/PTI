@@ -15,7 +15,7 @@ jobs:
     env:
       FIREBASE_PROJECT_ID: pti-app-2ab59
       MORSEL_SITE_ID: pti-app-2ab59-morsel
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/morsel-firebase-service-account.json
       FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npm install -g firebase-tools
           if ! firebase hosting:sites:get "$MORSEL_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then

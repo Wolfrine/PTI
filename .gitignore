@@ -10,3 +10,5 @@ firebase.personal-preview.json
 personal-activation-report.json
 
 food-qa/
+
+.morsel-dist/

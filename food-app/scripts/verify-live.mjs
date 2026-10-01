@@ -17,10 +17,14 @@ try{
  await check(path+'/orders/zomato-8650593269',ownerToken,200);await check(path+'/orders/zomato-8650593269',otherToken,403);
  console.log('PASS: owner can read imported food history; unrelated and unsigned clients cannot.');
 }finally{await auth.deleteUser(outsider).catch(()=>{});}
-const origin='https://pti-app-2ab59.web.app/food/';
+const origin='https://pti-app-2ab59-morsel.web.app/';
 for(const file of ['index.html','app.mjs','core.mjs','styles.css','sw.js','manifest.webmanifest']){
  const expected=await readFile('food-app/'+file,'utf8');let verified=false;
  for(let i=0;i<12;i++){const response=await fetch(origin+file+'?release='+process.env.GITHUB_SHA,{headers:{'Cache-Control':'no-cache'}});if(response.ok&&(await response.text())===expected){verified=true;break}await new Promise(r=>setTimeout(r,3000));}
  if(!verified)throw new Error('Live asset did not match: '+file);
 }
 console.log('PASS: live Morsel assets match this release.');
+
+const manifest=await fetch(origin+'manifest.webmanifest').then(r=>r.json());
+if(manifest.start_url!=='./'||manifest.scope!=='./')throw new Error('Morsel must install at its own app root.');
+console.log('PASS: standalone Morsel PWA start URL and scope.');

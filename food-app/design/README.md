@@ -2,6 +2,8 @@
 
 Level: L3 consumer working surface. Goal: make the next food decision easy on a phone; receipts and inference stay inspectable.
 
+App boundary: Morsel is a separate PWA at https://pti-app-2ab59-morsel.web.app/, like Personal and Velum. It shares the existing PTI Firebase project, account-scoped food memory and MCP. The PTI home tile is a launcher; former /food/ links migrate to the standalone app. Never embed the food UI back into PTI's main site.
+
 Thesis: a personal table, with a pixel meal responding to the chosen food mood, and three grounded directions immediately beneath it.
 
 References retrieved from Central: Material (object continuity and visible cause/effect); Linear (workflow density); Collection (idea-first labels); Atum (tangible metaphor separate from precise facts); Butter (direct controls for generated objects). Anti-pattern checked: GENERIC_AI_UI. No reference palette or layout was copied.

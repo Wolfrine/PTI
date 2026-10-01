@@ -7,7 +7,7 @@ const base=path.resolve('food-app');
 const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost');const file=path.resolve(base,'.'+(url.pathname==='/'?'/index.html':url.pathname));if(!file.startsWith(base+path.sep)){res.writeHead(403).end();return}const body=await readFile(file);const type={'.html':'text/html','.mjs':'application/javascript','.css':'text/css','.webp':'image/webp','.svg':'image/svg+xml'}[path.extname(file)]||'application/octet-stream';res.writeHead(200,{'Content-Type':type});res.end(body)}catch{res.writeHead(404).end()}});
 await new Promise(r=>server.listen(8766,'127.0.0.1',r));await mkdir('food-qa',{recursive:true});
 async function settle(page){await page.evaluate(()=>Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))));}
-const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const browser=await chromium.launch({headless:true,...(process.env.MORSEL_CHROME_PATH?{executablePath:process.env.MORSEL_CHROME_PATH}:{}),args:['--no-sandbox']});
 try{for(const [name,width,height] of [['desktop',1440,1100],['mobile',390,844],['small-mobile',320,740]]){
  const page=await browser.newPage({viewport:{width,height}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8766/?sample=1',{waitUntil:'networkidle'});

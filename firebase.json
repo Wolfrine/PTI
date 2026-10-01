@@ -85,6 +85,18 @@
           "source": "**",
           "destination": "/index.html"
         }
+      ],
+      "redirects": [
+        {
+          "source": "/food",
+          "destination": "https://pti-app-2ab59-morsel.web.app/",
+          "type": 302
+        },
+        {
+          "source": "/food/",
+          "destination": "https://pti-app-2ab59-morsel.web.app/",
+          "type": 302
+        }
       ]
     },
     {

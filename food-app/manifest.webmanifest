@@ -1,1 +1,1 @@
-{"name":"Morsel · Personal food memory","short_name":"Morsel","start_url":"/food/","scope":"/food/","display":"standalone","background_color":"#f6f6ef","theme_color":"#163d31","icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{"name":"Morsel \u00b7 Personal food memory","short_name":"Morsel","start_url":"./","scope":"./","display":"standalone","background_color":"#f6f6ef","theme_color":"#163d31","icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}],"id":"./"}

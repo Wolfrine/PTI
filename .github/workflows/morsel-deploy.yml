@@ -1,0 +1,59 @@
+name: Deploy standalone Morsel PWA
+on:
+  push:
+    branches: [main]
+    paths: ['food-app/**', 'firebase.morsel.json', '.github/workflows/morsel-deploy.yml']
+permissions:
+  contents: read
+concurrency:
+  group: morsel-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FIREBASE_PROJECT_ID: pti-app-2ab59
+      MORSEL_SITE_ID: pti-app-2ab59-morsel
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate and bundle the standalone app
+        run: |
+          node --test food-app/core.test.mjs
+          node --check food-app/app.mjs
+          node --check food-app/legacy-sw.js
+          node food-app/scripts/build.mjs
+          npm ci --prefix personal-functions --ignore-scripts --no-audit --no-fund
+      - name: Verify desktop and phone interactions
+        run: |
+          chrome_path="$(command -v google-chrome || true)"
+          if [ -z "$chrome_path" ]; then
+            personal-functions/node_modules/.bin/playwright install --with-deps chromium
+          fi
+          MORSEL_CHROME_PATH="$chrome_path" node food-app/scripts/browser-check.mjs
+      - name: Save visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: morsel-standalone-visual-evidence
+          path: food-qa/
+          retention-days: 7
+      - name: Create Morsel site and configure sign-in
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install -g firebase-tools
+          if ! firebase hosting:sites:get "$MORSEL_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            firebase hosting:sites:create "$MORSEL_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          fi
+          node food-app/scripts/configure-firebase-auth.mjs
+      - name: Deploy and verify private standalone app
+        run: |
+          firebase deploy --config firebase.morsel.json --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive
+          node food-app/scripts/verify-live.mjs

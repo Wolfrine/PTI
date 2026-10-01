@@ -146,7 +146,7 @@ document.addEventListener('click',e=>{
 });
 
 onAuthStateChanged(auth,async next=>{
-  user=next;$('#signInBtn').classList.toggle('hidden',!!user);$('#signOutBtn').classList.toggle('hidden',!user);$('#captureBtn').disabled=!user;$('#authGate').classList.toggle('hidden',!!user);$('#appSurface').classList.toggle('hidden',!user);
+  user=next;$('#signInBtn').classList.toggle('hidden',!!user);$('#signOutBtn').classList.toggle('hidden',!user);$('#captureBtn').classList.toggle('hidden',!user);$('#captureBtn').disabled=!user;$('#authGate').classList.toggle('hidden',!!user);$('#appSurface').classList.toggle('hidden',!user);
   if(!user){root=null;state={discoveries:[],patterns:[],opportunities:[],runs:[]};setSync(false,'Sign in required');return;}
   root=doc(db,'users',user.uid,'ventureData','workspace');
   await setDoc(root,{schemaVersion:1,app:'venture-lab',objective:'Find realistic entry opportunities with credible steady monthly income.',incomeFloorMonthly:10000,incomeTargetMonthly:20000,geography:'india-global',discoveryScope:'broad',updatedAt:now()},{merge:true});

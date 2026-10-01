@@ -13,9 +13,10 @@ describe('Shared PTI account boundary', () => {
   });
   it('discovers all seven apps without misrepresenting browser/Drive data', () => {
     const apps = appCatalog('owner');
-    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'venture', 'food', 'velum']);
+    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'venture', 'food', 'tracker', 'velum']);
     expect(apps.find(x => x.id === 'velum')?.access).toBe('external-connection-required');
     expect(apps.find(x => x.id === 'personal')?.root).toBe('users/owner/personalData/workspace');
+    expect(apps.find(x => x.id === 'tracker')?.root).toBe('users/owner/trackerData/workspace');
     expect(apps.find(x => x.id === 'venture')?.root).toBe('users/owner/ventureData/workspace');
   });
   it('lists the real server tools, calls discovery and rejects cross-user data before Firestore', async () => {

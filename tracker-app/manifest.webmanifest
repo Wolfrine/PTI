@@ -1,0 +1,1 @@
+{"name":"PTI Self-Tracking","short_name":"PTI Track","description":"Connected operating history for discussions, work, decisions, corrections and improvement.","start_url":"./#chronicle","scope":"./","display":"standalone","background_color":"#f7f9fc","theme_color":"#f7f9fc","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

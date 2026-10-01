@@ -1,0 +1,22 @@
+{
+  "firestore": [{"database":"(default)","rules":"personal-harness/firestore.rules"}],
+  "hosting": {
+    "site": "pti-app-2ab59-tracker",
+    "public": "tracker-app",
+    "ignore": ["firebase.tracker.json","**/.*","**/node_modules/**","README.md","AGENT.md","scripts/**","tests/**"],
+    "headers": [
+      {"source":"/**","headers":[
+        {"key":"Referrer-Policy","value":"no-referrer"},
+        {"key":"X-Content-Type-Options","value":"nosniff"},
+        {"key":"X-Frame-Options","value":"DENY"},
+        {"key":"Permissions-Policy","value":"camera=(), microphone=(), geolocation=()"},
+        {"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com; frame-src https://pti-app-2ab59.firebaseapp.com https://accounts.google.com; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"}
+      ]},
+      {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"}]},
+      {"source":"/sw.js","headers":[{"key":"Cache-Control","value":"no-cache"}]},
+      {"source":"/*.js","headers":[{"key":"Cache-Control","value":"no-cache, must-revalidate"}]},
+      {"source":"/*.mjs","headers":[{"key":"Cache-Control","value":"no-cache, must-revalidate"}]}
+    ],
+    "rewrites": [{"source":"**","destination":"/index.html"}]
+  }
+}

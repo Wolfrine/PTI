@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths: ['tracker-app/**','firebase.tracker.json','personal-harness/firestore.rules','tools/pti-mcp/src/apps.ts','.github/workflows/tracker.yml']
+  pull_request:
+    paths: ['tracker-app/**','firebase.tracker.json','personal-harness/firestore.rules','tools/pti-mcp/src/apps.ts','.github/workflows/tracker.yml']
   workflow_dispatch:
 permissions:
   contents: read

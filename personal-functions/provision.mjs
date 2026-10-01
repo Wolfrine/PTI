@@ -19,6 +19,8 @@ const priorHash=digest(previous[0].content),targetHash=digest(source);
 // Last entry is the reviewed OAuth-isolated rules in commit 3c4f30a, before adding owner-readable reflections.
 // Reviewed Morsel owner-only baseline from 63260adc.
 const approvedPrevious=new Set(['3075107d79eb458b543c467b2acfd91541a2c76e48dbffe3b6531cdca38c031b','44c427751ccb98cde0fc8cad8f02e4445ce3e856c81087a202c1d49363eaa5f4','00e383c39716729a89dca55839ec3503da4cc4cbd3f191560d78c356bb53dc2a','5c3cd9cdff141cf9a1536311cb16c68d0742c32b5d8df86878bcc7292b4fc442']);
+// Reviewed owner-only Venture baseline, PTI f40ee229. Only Venture's isolated block changes.
+approvedPrevious.add('72111fbf34b5575a8b42ec434ba732dc80558086fee0d7cf0defdcfe9f3fd38a');
 if(process.env.APPROVED_PREVIOUS_RULES_FILE){
  const approvedSource=await readFile(process.env.APPROVED_PREVIOUS_RULES_FILE,'utf8');
  approvedPrevious.add(digest(approvedSource));

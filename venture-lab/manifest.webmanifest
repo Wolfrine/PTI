@@ -1,17 +1,1 @@
-{
-  "name": "Venture Lab · PTI",
-  "short_name": "Venture Lab",
-  "description": "Discovery and opportunity intelligence workspace inside PTI.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ebe7de",
-  "theme_color": "#ebe7de",
-  "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
-}
+{"name":"Venture Studio","short_name":"Venture","description":"A shared studio for ideas, research and experiments.","start_url":"./","scope":"./","display":"standalone","background_color":"#f6f5ef","theme_color":"#e9ecdf","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

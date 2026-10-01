@@ -13,10 +13,72 @@ service cloud.firestore {
    allow read, write: if owner(uid);
    match /{collection}/{document=**} { allow read, write: if owner(uid); }
   }
-  // Venture Lab is private to its signed-in owner. Agents use Admin SDK through PTI MCP.
+  // Venture Studio: only the owner and explicitly invited verified Google accounts.
   match /users/{uid}/ventureData/workspace {
-   allow read, write: if owner(uid);
-   match /{collection}/{document=**} { allow read, write: if owner(uid); }
+   function participant() {
+    return owner(uid) || (request.auth != null && request.auth.token.get('email_verified', false) == true
+      && request.auth.token.get('email', '') is string
+      && exists(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/members/$(request.auth.token.email.lower())));
+   }
+   function author() { return request.resource.data.createdBy == request.auth.uid && request.resource.data.authorName is string && request.resource.data.createdAt is string; }
+   function threadExists(d) { return d.threadId is string && exists(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/threads/$(d.threadId)); }
+   function branchMatches(d) { return d.get('branchId','') == '' || get(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/branches/$(d.branchId)).data.threadId == d.threadId; }
+   function optionalThread(d) { return (d.get('threadId','') == '' && d.get('branchId','') == '') || (threadExists(d) && branchMatches(d)); }
+   function revised() { return request.resource.data.revision == resource.data.get('revision',1) + 1 && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt is string; }
+   function bounded(d,k,max) { return d.get(k,'') is string && d.get(k,'').size() <= max; }
+   allow read: if participant();
+   allow create, update: if owner(uid);
+   allow delete: if false;
+   match /members/{email} {
+    allow read: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['email','name','role','invitedAt','invitedBy']) && request.resource.data.email == email && email == email.lower() && email.matches('[^/@ ]+@[^/@ ]+[.][^/@ ]+') && request.resource.data.role == 'editor' && request.resource.data.invitedBy == request.auth.uid && bounded(request.resource.data,'name',120);
+    allow delete: if owner(uid);
+   }
+   match /threads/{id} {
+    allow read: if participant();
+    allow create: if participant() && author() && request.resource.data.title is string && request.resource.data.title.size()>0 && bounded(request.resource.data,'title',180) && bounded(request.resource.data,'summary',6000) && request.resource.data.status == 'active';
+    allow update: if participant() && revised() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','summary','status','updatedAt','updatedBy','revision']) && bounded(request.resource.data,'title',180) && request.resource.data.title.size()>0 && bounded(request.resource.data,'summary',6000) && request.resource.data.status in ['active','parked','closed'];
+   }
+   match /messages/{id} {
+    allow read: if participant();
+    allow create: if participant() && author() && request.resource.data.keys().hasOnly(['createdAt','updatedAt','createdBy','authorName','revision','threadId','branchId','text','kind','sourceUrl','audioData','audioDuration']) && existsAfter(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/threads/$(request.resource.data.threadId)) && branchMatches(request.resource.data) && bounded(request.resource.data,'text',12000) && bounded(request.resource.data,'sourceUrl',2000) && bounded(request.resource.data,'audioData',600000) && (request.resource.data.text.size()>0 || request.resource.data.audioData.size()>0) && request.resource.data.kind in ['thought','question','link','summary'];
+    allow update, delete: if false;
+   }
+   match /branches/{id} {
+    function fields() { return ['title','hypothesis','customer','offer','assumptions','openQuestions','demand','access','repeatability','economics','effort','automation','uncertainty','updatedAt','updatedBy','revision']; }
+    function validDecision() {
+     let decision = getAfter(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/decisions/$(request.resource.data.lastDecisionId)).data;
+     return !exists(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/decisions/$(request.resource.data.lastDecisionId)) && decision.branchId == id && decision.threadId == resource.data.threadId && decision.createdBy == request.auth.uid && decision.reason.size()>0 && ((decision.outcome == 'reopened' && request.resource.data.status == 'exploring') || decision.outcome == request.resource.data.status);
+    }
+    allow read: if participant();
+    allow create: if participant() && author() && threadExists(request.resource.data) && request.resource.data.status == 'exploring' && request.resource.data.title.size()>0 && bounded(request.resource.data,'title',180) && (request.resource.data.get('parentId','') == '' || get(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/branches/$(request.resource.data.parentId)).data.threadId == request.resource.data.threadId) && (request.resource.data.get('sourceMessageId','') == '' || get(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/messages/$(request.resource.data.sourceMessageId)).data.threadId == request.resource.data.threadId);
+    allow update: if participant() && revised() && request.resource.data.title.size()>0 && bounded(request.resource.data,'title',180) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields()) || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','lastDecisionId','updatedAt','updatedBy','revision']) && validDecision()));
+   }
+   match /researchTasks/{id} {
+    allow read: if participant();
+    allow create: if participant() && author() && optionalThread(request.resource.data) && request.resource.data.status == 'queued' && request.resource.data.scope in ['focused','open'] && request.resource.data.question.size()>0 && bounded(request.resource.data,'question',4000);
+    allow update, delete: if false;
+   }
+   match /findings/{id} {
+    allow read: if participant();
+    allow create: if participant() && author() && optionalThread(request.resource.data) && request.resource.data.title.size()>0 && bounded(request.resource.data,'title',180) && bounded(request.resource.data,'summary',8000) && request.resource.data.stance in ['supports','challenges','neutral'] && request.resource.data.evidenceType in ['fact','reported','inference','question'] && (!(request.resource.data.evidenceType in ['fact','reported']) || request.resource.data.get('sourceUrl','').matches('https?://.+'));
+    allow update, delete: if false;
+   }
+   match /decisions/{id} {
+    allow read: if participant();
+    allow create: if participant() && author() && request.resource.data.reason.size()>0 && bounded(request.resource.data,'reason',6000) && ((threadExists(request.resource.data) && branchMatches(request.resource.data) && request.resource.data.branchId.size()>0 && request.resource.data.outcome in ['shortlisted','parked','rejected','reopened']) || (request.resource.data.get('legacyCollection','') in ['opportunities','discoveries'] && request.resource.data.get('legacyId','').size()>0));
+    allow update, delete: if false;
+   }
+   match /experiments/{id} {
+    function valid() { return request.resource.data.title.size()>0 && request.resource.data.hypothesis.size()>0 && request.resource.data.method.size()>0 && request.resource.data.successCriterion.size()>0 && request.resource.data.status in ['planned','running','completed','stopped'] && (request.resource.data.status != 'completed' || (request.resource.data.result.size()>0 && request.resource.data.learning.size()>0)); }
+    allow read: if participant();
+    allow create: if participant() && author() && threadExists(request.resource.data) && branchMatches(request.resource.data) && request.resource.data.branchId.size()>0 && valid() && request.resource.data.status == 'planned';
+    allow update: if participant() && revised() && valid() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','hypothesis','method','successCriterion','status','result','learning','nextStep','updatedAt','updatedBy','revision']);
+   }
+   match /{collection}/{id} {
+    allow read: if participant() && collection in ['discoveries','patterns','opportunities','runs'];
+    allow create, update: if participant() && collection in ['discoveries','patterns','opportunities','runs'];
+   }
   }
   // Morsel receipts and derived entities are agent-written; only owner feedback/settings are client writable.
   match /users/{uid}/foodData/workspace {

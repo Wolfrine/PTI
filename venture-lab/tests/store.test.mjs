@@ -1,0 +1,24 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+globalThis.location={search:'?demo=1',origin:'https://example.invalid',pathname:'/'};
+globalThis.window={addEventListener(){}};
+const {createVentureStore}=await import('../data.js');
+test('full isolated workflow preserves origins, reasons, results and revisions',async()=>{
+ const store=createVentureStore(()=>{});await Promise.resolve();
+ const t=await store.createThread({title:'A shared question',text:'Our original thought'});
+ const original=store.state.messages.find(x=>x.threadId===t.id);
+ const b=await store.createBranch({threadId:t.id,sourceMessageId:original.id,title:'A service',hypothesis:'People pay to remove a repeat task'});
+ const fork=await store.createBranch({threadId:t.id,parentId:b.id,title:'Try one paid session'});
+ assert.equal(fork.parentId,b.id);assert.equal(store.state.messages.find(x=>x.id===original.id).text,'Our original thought');
+ const task=await store.requestResearch({threadId:t.id,branchId:b.id,question:'Who already pays?'});
+ assert.equal(task.status,'queued');assert.equal((await store.requestResearch({threadId:t.id,branchId:b.id,question:'Who already pays?'})).id,task.id);
+ await store.recordDecision({threadId:t.id,branchId:b.id,outcome:'parked',reason:'No buyer access yet',expectedRevision:1});
+ assert.equal(store.state.branches.find(x=>x.id===b.id).status,'parked');
+ await assert.rejects(store.updateBranch(b.id,{title:'stale overwrite',expectedRevision:1}),/updated/);
+ assert.equal(store.state.decisions.find(x=>x.branchId===b.id).reason,'No buyer access yet');
+ const e=await store.createExperiment({threadId:t.id,branchId:fork.id,title:'Three conversations',hypothesis:'One pays',method:'Offer a pilot',successCriterion:'One paid trial'});
+ await assert.rejects(store.updateExperiment(e.id,{status:'completed',expectedRevision:1}),/result/i);
+ await store.updateExperiment(e.id,{status:'completed',result:'Nobody paid',learning:'Problem was too vague',nextStep:'Narrow the buyer',expectedRevision:1});
+ assert.equal(store.state.experiments.find(x=>x.id===e.id).learning,'Problem was too vague');
+ assert.equal(store.state.demo,true);
+});

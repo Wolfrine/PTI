@@ -258,7 +258,9 @@
         "**/node_modules/**",
         "README.md",
         "scripts/**",
-        "design/**"
+        "design/**",
+        "tests/**",
+        "AGENT.md"
       ],
       "headers": [
         {
@@ -278,7 +280,11 @@
             },
             {
               "key": "Permissions-Policy",
-              "value": "camera=(), geolocation=(), microphone=()"
+              "value": "camera=(), geolocation=(), microphone=(self)"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, must-revalidate"
             }
           ]
         },

@@ -6,6 +6,7 @@ import { assertPath, assertUser } from "./access.js";
 import { appCatalog } from "./apps.js";
 import { registerFoodTools } from "./food.js";
 import { registerPersonalTools } from "./personal.js";
+import { registerVentureTools } from "./venture.js";
 import { z } from "zod";
 
 const projectId =
@@ -654,6 +655,7 @@ server.registerTool("pti_app_context", {
 });
 registerPersonalTools(server, db, context.uid, audit);
 registerFoodTools(server, db, context.uid);
+registerVentureTools(server, db, context.uid);
 return server;
 }
 

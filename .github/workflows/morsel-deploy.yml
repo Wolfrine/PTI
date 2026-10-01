@@ -28,7 +28,7 @@ jobs:
           node --check food-app/app.mjs
           node --check food-app/legacy-sw.js
           node food-app/scripts/build.mjs
-          npm ci --prefix personal-functions --ignore-scripts --no-audit --no-fund
+          npm install --prefix personal-functions --ignore-scripts --no-audit --no-fund
       - name: Verify desktop and phone interactions
         run: |
           chrome_path="$(command -v google-chrome || true)"

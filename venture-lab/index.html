@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#f3f0e8">
+  <meta name="theme-color" content="#ebe7de">
   <meta name="description" content="Venture Lab — PTI discovery and opportunity intelligence workspace.">
   <title>Venture Lab · PTI</title>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -14,15 +14,31 @@
   <div class="app-shell">
     <aside class="rail">
       <a class="brand" href="#" data-view="overview" aria-label="Venture Lab overview">
-        <span class="brand-mark">V</span>
-        <span><strong>Venture Lab</strong><small>Discovery · PTI</small></span>
+        <span class="brand-mark"><i></i><b>V</b></span>
+        <span class="brand-copy"><strong>Venture Lab</strong><small>PTI / evidence desk</small></span>
       </a>
+
+      <div class="rail-kicker">MARKET → ENTRY</div>
+
       <nav class="nav" aria-label="Primary navigation">
-        <button class="nav-item active" data-view="overview"><span>01</span>Overview</button>
-        <button class="nav-item" data-view="discoveries"><span>02</span>Discoveries</button>
-        <button class="nav-item" data-view="patterns"><span>03</span>Patterns</button>
-        <button class="nav-item" data-view="opportunities"><span>04</span>Opportunities</button>
+        <button class="nav-item active" data-view="overview" data-tone="overview">
+          <span class="nav-code">00</span><span class="nav-label">Desk</span><i></i>
+        </button>
+        <button class="nav-item" data-view="discoveries" data-tone="signal">
+          <span class="nav-code">01</span><span class="nav-label">Signals</span><i></i>
+        </button>
+        <button class="nav-item" data-view="patterns" data-tone="pattern">
+          <span class="nav-code">02</span><span class="nav-label">Patterns</span><i></i>
+        </button>
+        <button class="nav-item" data-view="opportunities" data-tone="opportunity">
+          <span class="nav-code">03</span><span class="nav-label">Entries</span><i></i>
+        </button>
       </nav>
+
+      <div class="rail-model" aria-label="Evidence model">
+        <span>external</span><b>signal</b><i></i><b>pattern</b><i></i><b>entry</b><span>ours</span>
+      </div>
+
       <div class="rail-foot">
         <div class="sync-state"><i id="syncDot"></i><span id="syncText">Sign in required</span></div>
         <button id="signOutBtn" class="text-button hidden">Sign out</button>
@@ -31,82 +47,99 @@
 
     <main>
       <header class="topbar">
-        <div>
+        <div class="topbar-title">
           <p class="eyebrow" id="viewEyebrow">DISCOVERY & STUDY</p>
           <h1 id="viewTitle">Find where money is already moving.</h1>
         </div>
-        <div class="top-actions">
-          <button id="signInBtn" class="secondary">Sign in</button>
-          <button id="captureBtn" class="primary hidden" disabled>Capture signal</button>
+        <div class="topbar-context">
+          <div class="run-status" id="runStatus"><span>LAST RUN</span><strong>Waiting for data</strong></div>
+          <div class="top-actions">
+            <button id="signInBtn" class="secondary">Sign in</button>
+            <button id="captureBtn" class="primary hidden" disabled><span>＋</span> Signal</button>
+          </div>
         </div>
       </header>
 
       <section id="authGate" class="auth-gate">
         <div class="auth-copy">
-          <p class="eyebrow">PTI · VENTURE LAB</p>
-          <h2>Observe the market before choosing what to build.</h2>
-          <p>Venture Lab turns external signals into structured studies, patterns and opportunities that can realistically become steady income.</p>
-          <button id="gateSignInBtn" class="primary">Continue with Google</button>
+          <p class="eyebrow">PTI / VENTURE LAB</p>
+          <h2>Observe the market.<br><em>Then earn from what repeats.</em></h2>
+          <p>Not an idea board. This is an evidence desk that converts outside market movement into studied patterns and realistic income paths.</p>
+          <button id="gateSignInBtn" class="primary auth-primary">Continue with Google <span>↗</span></button>
         </div>
-        <div class="logic-card" aria-label="Discovery flow">
-          <div><b>Signal</b><span>Something is working, changing or being paid for.</span></div>
-          <i></i>
-          <div><b>Study</b><span>Who pays, why now, acquisition, monetisation, traction.</span></div>
-          <i></i>
-          <div><b>Pattern</b><span>Repeated market behaviour across several signals.</span></div>
-          <i></i>
-          <div><b>Opportunity</b><span>A realistic entry path for us with repeatable income.</span></div>
+        <div class="auth-model" aria-label="Discovery flow">
+          <div class="model-step signal">
+            <span>01</span><b>SIGNAL</b><p>Something is changing, growing or being paid for.</p>
+          </div>
+          <div class="model-arrow">↓</div>
+          <div class="model-step pattern">
+            <span>02</span><b>PATTERN</b><p>Several signals reveal the same underlying market behavior.</p>
+          </div>
+          <div class="model-arrow">↓</div>
+          <div class="model-step opportunity">
+            <span>03</span><b>ENTRY</b><p>A credible route for us to turn that evidence into recurring income.</p>
+          </div>
         </div>
       </section>
 
       <div id="appSurface" class="hidden">
         <section class="view active" data-page="overview">
-          <div class="hero-grid">
-            <article class="hero-card">
-              <p class="eyebrow">CURRENT OBJECTIVE</p>
-              <h2>Find practical paths to steady ₹10k–₹20k+ monthly income.</h2>
-              <p>Do not optimize for maximum scale yet. Prefer real demand, recurring payment, identifiable customers and realistic entry.</p>
-              <div class="hero-tags"><span>India + global</span><span>No industry restriction</span><span>Budget/time not early filters</span></div>
-            </article>
-            <article class="pulse-card">
-              <span class="pulse-label">DISCOVERY PULSE</span>
-              <strong id="pulseNumber">0</strong>
-              <p id="pulseCopy">No market signals captured yet.</p>
-              <div class="pulse-line"><i></i></div>
-            </article>
-          </div>
+          <section class="brief">
+            <div class="brief-statement">
+              <p class="eyebrow">CURRENT OPERATING THESIS</p>
+              <h2>Small, repeatable cashflow first.<br><span>Bigger bets after the machine works.</span></h2>
+              <p>Prioritize paid demand, recurring need, identifiable buyers and realistic entry. Budget and time stay out of the early filter.</p>
+            </div>
+            <div class="brief-number">
+              <span>INITIAL TARGET</span>
+              <strong>₹10–20k<small>/mo+</small></strong>
+              <p>credible steady flow</p>
+            </div>
+          </section>
 
-          <div class="stats">
-            <article><span>Signals</span><strong id="statDiscoveries">0</strong><small id="statNew">0 new</small></article>
-            <article><span>Studied</span><strong id="statStudied">0</strong><small>structured cases</small></article>
-            <article><span>Patterns</span><strong id="statPatterns">0</strong><small>cross-market links</small></article>
-            <article><span>Shortlist</span><strong id="statShortlist">0</strong><small>worth discussing</small></article>
-          </div>
+          <section class="evidence-strip" aria-label="Discovery pipeline counts">
+            <div class="evidence-segment signal"><span>Signals</span><strong id="statDiscoveries">0</strong><small id="statNew">0 new</small></div>
+            <div class="evidence-segment study"><span>Studied</span><strong id="statStudied">0</strong><small>structured cases</small></div>
+            <div class="evidence-segment pattern"><span>Patterns</span><strong id="statPatterns">0</strong><small>cross-signal theses</small></div>
+            <div class="evidence-segment opportunity"><span>Shortlist</span><strong id="statShortlist">0</strong><small>worth discussing</small></div>
+          </section>
 
-          <div class="dashboard-grid">
-            <section class="panel wide">
-              <div class="panel-head">
-                <div><p class="eyebrow">LATEST SIGNALS</p><h3>What changed outside?</h3></div>
-                <button class="text-button" data-view="discoveries">See all</button>
+          <section class="desk-grid">
+            <div class="desk-main">
+              <div class="section-label">
+                <span>01 / INCOMING</span>
+                <div><h3>Market signals</h3><p>Fresh external evidence, indexed for study.</p></div>
+                <button class="text-button" data-view="discoveries">Open signal desk →</button>
               </div>
-              <div id="latestDiscoveries" class="signal-list empty-state">No discoveries yet.</div>
-            </section>
-            <section class="panel">
-              <div class="panel-head"><div><p class="eyebrow">SHORTLIST</p><h3>Worth our attention</h3></div></div>
-              <div id="shortlistList" class="compact-list empty-state">Nothing shortlisted yet.</div>
-            </section>
-            <section class="panel">
-              <div class="panel-head"><div><p class="eyebrow">PATTERNS</p><h3>Repeated market behaviour</h3></div></div>
-              <div id="patternPreview" class="compact-list empty-state">Patterns will emerge as studies accumulate.</div>
-            </section>
-          </div>
+              <div id="latestDiscoveries" class="signal-list signal-index empty-state">No discoveries yet.</div>
+            </div>
+
+            <div class="desk-side">
+              <section class="shortlist-panel">
+                <div class="section-label compact">
+                  <span>03 / ENTRY</span>
+                  <div><h3>Shortlist</h3><p>Evidence-backed routes we may act on.</p></div>
+                </div>
+                <div id="shortlistList" class="compact-list shortlist-list empty-state">Nothing shortlisted yet.</div>
+              </section>
+
+              <section class="pattern-panel">
+                <div class="section-label compact">
+                  <span>02 / SYNTHESIS</span>
+                  <div><h3>Patterns</h3><p>Repeated behavior across separate signals.</p></div>
+                </div>
+                <div id="patternPreview" class="compact-list pattern-list empty-state">Patterns will emerge as studies accumulate.</div>
+              </section>
+            </div>
+          </section>
         </section>
 
         <section class="view" data-page="discoveries">
-          <div class="section-head">
-            <div><p class="eyebrow">MARKET SIGNALS</p><h2>Discover first. Judge after evidence.</h2></div>
+          <div class="stage-head signal">
+            <span class="stage-code">01</span>
+            <div><p class="eyebrow">EXTERNAL MARKET EVIDENCE</p><h2>Signals worth studying.</h2><p>Raw movement becomes useful only when the buyer, monetisation, traction and timing are explicit.</p></div>
             <div class="filters">
-              <input id="discoverySearch" type="search" placeholder="Search signals…">
+              <input id="discoverySearch" type="search" placeholder="Search evidence…">
               <select id="discoveryStatus">
                 <option value="all">All states</option>
                 <option value="new">New</option>
@@ -116,21 +149,27 @@
             </div>
           </div>
           <div class="workspace">
-            <div id="discoveryList" class="signal-list empty-state">No discoveries yet.</div>
-            <aside id="discoveryDetail" class="detail-panel"><div class="detail-empty"><b>Signal → Study</b><p>Select a discovery to inspect who pays, why it works and what opportunity it may imply.</p></div></aside>
+            <div id="discoveryList" class="signal-list signal-index empty-state">No discoveries yet.</div>
+            <aside id="discoveryDetail" class="detail-panel signal-dossier">
+              <div class="detail-empty"><b>Signal → Study</b><p>Select a market signal. Its evidence, buyer, traction and our angle will open as a research dossier.</p></div>
+            </aside>
           </div>
         </section>
 
         <section class="view" data-page="patterns">
-          <div class="section-head"><div><p class="eyebrow">CONNECTED EVIDENCE</p><h2>Look for repetition, not isolated excitement.</h2></div></div>
+          <div class="stage-head pattern">
+            <span class="stage-code">02</span>
+            <div><p class="eyebrow">CROSS-SIGNAL SYNTHESIS</p><h2>Patterns, not excitement.</h2><p>A pattern must be supported by multiple signals and explain a repeatable commercial behavior.</p></div>
+          </div>
           <div id="patternGrid" class="pattern-grid empty-state">No patterns yet.</div>
         </section>
 
         <section class="view" data-page="opportunities">
-          <div class="section-head">
-            <div><p class="eyebrow">DERIVED OPPORTUNITIES</p><h2>What could we realistically enter?</h2></div>
+          <div class="stage-head opportunity">
+            <span class="stage-code">03</span>
+            <div><p class="eyebrow">EVIDENCE → OUR ENTRY</p><h2>Routes we could realistically enter.</h2><p>Every entry must show who pays, how demand repeats, how buyers are reached, and which evidence supports it.</p></div>
             <div class="filters">
-              <input id="opportunitySearch" type="search" placeholder="Search opportunities…">
+              <input id="opportunitySearch" type="search" placeholder="Search entries…">
               <select id="opportunityStatus">
                 <option value="all">All states</option>
                 <option value="candidate">Candidate</option>
@@ -141,8 +180,10 @@
             </div>
           </div>
           <div class="opportunity-layout">
-            <div id="opportunityList" class="opportunity-list empty-state">No opportunities derived yet.</div>
-            <aside id="opportunityDetail" class="detail-panel"><div class="detail-empty"><b>Evidence → Entry</b><p>Select an opportunity to inspect its income path, customer, acquisition route and supporting market evidence.</p></div></aside>
+            <div id="opportunityList" class="opportunity-list entry-index empty-state">No opportunities derived yet.</div>
+            <aside id="opportunityDetail" class="detail-panel opportunity-dossier">
+              <div class="detail-empty"><b>Evidence → Entry</b><p>Select an entry to inspect its buyer, offer, repeatability, route to market and provenance.</p></div>
+            </aside>
           </div>
         </section>
       </div>
@@ -151,16 +192,19 @@
 
   <dialog id="captureDialog">
     <form id="captureForm" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow">RAW MARKET SIGNAL</p><h2>Capture what caught attention.</h2></div><button id="closeCapture" type="button" class="icon-button" aria-label="Close">×</button></div>
-      <label>What did you notice?<textarea name="summary" required maxlength="3000" placeholder="A service, company, customer request, new behaviour, revenue model, complaint, trend…"></textarea></label>
+      <div class="dialog-head">
+        <div><p class="eyebrow">RAW MARKET SIGNAL</p><h2>Add evidence to the desk.</h2></div>
+        <button id="closeCapture" type="button" class="icon-button" aria-label="Close">×</button>
+      </div>
+      <label>What did you notice?<textarea name="summary" required maxlength="3000" placeholder="A service, venture, customer request, revenue model, complaint, behavior shift…"></textarea></label>
       <div class="form-grid">
         <label>Type<select name="kind"><option value="venture">Venture</option><option value="business-model">Business model</option><option value="market-signal">Market signal</option><option value="customer-pain">Customer pain</option><option value="new-capability">New capability</option></select></label>
-        <label>Market<input name="market" maxlength="120" placeholder="e.g. education, local services, AI"></label>
-        <label>Geography<input name="geography" maxlength="120" placeholder="India / US / global / local"></label>
+        <label>Market<input name="market" maxlength="120" placeholder="Education, local services, AI…"></label>
+        <label>Geography<input name="geography" maxlength="120" placeholder="India / global / local"></label>
         <label>Source URL<input name="sourceUrl" type="url" placeholder="https://…"></label>
       </div>
-      <label>Why might this matter?<textarea name="initialThought" maxlength="2000" placeholder="Optional first thought. No need to fully analyse yet."></textarea></label>
-      <div class="dialog-actions"><span>Saved as a <strong>new signal</strong>; study comes next.</span><button class="primary" value="default">Save signal</button></div>
+      <label>Why might this matter?<textarea name="initialThought" maxlength="2000" placeholder="Optional first thought. Keep it separate from verified evidence."></textarea></label>
+      <div class="dialog-actions"><span>Saved as a <strong>new signal</strong>. Study comes next.</span><button class="primary" value="default">Add signal <span>→</span></button></div>
     </form>
   </dialog>
 

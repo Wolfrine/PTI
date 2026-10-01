@@ -15,14 +15,16 @@ This repository contains an Angular application "PTI App" for tracking time inve
 
 For any UI, UX, layout, styling, landing-page, dashboard, motion, or visual-quality work:
 
-1. Read the shared design operating standard in `Wolfrine/Central/design/README.md`, `Wolfrine/Central/design/UI_AGENT_PROTOCOL.md`, and `Wolfrine/Central/design/EXECUTION_ROUTING.md`.
+1. Before work, read the shared design operating standard in `Wolfrine/Central/design/README.md`, `Wolfrine/Central/design/UI_AGENT_PROTOCOL.md`, `Wolfrine/Central/design/EXECUTION_ROUTING.md`, and `Wolfrine/Central/design/DESIGN_REVIEW_LOOP.md`.
 2. Read the nearest repo-local `design/` memory before changing visuals.
 3. Route by evidence needed: deterministic edits may use Chat + GitHub; visually judged implementation should use Codex/browser; Work is for larger research/audit before implementation.
 4. For L3/L4 or high-ambition work, do not start implementation from adjectives alone. Build a compact reference pack from real examples and consult Central design intelligence, anti-patterns, failures and evaluation guidance.
 5. Produce materially different art-direction candidates before committing to a new high-ambition visual language.
-6. Review actual desktop/mobile renders. Build success and code review do not establish visual quality.
-7. Save meaningful acceptance/rejection decisions back into repo-local design memory.
-8. Keep the project contract compact; do not make every implementation agent read the full Central design corpus.
+6. For design creation/change, assign a designer subagent and a separate critic subagent. Pass the Central entry points and local contract to both and verify they loaded them. Prefer a cheaper capable designer; concentrate screenshot/interaction evaluation in the critic.
+7. Run at least five substantive review cycles, extending toward ten until the independent critic's overall rating is 8+/10 and material defects are resolved. Record dimension scores, concrete feedback, changes and evidence. Review actual desktop/mobile renders and relevant interactions/motion; code review and build success do not establish visual quality.
+8. Do not claim the design gate passed if independent or rendered verification is unavailable. Read-only audits and policy maintenance stay within the requested scope.
+9. Save meaningful acceptance/rejection decisions and the review-cycle record back into repo-local design memory.
+10. Keep the project contract compact; do not make every implementation agent read the full Central design corpus.
 
 For Luminary specifically, `luminary-observer/design/` is the current design-governance source. The Living Instrument v1 visual direction is a rejected exploration. Preserve valid product/data constraints, but do not extend its dark-glow/orbit/network styling by default.
 

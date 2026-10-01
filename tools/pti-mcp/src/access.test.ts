@@ -11,11 +11,12 @@ describe('Shared PTI account boundary', () => {
     expect(assertPath('users/owner/luminaryData/observations/items/a', 'document', 'owner')).toContain('/owner/');
     expect(() => assertUser('other', 'owner')).toThrow();
   });
-  it('discovers all six apps without misrepresenting browser/Drive data', () => {
+  it('discovers all seven apps without misrepresenting browser/Drive data', () => {
     const apps = appCatalog('owner');
-    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'food', 'velum']);
+    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'venture', 'food', 'velum']);
     expect(apps.find(x => x.id === 'velum')?.access).toBe('external-connection-required');
     expect(apps.find(x => x.id === 'personal')?.root).toBe('users/owner/personalData/workspace');
+    expect(apps.find(x => x.id === 'venture')?.root).toBe('users/owner/ventureData/workspace');
   });
   it('lists the real server tools, calls discovery and rejects cross-user data before Firestore', async () => {
     const [a, b] = InMemoryTransport.createLinkedPair();

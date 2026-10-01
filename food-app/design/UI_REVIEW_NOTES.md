@@ -4,7 +4,9 @@
 
 The owner has rejected the quality of the current ecosystem designs and requested a corrective audit. Morsel's current visual direction is **reopened**, not owner-accepted. The active implementation is the supper-club direction documented in `README.md`; `SUPPER_CLUB_REVIEW.md` contains historical agent review, not owner approval. Its originality scores (critic 7.9, parent 7.8) must not be hidden by an overall mean above 8.
 
-Next candidate must pass appetite/food identity, recognition and immediate meal-action clarity independently, against rendered comparable food-product references and this rejected baseline. Review authenticated or clearly labelled fixture-backed meal states as well as the signed-out/empty entry. The 2026-10-01 cross-product audit observed only the public Morsel entry; it does not establish authenticated or mobile quality.
+Next candidate must pass appetite/food identity, recognition and immediate meal-action clarity independently, against rendered comparable food-product references and this rejected baseline. Review authenticated or clearly labelled fixture-backed meal states as well as the signed-out/empty entry.
+
+The 2026-10-01 audit inspected the public entry plus fresh sample-mode CI captures from [run 36912625340](https://github.com/Wolfrine/PTI/actions/runs/36912625340): desktop home (1440px), phone home (390px), meal studio (390×844) and Taste (390px). These are labelled fictional fixtures with no cloud writes, not authenticated personal history. The main Idli recommendation uses a tiny pixel fallback while adjacent alternatives use photographic artwork; the studio mixes photographic paneer with a pixel naan. Taste remains a long preference/settings flow. Retain the reachable meal action and working edit controls; food identity, coherent material quality and reduced settings burden need a direction-level comparison, not another pass based on functional tests alone. No new visual acceptance is claimed.
 
 All acceptance language below is historical. Do not inherit it as current authority.
 

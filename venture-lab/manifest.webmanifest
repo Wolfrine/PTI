@@ -4,9 +4,14 @@
   "description": "Discovery and opportunity intelligence workspace inside PTI.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f3f0e8",
-  "theme_color": "#f3f0e8",
+  "background_color": "#ebe7de",
+  "theme_color": "#ebe7de",
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }

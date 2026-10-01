@@ -1,6 +1,14 @@
 # Morsel UI review
 
-## Current accepted experience — 2026-10-01
+## Current verdict — reopened on 2026-10-01
+
+The owner has rejected the quality of the current ecosystem designs and requested a corrective audit. Morsel's current visual direction is **reopened**, not owner-accepted. The active implementation is the supper-club direction documented in `README.md`; `SUPPER_CLUB_REVIEW.md` contains historical agent review, not owner approval. Its originality scores (critic 7.9, parent 7.8) must not be hidden by an overall mean above 8.
+
+Next candidate must pass appetite/food identity, recognition and immediate meal-action clarity independently, against rendered comparable food-product references and this rejected baseline. Review authenticated or clearly labelled fixture-backed meal states as well as the signed-out/empty entry. The 2026-10-01 cross-product audit observed only the public Morsel entry; it does not establish authenticated or mobile quality.
+
+All acceptance language below is historical. Do not inherit it as current authority.
+
+## Historical atelier review — superseded; experiential quality later rejected
 
 The living food atelier redesign passed six substantive designer–critic cycles at **8.00/10**, with all six Central dimensions rated 8. The full cycle record is [REDESIGN_REVIEW.md](REDESIGN_REVIEW.md); it supersedes the earlier hero-led visual acceptance below.
 

@@ -2,6 +2,8 @@
 
 Level: L3 consumer working surface. Goal: make the next food decision easy on a phone; receipts and inference stay inspectable.
 
+Current visual verdict: **reopened after the owner's 2026-10-01 ecosystem design rejection**. This contract describes the implemented direction, not owner acceptance. `UI_REVIEW_NOTES.md` is the single current verdict; older numerical reviews remain historical. Before more polish, compare genuinely different meal-first directions using real or clearly labelled fixture states. Appetite/food identity, recognition and immediate meal-action clarity are critical dimensions: each must independently reach 8 for critic and parent, with rendered reference comparisons. No overall average can compensate.
+
 App boundary: Morsel is a separate PWA at https://pti-app-2ab59-morsel.web.app/, like Personal and Velum. It shares the existing PTI Firebase project, account-scoped food memory and MCP. The PTI home tile is a launcher; former /food/ links migrate to the standalone app. Never embed the food UI back into PTI's main site.
 
 Thesis: a personal supper club. A specific, appetising meal comes first; a compact invitation helps the user shape it, keep the chosen direction in view and teach the system through explicit reactions.

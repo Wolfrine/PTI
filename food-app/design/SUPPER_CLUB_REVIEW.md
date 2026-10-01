@@ -1,5 +1,7 @@
 # Morsel — personal supper club
 
+**Historical agent review. Current visual acceptance reopened after the owner's 2026-10-01 ecosystem design rejection.** See `UI_REVIEW_NOTES.md` for the authoritative current verdict. Preserve the scores below as evidence of the prior decision, not as proof of owner approval or of the revised critical-dimension gate passing.
+
 Date: 2026-10-01. L3 personal consumer app. The previous six-round implementation remains a useful functional baseline; the parent's later visual assessment rejected its experiential quality. This is a new review loop, not a retroactive upgrade of those scores.
 
 Goal: appetite, recognition and relief. Food should invite the next action before the user reads an explanation. Preserve meal shaping/saving, sensory preferences, receipt feedback/drafts, history search, memories, honest sourced discovery and all private data boundaries. Feelings are hypotheses, not measured reactions.

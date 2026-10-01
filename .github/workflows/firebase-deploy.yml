@@ -76,8 +76,8 @@ jobs:
           npm install -g firebase-tools
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
-          git show b459b1537ecffd84fef69e35f1017b36317ff76a:personal-harness/firestore.rules > /tmp/pre-food.rules
-          APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-food.rules node personal-functions/provision.mjs
+          git show 3bb47c18813c4811ae7094bf50cf873f6e1f3c60:personal-harness/firestore.rules > /tmp/pre-venture.rules
+          APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-venture.rules node personal-functions/provision.mjs
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:default --non-interactive
           node food-app/scripts/verify-legacy.mjs
 

@@ -2,7 +2,7 @@ name: Deploy standalone Morsel PWA
 on:
   push:
     branches: [main]
-    paths: ['food-app/**', 'firebase.morsel.json', '.github/workflows/morsel-deploy.yml']
+    paths: ['food-app/**', 'personal-harness/firestore.rules', 'personal-functions/provision.mjs', 'firebase.morsel.json', '.github/workflows/morsel-deploy.yml']
 permissions:
   contents: read
 concurrency:
@@ -24,7 +24,7 @@ jobs:
           node-version: 22
       - name: Validate and bundle the standalone app
         run: |
-          node --test food-app/core.test.mjs
+          node --test food-app/*.test.mjs
           node --check food-app/app.mjs
           node --check food-app/legacy-sw.js
           node food-app/scripts/build.mjs
@@ -54,6 +54,7 @@ jobs:
             firebase hosting:sites:create "$MORSEL_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
           fi
           node food-app/scripts/configure-firebase-auth.mjs
+          node personal-functions/provision.mjs
       - name: Deploy and verify private standalone app
         run: |
           firebase deploy --config firebase.morsel.json --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive

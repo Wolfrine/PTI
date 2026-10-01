@@ -34,10 +34,16 @@ try {
   assert.equal(await call('firestore_get_document', { path }), null);
   const food = await call('food_context', {});
   assert(food.profile.orderCount >= 93);
+  assert(Array.isArray(food.taste.observations));
+  const meal = await call('food_plan',{craving:'Comforting, but not too rich',mood:'Comfort'});
+  assert(meal.plans.length>0);
+  assert(meal.plans.every(p=>p.items.every(i=>i.restaurantId===p.restaurantId)));
+  const toolNames=(await client.listTools()).tools.map(t=>t.name);
+  for(const name of ['food_plan','food_record_learning','food_publish_research'])assert(toolNames.includes(name));
   const receipt = food.recentOrders[0];
   const dedupe = await call('food_ingest_email', {gmailMessageId:receipt.source.gmailMessageId,from:'noreply@zomato.com',subject:receipt.source.subject,receivedAt:receipt.receivedAt,text:`ORDER ID: ${receipt.orderId}\nDelivered\n${receipt.restaurantName}\n${receipt.items.map(i=>`${i.quantity} X ${i.name}`).join('\n')}\nTotal paid - ₹${receipt.total}`});
   assert.equal(dedupe.duplicate,true);
-  console.log('PASS: six-app discovery, five real app collection reads, food context and duplicate receipt rejection, owner-scoped create/update/read/delete and deletion verification. No private records printed.');
+  console.log('PASS: six-app discovery, five real app collection reads, shared meal model, food tool discovery and duplicate receipt rejection, owner-scoped create/update/read/delete and deletion verification. No private records printed.');
 } finally {
   if (created) {
     const remaining = await call('firestore_get_document', { path });

@@ -16,11 +16,33 @@ service cloud.firestore {
   // Morsel receipts and derived entities are agent-written; only owner feedback/settings are client writable.
   match /users/{uid}/foodData/workspace {
    allow read: if owner(uid);
-   allow create: if owner(uid) && request.resource.data.keys().hasOnly(['schemaVersion','vegetarian','ingestionPaused','updatedAt']) && request.resource.data.get('vegetarian',true) is bool && request.resource.data.get('ingestionPaused',false) is bool;
-   allow update: if owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vegetarian','ingestionPaused','updatedAt']) && request.resource.data.get('vegetarian',true) is bool && request.resource.data.get('ingestionPaused',false) is bool && request.resource.data.updatedAt is string;
+   allow create: if owner(uid) && request.resource.data.keys().hasOnly(['schemaVersion','vegetarian','ingestionPaused','proactive','updatedAt']) && request.resource.data.get('vegetarian',true) is bool && request.resource.data.get('ingestionPaused',false) is bool && request.resource.data.get('proactive',false) is bool;
+   allow update: if owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vegetarian','ingestionPaused','proactive','updatedAt']) && request.resource.data.get('vegetarian',true) is bool && request.resource.data.get('ingestionPaused',false) is bool && request.resource.data.get('proactive',false) is bool && request.resource.data.updatedAt is string;
    match /orders/{id} { allow read: if owner(uid); allow write: if false; }
    match /dishes/{id} { allow read: if owner(uid); allow write: if false; }
    match /restaurants/{id} { allow read: if owner(uid); allow write: if false; }
+   function foodMood(m) { return m in ['Comfort','Light','Spicy','Indulgent','Familiar','Explore','Quick','Proper meal']; }
+   function foodSignal(s) { return s in ['smoky','spicy','tangy','crispy','soft','rich','lighter','paneer','cheese','noodles','rice','bread']; }
+   function receipt(orderId) { return get(/databases/$(database)/documents/users/$(uid)/foodData/workspace/orders/$(orderId)); }
+   match /research/{id} { allow read: if owner(uid); allow write: if false; }
+   match /learning/{id} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['id','orderId','dishId','restaurantId','eaten','reaction','reason','note','mood','createdAt']) && request.resource.data.id == id && request.resource.data.orderId is string && request.resource.data.dishId is string && request.resource.data.dishId.size() <= 150 && receipt(request.resource.data.orderId).data.status == 'delivered' && request.resource.data.restaurantId == receipt(request.resource.data.orderId).data.restaurantId && request.resource.data.eaten is bool && request.resource.data.reaction in ['loved','good','okay','never'] && request.resource.data.reason in ['taste','convenience','other'] && request.resource.data.note is string && request.resource.data.note.size() <= 1000 && foodMood(request.resource.data.mood) && request.resource.data.createdAt is string;
+   }
+   match /preferences/{id} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['id','signal','stance','scope','createdAt']) && request.resource.data.id == id && foodSignal(request.resource.data.signal) && request.resource.data.stance in ['like','neutral','avoid'] && (request.resource.data.scope == 'always' || foodMood(request.resource.data.scope)) && request.resource.data.createdAt is string;
+   }
+   match /sessions/{id} {
+    allow read, delete: if owner(uid);
+    allow create: if owner(uid) && request.resource.data.keys().hasOnly(['id','restaurantId','restaurant','dishIds','itemNames','status','context','experiment','createdAt']) && request.resource.data.id == id && request.resource.data.status == 'chosen' && request.resource.data.restaurantId is string && request.resource.data.restaurantId.size() <= 150 && request.resource.data.restaurant is string && request.resource.data.restaurant.size() <= 300 && request.resource.data.dishIds is list && request.resource.data.dishIds.size() > 0 && request.resource.data.dishIds.size() <= 4 && request.resource.data.itemNames is list && request.resource.data.itemNames.size() == request.resource.data.dishIds.size() && request.resource.data.context is map && request.resource.data.context.keys().hasOnly(['craving','mood','wants','avoid','diners','budget','mode']) && request.resource.data.context.craving is string && request.resource.data.context.craving.size() <= 500 && foodMood(request.resource.data.context.mood) && request.resource.data.context.wants is list && request.resource.data.context.wants.size() <= 12 && request.resource.data.context.avoid is list && request.resource.data.context.avoid.size() <= 12 && request.resource.data.context.diners is int && request.resource.data.context.diners >= 1 && request.resource.data.context.diners <= 6 && request.resource.data.context.budget is number && request.resource.data.context.budget >= 0 && request.resource.data.context.budget <= 99999 && request.resource.data.context.mode in ['delivery','dine-in'] && (request.resource.data.experiment == null || request.resource.data.experiment is map) && request.resource.data.createdAt is string;
+    // Receipt reconciliation is agent-written; a client can only dismiss its chosen plan.
+    allow update: if owner(uid) && resource.data.status == 'chosen' && request.resource.data.status == 'dismissed' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+   }
+   match /memories/{id} {
+    allow read, delete: if owner(uid);
+    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['id','orderId','title','note','occasion','createdAt']) && request.resource.data.id == id && request.resource.data.orderId is string && receipt(request.resource.data.orderId).data.id == request.resource.data.orderId && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120 && request.resource.data.note is string && request.resource.data.note.size() <= 1000 && request.resource.data.occasion in ['any','weekend','outing','celebration'] && request.resource.data.createdAt is string;
+   }
    match /feedback/{id} {
     allow read, delete: if owner(uid);
     allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['id','targetKey','reaction','note','mood','orderId','createdAt']) && request.resource.data.id == id && request.resource.data.targetKey is string && request.resource.data.targetKey.size() > 0 && request.resource.data.targetKey.size() <= 4000 && request.resource.data.reaction in ['loved','good','okay','never'] && request.resource.data.note is string && request.resource.data.note.size() <= 1000 && request.resource.data.mood in ['Comfort','Light','Spicy','Indulgent','Familiar','Explore','Quick','Proper meal'] && request.resource.data.createdAt is string;

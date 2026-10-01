@@ -4,7 +4,7 @@ COPY tools/pti-mcp/package*.json ./
 RUN npm ci --ignore-scripts
 COPY tools/pti-mcp/ ./
 COPY personal-harness/core.mjs /app/personal-harness/core.mjs
-COPY food-app/core.mjs /app/food-app/core.mjs
+COPY food-app/core.mjs food-app/intelligence.mjs food-app/places.mjs /app/food-app/
 RUN npm run build && npm prune --omit=dev --ignore-scripts
 FROM node:22-slim
 ENV NODE_ENV=production

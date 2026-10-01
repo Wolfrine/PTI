@@ -2,9 +2,9 @@ name: PTI shared MCP
 on:
   push:
     branches: [main, codex/pti-shared-mcp]
-    paths: ['tools/pti-mcp/**', 'food-app/core.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
   pull_request:
-    paths: ['tools/pti-mcp/**', 'food-app/core.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
 permissions:
   contents: read
 concurrency:
@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: tools/pti-mcp/package-lock.json
       - run: npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
       - run: npm run build --prefix tools/pti-mcp && npm test --prefix tools/pti-mcp
-      - run: node --test personal-harness/core.test.mjs
+      - run: node --test personal-harness/core.test.mjs food-app/*.test.mjs
   deploy:
     if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'
     needs: verify

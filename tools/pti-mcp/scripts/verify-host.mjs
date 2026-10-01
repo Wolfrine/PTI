@@ -12,3 +12,23 @@ const unauth = await fetch(`${origin}/mcp`, { method: 'POST', signal: AbortSigna
 assert.equal(unauth.status, 401);
 assert(unauth.headers.get('www-authenticate').includes('resource_metadata'));
 console.log('HTTPS discovery, PKCE metadata and unauthenticated access rejection passed. User OAuth connection still required.');
+// Deployment-identity acceptance check. The existing CI admin credential grants a
+// five-minute test session to the already approved owner; both records are deleted.
+// No user OAuth connection is replaced or reused, and no token is printed.
+await import('../dist/index.js');
+const {getAuth}=await import('firebase-admin/auth');
+const {getFirestore}=await import('firebase-admin/firestore');
+const {secret,digest,now}=await import('../dist/auth-store.js');
+const {Client}=await import('@modelcontextprotocol/sdk/client/index.js');
+const {StreamableHTTPClientTransport}=await import('@modelcontextprotocol/sdk/client/streamableHttp.js');
+const user=await getAuth().getUserByEmail('schttewary@gmail.com');assert(user.emailVerified&&!user.disabled);
+const db=getFirestore(),token=secret(),sessionId=secret();
+const accessRef=db.doc(`_ptiMcpAuth/access/items/${digest(token)}`),sessionRef=db.doc(`_ptiMcpAuth/sessions/items/${digest(sessionId)}`);
+let client;
+try{
+ const batch=db.batch();batch.set(sessionRef,{expiresAt:now()+300,revoked:false});batch.set(accessRef,{uid:user.uid,email:user.email,authenticatedAt:now(),clientId:'morsel-deployment-check',scopes:['pti:apps'],sessionId,resource:origin+'/mcp',expiresAt:now()+300});await batch.commit();
+ client=new Client({name:'morsel-live-acceptance',version:'1'});await client.connect(new StreamableHTTPClientTransport(new URL(origin+'/mcp'),{requestInit:{headers:{Authorization:'Bearer '+token}}}));
+ const names=(await client.listTools()).tools.map(t=>t.name);for(const name of ['food_context','food_plan','food_record_learning','food_publish_research','food_ingest_email'])assert(names.includes(name));
+ const result=await client.callTool({name:'food_plan',arguments:{craving:'Comforting, not too rich',mood:'Comfort'}});assert(!result.isError);const data=JSON.parse(result.content.find(c=>c.type==='text').text);assert(data.profile.orderCount>=93);assert(data.plans.length>0);assert(data.plans.every(p=>p.items.every(i=>i.restaurantId===p.restaurantId)));
+ console.log('PASS: deployed authenticated tools/list and food_plan share real owner history and the coherent meal model.');
+}finally{await client?.close().catch(()=>{});const batch=db.batch();batch.delete(accessRef);batch.delete(sessionRef);await batch.commit();}

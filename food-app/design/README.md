@@ -16,16 +16,28 @@ Data honesty: receipt time is not order-placement time; orders may be shared; fl
 
 Verification and acceptance notes are recorded after rendering, beside this file. Keep new design guidance compact.
 
-## Product direction — 2026-10-01
+## Personal food studio — 2026-10-01
 
-Planning rule: first assess the existing combination of facilities, features, data, user journey and felt experience. Compare it with the desired user outcome, identify the missing capability, then plan the smallest complete improvement. A feature earns its place by improving the food decision or learning from its outcome.
+Promise: “This remembers what matters, helps me shape something satisfying, and improves when I correct it.” Recognition, relief, control, curiosity and the pleasure of looking forward to a meal are the product goals.
 
-Promise: “This remembers me, helps me choose, and improves when I correct it.” The intended feelings are recognition, relief, control and curiosity.
+Start with the current combination of facilities, features, underlying data, journey and felt experience. Compare it with the intended outcome before proposing work. The verified baseline was 93 delivered receipts and no explicit meal reactions. Historical basket ranking and decorative discovery alone did not fulfill the promise.
 
-Verified baseline: 93 delivered receipts, no saved meal feedback. Current intelligence ranks historical baskets using counts, receipt timing and dish-name hints; notes and feedback mood do not personalize the model. Discovery uses four curated directions. Receipt baskets can include other diners; frequency is not enjoyment.
+Two interaction directions considered for this phase: (1) conversational concierge, with an agent-led exchange before every shortlist; (2) editable table, with a craving entry, visible food cues and directly changeable meal pieces. Chose (2): a useful decision survives without an agent runtime, and the user can inspect and correct the result. Agents deepen the reasoning through the same structured records. Avoid making chat the only route to a meal.
 
-First implementation slice: a complete decision and learning loop. Combine food mood with meal context, diners, budget and temporary exclusions. Offer three distinct directions and one-tap refinements such as too heavy, had recently or something different. Keep session rejections separate from lasting dislikes. Record the selected choice; reconcile later receipts only when evidence supports it. Ask which dishes the user ate/enjoyed and make feedback easy to correct. Let confirmed dish-level, context-specific feedback influence subsequent suggestions and show why they changed. Confirm structured interpretations of free-text notes.
+| Intelligence | Working facility |
+|---|---|
+| Food understanding | Dish qualities, preparation hints, main/accompaniment/contrast relationships; name interpretations remain explicit. |
+| Personal taste | Confirmed personal dish reactions, convenience/shared-diner distinction, time-decayed evidence and explicit preferences scoped to food mood. Receipt frequency is weak evidence. |
+| Craving | Editable sensory cues, negation, novelty, sharing, budget and meal mode; one clarifying choice for vague requests. |
+| Composition | Same-restaurant combinations, compatible swaps and additions, companion cues, known-price budget checks and explicit portion/unknown-price checks. |
+| Discovery | Concrete Kharghar menu names, locations, sources and review dates; research refreshes through agent tools. No invented current prices or availability. |
+| Exploration | Familiar / deliberate twist / exploration; record what stayed and what changed, revisit that question after a matching receipt. |
+| Memory and anticipation | User-authored meals/rituals; optional on-open receipt-context cues and a gentle feedback prompt. No emotional inference or outbound notification schedule. |
 
-Then: build an editable taste summary from explicit preferences and time-aware patterns, with evidence and uncertainty. Research concrete delivery/dine-in options with source timestamps and verified menus/location/prices where obtainable. Add optional proactive assistance after the decision loop demonstrates value.
+Complete loop: receipt → food/taste evidence → craving → compose/edit → chosen session → unambiguous later receipt → personally consumed dish reactions → changed later ranking. A receipt never automatically means the user consumed or loved a dish. Ambiguous or more-than-two-day matches remain unresolved.
 
-Acceptance: fewer steps to a satisfying choice; refinements visibly change the shortlist; feedback changes a later decision; shared baskets do not become assumed individual consumption; sparse Zomato receipts do not become a complete diet; existing history stays inspectable. Motion should express narrowing, choosing and learning. Preserve the standalone app boundary.
+Implementation boundary: shared deterministic `intelligence.mjs` serves app and account-scoped MCP. External agents use `food_context`, `food_plan`, `food_record_learning`, `food_publish_research` and the existing Gmail-triggered `food_ingest_email`. No embedded LLM credential/provider or persistent Dot has been invented. Preferences, plans, learning, memories and research live with the account's existing durable food data.
+
+Perceptual choices: keep the tangible forest/pixel meal language; make meal pieces the editable objects; temporary “Not today” refinements differ from lasting Avoid preferences; disclose context and cue editing on phones to keep the first meal visible. Short piece entrance and stepped mood reveal communicate changed objects, while pause and reduced-motion remain usable. Receipt analytics stay behind disclosure in Taste. Source uncertainty is attached to the choice it affects.
+
+Acceptance: refinements change the shortlist; confirmed dish feedback changes later ranking; coherent swaps stay within one restaurant; shared baskets do not imply personal consumption; explicit dislikes beat repeat clues; sourced evidence stays inspectable; first recommendation is visible at 390×844 without horizontal overflow. Preserve the standalone app boundary.

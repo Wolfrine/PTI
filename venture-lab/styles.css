@@ -178,7 +178,7 @@ main{min-width:0;padding:0 34px 60px}
 .filters input,.filters select{height:38px;border:1px solid var(--line);border-radius:0;background:rgba(247,244,237,.82);padding:0 10px;font-size:11px}
 .filters input{min-width:190px}
 .workspace,.opportunity-layout{display:grid;grid-template-columns:minmax(340px,.82fr) minmax(500px,1.18fr);gap:26px;align-items:start;padding-top:24px}
-.detail-panel{position:sticky;top:18px;min-height:420px;background:var(--paper-2);border:1px solid var(--line-strong);box-shadow:var(--shadow)}
+.detail-panel{position:sticky;top:18px;min-height:420px;background:var(--paper-2);border:1px solid var(--line-strong);box-shadow:var(--shadow);scroll-margin-top:18px}.dossier-head,.study-grid,.proof-block{animation:dossierIn .24s cubic-bezier(.2,.7,.2,1)}@keyframes dossierIn{from{opacity:.6;transform:translateY(5px)}to{opacity:1;transform:none}}
 .detail-empty{min-height:420px;display:grid;place-content:center;text-align:center;padding:40px;color:var(--muted)}
 .detail-empty b{font-size:24px;letter-spacing:-.04em;color:var(--ink);margin-bottom:8px}
 .detail-empty p{max-width:360px;margin:0;line-height:1.5;font-size:12px}
@@ -240,7 +240,7 @@ label textarea{min-height:108px;resize:vertical;line-height:1.5}
 .dialog-actions{align-items:center;padding-top:5px;font-size:10px;color:var(--muted)}
 .toast{position:fixed;right:22px;bottom:22px;background:var(--ink);color:#fff;padding:11px 14px;font-size:11px;opacity:0;transform:translateY(8px);transition:.16s;pointer-events:none;z-index:50}
 .toast.show{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}@media(pointer:coarse){button,.nav-item,.primary,.secondary{min-height:44px}}
 @media(max-width:1120px){
   :root{--rail:82px}
   .brand-copy,.rail-kicker,.rail-model,.sync-state span,.rail-foot .text-button{display:none}

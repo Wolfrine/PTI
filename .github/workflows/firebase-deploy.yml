@@ -289,3 +289,80 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npm install --no-save google-auth-library
           node sefpo-lab/scripts/configure-firebase-auth.mjs
+
+
+  deploy_venture:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate Venture Lab static assets
+        run: |
+          node --input-type=module --check < venture-lab/app.js
+          node --check venture-lab/sw.js
+          node --check venture-lab/scripts/configure-firebase-auth.mjs
+
+      - name: Create and deploy Venture Lab secondary Hosting site
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          VENTURE_SITE_ID: pti-app-2ab59-venture
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT is not configured; cannot deploy Venture Lab."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install -g firebase-tools
+          firebase --version
+
+          if firebase hosting:sites:get "$VENTURE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            echo "Hosting site $VENTURE_SITE_ID already exists."
+          else
+            echo "Creating Hosting site $VENTURE_SITE_ID..."
+            firebase hosting:sites:create "$VENTURE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          fi
+
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:venture --non-interactive
+          echo "Venture Lab URL: https://$VENTURE_SITE_ID.web.app"
+
+      - name: Verify deployed Venture Lab assets
+        run: |
+          set -euo pipefail
+          origin="https://pti-app-2ab59-venture.web.app"
+          for file in index.html app.js styles.css manifest.webmanifest sw.js icon.svg; do
+            matched=false
+            for attempt in $(seq 1 18); do
+              target="$(mktemp)"
+              if curl --fail --silent --show-error -H 'Cache-Control: no-cache' "$origin/$file?release=$GITHUB_SHA&attempt=$attempt" -o "$target" && cmp -s "venture-lab/$file" "$target"; then
+                matched=true
+                rm "$target"
+                break
+              fi
+              rm -f "$target"
+              sleep 5
+            done
+            test "$matched" = true
+          done
+
+      - name: Authorize Venture Lab Firebase Auth domains
+        continue-on-error: true
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          VENTURE_SITE_ID: pti-app-2ab59-venture
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install --no-save google-auth-library
+          node venture-lab/scripts/configure-firebase-auth.mjs

@@ -44,17 +44,39 @@ async function login(){
 }
 async function readCollection(name,{sort='updatedAt',max=250}={}){
   const ref=collection(root,name);
-  try{const snap=await getDocs(query(ref,orderBy(sort,'desc'),limit(max)));return snap.docs.map(d=>({id:d.id,...d.data()}));}
-  catch(e){console.warn(name,e);const snap=await getDocs(query(ref,limit(max)));return snap.docs.map(d=>({id:d.id,...d.data()}));}
+  try{
+    const snap=await getDocs(query(ref,orderBy(sort,'desc'),limit(max)));
+    return {items:snap.docs.map(d=>({id:d.id,...d.data()})),error:null};
+  }catch(firstError){
+    console.warn(`Ordered read failed for ${name}`,firstError);
+    try{
+      const snap=await getDocs(query(ref,limit(max)));
+      return {items:snap.docs.map(d=>({id:d.id,...d.data()})),error:firstError};
+    }catch(error){
+      console.error(`Read failed for ${name}`,error);
+      return {items:[],error};
+    }
+  }
 }
 async function loadAll(){
-  if(!root)return;setSync(false,'Syncing…');
+  if(!root)return;
+  setSync(false,'Syncing…');
+  const [discoveries,patterns,opportunities,runs]=await Promise.all([
+    readCollection('discoveries'),
+    readCollection('patterns'),
+    readCollection('opportunities'),
+    readCollection('runs',{sort:'startedAt',max:30})
+  ]);
+  state={discoveries:discoveries.items,patterns:patterns.items,opportunities:opportunities.items,runs:runs.items};
+  const failures=[discoveries,patterns,opportunities,runs].filter(x=>x.error);
   try{
-    const [discoveries,patterns,opportunities,runs]=await Promise.all([
-      readCollection('discoveries'),readCollection('patterns'),readCollection('opportunities'),readCollection('runs',{sort:'startedAt',max:30})
-    ]);
-    state={discoveries,patterns,opportunities,runs};setSync(true,'Firestore · synced');render();
-  }catch(e){setSync(false,'Sync failed');toast(String(e.message||e).slice(0,180));}
+    render();
+    setSync(failures.length===0,failures.length?`Loaded · ${failures.length} fallback`:'Firestore · synced');
+  }catch(error){
+    console.error('Venture Lab render failed',error);
+    setSync(false,'Render failed');
+    toast('Data loaded, but the interface hit a render error.');
+  }
 }
 function tags(items=[]){return items.slice(0,4).map(x=>`<span>${esc(x)}</span>`).join('');}
 function discoveryCard(d,index=0){
@@ -82,8 +104,7 @@ function renderOverview(){
   const fresh=state.discoveries.filter(x=>x.status==='new').length;
   $('#statDiscoveries').textContent=state.discoveries.length;$('#statNew').textContent=`${fresh} new`;
   $('#statStudied').textContent=studied;$('#statPatterns').textContent=state.patterns.length;$('#statShortlist').textContent=shortlist;
-  $('#pulseNumber').textContent=state.discoveries.length;
-  $('#pulseCopy').textContent=state.discoveries.length?`${studied} studied · ${state.patterns.length} patterns · ${state.opportunities.length} opportunities derived.`:'No market signals captured yet.';
+
   const latest=state.discoveries.slice(0,5);$('#latestDiscoveries').classList.toggle('empty-state',!latest.length);$('#latestDiscoveries').innerHTML=latest.length?latest.map((d,i)=>discoveryCard(d,i)).join(''):'No discoveries yet.';
   const short=state.opportunities.filter(x=>x.status==='shortlist').slice(0,3);$('#shortlistList').classList.toggle('empty-state',!short.length);$('#shortlistList').innerHTML=short.length?short.map((o,i)=>`<button class="shortlist-feature" data-opportunity="${esc(o.id)}"><span class="shortlist-rank">0${i+1} / SHORTLIST</span><strong class="shortlist-money">${esc(money(o.monthlyPotentialMin,o.monthlyPotentialMax))}</strong><b>${esc(o.title)}</b><small>${esc((o.derivedFrom||[]).length)} linked signals · ${esc(o.customer||'buyer defined')}</small><i>Open entry dossier →</i></button>`).join(''):'Nothing shortlisted yet.';
   const patterns=state.patterns.slice(0,5);$('#patternPreview').classList.toggle('empty-state',!patterns.length);$('#patternPreview').innerHTML=patterns.length?patterns.map(p=>`<button data-pattern-view><b>${esc(p.title)}</b><span>${esc((p.discoveryIds||[]).length)} linked signals · ${esc(p.tags?.[0]||'synthesis')}</span></button>`).join(''):'Patterns will emerge as studies accumulate.';
@@ -158,7 +179,7 @@ onAuthStateChanged(auth,async next=>{
   user=next;$('#signInBtn').classList.toggle('hidden',!!user);$('#signOutBtn').classList.toggle('hidden',!user);$('#captureBtn').classList.toggle('hidden',!user);$('#captureBtn').disabled=!user;$('#authGate').classList.toggle('hidden',!!user);$('#appSurface').classList.toggle('hidden',!user);
   if(!user){root=null;state={discoveries:[],patterns:[],opportunities:[],runs:[]};setSync(false,'Sign in required');return;}
   root=doc(db,'users',user.uid,'ventureData','workspace');
-  await setDoc(root,{schemaVersion:1,app:'venture-lab',objective:'Find realistic entry opportunities with credible steady monthly income.',incomeFloorMonthly:10000,incomeTargetMonthly:20000,geography:'india-global',discoveryScope:'broad',updatedAt:now()},{merge:true});
   await loadAll();
+  setDoc(root,{schemaVersion:1,app:'venture-lab',objective:'Find realistic entry opportunities with credible steady monthly income.',incomeFloorMonthly:10000,incomeTargetMonthly:20000,geography:'india-global',discoveryScope:'broad',updatedAt:now()},{merge:true}).catch(error=>console.warn('Workspace metadata update skipped',error));
 });
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(console.warn));

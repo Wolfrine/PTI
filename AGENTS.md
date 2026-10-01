@@ -15,7 +15,7 @@ This repository contains an Angular application "PTI App" for tracking time inve
 
 For any UI, UX, layout, styling, landing-page, dashboard, motion, or visual-quality work:
 
-1. Before work, read the shared design operating standard in `Wolfrine/Central/design/README.md`, `Wolfrine/Central/design/UI_AGENT_PROTOCOL.md`, `Wolfrine/Central/design/EXECUTION_ROUTING.md`, and `Wolfrine/Central/design/DESIGN_REVIEW_LOOP.md`.
+1. Before work, read the shared design operating standard in `Wolfrine/Central/design/README.md`, `Wolfrine/Central/design/UI_AGENT_PROTOCOL.md`, `Wolfrine/Central/design/EXECUTION_ROUTING.md`, and `Wolfrine/Central/design/DESIGN_REVIEW_LOOP.md`. Do not use Codex/OpenAI's built-in `site` skill for art direction, layout, styling, or visual critique; reserve it for non-design hosting/deployment operations only.
 2. Read the nearest repo-local `design/` memory before changing visuals.
 3. Route by evidence needed: deterministic edits may use Chat + GitHub; visually judged implementation should use Codex/browser; Work is for larger research/audit before implementation.
 4. For L3/L4 or high-ambition work, do not start implementation from adjectives alone. Build a compact reference pack from real examples and consult Central design intelligence, anti-patterns, failures and evaluation guidance.

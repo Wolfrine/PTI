@@ -1,0 +1,70 @@
+name: PTI Self-Tracking · verify and deploy
+on:
+  push:
+    branches: [main]
+    paths: ['tracker-app/**','firebase.tracker.json','personal-harness/firestore.rules','tools/pti-mcp/src/apps.ts','.github/workflows/tracker.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tracker-deploy-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --check tracker-app/app.js && node --check tracker-app/model.mjs && node --check tracker-app/sw.js && node --check tracker-app/scripts/configure-firebase-auth.mjs
+      - run: node --test tracker-app/tests/model.test.mjs
+      - run: npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund && npm run build --prefix tools/pti-mcp
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: pti-app-2ab59
+      TRACKER_SITE_ID: pti-app-2ab59-tracker
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/pti-tracker-${{ github.run_id }}.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Configure deployment credential
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+      - name: Install deploy tools
+        run: npm install -g firebase-tools@15.31.0 && npm install --no-save google-auth-library
+      - name: Create tracker Hosting site if missing
+        run: |
+          if firebase hosting:sites:get "$TRACKER_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            echo "Hosting site already exists."
+          else
+            firebase hosting:sites:create "$TRACKER_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          fi
+      - name: Deploy owner-only rules and tracker PWA
+        run: firebase deploy --config firebase.tracker.json --project "$FIREBASE_PROJECT_ID" --only firestore:rules,hosting --non-interactive
+      - name: Authorize Firebase Auth domain
+        run: node tracker-app/scripts/configure-firebase-auth.mjs
+      - name: Verify live assets match commit
+        run: |
+          set -euo pipefail
+          origin="https://${TRACKER_SITE_ID}.web.app"
+          for file in index.html app.js model.mjs styles.css manifest.webmanifest sw.js icon.svg; do
+            matched=false
+            for attempt in $(seq 1 24); do
+              tmp="$(mktemp)"
+              if curl --fail --silent --show-error -H 'Cache-Control: no-cache' "$origin/$file?release=$GITHUB_SHA&attempt=$attempt" -o "$tmp" && cmp -s "tracker-app/$file" "$tmp"; then matched=true; rm "$tmp"; break; fi
+              rm -f "$tmp"; sleep 5
+            done
+            test "$matched" = true
+          done
+      - name: Remove temporary credential
+        if: always()
+        run: rm -f "$GOOGLE_APPLICATION_CREDENTIALS"

@@ -39,9 +39,9 @@ try{
  console.log('PASS: owner reads history and saves validated learning/preferences/plans/memories. Outsider/unsigned access, extra fields, invalid learning, invented memories, client menu/receipt writes and forged receipt reconciliation are denied.');
 }finally{for(const path of cleanup){const r=await fetch(base+path,{method:'DELETE',headers:{Authorization:'Bearer '+cleanupToken}});if(!r.ok)throw new Error('Temporary private test document could not be removed.');}await auth.deleteUser(outsider).catch(()=>{});}
 const origin='https://pti-app-2ab59-morsel.web.app/';
-for(const file of ['index.html','app.mjs','core.mjs','intelligence.mjs','places.mjs','styles.css','sw.js','manifest.webmanifest']){
- const expected=await readFile('food-app/'+file,'utf8');let verified=false;
- for(let i=0;i<12;i++){const response=await fetch(origin+file+'?release='+process.env.GITHUB_SHA,{headers:{'Cache-Control':'no-cache'}});if(response.ok&&(await response.text())===expected){verified=true;break}await new Promise(r=>setTimeout(r,3000));}
+for(const file of ['index.html','app.mjs','core.mjs','intelligence.mjs','places.mjs','styles.css','sw.js','manifest.webmanifest','assets/bhel.webp','assets/vada-pav.webp','assets/dal.webp','assets/hara-bhara.webp','assets/paneer-tikka.webp','assets/veg-biryani.webp']){
+ const expected=await readFile('food-app/'+file);let verified=false;
+ for(let i=0;i<12;i++){const response=await fetch(origin+file+'?release='+process.env.GITHUB_SHA,{headers:{'Cache-Control':'no-cache'}});if(response.ok&&Buffer.from(await response.arrayBuffer()).equals(expected)){verified=true;break}await new Promise(r=>setTimeout(r,3000));}
  if(!verified)throw new Error('Live asset did not match: '+file);
 }
 console.log('PASS: live Morsel assets match this release.');

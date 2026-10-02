@@ -25,14 +25,151 @@ function authView(){return shell(`<section class="auth"><div><p class="eyebrow">
 function loadingView(){return shell(`<div class="loading"><span class="spinner"></span><b>Building the connected view…</b><small>Loading events, nodes, evidence and edges.</small></div>`)}
 function errorView(){return shell(`<div class="empty-state danger"><h2>Tracker could not load</h2><p>${esc(state.error)}</p><button class="primary" id="retry">Retry</button></div>`)}
 
-function chronicle(){const model=chronicleModel(state.data.nodes,state.data.events,state.data.edges,state.data.dayIndex);const nmap=nodeMap(state.data.nodes);const selected=byId('events',state.selectedEvent)||state.data.events.find(e=>e.title?.includes('Morsel acceptance reopened'))||state.data.events.at(-1);const cols=Math.max(1,model.days.length);return `<section class="page chronicle-page"><div class="page-head"><div><p class="eyebrow">Operating history</p><h1>Living Chronicle</h1><p>Events, decisions, work and continuity — across days, across workstreams.</p></div><div class="head-actions"><button class="quiet">Today</button><span class="segmented"><button>‹</button><button>›</button></span><button class="quiet">Days⌄</button></div></div><div class="chronicle-wrap"><div class="chronicle-grid" style="--days:${cols}"><div class="corner">Workstream</div>${model.days.map(d=>`<div class="day-head">${esc(fmtLong(d))}</div>`).join('')}${model.rows.map(row=>`<div class="row-label"><b>${esc(row.title)}</b><small>${row.eventCount} event${row.eventCount===1?'':'s'}</small></div>${model.days.map(day=>{const evs=model.cells.filter(c=>c.workstreamId===row.id&&c.day===day).map(c=>c.event);return `<div class="day-cell">${evs.map(e=>eventCard(e)).join('')}</div>`}).join('')}`).join('')}</div>${selected?eventDrawer(selected):''}</div>${crossThreadStrip()}${carryForward()}`}
-function eventCard(e){return `<button class="event-card ${tone(e.eventType)} ${state.selectedEvent===e.id?'selected':''}" data-event="${attr(e.id)}"><span class="event-dot">${icon(e.eventType==='rejection'||e.eventType==='revert'?'alert':'evidence',13)}</span><span><b>${esc(e.title)}</b><small>${esc(human(e.eventType))}</small></span></button>`}
+
+function chronicle(){
+  const model=chronicleModel(state.data.nodes,state.data.events,state.data.edges,state.data.dayIndex);
+  const selected=byId('events',state.selectedEvent)||state.data.events.find(e=>e.id==='ev-20261002-morsel-reopened')||state.data.events.find(e=>e.title?.includes('Morsel acceptance reopened'))||state.data.events.at(-1);
+  const cols=Math.max(1,model.days.length);
+  const thread=byId('nodes','thread-design-acceptance');
+  return `<section class="page chronicle-page">
+    <div class="page-head chronicle-head">
+      <div><h1>Living Chronicle</h1><p>Events, decisions, work, and continuity — across days, across workstreams.</p></div>
+      <div class="head-actions"><button class="quiet">Today</button><span class="segmented"><button>‹</button><button>›</button></span><button class="quiet">Days⌄</button></div>
+    </div>
+    <div class="chronicle-stage ${selected?'has-drawer':''}">
+      <div class="chronicle-board" data-chronicle-board style="--days:${cols};--rows:${model.rows.length}">
+        <svg class="chronicle-links" aria-hidden="true"><defs><marker id="chronicle-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z"></path></marker></defs><g class="continuity-layer"></g><g class="relation-layer"></g></svg>
+        <div class="chronicle-corner">Workstream</div>
+        ${model.days.map((d,i)=>`<div class="chronicle-day" style="grid-column:${i+2};grid-row:1"><b>${esc(fmtLong(d))}</b></div>`).join('')}
+        ${model.rows.map((row,ri)=>{
+          const cells=model.days.map((day,di)=>{
+            const evs=model.cells.filter(c=>c.workstreamId===row.id&&c.day===day).map(c=>c.event).sort((a,b)=>String(a.occurredAt||a.localDate||'').localeCompare(String(b.occurredAt||b.localDate||'')));
+            return `<div class="chronicle-cell" style="grid-column:${di+2};grid-row:${ri+2}" data-cell="${attr(row.id)}:${attr(day)}">${evs.map(e=>eventCard(e,true)).join('')}</div>`;
+          }).join('');
+          return `<div class="chronicle-lane" style="grid-column:1;grid-row:${ri+2}"><b>${esc(row.title)}</b></div>${cells}`;
+        }).join('')}
+        ${thread?`<button class="semantic-node thread-node-card" data-graph-id="${attr(thread.id)}" data-node-open="${attr(thread.id)}"><span>${icon('trace',15)}</span><span><b>${esc(thread.title)}</b><small>Cross-project thread</small></span></button>`:''}
+      </div>
+      ${selected?eventDrawer(selected):''}
+    </div>
+    ${carryForward()}
+  </section>`;
+}
+
+function eventCard(e,graph=false){
+  return `<button class="event-card ${tone(e.eventType)} ${state.selectedEvent===e.id?'selected':''}" data-event="${attr(e.id)}" ${graph?`data-graph-id="${attr(e.id)}"`:''}>
+    <span class="event-dot">${icon(e.eventType==='rejection'||e.eventType==='revert'?'alert':'evidence',13)}</span>
+    <span><b>${esc(e.title)}</b><small>${esc(human(e.eventType))}</small></span>
+  </button>`;
+}
+
+function drawChronicleLinks(){
+  const board=document.querySelector('[data-chronicle-board]');
+  if(!board)return;
+  const svg=board.querySelector('.chronicle-links'), continuity=svg?.querySelector('.continuity-layer'), relations=svg?.querySelector('.relation-layer');
+  if(!svg||!continuity||!relations)return;
+  const box=board.getBoundingClientRect();
+  svg.setAttribute('viewBox',`0 0 ${Math.max(1,box.width)} ${Math.max(1,box.height)}`);
+  svg.setAttribute('width',box.width); svg.setAttribute('height',box.height);
+  const pos=id=>{
+    const el=board.querySelector(`[data-graph-id="${CSS.escape(id)}"]`);
+    if(!el)return null;
+    const r=el.getBoundingClientRect();
+    return {x1:r.left-box.left,y1:r.top-box.top,x2:r.right-box.left,y2:r.bottom-box.top,cx:r.left-box.left+r.width/2,cy:r.top-box.top+r.height/2};
+  };
+  const path=(a,b,cls='')=>{
+    if(!a||!b)return'';
+    const sx=a.x2, sy=a.cy, tx=b.x1, ty=b.cy, dx=Math.max(24,(tx-sx)*.48);
+    return `<path class="${cls}" d="M ${sx} ${sy} C ${sx+dx} ${sy}, ${tx-dx} ${ty}, ${tx} ${ty}" marker-end="url(#chronicle-arrow)"/>`;
+  };
+  let c='';
+  for(const row of chronicleModel(state.data.nodes,state.data.events,state.data.edges,state.data.dayIndex).rows){
+    const evs=eventsForNode(row.id,state.data.events).filter(e=>pos(e.id)).sort((a,b)=>String(a.localDate||'').localeCompare(String(b.localDate||''))||String(a.occurredAt||'').localeCompare(String(b.occurredAt||'')));
+    for(let i=0;i<evs.length-1;i++)c+=path(pos(evs[i].id),pos(evs[i+1].id),'continuity-path');
+  }
+  continuity.innerHTML=c;
+  let r='';
+  const threadId='thread-design-acceptance', tp=pos(threadId);
+  if(tp){
+    for(const e of state.data.events.filter(e=>(e.nodeIds||[]).includes(threadId))){
+      const ep=pos(e.id); if(ep) r+=path(ep,tp,'relation-path');
+    }
+    const plugin=state.data.events.find(e=>e.id==='ev-20261002-central-plugin'||e.title?.includes('Central packaged as reusable plugin'));
+    if(plugin&&pos(plugin.id)) r+=path(tp,pos(plugin.id),'relation-path strong');
+  }
+  for(const edge of state.data.edges){
+    const a=pos(edge.from?.id),b=pos(edge.to?.id);if(a&&b)r+=path(a,b,'relation-path');
+  }
+  relations.innerHTML=r;
+}
+
 function eventDrawer(e){const nodes=(e.nodeIds||[]).map(id=>byId('nodes',id)).filter(Boolean);const upstream=state.data.edges.filter(x=>x.to?.id===e.id).map(x=>x.from?.id);const downstream=state.data.edges.filter(x=>x.from?.id===e.id).map(x=>x.to?.id);return `<aside class="detail-drawer"><div class="drawer-head"><span><small>Event details</small><b>${esc(e.title)}</b></span><button class="icon-button" data-close-event>${icon('close',16)}</button></div><div class="event-banner ${tone(e.eventType)}"><b>${esc(human(e.eventType))}</b><span>${esc(e.localDate||'')}</span></div><dl><dt>Local date</dt><dd>${esc(fmtLong(e.localDate))}</dd><dt>Linked nodes</dt><dd class="chips">${nodes.map(n=>`<a href="#node/${encodeURIComponent(n.id)}">${esc(n.title)}</a>`).join('')||'—'}</dd><dt>Effect</dt><dd>${esc(e.effect?.reason||human(e.effect?.kind||''))||'Observed event'}</dd><dt>Source evidence</dt><dd>${(e.evidenceIds||[]).length}</dd></dl><div class="drawer-section"><b>Upstream</b>${upstream.length?upstream.map(id=>relationLink(id)).join(''):'<span>None recorded</span>'}</div><div class="drawer-section"><b>Downstream influence</b>${downstream.length?downstream.map(id=>relationLink(id)).join(''):'<span>None recorded</span>'}</div><div class="drawer-section"><b>Evidence</b>${(e.evidenceIds||[]).map(id=>{const x=byId('evidence',id);return `<div class="evidence-mini">${icon('evidence',15)}<span>${esc(x?.title||id)}<small>${esc(x?.summary||'')}</small></span></div>`}).join('')||'<span>No evidence loaded</span>'}</div></aside>`}
 function relationLink(id){const n=byId('nodes',id),e=byId('events',id);if(n)return `<a class="relation-pill" href="#node/${encodeURIComponent(id)}">${esc(n.title)}</a>`;if(e)return `<button class="relation-pill" data-event="${attr(id)}">${esc(e.title)}</button>`;return `<span class="relation-pill">${esc(id)}</span>`}
 function crossThreadStrip(){const thread=byId('nodes','thread-design-acceptance');if(!thread)return'';const related=eventsForNode(thread.id,state.data.events);return `<div class="thread-strip"><span class="thread-node">${icon('trace',16)}<b>${esc(thread.title)}</b></span><span class="thread-line"></span>${related.map(e=>`<button data-event="${attr(e.id)}" class="thread-event ${tone(e.eventType)}">${esc(e.title)}</button>`).join('')}<a href="#trace" class="thread-open">Open trace ${icon('arrow',14)}</a></div>`}
 function carryForward(){const ids=state.data.dayIndex.find(d=>d.localDate===chronicleModel(state.data.nodes,state.data.events,state.data.edges,state.data.dayIndex).to)?.carryForwardNodeIds||[];const fallback=['thread-design-acceptance','reco-validate-before-accept','ws-venture','ws-pti-self-tracking'];const items=[...new Set([...ids,...fallback])].map(id=>byId('nodes',id)).filter(Boolean).slice(0,4);return `<section class="carry"><div class="section-title"><div><h2>Carry Forward</h2><small>${items.length} ongoing objects</small></div><span>Daily reports are derived views — continuity lives in events, nodes and edges.</span></div><div class="carry-grid">${items.map(n=>`<a href="#node/${encodeURIComponent(n.id)}"><span class="node-icon ${esc(n.nodeType)}">${icon(n.nodeType==='problem'?'alert':'node',17)}</span><span><b>${esc(n.title)}</b><small>${esc(n.question||n.objective||n.description||n.hypothesis||human(n.nodeType))}</small></span></a>`).join('')}</div></section>`}
 
-function trace(){const root=byId('nodes',state.traceRoot)||byId('nodes','thread-design-acceptance')||state.data.nodes[0];if(!root)return empty('No traceable nodes yet.');const graph=traceNeighborhood(root.id,state.data.nodes,state.data.events,state.data.edges,3);const nm=nodeMap(state.data.nodes),em=eventMap(state.data.events);return `<section class="page"><div class="page-head"><div><p class="eyebrow">Causality browser</p><h1>Trace</h1><p>Explore how problems, decisions and outcomes connect — and why they happened.</p></div></div><div class="trace-layout"><aside class="related-list"><h2>Related Objects</h2>${state.data.nodes.filter(n=>['thread','problem','recommendation','decision','workstream'].includes(n.nodeType)).slice(0,16).map(n=>`<button data-trace="${attr(n.id)}" class="${n.id===root.id?'active':''}"><span class="node-icon ${esc(n.nodeType)}">${icon(n.nodeType==='problem'?'alert':'node',15)}</span><span><b>${esc(n.title)}</b><small>${esc(human(n.nodeType))}</small></span></button>`).join('')}</aside><div class="trace-canvas"><div class="trace-toolbar"><div><h2>Causal Trace</h2><small>Typed relationships around ${esc(root.title)}</small></div><span class="quiet">Depth 3</span></div><div class="trace-center"><div class="root-node ${esc(root.nodeType)}"><small>${esc(human(root.nodeType))}</small><b>${esc(root.title)}</b><p>${esc(root.question||root.description||root.objective||'')}</p></div><div class="trace-columns"><div class="trace-col"><h3>Upstream / evidence</h3>${graph.edges.filter(e=>e.to?.id===root.id||graph.edges.some(x=>x.to?.id===e.from?.id&&x.to?.id===root.id)).slice(0,8).map(e=>traceRelation(e,nm,em,'up')).join('')||'<span class="muted">No upstream edges recorded.</span>'}</div><div class="trace-col"><h3>Downstream / influence</h3>${graph.edges.filter(e=>e.from?.id===root.id||graph.edges.some(x=>x.from?.id===e.to?.id&&x.from?.id===root.id)).slice(0,8).map(e=>traceRelation(e,nm,em,'down')).join('')||'<span class="muted">No downstream edges recorded.</span>'}</div></div></div><div class="evidence-trail"><div class="section-title"><div><h2>Evidence Trail</h2><small>Source material supporting this causal thread</small></div></div><div class="evidence-row">${evidenceForGraph(graph).slice(0,5).map(x=>`<article><span>${icon('evidence',16)}</span><div><b>${esc(x.title||x.id)}</b><p>${esc(x.summary||'Source-backed evidence')}</p><small>${esc(x.localDate||x.occurredAt||'')}</small></div></article>`).join('')}</div></div></div>${nodeSidePanel(root)}</div></section>`}
+
+function trace(){
+  const root=byId('nodes',state.traceRoot)||byId('nodes','thread-design-acceptance')||state.data.nodes[0];
+  if(!root)return empty('No traceable nodes yet.');
+  const graph=traceNeighborhood(root.id,state.data.nodes,state.data.events,state.data.edges,3);
+  const objects=[...graph.nodes,...graph.events].filter(Boolean);
+  const placement=tracePlacement(root,objects,graph.edges);
+  return `<section class="page trace-page">
+    <div class="page-head"><div><h1>Trace</h1><p>Explore how problems, decisions, and outcomes are connected — and why they happened.</p></div></div>
+    <div class="trace-layout trace-layout-board">
+      <aside class="related-list"><h2>Related Objects</h2>${state.data.nodes.filter(n=>['thread','problem','recommendation','decision','workstream','outcome'].includes(n.nodeType)).slice(0,18).map(n=>`<button data-trace="${attr(n.id)}" class="${n.id===root.id?'active':''}"><span class="node-icon ${esc(n.nodeType)}">${icon(n.nodeType==='problem'?'alert':'node',15)}</span><span><b>${esc(n.title)}</b><small>${esc(human(n.nodeType))}</small></span></button>`).join('')}</aside>
+      <div class="trace-board-shell">
+        <div class="trace-toolbar"><div><h2>Causal Trace</h2><small>How events and decisions connect, and what they influenced.</small></div><div class="trace-tools"><span>Layout: Left → Right</span><span>− &nbsp; 100% &nbsp; +</span></div></div>
+        <div class="trace-board" data-trace-board>
+          <svg class="trace-links" aria-hidden="true"><defs><marker id="trace-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z"></path></marker></defs><g></g></svg>
+          ${objects.map(o=>traceBoardObject(o,placement.get(o.id),o.id===root.id)).join('')}
+        </div>
+        <div class="evidence-trail"><div class="section-title"><div><h2>Evidence Trail</h2><small>Key evidence underlying this causal thread.</small></div></div><div class="evidence-row">${evidenceForGraph(graph).slice(0,5).map(x=>`<article><span>${icon('evidence',16)}</span><div><b>${esc(x.title||x.id)}</b><p>${esc(x.summary||'Source-backed evidence')}</p><small>${esc(x.localDate||x.occurredAt||'')}</small></div></article>`).join('')}</div></div>
+      </div>
+      ${nodeSidePanel(root)}
+    </div>
+  </section>`;
+}
+
+function tracePlacement(root,objects,edges){
+  const map=new Map(), cols={left:[],center:[],right:[]};
+  for(const o of objects){
+    const kind=o.nodeType||'event';
+    if(o.id===root.id){map.set(o.id,{x:41,y:9});continue;}
+    if(kind==='event'||kind==='workstream')cols.left.push(o);
+    else if(['thread','problem','recommendation','principle'].includes(kind))cols.center.push(o);
+    else cols.right.push(o);
+  }
+  const place=(list,x,start=24,span=62)=>list.forEach((o,i)=>map.set(o.id,{x,y:start+(list.length===1?span/2:(span*i/Math.max(1,list.length-1)))}));
+  place(cols.left,4,20,68);place(cols.center,40,34,52);place(cols.right,72,18,68);
+  return map;
+}
+function traceBoardObject(o,p,root=false){
+  if(!p)return'';
+  const kind=o.nodeType||'event', cls=kind==='event'?tone(o.eventType):kind;
+  const href=o.nodeType?`#node/${encodeURIComponent(o.id)}`:'#trace';
+  return `<a class="trace-object ${esc(cls)} ${root?'root':''}" style="--x:${p.x};--y:${p.y}" data-trace-graph-id="${attr(o.id)}" href="${href}" ${o.nodeType?'':`data-event="${attr(o.id)}"`}>
+    <span class="trace-object-icon">${icon(kind==='problem'?'alert':kind==='event'?'evidence':'node',15)}</span>
+    <span><b>${esc(o.title)}</b><small>${esc(human(o.nodeType||o.eventType||''))}${o.localDate?` · ${esc(fmtDay(o.localDate))}`:''}</small>${root&&o.question?`<em>${esc(o.question)}</em>`:''}</span>
+  </a>`;
+}
+function drawTraceLinks(){
+  const board=document.querySelector('[data-trace-board]');if(!board)return;
+  const svg=board.querySelector('.trace-links'),layer=svg?.querySelector('g');if(!svg||!layer)return;
+  const box=board.getBoundingClientRect();svg.setAttribute('viewBox',`0 0 ${box.width} ${box.height}`);svg.setAttribute('width',box.width);svg.setAttribute('height',box.height);
+  const pos=id=>{const el=board.querySelector(`[data-trace-graph-id="${CSS.escape(id)}"]`);if(!el)return null;const r=el.getBoundingClientRect();return{x1:r.left-box.left,x2:r.right-box.left,cy:r.top-box.top+r.height/2};};
+  let out='';
+  for(const edge of state.data.edges){
+    const a=pos(edge.from?.id),b=pos(edge.to?.id);if(!a||!b)continue;
+    const sx=a.x2,tx=b.x1,sy=a.cy,ty=b.cy,dx=Math.max(28,Math.abs(tx-sx)*.42);
+    const reverse=tx<sx;
+    const d=reverse?`M ${a.x1} ${sy} C ${a.x1-dx} ${sy}, ${b.x2+dx} ${ty}, ${b.x2} ${ty}`:`M ${sx} ${sy} C ${sx+dx} ${sy}, ${tx-dx} ${ty}, ${tx} ${ty}`;
+    out+=`<path d="${d}" marker-end="url(#trace-arrow)"/><text x="${(sx+tx)/2}" y="${(sy+ty)/2-5}">${esc(edge.type.replaceAll('_',' '))}</text>`;
+  }
+  layer.innerHTML=out;
+}
+
 function traceRelation(edge,nm,em,dir){const source=nm.get(edge.from?.id)||em.get(edge.from?.id),target=nm.get(edge.to?.id)||em.get(edge.to?.id);const item=dir==='up'?source:target;if(!item)return'';return `<div class="trace-rel"><span class="rel-label">${esc(edge.type)}</span><a href="${item.nodeType?`#node/${encodeURIComponent(item.id)}`:'#trace'}" ${item.id&&!item.nodeType?`data-event="${attr(item.id)}"`:''}><span class="node-icon ${esc(item.nodeType||tone(item.eventType))}">${icon(item.nodeType==='problem'?'alert':'node',15)}</span><span><b>${esc(item.title)}</b><small>${esc(human(item.nodeType||item.eventType||''))}${item.localDate?` · ${esc(fmtDay(item.localDate))}`:''}</small></span></a></div>`}
 function evidenceForGraph(graph){const ids=[...new Set(graph.edges.flatMap(e=>e.evidenceIds||[]))];return ids.map(id=>byId('evidence',id)).filter(Boolean)}
 function nodeSidePanel(n){const ev=eventsForNode(n.id,state.data.events),eds=relatedEdges(n.id,state.data.edges);const connected=[...new Set(eds.flatMap(e=>[e.from?.id,e.to?.id]).filter(id=>id!==n.id))].map(id=>byId('nodes',id)).filter(Boolean);return `<aside class="object-panel"><div class="object-head"><span class="node-icon ${esc(n.nodeType)}">${icon(n.nodeType==='problem'?'alert':'node',20)}</span><div><b>${esc(n.title)}</b><small>${esc(human(n.nodeType))}</small></div></div>${n.question?`<label>Question</label><p>${esc(n.question)}</p>`:''}${n.objective?`<label>Objective</label><p>${esc(n.objective)}</p>`:''}<div class="object-grid"><span><small>First seen</small><b>${esc(fmtDay(n.firstSeenLocalDate||n.decidedLocalDate||n.occurredLocalDate))}</b></span><span><small>Last active</small><b>${esc(fmtDay(n.lastSeenLocalDate||n.lastActive||n.decidedLocalDate||n.occurredLocalDate))}</b></span><span><small>Events</small><b>${ev.length}</b></span><span><small>Edges</small><b>${eds.length}</b></span></div><label>Connected objects</label><div class="chips">${connected.slice(0,8).map(x=>`<a href="#node/${encodeURIComponent(x.id)}">${esc(x.title)}</a>`).join('')||'—'}</div><label>Current status</label><p><span class="status-dot"></span>${esc(human(n.status||'active'))}</p></aside>`}
@@ -50,8 +187,8 @@ function nodeUnderstanding(n,ev,eds){let summary='A persistent object whose mean
 function searchPage(){const results=searchAll(state.query,{nodes:state.data.nodes,events:state.data.events,evidence:state.data.evidence});return `<section class="page"><div class="page-head"><div><p class="eyebrow">Global retrieval</p><h1>Search</h1><p>Find workstreams, decisions, events and evidence without losing their context.</p></div></div><div class="search-page"><div class="search-hero">${icon('search',22)}<input id="page-query" value="${attr(state.query)}" placeholder="Try ‘Morsel’, ‘acceptance’, ‘Venture’, ‘plugin’…"></div><div class="results">${state.query?results.map(r=>`<article><span class="result-type">${esc(human(r.type))}</span><div><b>${esc(r.item.title||r.item.id)}</b><p>${esc(r.item.summary||r.item.description||r.item.question||r.item.objective||human(r.item.eventType||r.item.nodeType||''))}</p></div>${r.type==='node'?`<a href="#node/${encodeURIComponent(r.item.id)}">Open ${icon('arrow',13)}</a>`:r.type==='event'?`<button data-event="${attr(r.item.id)}">Inspect ${icon('arrow',13)}</button>`:''}</article>`).join('')||'<div class="empty-state"><h2>No matching canonical objects</h2><p>Try a broader phrase.</p></div>':'<div class="empty-state"><h2>Search the connected history</h2><p>Results span nodes, events and evidence.</p></div>'}</div></div></section>`}
 function empty(text){return `<div class="empty-state"><h2>${esc(text)}</h2></div>`}
 
-function render(){parseHash();if(!state.user){app.innerHTML=authView();bind();return;}if(state.error&&!state.loading){app.innerHTML=errorView();bind();return;}if(state.loading){app.innerHTML=loadingView();bind();return;}const view=state.view==='chronicle'?chronicle():state.view==='trace'?trace():state.view==='investment'?investment():state.view==='node'?nodeDetail():searchPage();app.innerHTML=shell(view);bind();}
-function bind(){document.querySelector('#sign-in')?.addEventListener('click',()=>signIn());document.querySelector('#retry')?.addEventListener('click',()=>loadWorkspace());document.querySelector('#global-search')?.addEventListener('submit',e=>{e.preventDefault();state.query=document.querySelector('#global-query').value.trim();location.hash='#search';});document.querySelector('#global-query')?.addEventListener('input',e=>state.query=e.target.value);document.querySelector('#page-query')?.addEventListener('input',e=>{state.query=e.target.value;render()});document.querySelectorAll('[data-event]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();state.selectedEvent=el.dataset.event;render()}));document.querySelector('[data-close-event]')?.addEventListener('click',()=>{state.selectedEvent='';render()});document.querySelectorAll('[data-trace]').forEach(el=>el.addEventListener('click',()=>{state.traceRoot=el.dataset.trace;render()}));}
+function render(){parseHash();if(!state.user){app.innerHTML=authView();bind();return;}if(state.error&&!state.loading){app.innerHTML=errorView();bind();return;}if(state.loading){app.innerHTML=loadingView();bind();return;}const view=state.view==='chronicle'?chronicle():state.view==='trace'?trace():state.view==='investment'?investment():state.view==='node'?nodeDetail():searchPage();app.innerHTML=shell(view);bind();requestAnimationFrame(()=>{drawChronicleLinks();drawTraceLinks();});}
+function bind(){document.querySelector('#sign-in')?.addEventListener('click',()=>signIn());document.querySelector('#retry')?.addEventListener('click',()=>loadWorkspace());document.querySelector('#global-search')?.addEventListener('submit',e=>{e.preventDefault();state.query=document.querySelector('#global-query').value.trim();location.hash='#search';});document.querySelector('#global-query')?.addEventListener('input',e=>state.query=e.target.value);document.querySelector('#page-query')?.addEventListener('input',e=>{state.query=e.target.value;render()});document.querySelectorAll('[data-event]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();state.selectedEvent=el.dataset.event;render()}));document.querySelector('[data-close-event]')?.addEventListener('click',()=>{state.selectedEvent='';render()});document.querySelectorAll('[data-trace]').forEach(el=>el.addEventListener('click',()=>{state.traceRoot=el.dataset.trace;render()}));document.querySelectorAll('[data-node-open]').forEach(el=>el.addEventListener('click',()=>{location.hash=`#node/${encodeURIComponent(el.dataset.nodeOpen)}`}));window.addEventListener('resize',()=>requestAnimationFrame(()=>{drawChronicleLinks();drawTraceLinks()}),{once:true});}
 
 async function signIn(){const provider=new api.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});try{await api.signInWithPopup(auth,provider)}catch(e){if(e.code==='auth/popup-blocked')await api.signInWithRedirect(auth,provider);else setState({error:e.message,loading:false})}}
 async function loadWorkspace(){if(!state.user)return;unsubs.forEach(f=>f());unsubs=[];state.loading=true;state.error='';render();const root=api.doc(db,'users',state.user.uid,'trackerData','workspace');try{const snap=await api.getDoc(root);if(!snap.exists())throw new Error('Tracker workspace has not been initialized for this account.');let pending=new Set(collections);for(const name of collections){const ref=api.collection(root,name);unsubs.push(api.onSnapshot(ref,s=>{state.data[name]=s.docs.map(d=>({id:d.id,...normalize(d.data())}));pending.delete(name);state.loading=pending.size>0;render();},e=>{pending.delete(name);state.data[name]=[];state.error=`Could not load ${name}: ${e.code||e.message}`;state.loading=pending.size>0;render();}));}}catch(e){state.loading=false;state.error=e.code==='permission-denied'?'This tracker is private to its owner. Sign in with the owner account.':String(e.message||e);render();}}

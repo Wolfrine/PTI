@@ -19,3 +19,16 @@ Maintain a truthful longitudinal model of where attention went, what it produced
 
 ## Reconciliation loop
 Collect new source material → create evidence → extract events → resolve against existing nodes → add/update nodes only when state changed → create typed edges → update dayIndex → write a versioned assessment when justified → advance sourceState cursors.
+
+## Outcome-first synthesis (daily evaluation)
+
+Run **source freshness and missing-day checks first**. A successful scheduled execution is not a successful reconciliation unless evidence, event/assessment records, source-state cursors and a run record are actually read back. If prior completed India-local days are missing, reconcile them chronologically using dated evidence; record unsupported gaps as gaps, never as inactive days.
+
+Organize interpretation by **persistent workstream or problem**, not one independent narrative per day:
+1. **Previously verified state → new observation → changed state → practical consequence → next falsifiable check**, with exact supporting event/evidence IDs. Surface at most three highest-consequence transitions and three active blockers in a concise derived digest, even if the canonical records contain many more.
+2. Separate **input/activity** (papers drafted, commits, research scans), **output** (merged release or approved artefact), **verified outcome** (actual users, successful delivery, owner acceptance), and **unknown** (measurement/coverage missing). Do not infer time, success, adoption, causation or a global user trait from counts alone.
+3. Use typed causal edges (\`led_to\`, \`revises\`, \`realized_by\`, \`addresses\`, \`contradicts\`) **only where the evidence establishes that relationship**. Ordinary membership belongs in \`event.nodeIds\`; avoid adding redundant \`supports\` or \`contributes_to\` edges merely to grow the graph.
+4. **Close the feedback loop.** Compare the latest evidence with each active recommendation's original test. Mark a recommendation adopted/validated/rejected only with real cited outcomes; otherwise retain proposed status and identify what verification remains. Preserve previous state via an event/revision.
+5. **Rank by consequence, not quantity.** Rising unresolved queue, failed production state or a verified user rejection outranks a routine successful run. Speculative concepts remain separate unless the user explicitly prioritizes them.
+6. Keep source coverage in view. A newer GitHub \`chatTurns\` capture can update capture coverage without proving complete ChatGPT history, and should not be counted as an independently verified production outcome. A missing source or stale day must be identified explicitly.
+7. Store canonical evidence/events/nodes/edges and a versioned day assessment as usual. The narrative is a **derived view**, not a new primary report file or fabricated record. A fresh daily assessment should make clear what changed since the previous assessed state and where confidence remains bounded.

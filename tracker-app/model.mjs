@@ -86,3 +86,25 @@ export function validateCanonical({evidence=[],events=[],nodes=[],edges=[]}){
   for(const edge of edges){if(!all.has(edge.from?.id))errors.push(`Edge ${edge.id} missing from ${edge.from?.id}`); if(!all.has(edge.to?.id))errors.push(`Edge ${edge.id} missing to ${edge.to?.id}`); for(const id of edge.evidenceIds||[])if(!eids.has(id))errors.push(`Edge ${edge.id} missing evidence ${id}`);}
   return errors;
 }
+
+/** A bounded, evidence-first projection of a versioned assessment.
+ * The list order is source order, NOT a computed priority ranking.
+ */
+export function assessmentReadout(assessment={}) {
+  const observed=assessment.observation||{};
+  const interpretation=assessment.interpretation||{};
+  const pick=values=>Array.isArray(values)?values.filter(v=>typeof v==='string'&&v.trim()).slice(0,3):[];
+  const sourceCoverage=assessment.coverage||assessment.sourceCoverage||{};
+  return {
+    id:assessment.id||'',
+    localDate:assessment.localDate||'',
+    status:assessment.status||'unknown',
+    conclusion:typeof interpretation.attentionProduced==='string'?interpretation.attentionProduced:
+      typeof assessment.summary==='string'?assessment.summary:'',
+    outputs:pick(observed.outputs),
+    openLoops:pick(observed.failuresAndOpenLoops),
+    nextChecks:pick(interpretation.improvementSignals),
+    evidenceCount:Array.isArray(assessment.basisEvidenceIds)?assessment.basisEvidenceIds.length:null,
+    chatCoverage:sourceCoverage.chatgpt?.status||'unknown'
+  };
+}

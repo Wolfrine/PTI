@@ -18,8 +18,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
-      - run: node --check tracker-app/app.js && node --check tracker-app/model.mjs && node --check tracker-app/sw.js && node --check tracker-app/scripts/configure-firebase-auth.mjs
-      - run: node --test tracker-app/tests/model.test.mjs
+      - run: node --check tracker-app/app.js && node --check tracker-app/model.mjs && node --check tracker-app/discussions.mjs && node --check tracker-app/sw.js && node --check tracker-app/scripts/configure-firebase-auth.mjs
+      - run: node --test tracker-app/tests/*.test.mjs
       - run: npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund && npm run build --prefix tools/pti-mcp
   deploy:
     if: github.ref == 'refs/heads/main'
@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           origin="https://${TRACKER_SITE_ID}.web.app"
-          for file in index.html app.js model.mjs styles.css manifest.webmanifest sw.js icon.svg; do
+          for file in index.html app.js model.mjs discussions.mjs styles.css manifest.webmanifest sw.js icon.svg; do
             matched=false
             for attempt in $(seq 1 24); do
               tmp="$(mktemp)"
@@ -70,3 +70,4 @@ jobs:
       - name: Remove temporary credential
         if: always()
         run: rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
+

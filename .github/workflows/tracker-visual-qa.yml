@@ -1,0 +1,40 @@
+name: PTI Tracker responsive visual QA
+on:
+  push:
+    branches: [main]
+    paths: ['tracker-app/**','.github/workflows/tracker-visual-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tracker-visual-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Prepare isolated test dependencies
+        run: |
+          npm install --prefix "$RUNNER_TEMP/tracker-qa" playwright@1.62.1 google-auth-library --no-audit --no-fund
+          node "$RUNNER_TEMP/tracker-qa/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Read owner snapshot and render responsive screens
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          umask 077
+          credential="$RUNNER_TEMP/tracker-visual-credential.json"
+          trap 'rm -f "$credential"' EXIT
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$credential"
+          export GOOGLE_APPLICATION_CREDENTIALS="$credential"
+          export TRACKER_QA_MODULES="$RUNNER_TEMP/tracker-qa/node_modules"
+          node tracker-app/scripts/visual-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tracker-responsive-review
+          path: tracker-qa-output/
+          retention-days: 7

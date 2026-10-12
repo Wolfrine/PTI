@@ -1,0 +1,24 @@
+name: PTI Chat Capture Schema Tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/pti-mcp/scripts/harness-sync-core.mjs'
+      - 'tools/pti-mcp/scripts/harness-sync-core.test.mjs'
+      - '.github/workflows/chat-capture-schema-tests.yml'
+  pull_request:
+    paths:
+      - 'tools/pti-mcp/scripts/harness-sync-core.mjs'
+      - 'tools/pti-mcp/scripts/harness-sync-core.test.mjs'
+      - '.github/workflows/chat-capture-schema-tests.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tools/pti-mcp/scripts/harness-sync-core.test.mjs

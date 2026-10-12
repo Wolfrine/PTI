@@ -52,6 +52,10 @@ try{
    if(overflow)issues.push(`${label}/${route}: body overflows`);
    const name=`${label}-${route.replaceAll('/','-')}.png`;
    await page.screenshot({path:resolve(out,name),fullPage:true});captures.push(name);
+   if(route==='review'){
+    let visible=0;for(const row of await page.locator('.activity-panel [data-event]').all())if(await row.isVisible())visible++;
+    assert.ok(visible<=(width<700?3:6),`${label}: initial activity density is bounded`);
+   }
   }
   await page.goto(`${origin}/#discussions`);await page.waitForTimeout(400);
   const discussions=page.locator('a[href^="#discussion/"]');
@@ -65,6 +69,18 @@ try{
    }
    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))issues.push(`${label}/discussion-reader: body overflows`);
    await page.screenshot({path:resolve(out,`${label}-discussion-expanded.png`),fullPage:true});
+   for(const summary of await page.locator('details.provenance > summary').all())await summary.click();
+   for(const turn of data.chatTurns.filter(t=>t.harnessConversationId===id)){
+    if(turn.sourceBlobSha)assert.ok((await page.locator('main').textContent()).includes(turn.sourceBlobSha),`${label}: source blob provenance is present`);
+   }
+   await page.screenshot({path:resolve(out,`${label}-discussion-provenance.png`),fullPage:true});
+  }
+  const partial=data.chatTurns.find(t=>t.captureStatus==='partial'||t.coverage?.assistant_prepared_text_saved===false);
+  if(partial){
+   await page.goto(`${origin}/#capture/${encodeURIComponent(partial.id)}`);await page.waitForTimeout(350);
+   assert.ok((await page.locator('main').textContent()).includes('Partial capture'),`${label}: explicit partial capture indicator`);
+   for(const message of partial.messages||[])assert.ok((await page.locator('.message-text').allTextContents()).includes(message.content),`${label}: exact partial source text is retained`);
+   await page.screenshot({path:resolve(out,`${label}-partial-capture.png`),fullPage:true});
   }
   await page.goto(`${origin}/#review`);await page.waitForTimeout(350);
   if(await page.locator('[data-event]').count()){

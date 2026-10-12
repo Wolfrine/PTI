@@ -1,0 +1,40 @@
+{
+  "sourceCommit": "10ace33d0daf09ecc8da92ae39467d4ecb185c05",
+  "dataCounts": {
+    "evidence": 72,
+    "events": 77,
+    "nodes": 42,
+    "edges": 132,
+    "dayIndex": 10,
+    "sourceState": 6,
+    "assessments": 9,
+    "runs": 9,
+    "chatTurns": 6,
+    "chatConversations": 1
+  },
+  "captures": [
+    "desktop-review.png",
+    "desktop-chronicle.png",
+    "desktop-trace.png",
+    "desktop-investment.png",
+    "desktop-search.png",
+    "desktop-node-ws-morsel.png",
+    "desktop-discussions.png",
+    "mobile-review.png",
+    "mobile-chronicle.png",
+    "mobile-trace.png",
+    "mobile-investment.png",
+    "mobile-search.png",
+    "mobile-node-ws-morsel.png",
+    "mobile-discussions.png",
+    "small-mobile-review.png",
+    "small-mobile-chronicle.png",
+    "small-mobile-trace.png",
+    "small-mobile-investment.png",
+    "small-mobile-search.png",
+    "small-mobile-node-ws-morsel.png",
+    "small-mobile-discussions.png"
+  ],
+  "issues": [],
+  "limits": "Read-only data snapshot; SDK stub rendering tests do not verify production authentication or source completeness."
+}

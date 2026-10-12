@@ -54,10 +54,14 @@ try{
    await page.screenshot({path:resolve(out,name),fullPage:true});captures.push(name);
    if(route==='review'){
     let visible=0;for(const row of await page.locator('.activity-panel [data-event]').all())if(await row.isVisible())visible++;
-    assert.ok(visible<=(width<700?3:6),`${label}: initial activity density is bounded`);
+    assert.equal(visible,Math.min(data.events.length,width<700?3:6),`${label}: displayed activity count matches its label and density`);
    }
   }
   await page.goto(`${origin}/#discussions`);await page.waitForTimeout(400);
+  if(await page.locator('.sync-panel > summary').count()){
+   await page.locator('.sync-panel > summary').click();
+   await page.screenshot({path:resolve(out,`${label}-source-sync.png`),fullPage:true});
+  }
   const discussions=page.locator('a[href^="#discussion/"]');
   if(await discussions.count()){
    const href=await discussions.first().getAttribute('href');

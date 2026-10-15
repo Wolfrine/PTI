@@ -1,5 +1,5 @@
 {
-  "fingerprint": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+  "fingerprint": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
   "description": "Exact source/public/build and Hosting policy bytes plus document-derived DEV fixture and final capture logic; no deployment or aesthetic claim.",
   "entries": [
     {
@@ -12,7 +12,7 @@
     },
     {
       "path": "design/illustrated-pwa/capture-final.mjs",
-      "sha256": "e138b8ad3d1a51ac7d35a0c94f125800d05de631816ebef97cfb4b7b48dfb501"
+      "sha256": "fdf9b70f65b6179cdcdfb7ea5f6c5e01e484ee935f4cfa67125a759f1fd45932"
     },
     {
       "path": "dist/art/botanical-scene-640.webp",
@@ -180,7 +180,7 @@
     },
     {
       "path": "dist/pwa-assets.json",
-      "sha256": "e3b9d0f8b2d6895a91dbcddbf4493a2924d0ab360898330d2d4f2efbaaf4dd44"
+      "sha256": "605e3681dfcb83f3f21569afe7dc15430198c88631c8a4a0f26e1a59f4270b1a"
     },
     {
       "path": "dist/share.png",
@@ -192,7 +192,7 @@
     },
     {
       "path": "dist/sw.js",
-      "sha256": "0af3ccd9aa2b4d0b94b3465fc71f22e52a418179021d8dca101429c8ae686472"
+      "sha256": "4d583127b35f4efb63089e47b5671eac164775bc21abfb028b34593105edffde"
     },
     {
       "path": "family/index.html",
@@ -332,7 +332,7 @@
     },
     {
       "path": "scripts/pwa-build.mjs",
-      "sha256": "d3723dae604b02ec9761be6c4147844e833df9d164e1cc89e3a4534586454fc9"
+      "sha256": "e1c7ec185e64fbe3f9ae06dab289858d14a75fc80edf883fc1b0a670086328cb"
     },
     {
       "path": "scripts/seed-record.mjs",

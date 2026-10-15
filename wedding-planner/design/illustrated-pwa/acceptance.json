@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+  "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
   "status": "agent-reviewed",
   "owner_verdict": {
     "status": "not-reviewed"
@@ -144,7 +144,7 @@
       "state": "sangeet-1440",
       "viewport": "desktop",
       "observed_marker": "Sweet corn",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -158,7 +158,7 @@
       "state": "reception-1440",
       "viewport": "desktop",
       "observed_marker": "Shahi Patam",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -172,7 +172,7 @@
       "state": "sangeet-390",
       "viewport": "mobile",
       "observed_marker": "Sweet corn",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -186,7 +186,7 @@
       "state": "reception-390",
       "viewport": "mobile",
       "observed_marker": "Shahi Patam",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -200,7 +200,7 @@
       "state": "compare-compact-390",
       "viewport": "mobile",
       "observed_marker": "Two menus, together.",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -214,7 +214,7 @@
       "state": "compare-search-390",
       "viewport": "mobile",
       "observed_marker": "Paneer",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -224,11 +224,11 @@
     },
     {
       "path": "wedding-planner/design/illustrated-pwa/final-invitation-1440.png",
-      "sha256": "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531",
+      "sha256": "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3",
       "state": "invitation-1440",
       "viewport": "desktop",
       "observed_marker": "Mahima",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -238,11 +238,11 @@
     },
     {
       "path": "wedding-planner/design/illustrated-pwa/final-invitation-360.png",
-      "sha256": "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542",
+      "sha256": "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517",
       "state": "invitation-360",
       "viewport": "mobile",
       "observed_marker": "Mahima",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -256,7 +256,7 @@
       "state": "install-help-390",
       "viewport": "mobile",
       "observed_marker": "Keep our wedding close.",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -266,11 +266,11 @@
     },
     {
       "path": "wedding-planner/design/illustrated-pwa/final-share-fallback-390.png",
-      "sha256": "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee",
+      "sha256": "9c93325e820ee8174c092ab3d04154a58b570772c1cf06ab56c865776a06c1fd",
       "state": "share-fallback-390",
       "viewport": "mobile",
       "observed_marker": "Share the invitation",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -280,11 +280,11 @@
     },
     {
       "path": "wedding-planner/design/illustrated-pwa/final-saved-offline-390.png",
-      "sha256": "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66",
+      "sha256": "d96e243f150e275919313e7f79bc8203dd51ed20b0a218b4645c5d5593cdf378",
       "state": "saved-offline-390",
       "viewport": "mobile",
       "observed_marker": "Saved invitation",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -298,7 +298,7 @@
       "state": "private-offline-390",
       "viewport": "mobile",
       "observed_marker": "Let’s reconnect.",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
         "overflow": false,
@@ -308,16 +308,16 @@
     },
     {
       "path": "wedding-planner/design/illustrated-pwa/final-social-card-1200.png",
-      "sha256": "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8",
+      "sha256": "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96",
       "state": "social-card-1200",
       "viewport": "desktop",
       "observed_marker": "1200×630 decoded public JPEG",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "checks": {
         "state_identity": true,
-        "overflow": false,
         "broken_images": false,
-        "page_errors": false
+        "page_errors": false,
+        "overflow": false
       }
     }
   ],
@@ -364,8 +364,8 @@
         "path": "wedding-planner/design/illustrated-pwa/final-private-offline-390.png",
         "sha256": "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13"
       },
-      "visual_finding": "All13 exact repaired-candidate renders independently reviewed. Final parent personally viewed every image after stronger-first round3 and final critic-first scores.",
-      "qa_finding": "Initial b76 candidate was withheld after actual private-offline failure. Reported-offline guard repaired fresh-live-shell behavior; exact neutral body/fromSW/zero family network and privateDOM regression passed, followed by13 hash-guarded captures and final combined PWA checks."
+      "visual_finding": "Final round refreshed after the production clean-URL repair: all13 unchanged-composition states recaptured against the new worker and personally re-inspected. Original pre-production round5 evidence is preserved in Git at1a4634b and the labelled snapshot files.",
+      "qa_finding": "Initial b76 candidate was withheld after actual private-offline failure. Reported-offline guard repaired fresh-live-shell behavior; exact neutral body/fromSW/zero family network and privateDOM regression passed, followed by13 hash-guarded captures and final combined PWA checks. Production301 redirected-cache failure was then reproduced with302/Brotli; fresh neutral Response repair passes all6 PWA cases and all13 refreshed captures with the same103-entry binding."
     }
   ],
   "parent_checkpoints": [
@@ -383,14 +383,14 @@
         "path": "wedding-planner/design/illustrated-pwa/final-private-offline-390.png",
         "sha256": "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13"
       },
-      "judgment": "Parent personally viewed all13 exact final images. Identity8.3/hierarchy8.2/craft8.2/overall8.2: food families remain recognizable beside literal names, proposed/undated/unclear states are clear, comparison is compact, footer actions stay secondary, recovery dialogs and saved/private offline pages fit. No owner aesthetic acceptance inferred."
+      "judgment": "Parent personally viewed all13 newly captured exact images after the clean-URL repair and rehashed103 inputs and every image. Menus/search/comparison remain compact and literal; names/date/countdown dominate the invitation; share/install dialogs fit; the redirected-cache neutral reconnect state is clear and its public recovery link is visible. Only sw.js and pwa-assets.json differ across45 build files; no visual treatment changed. Local six-scenario redirect/Brotli regression passes; actual new production readback is pending. Owner aesthetic acceptance is not inferred."
     }
   ],
   "designer_capability_record": "Designer and primary critic used inherited capabilities. Parent actually randomly selected round3; separate illustrated_stronger_r3 used explicitly assigned gpt-6-astra/high and inspected real current1440/390/360 browser states, producing STRONGER-ROUND3.md. Stronger scores preceded parent; primaryR3 score exposure is disclosed. No capability beyond tools is inferred.",
   "reviews": {
     "visual_critic": {
       "reviewer": "wedding_critic",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "verdict": "pass",
       "scores": {
         "identity": 8.1,
@@ -405,15 +405,15 @@
         "9dcee73044f88d81c804b353c5a71dce952c8884b9e0ef5a7043efe2ec96fb4f",
         "227a67164a8d2ed0f1400852251e621a66196e4deb1f6fc0bfdb4ca6c30bc3db",
         "c4c2155942845f23d331c042ebf21a667626e4626c23ccccbef313a8178ea0bc",
-        "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531",
-        "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542",
+        "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3",
+        "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517",
         "caeebe4188ce9dd25a04157c17b8fa3dc2d2488b5b2b0cc08ade6b21155a6b66",
-        "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee",
-        "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66",
+        "9c93325e820ee8174c092ab3d04154a58b570772c1cf06ab56c865776a06c1fd",
+        "d96e243f150e275919313e7f79bc8203dd51ed20b0a218b4645c5d5593cdf378",
         "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
-        "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8"
+        "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96"
       ],
-      "reason": "Critic personally viewed all13 final images and verified103 candidate entries, with actual current Chrome public-to-private offline recovery. See critic-reviewed.json and CRITIQUE.md.",
+      "reason": "Independent critic personally re-viewed all13 refreshed exact images, rehashed103 inputs and all image bytes, and exercised a separate301 clean-URL offline simulator. Scores8.1each/overall; no visual regression. Original five cycles remain in CRITIQUE.md; fresh review does not claim production acceptance or chronological critic-first ordering.",
       "generic_cues": [
         "Repeated food motifs are justified as indicative family cues beside literal menu names.",
         "Category disclosures and selected-pair search serve a concrete comparison job.",
@@ -422,7 +422,7 @@
     },
     "parent": {
       "reviewer": "/root",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "verdict": "pass",
       "scores": {
         "identity": 8.3,
@@ -437,15 +437,15 @@
         "9dcee73044f88d81c804b353c5a71dce952c8884b9e0ef5a7043efe2ec96fb4f",
         "227a67164a8d2ed0f1400852251e621a66196e4deb1f6fc0bfdb4ca6c30bc3db",
         "c4c2155942845f23d331c042ebf21a667626e4626c23ccccbef313a8178ea0bc",
-        "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531",
-        "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542",
+        "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3",
+        "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517",
         "caeebe4188ce9dd25a04157c17b8fa3dc2d2488b5b2b0cc08ade6b21155a6b66",
-        "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee",
-        "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66",
+        "9c93325e820ee8174c092ab3d04154a58b570772c1cf06ab56c865776a06c1fd",
+        "d96e243f150e275919313e7f79bc8203dd51ed20b0a218b4645c5d5593cdf378",
         "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
-        "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8"
+        "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96"
       ],
-      "reason": "Parent personally inspected all13 exact final renders and independently rehashed all103 candidate entries and image bytes. Food and written hierarchy are clear; private menus remain proposals, uncertainty is visible, phone dialogs fit, names/art stay dominant, and actual offline recovery reads clearly. Social render is the exact decoded1200x630 bitmap, not a recipient-platform test.",
+      "reason": "Parent personally viewed all13 newly captured exact images after the clean-URL repair and rehashed103 inputs and every image. Menus/search/comparison remain compact and literal; names/date/countdown dominate the invitation; share/install dialogs fit; the redirected-cache neutral reconnect state is clear and its public recovery link is visible. Only sw.js and pwa-assets.json differ across45 build files; no visual treatment changed. Local six-scenario redirect/Brotli regression passes; actual new production readback is pending. Owner aesthetic acceptance is not inferred.",
       "generic_cues": [
         "Recognizable category cues improve plain-word menus without making each dish a gallery card.",
         "Compact chosen menus and persistent dates make comparison purposeful.",
@@ -454,7 +454,7 @@
     },
     "qa": {
       "reviewer": "/root",
-      "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+      "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
       "verdict": "pass",
       "inspected_sha256": [
         "9764c03b2972182f1b8c923543ac6463d76470e7051767a98212847e2053e89a",
@@ -463,16 +463,27 @@
         "9dcee73044f88d81c804b353c5a71dce952c8884b9e0ef5a7043efe2ec96fb4f",
         "227a67164a8d2ed0f1400852251e621a66196e4deb1f6fc0bfdb4ca6c30bc3db",
         "c4c2155942845f23d331c042ebf21a667626e4626c23ccccbef313a8178ea0bc",
-        "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531",
-        "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542",
+        "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3",
+        "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517",
         "caeebe4188ce9dd25a04157c17b8fa3dc2d2488b5b2b0cc08ade6b21155a6b66",
-        "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee",
-        "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66",
+        "9c93325e820ee8174c092ab3d04154a58b570772c1cf06ab56c865776a06c1fd",
+        "d96e243f150e275919313e7f79bc8203dd51ed20b0a218b4645c5d5593cdf378",
         "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
-        "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8"
+        "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96"
       ],
-      "reason": "17model/menu tests,13wedding rules,9Venture shared regressions, actual Auth/Firestore collaboration/conflict/roles/draft browser tests,12existing browser scenarios, all10illustrated menu projections/search/compare, sharing metadata/native-abort/copy/manual fallback and6PWA scenarios passed. Final PWA regression requires exact neutralHTML/fromSW/zeroofflinefamilyrequests/zero privateDOM. Production build/audit pass. Shared Angular build passes; unrelated baseline Karma1pass/8missing-provider failures remain explicitly recorded. Real device install/Google login/WhatsApp preview are unverified."
+      "reason": "The prior complete wedding CI/release suite passed on1a4634b. This repair changes only the worker generator and capture/test coverage;43/45 built files are byte-identical. New production build and twice-repeated6-scenario PWA tests pass against a real302/Brotli response, including exact neutral bytes, preserved CSP/privacy headers, zero private cache/fetch/DOM, safe two-version activation and draft retention. New-commit CI and live production verification are pending. Existing shared Angular8 missing-provider failures remain unrelated."
     }
   },
-  "coverage_limitations": "Exactly13 retained states share final parent/critic scope. Proposed menus derive from the wedding record through DEV-only fixture interception, with synthetic people/logistics; public/install/share/offline use immutable actual dist. Artwork is indicative, not actual catering/venue photography. Clipboard denial, native share/prompt and iPhone user agent are simulations. Offline caching and update transitions are actual service-worker behavior. The initial failed candidate remains explicitly unaccepted. Scores are agent judgment; no measured perception, full WCAG conformance, physical device acceptance or owner aesthetic approval is claimed."
+  "coverage_limitations": "Exactly13 retained states share final parent/critic scope. Proposed menus derive from the wedding record through DEV-only fixture interception, with synthetic people/logistics; public/install/share/offline use immutable actual dist. Artwork is indicative, not actual catering/venue photography. Clipboard denial, native share/prompt and iPhone user agent are simulations. Offline caching and update transitions are actual service-worker behavior. The initial failed candidate remains explicitly unaccepted. Scores are agent judgment; no measured perception, full WCAG conformance, physical device acceptance or owner aesthetic approval is claimed. The c57e initial deployment subsequently failed the Hosting clean-URL production gate. This repaired candidate is freshly reviewed locally; final actual production verification is recorded separately in RELEASE.md.",
+  "post_production_repair": {
+    "failed_candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+    "released_commit": "1a4634b5b928a9e5918715e8e42f8a46bea09c3d",
+    "release_run": 38776919140,
+    "cause": "A Firebase clean-URL redirected cached response could not be directly replayed for a navigation.",
+    "repair": "Construct a fresh neutral Response from decoded bytes with safe headers; do not cache private data.",
+    "new_candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
+    "new_cache_version": "d040b4180b3f8fe06bc6",
+    "new_final_captures": 13,
+    "production_readback": "pending"
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+  "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
   "reviewer": "wedding_critic",
   "scores": {
     "identity": 8.1,
@@ -36,11 +36,11 @@
     },
     {
       "path": "design/illustrated-pwa/final-invitation-1440.png",
-      "sha256": "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531"
+      "sha256": "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3"
     },
     {
       "path": "design/illustrated-pwa/final-invitation-360.png",
-      "sha256": "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542"
+      "sha256": "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517"
     },
     {
       "path": "design/illustrated-pwa/final-install-help-390.png",
@@ -48,11 +48,11 @@
     },
     {
       "path": "design/illustrated-pwa/final-share-fallback-390.png",
-      "sha256": "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee"
+      "sha256": "9c93325e820ee8174c092ab3d04154a58b570772c1cf06ab56c865776a06c1fd"
     },
     {
       "path": "design/illustrated-pwa/final-saved-offline-390.png",
-      "sha256": "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66"
+      "sha256": "d96e243f150e275919313e7f79bc8203dd51ed20b0a218b4645c5d5593cdf378"
     },
     {
       "path": "design/illustrated-pwa/final-private-offline-390.png",
@@ -60,16 +60,15 @@
     },
     {
       "path": "design/illustrated-pwa/final-social-card-1200.png",
-      "sha256": "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8"
+      "sha256": "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96"
     }
   ],
   "limitations": [
-    "All 13 exact final renders personally inspected; other capture-manifest or device states are not implicitly accepted.",
-    "Family menu renders use complete document-derived proposed menus with labelled synthetic people/logistics through a DEV-only fixture. Production public/install/share/offline renders use the exact built candidate.",
-    "Real generated watercolor motifs are indicative food-family illustrations, not actual caterer photographs, confirmed dishes, ingredients or dietary guarantees. Canonical menuText and literal uncertainty remain authoritative.",
-    "Clipboard denial/no native share and iPhone user-agent guidance are explicit browser fixtures. No WhatsApp delivery, physical-phone installation, physical-phone PWA authentication or native installation prompt is claimed.",
-    "Critic independently exercised current production service-worker offline/public/private recovery and current DEV verify search; full security, parser, offline/update and role test suites remain parent QA.",
-    "R3 primary rating followed receipt of parent-reported stronger scores; that exposure is disclosed in CRITIQUE.md. R4/R5 critic scores preceded parent scores.",
-    "The discarded b76b72e50f99bd85655158954d4260ee09680a6f15834f989ee3b995cfb07cef candidate was never accepted. Final binding covers repaired c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00 only."
+    "Independent narrow repair review: all 13 newly captured exact images were personally re-inspected and all 103 candidate inputs plus the aggregate entry digest verified. No new visual issue or layout change; original five rounds remain historical evidence.",
+    "Prior c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00 visual/local evidence did not establish production functional acceptance: Firebase cleanUrls exposed a redirected cached-response navigation failure after PR40 deployment.",
+    "Current repaired runtime was independently exercised in Chrome using a local 301 cleanURL simulator with immutable dist bytes; actual live Firebase repair verification is pending new PR CI, deployment and the parent live gate. This visual pass is not a claim that production is already fixed.",
+    "Family menu renders use complete document-derived proposed menus with labelled synthetic people/logistics through a DEV-only fixture. Public/install/share/offline images use the current built candidate; generated art is indicative rather than actual caterer evidence.",
+    "Clipboard denial and iPhone user-agent guidance remain synthetic fixtures. No actual WhatsApp delivery, physical-phone install/authentication, native install prompt or motion-quality claim. Full security/parser/PWA/update/role QA remains parent-owned.",
+    "This refresh is an independent review; no literal chronological critic-before-parent-record claim is made. Earlier review-order disclosures remain in the original five-cycle record."
   ]
 }

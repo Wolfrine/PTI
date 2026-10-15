@@ -1,134 +1,869 @@
 import { createWeddingStore, type StoreState } from './store';
-import { empty, escapeHtml as esc, formatDate, formatTime, localInput, toInstant, attendanceCounts, stayDemand, type CollectionName, type Payload, type WeddingRecord, type EventRecord, type DecisionRecord, type ArrangementRecord, type GuestRecord } from './model';
-
-const root = document.querySelector<HTMLDivElement>('#app')!;
-const dialog = document.querySelector<HTMLDialogElement>('#editor')!;
-let view = 'overview';
-let eventFilter = 'all';
-let guestSearch = '';
-let notice = '';
-let current: StoreState;
-let returnFocus:HTMLElement|null=null;
-const store = createWeddingStore(state => { current = state; render(); });
-const icon = (name: string) => ({arrow:'↗',plus:'+',close:'×',calendar:'◇',check:'✓'}[name] ?? name);
-const badge = (status:string) => `<span class="status status-${esc(status)}">${status === 'unresolved' ? 'Needs a decision' : esc(status)}</span>`;
-const owner = (name:string) => `<span class="record-owner">${esc(name || 'Owner to assign')}</span>`;
-const editButton = (collection:CollectionName,id:string,label='Edit') => `<button class="text-button" data-edit="${collection}" data-id="${esc(id)}">${label} <span aria-hidden="true">↗</span></button>`;
-const addButton = (collection:CollectionName,label:string) => `<button class="button" data-add="${collection}"><span aria-hidden="true">+</span> ${label}</button>`;
-const emptyState = (title:string,body:string,action='') => `<div class="empty-state"><span class="empty-mark" aria-hidden="true">✳</span><h3>${title}</h3><p>${body}</p>${action}</div>`;
-const eventName = (id:string) => current.records.events.find(e=>e.id===id)?.title || (id?'Archived occasion':'Across the celebration');
-const stamps = (record:WeddingRecord) => `<p class="audit-note">Last updated ${esc(formatTime(record.updatedAt))} · revision ${record.revision}</p>`;
-
+import {
+  empty,
+  escapeHtml as esc,
+  formatDate,
+  formatTime,
+  localInput,
+  toInstant,
+  attendanceCounts,
+  stayDemand,
+  type CollectionName,
+  type Payload,
+  type WeddingRecord,
+  type EventRecord,
+  type GuestRecord,
+} from './model';
+import { brand, leaf, icon, badge, menuMarkup } from './presentation';
+const root = document.querySelector<HTMLDivElement>('#app')!,
+  dialog = document.querySelector<HTMLDialogElement>('#editor')!;
+let current: StoreState,
+  guestSearch = '',
+  dayFilter = 'all',
+  taskFilter = 'open',
+  compareA = '',
+  compareB = '',
+  returnFocus: HTMLElement | null = null,
+  toastTimer: ReturnType<typeof setTimeout>;
+type Draft = { base: Payload; revision?: number; fields: Payload };
+const drafts = new Map<string, Draft>();
+let activeDraftKey: string | null = null;
+const store = createWeddingStore((state) => {
+  current = state;
+  render();
+});
+const path = () => {
+  try {
+    return location.hash
+      .replace(/^#\/?/, '')
+      .split('?')[0]
+      .split('/')
+      .filter(Boolean)
+      .map(decodeURIComponent);
+  } catch {
+    return ['home'];
+  }
+};
+const href = (s: string) => `#/${s}`,
+  idPath = (base: string, id: string) =>
+    href(`${base}/${encodeURIComponent(id)}`);
+const edit = (c: CollectionName, id: string, s: string, label: string) =>
+  `<button class="text-button" data-edit="${c}" data-id="${esc(id)}" data-section="${s}">${label} <span aria-hidden="true">↗</span></button>`;
+const add = (c: CollectionName, label: string, s: string) =>
+  `<button class="button" data-add="${c}" data-section="${s}"><span aria-hidden="true">+</span> ${label}</button>`;
+const eventTitle = (id: string) =>
+  current.records.events.find((e) => e.id === id)?.title ||
+  (id ? 'Archived occasion' : 'Across the celebration');
+const eventHref = (e: EventRecord) =>
+  idPath(e.kind === 'function' ? 'occasions' : 'catering', e.id);
+const emptyView = (title: string, text: string, action = '') =>
+  `<div class="empty-state">${leaf}<h2>${title}</h2><p>${text}</p>${action}</div>`;
+const crumbs = (a: [string, string?][]) =>
+  `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="#/home">Family home</a>${a.map(([s, to]) => `<span aria-hidden="true">›</span>${to ? `<a href="${to}">${esc(s)}</a>` : `<span aria-current="page">${esc(s)}</span>`}`).join('')}</nav>`;
+const pageHead = (title: string, sub = '', action = '') =>
+  `<div class="page-heading"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${action}</div>`;
+const stamp = (r: WeddingRecord) =>
+  `<details class="record-source"><summary>Source & update details</summary>${'source' in r && r.source ? `<p>${esc(r.source)}</p>` : ''}<p>Updated ${esc(formatTime(r.updatedAt))} · revision ${r.revision}</p></details>`;
+const fact = (label: string, value: string) =>
+  `<div${value.length > 22 ? ' class="fact-long"' : ''}><dt>${label}</dt><dd>${esc(value)}</dd></div>`;
+function header() {
+  return `<header class="app-header">${brand('#/home')}<a class="family-brand" href="#/home"><strong>Family workspace</strong><span>MAHIMA & MAYANK</span></a><a class="invitation-link" href="/">The invitation ↗</a><details class="account-menu"><summary aria-label="Family account menu">${esc((current.user?.displayName || current.user?.email || 'F').slice(0, 1).toUpperCase())}</summary><div class="account-menu-panel"><p>${esc(current.user?.displayName || 'Family member')}</p>${current.isOwner ? '<button class="text-button" data-action="members">Family access</button>' : ''}<button class="text-button" data-action="export">Export private plan</button><button class="text-button" data-action="sign-out">Sign out</button></div></details></header>`;
+}
 function render() {
   if (!current) return;
   if (current.access !== 'ready') {
-    if(dialog.open)dialog.close();
-    dialog.innerHTML='';
-    const loading=current.access==='loading';
-    root.innerHTML=`<header class="login-header"><a href="/" class="wordmark">M<span>&</span>M</a><a class="text-link" href="/">The invitation ↗</a></header><main class="login-layout" id="workspace"><div class="login-art" aria-hidden="true"><div class="large-monogram">M<i>&</i>M</div><span>18 — 20 JANUARY 2027</span></div><section class="login-copy"><p class="eyebrow">MAHIMA & MAYANK · FAMILY</p><h1>A little planning.<br>A lot of love.</h1><p class="lead">Our shared place for the people, details and decisions behind the celebration.</p>${loading?'<p class="loading" role="status">Opening the family workspace…</p>':`<button class="button google-button" data-action="sign-in"><span aria-hidden="true">G</span> Continue with Google</button><p class="fine-print">For invited family members.</p>`}${current.error?`<div class="inline-alert" role="alert">${esc(current.error)}</div>`:''}${current.user?'<button class="text-button" data-action="sign-out">Use another account</button>':''}</section></main><footer class="login-footer">A wedding to bring us together.</footer>`;
-    bind(); return;
+    clearTimeout(toastTimer);
+    const notice = document.querySelector<HTMLElement>('#toast');
+    if (notice) { notice.textContent = ''; notice.classList.remove('visible'); }
+    drafts.clear();
+    if (dialog.open) dialog.close();
+    dialog.innerHTML = '';
+    root.innerHTML = `<header class="app-header login-header">${brand('/')}<a class="invitation-link" href="/">The invitation ↗</a></header><main id="workspace" class="login-main"><div class="login-scene" aria-hidden="true"></div><section class="login-copy"><p class="eyebrow">MAHIMA & MAYANK · FAMILY</p><h1>Welcome, family.</h1><p>A shared place for the people and details behind the celebration.</p>${current.access === 'loading' ? '<p class="loading" role="status">Opening the family workspace…</p>' : '<button class="button google-button" data-action="sign-in"><b aria-hidden="true">G</b> Continue with Google</button><p class="small-copy">For invited family members.</p>'}${current.error ? `<div class="inline-alert" role="alert">${esc(current.error)}</div>` : ''}${current.user ? '<button class="text-button" data-action="sign-out">Use another account</button>' : ''}</section></main>`;
+    bind();
+    return;
   }
-  const nav=[['overview','Overview'],['celebration','Celebration'],['guests','Guests & hospitality'],['arrangements','Arrangements']];
-  root.innerHTML=`${current.demo?'<div class="demo-banner">LOCAL DESIGN PREVIEW · Synthetic example records · Changes stay in this tab</div>':''}<header class="workspace-header"><a href="/" class="wordmark" aria-label="Mahima and Mayank invitation">M<span>&</span>M</a><div class="workspace-title"><strong>Mahima & Mayank</strong><span>THE FAMILY WORKSPACE</span></div><div class="account-actions">${current.isOwner?'<button class="text-button" data-action="members">Family access</button>':''}<button class="text-button" data-action="export">Export</button><details class="account-menu"><summary class="account-button" aria-label="Family account menu">${esc((current.user?.displayName||current.user?.email||'F').slice(0,1).toUpperCase())}</summary><div class="account-menu-panel"><p>${esc(current.user?.displayName||'Family member')}</p>${current.isOwner?'<button class="text-button" data-action="members">Family access</button>':''}<button class="text-button" data-action="export">Export private plan</button><button class="text-button" data-action="sign-out">Sign out</button></div></details></div></header><div class="workspace-shell"><nav class="workspace-nav" aria-label="Family sections">${nav.map(([id,label])=>`<button data-view="${id}" class="${view===id?'active':''}"${view===id?' aria-current="page"':''}>${label}</button>`).join('')}<a href="/">View invitation <span aria-hidden="true">↗</span></a></nav><main id="workspace" class="workspace-main">${current.offline?'<div class="inline-alert" role="alert">You are offline. Reconnect before saving changes.</div>':''}${current.error?`<div class="inline-alert" role="alert">${esc(current.error)}</div>`:''}${current.truncated?'<div class="inline-alert">Some records could not fit in this view. Export and review before relying on totals.</div>':''}${view==='overview'?overview():view==='celebration'?celebration():view==='guests'?guests():arrangements()}</main></div><footer class="workspace-footer"><span>Made for our celebration · 18–20 January 2027</span><span>Private to invited family</span></footer>`;
+  const [s = 'home', id, sub] = path();
+  let html = '';
+  if (s === 'home') html = home();
+  else if (s === 'catering')
+    html = id === 'compare' ? compareMenus() : id ? mealDetail(id) : catering();
+  else if (s === 'occasions') html = id ? occasionDetail(id) : home();
+  else if (s === 'guests') html = id ? guestDetail(id) : guests();
+  else if (s === 'stays') html = id ? stayDetail(id) : stays();
+  else if (s === 'tasks')
+    html =
+      id === 'decision' && sub
+        ? decisionDetail(sub)
+        : id === 'arrangement' && sub
+          ? arrangementDetail(sub)
+          : tasks();
+  else if (s === 'attendance') html = attendance(id);
+  else
+    html = emptyView(
+      'This page has moved.',
+      'Return to the family home to find the current plan.',
+      '<a class="button" href="#/home">Family home</a>',
+    );
+  root.innerHTML = `${current.demo ? '<div class="demo-banner">LOCAL PREVIEW · Example records · Changes stay in this tab</div>' : ''}${header()}<main id="workspace" class="family-main">${current.offline ? '<div class="inline-alert" role="alert">You are offline. Reconnect before saving changes.</div>' : ''}${html}</main>`;
   bind();
 }
-function overview() {
-  const {events,decisions,arrangements:items}=current.records;
-  const open=decisions.filter(d=>d.status!=='confirmed');
-  const needsOwner=items.filter(a=>!a.owner&&a.status!=='confirmed');
-  return `<div class="page-intro"><div><p class="eyebrow">THE SHARED FAMILY PLAN</p><h1>Making it a celebration.</h1><p>One place to bring the details together, one decision at a time.</p></div>${addButton('decisions','Add a decision')}</div><div class="overview-layout"><section class="primary-list"><div class="section-heading"><h2>Let’s decide</h2><span>${open.length} open</span></div>${open.length?open.map(decisionRow).join(''):emptyState('Room for the next decision.','Add an open question, an idea or something the family needs to agree.')}</section><aside class="overview-aside"><div class="celebration-note"><p class="eyebrow">LOOKING FORWARD TO</p><div class="date-display">18<span>—</span>20</div><p>January 2027</p><div class="hairline"></div><p class="small-copy">The celebration programme will take shape as timings and places are confirmed.</p><button class="text-button" data-view="celebration">View the celebration ↗</button></div><div class="section-heading compact"><h2>In the making</h2></div><dl class="small-stats"><div><dt>Occasions recorded</dt><dd>${events.length}</dd></div><div><dt>Arrangements to confirm</dt><dd>${items.filter(a=>a.status!=='confirmed').length}</dd></div><div><dt>Need an owner</dt><dd>${needsOwner.length}</dd></div></dl>${needsOwner.slice(0,2).map(a=>`<div class="aside-task"><strong>${esc(a.title)}</strong>${editButton('arrangements',a.id,'Assign')}</div>`).join('')}</aside></div><section class="quiet-note"><span aria-hidden="true">✳</span><div><h3>A shared plan, with room to change.</h3><p>Proposals stay visibly separate from confirmed arrangements. The guest invitation is updated after a family review.</p></div></section>`;
+function home() {
+  const functions = current.records.events
+    .filter((e) => e.kind === 'function')
+    .sort(
+      (a, b) =>
+        (a.date || '9999').localeCompare(b.date || '9999') ||
+        a.startAt.localeCompare(b.startAt),
+    );
+  const entrances = [
+    ['catering', 'food', 'Catering', 'Menus, meals & hospitality'],
+    ['guests', 'guests', 'Guests', 'People, households & attendance'],
+    ['stays', 'stay', 'Stays & Travel', 'Arrivals, rooms & getting there'],
+    [
+      'tasks',
+      'tasks',
+      'Tasks & Decisions',
+      'Responsibilities & things to agree',
+    ],
+  ];
+  return `<section class="family-welcome"><div><p class="eyebrow">18–20 JANUARY 2027</p><h1>Welcome, family.</h1></div><div class="welcome-scene" aria-hidden="true"></div></section><section class="timeline panel"><div class="section-heading"><h2>${icon('calendar')}The celebration</h2>${add('events', 'Add', 'function')}</div>${functions.length ? functions.map((e) => `<a class="timeline-event" href="${eventHref(e)}"><div class="timeline-date"><strong>${e.date ? Number(e.date.slice(-2)) : '—'}</strong><small>${e.date ? esc(new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(new Date(e.date + 'T12:00:00Z'))) : 'DATE'}</small></div><div class="timeline-info"><h3>${esc(e.title)}</h3><p>${!e.startAt && !e.venue ? 'Timing & venue to confirm' : (e.startAt ? esc(formatTime(e.startAt)) : 'Timing to confirm') + ' · ' + esc(e.venue || 'Venue to confirm')}</p></div>${badge(e.status)}<span class="row-arrow" aria-hidden="true">›</span></a>`).join('') : emptyView('The programme is taking shape.', 'Record functions as they are discussed. Meals and food counters have their own place in Catering.')}</section><div class="entrances">${entrances.map(([to, name, title, text]) => `<a class="entrance entrance-${name}" href="#/${to}"><span class="entrance-icon">${icon(name)}</span><div><h2>${title}</h2><p>${text}</p></div><span class="card-arrow" aria-hidden="true">↗</span></a>`).join('')}</div>`;
 }
-function decisionRow(d:DecisionRecord) {return `<article class="decision-row"><div class="record-topline">${badge(d.status)}${owner(d.owner)}</div><h3>${esc(d.title)}</h3>${d.proposal?`<p>${esc(d.proposal)}</p>`:''}${d.resolution?`<p class="resolution"><b>Decision:</b> ${esc(d.resolution)}</p>`:''}<div class="record-bottom"><span>${esc(d.eventId?eventName(d.eventId):d.due?'Needed by '+formatDate(d.due):'Across the celebration')}</span>${editButton('decisions',d.id,'Review')}</div></article>`;}
-function celebration() {
-  if(eventFilter!=='all'&&!current.records.events.some(e=>e.date===eventFilter))eventFilter='all';
-  const dates=[...new Set(current.records.events.map(e=>e.date).filter(Boolean))].sort();
-  const events=current.records.events.filter(e=>eventFilter==='all'||e.date===eventFilter).sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999')||a.startAt.localeCompare(b.startAt));
-  return `<div class="page-intro"><div><p class="eyebrow">THE DAYS, TOGETHER</p><h1>The celebration.</h1><p>Occasions, places and food across the whole stay.</p></div>${addButton('events','Add an occasion')}</div><div class="filter-tabs" role="group" aria-label="Filter occasions by day"><button data-date="all" class="${eventFilter==='all'?'selected':''}">The whole celebration</button>${dates.map(date=>`<button data-date="${date}" class="${date===eventFilter?'selected':''}">${esc(formatDate(date).replace(' 2027',''))}</button>`).join('')}</div>${events.length?`<div class="event-ledger">${events.map(eventCard).join('')}</div>`:emptyState('The days are taking shape.','Add a proposed occasion or meal. Leave unknown times and places blank.',addButton('events','Add the first occasion'))}<section class="quiet-note"><span aria-hidden="true">✳</span><div><h3>Make each meal feel considered.</h3><p>Compare menus across the stay. Familiar staples are welcome; repeated whole counters and rich combinations deserve a family conversation.</p></div></section>`;
+function catering() {
+  const services = current.records.events
+    .filter((e) => e.kind !== 'function' || e.menuText.trim())
+    .sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+  const dates = [...new Set(services.map((e) => e.date))].sort((a, b) =>
+    (a || '9999').localeCompare(b || '9999'),
+  );
+  if (dayFilter !== 'all' && !dates.includes(dayFilter)) dayFilter = 'all';
+  const filtered = services.filter(
+      (e) => dayFilter === 'all' || e.date === dayFilter,
+    ),
+    groups = new Map<string, EventRecord[]>();
+  for (const e of filtered)
+    groups.set(e.date, [...(groups.get(e.date) || []), e]);
+  return `${crumbs([['Catering']])}<div class="catering-head">${pageHead('Catering.', 'Meals, menus & food counters.', add('events', 'Add service', 'service'))}</div><div class="list-toolbar"><div class="filter-tabs" aria-label="Filter catering by day"><button data-day="all" class="${dayFilter === 'all' ? 'selected' : ''}">Whole stay</button>${dates.map((d) => `<button data-day="${d}" class="${dayFilter === d ? 'selected' : ''}">${d ? esc(new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'))) : 'Undated'}</button>`).join('')}</div><a class="text-button" href="#/catering/compare">Compare menus ↗</a></div>${
+    filtered.length
+      ? `<div class="catering-days">${[...groups]
+          .map(([date, rows]) => {
+            const same = rows.every((e) => e.status === rows[0].status);
+            return `<section class="catering-day panel"><div class="day-heading"><h2>${esc(date ? formatDate(date) : 'Date to confirm')}</h2>${same ? badge(rows[0].status) : ''}</div>${rows.map((e) => `<a class="catering-row" href="${idPath('catering', e.id)}"><span class="service-icon">${icon('food')}</span><div><h3>${esc(e.title)}</h3><p>${e.kind === 'food-counter' ? 'Food counter' : e.kind === 'meal' ? 'Meal' : 'Function & catering'} · ${e.menuText ? 'Menu recorded' : 'Menu to plan'}</p></div>${same ? '' : badge(e.status)}<span class="row-arrow" aria-hidden="true">›</span></a>`).join('')}</section>`;
+          })
+          .join('')}</div>`
+      : emptyView(
+          'A thoughtful meal starts here.',
+          'Record a proposed meal or food counter, then plan its menu.',
+          add('events', 'Add a service', 'service'),
+        )
+  }`;
 }
-function eventCard(e:EventRecord) {
-  const count=attendanceCounts(current.records,e.id);
-  return `<article class="event-entry"><div class="event-date"><span>${e.date?esc(new Date(e.date+'T12:00:00Z').getUTCDate()):'—'}</span><small>${e.date?esc(new Intl.DateTimeFormat('en',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(e.date+'T12:00:00Z'))):'DATE TO CONFIRM'}</small></div><div class="event-content"><div class="record-topline">${badge(e.status)}<span class="kind-label">${esc(e.kind.replace('-',' '))}</span></div><div class="entry-title"><h2>${esc(e.title)}</h2>${editButton('events',e.id)}</div><div class="event-details"><span>${esc(formatTime(e.startAt))}</span><span>${esc(e.venue||'Venue to confirm')}</span>${owner(e.owner)}</div>${e.arrivalAt?`<p class="small-copy">Arrival: ${esc(formatTime(e.arrivalAt))}</p>`:''}${e.address?`<p>${esc(e.address)}${e.mapUrl?` · <a href="${esc(e.mapUrl)}" target="_blank" rel="noopener">Map ↗</a>`:''}</p>`:''}${e.audience?`<p class="small-copy">For: ${esc(e.audience)}</p>`:''}${e.notes?`<p>${esc(e.notes)}</p>`:''}<details class="menu-details"><summary>Menu & attendance <span>${e.menuText?'Menu recorded':'Menu to plan'} · ${count.confirmed} confirmed</span></summary>${e.menuText?menuMarkup(e.menuText):'<p class="muted">No menu recorded yet.</p>'}<div class="attendance-strip"><span><b>${count.confirmed}</b> Confirmed</span><span><b>${count.tentative}</b> Tentative</span><span><b>${count.unknown}</b> Unknown</span><span><b>${count.declined}</b> Declined</span></div><button class="text-button" data-attendance="${esc(e.id)}">Manage attendance ↗</button>${e.source?`<p class="source-note">Source: ${esc(e.source)}</p>`:''}</details></div></article>`;
+function mealDetail(id: string) {
+  const e = current.records.events.find((e) => e.id === id);
+  if (!e) return missing('Catering', 'catering');
+  return `${crumbs([['Catering', href('catering')], ['Menu']])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="meal-layout"><section class="reading-menu panel"><div class="section-heading"><h2>Menu</h2>${edit('events', e.id, 'menu', 'Edit menu')}</div>${menuMarkup(e.menuText)}</section><aside class="detail-aside"><section class="service-context panel"><h2>Service details</h2>${e.startAt || e.venue || e.owner ? `<dl class="facts">${fact('Service time', e.startAt ? formatTime(e.startAt) : 'To confirm')}${fact('Venue', e.venue || 'To confirm')}${fact('Family owner', e.owner || 'To assign')}</dl>` : '<p>Timing, venue and family owner to confirm.</p>'}${edit('events', e.id, 'timing', 'Edit timing & venue')}</section><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>Manage attendance</span><span aria-hidden="true">↗</span></a>${relatedArrangements(e.id)}${e.notes ? `<details class="context-notes"><summary>Planning notes</summary><p>${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</details>` : ''}${stamp(e)}</aside></div>`;
 }
-function menuMarkup(text:string) {
-  const blocks=text.trim().split(/\n\s*\n/);
-  const groups=blocks.length>1?blocks.map(block=>{const lines=block.split('\n');return lines.length>1?`<section class="menu-group"><h4>${esc(lines[0])}</h4><p>${esc(lines.slice(1).join('\n'))}</p></section>`:`<p class="menu-note">${esc(block)}</p>`;}):text.split('\n').filter(Boolean).map(line=>{const i=line.indexOf(':');return i>0&&i<70?`<section class="menu-group"><h4>${esc(line.slice(0,i))}</h4><p>${esc(line.slice(i+1).trim())}</p></section>`:`<p class="menu-note">${esc(line)}</p>`;});
-  return `<div class="menu-text menu-groups">${groups.join('')}</div>`;
+function occasionDetail(id: string) {
+  const e = current.records.events.find((e) => e.id === id);
+  if (!e) return missing('Family home', 'home');
+  return `${crumbs([[e.title]])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="read-grid"><section class="panel read-card"><div class="section-heading"><h2>The occasion</h2>${edit('events', e.id, 'timing', 'Edit details')}</div><dl class="facts">${fact('Starts', e.startAt ? formatTime(e.startAt) : 'Time to confirm')}${e.arrivalAt ? fact('Arrival from', formatTime(e.arrivalAt)) : ''}${fact('Venue', e.venue || 'To confirm')}${e.address ? fact('Address', e.address) : ''}${fact('Family owner', e.owner || 'To assign')}${e.audience ? fact('For', e.audience) : ''}</dl>${e.mapUrl ? `<a class="text-button" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">Open directions ↗</a>` : ''}</section><div><a class="context-action" href="${idPath('catering', e.id)}">${icon('food')}<span>Catering & menu</span><span>↗</span></a><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>Manage attendance</span><span>↗</span></a>${relatedArrangements(e.id)}</div></div>${e.notes ? `<section class="panel read-card lower"><h2>Planning notes</h2><p class="preserve-lines">${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</section>` : ''}${stamp(e)}`;
+}
+function compareMenus() {
+  const events = current.records.events
+    .filter((e) => e.menuText.trim())
+    .sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+  if (!events.length)
+    return `${crumbs([['Catering', href('catering')], ['Compare menus']])}${emptyView('Menus are still to come.', 'Record a menu first, then compare it with another occasion.', '<a class="button" href="#/catering">Open catering</a>')}`;
+  if (!events.some((e) => e.id === compareA))
+    compareA = events.find((e) => e.kind === 'function')?.id || events[0].id;
+  if (!events.some((e) => e.id === compareB) || compareB === compareA)
+    compareB =
+      events.find((e) => e.id !== compareA && !e.date)?.id ||
+      events.find((e) => e.id !== compareA)?.id ||
+      '';
+  const selected = [
+    events.find((e) => e.id === compareA),
+    events.find((e) => e.id === compareB),
+  ].filter((e): e is EventRecord => !!e);
+  const selector = (key: string, value: string, label: string) =>
+    `<label>${label}<select data-compare="${key}" aria-label="${label}">${events.map((e) => `<option value="${esc(e.id)}"${e.id === value ? ' selected' : ''}>${esc(e.title)} · ${esc(e.date ? formatDate(e.date) : 'Undated')}</option>`).join('')}</select></label>`;
+  return `${crumbs([['Catering', href('catering')], ['Compare menus']])}${pageHead('Two menus, together.', 'Choose the meals or occasions you want to compare.')}<div class="compare-controls">${selector('a', compareA, 'First menu')}${selector('b', compareB, 'Compare with')}</div><div class="comparison-grid">${selected.map((e) => `<section class="panel reading-menu"><div class="record-topline"><span>${esc(e.date ? formatDate(e.date) : 'Date to confirm')}</span>${badge(e.status)}</div><h2><a href="${idPath('catering', e.id)}">${esc(e.title)} ↗</a></h2>${menuMarkup(e.menuText)}</section>`).join('')}</div>`;
 }
 function guests() {
-  const all=current.records.guests;
-  const filtered=all.filter(g=>`${g.name} ${g.household} ${g.family}`.toLowerCase().includes(guestSearch.toLowerCase()));
-  const households=new Map<string,GuestRecord[]>();
-  for(const g of filtered){const key=g.household||'Household not assigned';households.set(key,[...(households.get(key)||[]),g]);}
-  const demand=stayDemand(all);
-  return `<div class="page-intro"><div><p class="eyebrow">THOUGHTFUL HOSPITALITY</p><h1>People at the heart of it.</h1><p>Guests, their households and the little details of looking after them.</p></div>${addButton('guests','Add a guest')}</div><div class="hospitality-summary"><div><strong>${all.length}</strong><span>people recorded</span></div><div><strong>${new Set(all.map(g=>g.household).filter(Boolean)).size}</strong><span>named households</span></div><div><strong>${all.filter(g=>g.stayFrom&&g.stayUntil).length}</strong><span>stays recorded</span></div></div><div class="list-toolbar"><h2>The guest book</h2><label class="search-field"><span class="sr-only">Search guests or households</span><input id="guest-search" placeholder="Search names or households" value="${esc(guestSearch)}"></label></div>${filtered.length?[...households].map(([name,people])=>`<section class="household"><div class="household-title"><h3>${esc(name)}</h3><span>${people.length} ${people.length===1?'person':'people'}</span></div>${people.map(g=>`<article class="guest-row"><div class="guest-initial" aria-hidden="true">${esc(g.name.slice(0,1))}</div><div class="guest-info"><h4>${esc(g.name)}</h4><p>${esc(g.family||'Family group to add')}${g.dietary?' · '+esc(g.dietary):''}</p><p>${g.stayFrom?esc(formatDate(g.stayFrom))+' → '+esc(formatDate(g.stayUntil)): 'Stay dates to confirm'}${g.accommodation?' · '+esc(g.accommodation):''}${g.room?' / '+esc(g.room):''}</p>${g.transport?`<p>${esc(g.transport)}</p>`:''}</div>${editButton('guests',g.id,'Details')}</article>`).join('')}</section>`).join(''):emptyState(guestSearch?'No matching guests.':'There’s a place for everyone.',guestSearch?'Try another name, or clear the search to see everyone.':'Add people individually and group them by household. Attendance is recorded per occasion.',guestSearch?'<button class="button button-secondary" data-action="clear-search">Clear search</button>':addButton('guests','Add the first guest'))}<section class="stay-overview"><div class="section-heading"><h2>Looking after their stay</h2><span>People per night</span></div>${Object.keys(demand).length?`<div class="stay-nights">${Object.entries(demand).sort().map(([night,n])=>`<div><span>${esc(formatDate(night))}</span><strong>${n}</strong><small>people needing a stay</small></div>`).join('')}</div><p class="fine-print">These are people with recorded stay dates, not rooms or confirmed reservations.</p>`:'<p class="muted">Nightly needs will appear when guests have stay dates.</p>'}</section>`;
+  const all = current.records.guests,
+    filtered = all.filter((g) =>
+      `${g.name} ${g.household} ${g.family}`
+        .toLowerCase()
+        .includes(guestSearch.toLowerCase()),
+    ),
+    groups = new Map<string, GuestRecord[]>();
+  for (const g of filtered) {
+    const key = g.household || 'Household to assign';
+    groups.set(key, [...(groups.get(key) || []), g]);
+  }
+  return `${crumbs([['Guests']])}${pageHead('Guests.', 'People grouped by household.', add('guests', 'Add a guest', 'basics'))}<div class="list-toolbar"><p class="list-count">${all.length} ${all.length === 1 ? 'person' : 'people'} · ${new Set(all.map((g) => g.household).filter(Boolean)).size} named ${new Set(all.map((g) => g.household).filter(Boolean)).size === 1 ? 'household' : 'households'}</p><label class="search-field"><span class="sr-only">Search guests or households</span><input id="guest-search" value="${esc(guestSearch)}" placeholder="Search names or households"></label></div>${filtered.length ? [...groups].map(([household, people]) => `<section class="household"><div class="household-heading"><h2>${esc(household)}</h2><span>${people.length} ${people.length === 1 ? 'person' : 'people'}</span></div><div class="people-list panel">${people.map((g) => `<a class="person-row" href="${idPath('guests', g.id)}"><span class="person-initial" aria-hidden="true">${esc(g.name.slice(0, 1))}</span><div><h3>${esc(g.name)}</h3><p>${esc(g.family || 'Family group to add')}${g.dietary ? ' · Food needs recorded' : ''}</p></div><span class="row-arrow" aria-hidden="true">›</span></a>`).join('')}</div></section>`).join('') : emptyView(guestSearch ? 'No matching guests.' : 'A place for everyone.', guestSearch ? 'Try another name or clear the search.' : 'Add people and group them by household.', guestSearch ? '<button class="button button-secondary" data-action="clear-search">Clear search</button>' : add('guests', 'Add the first guest', 'basics'))}`;
 }
-function arrangements() {
-  const items=current.records.arrangements;
-  return `<div class="page-intro"><div><p class="eyebrow">THE DETAILS BEHIND THE DAY</p><h1>In good hands.</h1><p>Who’s looking after what, and what still needs to come together.</p></div>${addButton('arrangements','Add an arrangement')}</div><div class="section-heading"><h2>Arrangements</h2><span>${items.length} recorded</span></div>${items.length?`<div class="arrangement-list">${items.map(arrangementRow).join('')}</div>`:emptyState('Every detail starts somewhere.','Add a responsibility, provider or arrangement. Costs and commitments can wait until they are known.',addButton('arrangements','Add the first arrangement'))}<div class="section-heading lower"><h2>Family decisions</h2>${addButton('decisions','Add a decision')}</div>${current.records.decisions.length?`<div class="decision-grid">${current.records.decisions.map(decisionRow).join('')}</div>`:emptyState('Keep decisions close to the plan.','Record an open question or an agreed family decision.')}`;
+function guestDetail(id: string) {
+  const g = current.records.guests.find((g) => g.id === id);
+  if (!g) return missing('Guests', 'guests');
+  return `${crumbs([['Guests', href('guests')], [g.name]])}${pageHead(esc(g.name), esc(g.household || 'Household to assign'))}<div class="read-grid"><section class="panel read-card"><div class="section-heading"><h2>Guest details</h2>${edit('guests', g.id, 'basics', 'Edit basics')}</div><dl class="facts">${fact('Household', g.household || 'To assign')}${fact('Family group', g.family || 'To add')}${fact('Contact', g.phone || 'Not recorded')}</dl></section><section class="panel read-card sage"><div class="section-heading"><h2>Food & hospitality</h2>${edit('guests', g.id, 'food', 'Edit food needs')}</div><p class="preserve-lines">${esc(g.dietary || 'No food preferences or needs recorded.')}</p></section></div><div class="context-actions"><a class="context-action" href="${idPath('stays', g.id)}">${icon('stay')}<span>Stay & travel details</span><span>↗</span></a><div class="attendance-picker panel"><label for="guest-occasion">Attendance by occasion</label><select id="guest-occasion"><option value="">Choose an occasion or meal</option>${current.records.events.map((e) => `<option value="${esc(e.id)}">${esc(e.title)} · ${esc(e.date ? formatDate(e.date) : 'Undated')}</option>`).join('')}</select></div></div>${g.notes ? `<section class="context-notes"><h2>Notes</h2><p>${esc(g.notes)}</p>${edit('guests', g.id, 'notes', 'Edit note')}</section>` : ''}${!g.notes ? edit('guests', g.id, 'notes', 'Add a note') : ''}${stamp(g)}`;
 }
-function arrangementRow(a:ArrangementRecord) {
-  const money=(v:number|null)=>v===null?'Not recorded':new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v);
-  return `<article class="arrangement-row"><div class="arrangement-category">${esc(a.category)}</div><div class="arrangement-main"><div class="record-topline">${badge(a.status)}${owner(a.owner)}</div><h3>${esc(a.title)}</h3><p>${esc(a.vendor||'Provider to confirm')}${a.eventId?' · '+esc(eventName(a.eventId)):''}</p>${a.notes?`<p class="small-copy">${esc(a.notes)}</p>`:''}<div class="money-line"><span>Agreed <b>${esc(money(a.agreedAmount))}</b></span><span>Paid <b>${esc(money(a.paidAmount))}</b></span>${a.due?`<span>Needed by <b>${esc(formatDate(a.due))}</b></span>`:''}</div></div>${editButton('arrangements',a.id)}</article>`;
+function stays() {
+  const guests = current.records.guests,
+    nights = stayDemand(guests);
+  return `${crumbs([['Stays & Travel']])}${pageHead('Stays & Travel.', 'Rooms, dates & travel.')}<section class="panel night-summary"><div class="section-heading"><h2>People staying each night</h2><span>Checkout night excluded</span></div>${
+    Object.keys(nights).length
+      ? `<div class="stay-nights">${Object.entries(nights)
+          .sort()
+          .map(
+            ([d, n]) =>
+              `<div><span>${esc(formatDate(d))}</span><strong>${n}</strong><small>people with stay dates</small></div>`,
+          )
+          .join('')}</div>`
+      : '<p class="empty-inline">Nightly needs will appear when stay dates are recorded.</p>'
+  }<p class="small-copy">These are people with recorded dates, not confirmed rooms.</p></section><div class="stay-list">${guests.length ? guests.map((g) => `<a class="stay-person panel" href="${idPath('stays', g.id)}"><div><h2>${esc(g.name)}</h2><p>${esc(g.household || 'Household to assign')}</p></div><div><strong>${esc(g.accommodation || 'Stay to arrange')}</strong><p>${g.stayFrom && g.stayUntil ? esc(formatDate(g.stayFrom)) + ' → ' + esc(formatDate(g.stayUntil)) : 'Stay dates to confirm'}${g.room ? ' · ' + esc(g.room) : ''}</p>${g.transport ? `<p>${esc(g.transport)}</p>` : ''}</div><span class="row-arrow" aria-hidden="true">›</span></a>`).join('') : emptyView('Start with the guest book.', 'Add the person first, then record their stay and travel.', '<a class="button" href="#/guests">Open guests</a>')}</div>`;
 }
-
-type Field={key:string;label:string;type?:string;wide?:boolean;options?:[string,string][];hint?:string;required?:boolean};
-const statusOptions:[string,string][]=[['unresolved','Needs a decision'],['proposed','Proposed'],['confirmed','Confirmed']];
-function fields(collection:CollectionName):Field[] {
-  const shared:Field[]=[{key:'owner',label:'Responsible family member'},{key:'status',label:'Status',options:statusOptions}];
-  if(collection==='events')return [{key:'title',label:'Occasion or meal name',wide:true,required:true},{key:'kind',label:'Type',options:[['function','Function'],['meal','Meal'],['food-counter','Food counter']]},{key:'date',label:'Date',type:'date'},...shared,{key:'startAt',label:'Starts at · India time',type:'datetime-local'},{key:'arrivalAt',label:'Arrival from · India time',type:'datetime-local'},{key:'venue',label:'Venue',wide:true},{key:'address',label:'Address',wide:true},{key:'mapUrl',label:'Google Maps link',type:'url',wide:true},{key:'audience',label:'Who is this occasion for?',wide:true},{key:'menuText',label:'Proposed menu',type:'textarea',wide:true,hint:'Use category headings and one dish per line. Leave unclear readings marked for verification.'},{key:'notes',label:'Notes and open details',type:'textarea',wide:true},{key:'source',label:'Source / confirmation',wide:true}];
-  if(collection==='guests')return [{key:'name',label:'Guest name',required:true},{key:'household',label:'Household'},{key:'family',label:'Family group'},{key:'phone',label:'Contact number',type:'tel'},{key:'dietary',label:'Food preferences or needs',wide:true},{key:'arrivalAt',label:'Arrival · India time',type:'datetime-local'},{key:'departureAt',label:'Departure · India time',type:'datetime-local'},{key:'stayFrom',label:'First night',type:'date'},{key:'stayUntil',label:'Checkout date',type:'date'},{key:'accommodation',label:'Accommodation'},{key:'room',label:'Room / allocation'},{key:'transport',label:'Transport arrangements',wide:true},{key:'notes',label:'Notes',type:'textarea',wide:true}];
-  const eventOptions:[string,string][]=[['','Across the celebration'],...current.records.events.map(e=>[e.id,e.title] as [string,string])];
-  if(collection==='decisions')return [{key:'title',label:'What needs a decision?',required:true,wide:true},...shared,{key:'eventId',label:'Related occasion',options:eventOptions},{key:'due',label:'Needed by',type:'date'},{key:'proposal',label:'Proposal / question',type:'textarea',wide:true},{key:'resolution',label:'Agreed decision',type:'textarea',wide:true,hint:'Record the agreement before marking this confirmed.'},{key:'source',label:'Source / confirmation',wide:true}];
-  return [{key:'title',label:'Arrangement',required:true,wide:true},{key:'category',label:'Category'},...shared,{key:'eventId',label:'Related occasion',options:eventOptions},{key:'due',label:'Needed by',type:'date'},{key:'vendor',label:'Provider / vendor'},{key:'contact',label:'Provider contact'},{key:'agreedAmount',label:'Agreed amount · ₹',type:'number'},{key:'paidAmount',label:'Paid so far · ₹',type:'number'},{key:'notes',label:'Notes and responsibilities',type:'textarea',wide:true}];
+function stayDetail(id: string) {
+  const g = current.records.guests.find((g) => g.id === id);
+  if (!g) return missing('Stays & Travel', 'stays');
+  return `${crumbs([['Stays & Travel', href('stays')], [g.name]])}${pageHead(esc(g.name), esc(g.household || 'Stay & travel'))}<div class="read-grid"><section class="panel read-card sage"><div class="section-heading"><h2>Their stay</h2>${edit('guests', g.id, 'stay', 'Edit stay')}</div><dl class="facts">${fact('First night', g.stayFrom ? formatDate(g.stayFrom) : 'To confirm')}${fact('Checkout', g.stayUntil ? formatDate(g.stayUntil) : 'To confirm')}${fact('Accommodation', g.accommodation || 'To arrange')}${fact('Room / allocation', g.room || 'Not recorded')}</dl></section><section class="panel read-card blush"><div class="section-heading"><h2>Getting here & home</h2>${edit('guests', g.id, 'travel', 'Edit travel')}</div><dl class="facts">${fact('Arrival', g.arrivalAt ? formatTime(g.arrivalAt) : 'To confirm')}${fact('Departure', g.departureAt ? formatTime(g.departureAt) : 'To confirm')}</dl><p class="preserve-lines">${esc(g.transport || 'Transport arrangements to confirm.')}</p></section></div><a class="text-button lower" href="${idPath('guests', g.id)}">View guest & food details ↗</a>${stamp(g)}`;
 }
-function fieldMarkup(f:Field,value:unknown) {
-  const v=['startAt','arrivalAt','departureAt'].includes(f.key)?localInput(String(value||'')):value??'';
-  if(f.key==='eventId'&&f.options&&v&&!f.options.some(([key])=>key===v))f={...f,options:[...f.options,[String(v),'Previously linked occasion (archived)']]};
-  const common=`name="${f.key}" id="field-${f.key}"${f.required?' required':''}`;
-  return `<div class="field${f.wide?' field-wide':''}"><label for="field-${f.key}">${f.label}</label>${f.options?`<select ${common}>${f.options.map(([key,label])=>`<option value="${esc(key)}"${key===v?' selected':''}>${esc(label)}</option>`).join('')}</select>`:f.type==='textarea'?`<textarea ${common} rows="${f.key==='menuText'?9:4}">${esc(v)}</textarea>`:`<input ${common} type="${f.type||'text'}" value="${esc(v)}"${f.type==='number'?' min="0" step="0.01"':''}>`}${f.hint?`<small>${f.hint}</small>`:''}</div>`;
+function tasks() {
+  const group =
+    new URLSearchParams(location.hash.split('?')[1] || '').get('tab') ===
+    'responsibilities'
+      ? 'responsibilities'
+      : 'decisions';
+  const decisions = current.records.decisions.filter(
+      (d) => taskFilter === 'all' || d.status !== 'confirmed',
+    ),
+    arrangements = current.records.arrangements.filter(
+      (a) => taskFilter === 'all' || a.status !== 'confirmed',
+    );
+  const rows = group === 'decisions' ? decisions : arrangements;
+  return `${crumbs([['Tasks & Decisions']])}${pageHead('Tasks & Decisions.')}<div class="task-navigation"><nav class="group-tabs" aria-label="Task groups"><a href="#/tasks" class="${group === 'decisions' ? 'selected' : ''}"${group === 'decisions' ? ' aria-current="page"' : ''}>Family decisions <span>${decisions.length}</span></a><a href="#/tasks?tab=responsibilities" class="${group === 'responsibilities' ? 'selected' : ''}"${group === 'responsibilities' ? ' aria-current="page"' : ''}>Responsibilities <span>${arrangements.length}</span></a></nav><div class="filter-tabs"><button data-task-filter="open" class="${taskFilter === 'open' ? 'selected' : ''}">Still to settle</button><button data-task-filter="all" class="${taskFilter === 'all' ? 'selected' : ''}">Everything</button></div></div><section class="task-group"><div class="section-heading"><p class="list-count">${rows.length} ${group === 'decisions' ? (rows.length === 1 ? 'question' : 'questions') : (rows.length === 1 ? 'responsibility' : 'responsibilities')}</p>${group === 'decisions' ? add('decisions', 'Add question', 'new-question') : add('arrangements', 'Add task', 'arrangement')}</div>${rows.length ? `<div class="compact-tasks panel">${rows.map((row) => `<a class="compact-task" href="${idPath(group === 'decisions' ? 'tasks/decision' : 'tasks/arrangement', row.id)}"><div><h3>${esc(row.title)}</h3><p>${esc(row.owner || 'Owner to assign')}${row.due ? ' · ' + esc(formatDate(row.due)) : ''}</p></div>${badge(row.status)}<span class="row-arrow" aria-hidden="true">›</span></a>`).join('')}</div>` : emptyView('Nothing waiting here.', 'Record a question or responsibility as it arises.')}</section>`;
 }
-function openEditor(collection:CollectionName,id?:string) {
-  const record=id?current.records[collection].find(r=>r.id===id):undefined;
-  const values={...empty[collection],...record} as unknown as Payload;
-  const names={events:'occasion',guests:'guest',arrangements:'arrangement',decisions:'decision',attendance:'attendance'};
-  const optionalKeys:Record<string,string[]>={events:['arrivalAt','address','mapUrl','audience','source'],guests:['phone','arrivalAt','departureAt'],decisions:['source'],arrangements:['vendor','contact','agreedAmount','paidAmount']};
-  const allFields=fields(collection);
-  const optional=allFields.filter(f=>optionalKeys[collection]?.includes(f.key));
-  const essential=allFields.filter(f=>!optionalKeys[collection]?.includes(f.key));
-  const extraLabel={events:'Arrival, directions & source',guests:'Contact & travel times',decisions:'Source / confirmation',arrangements:'Provider, contact & costs',attendance:'More details'};
-  dialog.innerHTML=`<form id="record-form" class="record-form"><div class="dialog-heading"><div><p class="eyebrow">THE FAMILY PLAN</p><h2 id="editor-title">${record?'Edit':'Add'} ${names[collection]}</h2></div><button type="button" class="icon-button" data-close aria-label="Close editor">×</button></div><div class="editor-scroll"><div class="form-fields">${essential.map(f=>fieldMarkup(f,values[f.key])).join('')}</div>${optional.length?`<details class="additional-fields"><summary>${extraLabel[collection]} <span>Optional details +</span></summary><div class="form-fields">${optional.map(f=>fieldMarkup(f,values[f.key])).join('')}</div></details>`:''}${record?stamps(record):''}</div><div id="form-error" class="form-error" role="alert"></div><div class="dialog-actions">${record?'<button type="button" class="text-button archive-button" id="archive-record">Archive</button>':''}<button type="button" class="button button-secondary" data-close>Cancel</button><button class="button" type="submit">Save ${names[collection]}</button></div></form>`;
-  returnFocus=document.activeElement as HTMLElement;
+function decisionDetail(id: string) {
+  const d = current.records.decisions.find((d) => d.id === id);
+  if (!d) return missing('Tasks & Decisions', 'tasks');
+  return `${crumbs([['Tasks & Decisions', href('tasks')], [d.title]])}<div class="detail-heading"><h1>${esc(d.title)}</h1>${badge(d.status)}</div><section class="panel read-card decision-reading"><div class="section-heading"><h2>The question</h2>${edit('decisions', d.id, 'decision', d.resolution ? 'Edit decision' : 'Record decision')}</div><p class="preserve-lines">${esc(d.proposal || 'No proposal recorded yet.')}</p>${d.resolution ? `<div class="resolution"><h2>The agreed decision</h2><p>${esc(d.resolution)}</p></div>` : ''}<dl class="facts">${fact('Family owner', d.owner || 'To assign')}${d.due ? fact('Needed by', formatDate(d.due)) : ''}${d.eventId ? fact('Related occasion', eventTitle(d.eventId)) : ''}</dl>${edit('decisions', d.id, 'question', 'Edit question & owner')}</section>${stamp(d)}`;
+}
+function arrangementDetail(id: string) {
+  const a = current.records.arrangements.find((a) => a.id === id);
+  if (!a) return missing('Tasks & Decisions', 'tasks');
+  const money = (v: number | null) =>
+    v === null
+      ? 'Not recorded'
+      : new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0,
+        }).format(v);
+  return `${crumbs([['Tasks & Decisions', href('tasks?tab=responsibilities')], [a.title]])}<div class="detail-heading"><div><p class="eyebrow">${esc(a.category)}</p><h1>${esc(a.title)}</h1></div>${badge(a.status)}</div><div class="read-grid"><section class="panel read-card"><div class="section-heading"><h2>The arrangement</h2>${edit('arrangements', a.id, 'arrangement', 'Edit task')}</div><p class="preserve-lines">${esc(a.notes || 'No additional notes yet.')}</p><dl class="facts">${fact('Family owner', a.owner || 'To assign')}${a.due ? fact('Needed by', formatDate(a.due)) : ''}${a.eventId ? fact('Related occasion', eventTitle(a.eventId)) : ''}</dl></section><section class="panel read-card sage"><div class="section-heading"><h2>Provider & costs</h2>${edit('arrangements', a.id, 'provider', 'Edit details')}</div><dl class="facts">${fact('Provider', a.vendor || 'To confirm')}${fact('Contact', a.contact || 'Not recorded')}${fact('Agreed amount', money(a.agreedAmount))}${fact('Paid so far', money(a.paidAmount))}</dl></section></div>${stamp(a)}`;
+}
+function relatedArrangements(id: string) {
+  const rows = current.records.arrangements.filter((a) => a.eventId === id);
+  return rows.length
+    ? `<section class="related-tasks"><h2>Related arrangements</h2>${rows.map((a) => `<a class="context-action" href="${idPath('tasks/arrangement', a.id)}">${icon('tasks')}<span>${esc(a.title)}</span><span>↗</span></a>`).join('')}</section>`
+    : '';
+}
+function attendance(id?: string) {
+  const e = current.records.events.find((e) => e.id === id);
+  if (!e) return missing('Guests', 'guests');
+  const counts = attendanceCounts(current.records, e.id);
+  return `${crumbs([['Guests', href('guests')], ['Attendance']])}${pageHead('Who’s joining?', `${esc(e.title)} · ${esc(e.date ? formatDate(e.date) : 'Date to confirm')}`)}<div class="attendance-strip">${Object.entries(
+    counts,
+  )
+    .map(([s, n]) => `<span><b>${n}</b> ${s}</span>`)
+    .join('')}</div><div class="attendance-list panel">${
+    current.records.guests.length
+      ? current.records.guests
+          .map((g) => {
+            const a = current.records.attendance.find(
+              (a) => a.eventId === e.id && a.guestId === g.id,
+            );
+            return `<div class="attendance-person"><label for="attendance-${esc(g.id)}"><strong>${esc(g.name)}</strong><small>${esc(g.household || 'Household to assign')}</small></label><select id="attendance-${esc(g.id)}" data-guest="${esc(g.id)}" data-event="${esc(e.id)}">${['unknown', 'tentative', 'confirmed', 'declined'].map((s) => `<option${(a?.status || 'unknown') === s ? ' selected' : ''}>${s}</option>`).join('')}</select></div>`;
+          })
+          .join('')
+      : emptyView(
+          'The guest book is still to come.',
+          'Add people first, then record attendance for this occasion.',
+          '<a class="button" href="#/guests">Open guests</a>',
+        )
+  }</div>`;
+}
+function missing(label: string, to: string) {
+  return `${crumbs([[label, href(to)], ['Item unavailable']])}${emptyView('This item is no longer here.', 'It may have been archived. Return to the list to find the current plan.', `<a class="button" href="#/${to}">Back to ${label}</a>`)}`;
+}
+type Field = {
+  key: string;
+  label: string;
+  type?: string;
+  wide?: boolean;
+  options?: [string, string][];
+  required?: boolean;
+  hint?: string;
+};
+const statusOptions: [string, string][] = [
+  ['unresolved', 'Open'],
+  ['proposed', 'Proposed'],
+  ['confirmed', 'Confirmed'],
+];
+function fieldList(c: CollectionName, s: string): Field[] {
+  if (s === 'notes')
+    return [
+      { key: 'notes', label: 'Planning notes', type: 'textarea', wide: true },
+      ...(c === 'events'
+        ? [{ key: 'source', label: 'Source / confirmation', wide: true }]
+        : []),
+    ];
+  const title: Field = {
+      key: c === 'guests' ? 'name' : 'title',
+      label:
+        c === 'guests'
+          ? 'Guest name'
+          : c === 'decisions'
+            ? 'Decision / question'
+            : c === 'arrangements'
+              ? 'Task'
+              : 'Name',
+      required: true,
+      wide: true,
+    },
+    owner: Field = { key: 'owner', label: 'Responsible family member' },
+    status: Field = { key: 'status', label: 'Status', options: statusOptions },
+    event: Field = {
+      key: 'eventId',
+      label: 'Related occasion',
+      options: [
+        ['', 'Across the celebration'],
+        ...current.records.events.map(
+          (e) => [e.id, e.title] as [string, string],
+        ),
+      ],
+    };
+  if (c === 'events') {
+    if (s === 'menu')
+      return [
+        {
+          key: 'menuText',
+          label: 'Proposed menu',
+          type: 'textarea',
+          wide: true,
+          hint: 'Keep unclear readings marked for family verification.',
+        },
+      ];
+    if (s === 'function' || s === 'service')
+      return [
+        title,
+        ...(s === 'service'
+          ? [
+              {
+                key: 'kind',
+                label: 'Service type',
+                options: [
+                  ['meal', 'Meal'],
+                  ['food-counter', 'Food counter'],
+                ],
+              } as Field,
+            ]
+          : []),
+        { key: 'date', label: 'Date', type: 'date' },
+        owner,
+        status,
+      ];
+    return [
+      title,
+      { key: 'date', label: 'Date', type: 'date' },
+      status,
+      {
+        key: 'startAt',
+        label: 'Starts at · India time',
+        type: 'datetime-local',
+      },
+      {
+        key: 'arrivalAt',
+        label: 'Arrival from · India time',
+        type: 'datetime-local',
+      },
+      { key: 'venue', label: 'Venue', wide: true },
+      { key: 'address', label: 'Address', wide: true },
+      { key: 'mapUrl', label: 'Google Maps link', type: 'url', wide: true },
+      owner,
+      { key: 'audience', label: 'Who is this occasion for?', wide: true },
+    ];
+  }
+  if (c === 'guests') {
+    if (s === 'food')
+      return [
+        {
+          key: 'dietary',
+          label: 'Food preferences or needs',
+          type: 'textarea',
+          wide: true,
+        },
+      ];
+    if (s === 'stay')
+      return [
+        { key: 'stayFrom', label: 'First night', type: 'date' },
+        { key: 'stayUntil', label: 'Checkout date', type: 'date' },
+        { key: 'accommodation', label: 'Accommodation', wide: true },
+        { key: 'room', label: 'Room / allocation', wide: true },
+      ];
+    if (s === 'travel')
+      return [
+        {
+          key: 'arrivalAt',
+          label: 'Arrival · India time',
+          type: 'datetime-local',
+        },
+        {
+          key: 'departureAt',
+          label: 'Departure · India time',
+          type: 'datetime-local',
+        },
+        {
+          key: 'transport',
+          label: 'Transport arrangements',
+          type: 'textarea',
+          wide: true,
+        },
+      ];
+    return [
+      title,
+      { key: 'household', label: 'Household' },
+      { key: 'family', label: 'Family group' },
+      { key: 'phone', label: 'Contact number', type: 'tel' },
+    ];
+  }
+  if (c === 'decisions') {
+    if (s === 'decision')
+      return [
+        {
+          key: 'resolution',
+          label: 'Agreed decision',
+          type: 'textarea',
+          wide: true,
+        },
+        status,
+      ];
+    if (s === 'new-question')
+      return [
+        title,
+        {
+          key: 'proposal',
+          label: 'Proposal / question',
+          type: 'textarea',
+          wide: true,
+        },
+      ];
+    return [
+      title,
+      {
+        key: 'proposal',
+        label: 'Proposal / question',
+        type: 'textarea',
+        wide: true,
+      },
+      owner,
+      { key: 'due', label: 'Needed by', type: 'date' },
+      event,
+    ];
+  }
+  if (s === 'provider')
+    return [
+      { key: 'vendor', label: 'Provider / vendor' },
+      { key: 'contact', label: 'Provider contact' },
+      { key: 'agreedAmount', label: 'Agreed amount · ₹', type: 'number' },
+      { key: 'paidAmount', label: 'Paid so far · ₹', type: 'number' },
+    ];
+  return [
+    title,
+    { key: 'category', label: 'Category' },
+    owner,
+    status,
+    event,
+    { key: 'due', label: 'Needed by', type: 'date' },
+    {
+      key: 'notes',
+      label: 'Notes and responsibilities',
+      type: 'textarea',
+      wide: true,
+    },
+  ];
+}
+function fieldMarkup(f: Field, value: unknown) {
+  const v = ['startAt', 'arrivalAt', 'departureAt'].includes(f.key)
+    ? localInput(String(value || ''))
+    : (value ?? '');
+  if (
+    f.key === 'eventId' &&
+    f.options &&
+    v &&
+    !f.options.some(([k]) => k === v)
+  )
+    f = {
+      ...f,
+      options: [
+        ...f.options,
+        [String(v), 'Previously linked occasion (archived)'],
+      ],
+    };
+  const common = `name="${f.key}" id="field-${f.key}"${f.required ? ' required' : ''}`;
+  return `<div class="field${f.wide ? ' field-wide' : ''}"><label for="field-${f.key}">${f.label}</label>${f.options ? `<select ${common}>${f.options.map(([key, label]) => `<option value="${esc(key)}"${key === v ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select>` : f.type === 'textarea' ? `<textarea ${common} rows="${f.key === 'menuText' ? 14 : 4}">${esc(v)}</textarea>` : `<input ${common} type="${f.type || 'text'}" value="${esc(v)}"${f.type === 'number' ? ' min="0" step="0.01"' : ''}>`}${f.hint ? `<small>${f.hint}</small>` : ''}</div>`;
+}
+function openEditor(c: CollectionName, id: string | undefined, s: string) {
+  const record = id ? current.records[c].find((r) => r.id === id) : undefined;
+  if (id && !record) {
+    toast('This item is no longer available.');
+    return;
+  }
+  const key = `${c}:${id || 'new'}:${s}`;
+  activeDraftKey = key;
+  let draft = drafts.get(key);
+  if (!draft) {
+    draft = {
+      base: { ...empty[c], ...record },
+      revision: record?.revision,
+      fields: {},
+    };
+    if (c === 'events' && !record)
+      draft.base.kind = s === 'function' ? 'function' : 'meal';
+    drafts.set(key, draft);
+  }
+  const fields = fieldList(c, s),
+    values = { ...draft.base, ...draft.fields };
+  const title =
+    (
+      {
+        menu: 'Edit the menu.',
+        timing: 'Timing & venue.',
+        basics: record ? 'Guest details.' : 'Add a guest.',
+        food: 'Food & hospitality.',
+        stay: 'Their stay.',
+        travel: 'Getting here & home.',
+        decision: 'Record the decision.',
+        question: 'The question & owner.',
+        'new-question': 'A family question.',
+        arrangement: record ? 'Edit task.' : 'A new responsibility.',
+        provider: 'Provider & costs.',
+        notes: 'Planning notes.',
+        function: 'Add an occasion.',
+        service: 'Add a service.',
+      } as Record<string, string>
+    )[s] || 'Edit details.';
+  const saveLabel =
+    s === 'notes'
+      ? 'Save notes'
+      : s === 'menu'
+        ? 'Save menu'
+        : s === 'stay'
+          ? 'Save stay'
+          : s === 'travel'
+            ? 'Save travel'
+            : c === 'guests'
+              ? 'Save guest'
+              : c === 'decisions'
+                ? s === 'decision'
+                  ? 'Save decision'
+                  : 'Save question'
+                : c === 'arrangements'
+                  ? 'Save task'
+                  : 'Save details';
+  dialog.className = s === 'menu' ? 'menu-editor' : '';
+  dialog.innerHTML = `<form class="record-form"><div class="dialog-heading"><div><p class="eyebrow">${esc(record && 'title' in record ? record.title : record && 'name' in record ? record.name : 'THE FAMILY PLAN')}</p><h2 id="editor-title">${title}</h2></div><button type="button" class="icon-button" data-close aria-label="Close editor">×</button></div><div class="editor-scroll"><div class="form-fields">${fields.map((f) => fieldMarkup(f, values[f.key])).join('')}</div></div><div id="form-error" role="alert"></div><div class="dialog-actions">${record && ['decision', 'arrangement', 'basics', 'timing'].includes(s) ? '<button type="button" class="text-button archive-button" id="archive-record">Archive</button>' : ''}<button type="button" class="button button-secondary" data-close>Cancel</button><button class="button" type="submit">${saveLabel}</button></div></form>`;
+  returnFocus = document.activeElement as HTMLElement;
   dialog.showModal();
-  dialog.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>dialog.close()));
-  const form=dialog.querySelector<HTMLFormElement>('form')!;
-  form.addEventListener('submit',async e=>{e.preventDefault();const button=form.querySelector<HTMLButtonElement>('[type=submit]')!;const data=Object.fromEntries(new FormData(form).entries());for(const key of ['startAt','arrivalAt','departureAt'])if(key in data)data[key]=toInstant(String(data[key]));button.disabled=true;button.textContent='Saving…';try{await store.save(collection,data,id,record?.revision);dialog.close();toast('Saved to the family plan.');}catch(err){const message=err instanceof Error?err.message:'Could not save. Your changes are still here.';dialog.querySelector('#form-error')!.textContent=message;if(message.includes('Record the decision')){const field=form.querySelector<HTMLTextAreaElement>('[name=resolution]');field?.focus();field?.scrollIntoView({block:'center'});}}finally{button.disabled=false;button.textContent=`Save ${names[collection]}`;}});
-  let archiveReady=false;
-  dialog.querySelector('#archive-record')?.addEventListener('click',async e=>{const b=e.currentTarget as HTMLButtonElement;if(!archiveReady){archiveReady=true;b.textContent='Confirm archive';return;}b.disabled=true;try{await store.archive(collection,id!,record!.revision);dialog.close();toast('Archived. The change is kept in the private history.');}catch(err){dialog.querySelector('#form-error')!.textContent=err instanceof Error?err.message:'Could not archive.';b.disabled=false;}});
-}
-function openAttendance(eventId:string) {
-  const event=current.records.events.find(e=>e.id===eventId)!;
-  dialog.innerHTML=`<div class="dialog-heading"><div><p class="eyebrow">GUESTS BY OCCASION</p><h2 id="editor-title">${esc(event.title)}</h2></div><button class="icon-button" data-close aria-label="Close attendance">×</button></div><p class="dialog-description">Each person has their own attendance status. Tentative replies stay separate from confirmed numbers.</p><div class="attendance-editor">${current.records.guests.length?current.records.guests.map(g=>{const a=current.records.attendance.find(a=>a.guestId===g.id&&a.eventId===eventId);return `<div class="attendance-person"><label for="attendance-${esc(g.id)}"><b>${esc(g.name)}</b><small>${esc(g.household||'Household to assign')}</small></label><select id="attendance-${esc(g.id)}" data-guest="${esc(g.id)}">${['unknown','tentative','confirmed','declined'].map(s=>`<option${(a?.status||'unknown')===s?' selected':''}>${s}</option>`).join('')}</select></div>`;}).join(''):emptyState('No guests recorded yet.','Add guests in Guests & hospitality first.')}</div><div id="form-error" class="form-error" role="alert"></div><div class="dialog-actions"><button class="button button-secondary" data-close>Done</button></div>`;
-  returnFocus=document.activeElement as HTMLElement;
-  dialog.showModal();dialog.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>dialog.close()));
-  dialog.querySelectorAll<HTMLSelectElement>('[data-guest]').forEach(select=>select.addEventListener('change',async()=>{select.disabled=true;const guestId=select.dataset.guest!;const previous=current.records.attendance.find(a=>a.guestId===guestId&&a.eventId===eventId);try{await store.save('attendance',{guestId,eventId,status:select.value},previous?.id,previous?.revision);toast('Attendance saved.');}catch(err){select.value=previous?.status||'unknown';dialog.querySelector('#form-error')!.textContent=err instanceof Error?err.message:'Could not save attendance.';}finally{select.disabled=false;}}));
+  const form = dialog.querySelector<HTMLFormElement>('form')!;
+  form.addEventListener('input', () => {
+    draft!.fields = Object.fromEntries(new FormData(form).entries());
+  });
+  dialog
+    .querySelectorAll('[data-close]')
+    .forEach((b) => b.addEventListener('click', () => dialog.close()));
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const b = form.querySelector<HTMLButtonElement>('[type=submit]')!,
+      data = Object.fromEntries(new FormData(form).entries());
+    draft!.fields = data;
+    const payload = { ...draft!.base, ...data };
+    for (const k of ['startAt', 'arrivalAt', 'departureAt'])
+      if (k in data) payload[k] = toInstant(String(data[k]));
+    b.disabled = true;
+    b.textContent = 'Saving…';
+    try {
+      await store.save(c, payload, id, draft!.revision);
+      drafts.delete(key);
+      if (current.access === 'ready' && form.isConnected && dialog.open) {
+        dialog.close();
+        toast('Saved to the family plan.');
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Could not save. Your changes are still here.';
+      if (current.access === 'ready' && form.isConnected && dialog.open) {
+        form.querySelector('#form-error')!.textContent = message;
+        if (message.includes('Record the decision')) {
+          const field = form.querySelector<HTMLElement>('[name=resolution]');
+          field?.focus();
+          field?.scrollIntoView({ block: 'center' });
+        }
+      }
+    } finally {
+      b.disabled = false;
+      b.textContent = saveLabel;
+    }
+  });
+  let archiveReady = false;
+  dialog
+    .querySelector('#archive-record')
+    ?.addEventListener('click', async (e) => {
+      const b = e.currentTarget as HTMLButtonElement;
+      if (!archiveReady) {
+        archiveReady = true;
+        b.textContent = 'Confirm archive';
+        return;
+      }
+      b.disabled = true;
+      try {
+        await store.archive(c, id!, record!.revision);
+        drafts.delete(key);
+        dialog.close();
+        toast('Archived in the family plan.');
+      } catch (error) {
+        if (
+          current.access === 'ready' &&
+          dialog.open &&
+          dialog.querySelector('#form-error')
+        )
+          dialog.querySelector('#form-error')!.textContent =
+            error instanceof Error ? error.message : 'Could not archive.';
+        b.disabled = false;
+      }
+    });
 }
 function openMembers() {
-  dialog.innerHTML=`<div class="dialog-heading"><div><p class="eyebrow">INVITED FAMILY ONLY</p><h2 id="editor-title">A shared place.</h2></div><button class="icon-button" data-close aria-label="Close family access">×</button></div><p class="dialog-description">Invite a Google email account to view and edit the private family plan. The workspace owner manages access.</p><div class="member-list">${current.members.length?current.members.map(m=>`<div class="member-row"><div><strong>${esc(m.name||m.email)}</strong><small>${esc(m.email)}</small></div><button class="text-button" data-revoke="${esc(m.email)}">Remove access</button></div>`).join(''):'<p class="muted">No additional family members invited yet.</p>'}</div><form id="invite-form"><div class="form-fields">${fieldMarkup({key:'name',label:'Name'},'')}${fieldMarkup({key:'email',label:'Google email',type:'email',required:true},'')}</div><div id="form-error" class="form-error" role="alert"></div><div class="dialog-actions"><button type="button" class="button button-secondary" data-close>Done</button><button class="button" type="submit">Invite family member</button></div></form>`;
-  returnFocus=document.activeElement as HTMLElement;
-  dialog.showModal();dialog.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>dialog.close()));
-  dialog.querySelector<HTMLFormElement>('#invite-form')!.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget as HTMLFormElement;const data=new FormData(form);const b=form.querySelector<HTMLButtonElement>('[type=submit]')!;b.disabled=true;try{await store.invite(String(data.get('email')),String(data.get('name')));dialog.close();toast('Family access added. Share the family link with them.');}catch(err){dialog.querySelector('#form-error')!.textContent=err instanceof Error?err.message:'Could not invite.';}finally{b.disabled=false;}});
-  dialog.querySelectorAll<HTMLButtonElement>('[data-revoke]').forEach(b=>{let confirmed=false;b.addEventListener('click',async()=>{if(!confirmed){confirmed=true;b.textContent='Confirm removal';return;}b.disabled=true;try{await store.revoke(b.dataset.revoke!);b.closest('.member-row')?.remove();toast('Family access removed.');}catch(err){dialog.querySelector('#form-error')!.textContent=err instanceof Error?err.message:'Could not remove access.';b.disabled=false;}});});
+  dialog.className = '';
+  dialog.innerHTML = `<div class="dialog-heading"><div><p class="eyebrow">INVITED FAMILY ONLY</p><h2 id="editor-title">Family access.</h2></div><button class="icon-button" data-close aria-label="Close family access">×</button></div><div class="member-content"><p>Invited Google accounts can view and edit the family plan.</p><div class="member-list">${current.members.length ? current.members.map((m) => `<div class="member-row"><div><strong>${esc(m.name || m.email)}</strong><small>${esc(m.email)}</small></div><button class="text-button" data-revoke="${esc(m.email)}">Remove access</button></div>`).join('') : '<p class="empty-inline">No additional family members invited yet.</p>'}</div><form id="invite-form"><div class="form-fields">${fieldMarkup({ key: 'name', label: 'Name' }, '')}${fieldMarkup({ key: 'email', label: 'Google email', type: 'email', required: true }, '')}</div><div id="form-error" role="alert"></div><div class="dialog-actions"><button type="button" class="button button-secondary" data-close>Done</button><button class="button" type="submit">Invite family member</button></div></form></div>`;
+  returnFocus = document.activeElement as HTMLElement;
+  dialog.showModal();
+  dialog
+    .querySelectorAll('[data-close]')
+    .forEach((b) => b.addEventListener('click', () => dialog.close()));
+  dialog
+    .querySelector<HTMLFormElement>('#invite-form')!
+    .addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.currentTarget as HTMLFormElement,
+        data = new FormData(form),
+        b = form.querySelector<HTMLButtonElement>('[type=submit]')!;
+      b.disabled = true;
+      try {
+        await store.invite(String(data.get('email')), String(data.get('name')));
+        dialog.close();
+        toast('Family access added. Share the family link with them.');
+      } catch (error) {
+        if (
+          current.access === 'ready' &&
+          dialog.open &&
+          dialog.querySelector('#form-error')
+        )
+          dialog.querySelector('#form-error')!.textContent =
+            error instanceof Error ? error.message : 'Could not invite.';
+      } finally {
+        b.disabled = false;
+      }
+    });
+  dialog.querySelectorAll<HTMLButtonElement>('[data-revoke]').forEach((b) => {
+    let confirmed = false;
+    b.addEventListener('click', async () => {
+      if (!confirmed) {
+        confirmed = true;
+        b.textContent = 'Confirm removal';
+        return;
+      }
+      b.disabled = true;
+      try {
+        await store.revoke(b.dataset.revoke!);
+        b.closest('.member-row')?.remove();
+        toast('Family access removed.');
+      } catch (error) {
+        if (
+          current.access === 'ready' &&
+          dialog.open &&
+          dialog.querySelector('#form-error')
+        )
+          dialog.querySelector('#form-error')!.textContent =
+            error instanceof Error ? error.message : 'Could not remove access.';
+        b.disabled = false;
+      }
+    });
+  });
 }
-function toast(message:string) { notice=message;const el=document.querySelector('#toast')!;el.textContent=message;el.classList.add('visible');setTimeout(()=>{if(notice===message)el.classList.remove('visible');},2200); }
+function toast(message: string) {
+  clearTimeout(toastTimer);
+  const node = document.querySelector<HTMLElement>('#toast')!;
+  node.textContent = message;
+  node.classList.add('visible');
+  toastTimer = setTimeout(() => node.classList.remove('visible'), 2400);
+}
 function bind() {
-  root.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.view!;render();window.scrollTo({top:0,behavior:'instant'});}));
-  root.querySelectorAll<HTMLButtonElement>('[data-add]').forEach(b=>b.addEventListener('click',()=>openEditor(b.dataset.add as CollectionName)));
-  root.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach(b=>b.addEventListener('click',()=>openEditor(b.dataset.edit as CollectionName,b.dataset.id)));
-  root.querySelectorAll<HTMLButtonElement>('[data-attendance]').forEach(b=>b.addEventListener('click',()=>openAttendance(b.dataset.attendance!)));
-  root.querySelectorAll<HTMLButtonElement>('[data-date]').forEach(b=>b.addEventListener('click',()=>{eventFilter=b.dataset.date!;render();}));
-  root.querySelector<HTMLInputElement>('#guest-search')?.addEventListener('input',e=>{const input=e.target as HTMLInputElement;guestSearch=input.value;const start=input.selectionStart;render();const next=root.querySelector<HTMLInputElement>('#guest-search')!;next.focus();next.setSelectionRange(start,start);});
-  root.querySelectorAll<HTMLButtonElement>('[data-action]').forEach(b=>b.addEventListener('click',async()=>{try{if(b.dataset.action==='clear-search'){guestSearch='';render();}else if(b.dataset.action==='sign-in')await store.signIn();else if(b.dataset.action==='sign-out')await store.signOut();else if(b.dataset.action==='members')openMembers();else if(b.dataset.action==='export'){const blob=new Blob([await store.exportData()],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`mahima-mayank-private-plan-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);}}catch(err){toast(err instanceof Error?err.message:'Please try again.');}}));
+  root.querySelectorAll<HTMLSelectElement>('[data-compare]').forEach((select) =>
+    select.addEventListener('change', () => {
+      if (select.dataset.compare === 'a') compareA = select.value;
+      else compareB = select.value;
+      render();
+    }),
+  );
+  root
+    .querySelectorAll<HTMLButtonElement>('[data-add]')
+    .forEach((b) =>
+      b.addEventListener('click', () =>
+        openEditor(
+          b.dataset.add as CollectionName,
+          undefined,
+          b.dataset.section || 'basics',
+        ),
+      ),
+    );
+  root
+    .querySelectorAll<HTMLButtonElement>('[data-edit]')
+    .forEach((b) =>
+      b.addEventListener('click', () =>
+        openEditor(
+          b.dataset.edit as CollectionName,
+          b.dataset.id,
+          b.dataset.section || 'basics',
+        ),
+      ),
+    );
+  root.querySelectorAll<HTMLButtonElement>('[data-day]').forEach((b) =>
+    b.addEventListener('click', () => {
+      dayFilter = b.dataset.day!;
+      render();
+    }),
+  );
+  root.querySelectorAll<HTMLButtonElement>('[data-task-filter]').forEach((b) =>
+    b.addEventListener('click', () => {
+      taskFilter = b.dataset.taskFilter!;
+      render();
+    }),
+  );
+  root
+    .querySelector<HTMLInputElement>('#guest-search')
+    ?.addEventListener('input', (e) => {
+      const input = e.target as HTMLInputElement;
+      guestSearch = input.value;
+      const start = input.selectionStart;
+      render();
+      const next = root.querySelector<HTMLInputElement>('#guest-search')!;
+      next.focus();
+      next.setSelectionRange(start, start);
+    });
+  root
+    .querySelector<HTMLSelectElement>('#guest-occasion')
+    ?.addEventListener('change', (e) => {
+      const id = (e.currentTarget as HTMLSelectElement).value;
+      if (id) location.hash = idPath('attendance', id);
+    });
+  root
+    .querySelectorAll<HTMLSelectElement>('select[data-guest]')
+    .forEach((select) =>
+      select.addEventListener('change', async () => {
+        select.disabled = true;
+        const guestId = select.dataset.guest!,
+          eventId = select.dataset.event!,
+          previous = current.records.attendance.find(
+            (a) => a.guestId === guestId && a.eventId === eventId,
+          );
+        try {
+          await store.save(
+            'attendance',
+            { guestId, eventId, status: select.value },
+            previous?.id,
+            previous?.revision,
+          );
+        } catch (error) {
+          if (select.isConnected) select.value = previous?.status || 'unknown';
+          if (current.access === 'ready')
+            toast(
+              error instanceof Error
+                ? error.message
+                : 'Could not save attendance.',
+            );
+        } finally {
+          select.disabled = false;
+        }
+      }),
+    );
+  root.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      try {
+        if (b.dataset.action === 'clear-search') {
+          guestSearch = '';
+          render();
+        } else if (b.dataset.action === 'sign-in') await store.signIn();
+        else if (b.dataset.action === 'sign-out') await store.signOut();
+        else if (b.dataset.action === 'members') openMembers();
+        else if (b.dataset.action === 'export') {
+          const blob = new Blob([await store.exportData()], {
+              type: 'application/json',
+            }),
+            url = URL.createObjectURL(blob),
+            a = document.createElement('a');
+          a.href = url;
+          a.download = `mahima-mayank-private-plan-${new Date().toISOString().slice(0, 10)}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Please try again.');
+      }
+    }),
+  );
 }
-dialog.addEventListener('close',()=>{if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});else{const main=root.querySelector<HTMLElement>('#workspace');if(main){main.tabIndex=-1;main.focus({preventScroll:true});}}});
-dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
+dialog.addEventListener('close', () => {
+  if (activeDraftKey) {
+    drafts.delete(activeDraftKey);
+    activeDraftKey = null;
+  }
+  if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+  else {
+    const main = root.querySelector<HTMLElement>('#workspace');
+    if (main) {
+      main.tabIndex = -1;
+      main.focus({ preventScroll: true });
+    }
+  }
+});
+dialog.addEventListener('click', (e) => {
+  if (e.target === dialog) {
+    const r = dialog.getBoundingClientRect();
+    if (
+      e.clientX < r.left ||
+      e.clientX > r.right ||
+      e.clientY < r.top ||
+      e.clientY > r.bottom
+    )
+      dialog.close();
+  }
+});
+document
+  .querySelector<HTMLAnchorElement>('.skip-link')
+  ?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const main = root.querySelector<HTMLElement>('#workspace');
+    if (main) {
+      main.tabIndex = -1;
+      main.focus({ preventScroll: true });
+      main.scrollIntoView({ block: 'start' });
+    }
+  });
+addEventListener('hashchange', () => {
+  if (dialog.open) dialog.close();
+  render();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+});
+if (!location.hash) history.replaceState(null, '', '#/home');
 void store.start();

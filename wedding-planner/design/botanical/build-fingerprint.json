@@ -1,0 +1,121 @@
+{
+  "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+  "assets": [
+    {
+      "path": "art/botanical-scene-640.webp",
+      "sha256": "bf1edb56306f06704931b1216f6c34a311281457366a8f8d469b3fbc96519b17"
+    },
+    {
+      "path": "art/botanical-scene-960.webp",
+      "sha256": "ccdbad2cb9f66c835bad5a559b566d4e98e5339960514b3da852167748ba7287"
+    },
+    {
+      "path": "art/botanical-scene.webp",
+      "sha256": "ea0f4a41521728de0450f62eefce1f184b8f4eb139070308759c3317d06807e6"
+    },
+    {
+      "path": "assets/family-BJSAJzSO.js",
+      "sha256": "7f6f44e67cc500eb5e4af4caf7dff11cfada35968271835bee3414a496edd4bb"
+    },
+    {
+      "path": "assets/index.esm-BlY-EhdR.js",
+      "sha256": "c50f6342df5c0b646a7ac7e45e7cfa77362d37fe15d3c27416a5459216c9f5ff"
+    },
+    {
+      "path": "assets/index.esm-CAfxpO0J.js",
+      "sha256": "3590b7b3a60ee7d633c30d98219640e9082b89eb4a98d25d4425b8640d3b634a"
+    },
+    {
+      "path": "assets/index.esm-ChFjBI-R.js",
+      "sha256": "39284ce5549e7096214da320acd3e6d529c0ff3c9880d0d253f8aeb19fb71846"
+    },
+    {
+      "path": "assets/index.esm-pSDtD01t.js",
+      "sha256": "36f06a7e56fd6dc301dcdac8b2f553da1b32e9217a56a54f702c063b2c25f68c"
+    },
+    {
+      "path": "assets/invitation-DCGGw2_f.js",
+      "sha256": "90137e46cf6b74b053945a692f5a129a1b57c9acc63b5ad75a67386c4c2c30a2"
+    },
+    {
+      "path": "assets/styles-CvYs4Jws.css",
+      "sha256": "4a001bfe5b59322afe6f6b0bc123283d6cd9b09871bb6b51fc648ffce75b1b7b"
+    },
+    {
+      "path": "assets/styles-CxuRX0QS.js",
+      "sha256": "d2a32840421496e872ade591618d2fa5c33797605d1aec04301717e5a90757d0"
+    },
+    {
+      "path": "family/index.html",
+      "sha256": "7dff5b88058694878d22ceb9d31e99c513bb774c49813920477004671497c11c"
+    },
+    {
+      "path": "fonts/CormorantGaramond-LICENSE.txt",
+      "sha256": "2d18818d1e2044bda96e663840ef64c32d1e6aa53a11d05cc8b70e4aa0dffef8"
+    },
+    {
+      "path": "fonts/DMSans-LICENSE.txt",
+      "sha256": "be5f632588774077cbb19a8d3fd788fbc7861af041f4e7165eae5822b11392b3"
+    },
+    {
+      "path": "fonts/cormorant-garamond.woff2",
+      "sha256": "5661597bce90af31f1b6a6d4809bfb5d90b5e411f64f72cea96b9ddc4faae253"
+    },
+    {
+      "path": "fonts/dm-sans.woff2",
+      "sha256": "5aea616cba5a07d662b68b933bfbcb7479a604c10a81ddfc1e18ee56f61607f3"
+    },
+    {
+      "path": "index.html",
+      "sha256": "cb6f2916339ef8d74f888c7d836f5addf281aea500c92598627de8423a2e6a66"
+    },
+    {
+      "path": "monogram.svg",
+      "sha256": "2d7db1316f3c3911d46b39dd72afb05b88bc6064446de9def25279eca7804078"
+    },
+    {
+      "path": "share.png",
+      "sha256": "a873e6ad2a3824bfcf0ae4d324adde3e175fba0f75ffd7a62af8c45c94f77312"
+    }
+  ],
+  "fixture": [
+    {
+      "path": "tests/fixtures.mjs",
+      "sha256": "7ffbe7d490e1129bcdc2d24e3f4b536a9b000f7b8bfb66c3ffaf32ef9a07f7e5"
+    },
+    {
+      "path": "WEDDING_RECORD.md",
+      "sha256": "9726c7795a8bf73aea757d5295123a1d1aeef59bd92d7e613961ffa6c2c8b76b"
+    },
+    {
+      "path": "design/botanical/capture-final.mjs",
+      "sha256": "b8bf22d4ed9e1df1d171770f355752ea83709dab15df85ce125c6a410c422b2b"
+    }
+  ],
+  "source": [
+    {
+      "path": "src/family.ts",
+      "sha256": "2f7e385db2fc4318cb06aec4821c986016d167a78c485e0a000e36e9d864eef2"
+    },
+    {
+      "path": "src/presentation.ts",
+      "sha256": "0d8edafdaf39e9090e0dac76a364290b6a80ffe7918be81156a6a85110cf3140"
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "a2f1683af8c016d573461547bd87b4e181ed514561553fe5401f68f1e25a8d03"
+    },
+    {
+      "path": "src/public-content.ts",
+      "sha256": "f8de36675f44c6fafdc305753ffef555612dd19eb89e8bc309c53a15ef832d08"
+    },
+    {
+      "path": "index.html",
+      "sha256": "696909dbace379a424ef26d4d39982741b0f6c77eefff4fc2123c5612674799c"
+    },
+    {
+      "path": "family/index.html",
+      "sha256": "eaeba5d46da5a2ed4f3808dff717788183b29c2711669ee37d7d610c1a50b7d1"
+    }
+  ]
+}

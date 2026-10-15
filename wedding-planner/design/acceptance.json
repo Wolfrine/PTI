@@ -1,0 +1,812 @@
+{
+  "schema_version": 2,
+  "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+  "status": "agent-reviewed",
+  "owner_verdict": {
+    "status": "not-reviewed"
+  },
+  "blockers": [],
+  "perception_packet": {
+    "product_object": "Mahima and Mayank wedding invitation and private family plan",
+    "user_job": "Feel welcomed, find approved celebration details, or read/change one family arrangement.",
+    "screen_state": "Current sparse public invitation and realistic family working/error states",
+    "eye_path": "Names and planned date; family programme then four planning entrances; readable record then focused action.",
+    "outcome_100ms": "Botanical invitation atmosphere and personal names are the intended focal object.",
+    "outcome_1s": "Guest/family purpose and main record are intended to be clear.",
+    "outcome_5s": "One relevant next action is intended to be apparent. These are hypotheses, not measured attention."
+  },
+  "critical_dimensions": {
+    "identity": "Coherent original Botanical scene frames calm names/date space, compared with original Romantic Botanical board.",
+    "hierarchy": "Function programme and four family jobs are immediately clear; read-first records and focused edits avoid unrelated forms.",
+    "craft": "Desktop/phone composition remains readable with complete menus, long values and error states; controls fit without overflow."
+  },
+  "roles": {
+    "designer": "wedding_designer",
+    "visual_critic": "wedding_critic",
+    "parent": "/root",
+    "qa": "/root"
+  },
+  "baseline": {
+    "description": "Owner-rejected folded-invitation implementation with excessive forms and repeated content.",
+    "evidence": {
+      "path": "wedding-planner/design/cycle5-guest-390.png",
+      "sha256": "466095b0ee4d89204c670bde65ad027a35d7ca5d826c1d5a5e5946530ce6d67d"
+    }
+  },
+  "comparisons": [
+    {
+      "reference": "Romantic Botanical",
+      "matched_task_state": "Public invitation and family home",
+      "observed_gap": "Earlier flat borders lacked scene depth and a calm names area.",
+      "disposition": "Original floral scene and separate phone composition adopted.",
+      "evidence": {
+        "path": "wedding-planner/design/concepts/01-romantic-botanical.png",
+        "sha256": "0432552ae98639dfa9daf81629de9a7f28903f0c6d65623a898ba786e9d55922"
+      }
+    },
+    {
+      "reference": "Editorial Ivory",
+      "matched_task_state": "Compact family programme and entrances",
+      "observed_gap": "Earlier workspace overloaded entry with working records.",
+      "disposition": "Compact function timeline and four destinations adopted.",
+      "evidence": {
+        "path": "wedding-planner/design/concepts/02-editorial-ivory.png",
+        "sha256": "18002476b9d6001677f45d1e28af29c1f0eaebc5a6bea737a8da25dd24c24dfc"
+      }
+    },
+    {
+      "reference": "Contemporary Two-Mode",
+      "matched_task_state": "Guest and family separation",
+      "observed_gap": "Dense dashboard implies speculative modules and metrics.",
+      "disposition": "Audience separation retained; speculative dashboard overhead omitted.",
+      "evidence": {
+        "path": "wedding-planner/design/concepts/04-contemporary-two-mode.png",
+        "sha256": "9756d7b0741fcd9dfcea693b7eb0d3ca03280b6d2028ea5bc2c41396630b84a7"
+      }
+    }
+  ],
+  "direction_mode": "new-or-reset",
+  "direction_candidates": [
+    {
+      "id": "a",
+      "visual_difference": "Text-left garden invitation with scene-right, quiet phone name field.",
+      "evidence": {
+        "path": "wedding-planner/design/botanical/directions-a-guest-1440.png",
+        "sha256": "a229d347a5f056eaa07263bb6551de20ba301ed85c3bf07ee5952f319cbf50c9"
+      }
+    },
+    {
+      "id": "b",
+      "visual_difference": "Centered paper folio layered over a panorama.",
+      "evidence": {
+        "path": "wedding-planner/design/botanical/directions-b-guest-1440.png",
+        "sha256": "ad3a0f081d991c111fe7fde8853c84cf3ed1d765033ec33174d1b8974d91040d"
+      }
+    },
+    {
+      "id": "c",
+      "visual_difference": "Arched paper/pavilion panel and different interior card composition.",
+      "evidence": {
+        "path": "wedding-planner/design/botanical/directions-c-guest-1440.png",
+        "sha256": "c002d76786f6b7adf952f49701e96125acbbb5bce462afacbc341e796ccfa6a8"
+      }
+    }
+  ],
+  "selected_direction": {
+    "id": "a",
+    "reason": "Best relationship between original Romantic Botanical atmosphere and concise read-first family work; phone foliage conflict corrected before implementation."
+  },
+  "required_states": [
+    {
+      "id": "cycle5-invitation-1440",
+      "marker": "The days are coming together.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "cycle5-invitation-390",
+      "marker": "The days are coming together.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-home-1440",
+      "marker": "The celebration",
+      "viewport": "desktop"
+    },
+    {
+      "id": "cycle5-home-390",
+      "marker": "The celebration",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-catering-1440",
+      "marker": "Food counter",
+      "viewport": "desktop"
+    },
+    {
+      "id": "cycle5-catering-390",
+      "marker": "Food counter",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-sangeet-1440",
+      "marker": "Hot kesar milk",
+      "viewport": "desktop"
+    },
+    {
+      "id": "cycle5-sangeet-390",
+      "marker": "Hot kesar milk",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-menu-edit-1440",
+      "marker": "Keep unclear readings",
+      "viewport": "desktop"
+    },
+    {
+      "id": "cycle5-menu-edit-390",
+      "marker": "Keep unclear readings",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-reception-1440",
+      "marker": "Date to confirm",
+      "viewport": "desktop"
+    },
+    {
+      "id": "cycle5-reception-390",
+      "marker": "Date to confirm",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-login-1440",
+      "marker": "For invited family members.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "cycle5-login-390",
+      "marker": "For invited family members.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-validation-390",
+      "marker": "Record the decision before confirming it.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-offline-390",
+      "marker": "You are offline.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-loading-390",
+      "marker": "Opening the family workspace\u00e2\u20ac\u00a6",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-unavailable-390",
+      "marker": "Sign-in is temporarily unavailable.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-account-390",
+      "marker": "Export private plan",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-empty-home-390",
+      "marker": "The programme is taking shape.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-empty-search-390",
+      "marker": "No matching guests.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-stay-390",
+      "marker": "Their stay",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-guest-detail-390",
+      "marker": "Food & hospitality",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-tasks-390",
+      "marker": "Responsibilities",
+      "viewport": "mobile"
+    },
+    {
+      "id": "cycle5-attendance-390",
+      "marker": "Who\u00e2\u20ac\u2122s joining?",
+      "viewport": "mobile"
+    },
+    {
+      "id": "auth-revoked-1440",
+      "marker": "Your family access has been removed.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "auth-revoked-390",
+      "marker": "Your family access has been removed.",
+      "viewport": "mobile"
+    }
+  ],
+  "evidence": [
+    {
+      "state": "cycle5-invitation-1440",
+      "viewport": "desktop",
+      "observed_marker": "The days are coming together.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-invitation-1440.png",
+      "sha256": "6d57dec656de60cb43ae5d15d4b7402b73d035ad164587df7f12489f2b50832c"
+    },
+    {
+      "state": "cycle5-invitation-390",
+      "viewport": "mobile",
+      "observed_marker": "The days are coming together.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-invitation-390.png",
+      "sha256": "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8"
+    },
+    {
+      "state": "cycle5-home-1440",
+      "viewport": "desktop",
+      "observed_marker": "The celebration",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-home-1440.png",
+      "sha256": "7074cc979e17da1d11f5d6a084713ce039aed32676619410fcb66967c55db680"
+    },
+    {
+      "state": "cycle5-home-390",
+      "viewport": "mobile",
+      "observed_marker": "The celebration",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-home-390.png",
+      "sha256": "95bdac48d45f0a3044dedcacf60d92a0b9ca551b4d305b03ce398cfe3c3b0773"
+    },
+    {
+      "state": "cycle5-catering-1440",
+      "viewport": "desktop",
+      "observed_marker": "Food counter",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-catering-1440.png",
+      "sha256": "2839760e7bf308bce838a49b5e039104d2b499eae46ac249fa3f57f92ba30e40"
+    },
+    {
+      "state": "cycle5-catering-390",
+      "viewport": "mobile",
+      "observed_marker": "Food counter",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-catering-390.png",
+      "sha256": "988a89084a92cd86747e09f32ffca66958bba96e00d35881470d31dd09ff7ee0"
+    },
+    {
+      "state": "cycle5-sangeet-1440",
+      "viewport": "desktop",
+      "observed_marker": "Hot kesar milk",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-sangeet-1440.png",
+      "sha256": "dafe1e3a26231545d1d360b810f17b5d5fd55c846364569c744221cccfe4d043"
+    },
+    {
+      "state": "cycle5-sangeet-390",
+      "viewport": "mobile",
+      "observed_marker": "Hot kesar milk",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-sangeet-390.png",
+      "sha256": "c5ccae99322c76432e7022edf1579699b5024049f9bf6fa9077c8efa70c9ab8c"
+    },
+    {
+      "state": "cycle5-menu-edit-1440",
+      "viewport": "desktop",
+      "observed_marker": "Keep unclear readings",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-menu-edit-1440.png",
+      "sha256": "34b13e94bc2dbb6f73a8c7b9fa2d3e0a78376c374dcbb4d60923440f11fbb02c"
+    },
+    {
+      "state": "cycle5-menu-edit-390",
+      "viewport": "mobile",
+      "observed_marker": "Keep unclear readings",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-menu-edit-390.png",
+      "sha256": "7714c0b960075757e454e59595cd571940c12df308369198707b3784dbc2317e"
+    },
+    {
+      "state": "cycle5-reception-1440",
+      "viewport": "desktop",
+      "observed_marker": "Date to confirm",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-reception-1440.png",
+      "sha256": "51c5773e8c10d359fad379731b6f3f573908b1a9ecad30652b577173a8e2019b"
+    },
+    {
+      "state": "cycle5-reception-390",
+      "viewport": "mobile",
+      "observed_marker": "Date to confirm",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-reception-390.png",
+      "sha256": "f4bf00baff837954de3eb97213e55d3bcb695889301c899b253905cec3688a85"
+    },
+    {
+      "state": "cycle5-login-1440",
+      "viewport": "desktop",
+      "observed_marker": "For invited family members.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-login-1440.png",
+      "sha256": "0562423a8799f46b966f27b131c8d137d5efd2591937fab7d902de6822188064"
+    },
+    {
+      "state": "cycle5-login-390",
+      "viewport": "mobile",
+      "observed_marker": "For invited family members.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-login-390.png",
+      "sha256": "b394252623a88dabe7a9a078ef4944a68efa768eb0165bccca2f2f8f14fccaa9"
+    },
+    {
+      "state": "cycle5-validation-390",
+      "viewport": "mobile",
+      "observed_marker": "Record the decision before confirming it.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-validation-390.png",
+      "sha256": "f964bd6065f1c22bfe6eeb725412570ae8fd9dd83b5af9d3b6e8a40839bdd3ca"
+    },
+    {
+      "state": "cycle5-offline-390",
+      "viewport": "mobile",
+      "observed_marker": "You are offline.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-offline-390.png",
+      "sha256": "c5c1a0f92cf467b8e94da30f8d1c623581eaa77c51021f96ef2bb00a84fab41c"
+    },
+    {
+      "state": "cycle5-loading-390",
+      "viewport": "mobile",
+      "observed_marker": "Opening the family workspace\u00e2\u20ac\u00a6",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-loading-390.png",
+      "sha256": "814aa9a5c8af633f31f4db2e0487bbd393c5dee6e7714a758ea06d2e68486139"
+    },
+    {
+      "state": "cycle5-unavailable-390",
+      "viewport": "mobile",
+      "observed_marker": "Sign-in is temporarily unavailable.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-unavailable-390.png",
+      "sha256": "1e71ed9196e26e0a15b661db67dff32163fd4d6957fb077d0d76ef3a88a0a441"
+    },
+    {
+      "state": "cycle5-account-390",
+      "viewport": "mobile",
+      "observed_marker": "Export private plan",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-account-390.png",
+      "sha256": "4d3a8f7fb7bf6c1c92aee381ab01fc48974489692975561039eaecefe84ff212"
+    },
+    {
+      "state": "cycle5-empty-home-390",
+      "viewport": "mobile",
+      "observed_marker": "The programme is taking shape.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-empty-home-390.png",
+      "sha256": "7078c76732aba9c667b901beb8134e72818d36e579f9d75bcfdb69fe751b6602"
+    },
+    {
+      "state": "cycle5-empty-search-390",
+      "viewport": "mobile",
+      "observed_marker": "No matching guests.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-empty-search-390.png",
+      "sha256": "064a7435884caad64afb4472ce2b5e2648ba5aa9424e6317513966311a5d6ef9"
+    },
+    {
+      "state": "cycle5-stay-390",
+      "viewport": "mobile",
+      "observed_marker": "Their stay",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-stay-390.png",
+      "sha256": "72cdbca79ec8301b1878ab7c79cdb0cfbd4a74edf9b4dc780099f19c63e0a62a"
+    },
+    {
+      "state": "cycle5-guest-detail-390",
+      "viewport": "mobile",
+      "observed_marker": "Food & hospitality",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-guest-detail-390.png",
+      "sha256": "b1ac25e9ad118e2c2f101e9353ef1c16e7b426a35d83c8a1d1a2a64b50cb098b"
+    },
+    {
+      "state": "cycle5-tasks-390",
+      "viewport": "mobile",
+      "observed_marker": "Responsibilities",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-tasks-390.png",
+      "sha256": "5376fbd8f164be86327f838b5d080bae1e92128ce13dc68ebe462b3b9a6a37e7"
+    },
+    {
+      "state": "cycle5-attendance-390",
+      "viewport": "mobile",
+      "observed_marker": "Who\u00e2\u20ac\u2122s joining?",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/cycle5-attendance-390.png",
+      "sha256": "580e242c31de7d032ef5495bb80ab5a86cd61750db4cb465c3c12f13729c5c0a"
+    },
+    {
+      "state": "auth-revoked-1440",
+      "viewport": "desktop",
+      "observed_marker": "Your family access has been removed.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/auth-revoked-1440.png",
+      "sha256": "1c3e9cff56de055967961ed9f0b32cc46274902510cf739e6b2fd90e46d61c0d"
+    },
+    {
+      "state": "auth-revoked-390",
+      "viewport": "mobile",
+      "observed_marker": "Your family access has been removed.",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/botanical/auth-revoked-390.png",
+      "sha256": "be09e31808f109506dedfe1a04b1a1ac525ee1477e20c41b3b09f091a3e24e8d"
+    }
+  ],
+  "cycles": [
+    {
+      "id": 1,
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle1-catering-390.png",
+        "sha256": "fbc5fe6492690fce6f42dce9b9e7f0b3da21cb5f0ae2561b404a014809ca96ba"
+      },
+      "visual_finding": "Initial real service catalogue repeated date/status and consumed phone height.",
+      "qa_finding": "Build and actual emulator menu save/conflict/revocation passed; responsive task coverage began."
+    },
+    {
+      "id": 2,
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle2-decision-edit-390.png",
+        "sha256": "0e02c8e1b45941c8ee914a0ac6617b612af720324576d264ce8a27daefe9e557"
+      },
+      "visual_finding": "Guest/stay/food and two-field decisions were materially simpler; task rows and long phone facts remained weak.",
+      "qa_finding": "Actual short forms, decision validation and offline draft preservation passed; stale global errors identified."
+    },
+    {
+      "id": 3,
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle3-catering-390.png",
+        "sha256": "888f9cac0604ec6d0d0e7b630cfca1b25c2e899c0f4825dbae49d98cdc96dba2"
+      },
+      "visual_finding": "Grouped services/full-width headings improved; all-menu comparison and task access still needed correction.",
+      "qa_finding": "Keyboard/router skip and failed attendance presentation were fixed and browser regressions passed."
+    },
+    {
+      "id": 4,
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle4-compare-390.png",
+        "sha256": "1b80397540b34a4074ee62534ed036efffb751f717db86b04bc9d87fefa5ebd1"
+      },
+      "visual_finding": "Direct responsibility access, compact controls and two-menu selection resolved the major hierarchy gaps.",
+      "qa_finding": "Twelve browser tasks passed including selected-pair changes, Back and scoped validation recovery."
+    },
+    {
+      "id": 5,
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle5-invitation-390.png",
+        "sha256": "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8"
+      },
+      "visual_finding": "Final public, working, sparse/error and access-removal states inspected; no major visual blocker in reviewed set.",
+      "qa_finding": "Final build/model/browser checks passed; actual emulator revocation clears dialog, draft and toast. Broader47capture checks retained separately."
+    }
+  ],
+  "parent_checkpoints": [
+    {
+      "cycle": 3,
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle3-catering-390.png",
+        "sha256": "888f9cac0604ec6d0d0e7b630cfca1b25c2e899c0f4825dbae49d98cdc96dba2"
+      },
+      "judgment": "Personally viewed actual desktop/phone guest, family and working states. Hierarchy below8 remained a blocker."
+    },
+    {
+      "cycle": 5,
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle5-invitation-390.png",
+        "sha256": "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8"
+      },
+      "judgment": "Personally inspected exact final shared render set; Botanical identity and compact task hierarchy pass; owner aesthetic decision remains pending."
+    }
+  ],
+  "designer_capability_record": "Designer and critic used inherited capabilities. Random round3 stronger visual review actually ran as gpt-6-astra/high; report STRONGER-ROUND3.md. Supplemental review used retained images because its CUA was unavailable; primary critic and parent independently drove actual browsers.",
+  "reviews": {
+    "visual_critic": {
+      "reviewer": "wedding_critic",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "verdict": "pass",
+      "scores": {
+        "identity": 8.2,
+        "hierarchy": 8.1,
+        "craft": 8.1
+      },
+      "overall": 8.1,
+      "inspected_sha256": [
+        "6d57dec656de60cb43ae5d15d4b7402b73d035ad164587df7f12489f2b50832c",
+        "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8",
+        "7074cc979e17da1d11f5d6a084713ce039aed32676619410fcb66967c55db680",
+        "95bdac48d45f0a3044dedcacf60d92a0b9ca551b4d305b03ce398cfe3c3b0773",
+        "2839760e7bf308bce838a49b5e039104d2b499eae46ac249fa3f57f92ba30e40",
+        "988a89084a92cd86747e09f32ffca66958bba96e00d35881470d31dd09ff7ee0",
+        "dafe1e3a26231545d1d360b810f17b5d5fd55c846364569c744221cccfe4d043",
+        "c5ccae99322c76432e7022edf1579699b5024049f9bf6fa9077c8efa70c9ab8c",
+        "34b13e94bc2dbb6f73a8c7b9fa2d3e0a78376c374dcbb4d60923440f11fbb02c",
+        "7714c0b960075757e454e59595cd571940c12df308369198707b3784dbc2317e",
+        "51c5773e8c10d359fad379731b6f3f573908b1a9ecad30652b577173a8e2019b",
+        "f4bf00baff837954de3eb97213e55d3bcb695889301c899b253905cec3688a85",
+        "0562423a8799f46b966f27b131c8d137d5efd2591937fab7d902de6822188064",
+        "b394252623a88dabe7a9a078ef4944a68efa768eb0165bccca2f2f8f14fccaa9",
+        "f964bd6065f1c22bfe6eeb725412570ae8fd9dd83b5af9d3b6e8a40839bdd3ca",
+        "c5c1a0f92cf467b8e94da30f8d1c623581eaa77c51021f96ef2bb00a84fab41c",
+        "814aa9a5c8af633f31f4db2e0487bbd393c5dee6e7714a758ea06d2e68486139",
+        "1e71ed9196e26e0a15b661db67dff32163fd4d6957fb077d0d76ef3a88a0a441",
+        "4d3a8f7fb7bf6c1c92aee381ab01fc48974489692975561039eaecefe84ff212",
+        "7078c76732aba9c667b901beb8134e72818d36e579f9d75bcfdb69fe751b6602",
+        "064a7435884caad64afb4472ce2b5e2648ba5aa9424e6317513966311a5d6ef9",
+        "72cdbca79ec8301b1878ab7c79cdb0cfbd4a74edf9b4dc780099f19c63e0a62a",
+        "b1ac25e9ad118e2c2f101e9353ef1c16e7b426a35d83c8a1d1a2a64b50cb098b",
+        "5376fbd8f164be86327f838b5d080bae1e92128ce13dc68ebe462b3b9a6a37e7",
+        "580e242c31de7d032ef5495bb80ab5a86cd61750db4cb465c3c12f13729c5c0a",
+        "1c3e9cff56de055967961ed9f0b32cc46274902510cf739e6b2fd90e46d61c0d",
+        "be09e31808f109506dedfe1a04b1a1ac525ee1477e20c41b3b09f091a3e24e8d"
+      ],
+      "reason": "Compared these27 exact renders with original boards and rejected baseline; see independent CRITIQUE.md.",
+      "generic_cues": [
+        "Botanical corner camouflage resolved through coherent original scenery.",
+        "Tall generic full-record forms resolved through focused task editors.",
+        "Repeated catalogue/dashboard overhead resolved through day groups, four destinations and direct task groups."
+      ]
+    },
+    "parent": {
+      "reviewer": "/root",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "verdict": "pass",
+      "scores": {
+        "identity": 8.5,
+        "hierarchy": 8.3,
+        "craft": 8.2
+      },
+      "overall": 8.3,
+      "inspected_sha256": [
+        "6d57dec656de60cb43ae5d15d4b7402b73d035ad164587df7f12489f2b50832c",
+        "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8",
+        "7074cc979e17da1d11f5d6a084713ce039aed32676619410fcb66967c55db680",
+        "95bdac48d45f0a3044dedcacf60d92a0b9ca551b4d305b03ce398cfe3c3b0773",
+        "2839760e7bf308bce838a49b5e039104d2b499eae46ac249fa3f57f92ba30e40",
+        "988a89084a92cd86747e09f32ffca66958bba96e00d35881470d31dd09ff7ee0",
+        "dafe1e3a26231545d1d360b810f17b5d5fd55c846364569c744221cccfe4d043",
+        "c5ccae99322c76432e7022edf1579699b5024049f9bf6fa9077c8efa70c9ab8c",
+        "34b13e94bc2dbb6f73a8c7b9fa2d3e0a78376c374dcbb4d60923440f11fbb02c",
+        "7714c0b960075757e454e59595cd571940c12df308369198707b3784dbc2317e",
+        "51c5773e8c10d359fad379731b6f3f573908b1a9ecad30652b577173a8e2019b",
+        "f4bf00baff837954de3eb97213e55d3bcb695889301c899b253905cec3688a85",
+        "0562423a8799f46b966f27b131c8d137d5efd2591937fab7d902de6822188064",
+        "b394252623a88dabe7a9a078ef4944a68efa768eb0165bccca2f2f8f14fccaa9",
+        "f964bd6065f1c22bfe6eeb725412570ae8fd9dd83b5af9d3b6e8a40839bdd3ca",
+        "c5c1a0f92cf467b8e94da30f8d1c623581eaa77c51021f96ef2bb00a84fab41c",
+        "814aa9a5c8af633f31f4db2e0487bbd393c5dee6e7714a758ea06d2e68486139",
+        "1e71ed9196e26e0a15b661db67dff32163fd4d6957fb077d0d76ef3a88a0a441",
+        "4d3a8f7fb7bf6c1c92aee381ab01fc48974489692975561039eaecefe84ff212",
+        "7078c76732aba9c667b901beb8134e72818d36e579f9d75bcfdb69fe751b6602",
+        "064a7435884caad64afb4472ce2b5e2648ba5aa9424e6317513966311a5d6ef9",
+        "72cdbca79ec8301b1878ab7c79cdb0cfbd4a74edf9b4dc780099f19c63e0a62a",
+        "b1ac25e9ad118e2c2f101e9353ef1c16e7b426a35d83c8a1d1a2a64b50cb098b",
+        "5376fbd8f164be86327f838b5d080bae1e92128ce13dc68ebe462b3b9a6a37e7",
+        "580e242c31de7d032ef5495bb80ab5a86cd61750db4cb465c3c12f13729c5c0a",
+        "1c3e9cff56de055967961ed9f0b32cc46274902510cf739e6b2fd90e46d61c0d",
+        "be09e31808f109506dedfe1a04b1a1ac525ee1477e20c41b3b09f091a3e24e8d"
+      ],
+      "reason": "Personally inspected this shared set plus supporting working views. The scene frames rather than competes with names, four family jobs are clear, and short contextual editors fit phones.",
+      "generic_cues": [
+        "Botanical corner camouflage resolved through coherent original scenery.",
+        "Tall generic full-record forms resolved through focused task editors.",
+        "Repeated catalogue/dashboard overhead resolved through day groups, four destinations and direct task groups."
+      ]
+    },
+    "qa": {
+      "reviewer": "/root",
+      "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+      "verdict": "pass",
+      "inspected_sha256": [
+        "6d57dec656de60cb43ae5d15d4b7402b73d035ad164587df7f12489f2b50832c",
+        "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8",
+        "7074cc979e17da1d11f5d6a084713ce039aed32676619410fcb66967c55db680",
+        "95bdac48d45f0a3044dedcacf60d92a0b9ca551b4d305b03ce398cfe3c3b0773",
+        "2839760e7bf308bce838a49b5e039104d2b499eae46ac249fa3f57f92ba30e40",
+        "988a89084a92cd86747e09f32ffca66958bba96e00d35881470d31dd09ff7ee0",
+        "dafe1e3a26231545d1d360b810f17b5d5fd55c846364569c744221cccfe4d043",
+        "c5ccae99322c76432e7022edf1579699b5024049f9bf6fa9077c8efa70c9ab8c",
+        "34b13e94bc2dbb6f73a8c7b9fa2d3e0a78376c374dcbb4d60923440f11fbb02c",
+        "7714c0b960075757e454e59595cd571940c12df308369198707b3784dbc2317e",
+        "51c5773e8c10d359fad379731b6f3f573908b1a9ecad30652b577173a8e2019b",
+        "f4bf00baff837954de3eb97213e55d3bcb695889301c899b253905cec3688a85",
+        "0562423a8799f46b966f27b131c8d137d5efd2591937fab7d902de6822188064",
+        "b394252623a88dabe7a9a078ef4944a68efa768eb0165bccca2f2f8f14fccaa9",
+        "f964bd6065f1c22bfe6eeb725412570ae8fd9dd83b5af9d3b6e8a40839bdd3ca",
+        "c5c1a0f92cf467b8e94da30f8d1c623581eaa77c51021f96ef2bb00a84fab41c",
+        "814aa9a5c8af633f31f4db2e0487bbd393c5dee6e7714a758ea06d2e68486139",
+        "1e71ed9196e26e0a15b661db67dff32163fd4d6957fb077d0d76ef3a88a0a441",
+        "4d3a8f7fb7bf6c1c92aee381ab01fc48974489692975561039eaecefe84ff212",
+        "7078c76732aba9c667b901beb8134e72818d36e579f9d75bcfdb69fe751b6602",
+        "064a7435884caad64afb4472ce2b5e2648ba5aa9424e6317513966311a5d6ef9",
+        "72cdbca79ec8301b1878ab7c79cdb0cfbd4a74edf9b4dc780099f19c63e0a62a",
+        "b1ac25e9ad118e2c2f101e9353ef1c16e7b426a35d83c8a1d1a2a64b50cb098b",
+        "5376fbd8f164be86327f838b5d080bae1e92128ce13dc68ebe462b3b9a6a37e7",
+        "580e242c31de7d032ef5495bb80ab5a86cd61750db4cb465c3c12f13729c5c0a",
+        "1c3e9cff56de055967961ed9f0b32cc46274902510cf739e6b2fd90e46d61c0d",
+        "be09e31808f109506dedfe1a04b1a1ac525ee1477e20c41b3b09f091a3e24e8d"
+      ],
+      "reason": "Actual browser tasks, emulator transactions and revocation, keyboard, route continuity, offline draft preservation and responsive checks passed. UI fixture data is synthetic; no live human Google popup or full WCAG audit is claimed."
+    }
+  },
+  "coverage_limitations": "Formal visual review covers exactly these27 personally inspected renders, not every47capture. Other states have captured QA and earlier cycle review. No owner aesthetic acceptance or measured perception claim."
+}

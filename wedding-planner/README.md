@@ -6,7 +6,7 @@ The dedicated invitation and family workspace are implemented in this directory.
 
 Live: [guest invitation](https://mahima-mayank.web.app/) · [private family workspace](https://mahima-mayank.web.app/family/).
 
-The initial public release is a save-the-date invitation: names and the **planned** 18–20 January window. Event times, venues, a contact and an exact countdown remain absent until the family approves them. The private workspace supports events/menus, decisions, individual guests, event attendance, stays, arrangements, costs, family access and a portable export. Local preview fixtures are synthetic and are excluded from production.
+The public page is a Botanical save-the-date invitation: names, the **planned** 18–20 January window, and original imagined floral scenery. Event times, venues, a contact and an exact countdown remain absent until the family approves them. The private home presents a compact function programme and four entrances: **Catering, Guests, Stays & Travel, Tasks & Decisions**. Read a record first, then edit the relevant detail. Local preview fixtures are synthetic and are excluded from production.
 
 ## Purpose
 
@@ -45,7 +45,7 @@ The [**Wedding Record**](WEDDING_RECORD.md) preserves the initial timeline, comp
 
 - [Wedding Record](WEDDING_RECORD.md) — **live wedding facts, timeline, draft menus and open decisions**.
 - [Guest experience](guest-experience/README.md) and [family workspace](family-workspace/README.md) — the two audience intents.
-- [UI/UX concept references](design/concepts/README.md) — four exploratory styles and schematic image references, not a selected design.
+- [UI/UX concept references](design/concepts/README.md) — four original image prototypes; Romantic Botanical is the selected visual basis, not a feature or wedding-fact checklist. The [current design record](design/botanical/BRIEF.md) supersedes the rejected earlier design.
 - [Domain research](research/README.md) and [evaluation references](evals/README.md) — optional supporting knowledge, **not facts about this wedding or a required feature backlog**.
 
 This belongs within **Wolfrine/PTI**, reusing the existing **PTI Firebase project** with the separately named Hosting site **mahima-mayank**. The live website identity is **Mahima and Mayank**; no separate repository or Firebase project was created.

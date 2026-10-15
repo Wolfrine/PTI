@@ -1,6 +1,6 @@
 # Illustrated menus, sharing and one wedding PWA — 15 October 2026
 
-Implementation branch: codex/wedding-illustrated-pwa, base77f2d11. Release verification is in progress; deployment is not yet claimed. The existing PTI project, wedding site, roles and operational records remain the foundation.
+Initial [PR #40](https://github.com/Wolfrine/PTI/pull/40) merged as `1a4634b`; its complete CI and wedding-only deployment passed. The parent then caught a Hosting clean-URL failure in offline family navigation. The corrective branch `codex/wedding-offline-reconnect` reconstructs the neutral response safely and covers actual redirect/Brotli behavior. Candidate `dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95`, cache `d040b4180b3f8fe06bc6`, has fresh13-state review; corrective deployment/live acceptance is pending. The existing PTI project, wedding site, roles and operational records remain the foundation.
 
 Catering now projects the complete saved menu into compact illustrated category/item lists, with one dish/category search and collapsed selected-pair comparison. Thirteen original generated food-family motifs are indicative. The literal menu remains authoritative; uncertain names retain a neutral cue and explicit verification wording. No record, migration, rule or Auth-flow change belongs to this extension.
 
@@ -11,6 +11,8 @@ One manifest/app identity serves the invitation and family entry. Only the compl
 Observed local checks so far:17model/menu tests,13wedding rules,9Venture shared-rule regressions, actual Auth/Firestore collaboration/conflict/roles/draft tests,12existing browser scenarios, complete10-menu/search/compare browser projection, sharing metadata/fallback checks,6PWA offline/update scenarios, production dependency audit with0reported vulnerabilities. Final combined checks follow the frozen candidate. Shared PTI Angular build passes with existing stylesheet-budget warnings; its existing Karma baseline remains1pass/8missing-Firebase-provider failures.
 
 Design, artwork/provenance, independent critique and exact candidate evidence are under [illustrated-pwa](design/illustrated-pwa/BRIEF.md). The bounded refinement retains the Botanical direction, with independent designer/critic and an actual gpt-6-astra stronger pass in round3. Agent review does not establish owner aesthetic acceptance.
+
+PTI MCP readback after PR40 confirms all10 menu texts,7 decisions and the original two membership documents are unchanged. Concurrent authenticated activity added3 memberships and one Reception update/history entry; these changes are preserved. Protected owner remains Admin. See [RELEASE.md](design/illustrated-pwa/RELEASE.md) for the release, failure/repair and preservation evidence. No operational wedding data write belongs to the feature implementation.
 
 ---
 

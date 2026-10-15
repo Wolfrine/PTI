@@ -1,0 +1,173 @@
+{
+  "browser": "148.0.7778.96",
+  "build": "6b412cdc59d2ebd91615",
+  "neutralCache": {
+    "url": "http://127.0.0.1:53230/offline/",
+    "redirected": true,
+    "headers": {
+      "cache-control": "no-store",
+      "connection": "keep-alive",
+      "content-encoding": "br",
+      "content-length": "287",
+      "content-security-policy": "default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self'; img-src 'self' data: https://lh3.googleusercontent.com; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com; frame-src https://pti-app-2ab59.firebaseapp.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+      "content-type": "text/html; charset=utf-8",
+      "date": "Thu, 15 Oct 2026 17:31:27 GMT",
+      "etag": "\"local-neutral-brotli\"",
+      "keep-alive": "timeout=5",
+      "permissions-policy": "camera=(), microphone=(), geolocation=()",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "x-robots-tag": "noindex, nofollow"
+    },
+    "body": "<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"theme-color\" content=\"#faf7f0\"><title>Offline · Mahima & Mayank</title>  <link rel=\"stylesheet\" crossorigin href=\"/assets/pwa-B5siTsgX.css\">\n</head><body class=\"pwa-offline-page\"><main><p>MAHIMA & MAYANK</p><h1>Let’s reconnect.</h1><p>Family planning needs an internet connection. Your private family details are not saved for offline use.</p><p>You can still open the saved wedding invitation.</p><a href=\"/\">Open the invitation</a></main></body></html>\n"
+  },
+  "error": "page.goto: net::ERR_FAILED at http://127.0.0.1:53230/family/\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:53230/family/\", waiting until \"load\"\u001b[22m\n",
+  "networkRequests": [
+    {
+      "pathname": "/",
+      "at": "2026-10-15T17:31:27.391Z"
+    },
+    {
+      "pathname": "/fonts/cormorant-garamond.woff2",
+      "at": "2026-10-15T17:31:27.402Z"
+    },
+    {
+      "pathname": "/assets/preload-helper-CHsmrOs4.css",
+      "at": "2026-10-15T17:31:27.405Z"
+    },
+    {
+      "pathname": "/assets/invitation-B4ecOb54.js",
+      "at": "2026-10-15T17:31:27.405Z"
+    },
+    {
+      "pathname": "/assets/preload-helper-CsV6_7Lo.js",
+      "at": "2026-10-15T17:31:27.406Z"
+    },
+    {
+      "pathname": "/assets/pwa-CWh4su9L.js",
+      "at": "2026-10-15T17:31:27.412Z"
+    },
+    {
+      "pathname": "/assets/pwa-B5siTsgX.css",
+      "at": "2026-10-15T17:31:27.413Z"
+    },
+    {
+      "pathname": "/assets/sharing-V3kA-a7V.css",
+      "at": "2026-10-15T17:31:27.414Z"
+    },
+    {
+      "pathname": "/assets/sharing-BcTNlxZT.js",
+      "at": "2026-10-15T17:31:27.414Z"
+    },
+    {
+      "pathname": "/art/botanical-scene.webp",
+      "at": "2026-10-15T17:31:27.416Z"
+    },
+    {
+      "pathname": "/fonts/dm-sans.woff2",
+      "at": "2026-10-15T17:31:27.418Z"
+    },
+    {
+      "pathname": "/sw.js",
+      "at": "2026-10-15T17:31:27.432Z"
+    },
+    {
+      "pathname": "/art/botanical-scene-640.webp",
+      "at": "2026-10-15T17:31:27.443Z"
+    },
+    {
+      "pathname": "/art/botanical-scene-960.webp",
+      "at": "2026-10-15T17:31:27.444Z"
+    },
+    {
+      "pathname": "/art/botanical-scene.webp",
+      "at": "2026-10-15T17:31:27.444Z"
+    },
+    {
+      "pathname": "/assets/invitation-B4ecOb54.js",
+      "at": "2026-10-15T17:31:27.447Z"
+    },
+    {
+      "pathname": "/assets/preload-helper-CHsmrOs4.css",
+      "at": "2026-10-15T17:31:27.448Z"
+    },
+    {
+      "pathname": "/assets/preload-helper-CsV6_7Lo.js",
+      "at": "2026-10-15T17:31:27.450Z"
+    },
+    {
+      "pathname": "/assets/pwa-B5siTsgX.css",
+      "at": "2026-10-15T17:31:27.451Z"
+    },
+    {
+      "pathname": "/assets/pwa-CWh4su9L.js",
+      "at": "2026-10-15T17:31:27.452Z"
+    },
+    {
+      "pathname": "/assets/sharing-BcTNlxZT.js",
+      "at": "2026-10-15T17:31:27.453Z"
+    },
+    {
+      "pathname": "/assets/sharing-V3kA-a7V.css",
+      "at": "2026-10-15T17:31:27.454Z"
+    },
+    {
+      "pathname": "/fonts/cormorant-garamond.woff2",
+      "at": "2026-10-15T17:31:27.455Z"
+    },
+    {
+      "pathname": "/fonts/dm-sans.woff2",
+      "at": "2026-10-15T17:31:27.455Z"
+    },
+    {
+      "pathname": "/icons/apple-touch-icon.png",
+      "at": "2026-10-15T17:31:27.457Z"
+    },
+    {
+      "pathname": "/icons/icon-192.png",
+      "at": "2026-10-15T17:31:27.458Z"
+    },
+    {
+      "pathname": "/icons/icon-512.png",
+      "at": "2026-10-15T17:31:27.459Z"
+    },
+    {
+      "pathname": "/icons/maskable-512.png",
+      "at": "2026-10-15T17:31:27.460Z"
+    },
+    {
+      "pathname": "/index.html",
+      "at": "2026-10-15T17:31:27.460Z"
+    },
+    {
+      "pathname": "/manifest.webmanifest",
+      "at": "2026-10-15T17:31:27.461Z"
+    },
+    {
+      "pathname": "/monogram.svg",
+      "at": "2026-10-15T17:31:27.463Z"
+    },
+    {
+      "pathname": "/offline.html",
+      "at": "2026-10-15T17:31:27.464Z"
+    },
+    {
+      "pathname": "/offline/",
+      "at": "2026-10-15T17:31:27.465Z"
+    },
+    {
+      "pathname": "/__/auth/test",
+      "at": "2026-10-15T17:31:27.535Z"
+    },
+    {
+      "pathname": "/firestore/test",
+      "at": "2026-10-15T17:31:27.537Z"
+    },
+    {
+      "pathname": "/sw.js",
+      "at": "2026-10-15T17:31:29.420Z"
+    }
+  ],
+  "errors": []
+}

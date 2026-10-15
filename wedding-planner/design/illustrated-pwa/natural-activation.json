@@ -1,0 +1,76 @@
+{
+  "browser": "148.0.7778.96",
+  "build": "6b412cdc59d2ebd91615",
+  "activationProofs": [
+    {
+      "label": "b",
+      "selected": {
+        "url": "http://127.0.0.1:52765/sw.js",
+        "version": "2929ba5233ae60545c74",
+        "state": "installed",
+        "ownsWaiting": true,
+        "ownsActive": false
+      },
+      "version": "2929ba5233ae60545c74",
+      "state": "activated",
+      "activeState": "activated",
+      "waitingState": null,
+      "ownsActive": true,
+      "caches": [
+        "another-app-test-cache",
+        "mahima-mayank-public-v1-2929ba5233ae60545c74"
+      ],
+      "clients": [],
+      "transitions": [
+        {
+          "state": "installed",
+          "atMs": 1
+        },
+        {
+          "state": "activating",
+          "atMs": 33
+        },
+        {
+          "state": "activated",
+          "atMs": 1048
+        }
+      ],
+      "elapsedMs": 1048
+    },
+    {
+      "label": "c",
+      "selected": {
+        "url": "http://127.0.0.1:52765/sw.js",
+        "version": "5a0b2283a71fabc9473e",
+        "state": "installed",
+        "ownsWaiting": true,
+        "ownsActive": false
+      },
+      "version": "5a0b2283a71fabc9473e",
+      "state": "activated",
+      "activeState": "activated",
+      "waitingState": null,
+      "ownsActive": true,
+      "caches": [
+        "another-app-test-cache",
+        "mahima-mayank-public-v1-5a0b2283a71fabc9473e"
+      ],
+      "clients": [],
+      "transitions": [
+        {
+          "state": "installed",
+          "atMs": 0
+        },
+        {
+          "state": "activating",
+          "atMs": 19
+        },
+        {
+          "state": "activated",
+          "atMs": 1021
+        }
+      ],
+      "elapsedMs": 1022
+    }
+  ]
+}

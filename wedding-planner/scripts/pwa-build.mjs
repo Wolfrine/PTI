@@ -80,13 +80,22 @@ async function network(request) {
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3000);
   try{const response=await fetch(request,{signal:controller.signal});if(!response.ok)throw Error('Unavailable');return response;}finally{clearTimeout(timer);}
 }
+function offlineHeaders(response) {
+  const headers=new Headers(response.headers);
+  headers.delete('Content-Length');headers.delete('Content-Encoding');headers.delete('ETag');headers.set('Cache-Control','no-store');
+  return headers;
+}
+async function reconnect() {
+  const response=await(await caches.open(CACHE)).match('/offline.html');if(!response)return Response.error();
+  // cleanUrls can redirect this cached resource. Navigations require a fresh, unredirected response.
+  return new Response(await response.arrayBuffer(),{headers:offlineHeaders(response)});
+}
 async function invitation(event) {
   try{const response=await network(event.request);fallbackClients.delete(event.resultingClientId);return response;}
   catch {
     const cache=await caches.open(CACHE),response=await cache.match('/index.html');if(!response)return Response.error();
     if(event.resultingClientId)fallbackClients.add(event.resultingClientId);
-    const metadata=await cache.match(META),saved=metadata?(await metadata.json()).savedAt:'',headers=new Headers(response.headers);
-    headers.delete('Content-Length');headers.delete('Content-Encoding');headers.delete('ETag');headers.set('Cache-Control','no-store');
+    const metadata=await cache.match(META),saved=metadata?(await metadata.json()).savedAt:'',headers=offlineHeaders(response);
     return new Response((await response.text()).replace('</head>','<meta name="wedding-offline" content="'+saved+'"></head>'),{headers});
   }
 }
@@ -94,7 +103,7 @@ self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);if(event.request.method!=='GET'||url.origin!==self.location.origin||/^\\/(?:__\\/|auth(?:\\/|$)|firestore(?:\\/|$))/.test(url.pathname))return;
   if(event.request.mode==='navigate'){
     if(url.pathname==='/'||url.pathname==='/index.html'){event.respondWith(invitation(event));return;}
-    if(url.pathname==='/family'||url.pathname.startsWith('/family/'))event.respondWith(network(event.request).catch(async()=>await(await caches.open(CACHE)).match('/offline.html')||Response.error()));
+    if(url.pathname==='/family'||url.pathname.startsWith('/family/'))event.respondWith(network(event.request).catch(reconnect));
     return;
   }
   if(!PATHS.has(url.pathname))return;

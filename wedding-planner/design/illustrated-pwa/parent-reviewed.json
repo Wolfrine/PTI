@@ -1,5 +1,5 @@
 {
-  "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+  "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
   "reviewer": "/root",
   "overall": 8.2,
   "scores": {
@@ -14,13 +14,13 @@
     "9dcee73044f88d81c804b353c5a71dce952c8884b9e0ef5a7043efe2ec96fb4f",
     "227a67164a8d2ed0f1400852251e621a66196e4deb1f6fc0bfdb4ca6c30bc3db",
     "c4c2155942845f23d331c042ebf21a667626e4626c23ccccbef313a8178ea0bc",
-    "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531",
-    "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542",
+    "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3",
+    "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517",
     "caeebe4188ce9dd25a04157c17b8fa3dc2d2488b5b2b0cc08ade6b21155a6b66",
-    "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee",
-    "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66",
+    "9c93325e820ee8174c092ab3d04154a58b570772c1cf06ab56c865776a06c1fd",
+    "d96e243f150e275919313e7f79bc8203dd51ed20b0a218b4645c5d5593cdf378",
     "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
-    "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8"
+    "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96"
   ],
-  "reason": "Parent personally inspected all13 exact final renders and independently rehashed all103 candidate entries and image bytes. Food and written hierarchy are clear; private menus remain proposals, uncertainty is visible, phone dialogs fit, names/art stay dominant, and actual offline recovery reads clearly. Social render is the exact decoded1200x630 bitmap, not a recipient-platform test."
+  "reason": "Parent personally viewed all13 newly captured exact images after the clean-URL repair and rehashed103 inputs and every image. Menus/search/comparison remain compact and literal; names/date/countdown dominate the invitation; share/install dialogs fit; the redirected-cache neutral reconnect state is clear and its public recovery link is visible. Only sw.js and pwa-assets.json differ across45 build files; no visual treatment changed. Local six-scenario redirect/Brotli regression passes; actual new production readback is pending. Owner aesthetic acceptance is not inferred."
 }

@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-15T17:42:13.399Z",
+  "sourceSha256": "ece544c6ccc3692eb53083c9fa4ab10677863eb63873fc853dc9898bc0cf528a",
+  "method": "Actual unchanged hosted JPEG in Chromium1200x630; measured document width and natural image dimensions.",
+  "overflow": false,
+  "viewport": {
+    "width": 1200,
+    "height": 630
+  },
+  "image": {
+    "width": 1200,
+    "height": 630
+  }
+}

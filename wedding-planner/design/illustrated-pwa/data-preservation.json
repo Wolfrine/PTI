@@ -1,0 +1,65 @@
+{
+  "recordedAt": "2026-10-15T17:40:52.379Z",
+  "method": "Read-only PTI MCP bounded collection queries compared with the private pre-implementation snapshot; private documents/emails are not included.",
+  "allTenMenuTextsUnchanged": true,
+  "originalMembersUnchanged": true,
+  "allOriginalPlanningIdsRetained": true,
+  "receptionUpdateMatchesHistory": true,
+  "receptionActorCurrentRole": "admin",
+  "receptionUpdateAt": "2026-10-15T17:20:35.071Z",
+  "ownerAdmin": true,
+  "counts": {
+    "events": 10,
+    "decisions": 7,
+    "guests": 0,
+    "attendance": 0,
+    "arrangements": 0,
+    "history": 1,
+    "members": 5,
+    "accessRequests": 5
+  },
+  "comparison": {
+    "events": {
+      "before": 10,
+      "after": 10,
+      "exactIncludingUpdateTime": false
+    },
+    "decisions": {
+      "before": 7,
+      "after": 7,
+      "exactIncludingUpdateTime": true
+    },
+    "guests": {
+      "before": 0,
+      "after": 0,
+      "exactIncludingUpdateTime": true
+    },
+    "attendance": {
+      "before": 0,
+      "after": 0,
+      "exactIncludingUpdateTime": true
+    },
+    "arrangements": {
+      "before": 0,
+      "after": 0,
+      "exactIncludingUpdateTime": true
+    },
+    "history": {
+      "before": 0,
+      "after": 1,
+      "exactIncludingUpdateTime": false
+    },
+    "members": {
+      "before": 2,
+      "after": 5,
+      "exactIncludingUpdateTime": false
+    },
+    "accessRequests": {
+      "before": 2,
+      "after": 5,
+      "exactIncludingUpdateTime": false
+    }
+  },
+  "interpretation": "All ten menu texts, seven decisions and both original membership documents match. Concurrent authenticated admin activity changed Reception date/start/status (revision2) with matching immutable history and added three memberships/access profiles. Preserve these operational changes; this feature implementation performed no live wedding data write.",
+  "limits": "No baseline root-document snapshot was taken; no claim of an unchanged entire database. Readback is a point-in-time observation."
+}

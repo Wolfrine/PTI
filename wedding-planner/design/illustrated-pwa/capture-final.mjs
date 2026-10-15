@@ -48,10 +48,12 @@ const headers = JSON.parse(await readFile('../firebase.wedding.json', 'utf8')).h
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.svg': 'image/svg+xml' };
 const server = createServer((request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  const path = pathname === '/' ? '/index.html' : ['/family', '/family/'].includes(pathname) ? '/family/index.html' : pathname;
+  const path = pathname === '/' ? '/index.html' : ['/family', '/family/'].includes(pathname) ? '/family/index.html' : ['/offline', '/offline/'].includes(pathname) ? '/offline.html' : pathname;
   for (const header of headers) response.setHeader(header.key, header.value);
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Content-Type', mime[extname(path)] || 'application/octet-stream');
+  // Firebase cleanUrls redirects the cached fallback before it is served as a navigation.
+  if (pathname === '/offline.html') { response.writeHead(301, { Location: '/offline/' }); response.end('Redirecting'); return; }
   if (path === '/sw.js') response.setHeader('Service-Worker-Allowed', '/');
   const body = files.get(path);
   if (!body) { response.statusCode = 404; response.end('No such candidate asset'); }

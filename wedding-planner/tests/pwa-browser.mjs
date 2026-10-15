@@ -4,6 +4,7 @@ import {readFile,readdir,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,relative,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
+import {brotliCompressSync} from 'node:zlib';
 import {chromium,expect} from '@playwright/test';
 
 const root=fileURLToPath(new URL('../dist/',import.meta.url)),evidence=fileURLToPath(new URL('../../.wedding-qa/pwa/',import.meta.url)),files=new Map(),results=[],errors=[],networkRequests=[],activationProofs=[];
@@ -26,11 +27,14 @@ const versions={a:version('LOCAL PWA TEST A'),b:version('LOCAL PWA TEST B'),c:ve
 const headers=JSON.parse(await readFile(new URL('../../firebase.wedding.json',import.meta.url),'utf8')).hosting[0].headers[0].headers;
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.svg':'image/svg+xml'};
 const server=createServer((request,response)=>{
-  const pathname=new URL(request.url,'http://localhost').pathname,path=pathname==='/'?'/index.html':pathname==='/family/'||pathname==='/family'?'/family/index.html':pathname;
+  const pathname=new URL(request.url,'http://localhost').pathname,path=pathname==='/'?'/index.html':pathname==='/family/'||pathname==='/family'?'/family/index.html':pathname==='/offline/'?'/offline.html':pathname;
   networkRequests.push({pathname,at:new Date().toISOString()});
   for(const header of headers)response.setHeader(header.key,header.value);response.setHeader('Cache-Control','no-store');response.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');
+  // Firebase cleanUrls/trailingSlash redirects the precached HTML URL before returning compressed bytes.
+  if(pathname==='/offline.html'){response.statusCode=302;response.setHeader('Location','/offline/');response.end();return;}
   if(path.startsWith('/__/')||path.startsWith('/firestore/')){response.end('PRIVATE ENDPOINT TEST');return;}
-  const body=versions[release].snapshot.get(path);if(!body||(broken&&path.startsWith('/art/'))){response.statusCode=404;response.end('Missing local test asset');return;}response.end(body);
+  const body=versions[release].snapshot.get(path);if(!body||(broken&&path.startsWith('/art/'))){response.statusCode=404;response.end('Missing local test asset');return;}
+  if(pathname==='/offline/'){const compressed=brotliCompressSync(body);response.setHeader('Content-Encoding','br');response.setHeader('Content-Length',compressed.length);response.setHeader('ETag','"local-neutral-brotli"');response.end(compressed);return;}response.end(body);
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
 let browser;
@@ -78,6 +82,9 @@ try {
   await page.goto(origin);await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);await page.evaluate(()=>navigator.serviceWorker.ready);
   const cacheEntries=()=>page.evaluate(async()=>{const rows=[];for(const name of await caches.keys())for(const request of await(await caches.open(name)).keys())rows.push({name,url:request.url});return rows;});
   let entries=await cacheEntries();assert.equal(entries.filter(row=>row.name===versions.a.cacheName).length,graph.assets.length+1);assert.ok(!entries.some(row=>/\/family|firebase|\/__\//i.test(row.url)));
+  const neutralCache=await page.evaluate(async cacheName=>{const response=await(await caches.open(cacheName)).match('/offline.html');return{url:response.url,redirected:response.redirected,headers:Object.fromEntries(response.headers),body:await response.text()};},versions.a.cacheName);
+  assert.equal(neutralCache.redirected,true);assert.equal(neutralCache.url,origin+'/offline/');assert.equal(neutralCache.headers['content-encoding'],'br');assert.equal(neutralCache.body,files.get('/offline.html').toString());
+  await writeFile(evidence+'/clean-url-cache.json',JSON.stringify({browser:browser.version(),build:graph.version,neutralCache},null,2));
   await page.evaluate(async()=>{const cache=await caches.open('another-app-test-cache');await cache.put('/other-public-resource',new Response('Other app'));await fetch('/__/auth/test');await fetch('/firestore/test');});
   assert.ok(!(await cacheEntries()).some(row=>/\/__\/|\/firestore\//.test(row.url)));
   results.push('Initial install saves one complete public version; auth/private endpoints never enter CacheStorage');
@@ -86,11 +93,12 @@ try {
   assert.ok(await page.locator('img').evaluateAll(images=>images.every(image=>image.complete&&image.naturalWidth>0)));assert.equal(await page.evaluate(()=>document.fonts.check('16px DM')),true);
   await page.screenshot({path:evidence+'/offline-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:evidence+'/offline-mobile.png',fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   const privateRequestsBefore=networkRequests.filter(request=>request.pathname==='/family/').length;
-  const privateOffline=await page.goto(origin+'/family/');
+  let privateOffline;try{privateOffline=await page.goto(origin+'/family/');}catch(error){await writeFile(evidence+'/clean-url-navigation-failure.json',JSON.stringify({browser:browser.version(),build:graph.version,neutralCache,error:error.message,networkRequests,errors},null,2));throw error;}
   try {await expect(page.locator('h1')).toHaveText('Let’s reconnect.');}
   catch(error){await writeFile(evidence+'/private-offline-response.json',JSON.stringify({url:page.url(),status:privateOffline?.status(),headers:await privateOffline?.allHeaders(),responseBody:await privateOffline?.text(),document:await page.content(),workers:await Promise.all(context.serviceWorkers().map(worker=>worker.evaluate(()=>({online:navigator.onLine,url:location.href})))),browser:await page.evaluate(async()=>({online:navigator.onLine,contentType:document.contentType,controller:!!navigator.serviceWorker.controller,cached:await Promise.all((await caches.keys()).filter(name=>name.startsWith('mahima-mayank-public-')).map(async name=>{const response=await(await caches.open(name)).match('/offline.html');return{name,headers:response?Object.fromEntries(response.headers):null,body:response?await response.text():null};}))})),networkRequests,errors},null,2));throw error;}
   await expect(page.locator('body')).not.toContainText('Continue with Google');await expect(page.locator('a[href="/"]')).toBeVisible();
   assert.equal(privateOffline.status(),200);assert.equal(privateOffline.fromServiceWorker(),true);assert.equal(await privateOffline.text(),files.get('/offline.html').toString());
+  const neutralHeaders=await privateOffline.allHeaders();for(const name of ['content-encoding','content-length','etag'])assert.equal(neutralHeaders[name],undefined,name);assert.equal(neutralHeaders['cache-control'],'no-store');for(const header of headers.filter(header=>header.key!=='Cache-Control'))assert.equal(neutralHeaders[header.key.toLowerCase()],header.value,header.key);
   assert.equal(networkRequests.filter(request=>request.pathname==='/family/').length,privateRequestsBefore,'An explicitly offline family navigation must not fetch a live shell');assert.equal(await page.locator('#workspace, #editor, .guest-list').count(),0);
   await writeFile(evidence+'/private-offline-after-fix.json',JSON.stringify({browser:browser.version(),build:graph.version,status:privateOffline.status(),fromServiceWorker:privateOffline.fromServiceWorker(),headers:await privateOffline.allHeaders(),responseBody:await privateOffline.text(),offline:await page.evaluate(()=>!navigator.onLine),familyNetworkRequestsDuringOffline:networkRequests.filter(request=>request.pathname==='/family/').length-privateRequestsBefore,privateShellElements:await page.locator('#workspace, #editor, .guest-list').count(),errors},null,2));
   results.push('Offline invitation keeps artwork/fonts and a live countdown with saved-time notice; offline family route shows only neutral reconnect guidance');

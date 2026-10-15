@@ -1,5 +1,5 @@
 {
-  "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+  "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
   "candidateVerified": "all source/public/dist/config/fixture/capture entries checked unchanged before and after browser captures",
   "fixtureSha256": "f536666a85d2a3eda08fa29b9b7b99c35610ed65a07c2d7e2ec25a3652875185",
   "description": "Thirteen required real browser renders, no aesthetic score. Family menu data is document-derived DEV fixture only; public/install/share/offline use exact immutable production build. Clipboard denial is simulated; offline caching and route fallback are actual service-worker behavior.",
@@ -219,8 +219,8 @@
         "height": 1000
       },
       "path": "design/illustrated-pwa/final-invitation-1440.png",
-      "sha256": "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531",
-      "route": "http://127.0.0.1:51948/",
+      "sha256": "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3",
+      "route": "http://127.0.0.1:53465/",
       "observedMarker": "Mahima",
       "checks": {
         "overflow": false,
@@ -240,8 +240,8 @@
         "height": 844
       },
       "path": "design/illustrated-pwa/final-invitation-360.png",
-      "sha256": "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542",
-      "route": "http://127.0.0.1:51948/",
+      "sha256": "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517",
+      "route": "http://127.0.0.1:53465/",
       "observedMarker": "Mahima",
       "checks": {
         "overflow": false,
@@ -262,7 +262,7 @@
       },
       "path": "design/illustrated-pwa/final-install-help-390.png",
       "sha256": "caeebe4188ce9dd25a04157c17b8fa3dc2d2488b5b2b0cc08ade6b21155a6b66",
-      "route": "http://127.0.0.1:51948/",
+      "route": "http://127.0.0.1:53465/",
       "observedMarker": "Keep our wedding close.",
       "checks": {
         "overflow": false,
@@ -282,8 +282,8 @@
         "height": 844
       },
       "path": "design/illustrated-pwa/final-share-fallback-390.png",
-      "sha256": "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee",
-      "route": "http://127.0.0.1:51948/",
+      "sha256": "9c93325e820ee8174c092ab3d04154a58b570772c1cf06ab56c865776a06c1fd",
+      "route": "http://127.0.0.1:53465/",
       "observedMarker": "Share the invitation",
       "checks": {
         "overflow": false,
@@ -303,8 +303,8 @@
         "height": 844
       },
       "path": "design/illustrated-pwa/final-saved-offline-390.png",
-      "sha256": "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66",
-      "route": "http://127.0.0.1:51948/",
+      "sha256": "d96e243f150e275919313e7f79bc8203dd51ed20b0a218b4645c5d5593cdf378",
+      "route": "http://127.0.0.1:53465/",
       "observedMarker": "Saved invitation",
       "checks": {
         "overflow": false,
@@ -326,7 +326,7 @@
       },
       "path": "design/illustrated-pwa/final-private-offline-390.png",
       "sha256": "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
-      "route": "http://127.0.0.1:51948/family/",
+      "route": "http://127.0.0.1:53465/family/",
       "observedMarker": "Let’s reconnect.",
       "checks": {
         "overflow": false,
@@ -346,8 +346,8 @@
         "height": 630
       },
       "path": "design/illustrated-pwa/final-social-card-1200.png",
-      "sha256": "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8",
-      "route": "http://127.0.0.1:51948/share/wedding-invitation-v2.jpg",
+      "sha256": "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96",
+      "route": "http://127.0.0.1:53465/share/wedding-invitation-v2.jpg",
       "observedMarker": "1200×630 decoded public JPEG",
       "checks": {
         "naturalImageDimensions": {

@@ -1,5 +1,11 @@
 # Mahima Mishra & Mayank Awasthi — Wedding
 
+## Application
+
+The dedicated invitation and family workspace are implemented in this directory. The wedding Hosting target is `wedding`, using the existing `pti-app-2ab59` Firebase project and the separately named site `mahima-mayank-2027`. See [delivery and verification](IMPLEMENTATION.md) for the current release status and evidence, and [maintainer instructions](DEVELOPMENT.md) for local use, access and publication.
+
+The initial public release is a save-the-date invitation: names and the **planned** 18–20 January window. Event times, venues, a contact and an exact countdown remain absent until the family approves them. The private workspace supports events/menus, decisions, individual guests, event attendance, stays, arrangements, costs, family access and a portable export. Local preview fixtures are synthetic and are excluded from production.
+
 ## Purpose
 
 One personal digital home for Mahima and Mayank's wedding: **a welcoming invitation for guests** and **a private, coherent planning space for family**. It should reduce uncertainty without turning the celebration into a generic project-management product.
@@ -12,15 +18,15 @@ One personal digital home for Mahima and Mayank's wedding: **a welcoming invitat
 ## What we currently know
 
 - **Bride:** Mahima Mishra. **Groom:** Mayank Awasthi (names supplied directly by the family).
-- **Dates appearing on the initial catering notes:** **18–20 January 2027**. Treat these as **working planning dates** until validated against the invitation.
+- **Planned celebrations:** **18–20 January 2027**, reaffirmed directly by the family in the implementation brief. The detailed invitation programme and exact ceremony times still require confirmation.
 - **18 January:** Breakfast, lunch, high tea and **Sangeet evening/dinner** are listed.
 - **19 January:** Breakfast, a **Carnival** food section, lunch and high tea are listed. The Carnival's function status/time is not yet established.
 - **20 January:** Morning breakfast is listed; **guest tiffin boxes** are an open question.
 - A substantial **Reception** menu exists, **without a written date**. Its placement must not be guessed.
 - The intended overall planning journey is **baraat arrival through vidai**; ceremony dates, order, and times are still unconfirmed.
-- **Venues, city, invitation wording, timings, countdown target, guest counts, accommodation, and site name** have not yet been supplied.
+- **Venues, city, invitation wording, timings, countdown target, guest counts and accommodation** have not yet been supplied. The implemented public identity uses the couple's names; final family visual acceptance is still pending.
 
-The [**Wedding Record**](WEDDING_RECORD.md) is the single source for the current timeline, complete proposed menus, provenance, ambiguities, and unresolved details. It is **a working family record, not proof of approved menus, reservations or public invitation details**.
+The [**Wedding Record**](WEDDING_RECORD.md) preserves the initial timeline, complete proposed menus, provenance, ambiguities and unresolved details. The reviewed release imports it once into the private shared workspace; after successful activation, Firestore is the operational record. An existing workspace is never overwritten by later deployments. Neither this initial transcript nor its import is proof of approved menus, reservations or public invitation details.
 
 ## What matters
 
@@ -40,4 +46,4 @@ The [**Wedding Record**](WEDDING_RECORD.md) is the single source for the current
 
 This belongs within **Wolfrine/PTI**, reusing the existing **PTI Firebase project** with a separately named Hosting site. No separate repository or Firebase project is intended.
 
-As information arrives, refine the Wedding Record and the relevant existing audience document; keep one source of truth rather than creating parallel notes. This project record establishes the **intent and evidence**, not the implementation or visual design solution.
+After activation, record evolving arrangements in the shared family workspace. Keep this initial record as provenance and update audience documentation when intent changes. Public snapshots are separately reviewed release artifacts, not an automatic mirror of private edits.

@@ -23,6 +23,8 @@ const approvedPrevious=new Set(['3075107d79eb458b543c467b2acfd91541a2c76e48dbffe
 approvedPrevious.add('72111fbf34b5575a8b42ec434ba732dc80558086fee0d7cf0defdcfe9f3fd38a');
 // Reviewed pre-tracker live rules from 7ddac78; allows the tracker owner-only block to layer onto that exact deployed predecessor.
 approvedPrevious.add('23cc6d79329cafe835d1de837350b1ee5a539a471d1813f24b29b7c958b6893e');
+// Reviewed pre-wedding baseline, PTI 8548e6c. Adds only the isolated wedding namespace.
+approvedPrevious.add('3fcfe61820c4c44cfb59a1e68a14b144475c765438561d9e9b72ce900a77893c');
 if(process.env.APPROVED_PREVIOUS_RULES_FILE){
  const approvedSource=await readFile(process.env.APPROVED_PREVIOUS_RULES_FILE,'utf8');
  approvedPrevious.add(digest(approvedSource));
@@ -33,9 +35,12 @@ await writeFile('personal-activation-report.json',JSON.stringify(report,null,2))
 if(priorHash!==targetHash){
  const ruleset=await request(`${api}/projects/${project}/rulesets`,'POST',{source:{files:[{name:'firestore.rules',content:source}]}});
  const latest=await request(releaseUrl);
- if(latest.rulesetName!==release.rulesetName)throw new Error('Rule release changed during verification; no release update attempted.');
- await request(releaseUrl,'PATCH',{release:{name:release.name,rulesetName:ruleset.name},updateMask:'rulesetName'});
- report.ruleset=ruleset.name;
+ if(latest.rulesetName!==release.rulesetName){
+  const concurrent=await request(`${api}/${latest.rulesetName}`);
+  if(concurrent.source?.files?.length!==1||digest(concurrent.source.files[0].content)!==targetHash)throw new Error('Rule release changed during verification; no release update attempted.');
+  report.ruleset=latest.rulesetName;
+ }else await request(releaseUrl,'PATCH',{release:{name:release.name,rulesetName:ruleset.name},updateMask:'rulesetName'});
+ report.ruleset=report.ruleset||ruleset.name;
 }else report.ruleset=release.rulesetName;
 const configUrl=`https://identitytoolkit.googleapis.com/admin/v2/projects/${project}/config`;
 const config=await request(configUrl);

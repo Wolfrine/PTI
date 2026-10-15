@@ -2,7 +2,9 @@
 
 **Status:** Living working record — **initially planned**, not a final catering order or a confirmed invitation programme.  
 **Recorded from:** Couple names supplied by the user and **five handwritten menu photographs shared on 15 October 2026**. The photographs are conversation attachments, **not files committed to this repository**.  
-**Scope:** All information established so far, including uncertainties; add future confirmed facts here rather than scattering competing versions.
+**Scope:** Initial information established so far, including uncertainties. The implementation handoff below defines where subsequent operational changes belong.
+
+**Implementation handoff:** The release imports these proposals once into `users/{ownerUid}/weddingData/workspace`. After successful activation, that private Firestore workspace is the evolving operational record and this document preserves the original transcription. Redeployments preserve existing records. The family has directly reaffirmed **18–20 January 2027 as the planned celebration window**; this does not confirm individual ceremony times, venues or final menus.
 
 ## 1. Celebration facts and evidence
 
@@ -10,7 +12,7 @@
 | --- | --- | --- |
 | Bride | **Mahima Mishra** | Family-supplied name |
 | Groom | **Mayank Awasthi** | Family-supplied name |
-| Three-day planning window | **18–20 January 2027** | Dates written on catering sheets; **invitation not yet supplied for confirmation** |
+| Three-day planning window | **18–20 January 2027** | Dates on catering sheets, reaffirmed in the family's implementation brief; detailed invitation programme still unconfirmed |
 | Sangeet | **18 January, evening**, with dinner | Explicitly written on a dated menu |
 | Carnival | **19 January**, food section | Written as “Carnival” on the 19 January sheet; standalone function and time **not established** |
 | Reception | A substantial reception menu exists | **Undated** sheet; not assigned to a day |

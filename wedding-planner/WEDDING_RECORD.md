@@ -145,19 +145,21 @@ The sheet labels this **“Carnival”** above lunch; it does not establish a st
 
 ## 4. Cross-event menu review — **observations, not approved changes**
 
-Assess dishes across **all meals and live stalls**, not merely within one category. Whether a repeat is undesirable depends on how many of the same guests attend both services.
+**Review updated: 15 October 2026.** The [source-backed menu review](research/MENU_REVIEW.md) assesses all ten listed meal/snack services, within-service overlaps, repeats across events, flavour/texture profiles, alternatives, pairings and guest-preference evidence. Its 29 sources support reference recipes and research; family/caterer tastings remain pending.
+
+Assess dishes across **all meals and live stalls**, not merely within one category. Same menu block does not establish simultaneous service. The Reception is undated; the importance of repeats depends on actual guest overlap.
 
 | Observation | Where it occurs | Family/caterer decision to consider |
 | --- | --- | --- |
-| Dhokla is repeated | 18 Jan breakfast; 20 Jan breakfast | Keep as a familiar staple or vary one breakfast? |
-| Jhalmuri is repeated across adjacent days | 18 Jan high tea; 19 Jan Carnival counter | Differentiation may be worthwhile if guest groups overlap. |
-| Similar live counters recur | 18 Jan Sangeet and undated Reception: dosa, Hakka noodles, pasta | Decide which occasion should showcase which cuisine, rather than repeating whole counters by default. |
-| Rich sweets/desserts recur | Brownie and mawa bati at Sangeet and Reception; jalebi at 18 Jan breakfast and Reception | Distinguish each occasion's dessert identity while retaining favorites. |
-| Multiple dal-heavy selections | 18 Jan Sangeet includes dal makhani **and** dal tadka; 19 Jan lunch includes dal lapeta, dal fry **and** dal baati churma | 19 Jan deserves particular review because dal baati already provides a substantial dal-based dish. |
-| Paneer/rich-gravy concentration | Paneer mains at 18 Jan lunch, Sangeet, 19 Jan lunch and Reception; paneer starters at Sangeet/Reception | Seek contrast in preparation, spice, textures and lighter choices; distinct dish names do not guarantee variety. |
-| Repeated essentials can be desirable | Tea, coffee, water, fresh salad, roti/rice | Do **not** remove necessary comfort staples just to attain zero repetition. |
+| Multiple potentially separate dal offerings | 19 Jan lunch: dal lapeta (uncertain reading), dal fry and dal baati churma | Confirm names and which dal accompanies baati before removing anything. |
+| Dairy-rich starters and fusion flavour overlap | Sangeet: paneer garlic stick, cheese cigar, Jini dosa, paneer chilli and paneer Punjabi | Compare recipes; choose distinct preparations. A usual Jini recipe includes cheese and Indo-Chinese sauces. |
+| Repeated full counters and specific dishes | Sangeet and undated Reception: Jini dosa, Hakka noodles, fried rice, red/white pasta, Manchow and Blue Lagoon | Consider a street-food/Chinese emphasis at Sangeet and grills, winter regional pairings and selected Italian at Reception. This is a proposal, not an allocation decision. |
+| Rich desserts repeat within and across services | Brownie/mawa bati at both dinners; brownie/waffles and two halwas at Reception; shahi toast/rasmalai at 20 Jan breakfast | Give desserts distinct roles; verify the shahi-toast preparation. Keep chosen favourites intentionally. |
+| Familiar snack/breakfast repetitions | Dhokla on 18/20 Jan; jhalmuri on 18 Jan high tea/19 Jan Carnival | Optional rotation points; not automatic deletions. |
+| Paneer and creamy-gravy concentration | 18 Jan lunch, Sangeet, 19 Jan lunch and Reception | Actual gravy, seasoning and texture matter. Kadhai paneer and malai kofta can contrast; names alone cannot establish it. |
+| Useful repeated essentials and contrasting alternatives | Water, tea/coffee, salad, plain roti/rice; potentially a simpler dal beside a rich dal | Preserve comfort and dietary/texture needs instead of aiming for zero repetition. |
 
-No dish has been removed or replaced by this documentation. The family can confirm intended repetitions, decide alternatives, or preserve the original plan.
+The full review's suggestions remain separate from the initial menu transcript. **No dish has been removed, replaced or approved by this review.** Preserve uncertainty in handwritten terms and the Reception date. Update the transcript only when the family confirms a decision.
 
 ## 5. Information still needed — only when it becomes available
 

@@ -1,0 +1,323 @@
+{
+  "description": "Actual public/family install and share UI; unsupported native-share/clipboard branch and iPhone UA are synthetic browser fixtures. No invitation sent and no real device installation claim.",
+  "states": [
+    {
+      "id": "compare-no-match",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round4-compare-no-match-1440.png",
+      "observedMarker": "No matches in this menu.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "install-account",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round4-install-account-1440.png",
+      "observedMarker": "Install wedding app",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "family-install-help",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round4-family-install-help-1440.png",
+      "observedMarker": "Keep our wedding close.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "invitation-actions",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round4-invitation-actions-1440.png",
+      "observedMarker": "Share invitation",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "share-link-fallback",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round4-share-link-fallback-1440.png",
+      "observedMarker": "Share the invitation",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "public-install-help",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round4-public-install-help-1440.png",
+      "observedMarker": "Keep our wedding close.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "ios-help",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round4-ios-help-1440.png",
+      "observedMarker": "Add to Home Screen",
+      "fixture": "iPhone user-agent simulation; not a physical iOS install",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-no-match",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-compare-no-match-390.png",
+      "observedMarker": "No matches in this menu.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "install-account",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-install-account-390.png",
+      "observedMarker": "Install wedding app",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "family-install-help",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-family-install-help-390.png",
+      "observedMarker": "Keep our wedding close.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "invitation-actions",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-invitation-actions-390.png",
+      "observedMarker": "Share invitation",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "share-link-fallback",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-share-link-fallback-390.png",
+      "observedMarker": "Share the invitation",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "public-install-help",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-public-install-help-390.png",
+      "observedMarker": "Keep our wedding close.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "ios-help",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-ios-help-390.png",
+      "observedMarker": "Add to Home Screen",
+      "fixture": "iPhone user-agent simulation; not a physical iOS install",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-no-match",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-compare-no-match-360.png",
+      "observedMarker": "No matches in this menu.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "install-account",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-install-account-360.png",
+      "observedMarker": "Install wedding app",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "family-install-help",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-family-install-help-360.png",
+      "observedMarker": "Keep our wedding close.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "invitation-actions",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-invitation-actions-360.png",
+      "observedMarker": "Share invitation",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "share-link-fallback",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-share-link-fallback-360.png",
+      "observedMarker": "Share the invitation",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "public-install-help",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-public-install-help-360.png",
+      "observedMarker": "Keep our wedding close.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "ios-help",
+      "route": "http://127.0.0.1:5177/",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round4-ios-help-360.png",
+      "observedMarker": "Add to Home Screen",
+      "fixture": "iPhone user-agent simulation; not a physical iOS install",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    }
+  ]
+}

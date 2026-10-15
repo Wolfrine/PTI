@@ -1,0 +1,10 @@
+import {createHash} from 'node:crypto';
+import {readdir,readFile,writeFile} from 'node:fs/promises';
+const files=[];
+const walk=async directory=>{for(const entry of await readdir(directory,{withFileTypes:true})){const path=directory+'/'+entry.name;if(entry.isDirectory())await walk(path);else files.push(path)}};
+for(const directory of ['src','public','dist'])await walk(directory);
+files.push('index.html','family/index.html','offline.html','vite.config.ts','package.json','package-lock.json','scripts/pwa-build.mjs','scripts/pwa-build.d.mts','scripts/seed-record.mjs','WEDDING_RECORD.md','tests/fixtures.mjs','design/illustrated-pwa/capture-final.mjs','../firebase.wedding.json');
+const entries=[];for(const path of files.sort())entries.push({path,sha256:createHash('sha256').update(await readFile(path)).digest('hex')});
+const fingerprint=createHash('sha256').update(JSON.stringify(entries)).digest('hex');
+await writeFile('design/illustrated-pwa/build-fingerprint.json',JSON.stringify({fingerprint,description:'Exact source/public/build and Hosting policy bytes plus document-derived DEV fixture and final capture logic; no deployment or aesthetic claim.',entries},null,2)+'\n');
+console.log(fingerprint);

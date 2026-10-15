@@ -1,0 +1,7 @@
+# Artwork and sharing provenance
+
+The 13 food motifs were generated with the built-in image generation tool for this wedding. Full prompts, master/public SHA-256 digests, dimensions and sizes are retained in [art-manifest.json](art-manifest.json). Originals are preserved under art-originals; production WebPs are256×256 with transparency,17–26KB each. Parent personally inspected every motif. They depict food families; they are not caterer photographs, exact plating, ingredient lists or dietary guarantees. Unknown/uncertain readings use the neutral setting motif.
+
+The app icon extends the existing M-and-leaf identity using native SVG paths in icon-master.svg, rasterized to opaque192/512PNG and180ApplePNG. The512maskable variant pads its artwork within the safe area. No font or remote image dependency exists in these icons.
+
+The social artwork is native HTML/type composition in share-card.html over the existing original imagined Botanical scene. Run `node scripts/share-image.mjs` from wedding-planner to regenerate public/share/wedding-invitation-v2.jpg. The image is1200×630JPEG and under250KB, with full names and the planned18–20January2027 window. It contains no countdown, ceremony/venue assertion or private planning data. Metadata uses its absolute HTTPS URL, including on the generic family login page. Platform caching and recipient crop decisions remain outside the site; a real WhatsApp recipient preview still requires device validation.

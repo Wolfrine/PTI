@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as pause } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
@@ -34,16 +35,13 @@ try {
     deviceScaleFactor: 1,
     reducedMotion: 'reduce',
   });
-  await page.goto(origin);
+  await page.goto(origin + '/design/illustrated-pwa/share-card.html');
   await page.evaluate(() => document.fonts.ready);
-  await page.addStyleTag({
-    content:
-      '.skip-link,.public-header,.public-celebration,.guest-footer,.countdown{display:none!important}body{margin:0!important}.guest-main{max-width:none!important;padding:0!important}.garden-hero{height:630px!important}.invitation-copy{max-width:59%!important;padding:83px 30px 35px 45px!important}.invitation-copy h1{font-size:66px!important}.invitation-copy>.eyebrow{font-size:12px!important}.hero-date{font-size:31px!important}.guest-welcome{font-size:23px!important}',
-  });
   await page.waitForLoadState('networkidle');
-  await page.screenshot({ path: `${cwd}/public/share.png` });
+  await mkdir(`${cwd}/public/share`, { recursive: true });
+  await page.screenshot({ path: `${cwd}/public/share/wedding-invitation-v2.jpg`, type: 'jpeg', quality: 85 });
   console.log(
-    'Generated public/share.png from the reviewed invitation, with approved names and planned dates.',
+    'Generated the 1200×630 versioned social image with names and planned dates; no live countdown or private details.',
   );
 } finally {
   if (browser) await browser.close();

@@ -14,13 +14,17 @@ import {
   type EventRecord,
   type GuestRecord,
 } from './model';
-import { brand, leaf, icon, badge, menuMarkup } from './presentation';
+import { brand, leaf, icon, badge, menuMarkup, foodIllustration } from './presentation';
+import {parseMenu,filterMenu} from './menu';
+import {foodArt} from './food-art';
+import {startPwa} from './pwa';
 import { ownerUid } from './config';
 const root = document.querySelector<HTMLDivElement>('#app')!,
   dialog = document.querySelector<HTMLDialogElement>('#editor')!;
 let current: StoreState,
   guestSearch = '',
   dayFilter = 'all',
+  menuSearch = '',
   taskFilter = 'open',
   compareA = '',
   compareB = '',
@@ -73,8 +77,12 @@ const stamp = (r: WeddingRecord) =>
   `<details class="record-source"><summary>Source & update details</summary>${'source' in r && r.source ? `<p>${esc(r.source)}</p>` : ''}<p>Updated ${esc(formatTime(r.updatedAt))} · revision ${r.revision}</p></details>`;
 const fact = (label: string, value: string) =>
   `<div${value.length > 22 ? ' class="fact-long"' : ''}><dt>${label}</dt><dd>${esc(value)}</dd></div>`;
+const menuSearchbar = () => `<div class="menu-searchbar"><label for="menu-search" class="sr-only">Search dishes or categories</label><input id="menu-search" type="search" placeholder="Find a dish or category" value="${esc(menuSearch)}" autocomplete="off">${menuSearch ? '<button type="button" class="text-button" data-clear-menu>Clear</button>' : ''}</div>`;
+const serviceIllustration = (event: EventRecord) => foodArt(event.title).key === 'setting'
+  ? foodIllustration('',parseMenu(event.menuText).sections[0]?.title || '', 'service-art')
+  : foodIllustration(event.title,'','service-art');
 function header() {
-  return `<header class="app-header">${brand('#/home')}<a class="family-brand" href="#/home"><strong>Family workspace</strong><span>MAHIMA & MAYANK</span></a><a class="invitation-link" href="/">The invitation ↗</a><details class="account-menu"><summary aria-label="Family account menu">${esc((current.user?.displayName || current.user?.email || 'F').slice(0, 1).toUpperCase())}</summary><div class="account-menu-panel"><p>${esc(current.user?.displayName || 'Family member')}<small>${current.isAdmin ? 'Admin' : current.canEdit ? 'Family' : 'Viewer'}</small></p>${current.isAdmin ? '<a class="text-button" href="#/access">Manage family access</a>' : ''}<button class="text-button" data-action="export">Export private plan</button><button class="text-button" data-action="sign-out">Sign out</button></div></details></header>`;
+  return `<header class="app-header">${brand('#/home')}<a class="family-brand" href="#/home"><strong>Family workspace</strong><span>MAHIMA & MAYANK</span></a><a class="invitation-link" href="/">The invitation ↗</a><details class="account-menu"><summary aria-label="Family account menu">${esc((current.user?.displayName || current.user?.email || 'F').slice(0, 1).toUpperCase())}</summary><div class="account-menu-panel"><p>${esc(current.user?.displayName || 'Family member')}<small>${current.isAdmin ? 'Admin' : current.canEdit ? 'Family' : 'Viewer'}</small></p>${current.isAdmin ? '<a class="text-button" href="#/access">Manage family access</a>' : ''}<button class="text-button" type="button" data-pwa-install>Install wedding app</button><button class="text-button" data-action="export">Export private plan</button><button class="text-button" data-action="sign-out">Sign out</button></div></details></header>`;
 }
 function accessPage() {
   if (!current.isAdmin) return `${crumbs([['Family access']])}${emptyView('Admins manage family access.', 'Your account can open the plan with its current role. Speak with an admin if your access needs to change.', '<a class="button button-secondary" href="#/home">Back to family home</a>')}`;
@@ -180,30 +188,30 @@ function catering() {
   );
   if (dayFilter !== 'all' && !dates.includes(dayFilter)) dayFilter = 'all';
   const filtered = services.filter(
-      (e) => dayFilter === 'all' || e.date === dayFilter,
+      (e) => (dayFilter === 'all' || e.date === dayFilter) && (!menuSearch.trim() || filterMenu(parseMenu(e.menuText),menuSearch).length || e.title.toLocaleLowerCase().includes(menuSearch.toLocaleLowerCase())),
     ),
     groups = new Map<string, EventRecord[]>();
   for (const e of filtered)
     groups.set(e.date, [...(groups.get(e.date) || []), e]);
-  return `${crumbs([['Catering']])}<div class="catering-head">${pageHead('Catering.', 'Meals, menus & food counters.', add('events', 'Add service', 'service'))}</div><div class="list-toolbar"><div class="filter-tabs" aria-label="Filter catering by day"><button data-day="all" class="${dayFilter === 'all' ? 'selected' : ''}">Whole stay</button>${dates.map((d) => `<button data-day="${d}" class="${dayFilter === d ? 'selected' : ''}">${d ? esc(new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'))) : 'Undated'}</button>`).join('')}</div><a class="text-button" href="#/catering/compare">Compare menus ↗</a></div>${
+  return `${crumbs([['Catering']])}<div class="catering-head">${pageHead('Catering.', 'Meals, menus & food counters.', add('events', 'Add service', 'service'))}</div><div class="list-toolbar"><div class="filter-tabs" aria-label="Filter catering by day"><button data-day="all" class="${dayFilter === 'all' ? 'selected' : ''}">Whole stay</button>${dates.map((d) => `<button data-day="${d}" class="${dayFilter === d ? 'selected' : ''}">${d ? esc(new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'))) : 'Undated'}</button>`).join('')}</div><a class="text-button" href="#/catering/compare">Compare menus ↗</a></div>${menuSearchbar()}${
     filtered.length
       ? `<div class="catering-days">${[...groups]
           .map(([date, rows]) => {
             const same = rows.every((e) => e.status === rows[0].status);
-            return `<section class="catering-day panel"><div class="day-heading"><h2>${esc(date ? formatDate(date) : 'Date to confirm')}</h2>${same ? badge(rows[0].status) : ''}</div>${rows.map((e) => `<a class="catering-row" href="${idPath('catering', e.id)}"><span class="service-icon">${icon('food')}</span><div><h3>${esc(e.title)}</h3><p>${e.kind === 'food-counter' ? 'Food counter' : e.kind === 'meal' ? 'Meal' : 'Function & catering'} · ${e.menuText ? 'Menu recorded' : 'Menu to plan'}</p></div>${same ? '' : badge(e.status)}<span class="row-arrow" aria-hidden="true">›</span></a>`).join('')}</section>`;
+            return `<section class="catering-day panel"><div class="day-heading"><h2>${esc(date ? formatDate(date) : 'Date to confirm')}</h2>${same ? badge(rows[0].status) : ''}</div>${rows.map((e) => `<a class="catering-row" href="${idPath('catering', e.id)}">${serviceIllustration(e)}<div><h3>${esc(e.title)}</h3><p>${e.kind === 'food-counter' ? 'Food counter' : e.kind === 'meal' ? 'Meal' : 'Function & catering'} · ${e.menuText ? 'Menu recorded' : 'Menu to plan'}</p></div>${same ? '' : badge(e.status)}<span class="row-arrow" aria-hidden="true">›</span></a>`).join('')}</section>`;
           })
           .join('')}</div>`
       : emptyView(
-          'A thoughtful meal starts here.',
-          'Record a proposed meal or food counter, then plan its menu.',
-          add('events', 'Add a service', 'service'),
+          menuSearch ? 'No matching meals or menus.' : 'A thoughtful meal starts here.',
+          menuSearch ? 'Try another dish or category, or clear the search.' : 'Record a proposed meal or food counter, then plan its menu.',
+          menuSearch ? '<button class="button button-secondary" data-clear-menu>Clear search</button>' : add('events', 'Add a service', 'service'),
         )
   }`;
 }
 function mealDetail(id: string) {
   const e = current.records.events.find((e) => e.id === id);
   if (!e) return missing('Catering', 'catering');
-  return `${crumbs([['Catering', href('catering')], ['Menu']])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="meal-layout"><section class="reading-menu panel"><div class="section-heading"><h2>Menu</h2>${edit('events', e.id, 'menu', 'Edit menu')}</div>${menuMarkup(e.menuText)}</section><aside class="detail-aside"><section class="service-context panel"><h2>Service details</h2>${e.startAt || e.venue || e.owner ? `<dl class="facts">${fact('Service time', e.startAt ? formatTime(e.startAt) : 'To confirm')}${fact('Venue', e.venue || 'To confirm')}${fact('Family owner', e.owner || 'To assign')}</dl>` : '<p>Timing, venue and family owner to confirm.</p>'}${edit('events', e.id, 'timing', 'Edit timing & venue')}</section><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>${current.canEdit ? 'Manage attendance' : 'View attendance'}</span><span aria-hidden="true">↗</span></a>${relatedArrangements(e.id)}${e.notes ? `<details class="context-notes"><summary>Planning notes</summary><p>${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</details>` : ''}${stamp(e)}</aside></div>`;
+  return `${crumbs([['Catering', href('catering')], ['Menu']])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="meal-layout"><section class="reading-menu panel"><div class="section-heading"><h2>Menu</h2>${edit('events', e.id, 'menu', 'Edit menu')}</div>${menuSearchbar()}${menuMarkup(e.menuText,{query:menuSearch})}<p class="art-caption">Illustrations are indicative; the written menu is the reference.</p><details class="recorded-menu"><summary>Menu as recorded</summary><pre>${esc(e.menuText)}</pre></details></section><aside class="detail-aside"><section class="service-context panel"><h2>Service details</h2>${e.startAt || e.venue || e.owner ? `<dl class="facts">${fact('Service time', e.startAt ? formatTime(e.startAt) : 'To confirm')}${fact('Venue', e.venue || 'To confirm')}${fact('Family owner', e.owner || 'To assign')}</dl>` : '<p>Timing, venue and family owner to confirm.</p>'}${edit('events', e.id, 'timing', 'Edit timing & venue')}</section><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>${current.canEdit ? 'Manage attendance' : 'View attendance'}</span><span aria-hidden="true">↗</span></a>${relatedArrangements(e.id)}${e.notes ? `<details class="context-notes"><summary>Planning notes</summary><p>${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</details>` : ''}${stamp(e)}</aside></div>`;
 }
 function occasionDetail(id: string) {
   const e = current.records.events.find((e) => e.id === id);
@@ -228,8 +236,8 @@ function compareMenus() {
     events.find((e) => e.id === compareB),
   ].filter((e): e is EventRecord => !!e);
   const selector = (key: string, value: string, label: string) =>
-    `<label>${label}<select data-compare="${key}" aria-label="${label}">${events.map((e) => `<option value="${esc(e.id)}"${e.id === value ? ' selected' : ''}>${esc(e.title)} · ${esc(e.date ? formatDate(e.date) : 'Undated')}</option>`).join('')}</select></label>`;
-  return `${crumbs([['Catering', href('catering')], ['Compare menus']])}${pageHead('Two menus, together.', 'Choose the meals or occasions you want to compare.')}<div class="compare-controls">${selector('a', compareA, 'First menu')}${selector('b', compareB, 'Compare with')}</div><div class="comparison-grid">${selected.map((e) => `<section class="panel reading-menu"><div class="record-topline"><span>${esc(e.date ? formatDate(e.date) : 'Date to confirm')}</span>${badge(e.status)}</div><h2><a href="${idPath('catering', e.id)}">${esc(e.title)} ↗</a></h2>${menuMarkup(e.menuText)}</section>`).join('')}</div>`;
+    `<label>${label}<select data-compare="${key}" aria-label="${label}">${events.map((e) => `<option value="${esc(e.id)}"${e.id === value ? ' selected' : ''}>${esc(e.title)} · ${esc(e.date ? formatDate(e.date) : 'Undated')}</option>`).join('')}</select><small class="compare-selected-date">${esc(events.find(e=>e.id===value)?.date ? formatDate(events.find(e=>e.id===value)!.date) : 'Date to confirm')}</small></label>`;
+  return `${crumbs([['Catering', href('catering')], ['Compare menus']])}${pageHead('Two menus, together.', 'Choose the meals or occasions you want to compare.')}<div class="compare-controls">${selector('a', compareA, 'First menu')}${selector('b', compareB, 'Compare with')}</div>${menuSearchbar()}<div class="comparison-grid">${selected.map((e) => `<section class="panel reading-menu"><div class="record-topline"><span>${esc(e.date ? formatDate(e.date) : 'Date to confirm')}</span>${badge(e.status)}</div><h2><a href="${idPath('catering', e.id)}">${esc(e.title)} ↗</a></h2>${menuMarkup(e.menuText,{query:menuSearch,compact:true})}</section>`).join('')}</div>`;
 }
 function guests() {
   const all = current.records.guests,
@@ -697,6 +705,16 @@ function toast(message: string) {
   toastTimer = setTimeout(() => node.classList.remove('visible'), 2400);
 }
 function bind() {
+  root.querySelector<HTMLInputElement>('#menu-search')?.addEventListener('input',event=>{
+    const input=event.currentTarget as HTMLInputElement;
+    const start=input.selectionStart,end=input.selectionEnd;
+    menuSearch=input.value; render();
+    const next=root.querySelector<HTMLInputElement>('#menu-search')!;
+    next.focus();next.setSelectionRange(start,end);
+  });
+  root.querySelectorAll<HTMLButtonElement>('[data-clear-menu]').forEach(button=>button.addEventListener('click',()=>{
+    menuSearch='';render();root.querySelector<HTMLInputElement>('#menu-search')?.focus();
+  }));
   root.querySelectorAll<HTMLButtonElement>('[data-role-reset]').forEach(button => button.addEventListener('click', () => {
     const email = button.dataset.roleReset!;
     roleDrafts.delete(email); roleErrors.delete(email); render();
@@ -896,4 +914,5 @@ addEventListener('hashchange', () => {
   window.scrollTo({ top: 0, behavior: 'instant' });
 });
 if (!location.hash) history.replaceState(null, '', '#/home');
+startPwa();
 void store.start();

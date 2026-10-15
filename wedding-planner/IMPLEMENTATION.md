@@ -1,3 +1,19 @@
+# Illustrated menus, sharing and one wedding PWA — 15 October 2026
+
+Implementation branch: codex/wedding-illustrated-pwa, base77f2d11. Release verification is in progress; deployment is not yet claimed. The existing PTI project, wedding site, roles and operational records remain the foundation.
+
+Catering now projects the complete saved menu into compact illustrated category/item lists, with one dish/category search and collapsed selected-pair comparison. Thirteen original generated food-family motifs are indicative. The literal menu remains authoritative; uncertain names retain a neutral cue and explicit verification wording. No record, migration, rule or Auth-flow change belongs to this extension.
+
+Sharing uses a dedicated1200×630versioned Botanical JPEG, static OG/Twitter metadata in both entry pages, and native share/copy/manual-link fallback that always sends the canonical public invitation URL. Native sharing is simulated in tests; actual WhatsApp recipient rendering remains a device check.
+
+One manifest/app identity serves the invitation and family entry. Only the complete hash-verified public invitation is saved offline, with saved-time guidance and its live countdown. Offline family navigation shows a neutral reconnect page; private records, Auth and Firebase application chunks are outside the cache. Updates wait for wedding windows to close, preserving open drafts. Real phone installation and human Google popup login remain unverified.
+
+Observed local checks so far:17model/menu tests,13wedding rules,9Venture shared-rule regressions, actual Auth/Firestore collaboration/conflict/roles/draft tests,12existing browser scenarios, complete10-menu/search/compare browser projection, sharing metadata/fallback checks,6PWA offline/update scenarios, production dependency audit with0reported vulnerabilities. Final combined checks follow the frozen candidate. Shared PTI Angular build passes with existing stylesheet-budget warnings; its existing Karma baseline remains1pass/8missing-Firebase-provider failures.
+
+Design, artwork/provenance, independent critique and exact candidate evidence are under [illustrated-pwa](design/illustrated-pwa/BRIEF.md). The bounded refinement retains the Botanical direction, with independent designer/critic and an actual gpt-6-astra stronger pass in round3. Agent review does not establish owner aesthetic acceptance.
+
+---
+
 # Countdown and access management extension — 15 October 2026
 
 **Live and verified:** [PR #39](https://github.com/Wolfrine/PTI/pull/39), merge `079b76e`; [successful release](https://github.com/Wolfrine/PTI/actions/runs/38749501396). All 64 live permission checks and 19 hosted-asset checks pass. PTI MCP readback confirms protected owner Admin and unchanged 17 planning records. The release record includes the Windows/CI carriage-return-only build binding and hosted desktop/mobile inspection.

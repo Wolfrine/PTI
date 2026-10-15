@@ -46,6 +46,10 @@ for (const path of [
   '/design/botanical/artwork-master.png',
   '/design/concepts/01-romantic-botanical.png',
   '/scripts/seed-record.mjs',
+  '/design/illustrated-pwa/share-card.html',
+  '/design/illustrated-pwa/art-originals/curry.png',
+  '/src/pwa.ts',
+  '/scripts/pwa-build.mjs',
 ]) {
   const response = await fetch(origin + path, {
     signal: AbortSignal.timeout(20000),
@@ -53,6 +57,12 @@ for (const path of [
   if (response.status !== 404)
     throw Error(`Private/development source unexpectedly served: ${path}`);
 }
+for (const [path,pattern] of [['/sw.js',/no-cache.*no-store/],['/manifest.webmanifest',/no-cache/]]) {
+  const response = await fetch(origin + path, {cache:'no-store'});
+  if (!response.ok || !pattern.test(response.headers.get('cache-control') || '')) throw Error(`Stale PWA response policy: ${path}`);
+}
+const social = await fetch(origin + '/share/wedding-invitation-v2.jpg');
+if (!social.ok || !/image\/jpeg/.test(social.headers.get('content-type') || '')) throw Error('Social image is not publicly fetchable as JPEG.');
 const report = JSON.parse(
   await readFile('wedding-activation-report.json', 'utf8'),
 );

@@ -53,4 +53,6 @@ Live authorization checks use temporary synthetic accounts and an isolated verif
 
 Hosting-only recovery can release a previous reviewed wedding build through `hosting:wedding`. Do not restore older shared rules that omit wedding isolation while private data exists. Before any rule rollback, retain `weddingData` exclusion and its reviewed access block and rerun security regressions. No service worker caches obsolete invitation details.
 
+CI builds committed LF text. A Windows working tree may produce CR-only differences in HTML, SVG and license files during a byte comparison. For a clean comparison, archive with `git -c core.autocrlf=false archive HEAD wedding-planner`, build that source with the locked dependencies, and compare its `dist` with Hosting. The countdown/access release retains both fingerprints and the exact CR-only deltas in `design/countdown-access/deployment-binding.json`; original screenshot acceptance keeps its own byte binding.
+
 Current fonts are self-hosted Latin subsets with licenses in `public/fonts`. Add an appropriate licensed Devanagari font/subset before introducing Hindi copy; obtain family-approved text first.

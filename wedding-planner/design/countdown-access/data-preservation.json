@@ -1,0 +1,38 @@
+{
+  "source": "Fresh account-scoped PTI MCP queries before provisioning and after the live owner bootstrap; arrays/objects canonically compared including document metadata.",
+  "collections": [
+    {
+      "name": "events",
+      "count": 10,
+      "unchanged": true
+    },
+    {
+      "name": "guests",
+      "count": 0,
+      "unchanged": true
+    },
+    {
+      "name": "arrangements",
+      "count": 0,
+      "unchanged": true
+    },
+    {
+      "name": "decisions",
+      "count": 7,
+      "unchanged": true
+    },
+    {
+      "name": "history",
+      "count": 0,
+      "unchanged": true
+    }
+  ],
+  "protectedOwner": {
+    "uid": "5PbKbpGf3AbarNrp6pyqJ5C5Ziu2",
+    "rootCanonicalEmailMatchesProfile": true,
+    "matchingMembershipRole": "admin",
+    "bootstrapLoginTimestampsEmpty": true,
+    "identityAuthority": "Enabled, verified Firebase Auth identity checked in successful release run38749501396; not the broad legacy PTI user document."
+  },
+  "scope": "No private record contents or owner email retained in GitHub. Registration directory changed from empty to the protected owner profile; membership directory changed from empty to its pinned Admin member. Existing event/decision/history documents were not reseeded."
+}

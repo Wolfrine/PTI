@@ -1,5 +1,7 @@
 # Countdown and access management extension — 15 October 2026
 
+**Live and verified:** [PR #39](https://github.com/Wolfrine/PTI/pull/39), merge `079b76e`; [successful release](https://github.com/Wolfrine/PTI/actions/runs/38749501396). All 64 live permission checks and 19 hosted-asset checks pass. PTI MCP readback confirms protected owner Admin and unchanged 17 planning records. The release record includes the Windows/CI carriage-return-only build binding and hosted desktop/mobile inspection.
+
 The current extension preserves the Botanical direction and adds the requested centred countdown plus a dedicated admin access page. The timer explicitly targets the start of **18 January 2027 at midnight IST**; this is an implementation date boundary, not a family-confirmed ceremony time. Verified family-site sign-ins register themselves, start Pending, and appear to admins for role assignment. Viewer reads; Family edits; Admin also manages access; Blocked/Pending cannot read the plan. The connected owner's UID remains protected Admin, backed by an authoritative Firebase Auth bootstrap and immutable owner-email key.
 
 Current evidence: [bounded design and exact candidate](design/countdown-access/BRIEF.md), [independent visual critique](design/countdown-access/CRITIQUE.md), and [security review](design/countdown-access/SECURITY.md). Earlier design scores and releases below are historical; they do not accept this changed candidate.

@@ -1,6 +1,6 @@
 # Countdown and family access — release record
 
-Status: implemented and locally verified; cloud release pending. Branch `codex/wedding-countdown-access`, based on main `075b1e3`.
+Status: **merged, live and verified**. [PR #39](https://github.com/Wolfrine/PTI/pull/39), merge `079b76ef3efa19157bfd6329e3b228e5f943b217`; [successful wedding release](https://github.com/Wolfrine/PTI/actions/runs/38749501396). Same PTI project, default database and wedding Hosting target. Live [invitation](https://mahima-mayank.web.app/) and [family access management](https://mahima-mayank.web.app/family/#/access).
 
 The invitation retains the Botanical artwork and concise journey, with a centred live countdown to the explicitly labelled **18 January 2027, midnight IST**. This is the planned date's boundary, not a ceremony time. No event times, venues, contact or menus were newly published.
 
@@ -18,4 +18,14 @@ The existing connected owner UID is always Admin. Provisioning obtains its canon
 
 Family screenshot identities/errors/roles are browser-only synthetic fixtures. Interactive authorization tests use isolated synthetic accounts. No real wedding records were used as test fixtures or overwritten. A real human Google popup, actual native BFCache navigation and full accessibility conformance were not tested. Controlled page events verify countdown stop/resume; static screenshots do not prove motion or user comprehension.
 
-Live release, protected-owner readback, hosted-byte comparison and before/after operational-record comparison will be recorded after deployment.
+## Live verification
+
+The main release passed all **64 live registration/role/collaboration/owner-protection checks** using isolated synthetic accounts, then cleaned them up. Firebase Auth verified the actual owner's enabled email and pinned Admin before publishing the new rules. Google provider/domain checks passed; a human popup was not tested. Shared rules advanced from reviewed `b1c3ca…` to `4dadb9232ddfa27ca6f09bae844adb8cff3d3a4854a6d034a9f221d1d1525c0b`; the operational workspace was not reseeded.
+
+Independent PTI MCP readback confirmed the protected owner UID, canonical owner email, matching Admin membership and owner identity profile. Bootstrap timestamps remain empty, correctly recording no invented family-site login. Fresh before/after queries matched all document fields and metadata for **10 events, 7 decisions, zero guests, zero arrangements and zero history records**. Only owner/access metadata was added.
+
+The release compared all **19 hosted assets** with its CI build and verified private source routes return 404. Parent separately rendered the hosted invitation at 1440/390/360 and signed-out `/family/#/access` at 1440/390: countdown target, ticking, centring and overflow checks pass, with no page/console errors. Parent personally viewed live invitation1440/390 and sign-in390 pixels. Authenticated layout/role behavior remains covered by the identical runtime bundles and synthetic emulator/live authorization tests.
+
+The first independent byte comparison against the Windows working build failed: Git checkout and HTML/font-license/SVG output contained carriage returns absent in Linux CI. A clean archive with `core.autocrlf=false` was rebuilt from the committed tree and **all 19 files matched live exactly**. [Deployment binding](deployment-binding.json) retains the canonical candidate `8ab23c6fcef64a3ae46a13e9d990aa2c92fedefa22943d0a1f35425e96f6abdf`, original reviewed candidate and every CR-only delta. All executable/style bundles and artwork are byte-identical; no old screenshot is relabelled as another byte candidate. This was a transport-whitespace verification correction, with fresh hosted visual checks.
+
+Wedding, shared PTI/MCP and default Firebase deployment CI passed. Personal's tests/build/browser checks passed, but its evidence upload failed because GitHub artifact quota is exhausted. Morsel likewise failed at Save visual evidence for that quota. The wedding workflow's optional uploads warned for the same reason and activation evidence remains in its job log. Two existing SEFPO workflow-definition failures remain outside this wedding change. The unchanged Angular missing-provider failures described above remain. Final family aesthetic approval and a real human Google popup are still unverified.

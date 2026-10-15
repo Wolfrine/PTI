@@ -6,7 +6,7 @@ Research date: **15 October 2026**. Status: **research complete for an initial d
 
 Chat records the base intent; Work researches the domain and develops evaluation material; Codex implements and supplies execution evidence. This pack supports that division. It adds no application code, infrastructure, bookings or deployment.
 
-Start with the existing [project intent](../README.md), [guest intent](../guest-experience/README.md) and [family intent](../family-workspace/README.md). Read the [domain guide](DOMAIN_GUIDE.md) for the subject at hand and [eval guide](../evals/README.md) before evaluating. The machine-readable [cases](../evals/cases.json) contain synthetic situations and expected outcomes.
+Start with the [project intent](../README.md) and [live wedding record](../WEDDING_RECORD.md) for actual family-supplied facts; then the [guest intent](../guest-experience/README.md) and [family intent](../family-workspace/README.md). Read the [domain guide](DOMAIN_GUIDE.md) for the subject at hand and [eval guide](../evals/README.md) before evaluating. The machine-readable [cases](../evals/cases.json) contain synthetic situations and expected outcomes.
 
 **The coverage map is a research reference, not a feature backlog or a requirement to create one page per topic.** A family can handle an arrangement outside the app, mark it irrelevant, or express it through a simple note. Evaluate whether the intended outcome is supported with reasonable effort. Keep the celebration lightweight.
 
@@ -14,9 +14,9 @@ Start with the existing [project intent](../README.md), [guest intent](../guest-
 
 | Established by the current repository | Still unknown; must come from invitation/family/vendor evidence |
 | --- | --- |
-| Three-day wedding; family scope from baraat arrival through vidai | Couple's names and spellings, city, dates, exact functions and venues |
+| Three-day wedding; bride **Mahima Mishra**, groom **Mayank Awasthi**; catering sheets dated **18–20 Jan 2027**; **Sangeet on 18 Jan evening** | Dates and programme are not yet invitation-verified; city, venues, other ceremony timings and Reception date unknown |
 | Public living invitation; authorized family workspace | Traditions, officiant-confirmed rites/order/timings and each event's audience |
-| Food considered across days, meals and stalls together | Wedding-wide food policy, dietary needs, caterer, menus and meal counts |
+| [Initial handwritten catering menus](../WEDDING_RECORD.md) for 18–20 Jan and an **undated Reception**; stalls and meals considered together | Final selections, wedding-wide food policy, dietary needs, caterer and per-meal counts are unconfirmed |
 | Existing PTI repository and Firebase project; separate public identity | Guest groups, travel, stay dates, hotel policies, sponsor/payment arrangements |
 | Personal, simple, connected planning | Budget, vendors, family owners, publication decisions, site name |
 

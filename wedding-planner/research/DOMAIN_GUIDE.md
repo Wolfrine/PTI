@@ -1,6 +1,6 @@
 # Indian wedding domain guide
 
-Research baseline: 15 October 2026. Authority: [project intent](../README.md). Source IDs and limitations: [research index](README.md). This guide covers the celebration before arrival, during the three days, and through departure and settlement. It supplies questions and options; it does not select this family's arrangements or prescribe application modules.
+Research baseline: 15 October 2026. Authority: [project intent](../README.md). Source IDs and limitations: [research index](README.md). This guide covers the celebration before arrival, during the three days, and through departure and settlement. For this family's actual evolving dates, events and draft menus, use the [Wedding Record](../WEDDING_RECORD.md) rather than the examples in this guide. It supplies questions and options; it does not select this family's arrangements or prescribe application modules.
 
 ## 1. The guest's complete journey
 

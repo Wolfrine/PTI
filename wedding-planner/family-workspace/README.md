@@ -2,14 +2,24 @@
 
 ## Intent
 
-A private place where authorized family members share a reliable picture of the complete three-day wedding, from the **baraat's arrival through the vidai**.
+A private home for family members coordinating **Mahima Mishra and Mayank Awasthi's** wedding, covering the three-day stay and events from **baraat arrival through vidai** without assuming a generic ceremony sequence.
 
-The experience should make a complex, evolving celebration feel understandable: the relationship between ceremonies, days, timings, guests, food, people, vendors, responsibilities, arrangements, and decisions; what is settled; what is still uncertain; and what deserves attention.
+Family members should share one understandable view of events, guest hospitality, catering, venues, travel/stays, vendors, responsibilities, changing decisions and unresolved needs—so preparation feels coordinated rather than fragmented.
 
-Catering is an important example of the intended intelligence. Food choices should be understood **across days and occasions, including stalls and full meals together**, so combinations are complementary and avoid unnecessary repetition rather than merely being transcribed from lists.
+## The family's current working record
 
-## Experience boundary
+The [**Wedding Record**](../WEDDING_RECORD.md) is canonical for the actual family-supplied details and full initial catering transcript:
 
-Family planning includes information not intended for general guests. Access is restricted to authorized family members, and the workspace is distinct from the public invitation.
+- **18 January 2027:** Breakfast, lunch, high tea, Sangeet evening/dinner.
+- **19 January 2027:** Breakfast, Carnival-labelled food section, lunch, high tea.
+- **20 January 2027:** Breakfast; guest tiffin box is undecided.
+- **Reception:** Proposed multi-cuisine menu with **date and time not supplied**.
+- **Baraat, marriage ceremony and vidai:** Within the intended planning scope, but no day/time has yet been established from the supplied sheets.
 
-The purpose is coordinated understanding and fewer avoidable conversations—not additional administration or a complicated project-management system.
+These are proposed arrangements, **not final caterer confirmation or an approved running order**.
+
+Menu judgment should consider the entire stay and each occasion—including live stalls and main meals together—and respect family preferences while identifying overlapping preparations and unnecessarily similar experiences. The wedding record notes the clearest examples, without independently deleting dishes.
+
+## Trust and access
+
+Internal notes, guest information, logistics and budgets belong with authorized family members, not the public invitation. Distinguish observed facts from options and final family decisions. Keep coordination light; its value is a reliable shared understanding, not more paperwork.

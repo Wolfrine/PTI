@@ -1,32 +1,43 @@
-# Wedding — One Celebration, Two Experiences
+# Mahima Mishra & Mayank Awasthi — Wedding
 
-## Intent
+## Purpose
 
-A small, personal digital home for a three-day wedding. It should help guests **feel welcomed, informed, and part of the occasion**, while helping the planning family **feel aligned, confident, and free to enjoy it**.
+One personal digital home for Mahima and Mayank's wedding: **a welcoming invitation for guests** and **a private, coherent planning space for family**. It should reduce uncertainty without turning the celebration into a generic project-management product.
 
-The same celebration has two distinct perspectives:
-
-| Experience | Audience | Essential promise |
+| Experience | Audience | Promise |
 | --- | --- | --- |
-| [Guest experience](guest-experience/README.md) | Guests and invitees | A welcoming, public, living invitation with the clarity of the invitation card and the anticipation of the celebration. |
-| [Family workspace](family-workspace/README.md) | Authorized family members | A private, shared understanding of the complete celebration, its arrangements, and the decisions that shape it. |
+| [Guest experience](guest-experience/README.md) | Guests | A warm, useful living invitation with only approved celebration details. |
+| [Family workspace](family-workspace/README.md) | Authorized family | Shared clarity on the complete celebration, arrangements, decisions and open questions. |
+
+## What we currently know
+
+- **Bride:** Mahima Mishra. **Groom:** Mayank Awasthi (names supplied directly by the family).
+- **Dates appearing on the initial catering notes:** **18–20 January 2027**. Treat these as **working planning dates** until validated against the invitation.
+- **18 January:** Breakfast, lunch, high tea and **Sangeet evening/dinner** are listed.
+- **19 January:** Breakfast, a **Carnival** food section, lunch and high tea are listed. The Carnival's function status/time is not yet established.
+- **20 January:** Morning breakfast is listed; **guest tiffin boxes** are an open question.
+- A substantial **Reception** menu exists, **without a written date**. Its placement must not be guessed.
+- The intended overall planning journey is **baraat arrival through vidai**; ceremony dates, order, and times are still unconfirmed.
+- **Venues, city, invitation wording, timings, countdown target, guest counts, accommodation, and site name** have not yet been supplied.
+
+The [**Wedding Record**](WEDDING_RECORD.md) is the single source for the current timeline, complete proposed menus, provenance, ambiguities, and unresolved details. It is **a working family record, not proof of approved menus, reservations or public invitation details**.
 
 ## What matters
 
-**A celebration, not a generic management product.** The experience should remain personal, lightweight, and purposeful. Its value comes from reducing uncertainty and repeated coordination, not accumulating features.
+**A celebration rather than a generic management product.** The character of the occasion should lead the experience; the product should not accumulate features for their own sake.
 
-**One coherent occasion.** Dates, events, venues, food, people, and arrangements should feel connected across all three days—not like isolated lists.
+**One connected story.** Dates, events, food, guests, locations, logistics and responsibilities must make sense across all three days.
 
-**Clarity for each audience.** Guests should find what they need to attend and participate. Family members should understand what is agreed, what is changing, and where attention is needed.
+**Thoughtful hospitality.** Assess meals and live stalls together. Preserve welcome and familiarity while identifying avoidable duplication, heavy combinations, and missing variety; do not mistake all repeated staples for errors.
 
-**Thoughtful hospitality.** Catering is about variety, balance, and guest experience across days, meals, main courses, and live stalls—not simply a long list of dishes.
+**Clarity and trust.** Distinguish proposed, confirmed, changed and unresolved information. Do not publish draft internal material to guests. Family decisions outrank assumptions and generic wedding templates.
 
-**Trust and discretion.** The public invitation and private family coordination belong to the same wedding, but sensitive planning information should not appear in the guest experience.
+## Supporting context
 
-## Context
+- [Wedding Record](WEDDING_RECORD.md) — **live wedding facts, timeline, draft menus and open decisions**.
+- [Guest experience](guest-experience/README.md) and [family workspace](family-workspace/README.md) — the two audience intents.
+- [Domain research](research/README.md) and [evaluation references](evals/README.md) — optional supporting knowledge, **not facts about this wedding or a required feature backlog**.
 
-This wedding site belongs within the existing **Wolfrine/PTI** repository and **PTI Firebase project**, while having its own public identity and website name. A separate repository or Firebase project is not part of the intent.
+This belongs within **Wolfrine/PTI**, reusing the existing **PTI Firebase project** with a separately named Hosting site. No separate repository or Firebase project is intended.
 
-Names, dates, venues, invitation details, menus, family roles, and the final site name are not established here. Real invitation and planning materials will give those details their meaning.
-
-This folder records **intent only**. It does not prescribe a technology, visual direction, information architecture, delivery sequence, or implementation method.
+As information arrives, refine the Wedding Record and the relevant existing audience document; keep one source of truth rather than creating parallel notes. This project record establishes the **intent and evidence**, not the implementation or visual design solution.

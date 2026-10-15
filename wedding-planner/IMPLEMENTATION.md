@@ -4,6 +4,8 @@ Base reviewed: PTI main `8548e6c4d59fadd979fac4ff21ed3b5be3e5668b`. Delivery bra
 
 Integrated subsequent main context through `ba4d473`: the family's requested `mahima_mayank.web.app` identity (underscores are invalid; closest valid target configured as `mahima-mayank`) and the additional source-backed menu review. Those culinary suggestions remain proposals; the initial menu selections were preserved.
 
+Also preserved main `8d07d59` and its four schematic design references. They describe optional mood explorations, explicitly carry unverified mockup details, and do not record a family-selected direction. The implementation remains the separately rendered/reviewed folded invitation direction, with human aesthetic acceptance pending.
+
 ## Delivered behavior
 
 - Static, responsive invitation with couple identity, planned celebration dates, approved-content rendering, optional exact-moment countdown, safe venue directions, approved contact and a native social sharing image. Current public content is deliberately a save-the-date state because detailed invitation facts remain unconfirmed.

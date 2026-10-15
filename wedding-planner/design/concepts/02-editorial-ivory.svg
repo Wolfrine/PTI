@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="790" viewBox="0 0 1200 790" role="img" aria-label="Editorial Ivory wedding website concept reference">
+<defs>
+ <linearGradient id="hero" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#E9E4DC"/><stop offset=".58" stop-color="#EDE4D2"/><stop offset="1" stop-color="#EDE6D9"/></linearGradient>
+ <radialGradient id="light"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".92"/><stop offset="1" stop-color="#E9E4DC" stop-opacity="0"/></radialGradient>
+ <filter id="shadow"><feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#322C28" flood-opacity=".12"/></filter>
+</defs>
+<rect x="0" y="0" width="1200" height="790" rx="0" fill="#F5F1E9" stroke="none" stroke-width="0"/>
+<text x="46" y="65" font-family="Georgia" font-size="24" fill="#322C28" font-weight="600" text-anchor="start">EDITORIAL IVORY</text>
+<text x="46" y="93" font-family="Arial" font-size="16" fill="#927746" font-weight="400" text-anchor="start">Minimal · Timeless · Typographic</text>
+<line x1="44" y1="109" x2="1154" y2="109" stroke="#927746" stroke-width="1"/>
+<text x="1153" y="65" font-family="Arial" font-size="14" fill="#322C28" font-weight="400" text-anchor="end">MAHIMA  &amp;  MAYANK  /  UI DIRECTION SKETCH</text>
+<rect x="45" y="142" width="700" height="578" rx="16" fill="#FFFEFC" stroke="none" stroke-width="0"/>
+<rect x="45" y="142" width="700" height="578" rx="16" fill="none" stroke="#322C28" stroke-width="0.8"/>
+<rect x="45" y="142" width="700" height="43" rx="16" fill="#FFFEFC" stroke="none" stroke-width="0"/>
+<text x="72" y="169" font-family="Georgia" font-size="19" fill="#322C28" font-weight="500" text-anchor="start">M   ✦   M</text>
+<text x="285" y="168" font-family="Arial" font-size="12" fill="#322C28" font-weight="400" text-anchor="start">HOME     CELEBRATIONS     THE STORY</text>
+<rect x="641" y="151" width="84" height="24" rx="12" fill="#EDE4D2" stroke="none" stroke-width="0"/>
+<text x="684" y="168" font-family="Arial" font-size="11" fill="#322C28" font-weight="600" text-anchor="middle">FAMILY</text>
+<rect x="61" y="193" width="668" height="359" rx="8" fill="url(#hero)" stroke="none" stroke-width="0"/>
+<rect x="61" y="558" width="668" height="144" rx="8" fill="#FFFEFC" stroke="none" stroke-width="0"/>
+<rect x="775" y="142" width="384" height="578" rx="16" fill="#FFFEFC" stroke="none" stroke-width="0"/>
+<rect x="775" y="142" width="384" height="578" rx="16" fill="none" stroke="#322C28" stroke-width="0.8"/>
+<rect x="775" y="142" width="384" height="48" rx="16" fill="#EDE4D2" stroke="none" stroke-width="0"/>
+<text x="795" y="172" font-family="Arial" font-size="14" fill="#322C28" font-weight="700" text-anchor="start">PRIVATE FAMILY WORKSPACE</text>
+<text x="798" y="217" font-family="Arial" font-size="12" fill="#927746" font-weight="700" text-anchor="start">PLANNING OVERVIEW</text>
+<text x="798" y="247" font-family="Georgia" font-size="25" fill="#322C28" font-weight="400" text-anchor="start">Mahima &amp; Mayank</text>
+<text x="799" y="269" font-family="Arial" font-size="13" fill="#322C28" font-weight="400" text-anchor="start">Working dates: 18–20 January 2027</text>
+<rect x="797" y="292" width="342" height="47" rx="8" fill="#EDE4D2" stroke="none" stroke-width="0"/>
+<text x="812" y="319" font-family="Arial" font-size="13" fill="#322C28" font-weight="400" text-anchor="start">Venue and timings: to be confirmed</text>
+<text x="801" y="376" font-family="Georgia" font-size="22" fill="#322C28" font-weight="400" text-anchor="start">Wedding timeline</text>
+<line x1="810" y1="400" x2="810" y2="487" stroke="#927746" stroke-width="2"/>
+<rect x="804" y="414" width="11" height="11" rx="5.5" fill="#927746" stroke="none" stroke-width="0"/><text x="827" y="423" font-family="Arial" font-size="15" fill="#322C28" font-weight="400" text-anchor="start">18 JAN · Sangeet evening</text><rect x="804" y="450" width="11" height="11" rx="5.5" fill="#927746" stroke="none" stroke-width="0"/><text x="827" y="459" font-family="Arial" font-size="15" fill="#322C28" font-weight="400" text-anchor="start">19 JAN · Carnival food</text><rect x="804" y="486" width="11" height="11" rx="5.5" fill="#927746" stroke="none" stroke-width="0"/><text x="827" y="495" font-family="Arial" font-size="15" fill="#322C28" font-weight="400" text-anchor="start">Reception · Date TBD</text>
+<line x1="800" y1="531" x2="1139" y2="531" stroke="#927746" stroke-width="0.8"/>
+<text x="808" y="556" font-family="Georgia" font-size="18" fill="#322C28" font-weight="400" text-anchor="start">Catering</text><text x="987" y="556" font-family="Georgia" font-size="18" fill="#322C28" font-weight="400" text-anchor="start">Guests</text>
+<rect x="801" y="571" width="160" height="86" rx="9" fill="#F5F1E9" stroke="none" stroke-width="0"/><rect x="980" y="571" width="159" height="86" rx="9" fill="#F5F1E9" stroke="none" stroke-width="0"/>
+<text x="815" y="600" font-family="Arial" font-size="12" fill="#322C28" font-weight="400" text-anchor="start">Menus &amp; counters</text>
+<text x="995" y="600" font-family="Arial" font-size="12" fill="#322C28" font-weight="400" text-anchor="start">Family attendance</text>
+<text x="815" y="625" font-family="Arial" font-size="11" fill="#927746" font-weight="400" text-anchor="start">In planning</text>
+<text x="995" y="625" font-family="Arial" font-size="11" fill="#927746" font-weight="400" text-anchor="start">Not yet supplied</text>
+<text x="600" y="759" font-family="Arial" font-size="11" fill="#927746" font-weight="400" text-anchor="middle">DIRECTIONAL SKETCH — NOT CONFIRMED EVENT DETAILS</text><rect x="61" y="193" width="668" height="359" rx="8" fill="#F4F0E8" stroke="none" stroke-width="0"/>
+ <line x1="85" y1="227" x2="703" y2="227" stroke="#927746" stroke-width="1"/><g transform="translate(600,243) scale(0.8)" fill="none" stroke="#B2A68C" stroke-width="2" stroke-linecap="round"><path d="M0 72 C8 41 23 16 52 0"/><path d="M10 49 C-1 44 -3 37 0 29 C10 31 15 37 10 49 Z" fill="#B2A68C" opacity=".65"/><path d="M20 31 C18 17 28 10 38 11 C38 23 29 29 20 31 Z" fill="#B2A68C" opacity=".65"/><path d="M31 18 C37 7 48 3 58 8 C52 18 44 20 31 18 Z" fill="#B2A68C" opacity=".65"/></g>
+ <text x="395" y="270" font-family="Arial" font-size="16" fill="#927746" font-weight="400" text-anchor="middle">A celebration of love and togetherness</text>
+ <text x="392" y="348" font-family="Georgia" font-size="53" fill="#322C28" font-weight="400" text-anchor="middle">Mahima Mishra</text>
+ <text x="390" y="387" font-family="Georgia" font-size="36" fill="#927746" font-weight="400" text-anchor="middle">&amp;</text>
+ <text x="392" y="445" font-family="Georgia" font-size="53" fill="#322C28" font-weight="400" text-anchor="middle">Mayank Awasthi</text>
+ <line x1="220" y1="475" x2="560" y2="475" stroke="#927746" stroke-width="1"/>
+ <text x="390" y="507" font-family="Arial" font-size="17" fill="#322C28" font-weight="400" text-anchor="middle">18 — 20 JANUARY 2027</text><text x="85" y="590" font-family="Arial" font-size="17" fill="#322C28" font-weight="600" text-anchor="start">THREE DAYS · A LIFETIME OF MEMORIES</text>
+<rect x="81" y="606" width="197" height="78" rx="9" fill="#EDE4D2" stroke="none" stroke-width="0"/><text x="98" y="633" font-family="Arial" font-size="13" fill="#927746" font-weight="700" text-anchor="start">18 JAN</text><text x="98" y="659" font-family="Georgia" font-size="15" fill="#322C28" font-weight="400" text-anchor="start">Sangeet evening</text><rect x="296" y="606" width="197" height="78" rx="9" fill="#F5F1E9" stroke="none" stroke-width="0"/><text x="313" y="633" font-family="Arial" font-size="13" fill="#927746" font-weight="700" text-anchor="start">19 JAN</text><text x="313" y="659" font-family="Georgia" font-size="15" fill="#322C28" font-weight="400" text-anchor="start">Carnival food</text><rect x="511" y="606" width="197" height="78" rx="9" fill="#EDE4D2" stroke="none" stroke-width="0"/><text x="528" y="633" font-family="Arial" font-size="13" fill="#927746" font-weight="700" text-anchor="start">TBD</text><text x="528" y="659" font-family="Georgia" font-size="15" fill="#322C28" font-weight="400" text-anchor="start">Reception</text>
+</svg>

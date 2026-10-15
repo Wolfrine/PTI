@@ -15,6 +15,7 @@ import {
   type GuestRecord,
 } from './model';
 import { brand, leaf, icon, badge, menuMarkup } from './presentation';
+import { ownerUid } from './config';
 const root = document.querySelector<HTMLDivElement>('#app')!,
   dialog = document.querySelector<HTMLDialogElement>('#editor')!;
 let current: StoreState,
@@ -23,10 +24,16 @@ let current: StoreState,
   taskFilter = 'open',
   compareA = '',
   compareB = '',
+  accessSearch = '',
+  accessFilter = 'all',
   returnFocus: HTMLElement | null = null,
   toastTimer: ReturnType<typeof setTimeout>;
 type Draft = { base: Payload; revision?: number; fields: Payload };
 const drafts = new Map<string, Draft>();
+type AccessRole = 'pending' | 'viewer' | 'family' | 'admin' | 'blocked';
+const roleDrafts = new Map<string, { role: AccessRole; expectedRole: string }>();
+const roleErrors = new Map<string, string>();
+const roleSaving = new Set<string>();
 let activeDraftKey: string | null = null;
 const store = createWeddingStore((state) => {
   current = state;
@@ -48,9 +55,9 @@ const href = (s: string) => `#/${s}`,
   idPath = (base: string, id: string) =>
     href(`${base}/${encodeURIComponent(id)}`);
 const edit = (c: CollectionName, id: string, s: string, label: string) =>
-  `<button class="text-button" data-edit="${c}" data-id="${esc(id)}" data-section="${s}">${label} <span aria-hidden="true">↗</span></button>`;
+  current.canEdit ? `<button class="text-button" data-edit="${c}" data-id="${esc(id)}" data-section="${s}">${label} <span aria-hidden="true">↗</span></button>` : '';
 const add = (c: CollectionName, label: string, s: string) =>
-  `<button class="button" data-add="${c}" data-section="${s}"><span aria-hidden="true">+</span> ${label}</button>`;
+  current.canEdit ? `<button class="button" data-add="${c}" data-section="${s}"><span aria-hidden="true">+</span> ${label}</button>` : '';
 const eventTitle = (id: string) =>
   current.records.events.find((e) => e.id === id)?.title ||
   (id ? 'Archived occasion' : 'Across the celebration');
@@ -67,10 +74,43 @@ const stamp = (r: WeddingRecord) =>
 const fact = (label: string, value: string) =>
   `<div${value.length > 22 ? ' class="fact-long"' : ''}><dt>${label}</dt><dd>${esc(value)}</dd></div>`;
 function header() {
-  return `<header class="app-header">${brand('#/home')}<a class="family-brand" href="#/home"><strong>Family workspace</strong><span>MAHIMA & MAYANK</span></a><a class="invitation-link" href="/">The invitation ↗</a><details class="account-menu"><summary aria-label="Family account menu">${esc((current.user?.displayName || current.user?.email || 'F').slice(0, 1).toUpperCase())}</summary><div class="account-menu-panel"><p>${esc(current.user?.displayName || 'Family member')}</p>${current.isOwner ? '<button class="text-button" data-action="members">Family access</button>' : ''}<button class="text-button" data-action="export">Export private plan</button><button class="text-button" data-action="sign-out">Sign out</button></div></details></header>`;
+  return `<header class="app-header">${brand('#/home')}<a class="family-brand" href="#/home"><strong>Family workspace</strong><span>MAHIMA & MAYANK</span></a><a class="invitation-link" href="/">The invitation ↗</a><details class="account-menu"><summary aria-label="Family account menu">${esc((current.user?.displayName || current.user?.email || 'F').slice(0, 1).toUpperCase())}</summary><div class="account-menu-panel"><p>${esc(current.user?.displayName || 'Family member')}<small>${current.isAdmin ? 'Admin' : current.canEdit ? 'Family' : 'Viewer'}</small></p>${current.isAdmin ? '<a class="text-button" href="#/access">Manage family access</a>' : ''}<button class="text-button" data-action="export">Export private plan</button><button class="text-button" data-action="sign-out">Sign out</button></div></details></header>`;
+}
+function accessPage() {
+  if (!current.isAdmin) return `${crumbs([['Family access']])}${emptyView('Admins manage family access.', 'Your account can open the plan with its current role. Speak with an admin if your access needs to change.', '<a class="button button-secondary" href="#/home">Back to family home</a>')}`;
+  const people = new Map<string, { email: string; name: string; uid?: string; lastSeenAt?: string; role: string }>();
+  for (const profile of current.accessRequests) {
+    const email = profile.email.toLowerCase();
+    const member = current.members.find(m => m.email.toLowerCase() === email);
+    const previous = people.get(email);
+    if (!previous || (profile.lastSeenAt || '') > (previous.lastSeenAt || '')) people.set(email, { ...profile, role: profile.uid === ownerUid ? 'admin' : member?.role || 'pending' });
+  }
+  for (const member of current.members) if (!people.has(member.email.toLowerCase())) people.set(member.email.toLowerCase(), { ...member, role: member.role });
+  if (current.isOwner && current.user?.email && ![...people.values()].some(p => p.uid === ownerUid)) people.set(current.user.email.toLowerCase(), { uid: ownerUid, email: current.user.email, name: current.user.displayName || 'Workspace owner', role: 'admin' });
+  if (![...people.values()].some(p => p.uid === ownerUid)) people.set('__protected_owner__', { uid: ownerUid, email: '', name: 'Workspace owner', role: 'admin' });
+  const normalizedRole = (role: string) => role === 'editor' ? 'family' : role as AccessRole;
+  const roleName = (role: string) => ({ pending: 'Awaiting approval', viewer: 'Viewer', family: 'Family', editor: 'Family', admin: 'Admin', blocked: 'Blocked' })[role as AccessRole] || role;
+  const rows = [...people.values()].sort((a,b) => Number(b.uid === ownerUid) - Number(a.uid === ownerUid) || Number(b.role === 'pending') - Number(a.role === 'pending') || (a.name || a.email).localeCompare(b.name || b.email));
+  const filtered = rows.filter(p => (`${p.name} ${p.email}`.toLowerCase().includes(accessSearch.toLowerCase())) && (accessFilter === 'all' || accessFilter === 'pending' && p.role === 'pending' || accessFilter === 'active' && !['pending','blocked'].includes(p.role) || accessFilter === 'blocked' && p.role === 'blocked'));
+  const pending = rows.filter(p => p.role === 'pending').length;
+  return `${crumbs([['Family access']])}${pageHead('Family access.')}<div class="access-intro"><p>Choose who can read, plan or manage access. Accounts appear after Google sign-in.</p><details class="role-guide"><summary>What each role can do</summary><dl>${[['Admin','Read and edit the plan, and manage family access.'],['Family','Read and edit the plan.'],['Viewer','Read the plan without making changes.'],['Awaiting approval','Signed in, without access to the private plan.'],['Blocked','Cannot open the private plan.']].map(([role, text]) => `<div><dt>${role}</dt><dd>${text}</dd></div>`).join('')}</dl></details></div><div class="access-toolbar"><div class="filter-tabs" aria-label="Filter family accounts">${[['all','All accounts'],['pending',`Awaiting approval${pending ? ` · ${pending}` : ''}`],['active','With access'],['blocked','Blocked']].map(([value,label]) => `<button data-access-filter="${value}" class="${accessFilter === value ? 'selected' : ''}">${label}</button>`).join('')}</div><label class="search-field"><span class="sr-only">Search family accounts</span><input id="access-search" placeholder="Search names or emails" value="${esc(accessSearch)}"></label></div><div class="access-list panel"><div class="access-column-head" aria-hidden="true"><span>Google account</span><span>Current role</span><span>Change access</span></div>${filtered.length ? filtered.map(person => {
+    const owner = person.uid === ownerUid;
+    const value = roleDrafts.get(person.email)?.role || normalizedRole(person.role);
+    const label = roleName(person.role);
+    return `<article class="access-row${owner ? ' access-owner' : ''}" data-access-email="${esc(person.email)}"><div class="access-person"><span class="person-initial" aria-hidden="true">${esc((person.name || person.email).slice(0,1))}</span><div><h2>${esc(person.name || person.email)}</h2><p>${esc(person.email || 'Protected account')}</p>${person.lastSeenAt ? `<small>Signed in ${esc(formatTime(person.lastSeenAt))}</small>` : owner ? '<small>Always has admin access</small>' : '<small>Invited account · not signed in yet</small>'}</div></div><div class="access-current"><span class="role-label role-${owner ? 'admin' : normalizedRole(person.role)}">${owner ? 'Admin' : label}</span>${owner ? '<small>Workspace owner</small>' : ''}</div>${owner ? `<div class="protected-access">${icon('lock')}<span>Protected access</span></div>` : `<form class="role-form" data-role-form="${esc(person.email)}"><label class="sr-only" for="role-${esc(person.email)}">Role for ${esc(person.name || person.email)}</label><select id="role-${esc(person.email)}" data-role-email="${esc(person.email)}" data-current-role="${esc(person.role)}"${roleSaving.has(person.email) ? ' disabled' : ''}>${(['pending','viewer','family','admin','blocked'] as AccessRole[]).map(role => `<option value="${role}"${value === role ? ' selected' : ''}>${roleName(role)}</option>`).join('')}</select><button class="button button-secondary" type="submit" data-role-save="${esc(person.email)}"${roleSaving.has(person.email) || value === normalizedRole(person.role) ? ' disabled' : ''}>${roleSaving.has(person.email) ? 'Saving…' : 'Save'}</button>${roleErrors.has(person.email) ? `<div class="role-error"><p role="alert">${esc(roleErrors.get(person.email)!)}</p><button type="button" class="text-button" data-role-reset="${esc(person.email)}">Use current role</button></div>` : ''}</form>`}</article>`;
+  }).join('') : emptyView(accessSearch ? 'No matching accounts.' : 'No accounts in this group.', accessSearch ? 'Try another name or email.' : 'Accounts appear here when someone signs in with Google.', '<button class="button button-secondary" data-action="clear-access">Show all accounts</button>')}</div>`;
 }
 function render() {
   if (!current) return;
+  if (!current.isAdmin) {
+    roleDrafts.clear();
+    roleErrors.clear();
+  }
+  if (!current.canEdit && dialog.open) {
+    dialog.close();
+    dialog.innerHTML = '';
+    drafts.clear();
+  }
   if (current.access !== 'ready') {
     clearTimeout(toastTimer);
     const notice = document.querySelector<HTMLElement>('#toast');
@@ -78,7 +118,9 @@ function render() {
     drafts.clear();
     if (dialog.open) dialog.close();
     dialog.innerHTML = '';
-    root.innerHTML = `<header class="app-header login-header">${brand('/')}<a class="invitation-link" href="/">The invitation ↗</a></header><main id="workspace" class="login-main"><div class="login-scene" aria-hidden="true"></div><section class="login-copy"><p class="eyebrow">MAHIMA & MAYANK · FAMILY</p><h1>Welcome, family.</h1><p>A shared place for the people and details behind the celebration.</p>${current.access === 'loading' ? '<p class="loading" role="status">Opening the family workspace…</p>' : '<button class="button google-button" data-action="sign-in"><b aria-hidden="true">G</b> Continue with Google</button><p class="small-copy">For invited family members.</p>'}${current.error ? `<div class="inline-alert" role="alert">${esc(current.error)}</div>` : ''}${current.user ? '<button class="text-button" data-action="sign-out">Use another account</button>' : ''}</section></main>`;
+    const pending = current.access === 'pending';
+    const blocked = current.role === 'blocked';
+    root.innerHTML = `<header class="app-header login-header">${brand('/')}<a class="invitation-link" href="/">The invitation ↗</a></header><main id="workspace" class="login-main"><div class="login-scene" aria-hidden="true"></div><section class="login-copy"><p class="eyebrow">MAHIMA & MAYANK · FAMILY</p><h1>${pending ? 'You’re signed in.' : blocked ? 'Family access is paused.' : 'Welcome, family.'}</h1><p>${pending ? 'An admin will review your account before you can open the private family plan.' : blocked ? 'This account cannot open the private family plan. Please speak with a family admin if you need access.' : 'A shared place for the people and details behind the celebration.'}</p>${current.access === 'loading' ? '<p class="loading" role="status">Opening the family workspace…</p>' : current.user ? `<div class="signed-in-identity"><span class="identity-initial">${esc((current.user.displayName || current.user.email || 'F').slice(0,1))}</span><div><strong>${esc(current.user.displayName || 'Google account')}</strong><span>${esc(current.user.email || '')}</span></div><span class="role-label role-${pending ? 'pending' : blocked ? 'blocked' : 'viewer'}">${pending ? 'Awaiting approval' : blocked ? 'Blocked' : 'Access unavailable'}</span></div>${pending ? '<p class="small-copy">This page will open the workspace when your access is approved.</p>' : ''}` : '<button class="button google-button" data-action="sign-in"><b aria-hidden="true">G</b> Continue with Google</button><p class="small-copy">Sign in to request family access.</p>'}${current.error && !pending && !blocked ? `<div class="inline-alert" role="alert">${esc(current.error)}</div>` : ''}${current.user ? '<button class="text-button" data-action="sign-out">Use another account</button>' : ''}</section></main>`;
     bind();
     return;
   }
@@ -98,13 +140,14 @@ function render() {
           ? arrangementDetail(sub)
           : tasks();
   else if (s === 'attendance') html = attendance(id);
+  else if (s === 'access') html = accessPage();
   else
     html = emptyView(
       'This page has moved.',
       'Return to the family home to find the current plan.',
       '<a class="button" href="#/home">Family home</a>',
     );
-  root.innerHTML = `${current.demo ? '<div class="demo-banner">LOCAL PREVIEW · Example records · Changes stay in this tab</div>' : ''}${header()}<main id="workspace" class="family-main">${current.offline ? '<div class="inline-alert" role="alert">You are offline. Reconnect before saving changes.</div>' : ''}${html}</main>`;
+  root.innerHTML = `${current.demo ? '<div class="demo-banner">LOCAL PREVIEW · Example records · Changes stay in this tab</div>' : ''}${header()}<main id="workspace" class="family-main">${current.offline ? '<div class="inline-alert" role="alert">You are offline. Reconnect before saving changes.</div>' : ''}${!current.canEdit ? '<p class="viewer-notice">'+icon('lock')+'<span><strong>Viewer access</strong> · You can read the family plan. An admin can change your role.</span></p>' : ''}${html}</main>`;
   bind();
 }
 function home() {
@@ -160,12 +203,12 @@ function catering() {
 function mealDetail(id: string) {
   const e = current.records.events.find((e) => e.id === id);
   if (!e) return missing('Catering', 'catering');
-  return `${crumbs([['Catering', href('catering')], ['Menu']])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="meal-layout"><section class="reading-menu panel"><div class="section-heading"><h2>Menu</h2>${edit('events', e.id, 'menu', 'Edit menu')}</div>${menuMarkup(e.menuText)}</section><aside class="detail-aside"><section class="service-context panel"><h2>Service details</h2>${e.startAt || e.venue || e.owner ? `<dl class="facts">${fact('Service time', e.startAt ? formatTime(e.startAt) : 'To confirm')}${fact('Venue', e.venue || 'To confirm')}${fact('Family owner', e.owner || 'To assign')}</dl>` : '<p>Timing, venue and family owner to confirm.</p>'}${edit('events', e.id, 'timing', 'Edit timing & venue')}</section><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>Manage attendance</span><span aria-hidden="true">↗</span></a>${relatedArrangements(e.id)}${e.notes ? `<details class="context-notes"><summary>Planning notes</summary><p>${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</details>` : ''}${stamp(e)}</aside></div>`;
+  return `${crumbs([['Catering', href('catering')], ['Menu']])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="meal-layout"><section class="reading-menu panel"><div class="section-heading"><h2>Menu</h2>${edit('events', e.id, 'menu', 'Edit menu')}</div>${menuMarkup(e.menuText)}</section><aside class="detail-aside"><section class="service-context panel"><h2>Service details</h2>${e.startAt || e.venue || e.owner ? `<dl class="facts">${fact('Service time', e.startAt ? formatTime(e.startAt) : 'To confirm')}${fact('Venue', e.venue || 'To confirm')}${fact('Family owner', e.owner || 'To assign')}</dl>` : '<p>Timing, venue and family owner to confirm.</p>'}${edit('events', e.id, 'timing', 'Edit timing & venue')}</section><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>${current.canEdit ? 'Manage attendance' : 'View attendance'}</span><span aria-hidden="true">↗</span></a>${relatedArrangements(e.id)}${e.notes ? `<details class="context-notes"><summary>Planning notes</summary><p>${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</details>` : ''}${stamp(e)}</aside></div>`;
 }
 function occasionDetail(id: string) {
   const e = current.records.events.find((e) => e.id === id);
   if (!e) return missing('Family home', 'home');
-  return `${crumbs([[e.title]])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="read-grid"><section class="panel read-card"><div class="section-heading"><h2>The occasion</h2>${edit('events', e.id, 'timing', 'Edit details')}</div><dl class="facts">${fact('Starts', e.startAt ? formatTime(e.startAt) : 'Time to confirm')}${e.arrivalAt ? fact('Arrival from', formatTime(e.arrivalAt)) : ''}${fact('Venue', e.venue || 'To confirm')}${e.address ? fact('Address', e.address) : ''}${fact('Family owner', e.owner || 'To assign')}${e.audience ? fact('For', e.audience) : ''}</dl>${e.mapUrl ? `<a class="text-button" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">Open directions ↗</a>` : ''}</section><div><a class="context-action" href="${idPath('catering', e.id)}">${icon('food')}<span>Catering & menu</span><span>↗</span></a><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>Manage attendance</span><span>↗</span></a>${relatedArrangements(e.id)}</div></div>${e.notes ? `<section class="panel read-card lower"><h2>Planning notes</h2><p class="preserve-lines">${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</section>` : ''}${stamp(e)}`;
+  return `${crumbs([[e.title]])}<div class="detail-heading"><div><p class="eyebrow">${esc(e.date ? formatDate(e.date) : 'DATE TO CONFIRM')}</p><h1>${esc(e.title)}</h1></div>${badge(e.status)}</div><div class="read-grid"><section class="panel read-card"><div class="section-heading"><h2>The occasion</h2>${edit('events', e.id, 'timing', 'Edit details')}</div><dl class="facts">${fact('Starts', e.startAt ? formatTime(e.startAt) : 'Time to confirm')}${e.arrivalAt ? fact('Arrival from', formatTime(e.arrivalAt)) : ''}${fact('Venue', e.venue || 'To confirm')}${e.address ? fact('Address', e.address) : ''}${fact('Family owner', e.owner || 'To assign')}${e.audience ? fact('For', e.audience) : ''}</dl>${e.mapUrl ? `<a class="text-button" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">Open directions ↗</a>` : ''}</section><div><a class="context-action" href="${idPath('catering', e.id)}">${icon('food')}<span>Catering & menu</span><span>↗</span></a><a class="context-action" href="${idPath('attendance', e.id)}">${icon('guests')}<span>${current.canEdit ? 'Manage attendance' : 'View attendance'}</span><span>↗</span></a>${relatedArrangements(e.id)}</div></div>${e.notes ? `<section class="panel read-card lower"><h2>Planning notes</h2><p class="preserve-lines">${esc(e.notes)}</p>${edit('events', e.id, 'notes', 'Edit notes')}</section>` : ''}${stamp(e)}`;
 }
 function compareMenus() {
   const events = current.records.events
@@ -281,7 +324,7 @@ function attendance(id?: string) {
             const a = current.records.attendance.find(
               (a) => a.eventId === e.id && a.guestId === g.id,
             );
-            return `<div class="attendance-person"><label for="attendance-${esc(g.id)}"><strong>${esc(g.name)}</strong><small>${esc(g.household || 'Household to assign')}</small></label><select id="attendance-${esc(g.id)}" data-guest="${esc(g.id)}" data-event="${esc(e.id)}">${['unknown', 'tentative', 'confirmed', 'declined'].map((s) => `<option${(a?.status || 'unknown') === s ? ' selected' : ''}>${s}</option>`).join('')}</select></div>`;
+            return `<div class="attendance-person"><label for="attendance-${esc(g.id)}"><strong>${esc(g.name)}</strong><small>${esc(g.household || 'Household to assign')}</small></label>${current.canEdit ? `<select id="attendance-${esc(g.id)}" data-guest="${esc(g.id)}" data-event="${esc(e.id)}">${['unknown', 'tentative', 'confirmed', 'declined'].map((s) => `<option${(a?.status || 'unknown') === s ? ' selected' : ''}>${s}</option>`).join('')}</select>` : `<span class="attendance-status">${esc(a?.status || 'unknown')}</span>`}</div>`;
           })
           .join('')
       : emptyView(
@@ -512,6 +555,7 @@ function fieldMarkup(f: Field, value: unknown) {
   return `<div class="field${f.wide ? ' field-wide' : ''}"><label for="field-${f.key}">${f.label}</label>${f.options ? `<select ${common}>${f.options.map(([key, label]) => `<option value="${esc(key)}"${key === v ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select>` : f.type === 'textarea' ? `<textarea ${common} rows="${f.key === 'menuText' ? 14 : 4}">${esc(v)}</textarea>` : `<input ${common} type="${f.type || 'text'}" value="${esc(v)}"${f.type === 'number' ? ' min="0" step="0.01"' : ''}>`}${f.hint ? `<small>${f.hint}</small>` : ''}</div>`;
 }
 function openEditor(c: CollectionName, id: string | undefined, s: string) {
+  if (!current.canEdit) return;
   const record = id ? current.records[c].find((r) => r.id === id) : undefined;
   if (id && !record) {
     toast('This item is no longer available.');
@@ -582,6 +626,7 @@ function openEditor(c: CollectionName, id: string | undefined, s: string) {
     .forEach((b) => b.addEventListener('click', () => dialog.close()));
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!current.canEdit) return;
     const b = form.querySelector<HTMLButtonElement>('[type=submit]')!,
       data = Object.fromEntries(new FormData(form).entries());
     draft!.fields = data;
@@ -625,6 +670,7 @@ function openEditor(c: CollectionName, id: string | undefined, s: string) {
         b.textContent = 'Confirm archive';
         return;
       }
+      if (!current.canEdit) return;
       b.disabled = true;
       try {
         await store.archive(c, id!, record!.revision);
@@ -643,64 +689,6 @@ function openEditor(c: CollectionName, id: string | undefined, s: string) {
       }
     });
 }
-function openMembers() {
-  dialog.className = '';
-  dialog.innerHTML = `<div class="dialog-heading"><div><p class="eyebrow">INVITED FAMILY ONLY</p><h2 id="editor-title">Family access.</h2></div><button class="icon-button" data-close aria-label="Close family access">×</button></div><div class="member-content"><p>Invited Google accounts can view and edit the family plan.</p><div class="member-list">${current.members.length ? current.members.map((m) => `<div class="member-row"><div><strong>${esc(m.name || m.email)}</strong><small>${esc(m.email)}</small></div><button class="text-button" data-revoke="${esc(m.email)}">Remove access</button></div>`).join('') : '<p class="empty-inline">No additional family members invited yet.</p>'}</div><form id="invite-form"><div class="form-fields">${fieldMarkup({ key: 'name', label: 'Name' }, '')}${fieldMarkup({ key: 'email', label: 'Google email', type: 'email', required: true }, '')}</div><div id="form-error" role="alert"></div><div class="dialog-actions"><button type="button" class="button button-secondary" data-close>Done</button><button class="button" type="submit">Invite family member</button></div></form></div>`;
-  returnFocus = document.activeElement as HTMLElement;
-  dialog.showModal();
-  dialog
-    .querySelectorAll('[data-close]')
-    .forEach((b) => b.addEventListener('click', () => dialog.close()));
-  dialog
-    .querySelector<HTMLFormElement>('#invite-form')!
-    .addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.currentTarget as HTMLFormElement,
-        data = new FormData(form),
-        b = form.querySelector<HTMLButtonElement>('[type=submit]')!;
-      b.disabled = true;
-      try {
-        await store.invite(String(data.get('email')), String(data.get('name')));
-        dialog.close();
-        toast('Family access added. Share the family link with them.');
-      } catch (error) {
-        if (
-          current.access === 'ready' &&
-          dialog.open &&
-          dialog.querySelector('#form-error')
-        )
-          dialog.querySelector('#form-error')!.textContent =
-            error instanceof Error ? error.message : 'Could not invite.';
-      } finally {
-        b.disabled = false;
-      }
-    });
-  dialog.querySelectorAll<HTMLButtonElement>('[data-revoke]').forEach((b) => {
-    let confirmed = false;
-    b.addEventListener('click', async () => {
-      if (!confirmed) {
-        confirmed = true;
-        b.textContent = 'Confirm removal';
-        return;
-      }
-      b.disabled = true;
-      try {
-        await store.revoke(b.dataset.revoke!);
-        b.closest('.member-row')?.remove();
-        toast('Family access removed.');
-      } catch (error) {
-        if (
-          current.access === 'ready' &&
-          dialog.open &&
-          dialog.querySelector('#form-error')
-        )
-          dialog.querySelector('#form-error')!.textContent =
-            error instanceof Error ? error.message : 'Could not remove access.';
-        b.disabled = false;
-      }
-    });
-  });
-}
 function toast(message: string) {
   clearTimeout(toastTimer);
   const node = document.querySelector<HTMLElement>('#toast')!;
@@ -709,6 +697,47 @@ function toast(message: string) {
   toastTimer = setTimeout(() => node.classList.remove('visible'), 2400);
 }
 function bind() {
+  root.querySelectorAll<HTMLButtonElement>('[data-role-reset]').forEach(button => button.addEventListener('click', () => {
+    const email = button.dataset.roleReset!;
+    roleDrafts.delete(email); roleErrors.delete(email); render();
+  }));
+  root.querySelectorAll<HTMLButtonElement>('[data-access-filter]').forEach(button => button.addEventListener('click', () => {
+    accessFilter = button.dataset.accessFilter!;
+    render();
+  }));
+  root.querySelector<HTMLInputElement>('#access-search')?.addEventListener('input', event => {
+    const input = event.currentTarget as HTMLInputElement;
+    accessSearch = input.value;
+    const cursor = input.selectionStart;
+    render();
+    const next = root.querySelector<HTMLInputElement>('#access-search')!;
+    next.focus(); next.setSelectionRange(cursor, cursor);
+  });
+  root.querySelectorAll<HTMLSelectElement>('[data-role-email]').forEach(select => select.addEventListener('change', () => {
+    if (!current.isAdmin) return;
+    const email = select.dataset.roleEmail!;
+    roleDrafts.set(email, { role: select.value as AccessRole, expectedRole: roleDrafts.get(email)?.expectedRole || select.dataset.currentRole! });
+    roleErrors.delete(email);
+    const button = select.form?.querySelector<HTMLButtonElement>('[data-role-save]');
+    if (button) button.disabled = select.value === (select.dataset.currentRole === 'editor' ? 'family' : select.dataset.currentRole);
+  }));
+  root.querySelectorAll<HTMLFormElement>('[data-role-form]').forEach(form => form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!current.isAdmin) return;
+    const email = form.dataset.roleForm!, draft = roleDrafts.get(email);
+    if (!draft || roleSaving.has(email)) return;
+    roleSaving.add(email); roleErrors.delete(email); render();
+    try {
+      await store.assignRole(email, draft.role, draft.expectedRole);
+      roleDrafts.delete(email);
+      if (current.access === 'ready') toast('Family access updated.');
+    } catch (error) {
+      if (current.access === 'ready' && current.isAdmin) roleErrors.set(email, error instanceof Error ? error.message : 'Could not update access. Please try again.');
+    } finally {
+      roleSaving.delete(email);
+      if (current.access === 'ready') render();
+    }
+  }));
   root.querySelectorAll<HTMLSelectElement>('[data-compare]').forEach((select) =>
     select.addEventListener('change', () => {
       if (select.dataset.compare === 'a') compareA = select.value;
@@ -771,6 +800,7 @@ function bind() {
     .querySelectorAll<HTMLSelectElement>('select[data-guest]')
     .forEach((select) =>
       select.addEventListener('change', async () => {
+        if (!current.canEdit) return;
         select.disabled = true;
         const guestId = select.dataset.guest!,
           eventId = select.dataset.event!,
@@ -805,7 +835,7 @@ function bind() {
           render();
         } else if (b.dataset.action === 'sign-in') await store.signIn();
         else if (b.dataset.action === 'sign-out') await store.signOut();
-        else if (b.dataset.action === 'members') openMembers();
+        else if (b.dataset.action === 'clear-access') { accessSearch = ''; accessFilter = 'all'; render(); }
         else if (b.dataset.action === 'export') {
           const blob = new Blob([await store.exportData()], {
               type: 'application/json',

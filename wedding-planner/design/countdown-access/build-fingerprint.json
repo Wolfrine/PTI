@@ -1,0 +1,194 @@
+{
+  "fingerprint": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+  "description": "SHA256 of sorted source, public assets, production dist and final capture fixture/logic file hashes. Functional QA and aesthetic verdict remain separate.",
+  "entries": [
+    {
+      "path": "design/countdown-access/capture-final.mjs",
+      "sha256": "6f3cf033de86493da9765b5c75f46700f208189a14b9fb9c9017225cf2f6ceb4"
+    },
+    {
+      "path": "design/countdown-access/visual-fixture.mjs",
+      "sha256": "a39a944b3253f6be3dd72b06161cb5fb8c3735c1bb54856535cc4948b8382c23"
+    },
+    {
+      "path": "dist/art/botanical-scene-640.webp",
+      "sha256": "bf1edb56306f06704931b1216f6c34a311281457366a8f8d469b3fbc96519b17"
+    },
+    {
+      "path": "dist/art/botanical-scene-960.webp",
+      "sha256": "ccdbad2cb9f66c835bad5a559b566d4e98e5339960514b3da852167748ba7287"
+    },
+    {
+      "path": "dist/art/botanical-scene.webp",
+      "sha256": "ea0f4a41521728de0450f62eefce1f184b8f4eb139070308759c3317d06807e6"
+    },
+    {
+      "path": "dist/assets/family-BfnbX0wy.js",
+      "sha256": "5ef5e44ed5669a1ae0f238171756cc53880df66008fde749aa33b853ceb91b36"
+    },
+    {
+      "path": "dist/assets/index.esm-BlY-EhdR.js",
+      "sha256": "c50f6342df5c0b646a7ac7e45e7cfa77362d37fe15d3c27416a5459216c9f5ff"
+    },
+    {
+      "path": "dist/assets/index.esm-CAfxpO0J.js",
+      "sha256": "3590b7b3a60ee7d633c30d98219640e9082b89eb4a98d25d4425b8640d3b634a"
+    },
+    {
+      "path": "dist/assets/index.esm-ChFjBI-R.js",
+      "sha256": "39284ce5549e7096214da320acd3e6d529c0ff3c9880d0d253f8aeb19fb71846"
+    },
+    {
+      "path": "dist/assets/index.esm-pSDtD01t.js",
+      "sha256": "36f06a7e56fd6dc301dcdac8b2f553da1b32e9217a56a54f702c063b2c25f68c"
+    },
+    {
+      "path": "dist/assets/invitation-BVv8nWgl.js",
+      "sha256": "a012c08596aacd28ceab2c1a50caee76bb52e20f3d1036d358b3bf750a719651"
+    },
+    {
+      "path": "dist/assets/styles-BdfuWcRN.css",
+      "sha256": "9c035a1d709a8e480cf6641f8614f403386a5469c164bfd4376164d3152ab81c"
+    },
+    {
+      "path": "dist/assets/styles-CMmDxZiv.js",
+      "sha256": "d2a32840421496e872ade591618d2fa5c33797605d1aec04301717e5a90757d0"
+    },
+    {
+      "path": "dist/family/index.html",
+      "sha256": "d3c3288eb6a46a547c03b822a875277eded848b7def0c1f75dafafcc5456b01d"
+    },
+    {
+      "path": "dist/fonts/CormorantGaramond-LICENSE.txt",
+      "sha256": "2d18818d1e2044bda96e663840ef64c32d1e6aa53a11d05cc8b70e4aa0dffef8"
+    },
+    {
+      "path": "dist/fonts/DMSans-LICENSE.txt",
+      "sha256": "be5f632588774077cbb19a8d3fd788fbc7861af041f4e7165eae5822b11392b3"
+    },
+    {
+      "path": "dist/fonts/cormorant-garamond.woff2",
+      "sha256": "5661597bce90af31f1b6a6d4809bfb5d90b5e411f64f72cea96b9ddc4faae253"
+    },
+    {
+      "path": "dist/fonts/dm-sans.woff2",
+      "sha256": "5aea616cba5a07d662b68b933bfbcb7479a604c10a81ddfc1e18ee56f61607f3"
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "7a10efbe4d67a8ce3da4fabb902f585a31617ca39ba912de21af0cfb107e5e85"
+    },
+    {
+      "path": "dist/monogram.svg",
+      "sha256": "2d7db1316f3c3911d46b39dd72afb05b88bc6064446de9def25279eca7804078"
+    },
+    {
+      "path": "dist/share.png",
+      "sha256": "a873e6ad2a3824bfcf0ae4d324adde3e175fba0f75ffd7a62af8c45c94f77312"
+    },
+    {
+      "path": "family/index.html",
+      "sha256": "b8fc6439421c9228fcf7ddd909678187ae95758bdd510ff35b993c0f45a1d44a"
+    },
+    {
+      "path": "index.html",
+      "sha256": "32fcba01597eec5e6dc26a34288ca75a36eee8f0461f77c9f09b39d3af6eea8a"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "cc7b49f365e0eab17923dfc6f7151a6ac47f1dfd6f8acc70d66aa896ccfc574f"
+    },
+    {
+      "path": "package.json",
+      "sha256": "5f6b38972b0b508b97791f5c70ea1c9df442a8362a850c6af2f42ad5346852b7"
+    },
+    {
+      "path": "public/art/botanical-scene-640.webp",
+      "sha256": "bf1edb56306f06704931b1216f6c34a311281457366a8f8d469b3fbc96519b17"
+    },
+    {
+      "path": "public/art/botanical-scene-960.webp",
+      "sha256": "ccdbad2cb9f66c835bad5a559b566d4e98e5339960514b3da852167748ba7287"
+    },
+    {
+      "path": "public/art/botanical-scene.webp",
+      "sha256": "ea0f4a41521728de0450f62eefce1f184b8f4eb139070308759c3317d06807e6"
+    },
+    {
+      "path": "public/fonts/CormorantGaramond-LICENSE.txt",
+      "sha256": "2d18818d1e2044bda96e663840ef64c32d1e6aa53a11d05cc8b70e4aa0dffef8"
+    },
+    {
+      "path": "public/fonts/DMSans-LICENSE.txt",
+      "sha256": "be5f632588774077cbb19a8d3fd788fbc7861af041f4e7165eae5822b11392b3"
+    },
+    {
+      "path": "public/fonts/cormorant-garamond.woff2",
+      "sha256": "5661597bce90af31f1b6a6d4809bfb5d90b5e411f64f72cea96b9ddc4faae253"
+    },
+    {
+      "path": "public/fonts/dm-sans.woff2",
+      "sha256": "5aea616cba5a07d662b68b933bfbcb7479a604c10a81ddfc1e18ee56f61607f3"
+    },
+    {
+      "path": "public/monogram.svg",
+      "sha256": "2d7db1316f3c3911d46b39dd72afb05b88bc6064446de9def25279eca7804078"
+    },
+    {
+      "path": "public/share.png",
+      "sha256": "a873e6ad2a3824bfcf0ae4d324adde3e175fba0f75ffd7a62af8c45c94f77312"
+    },
+    {
+      "path": "src/access.ts",
+      "sha256": "1bfeee442452c38e6e05cfb0a3bcee0e8cb75ceac985b61336e8e8c000e59a8e"
+    },
+    {
+      "path": "src/config.ts",
+      "sha256": "e09bd5ec7ed75436e24c26469596b0ab0f9aedbc01b0a22a3d6cc0a8e1bacd83"
+    },
+    {
+      "path": "src/demo.ts",
+      "sha256": "3378200b7972e819ab81dda6fca388d0627a2728558a8a6ead0b4e6d5290bd22"
+    },
+    {
+      "path": "src/export.ts",
+      "sha256": "28f30fc3a316e7957fa4154e4f1e125a244f8404c1eac4f12d89830a56a8ca8c"
+    },
+    {
+      "path": "src/family.ts",
+      "sha256": "339be36c33e5b325137b1233f214956cafd8df7d4f60c7640dccbf0c99cd5106"
+    },
+    {
+      "path": "src/model.ts",
+      "sha256": "489cc2fb759dc61a3b7aa8b57059b6c2f919b002e5f7f8e79a5805a33fbb8b0c"
+    },
+    {
+      "path": "src/presentation.ts",
+      "sha256": "e187653440b61024881f277ab8c58d8124b89818f382449e35ee1f0f49bf147b"
+    },
+    {
+      "path": "src/public-content.ts",
+      "sha256": "7b076dd7267a77f1bda606f099001c25d0e5878a109afea7462b2218549c43d3"
+    },
+    {
+      "path": "src/public.ts",
+      "sha256": "e4ab49216792c3b61c7bd19f25ba9116d7629cbce505c6b258f656f3bd3b9e4c"
+    },
+    {
+      "path": "src/store.ts",
+      "sha256": "b72b7984f51245690d0927b60cdd78bc452835200a0e700061f75e575a91805b"
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "969ee0548bd8c06dac2ffc3102c5d54e1b403477cb8c25c0f38d14390ca9194c"
+    },
+    {
+      "path": "tests/fixtures.mjs",
+      "sha256": "2b5da6d265bc88eb533e7ea9ae495e7caa39bd42a93820ee5a1baad74179c51a"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "98a9e6851cbc4652de7c8e6e681be3a1a8dfd0636f525e412c1005e4b5fda476"
+    }
+  ]
+}

@@ -1,3 +1,15 @@
+# Countdown and access management extension — 15 October 2026
+
+The current extension preserves the Botanical direction and adds the requested centred countdown plus a dedicated admin access page. The timer explicitly targets the start of **18 January 2027 at midnight IST**; this is an implementation date boundary, not a family-confirmed ceremony time. Verified family-site sign-ins register themselves, start Pending, and appear to admins for role assignment. Viewer reads; Family edits; Admin also manages access; Blocked/Pending cannot read the plan. The connected owner's UID remains protected Admin, backed by an authoritative Firebase Auth bootstrap and immutable owner-email key.
+
+Current evidence: [bounded design and exact candidate](design/countdown-access/BRIEF.md), [independent visual critique](design/countdown-access/CRITIQUE.md), and [security review](design/countdown-access/SECURITY.md). Earlier design scores and releases below are historical; they do not accept this changed candidate.
+
+Local verification: 10 model tests; 13 wedding rules tests; 9 existing Venture shared-rules regressions; 12 browser task scenarios; actual Auth/Firestore emulator registration, role assignment, open-session approval/downgrade/block/reapproval and owner protection all passed. All 64 isolated security probes passed on emulators. Production dependency audit reports zero vulnerabilities. Wedding and shared PTI builds pass. The unchanged PTI Angular suite still has 8 existing missing Auth/Firestore-provider failures and 1 pass; logs are retained in `.wedding-qa/access-pti-test.log`.
+
+Visual family identities are synthetic local browser fixtures; actual role-transition tests use synthetic emulator accounts. Neither is a claim of real human Google popup login. Planning records are preserved by provisioning; owner profile bootstrap has empty login times until a real family-site entry. Live release evidence is recorded in [extension release](design/countdown-access/RELEASE.md).
+
+---
+
 # Wedding implementation and verification
 
 ## Current Botanical redesign

@@ -1,0 +1,346 @@
+{
+  "schema_version": 2,
+  "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+  "status": "agent-reviewed",
+  "owner_verdict": {
+    "status": "not-reviewed"
+  },
+  "blockers": [],
+  "perception_packet": {
+    "product_object": "Mahima and Mayank Botanical wedding invitation with private family access management",
+    "user_job": "See the planned-date countdown, or understand and manage a signed-in account’s family permissions.",
+    "screen_state": "Current public countdown; realistic synthetic admin roster, pending identity, Viewer home and scoped role-save error.",
+    "eye_path": "Personal names and artwork, then centred first-day countdown; account identity, current role, selected change and Save.",
+    "outcome_100ms": "Names/art should remain dominant, while family access retains the same restrained Botanical identity.",
+    "outcome_1s": "The countdown should read as the first planned-day boundary and the account’s current role should be distinguishable from its draft.",
+    "outcome_5s": "The approval, role-change or recovery next action should be apparent. These are design hypotheses, not measured perception."
+  },
+  "critical_dimensions": {
+    "identity": "Retain Botanical names/art dominance and integrate a truly centred ivory/blush/sage countdown without duplicate pending-detail cards.",
+    "clarity": "Identity, current role, selected role and Save remain distinguishable; owner protection and pending/recovery next steps are clear.",
+    "craft": "All four units and working controls fit1440/390/360; long identities, Viewer/pending/error states remain readable without orphaned words or clipping."
+  },
+  "roles": {
+    "designer": "wedding_designer",
+    "visual_critic": "wedding_critic",
+    "parent": "/root",
+    "qa": "/root"
+  },
+  "baseline": {
+    "description": "Existing agent-reviewed Botanical invitation and family workspace, before countdown/roles extension; preserved direction, not an owner-rejected baseline.",
+    "evidence": {
+      "path": "wedding-planner/design/botanical/cycle5-invitation-1440.png",
+      "sha256": "6d57dec656de60cb43ae5d15d4b7402b73d035ad164587df7f12489f2b50832c"
+    }
+  },
+  "comparisons": [
+    {
+      "reference": "Romantic Botanical original concept",
+      "matched_task_state": "Public invitation focal hierarchy",
+      "observed_gap": "A countdown could compete with the names/scenery if treated as a dashboard.",
+      "disposition": "Names/art retained; one calm centred countdown panel follows the hero.",
+      "evidence": {
+        "path": "wedding-planner/design/concepts/01-romantic-botanical.png",
+        "sha256": "0432552ae98639dfa9daf81629de9a7f28903f0c6d65623a898ba786e9d55922"
+      }
+    },
+    {
+      "reference": "Contemporary Two-Mode original concept",
+      "matched_task_state": "Guest/family separation and useful working controls",
+      "observed_gap": "Dense dashboard summaries would add overhead to one access-management task.",
+      "disposition": "Separate access route with one comparable identity/current-role/action list; no speculative metrics.",
+      "evidence": {
+        "path": "wedding-planner/design/concepts/04-contemporary-two-mode.png",
+        "sha256": "9756d7b0741fcd9dfcea693b7eb0d3ca03280b6d2028ea5bc2c41396630b84a7"
+      }
+    },
+    {
+      "reference": "Previous agent-reviewed Botanical family home",
+      "matched_task_state": "Family entry and permission-aware read experience",
+      "observed_gap": "New roles could leave disabled editor clutter or break the compact four-destination home.",
+      "disposition": "Viewer retains useful reading routes; mutation controls disappear; narrow360 heading orphan corrected.",
+      "evidence": {
+        "path": "wedding-planner/design/botanical/cycle5-home-390.png",
+        "sha256": "95bdac48d45f0a3044dedcacf60d92a0b9ca551b4d305b03ce398cfe3c3b0773"
+      }
+    }
+  ],
+  "direction_mode": "accepted-direction-refinement",
+  "existing_direction_evidence": {
+    "path": "wedding-planner/design/botanical/cycle5-invitation-390.png",
+    "sha256": "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8"
+  },
+  "required_states": [
+    {
+      "id": "round5-invitation-live-1440",
+      "marker": "To the first day of our planned celebrations",
+      "viewport": "desktop"
+    },
+    {
+      "id": "round5-invitation-live-360",
+      "marker": "To the first day of our planned celebrations",
+      "viewport": "mobile"
+    },
+    {
+      "id": "round5-admin-roster-1440",
+      "marker": "Family access.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "round5-admin-roster-390",
+      "marker": "Family access.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "round5-pending-390",
+      "marker": "You’re signed in.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "round5-viewer-home-360",
+      "marker": "Viewer access",
+      "viewport": "mobile"
+    },
+    {
+      "id": "round5-failed-offline-role-390",
+      "marker": "You are offline. Reconnect before saving.",
+      "viewport": "mobile"
+    }
+  ],
+  "evidence": [
+    {
+      "state": "round5-invitation-live-1440",
+      "viewport": "desktop",
+      "observed_marker": "To the first day of our planned celebrations",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/countdown-access/round5-invitation-live-1440.png",
+      "sha256": "6971f627ab8d94d0382e056371e7cb28d6ab9730959599fedada01d9f7e1adbe"
+    },
+    {
+      "state": "round5-invitation-live-360",
+      "viewport": "mobile",
+      "observed_marker": "To the first day of our planned celebrations",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/countdown-access/round5-invitation-live-360.png",
+      "sha256": "f4607fce49f61299988b3042a9df5cccc11f8b1ef954cb6707427cbee7104f14"
+    },
+    {
+      "state": "round5-admin-roster-1440",
+      "viewport": "desktop",
+      "observed_marker": "Family access.",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/countdown-access/round5-admin-roster-1440.png",
+      "sha256": "13c4a2c44ad3754474cdc97ccd0dbfcea1de75fd2eed63e6782e858f7a1a2aba"
+    },
+    {
+      "state": "round5-admin-roster-390",
+      "viewport": "mobile",
+      "observed_marker": "Family access.",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/countdown-access/round5-admin-roster-390.png",
+      "sha256": "e4e90bf428774662af0d3ebc9483af7ca4d799131bd8eadc3b038862a73533a9"
+    },
+    {
+      "state": "round5-pending-390",
+      "viewport": "mobile",
+      "observed_marker": "You’re signed in.",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/countdown-access/round5-pending-390.png",
+      "sha256": "173cef8d6893917c40176ca24d7d00c9a44d066bb2c56bfeb24d315975fafd80"
+    },
+    {
+      "state": "round5-viewer-home-360",
+      "viewport": "mobile",
+      "observed_marker": "Viewer access",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/countdown-access/round5-viewer-home-360.png",
+      "sha256": "51b44f279bb5bedc93bf40e99bbb209e9ad909ed1c62390b3932b561b335df5b"
+    },
+    {
+      "state": "round5-failed-offline-role-390",
+      "viewport": "mobile",
+      "observed_marker": "You are offline. Reconnect before saving.",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "path": "wedding-planner/design/countdown-access/round5-failed-offline-role-390.png",
+      "sha256": "705880c422be42c19daed494464270ff325a918a27312b2b4a15e05087dcbc08"
+    }
+  ],
+  "cycles": [
+    {
+      "id": 1,
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/round1-live-390.png",
+        "sha256": "1eddcc041a9f4336abafa2e62c462ec2db2708a2886389a4ba68f5559eee350c"
+      },
+      "visual_finding": "Centred four-unit countdown retained names/art dominance; critic requested explicit first-planned-day context.",
+      "qa_finding": "Actual render checks at1440/390/360 found no overflow, broken images or page errors; no-JS and completed states captured."
+    },
+    {
+      "id": 2,
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/round2-access-pending-390.png",
+        "sha256": "a74a9da24f9144d5727a98b19c9b77cc2b6912f73a15d68d78828384ea2b2710"
+      },
+      "visual_finding": "Ten-account roster distinguished current role from draft; phone control clipping and redundant intro required correction.",
+      "qa_finding": "Browser-only synthetic roster filters and assignment rendering exercised; backend authorization was not established by this fixture."
+    },
+    {
+      "id": 3,
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/critic-round3-pending-roster-390.png",
+        "sha256": "5c1c0df467c0c88bb8958faef88d8208133f39176149560040942b9a3817b672"
+      },
+      "visual_finding": "Full-width role controls and shorter intro resolved clipping; pending identity and Viewer read-first routes were clear. Original independent critic capture retained separately after designer originals were overwritten.",
+      "qa_finding": "Rendered Viewer menu and attendance exposed zero mutation controls; pending/blocked showed no private plan. Parent personally viewed original designerR3 desktop/phone states."
+    },
+    {
+      "id": 4,
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/round4-failed-role-390.png",
+        "sha256": "88f559e521b20acf57ec913a8f1e2c56b1ff00ccce5732e48f408694c54aa228"
+      },
+      "visual_finding": "Scoped role failure/reset, saving/loading and editor-to-Viewer-to-Pending states were clear. Duplicate Blocked copy and phone attendance rhythm corrected; separate stronger reviewer found the360 heading orphan, subsequently repaired.",
+      "qa_finding": "Critic drove failed role reset and synthetic downgrade; editor closed. Controlled pagehide/pageshow and browser-clock checks passed; no actual BFCache claim."
+    },
+    {
+      "id": 5,
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/round5-invitation-live-360.png",
+        "sha256": "f4607fce49f61299988b3042a9df5cccc11f8b1ef954cb6707427cbee7104f14"
+      },
+      "visual_finding": "Frozen final invitation/role/search/error states reviewed; all four units fit360 and Decisions remains a complete word. Shared final acceptance is restricted to the seven declared renders.",
+      "qa_finding": "Parent reports10model,13wedding-rules,9Venture,12browser and real Auth/Firestore role-transition/conflict/protected-owner/legacy-Editor checks passing. Existing Angular8missing-provider failures are unrelated."
+    }
+  ],
+  "parent_checkpoints": [
+    {
+      "cycle": 3,
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/critic-round3-pending-roster-390.png",
+        "sha256": "5c1c0df467c0c88bb8958faef88d8208133f39176149560040942b9a3817b672"
+      },
+      "judgment": "Parent originally viewed designerR3 pending-roster1440/390, pending390 and Viewer-home390 before later changes. After those designer captures were overwritten, parent explicitly revisited this independently retained original criticR3 image; it shows full-width role selection/Save, current badge and two pending rows. This exact independent file is not falsely attributed to the original parent viewing."
+    },
+    {
+      "cycle": 5,
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/round5-invitation-live-360.png",
+        "sha256": "f4607fce49f61299988b3042a9df5cccc11f8b1ef954cb6707427cbee7104f14"
+      },
+      "judgment": "Parent personally inspected the seven declared final renders: names/art dominance, centred readable four-unit360 countdown, role/draft/Save/owner distinction, pending/error next steps and complete Decisions word pass. Final parent scores8.3identity/8.2clarity/8.2craft/8.2overall; owner taste review remains pending."
+    }
+  ],
+  "designer_capability_record": "Designer and primary critic used inherited capabilities. Parent randomly selected round4 via Get-Random2..5; a separate gpt-6-astra stronger reviewer actually reviewed the rendered candidate, identified a360 home heading orphan and reviewed the repair at8.4identity/8.2clarity/8.1craft/8.2overall. Parent also viewed the repair; see STRONGER-ROUND4.md. No model identity beyond the supplied capability is inferred.",
+  "reviews": {
+    "visual_critic": {
+      "reviewer": "wedding_critic",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "verdict": "pass",
+      "scores": {
+        "identity": 8.2,
+        "clarity": 8.1,
+        "craft": 8.1
+      },
+      "overall": 8.1,
+      "inspected_sha256": [
+        "6971f627ab8d94d0382e056371e7cb28d6ab9730959599fedada01d9f7e1adbe",
+        "f4607fce49f61299988b3042a9df5cccc11f8b1ef954cb6707427cbee7104f14",
+        "13c4a2c44ad3754474cdc97ccd0dbfcea1de75fd2eed63e6782e858f7a1a2aba",
+        "e4e90bf428774662af0d3ebc9483af7ca4d799131bd8eadc3b038862a73533a9",
+        "173cef8d6893917c40176ca24d7d00c9a44d066bb2c56bfeb24d315975fafd80",
+        "51b44f279bb5bedc93bf40e99bbb209e9ad909ed1c62390b3932b561b335df5b",
+        "705880c422be42c19daed494464270ff325a918a27312b2b4a15e05087dcbc08"
+      ],
+      "reason": "Critic personally viewed all25 final captures and verified byte hashes/candidate; these seven are the shared parent-inspected subset. Live frontend interactions were independently driven in earlier rounds. See critic-reviewed.json and CRITIQUE.md.",
+      "generic_cues": [
+        "The single countdown panel is justified by one requested time-to-date job, while names/art remain focal.",
+        "Role badges plus editable selection distinguish current permission from an unsaved change.",
+        "Repeated Blocked status and duplicate empty-programme panels were resolved."
+      ]
+    },
+    "parent": {
+      "reviewer": "/root",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "verdict": "pass",
+      "scores": {
+        "identity": 8.3,
+        "clarity": 8.2,
+        "craft": 8.2
+      },
+      "overall": 8.2,
+      "inspected_sha256": [
+        "6971f627ab8d94d0382e056371e7cb28d6ab9730959599fedada01d9f7e1adbe",
+        "f4607fce49f61299988b3042a9df5cccc11f8b1ef954cb6707427cbee7104f14",
+        "13c4a2c44ad3754474cdc97ccd0dbfcea1de75fd2eed63e6782e858f7a1a2aba",
+        "e4e90bf428774662af0d3ebc9483af7ca4d799131bd8eadc3b038862a73533a9",
+        "173cef8d6893917c40176ca24d7d00c9a44d066bb2c56bfeb24d315975fafd80",
+        "51b44f279bb5bedc93bf40e99bbb209e9ad909ed1c62390b3932b561b335df5b",
+        "705880c422be42c19daed494464270ff325a918a27312b2b4a15e05087dcbc08"
+      ],
+      "reason": "Parent personally inspected these seven exact final states: names/art dominate, countdown centres and fits360, current role/draft/Save/protected owner are clear, pending/error give a next action and Decisions remains complete. Parent independently verified all47candidate entry bytes and recomputed this fingerprint.",
+      "generic_cues": [
+        "One countdown panel is justified by one job.",
+        "Badges plus select are justified by current-versus-draft state.",
+        "Repeated Blocked status and empty-programme duplicates are resolved."
+      ]
+    },
+    "qa": {
+      "reviewer": "/root",
+      "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+      "verdict": "pass",
+      "inspected_sha256": [
+        "6971f627ab8d94d0382e056371e7cb28d6ab9730959599fedada01d9f7e1adbe",
+        "f4607fce49f61299988b3042a9df5cccc11f8b1ef954cb6707427cbee7104f14",
+        "13c4a2c44ad3754474cdc97ccd0dbfcea1de75fd2eed63e6782e858f7a1a2aba",
+        "e4e90bf428774662af0d3ebc9483af7ca4d799131bd8eadc3b038862a73533a9",
+        "173cef8d6893917c40176ca24d7d00c9a44d066bb2c56bfeb24d315975fafd80",
+        "51b44f279bb5bedc93bf40e99bbb209e9ad909ed1c62390b3932b561b335df5b",
+        "705880c422be42c19daed494464270ff325a918a27312b2b4a15e05087dcbc08"
+      ],
+      "reason": "Parent reports layout/runtime flows,10model,13wedding-rules,9Venture,12browser and actual Auth/Firestore pending-to-Viewer-to-Family-to-Admin-to-Blocked, protected owner, legacy Editor expectedRole and stale-assignment checks pass. Existing unrelated Angular8missing-provider failures remain. Synthetic role captures do not establish backend security; actual emulator tests are separate. Real Google popup, native BFCache and full WCAG audit were not observed."
+    }
+  },
+  "coverage_limitations": "This scoped formal record covers exactly seven parent-and-critic-inspected final renders. The broader25state manifest and critic-reviewed.json are supplemental. Family identities/errors are browser-only synthetic fixtures; public names and planned18–20January2027 dates are reviewed wedding facts. Owner requested a countdown;18January midnightIST is the clearly labelled implementation boundary, not owner-confirmed ceremony time. DesignerR3 images were regenerated; cycle3 uses an unchanged original independent critic image and explicit parent revisit. Validator checks declared evidence integrity, not beauty or owner approval."
+}

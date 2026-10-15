@@ -66,7 +66,10 @@ try {
   }
   await env.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore();
-    await setDoc(doc(db, root), { schemaVersion: 1 });
+    await setDoc(doc(db, root), { schemaVersion: 1, ownerEmail: 'owner@example.test' });
+    await setDoc(doc(db, root + '/members/owner@example.test'), {
+      email: 'owner@example.test', name: 'Workspace owner', role: 'admin', invitedAt: at, invitedBy: owner,
+    });
     await setDoc(doc(db, root + '/members/member@example.test'), {
       email: 'member@example.test',
       name: 'Synthetic member',
@@ -84,6 +87,7 @@ try {
   for (const [uid, email] of [
     [owner, 'owner@example.test'],
     ['member', 'member@example.test'],
+    ['new-family', 'new-family@example.test'],
   ])
     await getAdminAuth(admin).createUser({
       uid,
@@ -100,12 +104,12 @@ try {
     b = await browser.newContext(),
     pageA = await a.newPage(),
     pageB = await b.newPage();
-  async function login(page, uid, email) {
+  async function login(page, uid, email, expectedAccess = 'ready') {
     await page.goto(origin + '/tests/store-fixture.html');
     await page.waitForFunction(() => !!window.fixture);
     await page.evaluate((t) => window.fixture.signIn(t), token(uid, email));
     try {
-      await page.waitForFunction(() => window.fixtureState?.access === 'ready');
+      await page.waitForFunction((access) => window.fixtureState?.access === access, expectedAccess);
     } catch {
       throw Error(
         'Store login did not become ready: ' +
@@ -115,6 +119,15 @@ try {
   }
   await login(pageA, owner, 'owner@example.test');
   await login(pageB, 'member', 'member@example.test');
+  await pageA.evaluate(() => window.fixture.store.assignRole('member@example.test', 'viewer', 'editor'));
+  await pageB.waitForFunction(() => window.fixtureState.role === 'viewer' && window.fixtureState.access === 'ready');
+  const staleRole = await pageA.evaluate(async () => {
+    try { await window.fixture.store.assignRole('member@example.test', 'admin', 'family'); return false; }
+    catch (error) { return /role changed/.test(error.message); }
+  });
+  assert.equal(staleRole, true, 'A stale role choice cannot overwrite another assignment.');
+  await pageA.evaluate(() => window.fixture.store.assignRole('member@example.test', 'family', 'viewer'));
+  await pageB.waitForFunction(() => window.fixtureState.role === 'family' && window.fixtureState.access === 'ready');
   const id = await pageA.evaluate(() =>
     window.fixture.store.save('decisions', {
       title: 'Synthetic shared decision',
@@ -262,9 +275,7 @@ try {
   await env.withSecurityRulesDisabled(async (context) =>
     deleteDoc(doc(context.firestore(), root + '/members/member@example.test')),
   );
-  await pageB
-    .getByRole('button', { name: /Google/ })
-    .waitFor({ timeout: 10000 });
+  await pageB.getByText('Awaiting approval', { exact: true }).waitFor({ timeout: 10000 });
   assert.equal(await pageB.locator('dialog[open]').count(), 0);
   assert.equal(await pageB.locator('dialog').textContent(), '');
   assert.equal(await pageB.locator('#toast').textContent(), '');
@@ -277,9 +288,63 @@ try {
   for (const width of [1440, 390]) {
     await pageB.setViewportSize({ width, height: 900 });
     await pageB.screenshot({
-      path: `${cwd}/design/botanical/auth-revoked-${width}.png`,
+      path: `${cwd}/design/countdown-access/auth-pending-${width}.png`,
       fullPage: true,
     });
+  }
+  // New verified sign-ins register automatically without gaining private access.
+  const c = await browser.newContext(), pageC = await c.newPage();
+  await login(pageC, 'new-family', 'new-family@example.test', 'pending');
+  assert.equal(await pageC.evaluate(() => window.fixtureState.records.events.length), 0);
+  await pageC.goto(origin + '/family/');
+  await pageC.getByText('Awaiting approval', { exact: true }).waitFor();
+  await pageA.goto(origin + '/family/#/access');
+  const ownerRow = pageA.locator('[data-access-email="owner@example.test"]');
+  await expect(ownerRow).toContainText('Admin');
+  assert.equal(await ownerRow.locator('select').count(), 0, 'Owner role is protected.');
+  const row = pageA.locator('[data-access-email="new-family@example.test"]');
+  await expect(row).toContainText('Awaiting approval');
+  async function assign(email, role, currentRole) {
+    const account = pageA.locator(`[data-access-email="${email}"]`);
+    await account.locator('[data-role-email]').selectOption(role);
+    await account.locator('[data-role-save]').click();
+    await expect(account.locator('[data-role-save]')).toBeDisabled();
+    if (currentRole) await expect(account.locator('.role-label')).toHaveText(currentRole);
+  }
+  await assign('new-family@example.test', 'viewer', 'Viewer');
+  await pageC.getByText('Viewer access', { exact: true }).waitFor();
+  assert.equal(await pageC.locator('[data-add], [data-edit]').count(), 0);
+  await pageC.goto(origin + '/family/#/catering/18-1');
+  await expect(pageC.locator('body')).toContainText('Synthetic recovered member edit');
+  assert.equal(await pageC.locator('[data-edit]').count(), 0);
+  await pageC.goto(origin + '/family/#/access');
+  await expect(pageC.locator('h2')).toContainText('Admins manage family access.');
+  assert.equal(await pageC.locator('[data-access-email]').count(), 0);
+  await assign('new-family@example.test', 'family', 'Family');
+  await pageC.goto(origin + '/family/#/tasks');
+  await pageC.locator('[data-add="decisions"]').waitFor();
+  await pageC.locator('[data-add="decisions"]').click();
+  await pageC.locator('dialog [name="title"]').fill('Downgraded private draft');
+  await assign('new-family@example.test', 'viewer', 'Viewer');
+  await pageC.getByText('Viewer access', { exact: true }).waitFor();
+  assert.equal(await pageC.locator('dialog[open]').count(), 0, 'Downgrade closes open editor.');
+  assert.ok(!(await pageC.locator('body').textContent()).includes('Downgraded private draft'));
+  await assign('new-family@example.test', 'admin', 'Admin');
+  await pageC.goto(origin + '/family/#/access');
+  await pageC.locator('[data-access-email="member@example.test"]').waitFor();
+  await expect(pageC.locator('[data-access-email="owner@example.test"]')).toContainText('Admin');
+  assert.equal(await pageC.locator('[data-access-email="owner@example.test"] select').count(), 0);
+  await assign('new-family@example.test', 'blocked', 'Blocked');
+  await pageC.getByRole('heading', { name: 'Family access is paused.', exact: true }).waitFor();
+  assert.equal(await pageC.locator('[data-access-email], [data-edit], [data-add]').count(), 0);
+  await assign('new-family@example.test', 'pending', 'Awaiting approval');
+  await pageC.getByText('Awaiting approval', { exact: true }).waitFor();
+  // An already-open pending session gains access when approved again.
+  await assign('member@example.test', 'family', 'Family');
+  await pageB.locator('[data-add="decisions"]').waitFor();
+  for (const width of [1440, 390]) {
+    await pageA.setViewportSize({ width, height: 900 });
+    await pageA.screenshot({ path: `${cwd}/design/countdown-access/auth-access-${width}.png`, fullPage: true });
   }
   // Signing out immediately clears a second open private editor as well.
   await pageA.goto(origin + '/family/#/tasks');
@@ -303,11 +368,18 @@ try {
         status: 'pass',
         checks: [
           'two-account collaboration',
+          'legacy Editor role normalizes to Family and stale role changes are rejected',
           'competing-revision conflict',
           'export includes archive and history',
           'actual focused menu save preserves hidden fields',
           'actual focused edit rejects a competing live revision without losing draft',
           'focused open-editor revocation clears private UI',
+          'verified sign-in automatically registers a pending account',
+          'admin UI role assignment updates already-open sessions',
+          'Viewer hides writes and cannot open access management',
+          'Family downgrade clears the open private editor',
+          'Admin can manage roles; owner Admin is protected',
+          'Blocked then Pending removes private data; reapproval restores access',
           'sign-out clears private UI',
         ],
         backend:

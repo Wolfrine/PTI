@@ -1,0 +1,356 @@
+{
+  "fixture": "Browser-intercepted synthetic roles/errors/delay/transitions. Frontend state rendering only, not backend security verification.",
+  "states": [
+    {
+      "id": "failed-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-failed-role-1440.png",
+      "observedMarker": "This account changed.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "reset-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-reset-role-1440.png",
+      "observedMarker": "Awaiting approval",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "saving-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-saving-role-1440.png",
+      "observedMarker": "Saving…",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "approved-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-approved-role-1440.png",
+      "observedMarker": "Family",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "loading",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-loading-1440.png",
+      "observedMarker": "Opening the family workspace…",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "downgraded-viewer",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-downgraded-viewer-1440.png",
+      "observedMarker": "Viewer access",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "returned-pending",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-returned-pending-1440.png",
+      "observedMarker": "You’re signed in.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "blocked",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-blocked-1440.png",
+      "observedMarker": "Family access is paused.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "viewer-attendance",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/attendance/18-1",
+      "viewport": 1440,
+      "path": "design/countdown-access/round4-viewer-attendance-1440.png",
+      "observedMarker": "Who’s joining?",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "failed-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-failed-role-390.png",
+      "observedMarker": "This account changed.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "reset-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-reset-role-390.png",
+      "observedMarker": "Awaiting approval",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "saving-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-saving-role-390.png",
+      "observedMarker": "Saving…",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "approved-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-approved-role-390.png",
+      "observedMarker": "Family",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "loading",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-loading-390.png",
+      "observedMarker": "Opening the family workspace…",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "downgraded-viewer",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-downgraded-viewer-390.png",
+      "observedMarker": "Viewer access",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "returned-pending",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-returned-pending-390.png",
+      "observedMarker": "You’re signed in.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "blocked",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-blocked-390.png",
+      "observedMarker": "Family access is paused.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "viewer-attendance",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/attendance/18-1",
+      "viewport": 390,
+      "path": "design/countdown-access/round4-viewer-attendance-390.png",
+      "observedMarker": "Who’s joining?",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "failed-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-failed-role-360.png",
+      "observedMarker": "This account changed.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "reset-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-reset-role-360.png",
+      "observedMarker": "Awaiting approval",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "saving-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-saving-role-360.png",
+      "observedMarker": "Saving…",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "approved-role",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-approved-role-360.png",
+      "observedMarker": "Family",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "loading",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-loading-360.png",
+      "observedMarker": "Opening the family workspace…",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "downgraded-viewer",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-downgraded-viewer-360.png",
+      "observedMarker": "Viewer access",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "returned-pending",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-returned-pending-360.png",
+      "observedMarker": "You’re signed in.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "blocked",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/access",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-blocked-360.png",
+      "observedMarker": "Family access is paused.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "viewer-attendance",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/attendance/18-1",
+      "viewport": 360,
+      "path": "design/countdown-access/round4-viewer-attendance-360.png",
+      "observedMarker": "Who’s joining?",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "openPrivateEditor": false
+      },
+      "pageErrors": []
+    }
+  ]
+}

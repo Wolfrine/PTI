@@ -1,5 +1,7 @@
 # Botanical redesign — current design contract
 
+The subsequent [countdown/access extension](../countdown-access/BRIEF.md) retains this direction and supplies its own candidate fingerprint and review evidence. The scores and source binding below remain historical for the original Botanical release.
+
 Current verdict: **agent-reviewed; owner aesthetic review pending**. The previous folded-invitation design is **owner-rejected** for weak visual character and excessive journey burden. Its historical numerical scores do not establish acceptance of this redesign.
 
 Implementation base: PTI main `2fe53ab`; branch `codex/wedding-botanical`. Central plugin `0.1.0`, source `ba1235fe7b220842778414f3f70fca38e7df4c53`. Parent: scope, asset production, functional QA and release. Designer: `wedding_designer`. Independent critic: `wedding_critic`. A randomly selected stronger review is assigned to implementation round **3** (PowerShell Get-Random, range 2–5); actual capability and evidence will be recorded when it runs.

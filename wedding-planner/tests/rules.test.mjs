@@ -10,8 +10,9 @@ async function change(db,kind,id,data,before=null){const b=writeBatch(db);b.set(
 before(async()=>{
  env=await initializeTestEnvironment({projectId:'demo-wedding-tests',firestore:{host:'127.0.0.1',port:8085,rules:await readFile(new URL('../../personal-harness/firestore.rules',import.meta.url),'utf8')}});
  await env.withSecurityRulesDisabled(async ctx=>{
-  const d=ctx.firestore();await setDoc(doc(d,root),{schemaVersion:1});
+  const d=ctx.firestore();await setDoc(doc(d,root),{schemaVersion:1,ownerEmail:'owner@example.test'});
   await setDoc(doc(d,root+'/members/member@example.test'),{email:'member@example.test',name:'Member',role:'editor',invitedAt:at,invitedBy:'owner'});
+  for(const [id,role] of [['owner','admin'],['manager','admin'],['reader','viewer'],['relative','family'],['blocked','blocked']])await setDoc(doc(d,root+'/members/'+id+'@example.test'),{email:id+'@example.test',name:id,role,invitedAt:at,invitedBy:'owner'});
   await setDoc(doc(d,root+'/events/seed'),{...defaults,...stamp('owner',1,'seed-import')});
   await setDoc(doc(d,root+'/guests/person'),{name:'Example guest',household:'Example',family:'',phone:'',dietary:'',arrivalAt:'',departureAt:'',stayFrom:'',stayUntil:'',accommodation:'',room:'',transport:'',notes:'',...stamp('owner',1,'seed-import')});
  });
@@ -75,4 +76,50 @@ test('membership removal revokes future root/collection reads and writes',async(
  const owner=client('owner');await assertSucceeds(deleteDoc(doc(owner,root+'/members/member@example.test')));
  const revoked=client('member');await assertFails(getDoc(doc(revoked,root)));await assertFails(getDocs(collection(revoked,root+'/events')));
  await assertFails(change(revoked,'events','after-revocation',{...defaults,...stamp('member',1,'revoked')}));
+});
+
+test('verified sign-ins register only their own identity without gaining plan access',async()=>{
+ const profile={uid:'requester',email:'requester@example.test',name:'Synthetic requester',firstSeenAt:at,lastSeenAt:at},d=client('requester');
+ await assertSucceeds(setDoc(doc(d,root+'/accessRequests/requester'),profile));
+ await assertSucceeds(getDoc(doc(d,root+'/accessRequests/requester')));
+ await assertFails(getDoc(doc(d,root)));await assertFails(getDocs(collection(d,root+'/accessRequests')));
+ await assertFails(setDoc(doc(d,root+'/accessRequests/another'),{...profile,uid:'another'}));
+ await assertFails(updateDoc(doc(d,root+'/accessRequests/requester'),{role:'admin'}));
+ await assertFails(updateDoc(doc(d,root+'/accessRequests/requester'),{email:'owner@example.test'}));
+ await assertFails(updateDoc(doc(d,root+'/accessRequests/requester'),{firstSeenAt:'2020-01-01T00:00:00Z'}));
+ await assertSucceeds(updateDoc(doc(d,root+'/accessRequests/requester'),{name:'Updated synthetic name',lastSeenAt:'2026-10-16T10:00:00Z'}));
+ await assertFails(setDoc(doc(client('unverified','unverified@example.test',false),root+'/accessRequests/unverified'),{...profile,uid:'unverified',email:'unverified@example.test'}));
+});
+
+test('roles enforce Viewer read-only, Family edit and Blocked denial on the server',async()=>{
+ await assertSucceeds(getDoc(doc(client('reader'),root+'/events/seed')));
+ await assertFails(change(client('reader'),'events','viewer-write',{...defaults,...stamp('reader',1,'viewer-write')}));
+ await assertSucceeds(change(client('relative'),'events','family-write',{...defaults,...stamp('relative',1,'family-write')}));
+ await assertFails(getDoc(doc(client('blocked'),root)));
+ await assertFails(getDocs(collection(client('blocked'),root+'/events')));
+ await assertFails(change(client('blocked'),'events','blocked-write',{...defaults,...stamp('blocked',1,'blocked-write')}));
+ await assertFails(getDocs(collection(client('reader'),root+'/members')));
+});
+
+test('admins can assign roles but members cannot self-promote, including atomic batches',async()=>{
+ const manager=client('manager'),ref=doc(manager,root+'/members/requester@example.test');
+ await assertSucceeds(getDocs(collection(manager,root+'/accessRequests')));
+ await assertSucceeds(setDoc(ref,{email:'requester@example.test',name:'Synthetic requester',role:'viewer',invitedAt:at,invitedBy:'manager',updatedAt:at,updatedBy:'manager'}));
+ await assertSucceeds(getDoc(doc(client('requester'),root)));
+ await assertFails(updateDoc(doc(client('requester'),root+'/members/requester@example.test'),{role:'admin',updatedBy:'requester'}));
+ const intruder=client('intruder'),batch=writeBatch(intruder);
+ batch.set(doc(intruder,root+'/accessRequests/intruder'),{uid:'intruder',email:'intruder@example.test',name:'Synthetic intruder',firstSeenAt:at,lastSeenAt:at});
+ batch.set(doc(intruder,root+'/members/intruder@example.test'),{email:'intruder@example.test',name:'Synthetic intruder',role:'admin',invitedAt:at,invitedBy:'intruder'});
+ await assertFails(batch.commit());
+ await assertSucceeds(updateDoc(ref,{role:'blocked'}));
+ await assertFails(getDoc(doc(client('requester'),root)));
+});
+
+test('the canonical owner cannot be demoted or deleted by any client admin',async()=>{
+ for(const actor of ['manager','owner']){
+  const d=client(actor),ref=doc(d,root+'/members/owner@example.test');
+  await assertFails(updateDoc(ref,{role:'blocked'}));await assertFails(deleteDoc(ref));
+  await assertFails(updateDoc(doc(d,root),{ownerEmail:'manager@example.test'}));
+ }
+ await assertSucceeds(getDoc(doc(client('owner'),root)));
 });

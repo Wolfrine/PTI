@@ -1,0 +1,10 @@
+import {createHash} from 'node:crypto';
+import {readdir,readFile,writeFile} from 'node:fs/promises';
+const files=[];
+const walk=async directory=>{for(const entry of await readdir(directory,{withFileTypes:true})){const path=`${directory}/${entry.name}`;if(entry.isDirectory())await walk(path);else files.push(path)}};
+for(const directory of['src','public','dist'])await walk(directory);
+files.push('index.html','family/index.html','vite.config.ts','package.json','package-lock.json','tests/fixtures.mjs','design/countdown-access/visual-fixture.mjs','design/countdown-access/capture-final.mjs');
+const entries=[];for(const path of files.sort())entries.push({path,sha256:createHash('sha256').update(await readFile(path)).digest('hex')});
+const fingerprint=createHash('sha256').update(JSON.stringify(entries)).digest('hex');
+await writeFile('design/countdown-access/build-fingerprint.json',JSON.stringify({fingerprint,description:'SHA256 of sorted source, public assets, production dist and final capture fixture/logic file hashes. Functional QA and aesthetic verdict remain separate.',entries},null,2));
+console.log(fingerprint);

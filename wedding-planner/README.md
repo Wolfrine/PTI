@@ -6,7 +6,7 @@ The dedicated invitation and family workspace are implemented in this directory.
 
 Live: [guest invitation](https://mahima-mayank.web.app/) · [private family workspace](https://mahima-mayank.web.app/family/).
 
-The public page is a Botanical save-the-date invitation: names, the **planned** 18–20 January window, and original imagined floral scenery. Event times, venues, a contact and an exact countdown remain absent until the family approves them. The private home presents a compact function programme and four entrances: **Catering, Guests, Stays & Travel, Tasks & Decisions**. Read a record first, then edit the relevant detail. Local preview fixtures are synthetic and are excluded from production.
+The public page is a Botanical save-the-date invitation: names, the **planned** 18–20 January window, original imagined floral scenery, and a centred countdown to **18 January 2027 at midnight IST**. This is the start of the planned date, not a ceremony time. Event times, venues and a contact still require approval. The private home presents a compact function programme and four entrances: **Catering, Guests, Stays & Travel, Tasks & Decisions**. Read a record first, then edit the relevant detail. Admins manage signed-in accounts through **Family account menu → Manage family access**; new accounts await approval. Your protected owner account remains Admin. Local preview fixtures are synthetic and excluded from production.
 
 ## Purpose
 
@@ -27,7 +27,7 @@ One personal digital home for Mahima and Mayank's wedding: **a welcoming invitat
 - A substantial **Reception** menu exists, **without a written date**. Its placement must not be guessed.
 - The intended overall planning journey is **baraat arrival through vidai**; ceremony dates, order, and times are still unconfirmed.
 - **Website naming preference:** `mahima_mayank.web.app` (requested by the family). Firebase Hosting does not allow `_` in site IDs. The closest valid hyphenated identity, `mahima-mayank.web.app`, is now provisioned and live.
-- **Venues, city, invitation wording, timings, countdown target, guest counts and accommodation** have not yet been supplied. Final family visual acceptance is still pending.
+- **Venues, city, invitation wording, event timings, guest counts and accommodation** have not yet been supplied. The requested countdown uses the labelled start of 18 January as an implementation choice; no exact ceremony time is inferred. Final family visual acceptance is still pending.
 
 The [**Wedding Record**](WEDDING_RECORD.md) preserves the initial timeline, complete proposed menus, provenance, ambiguities and unresolved details. The reviewed release imports it once into the private shared workspace; after successful activation, Firestore is the operational record. An existing workspace is never overwritten by later deployments. Neither this initial transcript nor its import is proof of approved menus, reservations or public invitation details.
 

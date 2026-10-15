@@ -1,0 +1,121 @@
+{
+  "candidate": "22c25dc3fc0c4a9cdc8f6fee22d5ac162419ab657f335db5d49b28fe9c8bdb20",
+  "reviewer": "wedding_critic",
+  "scores": {
+    "identity": 8.2,
+    "clarity": 8.1,
+    "craft": 8.1
+  },
+  "overall": 8.1,
+  "verdict": "pass",
+  "owner_accepted": false,
+  "evidence": [
+    {
+      "path": "design/countdown-access/round5-invitation-live-1440.png",
+      "sha256": "6971f627ab8d94d0382e056371e7cb28d6ab9730959599fedada01d9f7e1adbe"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-roster-1440.png",
+      "sha256": "13c4a2c44ad3754474cdc97ccd0dbfcea1de75fd2eed63e6782e858f7a1a2aba"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-pending-1440.png",
+      "sha256": "05cb8bf38dbcf7a5e917bd5027f2827ed706640efc2376f80bd54f84352d5b05"
+    },
+    {
+      "path": "design/countdown-access/round5-pending-1440.png",
+      "sha256": "f46de1d2664a686ab088c8eb35a100c884b3261244745cf1cd0226428cd675c2"
+    },
+    {
+      "path": "design/countdown-access/round5-viewer-home-1440.png",
+      "sha256": "815eea09c5dc46a53578a38426bc47146d624cdad15ca826713c6c1d11782d5a"
+    },
+    {
+      "path": "design/countdown-access/round5-invitation-live-390.png",
+      "sha256": "6c2c90f59fef004b945a707709655c0c5821da78eb5923f2623c9ca7466234ea"
+    },
+    {
+      "path": "design/countdown-access/round5-invitation-no-js-390.png",
+      "sha256": "ac0e935b51b2e8530b6ef2a4560b54ec09009ec1c7e8422dea9c16bc471fb8e8"
+    },
+    {
+      "path": "design/countdown-access/round5-invitation-complete-390.png",
+      "sha256": "8a731da9bfa047d8463837238fb55ef1d520c89e749237c77823aa9da4951474"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-roster-390.png",
+      "sha256": "e4e90bf428774662af0d3ebc9483af7ca4d799131bd8eadc3b038862a73533a9"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-pending-390.png",
+      "sha256": "5c1c0df467c0c88bb8958faef88d8208133f39176149560040942b9a3817b672"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-role-choice-390.png",
+      "sha256": "257d7b7e036f18e8d81754fabbb6bd537c88e73951ac5aa1ab7eb8ce73a5a348"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-no-match-390.png",
+      "sha256": "c82f2e55482afee107f548b156b76b10d598a95c1189a87a8b9cbe087b88fa2c"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-account-390.png",
+      "sha256": "bdc10b1ae92826ea258480c5c2f42f3d0f60fd7cba06a3bafb4bb155aa8bae6d"
+    },
+    {
+      "path": "design/countdown-access/round5-pending-390.png",
+      "sha256": "173cef8d6893917c40176ca24d7d00c9a44d066bb2c56bfeb24d315975fafd80"
+    },
+    {
+      "path": "design/countdown-access/round5-viewer-home-390.png",
+      "sha256": "8cb676f71441c71d5388ac9d4e4e9a1a106ed5883ebad1bb7d831fa659e0a671"
+    },
+    {
+      "path": "design/countdown-access/round5-viewer-menu-390.png",
+      "sha256": "61b09aad30c9241b7f6bda5c763f965a1cdb4af48511698fbb5ba397dd367d89"
+    },
+    {
+      "path": "design/countdown-access/round5-viewer-attendance-390.png",
+      "sha256": "caf895fc6cf30c7dd15d9da477565f4ae98358b650b4a34bafceea1d48f273cd"
+    },
+    {
+      "path": "design/countdown-access/round5-viewer-no-access-390.png",
+      "sha256": "5ff6ce2828b1fb5ecc416b45c68ce7ca3cc909e137d090a0cbb02db988572afe"
+    },
+    {
+      "path": "design/countdown-access/round5-blocked-390.png",
+      "sha256": "1f45f355cb7cb802ae98424f4f986c3a8905e95051041d084c361378160947a4"
+    },
+    {
+      "path": "design/countdown-access/round5-loading-390.png",
+      "sha256": "c87976f23895b2c24b325ebfb400a94488608ff4d818ad11c13ad333eca6bf07"
+    },
+    {
+      "path": "design/countdown-access/round5-failed-offline-role-390.png",
+      "sha256": "705880c422be42c19daed494464270ff325a918a27312b2b4a15e05087dcbc08"
+    },
+    {
+      "path": "design/countdown-access/round5-invitation-live-360.png",
+      "sha256": "f4607fce49f61299988b3042a9df5cccc11f8b1ef954cb6707427cbee7104f14"
+    },
+    {
+      "path": "design/countdown-access/round5-admin-roster-360.png",
+      "sha256": "22eed859ea2b063f310a6dce2455e3ce2083ace9955f846b3c540312cc0b5828"
+    },
+    {
+      "path": "design/countdown-access/round5-pending-360.png",
+      "sha256": "11b91a916314dae2296ffd8b064dd1a97e2edbf20b9e53a34109ace2a62227a2"
+    },
+    {
+      "path": "design/countdown-access/round5-viewer-home-360.png",
+      "sha256": "51b44f279bb5bedc93bf40e99bbb209e9ad909ed1c62390b3932b561b335df5b"
+    }
+  ],
+  "limitations": [
+    "All 25 listed final renders were personally viewed. Parent shared acceptance is limited to the subset the parent personally viewed.",
+    "The critic independently drove actual frontend interactions in Chrome at 1440/390/360 throughout the five rounds; family role/error fixtures are browser-only synthetic store interception, not backend authentication proof.",
+    "Parent reports actual Auth/Firestore role journeys and 12 final browser tasks passing; critic did not rerun the complete functional suite.",
+    "Owner requested a countdown; midnight IST at the first planned celebration day is a clearly labelled implementation choice, not an owner-confirmed ceremony time.",
+    "Final public capture clock is fixed for stable evidence; actual browser live ticking was separately observed. Reduced-motion stills and synthetic lifecycle events do not establish motion quality or actual BFCache navigation."
+  ]
+}

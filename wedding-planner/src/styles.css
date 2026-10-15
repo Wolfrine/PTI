@@ -479,26 +479,175 @@ select:focus {
 }
 .countdown {
   text-align: center;
-  padding: 30px;
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  margin: -53px auto 0;
+  padding: 23px 34px 25px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fffcf7f5;
+  box-shadow: 0 12px 35px #866f5412;
+}
+.countdown h2 {
+  font-size: 30px;
+}
+.countdown-leaf {
+  display: none;
+}
+.countdown-boundary {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.countdown-context {
+  margin-top: 8px;
+  color: var(--sage-ink);
+  font-size: 12px;
+  letter-spacing: .03em;
 }
 .countdown [data-countdown] {
-  display: flex;
-  gap: 35px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
   justify-content: center;
-  margin-top: 15px;
+  max-width: 430px;
+  margin: 18px auto 0;
 }
 .countdown [data-countdown] > span {
   display: flex;
   flex-direction: column;
+  gap: 3px;
+  position: relative;
+}
+.countdown [data-countdown] > span + span {
+  border-left: 1px solid var(--line);
 }
 .countdown b {
-  font: 45px var(--serif);
+  font: 48px/1 var(--serif);
+  font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 .countdown small {
   text-transform: uppercase;
   font-size: 10px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.13em;
+  color: var(--sage-ink);
+}
+.countdown-details {
+  margin: 20px auto 0;
+  max-width: 470px;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.countdown-fallback,
+.countdown-complete {
+  grid-column: 1 / -1;
+  font: italic 22px/1.35 var(--serif);
+  color: var(--ink);
+}
+/* Dedicated family access: identity, current role, then one focused action. */
+.account-menu-panel > p small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.account-menu-panel > a.text-button {
+  display: flex;
+  min-height: 44px;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+}
+.viewer-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 17px;
+  margin-bottom: 22px;
+  background: var(--sage);
+  color: var(--sage-ink);
+  font-size: 14px;
+  border-radius: 8px;
+}
+.viewer-notice .ui-icon { width: 20px; height: 20px; }
+.access-intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 35px;
+  margin: -9px 0 26px;
+}
+.access-intro > p { max-width: 560px; }
+.role-guide { position: relative; min-width: 225px; font-size: 14px; }
+.role-guide summary { cursor: pointer; color: var(--ink); min-height: 44px; padding: 7px 0; }
+.role-guide dl { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 7px; }
+.role-guide dl > div + div { margin-top: 12px; }
+.role-guide dt { font-weight: 600; color: var(--ink); }
+.role-guide dd { margin: 3px 0 0; color: var(--muted); }
+.access-toolbar { display: flex; gap: 20px; justify-content: space-between; align-items: center; margin-bottom: 19px; }
+.access-toolbar .filter-tabs { gap: 5px; flex-wrap: wrap; }
+.access-toolbar .filter-tabs button { padding: 9px 14px; }
+.access-list { overflow: hidden; }
+.access-column-head,
+.access-row { display: grid; grid-template-columns: minmax(260px,1.4fr) 155px minmax(230px,1fr); gap: 24px; align-items: center; }
+.access-column-head { padding: 13px 25px; background: #efeee4; color: var(--muted); font-size: 12px; }
+.access-row { padding: 22px 25px; }
+.access-row + .access-row { border-top: 1px solid var(--line); }
+.access-person { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.access-person .person-initial { width: 40px; height: 40px; font-size: 21px; flex-shrink: 0; }
+.access-person > div { min-width: 0; }
+.access-person h2 { font: 500 19px/1.3 var(--sans); }
+.access-person p { margin-top: 3px; overflow-wrap: anywhere; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.access-person small { display: block; color: var(--muted); margin-top: 5px; font-size: 12px; }
+.access-current { display: flex; flex-direction: column; gap: 4px; align-items: start; }
+.access-current > small { font-size: 12px; color: var(--muted); }
+.role-label { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 100px; font-size: 12px; line-height: 1.6; white-space: nowrap; color: var(--ink); background: var(--blush); }
+.role-admin, .role-family { color: var(--sage-ink); background: var(--sage); }
+.role-viewer { color: #5b6170; background: #e9ecf0; }
+.role-blocked { color: #843c37; background: #f5e0dc; }
+.role-pending { color: #775a31; background: #f2e9d4; }
+.role-form { display: grid; grid-template-columns: minmax(0,1fr) 71px; align-items: start; gap: 10px; }
+.role-form select { min-height: 44px; width: 100%; padding: 8px 28px 8px 12px; border: 1px solid #c7b7a4; border-radius: 7px; background: var(--white); color: var(--body); font-size: 14px; }
+.role-form .button { min-width: 0; padding: 8px 13px; border-radius: 7px; }
+.role-form button:disabled { cursor: default; opacity: .6; }
+.role-error { grid-column: 1 / -1; font-size: 14px; color: #873c36; background: #f7e7e0; padding: 9px 11px; border-radius: 5px; line-height: 1.5; }
+.protected-access { display: flex; gap: 9px; align-items: center; color: var(--muted); font-size: 14px; }
+.protected-access .ui-icon { width: 17px; height: 17px; }
+.signed-in-identity { display: grid; grid-template-columns: 45px minmax(0,1fr); column-gap: 13px; row-gap: 10px; align-items: center; margin-top: 25px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.identity-initial { border: 1px solid #cfd5bd; background: var(--sage); color: var(--sage-ink); width: 45px; height: 45px; border-radius: 50%; display: grid; place-items: center; font: 26px var(--serif); }
+.signed-in-identity > div { min-width: 0; flex: 1; }
+.signed-in-identity strong { font-size: 16px; font-weight: 500; color: var(--ink); }
+.signed-in-identity > div span { display: block; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.signed-in-identity > .role-label { grid-column: 2; justify-self: start; }
+.attendance-status { text-transform: capitalize; padding: 7px 13px; border-radius: 6px; font-size: 14px; background: var(--sage); color: var(--sage-ink); }
+@media (max-width: 1000px) {
+  .access-column-head, .access-row { grid-template-columns: minmax(230px,1.3fr) 132px minmax(190px,1fr); gap: 15px; }
+  .access-toolbar { flex-wrap: wrap; }
+}
+@media (max-width: 700px) {
+  .access-intro { display: block; margin: -8px 0 10px; }
+  .access-intro > p { font-size: 15px; }
+  .role-guide { margin-top: 7px; }
+  .role-guide dl { padding: 12px 14px; background: var(--sage); border-radius: 7px; }
+  .access-toolbar { gap: 10px; margin-bottom: 14px; }
+  .access-toolbar .filter-tabs { display: grid; grid-template-columns: 1fr 1.3fr; width: 100%; gap: 5px; }
+  .access-toolbar .filter-tabs button { padding: 9px; font-size: 13px; }
+  .access-toolbar .search-field { width: 100%; }
+  .access-column-head { display: none; }
+  .access-row { padding: 20px; grid-template-columns: minmax(0,1fr) auto; gap: 13px; }
+  .access-person { grid-column: 1 / -1; gap: 11px; }
+  .access-person h2 { font-size: 17px; }
+  .access-person p { font-size: 13px; }
+  .access-person small { font-size: 12px; }
+  .access-current { grid-column: 1 / -1; margin-left: 51px; }
+  .access-owner .access-current { grid-column: 1; }
+  .access-owner .protected-access { grid-column: 2; font-size: 12px; gap: 5px; }
+  .role-form { grid-column: 1 / -1; grid-template-columns: minmax(0,1fr) 75px; margin-left: 0; }
+  .role-form select { font-size: 16px; }
+  .viewer-notice { font-size: 13px; align-items: start; }
 }
 /* Family home and read-first modules. */
 .demo-banner {
@@ -1669,13 +1818,15 @@ dialog.menu-editor {
     padding: 30px 22px;
   }
   .countdown {
-    padding: 25px 15px;
+    margin: -30px 18px 0;
+    padding: 23px 16px;
   }
   .countdown [data-countdown] {
-    gap: 25px;
+    gap: 0;
+    margin-top: 19px;
   }
   .countdown b {
-    font-size: 37px;
+    font-size: 39px;
   }
   .family-brand strong {
     font-size: 22px;
@@ -2093,6 +2244,8 @@ dialog.menu-editor {
     font-size: 14px;
   }
   .attendance-strip {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
     gap: 15px;
     margin: 20px 0;
   }
@@ -2543,6 +2696,7 @@ dialog.menu-editor {
     font-size: 23px;
     line-height: 1.06;
     margin: 2px 0 0;
+    overflow-wrap: normal;
   }
   .entrance p {
     grid-column: 1/-1;
@@ -2642,6 +2796,9 @@ dialog.menu-editor {
   .task-group > .section-heading > .button {
     font-size: 12px;
   }
+}
+@media (max-width: 380px) {
+  .entrance-tasks h2 { font-size: 21px; letter-spacing: -.015em; }
 }
 .compare-controls {
   display: grid;

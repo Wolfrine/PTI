@@ -1,51 +1,75 @@
 import {collections, emptyRecords, validateRecord, type CollectionName, type Payload, type Records, type RecordMap} from './model';
 import {firebaseConfig, ownerUid, workspacePath} from './config';
 import {readStableExport} from './export';
+import {effectiveRole,canReadPlan,canEditPlan,type AccessRole,type MemberRole} from './access';
 import type {Auth, User} from 'firebase/auth';
 import type {Firestore, Unsubscribe} from 'firebase/firestore';
 
-export interface Member {id:string; email:string; name:string; role:'editor'; invitedAt:string; invitedBy:string;}
+export interface Member {id:string; email:string; name:string; role:MemberRole; invitedAt:string; invitedBy:string; updatedAt?:string; updatedBy?:string;}
+export interface AccessRequest {id:string;uid:string;email:string;name:string;firstSeenAt:string;lastSeenAt:string;}
 export interface StoreState {
-  user:{uid:string;displayName:string|null;email:string|null}|null; isOwner:boolean;
-  loading:boolean; access:'signed-out'|'loading'|'ready'|'denied'; offline:boolean;
-  error:string; records:Records; members:Member[]; demo:boolean; truncated:boolean;
+  user:{uid:string;displayName:string|null;email:string|null}|null; isOwner:boolean; isAdmin:boolean; canEdit:boolean;role:AccessRole;
+  loading:boolean; access:'signed-out'|'loading'|'ready'|'denied'|'pending'; offline:boolean;
+  error:string; records:Records; members:Member[]; accessRequests:AccessRequest[];demo:boolean; truncated:boolean;
 }
 export function createWeddingStore(onChange:(state:StoreState)=>void) {
-  let state:StoreState={user:null,isOwner:false,loading:false,access:'signed-out',offline:!navigator.onLine,error:'',records:emptyRecords(),members:[],demo:false,truncated:false};
-  let auth:Auth,db:Firestore,unsubscribers:Unsubscribe[]=[],epoch=0;
+  let state:StoreState={user:null,isOwner:false,isAdmin:false,canEdit:false,role:'pending',loading:false,access:'signed-out',offline:!navigator.onLine,error:'',records:emptyRecords(),members:[],accessRequests:[],demo:false,truncated:false};
+  let auth:Auth,db:Firestore,unsubscribers:Unsubscribe[]=[],membershipStop:Unsubscribe|undefined,epoch=0,viewEpoch=0;
   let api:typeof import('firebase/firestore');
   let authApi:typeof import('firebase/auth');
   const history:Payload[]=[];
   const emit=()=>{store.state=state;onChange(state);};
-  const clear=()=>{unsubscribers.forEach(f=>f());unsubscribers=[];state={...state,records:emptyRecords(),members:[],truncated:false};};
-  function deny(message:string) { epoch++;clear();state={...state,loading:false,access:'denied',error:message};emit(); }
-  function check() {
-    if(state.access!=='ready'||!state.user)throw Error('Sign in with an invited account to make changes.');
+  const clearPrivate=()=>{viewEpoch++;unsubscribers.forEach(f=>f());unsubscribers=[];state={...state,records:emptyRecords(),members:[],accessRequests:[],truncated:false};};
+  const clear=()=>{membershipStop?.();membershipStop=undefined;clearPrivate();};
+  function deny(message:string) {clearPrivate();state={...state,loading:false,canEdit:false,isAdmin:false,access:'denied',error:message};emit();}
+  function check(edit=false) {
+    if(state.access!=='ready'||!state.user)throw Error('Sign in with an approved account to make changes.');
     if(state.offline||!navigator.onLine)throw Error('You are offline. Reconnect before saving.');
+    if(edit&&!state.canEdit)throw Error('Your Viewer role is read-only. Ask an admin to change your access.');
+  }
+  async function register(user:User,generation:number) {
+    if(!user.emailVerified||!user.email)throw Error('Use a verified Google account to request family access.');
+    const ref=api.doc(db,workspacePath,'accessRequests',user.uid),at=new Date().toISOString();
+    await api.runTransaction(db,async tx=>{
+      const snap=await tx.get(ref);if(generation!==epoch)throw Error('Your sign-in changed. Please try again.');
+      const identity={uid:user.uid,email:user.email!.toLowerCase(),name:(user.displayName||'').slice(0,180),lastSeenAt:at};
+      if(snap.exists())tx.update(ref,{name:identity.name,lastSeenAt:at,...(!snap.data().firstSeenAt?{firstSeenAt:at}:{})});
+      else tx.set(ref,{...identity,firstSeenAt:at});
+    });
+  }
+  async function loadPlan(role:AccessRole,generation:number) {
+    clearPrivate();const view=viewEpoch;
+    state={...state,role,isAdmin:role==='admin',canEdit:canEditPlan(role),error:'',loading:canReadPlan(role),access:canReadPlan(role)?'loading':role==='pending'?'pending':'denied'};
+    if(role==='blocked')state.error='Your family access has been blocked. Contact a family admin.';
+    emit();if(!canReadPlan(role))return;
+    try {
+      const root=api.doc(db,workspacePath),snap=await api.getDocFromServer(root);
+      if(generation!==epoch||view!==viewEpoch)return;
+      if(!snap.exists())return deny('The family workspace is being prepared. Please try again later.');
+      const names=[...collections,...(role==='admin'?['members','accessRequests']:[])],pending=new Set(names);
+      unsubscribers.push(api.onSnapshot(root,s=>{if(generation!==epoch||view!==viewEpoch)return;if(!s.exists())deny('This workspace is no longer available.');},()=>{if(generation===epoch&&view===viewEpoch)deny('Your access has changed. Please check your family role.');}));
+      for(const name of names)unsubscribers.push(api.onSnapshot(api.collection(root,name),snapshot=>{
+        if(generation!==epoch||view!==viewEpoch)return;
+        if(name==='members')state={...state,members:snapshot.docs.map(d=>({id:d.id,...d.data()} as Member))};
+        else if(name==='accessRequests')state={...state,accessRequests:snapshot.docs.map(d=>({id:d.id,...d.data()} as AccessRequest))};
+        else state={...state,records:{...state.records,[name]:snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(d=>!(d as {archived?:boolean}).archived)}};
+        pending.delete(name);state={...state,loading:pending.size>0,access:pending.size?'loading':'ready'};emit();
+      },()=>{if(generation===epoch&&view===viewEpoch)deny('We could not load the private workspace. Check your role and connection.');}));
+    } catch {if(generation===epoch&&view===viewEpoch)deny(navigator.onLine?'Your access could not be verified. Please sign in again.':'You are offline. Reconnect to open the private workspace.');}
   }
   async function open(user:User|null) {
     const generation=++epoch;clear();
-    state={...state,user:user?{uid:user.uid,displayName:user.displayName,email:user.email}:null,isOwner:user?.uid===ownerUid,error:'',access:user?'loading':'signed-out',loading:!!user};emit();
+    state={...state,user:user?{uid:user.uid,displayName:user.displayName,email:user.email}:null,isOwner:user?.uid===ownerUid,isAdmin:false,canEdit:false,role:'pending',error:'',access:user?'loading':'signed-out',loading:!!user};emit();
     if(!user)return;
     try {
-      const root=api.doc(db,workspacePath),snap=await api.getDocFromServer(root);
-      if(generation!==epoch)return;
-      if(!snap.exists())return deny('The family workspace is being prepared. Please try again later.');
-      if(!state.isOwner && user.email)unsubscribers.push(api.onSnapshot(api.doc(root,'members',user.email.toLowerCase()),membership=>{
-        if(generation===epoch&&!membership.exists())deny('Your family access has been removed.');
-      },()=>{if(generation===epoch)deny('Your family access could not be verified.');}));
-      const pending=new Set<string>([...collections,...(state.isOwner?['members']:[])]);
-      unsubscribers.push(api.onSnapshot(root,s=>{if(generation!==epoch)return;if(!s.exists())deny('This workspace is no longer available.');},()=>{if(generation===epoch)deny('Your access has changed. Ask the family owner to check your invitation.');}));
-      for(const name of pending) {
-        unsubscribers.push(api.onSnapshot(api.collection(root,name),snapshot=>{
-          if(generation!==epoch)return;
-          if(name==='members')state={...state,members:snapshot.docs.map(d=>({id:d.id,...d.data()} as Member))};
-          else state={...state,records:{...state.records,[name]:snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(d=>!(d as {archived?:boolean}).archived)}};
-          pending.delete(name);
-          state={...state,loading:pending.size>0,access:pending.size?'loading':'ready'};emit();
-        },()=>{if(generation===epoch)deny('We could not load the private workspace. Check your invitation and connection.');}));
-      }
-    } catch { if(generation===epoch)deny(navigator.onLine?'This Google account has not been invited. Ask the family owner for access.':'You are offline. Reconnect to open the private workspace.'); }
+      // Register the verified identity before touching any private planning data.
+      await register(user,generation);if(generation!==epoch)return;
+      let lastRole:AccessRole|undefined;
+      membershipStop=api.onSnapshot(api.doc(db,workspacePath,'members',user.email!.toLowerCase()),membership=>{
+        if(generation!==epoch)return;const role=effectiveRole(user.uid===ownerUid,membership.data()?.role);
+        if(role!==lastRole){lastRole=role;void loadPlan(role,generation);}
+      },()=>{if(generation===epoch)deny('Your family role could not be verified. Please sign in again.');});
+    }catch(error){if(generation===epoch)deny(navigator.onLine?(error instanceof Error?error.message:'Your sign-in could not be registered.'):'You are offline. Reconnect to request access.');}
   }
   async function guard<T>(action:()=>Promise<T>):Promise<T> {
     try {state={...state,error:''};const value=await action();emit();return value;}
@@ -55,10 +79,10 @@ export function createWeddingStore(onChange:(state:StoreState)=>void) {
     state,
     async start() {
       addEventListener('offline',()=>{state={...state,offline:true};emit();});
-      addEventListener('online',()=>{state={...state,offline:false};emit();if(auth?.currentUser&&state.access==='denied')void open(auth.currentUser);});
+      addEventListener('online',()=>{state={...state,offline:false};emit();if(auth?.currentUser&&(state.access==='denied'||state.access==='pending'))void open(auth.currentUser);});
       if(import.meta.env.DEV && new URLSearchParams(location.search).get('demo')==='1') {
         const {demoRecords}=await import('./demo');
-        state={...state,user:{uid:'demo-owner',displayName:'Preview family',email:'preview@example.test'},isOwner:true,access:'ready',demo:true,records:demoRecords()};emit();return;
+        state={...state,user:{uid:'demo-owner',displayName:'Preview family',email:'preview@example.test'},isOwner:true,isAdmin:true,canEdit:true,role:'admin',access:'ready',demo:true,records:demoRecords(),accessRequests:[{id:'demo-owner',uid:'demo-owner',email:'preview@example.test',name:'Preview family',firstSeenAt:'',lastSeenAt:''},{id:'preview-pending',uid:'preview-pending',email:'pending@example.test',name:'Example pending account',firstSeenAt:'2026-10-15T10:00:00Z',lastSeenAt:'2026-10-15T10:00:00Z'}]};emit();return;
       }
       state={...state,loading:true,access:'loading'};emit();
       try {
@@ -72,14 +96,14 @@ export function createWeddingStore(onChange:(state:StoreState)=>void) {
         }
         await authApi.setPersistence(auth,authApi.browserSessionPersistence);
         authApi.onAuthStateChanged(auth,user=>void open(user),()=>deny('Sign-in could not be restored. Please try again.'));
-        addEventListener('focus',()=>{if(auth.currentUser&&state.access==='ready')api.getDocFromServer(api.doc(db,workspacePath)).catch(()=>deny('Your access could not be verified. Please sign in again.'));});
+        addEventListener('focus',()=>{if(auth.currentUser&&state.access==='denied')void open(auth.currentUser);else if(auth.currentUser&&state.access==='ready')api.getDocFromServer(api.doc(db,workspacePath)).catch(()=>deny('Your access could not be verified. Please sign in again.'));});
       } catch { deny('Sign-in is temporarily unavailable. Please check your connection and try again.'); }
     },
     async signIn() {return guard(async()=>{if(!auth)throw Error('Sign-in is loading. Refresh if this continues.');await authApi.signInWithPopup(auth,new authApi.GoogleAuthProvider());});},
-    async signOut() {epoch++;clear();state={...state,user:null,isOwner:false,access:'signed-out',loading:false,error:''};emit();if(auth)await authApi.signOut(auth);},
+    async signOut() {epoch++;clear();state={...state,user:null,isOwner:false,access:'signed-out',loading:false,isAdmin:false,canEdit:false,role:'pending',error:''};emit();if(auth)await authApi.signOut(auth);},
     async save<K extends CollectionName>(collection:K,payload:Payload,id?:string,expectedRevision?:number) {
       return guard(async()=>{
-        check();const cleaned=validateRecord(collection,payload),actor=state.user!.uid;
+        check(true);const cleaned=validateRecord(collection,payload),actor=state.user!.uid;
         const key=id||(collection==='attendance'?`${cleaned.guestId}--${cleaned.eventId}`:crypto.randomUUID());
         if(!/^[A-Za-z0-9_-]{1,260}$/.test(key))throw Error('Invalid record identifier.');
         const at=new Date().toISOString(),changeId=crypto.randomUUID();
@@ -103,7 +127,7 @@ export function createWeddingStore(onChange:(state:StoreState)=>void) {
     },
     async archive(collection:CollectionName,id:string,expectedRevision:number) {
       return guard(async()=>{
-        check();const at=new Date().toISOString(),actor=state.user!.uid,changeId=crypto.randomUUID();
+        check(true);const at=new Date().toISOString(),actor=state.user!.uid,changeId=crypto.randomUUID();
         if(state.demo){state={...state,records:{...state.records,[collection]:state.records[collection].filter(r=>r.id!==id)}};emit();return;}
         await api.runTransaction(db,async tx=>{
           const ref=api.doc(db,workspacePath,collection,id),snapshot=await tx.get(ref);
@@ -113,23 +137,38 @@ export function createWeddingStore(onChange:(state:StoreState)=>void) {
         });
       });
     },
-    async invite(email:string,name:string) {
+    async assignRole(email:string,role:AccessRole,expectedRole?:string) {
       return guard(async()=>{
-        check();if(!state.isOwner)throw Error('Only the family owner can invite members.');
-        email=email.trim().toLowerCase();name=name.trim();
-        if(!/^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(email)||email.length>254||name.length>180)throw Error('Enter a valid Google email and a name up to 180 characters.');
-        const member={email,name,role:'editor' as const,invitedAt:new Date().toISOString(),invitedBy:state.user!.uid};
-        if(state.demo){state={...state,members:[...state.members.filter(m=>m.email!==email),{id:email,...member}]};emit();}
-        else await api.setDoc(api.doc(db,workspacePath,'members',email),member);
+        check();if(!state.isAdmin)throw Error('Only an admin can manage family access.');
+        email=email.trim().toLowerCase();
+        if(!['pending','admin','family','viewer','blocked'].includes(role)||!/^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(email)||email.length>254)throw Error('Choose a valid account and role.');
+        const ownerProfile=state.accessRequests.find(p=>p.uid===ownerUid);
+        if(ownerProfile?.email===email||state.isOwner&&state.user?.email?.toLowerCase()===email)throw Error('The wedding owner stays Admin.');
+        const at=new Date().toISOString(),actor=state.user!.uid,profile=state.accessRequests.find(p=>p.email===email);
+        if(state.demo){
+          const previous=state.members.find(m=>m.email===email),before=effectiveRole(false,previous?.role);
+          if(expectedRole&&before!==effectiveRole(false,expectedRole))throw Error('This role changed. Review the current account before saving.');
+          state={...state,members:[...state.members.filter(m=>m.email!==email),...(role==='pending'?[]:[{id:email,email,name:profile?.name||previous?.name||'',role,invitedAt:previous?.invitedAt||at,invitedBy:previous?.invitedBy||actor,updatedAt:at,updatedBy:actor}]) ]};emit();return;
+        }
+        const ref=api.doc(db,workspacePath,'members',email);
+        await api.runTransaction(db,async tx=>{
+          const snap=await tx.get(ref),previous=snap.exists()?snap.data():undefined,before=effectiveRole(false,previous?.role);
+          if(expectedRole&&before!==effectiveRole(false,expectedRole))throw Error('This role changed. Review the current account before saving.');
+          if(role==='pending')tx.delete(ref);
+          else tx.set(ref,{email,name:profile?.name||previous?.name||'',role,invitedAt:previous?.invitedAt||at,invitedBy:previous?.invitedBy||actor,updatedAt:at,updatedBy:actor});
+        });
       });
     },
-    async revoke(email:string) {return guard(async()=>{check();if(!state.isOwner)throw Error('Only the family owner can manage access.');if(state.demo){state={...state,members:state.members.filter(m=>m.email!==email)};emit();}else await api.deleteDoc(api.doc(db,workspacePath,'members',email));});},
+    async invite(email:string,name:string) {
+      await store.assignRole(email,'family');
+    },
+    async revoke(email:string) {return store.assignRole(email,'blocked');},
     async exportData(){
       check();
       if(state.demo)return JSON.stringify({schemaVersion:1,exportedAt:new Date().toISOString(),private:true,...state.records,history},null,2);
-      const startedAt=new Date().toISOString(),exportEpoch=epoch,exportUid=state.user!.uid;
-      const session=()=>{if(epoch!==exportEpoch||state.user?.uid!==exportUid||state.access!=='ready')throw Error('Your access changed during export. Sign in again before exporting.');};
-      const records=await readStableExport(async name=>(await api.getDocsFromServer(api.collection(db,workspacePath,name))).docs.map(d=>({id:d.id,...d.data()})),session,state.isOwner);
+      const startedAt=new Date().toISOString(),exportEpoch=epoch,exportView=viewEpoch,exportUid=state.user!.uid;
+      const session=()=>{if(epoch!==exportEpoch||viewEpoch!==exportView||state.user?.uid!==exportUid||state.access!=='ready')throw Error('Your access changed during export. Sign in again before exporting.');};
+      const records=await readStableExport(async name=>(await api.getDocsFromServer(api.collection(db,workspacePath,name))).docs.map(d=>({id:d.id,...d.data()})),session,state.isAdmin);
       return JSON.stringify({schemaVersion:1,readStartedAt:startedAt,exportedAt:new Date().toISOString(),private:true,...records},null,2);
     },
   };

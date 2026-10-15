@@ -52,7 +52,8 @@ try {
   await expect(staticPage.locator('#couple-names')).toContainText('Mayank');
   await expect(staticPage.locator('body')).toContainText('18–20 January 2027');
   assert.match(await staticPage.locator('body').innerText(), /planned/i);
-  assert.equal(await staticPage.locator('[data-countdown]').count(), 0);
+  await expect(staticPage.locator('.countdown-boundary')).toHaveText('18 January 2027 · midnight IST');
+  await expect(staticPage.locator('[data-countdown]')).toContainText('first day of our planned celebrations');
   assert.ok(
     !(await staticPage.locator('body').textContent()).includes('Reception'),
   );
@@ -70,6 +71,10 @@ try {
     await publicPage.goto(production);
     await publicPage.evaluate(() => document.fonts.ready);
     await publicPage.waitForLoadState('networkidle');
+    await expect(publicPage.locator('[data-countdown] > span')).toHaveCount(4);
+    assert.equal(await publicPage.locator('[data-countdown]').getAttribute('data-target'), '2027-01-18T00:00:00+05:30');
+    const countdownBox = await publicPage.locator('.countdown').boundingBox();
+    assert.ok(Math.abs(countdownBox.x + countdownBox.width / 2 - width / 2) < 2, 'Countdown remains centred.');
     assert.ok(
       await publicPage.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -81,6 +86,8 @@ try {
     });
   }
   assert.ok(requests.some((url) => /\/art\/.*\.webp/.test(url)));
+  const beforeTick = await publicPage.locator('[data-countdown]').innerText();
+  await expect.poll(() => publicPage.locator('[data-countdown]').innerText()).not.toBe(beforeTick);
   assert.ok(
     !requests.some((url) =>
       /googleapis\.com|firebaseio\.com|firebaseapp\.com/.test(url),

@@ -17,7 +17,9 @@
 | Baraat arrival through vidai | Overall intended wedding-planning coverage | Family's stated scope; no specific dates/times from these photos |
 | Venue(s), city, address/map, start times | **Not supplied** | Do not infer |
 | Guest list, headcounts, dietary arrangements, stay/transport | **Not supplied** | Do not infer |
-| Invitation card, public countdown target, website name | **Not supplied/approved** | Public details remain provisional |
+| Invitation card and public countdown target | **Not supplied/approved** | Public event details remain provisional |
+| Website address requested | `mahima_mayank.web.app` | User-selected on 15 Oct 2026; **invalid as a Firebase Hosting site ID** because `_` is disallowed |
+| Closest deployable website address candidate | `mahima-mayank.web.app` | Hyphenated equivalent; **availability not checked and family approval pending**. No Hosting site created |
 
 **Reading key:** Items below are *proposed from handwriting*, not caterer commitments. Struck-through entries are not active selections unless the family reconfirms them. Unclear readings are explicitly marked **verify**; the source should not be silently replaced with an invented dish name. Standard English spellings are used where the meaning is clear.
 
@@ -160,6 +162,7 @@ No dish has been removed or replaced by this documentation. The family can confi
 ## 5. Information still needed — only when it becomes available
 
 - **Invitation:** Final dates, approved spelling/wording, celebration programme, start and arrival times, venues, address/map links, contacts, public countdown target and audience for each function.
+- **Website address:** Requested `mahima_mayank.web.app` contains a disallowed underscore; confirm the hyphenated candidate `mahima-mayank.web.app` and its availability before setting up Hosting.
 - **Ceremonies and flow:** Baraat arrival, other functions, wedding rites, vidai, and their actual order, dates and times. Confirm whether the Carnival is a named event or a food counter.
 - **Reception:** Date, venue, whether it is a separate service or part of another event, and confirmation of ambiguous menu terms.
 - **Hospitality:** Guest/meal counts per function, arrivals and departures, accommodation, transport, dietary needs and who receives tiffin boxes.
@@ -174,6 +177,7 @@ These are **open facts**, not a mandatory data-entry form or a commitment that e
 | --- | --- |
 | User's wedding-planning messages | Two experiences: public guest invitation and private family workspace; three-day scope from baraat arrival to vidai; keep PTI repo/Firebase; menu quality and variety matter |
 | Direct user names supplied on 15 Oct 2026 | Bride **Mahima Mishra**; groom **Mayank Awasthi** |
+| User website-name decision on 15 Oct 2026 | Requested `mahima_mayank.web.app`; documented with Firebase hostname restriction and closest candidate |
 | `1000154325.jpg` | 18 Jan breakfast, lunch and high tea |
 | `1000154329.jpg` | 18 Jan Sangeet dinner |
 | `1000154328.jpg` | 19 Jan breakfast, Carnival snacks, lunch and high tea |

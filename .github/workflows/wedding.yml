@@ -80,7 +80,7 @@ jobs:
       - name: Release only the wedding Hosting target
         run: npx --yes firebase-tools@15.31.0 deploy --project pti-app-2ab59 --config firebase.wedding.json --only hosting:wedding --non-interactive
       - name: Verify the hosted build and private source boundary
-        run: node wedding-planner/scripts/verify-hosting.mjs https://mahima-mayank-2027.web.app
+        run: node wedding-planner/scripts/verify-hosting.mjs https://mahima-mayank.web.app
       - uses: actions/upload-artifact@v4
         if: always()
         with:

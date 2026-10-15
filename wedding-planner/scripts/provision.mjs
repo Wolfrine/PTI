@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {weddingSeed} from './seed-record.mjs';
 
 const {app,db}=createRequire(import.meta.url)('../../personal-functions/runtime.cjs');
-const project='pti-app-2ab59',site='mahima-mayank-2027',uid='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
+const project='pti-app-2ab59',site='mahima-mayank',uid='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 const token=(await app.options.credential.getAccessToken()).access_token;
 const report={project,site,database:'(default)',rulesUpdated:false,seeded:false,authDomainsReady:false,verifiedAt:null};
 async function request(url,method='GET',data,allow404=false) {

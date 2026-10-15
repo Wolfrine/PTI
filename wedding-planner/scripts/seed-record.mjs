@@ -23,7 +23,7 @@ export function weddingSeed(text) {
     ['programme','Confirm the celebration programme','Confirm ceremony, baraat arrival, procession and vidai dates, order, times, event audiences and family-approved wording.'],
     ['reception-date','Place the Reception in the programme','The Reception menu is undated. Confirm its date, time, venue and audience.'],
     ['venues','Confirm venues and directions','Record the city, venue addresses, correct entrance/map pins and approved guest contact.'],
-    ['menu-variety','Review the menus across the stay','Review the 19 January lunch dal selections and repeated Sangeet/Reception counters. Preserve favourites and comfort staples; no dish is automatically removed.'],
+    ['menu-variety','Review the menus across the stay','Use the source-backed menu review to discuss the 19 January dals, Sangeet dairy-led starters, repeated dinner counters, Reception desserts and 20 January breakfast sweets. Verify recipes and audience overlap first. Preserve favourites and comfort staples; no selection is automatically changed.'],
     ['menu-readings','Check unclear menu readings','Verify dal lapeta, aloo gunda and the unclear Reception barbecue, dosa and chilli items with the family/caterer.'],
     ['tiffin','Decide on departure tiffin boxes','Establish whether packed food is needed, for whom, and at what departure time.'],
     ['hospitality','Plan guest hospitality','Confirm attendance by occasion, stay nights, arrivals/departures, transport, food requests and family owners as information arrives.'],

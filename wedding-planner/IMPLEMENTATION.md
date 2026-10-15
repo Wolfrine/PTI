@@ -2,6 +2,8 @@
 
 Base reviewed: PTI main `8548e6c4d59fadd979fac4ff21ed3b5be3e5668b`. Delivery branch: `codex/wedding-home`. This record is updated with observed release results; configuration alone is not deployment evidence.
 
+Integrated subsequent main context through `ba4d473`: the family's requested `mahima_mayank.web.app` identity (underscores are invalid; closest valid target configured as `mahima-mayank`) and the additional source-backed menu review. Those culinary suggestions remain proposals; the initial menu selections were preserved.
+
 ## Delivered behavior
 
 - Static, responsive invitation with couple identity, planned celebration dates, approved-content rendering, optional exact-moment countdown, safe venue directions, approved contact and a native social sharing image. Current public content is deliberately a save-the-date state because detailed invitation facts remain unconfirmed.
@@ -26,6 +28,7 @@ Verdict: **independently reviewed; family aesthetic acceptance pending**. No att
 |---|---|
 | Model/public-content tests | 9 pass: people/attendance, nightly demand, validation, India wall-time conversion, honest decision/cost semantics, all-menu import, public truth, safe cross-midnight information, exact countdown |
 | Family access/rules | 9 pass: anonymous/non-family denial, verified membership, escalation prevention, logged collaboration, stale/forged edits, attendance identity, input guards, archive-linked updates, revocation |
+| Existing Venture shared-rules regressions | 9 pass against the combined rules, including membership, private sibling isolation and revocation |
 | Actual Auth + Firestore emulator browser/store | Pass: two-account updates, competing editor conflict, complete archive/history export, already-open editor removal on revocation, sign-out clearing |
 | Browser task scenarios | 9 pass: static no-JS invitation, zero public Firebase requests, keyboard and responsive reflow, no production demo bypass, decision validation/draft preservation, household/stay counts, offline failure, attendance editing, private seed exclusion |
 | Rendered coverage | Actual Chromium at 1440, 390 and 360 CSS pixels; 720 CSS-pixel desktop zoom-equivalent check. Functional evidence uses synthetic family records and is labelled. This is not a real-device Google login or a full WCAG conformance audit. |

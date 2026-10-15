@@ -1,0 +1,2271 @@
+{
+  "schema_version": 1,
+  "suite_version": "0.1",
+  "research_date": "2026-10-15",
+  "status": "specified_not_run",
+  "case_count": 65,
+  "fixture_provenance": "Analyst-authored synthetic examples, not actual wedding facts or a production data schema.",
+  "calibration_status": "Pending family review; no validated model judge or family-approved visual baseline.",
+  "holdout_status": "All cases visible; no hidden holdout established.",
+  "domain_names": {
+    "INV": "Invitation and public information",
+    "GUE": "Guests and attendance",
+    "FUN": "Functions and cultural fit",
+    "TIM": "Timing and dependencies",
+    "FOD": "Food variety and menus",
+    "HOS": "Everyday hospitality",
+    "ACC": "Accommodation",
+    "TRN": "Travel and transport",
+    "VEN": "Venue and facilities",
+    "RIT": "Ritual readiness",
+    "BRD": "Couple and close-family preparation",
+    "DEC": "Decor and physical setup",
+    "AV": "Entertainment and production",
+    "PHO": "Photography and memories",
+    "GIF": "Gifts and belongings",
+    "BUD": "Budget and settlements",
+    "VND": "Vendors and responsibilities",
+    "CHG": "Decisions and changes",
+    "CONT": "Comfort and contingencies",
+    "CLS": "Closing the celebration",
+    "PRV": "Privacy and authorization",
+    "UX": "Ease and emotional experience"
+  },
+  "cases": [
+    {
+      "id": "WP-001",
+      "title": "Unknown invitation facts remain unknown",
+      "domains": [
+        "INV",
+        "CHG"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "confirmed": {
+          "duration_days": 3
+        },
+        "unknown": [
+          "couple_names",
+          "dates",
+          "venues",
+          "menu_policy"
+        ]
+      },
+      "task": "Prepare the guest invitation information from the available facts.",
+      "pass_assertions": [
+        "Do not invent any unknown name, date, venue or menu policy.",
+        "Make missing confirmation apparent; do not run a fabricated countdown."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S17"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-002",
+      "title": "Conflicting sources do not silently settle a time",
+      "domains": [
+        "INV",
+        "CHG"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "invitation_time": "18:00",
+        "family_message_time": "19:00",
+        "message_approval": "unconfirmed",
+        "invitation_approval": "approved"
+      },
+      "task": "Resolve what the guest invitation should show.",
+      "pass_assertions": [
+        "Identify the discrepancy and need for confirmation.",
+        "Keep the last approved time until a change is authorized; do not silently publish the proposal."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-003",
+      "title": "Timezone-independent countdown",
+      "domains": [
+        "INV",
+        "TIM"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "boundary",
+      "grader": "browser",
+      "input": {
+        "event": "Synthetic main ceremony",
+        "start": "2030-02-15T18:00:00+05:30",
+        "now": "2030-02-15T12:00:00Z",
+        "viewer_zones": [
+          "Asia/Kolkata",
+          "Europe/London"
+        ],
+        "after_start_probe": "2030-02-15T12:31:00Z"
+      },
+      "task": "Show event time and countdown in both viewing environments.",
+      "pass_assertions": [
+        "Countdown is 30 minutes in both environments.",
+        "Indian local event time and the target occasion are unambiguous.",
+        "After start, do not show a negative countdown as time remaining."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-004",
+      "title": "Address, entrance and map identify the same place",
+      "domains": [
+        "INV",
+        "VEN"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "browser",
+      "input": {
+        "venue": "Synthetic Lotus Hall",
+        "entrance": "East Gate",
+        "address": "Fictional Site A",
+        "map_target": "Fictional Site B"
+      },
+      "task": "Use the invitation to navigate to the event.",
+      "pass_assertions": [
+        "Detect or flag the contradictory destination.",
+        "Do not present the wrong map target as verified.",
+        "A usable address/entrance is available even if the map fails."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-005",
+      "title": "Guest essential information without family login",
+      "domains": [
+        "INV",
+        "UX"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "browser",
+      "input": {
+        "approved_public_fields": [
+          "couple_names",
+          "event_dates",
+          "event_times",
+          "venue_address",
+          "host_contact"
+        ],
+        "viewer": "signed_out",
+        "public_fixture": {
+          "couple_names": "Example A and Example B",
+          "event_dates": [
+            "2030-02-14",
+            "2030-02-15",
+            "2030-02-16"
+          ],
+          "event_times": {
+            "main_ceremony": "2030-02-15T18:00:00+05:30"
+          },
+          "venue_address": "Synthetic Lotus Hall, Fictional Site A",
+          "host_contact": "Synthetic Host: test-only contact link"
+        }
+      },
+      "task": "Find whose wedding, when, where and how to contact the approved host on a phone.",
+      "pass_assertions": [
+        "Essential approved invitation information is available without signing in.",
+        "The guest can answer all four questions from the rendered experience.",
+        "Decorative imagery is not the only readable source of dates/times."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S15"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-006",
+      "title": "A household is not one attendee",
+      "domains": [
+        "GUE"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "objective",
+      "input": {
+        "household": "Synthetic Group A",
+        "people": [
+          {
+            "id": "a",
+            "age_group": "adult"
+          },
+          {
+            "id": "b",
+            "age_group": "adult"
+          },
+          {
+            "id": "c",
+            "age_group": "child"
+          }
+        ],
+        "event_rsvp": "confirmed"
+      },
+      "task": "Explain this household attendance.",
+      "pass_assertions": [
+        "Attendance is three people: two adults and one child.",
+        "No child billing rule or plate discount is invented."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-007",
+      "title": "One person in two family groups is one attendee",
+      "domains": [
+        "GUE"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "people": [
+          {
+            "person_id": "p1",
+            "groups": [
+              "bride_relatives",
+              "groom_friends"
+            ]
+          }
+        ],
+        "event": "dinner",
+        "rsvp": "confirmed"
+      },
+      "task": "Calculate dinner attendance.",
+      "pass_assertions": [
+        "Count one attendee, not two.",
+        "Preserve both useful group associations."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-008",
+      "title": "Shared phone number is not duplicate proof",
+      "domains": [
+        "GUE"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "objective",
+      "input": {
+        "people": [
+          {
+            "person_id": "p1",
+            "name": "Synthetic Adult A",
+            "phone": "shared-household"
+          },
+          {
+            "person_id": "p2",
+            "name": "Synthetic Adult B",
+            "phone": "shared-household"
+          }
+        ]
+      },
+      "task": "Review possible duplicates.",
+      "pass_assertions": [
+        "Keep two distinct people unless identity evidence establishes duplication.",
+        "A shared contact can remain associated with the household."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-009",
+      "title": "Attendance varies by occasion",
+      "domains": [
+        "GUE",
+        "FOD"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "reception_confirmed": 300,
+        "day1_lunch_confirmed": 80,
+        "day2_lunch_confirmed": 110
+      },
+      "task": "Prepare meal attendance figures.",
+      "pass_assertions": [
+        "Use 80 and 110 for the two lunches.",
+        "Do not apply reception attendance of 300 to every meal."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-010",
+      "title": "Confirmed, tentative and staff stay distinguishable",
+      "domains": [
+        "GUE",
+        "FOD"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "guests_confirmed": 180,
+        "guests_tentative": 20,
+        "staff_confirmed_for_same_meal": 12,
+        "vendor_buffer_agreed": false
+      },
+      "task": "Explain meal demand to the catering owner.",
+      "pass_assertions": [
+        "Confirmed guest demand is 180; tentative guest demand is 20; staff demand is 12.",
+        "Confirmed guest-plus-staff demand is 192; 212 includes tentative guests.",
+        "Any buffer is an explicit unresolved decision, not an invented confirmed total."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-011",
+      "title": "No automatic mandatory ceremony template",
+      "domains": [
+        "FUN",
+        "RIT"
+      ],
+      "target": "planning",
+      "applicability": "core",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "family_approved_functions": [
+          "main ceremony",
+          "vidai"
+        ],
+        "other_functions_confirmed": false
+      },
+      "task": "Review function coverage.",
+      "pass_assertions": [
+        "Retain the approved functions.",
+        "Offer missing-function questions as optional exploration.",
+        "Do not add haldi, mehendi or sangeet as confirmed or mandatory."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-012",
+      "title": "Honor an explicitly omitted function",
+      "domains": [
+        "FUN",
+        "RIT"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "objective",
+      "input": {
+        "family_decision": "No sangeet",
+        "confirmed_events": [
+          "welcome meal",
+          "ceremony",
+          "vidai"
+        ]
+      },
+      "task": "Review the function plan.",
+      "pass_assertions": [
+        "Do not treat the omitted sangeet as a missing requirement.",
+        "Do not reintroduce it to improve a completeness score."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-013",
+      "title": "Visiting party arrival differs from ceremonial baraat",
+      "domains": [
+        "FUN",
+        "TRN",
+        "HOS"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "boundary",
+      "grader": "objective",
+      "input": {
+        "party_city_arrival": "2030-02-14T09:00:00+05:30",
+        "procession_start": "2030-02-15T18:00:00+05:30"
+      },
+      "task": "Plan welcome and procession arrangements.",
+      "pass_assertions": [
+        "Keep two distinct moments and dates.",
+        "Provide arrival hospitality independently of procession staging."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-014",
+      "title": "An event crossing midnight keeps its actual dates",
+      "domains": [
+        "TIM",
+        "FUN"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "boundary",
+      "grader": "objective",
+      "input": {
+        "start": "2030-02-15T23:00:00+05:30",
+        "end": "2030-02-16T01:00:00+05:30"
+      },
+      "task": "Explain the event duration and departure timing.",
+      "pass_assertions": [
+        "Duration is two hours.",
+        "The end/return plan falls on 16 February; do not place it before the start."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-015",
+      "title": "Preparation and travel must fit the ceremony",
+      "domains": [
+        "TIM",
+        "BRD",
+        "PHO"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "ceremony_start": "18:00",
+        "dressing_complete": "17:50",
+        "travel_minutes": 30,
+        "arrival_buffer_minutes": 10
+      },
+      "task": "Check readiness for the ceremony.",
+      "pass_assertions": [
+        "Latest ready/departure time is 17:20 under the stated assumptions.",
+        "Flag dressing completion 30 minutes too late.",
+        "Offer an explicit decision rather than silently changing the ceremony."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-016",
+      "title": "Room changeover needs time",
+      "domains": [
+        "TIM",
+        "VEN",
+        "DEC"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "event_a_end": "17:00",
+        "cleanup_minutes": 30,
+        "new_setup_minutes": 45,
+        "event_b_start": "18:00",
+        "same_space": true
+      },
+      "task": "Check whether the shared venue is ready.",
+      "pass_assertions": [
+        "Earliest readiness is 18:15.",
+        "Flag a 15-minute shortfall; a different space or timing needs confirmation."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S08"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-017",
+      "title": "Meals outside formal functions are covered",
+      "domains": [
+        "FOD",
+        "HOS"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "stay_days": 3,
+        "supplied_meals": [
+          "day1 dinner",
+          "day2 dinner",
+          "day3 wedding meal"
+        ],
+        "breakfast_included": false,
+        "other_meal_arrangements": null
+      },
+      "task": "Review hospitality coverage.",
+      "pass_assertions": [
+        "Identify unarranged breakfasts and other meal periods for people present.",
+        "Do not mark catering complete based solely on function dinners.",
+        "Ask who actually remains present instead of assuming every meal has the same count."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02",
+        "S06"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-018",
+      "title": "Stalls and buffet contribute to the same menu experience",
+      "domains": [
+        "FOD"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "calibrated_review",
+      "input": {
+        "occasion_menu": [
+          "paneer tikka stall",
+          "paneer roll stall",
+          "paneer butter masala",
+          "shahi paneer"
+        ]
+      },
+      "task": "Assess variety and suggest a focused improvement.",
+      "pass_assertions": [
+        "Recognize concentration around paneer and rich preparations.",
+        "Suggest complementary ingredient/preparation options with reasons.",
+        "Do not call four distinct names four independently varied courses."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S04",
+        "S05"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-019",
+      "title": "Comfort repeats can be intentional",
+      "domains": [
+        "FOD"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "calibrated_review",
+      "input": {
+        "day1": [
+          "tea",
+          "plain rice",
+          "dal",
+          "regional festive dish A"
+        ],
+        "day2": [
+          "tea",
+          "plain rice",
+          "dal",
+          "regional festive dish B"
+        ],
+        "family_preference": "Keep familiar staples"
+      },
+      "task": "Evaluate repetition.",
+      "pass_assertions": [
+        "Respect the requested repeated staples.",
+        "Assess variety in the rest of the meal.",
+        "Do not replace everything merely to achieve zero repeated dishes."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S04"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-020",
+      "title": "Different dish names can hide repeated experience",
+      "domains": [
+        "FOD"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "calibrated_review",
+      "input": {
+        "day1_dinner": [
+          "paneer makhani"
+        ],
+        "day2_lunch": [
+          "shahi paneer"
+        ],
+        "day2_dinner": [
+          "malai kofta"
+        ],
+        "recipe_notes": "All use a similar rich cream-nut gravy"
+      },
+      "task": "Review the combined meal sequence.",
+      "pass_assertions": [
+        "Identify repetition in the supplied gravy profile across meals.",
+        "Offer a lighter/different preparation or ingredient direction.",
+        "Do not make unsupported recipe claims beyond the given notes."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S04"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-021",
+      "title": "Vegetarian does not satisfy every dietary request",
+      "domains": [
+        "FOD"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "guest_request": "vegan",
+        "proposed_dish": {
+          "name": "paneer tikka",
+          "ingredients": [
+            "paneer",
+            "yogurt"
+          ]
+        }
+      },
+      "task": "Check the proposed option.",
+      "pass_assertions": [
+        "Reject this as meeting the vegan request.",
+        "Request a verified suitable alternative without medical guarantees."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S04",
+        "S07"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-022",
+      "title": "Jain and no onion/garlic remain distinct",
+      "domains": [
+        "FOD"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "guest_request": "Jain; no root vegetables",
+        "proposed_dish": {
+          "name": "potato curry",
+          "onion": false,
+          "garlic": false,
+          "potato": true
+        }
+      },
+      "task": "Check the proposed option.",
+      "pass_assertions": [
+        "Flag that potato conflicts with the stated no-root requirement.",
+        "Do not label it suitable solely because onion and garlic are absent."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S04"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-023",
+      "title": "An allergen-free name is insufficient evidence",
+      "domains": [
+        "FOD"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "guest_allergy": "peanut",
+        "dish_ingredients": "peanut not listed",
+        "kitchen_cross_contact_verified": false
+      },
+      "task": "Communicate the dish suitability.",
+      "pass_assertions": [
+        "Do not guarantee peanut safety.",
+        "Identify the missing caterer verification and agree an appropriate alternative with the guest.",
+        "Keep the personal allergy detail private."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S07"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-024",
+      "title": "Fasting menus use the guest actual practice",
+      "domains": [
+        "FOD"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "guest_request": "fasting meal",
+        "allowed_ingredients": null,
+        "suggestion": "Generic vrat thali"
+      },
+      "task": "Settle the fasting-meal arrangement.",
+      "pass_assertions": [
+        "Ask for the relevant permitted ingredients/preparation.",
+        "Keep the suggestion provisional until confirmed.",
+        "Do not equate fasting with Jain or no onion/garlic."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S04"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-025",
+      "title": "A simple requested alternative earns credit",
+      "domains": [
+        "FOD",
+        "HOS"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "calibrated_review",
+      "input": {
+        "main_menu": "festive buffet",
+        "requested_alternative": "mild dal-rice",
+        "alternative_confirmed_by_caterer": true
+      },
+      "task": "Review hospitality.",
+      "pass_assertions": [
+        "Recognize the confirmed alternative as meeting the stated preference.",
+        "Do not add unnecessary medical labels or require more dishes to pass."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S04"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-026",
+      "title": "Live-station throughput is checked against the actual window",
+      "domains": [
+        "FOD",
+        "VND"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "expected_orders": 180,
+        "stations": 2,
+        "observed_minutes_per_order_per_station": 2,
+        "service_window_minutes": 60,
+        "parallel_orders_per_station": 1
+      },
+      "task": "Check the upper-bound production capacity.",
+      "pass_assertions": [
+        "Under the stated simplified serial model, capacity is 60 orders in total.",
+        "Flag that this does not meet 180 expected orders.",
+        "Do not present this model as an actual queue-time prediction; validate with caterer."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S05"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-027",
+      "title": "Hotel breakfast is not counted twice",
+      "domains": [
+        "FOD",
+        "BUD"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "boundary",
+      "grader": "objective",
+      "input": {
+        "hotel_package": {
+          "breakfast_people": 40,
+          "date": "2030-02-15"
+        },
+        "venue_breakfast_request": {
+          "same_people": 40,
+          "date": "2030-02-15"
+        },
+        "reason_for_second_service": null
+      },
+      "task": "Review breakfast arrangements.",
+      "pass_assertions": [
+        "Identify overlapping provision for the same 40 people.",
+        "Seek the intended service/location decision before treating 80 breakfasts as distinct demand."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-028",
+      "title": "Room-nights differ from peak rooms",
+      "domains": [
+        "ACC"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "boundary",
+      "grader": "objective",
+      "input": {
+        "room_blocks": [
+          {
+            "rooms": 8,
+            "nights": [
+              "2030-02-14",
+              "2030-02-15"
+            ]
+          },
+          {
+            "rooms": 4,
+            "nights": [
+              "2030-02-15"
+            ]
+          }
+        ]
+      },
+      "task": "Calculate room demand.",
+      "pass_assertions": [
+        "Total demand is 20 room-nights.",
+        "Peak simultaneous room demand is 12 on the night of 15 February.",
+        "Do not say 20 rooms are needed simultaneously."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S09"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-029",
+      "title": "Early arrivals do not imply guaranteed early check-in",
+      "domains": [
+        "ACC",
+        "HOS"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "guest_arrival": "07:00",
+        "guaranteed_room_ready": "15:00",
+        "early_access_confirmed": false,
+        "alternative_arrangement": null
+      },
+      "task": "Review arrival comfort.",
+      "pass_assertions": [
+        "Identify an eight-hour gap.",
+        "Do not promise immediate room access.",
+        "Resolve prior-night booking, confirmed early access or a family-agreed rest/change arrangement."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S09"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-030",
+      "title": "Late departure has a checkout gap",
+      "domains": [
+        "ACC",
+        "TRN"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "checkout": "12:00",
+        "onward_departure": "21:00",
+        "hotel_to_terminal_minutes": 60,
+        "terminal_arrival_buffer_minutes": 120,
+        "late_room_confirmed": false
+      },
+      "task": "Check the post-checkout plan.",
+      "pass_assertions": [
+        "Planned hotel departure is 18:00 under the supplied assumptions.",
+        "Identify the six-hour gap after checkout.",
+        "Resolve bags/rest/change arrangements without promising a free extension."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S09"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-031",
+      "title": "Room suitability follows the supplied occupancy rule",
+      "domains": [
+        "ACC"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "objective",
+      "input": {
+        "household": {
+          "adults": 4,
+          "children": 2
+        },
+        "room_policy": {
+          "max_adults": 2,
+          "max_children": 1
+        },
+        "rooms_reserved": 2,
+        "other_preferences": null
+      },
+      "task": "Check capacity under this explicit policy.",
+      "pass_assertions": [
+        "Two rooms satisfy these stated limits with two adults and one child each.",
+        "Do not invent an extra-room requirement or generalize this hotel policy."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S09"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-032",
+      "title": "A ramp alone does not establish the complete accessible route",
+      "domains": [
+        "ACC",
+        "CONT"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "guest_need": "step-free path to room and toilet",
+        "entrance": "ramp",
+        "room_access": "stairs only",
+        "accessible_toilet_verified": false
+      },
+      "task": "Review the proposed stay.",
+      "pass_assertions": [
+        "Identify the incompatible room route and unverified toilet.",
+        "Do not describe the entire stay as accessible based solely on the entrance.",
+        "Seek a suitable confirmed arrangement."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S09",
+        "S10"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-033",
+      "title": "Room allocation respects stated household preferences",
+      "domains": [
+        "ACC",
+        "GUE"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "households": [
+          {
+            "id": "h1",
+            "sharing_with_h2": "not agreed"
+          },
+          {
+            "id": "h2",
+            "sharing_with_h1": "not agreed"
+          }
+        ],
+        "proposed_allocation": "one shared room",
+        "capacity_sufficient": true
+      },
+      "task": "Review room allocation.",
+      "pass_assertions": [
+        "Distinguish physical capacity from acceptable sharing.",
+        "Do not call the arrangement confirmed without agreement."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-034",
+      "title": "Same-day room reuse includes turnaround",
+      "domains": [
+        "ACC",
+        "TIM"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "room_a_checkout": "11:00",
+        "housekeeping_minutes": 120,
+        "next_guest_arrival": "12:00",
+        "alternative_room": null
+      },
+      "task": "Review room readiness.",
+      "pass_assertions": [
+        "Earliest ready time is 13:00 under the supplied rule.",
+        "Flag the one-hour guest waiting period.",
+        "Do not allocate the same room as ready at noon."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-035",
+      "title": "Passenger seats exclude driver and are not enough",
+      "domains": [
+        "TRN"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "passengers": 19,
+        "vehicle_usable_passenger_seats": 15,
+        "trips_available": 1,
+        "luggage_fit_verified": false
+      },
+      "task": "Check the transfer.",
+      "pass_assertions": [
+        "Flag a shortfall of four passenger seats.",
+        "Treat luggage fit as unresolved.",
+        "Do not solve by overloading or assuming a second trip fits."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-036",
+      "title": "A shuttle cannot be in two places at once",
+      "domains": [
+        "TRN",
+        "TIM"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "trip_a_start": "09:00",
+        "trip_a_travel_minutes": 30,
+        "unload_minutes": 10,
+        "reposition_minutes": 30,
+        "trip_b_pickup": "09:45",
+        "same_vehicle": true
+      },
+      "task": "Check whether one vehicle can perform both pickups.",
+      "pass_assertions": [
+        "Earliest readiness for pickup B is 10:10.",
+        "Flag a 25-minute conflict."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-037",
+      "title": "A travel delay affects connected arrangements",
+      "domains": [
+        "TRN",
+        "GUE"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "original_arrival": "18:00",
+        "revised_arrival": "23:30",
+        "pickup_confirmed_for": "18:00",
+        "dinner_closes": "22:00",
+        "hotel_late_checkin_confirmed": false
+      },
+      "task": "Review consequences of the revised arrival.",
+      "pass_assertions": [
+        "Identify pickup retiming, late food and hotel late-arrival confirmation.",
+        "Preserve the revised ETA and make outstanding confirmations clear.",
+        "Do not mark linked vendors informed without evidence."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-038",
+      "title": "Two terminals are not interchangeable pickup points",
+      "domains": [
+        "TRN",
+        "VEN"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "ticket_terminal": "Terminal 2",
+        "pickup_instructions": "Terminal 1",
+        "vendor_confirmation": "Terminal 1"
+      },
+      "task": "Verify the arrival handoff.",
+      "pass_assertions": [
+        "Flag the location mismatch.",
+        "Resolve the actual meeting point and receiver before claiming the pickup is ready."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-039",
+      "title": "Confirmed return transfer is adequate",
+      "domains": [
+        "TRN",
+        "HOS"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "objective",
+      "input": {
+        "last_event_end": "22:00",
+        "return_pickup": "22:15",
+        "return_capacity": 25,
+        "people_returning": 20,
+        "driver_and_meeting_point_confirmed": true,
+        "luggage_fit_verified": true
+      },
+      "task": "Review return arrangements using only the supplied facts.",
+      "pass_assertions": [
+        "Accept this as having adequate confirmed capacity and a post-event pickup.",
+        "Do not invent a transport problem or add a compulsory extra vehicle."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-040",
+      "title": "Standing capacity is not seated banquet capacity",
+      "domains": [
+        "VEN"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "expected_seated_diners": 300,
+        "venue_capacities": {
+          "standing_reception": 800,
+          "seated_banquet": 250
+        },
+        "layout_confirmed": "seated_banquet"
+      },
+      "task": "Check venue fit.",
+      "pass_assertions": [
+        "Flag a shortfall of 50 seated places under the supplied configuration.",
+        "Do not approve the plan using the standing figure of 800."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S08"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-041",
+      "title": "Vendor access must precede actual setup work",
+      "domains": [
+        "VEN",
+        "DEC"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "venue_access": "16:00",
+        "decor_setup_minutes": 120,
+        "guest_arrival": "17:00",
+        "setup_complete_claim": "16:45"
+      },
+      "task": "Check setup readiness.",
+      "pass_assertions": [
+        "Earliest complete time is 18:00.",
+        "Flag the inconsistent completion claim and one-hour guest-arrival conflict."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S08"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-042",
+      "title": "Scope-equivalent vendor comparison",
+      "domains": [
+        "VND",
+        "BUD"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "quote_a": {
+          "total_inr": 100000,
+          "functions": 2,
+          "travel_included": true
+        },
+        "quote_b": {
+          "total_inr": 80000,
+          "functions": 1,
+          "travel_included": false
+        }
+      },
+      "task": "Compare the quotes.",
+      "pass_assertions": [
+        "Do not conclude B is cheaper for the same work.",
+        "Identify missing second-function and travel costs before comparison."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-043",
+      "title": "Deposit is part of the contracted total",
+      "domains": [
+        "BUD"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "boundary",
+      "grader": "objective",
+      "input": {
+        "contract_total_inr": 100000,
+        "approved_extra_inr": 10000,
+        "paid_inr": 30000,
+        "tax_included": true
+      },
+      "task": "Reconcile committed cost and balance.",
+      "pass_assertions": [
+        "Committed total is INR 110000.",
+        "Outstanding balance is INR 80000.",
+        "Do not count the INR 30000 deposit again as extra cost."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-044",
+      "title": "One owner cannot run simultaneous essential jobs",
+      "domains": [
+        "VND",
+        "AV",
+        "TIM"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "owner": "Synthetic Host A",
+        "duties": [
+          {
+            "job": "station receiving",
+            "start": "17:00",
+            "end": "18:00"
+          },
+          {
+            "job": "stage cues",
+            "start": "17:30",
+            "end": "18:30"
+          }
+        ],
+        "travel_minutes": 20
+      },
+      "task": "Review responsibility coverage.",
+      "pass_assertions": [
+        "Flag the overlapping 30-minute duties and additional travel dependency.",
+        "Require an explicit handoff/alternative owner rather than claiming both covered."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-045",
+      "title": "Simultaneous events need explicit coverage",
+      "domains": [
+        "PHO",
+        "FUN"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "functions": [
+          {
+            "id": "bride_custom",
+            "time": "10:00",
+            "place": "A"
+          },
+          {
+            "id": "groom_custom",
+            "time": "10:00",
+            "place": "B"
+          }
+        ],
+        "photography_teams": 1,
+        "travel_minutes": 40,
+        "coverage_requested": "both complete"
+      },
+      "task": "Assess the photography commitment.",
+      "pass_assertions": [
+        "Flag incompatibility between complete simultaneous coverage and one team.",
+        "Seek an explicit revised coverage decision without inventing a second team."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S12"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-046",
+      "title": "Gift counts follow the agreed distribution unit",
+      "domains": [
+        "GIF",
+        "GUE"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "objective",
+      "input": {
+        "guest_people": 120,
+        "guest_households": 40,
+        "policy": "one return gift per household",
+        "spare_packs_agreed": 5
+      },
+      "task": "Calculate required gift packs.",
+      "pass_assertions": [
+        "Required packs total 45.",
+        "Do not calculate 125 using people when policy specifies households."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-047",
+      "title": "A ritual list needs the family actual confirmation",
+      "domains": [
+        "RIT",
+        "VND"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "ritual_pack_source": "generic online list",
+        "officiant_approved": false,
+        "essential_articles_confirmed": null
+      },
+      "task": "Assess ritual readiness.",
+      "pass_assertions": [
+        "Treat the generic list as provisional.",
+        "Identify officiant/family confirmation and article responsibility as unresolved.",
+        "Do not assert that a particular ritual or article is universally required."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-048",
+      "title": "The couple needs a practical meal/rest window",
+      "domains": [
+        "BRD",
+        "TIM"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "calibrated_review",
+      "input": {
+        "schedule": [
+          {
+            "name": "makeup",
+            "start": "12:00",
+            "end": "15:00"
+          },
+          {
+            "name": "portraits",
+            "start": "15:00",
+            "end": "17:00"
+          },
+          {
+            "name": "travel",
+            "start": "17:00",
+            "end": "18:00"
+          },
+          {
+            "name": "ceremony",
+            "start": "18:00",
+            "end": "21:00"
+          }
+        ],
+        "meal_or_break_arrangement": null
+      },
+      "task": "Review the couple preparation experience.",
+      "pass_assertions": [
+        "Identify the continuous nine-hour schedule with no arranged meal/rest.",
+        "Propose a practical agreed arrangement within constraints.",
+        "Do not diagnose health conditions or silently move the ceremony."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-049",
+      "title": "An approved time change exposes affected arrangements",
+      "domains": [
+        "CHG",
+        "TIM",
+        "TRN",
+        "FOD"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "event_old_start": "18:00",
+        "event_approved_start": "19:00",
+        "public_start": "18:00",
+        "transport_pickup": "17:00",
+        "catering_brief_start": "18:00",
+        "supplier_acknowledgments": []
+      },
+      "task": "Review and record the approved change.",
+      "pass_assertions": [
+        "Identify stale public information and affected transport/catering briefs.",
+        "Make approval distinct from publication and supplier acknowledgment.",
+        "Do not claim affected people received a message without evidence."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-050",
+      "title": "Rain fallback must fit the actual guests",
+      "domains": [
+        "CONT",
+        "VEN"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "outdoor_guests": 250,
+        "fallback_confirmed_capacity": 100,
+        "forecast": "rain risk supplied for synthetic event",
+        "secondary_plan": null
+      },
+      "task": "Review fallback readiness.",
+      "pass_assertions": [
+        "Flag the 150-person capacity gap.",
+        "Do not call a named indoor room a complete fallback just because it exists."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S08",
+        "S11"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-051",
+      "title": "Backup equipment is not backup readiness",
+      "domains": [
+        "CONT",
+        "AV",
+        "VND"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "power_backup": "generator listed",
+        "load_verified": false,
+        "fuel_and_operator_confirmed": false,
+        "required_users": [
+          "lights",
+          "sound",
+          "catering"
+        ]
+      },
+      "task": "Review backup readiness.",
+      "pass_assertions": [
+        "Identify missing capacity/load and operator confirmation.",
+        "Do not mark power backup ready from the equipment name alone."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-052",
+      "title": "Vidai does not finish hospitality for remaining guests",
+      "domains": [
+        "CLS",
+        "ACC",
+        "TRN",
+        "FOD"
+      ],
+      "target": "planning",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "vidai": "2030-02-16T03:00:00+05:30",
+        "guests_staying_until": "2030-02-16T18:00:00+05:30",
+        "breakfast_arranged": false,
+        "checkout_and_departure_transfer_confirmed": false
+      },
+      "task": "Review closure arrangements.",
+      "pass_assertions": [
+        "Identify food, checkout/bags and onward transport needs after vidai.",
+        "Do not mark the whole wedding closed at vidai."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-053",
+      "title": "Post-wedding obligations remain visible",
+      "domains": [
+        "CLS",
+        "PHO",
+        "BUD"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "ceremony_complete": true,
+        "vendor_balance_inr": 20000,
+        "rental_return": "pending",
+        "photo_delivery": "pending"
+      },
+      "task": "Review completion.",
+      "pass_assertions": [
+        "Keep the payment, rental return and photo delivery open.",
+        "Distinguish celebration completion from settlement/delivery completion."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S12"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-054",
+      "title": "Public page and public responses contain only approved information",
+      "domains": [
+        "PRV",
+        "INV"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "browser",
+      "input": {
+        "viewer": "signed_out",
+        "approved_public": [
+          "event name",
+          "time",
+          "venue",
+          "host contact"
+        ],
+        "private": [
+          "rooming list",
+          "guest phone list",
+          "dietary details",
+          "vendor quotes",
+          "family notes"
+        ]
+      },
+      "task": "Inspect the public experience, its delivered data and public exports.",
+      "pass_assertions": [
+        "Approved invitation facts remain available.",
+        "Private fields do not appear in rendered content, initial payloads, public data responses or public exports."
+      ],
+      "evidence_required": [
+        "Signed-out browser inspection plus actual client/API authorization checks and payload review; use synthetic private markers."
+      ],
+      "source_ids": [
+        "S16"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-055",
+      "title": "An authenticated non-family member is unauthorized",
+      "domains": [
+        "PRV"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "browser",
+      "input": {
+        "viewer": {
+          "signed_in": true,
+          "family_authorized": false
+        },
+        "attempts": [
+          "read family data",
+          "edit wedding time",
+          "read private attachment"
+        ]
+      },
+      "task": "Attempt all listed actions as the non-family account.",
+      "pass_assertions": [
+        "All unauthorized private reads and writes are denied by the data-access layer.",
+        "A hidden navigation item alone does not satisfy this case."
+      ],
+      "evidence_required": [
+        "Actual non-family credentials against protected reads/writes; record denials without real private data."
+      ],
+      "source_ids": [
+        "S16"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-056",
+      "title": "Authorized family collaboration works",
+      "domains": [
+        "PRV"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "valid",
+      "grader": "browser",
+      "input": {
+        "viewer_a": "authorized family",
+        "viewer_b": "authorized family",
+        "edit": "confirmed synthetic hospitality note"
+      },
+      "task": "Record the note in one session and retrieve it in the second.",
+      "pass_assertions": [
+        "The authorized change persists across reload/session.",
+        "The second authorized family member can retrieve the agreed shared information.",
+        "Public access remains unaffected."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S16"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-057",
+      "title": "Sign-out and revoked access do not leave private viewing open",
+      "domains": [
+        "PRV"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "browser",
+      "input": {
+        "viewer_initial": "authorized family",
+        "transitions": [
+          "sign out",
+          "family authorization revoked"
+        ],
+        "device": "shared"
+      },
+      "task": "Inspect access and displayed private data after each transition.",
+      "pass_assertions": [
+        "Further private data access is denied appropriately.",
+        "Private content is no longer available through the signed-out/revoked application session or ordinary back navigation.",
+        "Test any caches/exports actually provided; do not claim control over files a user already downloaded."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S16"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-058",
+      "title": "Essential invitation remains usable with zoom and keyboard",
+      "domains": [
+        "UX",
+        "INV"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "browser",
+      "input": {
+        "viewport_css_pixels": [
+          320,
+          800
+        ],
+        "text_zoom_percent": 200,
+        "input": "keyboard",
+        "content": "confirmed invitation"
+      },
+      "task": "Read event details and use map/contact controls.",
+      "pass_assertions": [
+        "Core information remains readable without clipping or a keyboard trap.",
+        "Controls have clear accessible names and visible focus.",
+        "No claim of full WCAG conformance is made from this single check."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S15"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-059",
+      "title": "A failed save is not shown as confirmed",
+      "domains": [
+        "UX",
+        "CHG"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "browser",
+      "input": {
+        "action": "change confirmed synthetic time",
+        "network_result": "failed",
+        "previous_persisted_value": "18:00",
+        "attempted_value": "19:00"
+      },
+      "task": "Attempt the update and reload.",
+      "pass_assertions": [
+        "Failure/pending state is clear.",
+        "Do not claim 19:00 was saved or published.",
+        "After reload the actual persisted state is presented honestly."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-060",
+      "title": "Family member can identify the next real decision",
+      "domains": [
+        "UX",
+        "HOS"
+      ],
+      "target": "both",
+      "applicability": "core",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "calibrated_review",
+      "input": {
+        "open_items": [
+          {
+            "issue": "early arrival without room",
+            "owner": "Synthetic Host A",
+            "deadline": "before arrival"
+          },
+          {
+            "issue": "unapproved menu proposal",
+            "owner": "Synthetic Host B",
+            "deadline": "before caterer confirmation"
+          }
+        ],
+        "confirmed_items": [
+          "venue booking"
+        ]
+      },
+      "task": "Have a family member find what needs attention and whom to contact.",
+      "pass_assertions": [
+        "The member correctly identifies both unresolved items, owners and the confirmed booking.",
+        "They can explain the next action without interpreting unexplained status codes.",
+        "Use a human observation; a model claim of clarity is insufficient."
+      ],
+      "evidence_required": [
+        "Observed family/representative user task, errors and assistance needed."
+      ],
+      "source_ids": [
+        "S18"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-061",
+      "title": "Warmth and clarity are reviewed separately from functionality",
+      "domains": [
+        "UX",
+        "INV"
+      ],
+      "target": "both",
+      "applicability": "quality",
+      "severity": "quality",
+      "polarity": "failure",
+      "grader": "calibrated_review",
+      "input": {
+        "candidate": "actual rendered invitation",
+        "comparison": "family-approved invitation/reference, if available"
+      },
+      "task": "Review whether the invitation feels personal and welcoming while retaining essential clarity.",
+      "pass_assertions": [
+        "Use actual renders and concrete reasons for the family preference.",
+        "Report missing approved reference/calibration as blocked rather than inventing a taste score.",
+        "Functional correctness cannot by itself establish visual acceptance."
+      ],
+      "evidence_required": [
+        "Desktop/mobile renders, comparison artifact and attributable human acceptance/rejection."
+      ],
+      "source_ids": [
+        "S20"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-062",
+      "title": "A late household addition updates all relevant demand",
+      "domains": [
+        "GUE",
+        "ACC",
+        "TRN",
+        "FOD",
+        "CHG"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "new_household": {
+          "adults": 2,
+          "children": 1,
+          "dinner": "confirmed",
+          "stay_nights": [
+            "2030-02-15"
+          ],
+          "pickup_required": true
+        },
+        "room_policy": {
+          "max_adults": 2,
+          "max_children": 1
+        },
+        "existing_allocations_for_household": null
+      },
+      "task": "Review effects of accepting the household.",
+      "pass_assertions": [
+        "Dinner guest demand increases by three, with adult/child breakdown preserved.",
+        "Under the supplied policy, one suitable room-night is needed.",
+        "Pickup demand increases by three; actual vehicle assignment remains unconfirmed.",
+        "Do not claim new bookings or vendor communications occurred."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-063",
+      "title": "A cancellation changes demand without inventing refunds",
+      "domains": [
+        "GUE",
+        "ACC",
+        "TRN",
+        "FOD",
+        "CHG"
+      ],
+      "target": "both",
+      "applicability": "conditional",
+      "severity": "major",
+      "polarity": "boundary",
+      "grader": "objective",
+      "input": {
+        "canceled_household": {
+          "people": 3,
+          "meal": "dinner",
+          "room_nights": 2,
+          "pickup_people": 3
+        },
+        "vendor_cancellation_terms": null,
+        "booking_release_confirmed": false
+      },
+      "task": "Review the cancellation consequences.",
+      "pass_assertions": [
+        "Reduce expected attendance/meal/transfer demand by three and identify two room-nights potentially releasable.",
+        "Do not claim the hotel booking was released or a refund is due.",
+        "Keep actual vendor commitments distinct from guest demand."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S02"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-064",
+      "title": "Small confirmed arrangements can satisfy coverage",
+      "domains": [
+        "FUN",
+        "FOD",
+        "ACC",
+        "UX"
+      ],
+      "target": "planning",
+      "applicability": "core",
+      "severity": "major",
+      "polarity": "valid",
+      "grader": "calibrated_review",
+      "input": {
+        "family_scale": "small celebration",
+        "choices": {
+          "meals": "confirmed caterer menu document",
+          "transport": "self-arranged; no pickups requested",
+          "stays": "none needed",
+          "responsibilities": "simple family note"
+        },
+        "evidence": "family has confirmed these choices"
+      },
+      "task": "Evaluate whether more app modules are required for completeness.",
+      "pass_assertions": [
+        "Accept the explicit transport/stay exclusions.",
+        "Allow a usable confirmed document/note to satisfy relevant planning outcomes.",
+        "Do not require dashboards, automation or a page for every research domain."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [],
+      "status": "not_run"
+    },
+    {
+      "id": "WP-065",
+      "title": "Application evidence is distinct from a correct planning answer",
+      "domains": [
+        "CHG",
+        "UX"
+      ],
+      "target": "planning",
+      "applicability": "core",
+      "severity": "blocker",
+      "polarity": "failure",
+      "grader": "objective",
+      "input": {
+        "agent_answer": "All room and meal counts are correct",
+        "browser_run_available": false,
+        "persisted_state_inspected": false
+      },
+      "task": "Report evaluation status.",
+      "pass_assertions": [
+        "Planning answer may be assessed separately.",
+        "Application behavior stays not_run/blocked without execution evidence.",
+        "Do not report a passed workflow or deployed improvement from text alone."
+      ],
+      "evidence_required": [
+        "Observed result and evidence for each assertion; application targets require actual user-task evidence."
+      ],
+      "source_ids": [
+        "S17"
+      ],
+      "status": "not_run"
+    }
+  ]
+}

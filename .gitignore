@@ -15,3 +15,12 @@ food-qa/
 
 venture-lab/tests/node_modules/
 tools/pti-mcp/node_modules
+
+wedding-planner/node_modules/
+wedding-planner/dist/
+wedding-planner/.vite/
+wedding-planner/test-results/
+wedding-planner/playwright-report/
+wedding-activation-report.json
+wedding-preview.json
+.wedding-qa/

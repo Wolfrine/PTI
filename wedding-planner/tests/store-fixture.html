@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Local emulator store verification</title><body><p>Local synthetic integration test. This page is excluded from the production build.</p><script type="module">
+import {createWeddingStore} from '/src/store.ts';
+import {getApps} from 'firebase/app';
+import {getAuth,signInWithCustomToken} from 'firebase/auth';
+if(!import.meta.env.DEV || import.meta.env.VITE_USE_EMULATORS!=='1')throw Error('Emulators required.');
+const store=createWeddingStore(state=>{window.fixtureState=state;});
+await store.start();
+window.fixture={store,signIn:token=>signInWithCustomToken(getAuth(getApps().find(a=>a.name==='wedding')),token)};
+</script></body></html>

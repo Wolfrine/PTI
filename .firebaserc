@@ -5,6 +5,9 @@
   "targets": {
     "pti-app-2ab59": {
       "hosting": {
+        "wedding": [
+          "mahima-mayank"
+        ],
         "default": [
           "pti-app-2ab59"
         ],

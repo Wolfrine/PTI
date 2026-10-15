@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'wedding-planner/**'
+      - 'firebase.wedding*.json'
+      - '.github/workflows/wedding.yml'
 
 jobs:
   verify_venture:

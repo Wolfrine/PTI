@@ -1,60 +1,31 @@
-# Wedding UI/UX concept references
+# Wedding UI/UX prototypes — original images
 
-These **four different visual directions** are references for Codex to study and compare, **not approved templates, requirements, or a fixed composite to implement**. They cover the public invitation (emotion and hospitality), mobile presentation and the private family workspace (clarity and coordination).
+Four **original generated PNG mockups** for Mahima Mishra and Mayank Awasthi's wedding website. These are the actual reference images from the design discussion, preserved unchanged, not SVG recreations.
 
-| ID | Concept | Visual character | Best exploration opportunity |
-| --- | --- | --- | --- |
-| [01-romantic-botanical](./01-romantic-botanical.svg) | **Romantic Botanical** | Airy, Floral, Intimate | Soft ivory, blush and sage, botanical ornamentation, floral arches and invitation-card typography. A warm, intimate public experience; family workspace remains practical but visually related. |
-| [02-editorial-ivory](./02-editorial-ivory.svg) | **Editorial Ivory** | Minimal, Timeless, Typographic | Whitespace-led editorial composition, elegant serif typography, slim dividers and reserved champagne/gold details. Quietly luxurious invitation; spare, structured planner interface. |
-| [03-heritage-maroon](./03-heritage-maroon.svg) | **Regal Indian Celebration** | Cinematic, Festive, Heritage | Deep maroon, antique gold, restrained Indian decorative motifs, warm evening-light and festive imagery. Strong celebratory public site with a contrasting readable private dashboard. |
-| [04-contemporary-two-mode](./04-contemporary-two-mode.svg) | **Contemporary Two-Mode** | Warm, Clear, Coordinated | One connected design language with intentionally different guest and family modes. Emotional public invitation alongside a stronger card-and-timeline operational workspace. |
+## 01 — Romantic Botanical
 
-## Visual references
+Ivory, blush, sage, florals and warm invitation-card styling. Public invitation, mobile view and private planning preview.
 
-### Romantic Botanical
+![Romantic Botanical prototype](01-romantic-botanical.png)
 
-![Romantic Botanical reference sketch](./01-romantic-botanical.svg)
+## 02 — Editorial Ivory
 
-Soft ivory, blush and sage, botanical ornamentation, floral arches and invitation-card typography. A warm, intimate public experience; family workspace remains practical but visually related.
+Minimal cream and gold, generous whitespace, refined serif typography. Calm public invitation with structured family workspace.
 
-**Original image from the ChatGPT concept discussion:** `mahima_mayank_wedding_ui_showcase.png`. The original generated raster board is available in the conversation, **not checked into this repository**; the linked SVG is a simplified, separately constructed visual reference and is **not** a copy of the original PNG. If detailed screenshot-level comparison is required, the original asset still needs to be transferred to the development workspace.
+![Editorial Ivory prototype](02-editorial-ivory.png)
 
-### Editorial Ivory
+## 03 — Regal Indian Celebration
 
-![Editorial Ivory reference sketch](./02-editorial-ivory.svg)
+Deep maroon, warm gold and heritage-inspired festivities. More cinematic guest experience alongside a wedding planning dashboard.
 
-Whitespace-led editorial composition, elegant serif typography, slim dividers and reserved champagne/gold details. Quietly luxurious invitation; spare, structured planner interface.
+![Regal Indian Celebration prototype](03-heritage-maroon.png)
 
-**Original image from the ChatGPT concept discussion:** `elegant_wedding_planning_ui_board.png`. The original generated raster board is available in the conversation, **not checked into this repository**; the linked SVG is a simplified, separately constructed visual reference and is **not** a copy of the original PNG. If detailed screenshot-level comparison is required, the original asset still needs to be transferred to the development workspace.
+## 04 — Contemporary Two-Mode
 
-### Regal Indian Celebration
+Unified design language with deliberately different experiences: a personal public invitation and a clear, private family-management workspace.
 
-![Regal Indian Celebration reference sketch](./03-heritage-maroon.svg)
+![Contemporary Two-Mode prototype](04-contemporary-two-mode.png)
 
-Deep maroon, antique gold, restrained Indian decorative motifs, warm evening-light and festive imagery. Strong celebratory public site with a contrasting readable private dashboard.
+---
 
-**Original image from the ChatGPT concept discussion:** `indian_wedding_planner_mockup_board.png`. The original generated raster board is available in the conversation, **not checked into this repository**; the linked SVG is a simplified, separately constructed visual reference and is **not** a copy of the original PNG. If detailed screenshot-level comparison is required, the original asset still needs to be transferred to the development workspace.
-
-### Contemporary Two-Mode
-
-![Contemporary Two-Mode reference sketch](./04-contemporary-two-mode.svg)
-
-One connected design language with intentionally different guest and family modes. Emotional public invitation alongside a stronger card-and-timeline operational workspace.
-
-**Original image from the ChatGPT concept discussion:** `elegant_two_mode_wedding_experience.png`. The original generated raster board is available in the conversation, **not checked into this repository**; the linked SVG is a simplified, separately constructed visual reference and is **not** a copy of the original PNG. If detailed screenshot-level comparison is required, the original asset still needs to be transferred to the development workspace.
-
-
-## Shared product truths
-
-- **Couple:** Mahima Mishra and Mayank Awasthi.
-- **Working dates:** 18–20 January 2027, from initial menu sheets, pending invitation confirmation.
-- **Actually evidenced:** Sangeet evening on 18 January; Carnival-labelled food section on 19 January; proposed Reception menu with **no date**.
-- **Unconfirmed:** Reception date, wedding ceremony/vidai scheduling, countdown target, venue/location, event attendance/RSVP, and guest details.
-
-**Mockups illustrate a visual mood, not verified facts.** Some original generated boards depict a specific wedding day on 20 January, a confirmed event status, fabricated countdown values, or a progress percentage. **None of those details are established**; do not propagate them to guest pages or internal records. Refer to [Wedding Record](../../WEDDING_RECORD.md) as the factual source, not these sketches.
-
-## Interpretation for design work
-
-Treat each concept as one possible expression rather than mixing every ornament, color and panel into a single cluttered interface. Evaluate the emotional experience and mobile legibility of the public invitation separately from the information hierarchy and usefulness of the family workspace. A guest should sense a personal celebration, not generic e-commerce; a family planner should surface accurate information without mimicking a generic enterprise dashboard.
-
-No art direction has been selected by the family. The existing [project overview](../../README.md), [guest promise](../../guest-experience/README.md), [family promise](../../family-workspace/README.md) and domain/eval research remain authoritative for intent, real facts and quality boundaries.
+**For Codex:** These are alternative visual ideas, not implementation requirements or an approved final design. Compare the actual imagery and visual quality rather than copying every element. Some generated mockup text contains invented dates for ceremonies, venue assertions, countdown numbers, event confirmations or progress figures; those are **not verified facts**. The canonical wedding facts, provisional catering menus and open questions remain in [Wedding Record](../../WEDDING_RECORD.md). Do not promote illustrative mockup labels into real wedding data.

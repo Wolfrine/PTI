@@ -2800,6 +2800,78 @@ dialog.menu-editor {
 @media (max-width: 380px) {
   .entrance-tasks h2 { font-size: 21px; letter-spacing: -.015em; }
 }
+
+/* Illustrated Catering: compact literal entries, with reusable watercolor motifs. */
+.food-art { display: block; object-fit: contain; flex-shrink: 0; }
+.catering-row > .service-art { width: 64px; height: 64px; }
+.menu-searchbar { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; border: 1px solid #c8b69f; border-radius: 26px; background: var(--white); max-width: 500px; }
+.menu-searchbar input { appearance: none; min-width: 0; flex: 1; width: 100%; border: 0; background: transparent; padding: 11px 18px; min-height: 46px; font-size: 16px; color: var(--body); border-radius: 26px; }
+.menu-searchbar input::-webkit-search-cancel-button { display: none; }
+.menu-searchbar .text-button { margin-right: 7px; padding: 6px 12px; flex-shrink: 0; }
+.reading-menu > .menu-searchbar { margin-top: 20px; margin-bottom: 22px; max-width: none; }
+.illustrated-menu { columns: 2; column-gap: 28px; }
+.illustrated-category { break-inside: avoid; margin: 0 0 25px; }
+.menu-category-heading { display: flex; gap: 12px; align-items: center; min-height: 72px; margin-bottom: 5px; border-bottom: 1px solid var(--line); padding-bottom: 5px; }
+.menu-category-heading .category-art { width: 72px; height: 72px; }
+.menu-category-heading h3 { font-size: 26px; line-height: 1.12; overflow-wrap: normal; }
+.menu-items { list-style: none; margin: 0; padding: 0; }
+.menu-item { display: flex; gap: 10px; align-items: center; padding: 4px 0; min-height: 44px; break-inside: avoid; }
+.menu-item:last-child { border-bottom: 0; }
+.menu-item .dish-art { width: 36px; height: 36px; }
+.menu-item > div { min-width: 0; flex: 1; }
+.dish-name { display: block; font-size: 16px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+.menu-item-uncertain { padding: 8px; border-radius: 7px; background: #f3ebdc; border: 0; margin: 5px 0; }
+.reading-flag { display: block; font-size: 12px; color: #755827; margin-top: 5px; line-height: 1.4; }
+.menu-category-note { background: var(--sage); border-radius: 8px; padding: 12px; }
+.menu-category-note .menu-category-heading { border-bottom-color: #cdd2bb; }
+.art-caption { font-size: 12px; line-height: 1.6; color: var(--muted); margin-top: 18px; }
+.recorded-menu { margin-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+.recorded-menu summary { cursor: pointer; padding: 12px 0; min-height: 44px; color: var(--ink); }
+.recorded-menu pre { font: 15px/1.8 var(--sans); white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 10px; }
+.menu-no-results { padding: 24px 5px; column-span: all; }
+.menu-no-results h3 { font-size: 27px; }
+.menu-no-results p { margin-top: 10px; font-size: 15px; color: var(--muted); }
+.menu-no-results .text-button { margin-top: 10px; }
+.comparison-grid .illustrated-menu { columns: 1; }
+.menu-compact .menu-category-heading { min-height: 53px; margin-top: 20px; }
+.menu-compact .category-art { width: 52px; height: 52px; }
+.menu-compact .menu-category-heading h3 { font-size: 23px; }
+.menu-compact .menu-item { min-height: 42px; padding: 5px 0; }
+.menu-compact .dish-art { width: 32px; height: 32px; }
+.menu-compact .dish-name { font-size: 15px; }
+.menu-compact .illustrated-category { margin-bottom: 19px; }
+.menu-compact .compare-category { border-bottom: 1px solid var(--line); margin-bottom: 0; }
+.compare-category > summary { display: grid; grid-template-columns: 48px minmax(0,1fr) 18px; gap: 11px; align-items: center; cursor: pointer; padding: 8px 0; list-style: none; }
+.compare-category > summary::-webkit-details-marker { display: none; }
+.compare-category > summary::after { content: '+'; color: var(--muted); font-size: 20px; text-align: right; }
+.compare-category[open] > summary::after { content: '−'; }
+.compare-category > summary .category-art { width: 48px; height: 48px; }
+.compare-category > summary strong { display: block; font: 500 23px/1.15 var(--serif); color: var(--ink); }
+.compare-category > summary small { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+.compare-category > .menu-items { padding: 0 0 12px; }
+@media (max-width: 1000px) {
+  .meal-layout .illustrated-menu { columns: 1; }
+}
+@media (max-width: 700px) {
+  .catering-row > .service-art { width: 54px; height: 54px; }
+  .catering-row { gap: 11px; }
+  .menu-searchbar { max-width: none; margin-bottom: 18px; }
+  .reading-menu > .menu-searchbar { margin-top: 17px; margin-bottom: 18px; }
+  .illustrated-menu { columns: 1; }
+  .menu-category-heading { gap: 10px; min-height: 48px; padding-bottom: 4px; }
+  .menu-category-heading .category-art { width: 48px; height: 48px; }
+  .menu-category-heading h3 { font-size: 25px; }
+  .menu-item { min-height: 36px; gap: 9px; padding: 2px 0; }
+  .menu-item .dish-art { width: 32px; height: 32px; }
+  .menu-item .dish-name { line-height: 1.4; }
+  .menu-item-uncertain { padding: 8px; }
+  .illustrated-category { margin-bottom: 12px; }
+  .menu-compact .menu-category-heading .category-art { width: 48px; height: 48px; }
+  .menu-compact .menu-category-heading h3 { font-size: 25px; }
+  .compare-controls { grid-template-columns: 1fr; }
+  .compare-category > summary { grid-template-columns: 40px minmax(0,1fr) 18px; padding: 7px 0; gap: 10px; }
+  .compare-category > summary .category-art { width: 40px; height: 40px; }
+}
 .compare-controls {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2866,6 +2938,7 @@ dialog.menu-editor {
     font-size: 14px;
   }
   .compare-controls {
+    grid-template-columns: 1fr;
     gap: 12px;
     margin: 22px 0;
   }
@@ -2876,6 +2949,7 @@ dialog.menu-editor {
     font-size: 16px;
     padding: 10px 9px;
   }
+  .compare-selected-date { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
   .comparison-grid {
     gap: 20px;
   }
@@ -2914,3 +2988,6 @@ dialog.menu-editor {
     font-size: 14px;
   }
 }
+
+/* Invitation actions become available after their browser enhancements load. */
+.invitation-actions[hidden] { display: none; }

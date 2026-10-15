@@ -1,0 +1,95 @@
+{
+  "description": "Actual watercolor assets and current rendered UI. Document-derived proposed menus plus synthetic people/logistics through DEV-only fixture interception.",
+  "states": [
+    {
+      "id": "overview",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round1-overview-1440.png",
+      "observedMarker": "Food counter",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "sangeet",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round1-sangeet-1440.png",
+      "observedMarker": "Hot kesar milk",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "breakfast",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-1",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round1-breakfast-1440.png",
+      "observedMarker": "aloo paratha with dahi",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "overview",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round1-overview-390.png",
+      "observedMarker": "Food counter",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "sangeet",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round1-sangeet-390.png",
+      "observedMarker": "Hot kesar milk",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "breakfast",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round1-breakfast-390.png",
+      "observedMarker": "aloo paratha with dahi",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    }
+  ]
+}

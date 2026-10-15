@@ -14,6 +14,12 @@
         {"key":"Cache-Control","value":"no-cache, must-revalidate"},
         {"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self'; img-src 'self' data: https://lh3.googleusercontent.com; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com; frame-src https://pti-app-2ab59.firebaseapp.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"}
       ]
+    },{
+      "source": "/sw.js",
+      "headers": [{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"},{"key":"Service-Worker-Allowed","value":"/"}]
+    },{
+      "source": "/manifest.webmanifest",
+      "headers": [{"key":"Cache-Control","value":"no-cache, must-revalidate"},{"key":"Content-Type","value":"application/manifest+json"}]
     }],
     "cleanUrls": true,
     "trailingSlash": true,

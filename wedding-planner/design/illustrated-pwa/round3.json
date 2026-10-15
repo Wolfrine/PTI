@@ -1,0 +1,362 @@
+{
+  "description": "Actual real-art search/category/no-results recovery and selected-pair compact comparison. Document-derived proposed menus; DEV fixture only.",
+  "states": [
+    {
+      "id": "overview-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round3-overview-search-1440.png",
+      "observedMarker": "Sangeet",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "overview-no-match",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round3-overview-no-match-1440.png",
+      "observedMarker": "No matching meals or menus.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "uncertain-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/reception-undated",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round3-uncertain-search-1440.png",
+      "observedMarker": "Shahi Patam",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "category-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round3-category-search-1440.png",
+      "observedMarker": "Sweet corn",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-compact",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round3-compare-compact-1440.png",
+      "observedMarker": "Two menus, together.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-expanded",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round3-compare-expanded-1440.png",
+      "observedMarker": "Hot kesar milk",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/illustrated-pwa/round3-compare-search-1440.png",
+      "observedMarker": "Paneer",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "overview-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-overview-search-390.png",
+      "observedMarker": "Sangeet",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "overview-no-match",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-overview-no-match-390.png",
+      "observedMarker": "No matching meals or menus.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "uncertain-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/reception-undated",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-uncertain-search-390.png",
+      "observedMarker": "Shahi Patam",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "category-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-category-search-390.png",
+      "observedMarker": "Sweet corn",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-compact",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-compare-compact-390.png",
+      "observedMarker": "Two menus, together.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-expanded",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-compare-expanded-390.png",
+      "observedMarker": "Hot kesar milk",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-compare-search-390.png",
+      "observedMarker": "Paneer",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "overview-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-overview-search-360.png",
+      "observedMarker": "Sangeet",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "overview-no-match",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-overview-no-match-360.png",
+      "observedMarker": "No matching meals or menus.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "uncertain-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/reception-undated",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-uncertain-search-360.png",
+      "observedMarker": "Shahi Patam",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "category-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/18-4",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-category-search-360.png",
+      "observedMarker": "Sweet corn",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-compact",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-compare-compact-360.png",
+      "observedMarker": "Two menus, together.",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-expanded",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-compare-expanded-360.png",
+      "observedMarker": "Hot kesar milk",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "compare-search",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/compare",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/illustrated-pwa/round3-compare-search-360.png",
+      "observedMarker": "Paneer",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false,
+        "activeElement": "menu-search",
+        "skipLinkTop": -100
+      },
+      "pageErrors": []
+    }
+  ]
+}

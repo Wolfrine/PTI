@@ -1,0 +1,75 @@
+{
+  "candidate": "c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00",
+  "reviewer": "wedding_critic",
+  "scores": {
+    "identity": 8.1,
+    "hierarchy": 8.1,
+    "craft": 8.1
+  },
+  "overall": 8.1,
+  "verdict": "pass",
+  "owner_accepted": false,
+  "evidence": [
+    {
+      "path": "design/illustrated-pwa/final-sangeet-1440.png",
+      "sha256": "9764c03b2972182f1b8c923543ac6463d76470e7051767a98212847e2053e89a"
+    },
+    {
+      "path": "design/illustrated-pwa/final-reception-1440.png",
+      "sha256": "d3d88819e4ce3b49ffe9e438db351f94cd886925c935a80d6bf496ac4d7985f9"
+    },
+    {
+      "path": "design/illustrated-pwa/final-sangeet-390.png",
+      "sha256": "aa9c42922593ecd789abf0020a68d5962f5732372b51e564ba3b609f4344d352"
+    },
+    {
+      "path": "design/illustrated-pwa/final-reception-390.png",
+      "sha256": "9dcee73044f88d81c804b353c5a71dce952c8884b9e0ef5a7043efe2ec96fb4f"
+    },
+    {
+      "path": "design/illustrated-pwa/final-compare-compact-390.png",
+      "sha256": "227a67164a8d2ed0f1400852251e621a66196e4deb1f6fc0bfdb4ca6c30bc3db"
+    },
+    {
+      "path": "design/illustrated-pwa/final-compare-search-390.png",
+      "sha256": "c4c2155942845f23d331c042ebf21a667626e4626c23ccccbef313a8178ea0bc"
+    },
+    {
+      "path": "design/illustrated-pwa/final-invitation-1440.png",
+      "sha256": "5b7fdb57cb598a17a20f5c664d5264989dbb4f061f4abab1bf5347edf53b7531"
+    },
+    {
+      "path": "design/illustrated-pwa/final-invitation-360.png",
+      "sha256": "b001d5cfb66242558b24a83073da4944bf69ce14c013aa07b81f7adae4dca542"
+    },
+    {
+      "path": "design/illustrated-pwa/final-install-help-390.png",
+      "sha256": "caeebe4188ce9dd25a04157c17b8fa3dc2d2488b5b2b0cc08ade6b21155a6b66"
+    },
+    {
+      "path": "design/illustrated-pwa/final-share-fallback-390.png",
+      "sha256": "f5493b5f32d70be7bfc3d93170b854856f9dedc56c710357698cfc79e63b04ee"
+    },
+    {
+      "path": "design/illustrated-pwa/final-saved-offline-390.png",
+      "sha256": "8436ebb12adff846ae5414bc457a9a0284d654be3d44eb856c1e9cf17974fb66"
+    },
+    {
+      "path": "design/illustrated-pwa/final-private-offline-390.png",
+      "sha256": "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13"
+    },
+    {
+      "path": "design/illustrated-pwa/final-social-card-1200.png",
+      "sha256": "0b55580057db37ec46400da236abffea74d6d20989fc024b4da682208e209ef8"
+    }
+  ],
+  "limitations": [
+    "All 13 exact final renders personally inspected; other capture-manifest or device states are not implicitly accepted.",
+    "Family menu renders use complete document-derived proposed menus with labelled synthetic people/logistics through a DEV-only fixture. Production public/install/share/offline renders use the exact built candidate.",
+    "Real generated watercolor motifs are indicative food-family illustrations, not actual caterer photographs, confirmed dishes, ingredients or dietary guarantees. Canonical menuText and literal uncertainty remain authoritative.",
+    "Clipboard denial/no native share and iPhone user-agent guidance are explicit browser fixtures. No WhatsApp delivery, physical-phone installation, physical-phone PWA authentication or native installation prompt is claimed.",
+    "Critic independently exercised current production service-worker offline/public/private recovery and current DEV verify search; full security, parser, offline/update and role test suites remain parent QA.",
+    "R3 primary rating followed receipt of parent-reported stronger scores; that exposure is disclosed in CRITIQUE.md. R4/R5 critic scores preceded parent scores.",
+    "The discarded b76b72e50f99bd85655158954d4260ee09680a6f15834f989ee3b995cfb07cef candidate was never accepted. Final binding covers repaired c57e2c94e2be8b5a1cf5ccee052e584eb7da6c1d267758d7ec3b12777312df00 only."
+  ]
+}

@@ -1,0 +1,77 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile,readdir,mkdir,writeFile} from 'node:fs/promises';
+import {resolve,relative,extname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+import {setTimeout as pause} from 'node:timers/promises';
+import {chromium,expect} from '@playwright/test';
+
+const root=fileURLToPath(new URL('../dist/',import.meta.url)),evidence=fileURLToPath(new URL('../../.wedding-qa/pwa/',import.meta.url)),files=new Map(),results=[],errors=[],networkRequests=[];
+const digest=value=>createHash('sha256').update(value).digest('hex');
+async function walk(path){for(const item of await readdir(path,{withFileTypes:true})){const name=resolve(path,item.name);if(item.isDirectory())await walk(name);else files.set('/'+relative(root,name).replaceAll('\\','/'),await readFile(name));}}
+await walk(root);await mkdir(evidence,{recursive:true});
+const graph=JSON.parse(files.get('/pwa-assets.json').toString()),manifest=JSON.parse(files.get('/manifest.webmanifest').toString());
+assert.equal(manifest.id,'/');assert.equal(manifest.start_url,'/');assert.equal(manifest.scope,'/');assert.equal(manifest.display,'standalone');assert.equal(manifest.name,'Mahima & Mayank');assert.ok(manifest.shortcuts.some(shortcut=>shortcut.url==='/family/'));
+for(const asset of graph.assets){assert.equal(digest(files.get(asset.url)),asset.sha256);assert.ok(!/\/family|index[.]esm|firebase|\/__\//i.test(asset.url),asset.url);}
+assert.ok(graph.assets.some(asset=>asset.url.endsWith('.woff2')));assert.ok(graph.assets.some(asset=>asset.url.startsWith('/art/')));assert.ok(graph.assets.some(asset=>asset.url.endsWith('/icon-512.png')));
+const js=graph.assets.filter(asset=>asset.url.endsWith('.js')).map(asset=>files.get(asset.url).toString()).join('\n');assert.doesNotMatch(js,/firestore[.]googleapis[.]com|identitytoolkit[.]googleapis[.]com|initializeFirestore/);
+results.push('Production public dependency graph is complete, hash checked and excludes family/Firebase chunks');
+function version(marker) {
+  const snapshot=new Map(files),html=files.get('/index.html').toString().replace('</body>',`<p data-release-marker>${marker}</p></body>`);snapshot.set('/index.html',Buffer.from(html));
+  const assets=graph.assets.map(asset=>asset.url==='/index.html'?{...asset,sha256:digest(html)}:asset),id=digest(marker+JSON.stringify(assets)).slice(0,20),cacheName='mahima-mayank-public-v1-'+id;
+  snapshot.set('/sw.js',Buffer.from(files.get('/sw.js').toString().replace(/const VERSION="[^"]+",CACHE="[^"]+"/,`const VERSION="${id}",CACHE="${cacheName}"`).replace(/FILES=\[[^\n]*?\],META=/,`FILES=${JSON.stringify(assets)},META=`)));
+  return {snapshot,id,cacheName};
+}
+const versions={a:version('LOCAL PWA TEST A'),b:version('LOCAL PWA TEST B'),c:version('LOCAL PWA TEST C')};let release='a',broken=false;
+const headers=JSON.parse(await readFile(new URL('../../firebase.wedding.json',import.meta.url),'utf8')).hosting[0].headers[0].headers;
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.svg':'image/svg+xml'};
+const server=createServer((request,response)=>{
+  const pathname=new URL(request.url,'http://localhost').pathname,path=pathname==='/'?'/index.html':pathname==='/family/'||pathname==='/family'?'/family/index.html':pathname;
+  networkRequests.push({pathname,at:new Date().toISOString()});
+  for(const header of headers)response.setHeader(header.key,header.value);response.setHeader('Cache-Control','no-store');response.setHeader('Content-Type',mime[extname(path)]||'application/octet-stream');
+  if(path.startsWith('/__/')||path.startsWith('/firestore/')){response.end('PRIVATE ENDPOINT TEST');return;}
+  const body=versions[release].snapshot.get(path);if(!body||(broken&&path.startsWith('/art/'))){response.statusCode=404;response.end('Missing local test asset');return;}response.end(body);
+});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
+let browser;
+try {
+  browser=await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH}:{});
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(origin);await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);await page.evaluate(()=>navigator.serviceWorker.ready);
+  const cacheEntries=()=>page.evaluate(async()=>{const rows=[];for(const name of await caches.keys())for(const request of await(await caches.open(name)).keys())rows.push({name,url:request.url});return rows;});
+  let entries=await cacheEntries();assert.equal(entries.filter(row=>row.name===versions.a.cacheName).length,graph.assets.length+1);assert.ok(!entries.some(row=>/\/family|firebase|\/__\//i.test(row.url)));
+  await page.evaluate(async()=>{const cache=await caches.open('another-app-test-cache');await cache.put('/other-public-resource',new Response('Other app'));await fetch('/__/auth/test');await fetch('/firestore/test');});
+  assert.ok(!(await cacheEntries()).some(row=>/\/__\/|\/firestore\//.test(row.url)));
+  results.push('Initial install saves one complete public version; auth/private endpoints never enter CacheStorage');
+  await context.setOffline(true);await page.reload();await expect(page.locator('[data-pwa-notice="offline"]')).toContainText('Saved invitation');await expect(page.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST A');await expect(page.locator('[data-countdown] > span')).toHaveCount(4);
+  const before=await page.locator('[data-countdown]').innerText();await expect.poll(()=>page.locator('[data-countdown]').innerText()).not.toBe(before);
+  assert.ok(await page.locator('img').evaluateAll(images=>images.every(image=>image.complete&&image.naturalWidth>0)));assert.equal(await page.evaluate(()=>document.fonts.check('16px DM')),true);
+  await page.screenshot({path:evidence+'/offline-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:evidence+'/offline-mobile.png',fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  const privateRequestsBefore=networkRequests.filter(request=>request.pathname==='/family/').length;
+  const privateOffline=await page.goto(origin+'/family/');
+  try {await expect(page.locator('h1')).toHaveText('Let’s reconnect.');}
+  catch(error){await writeFile(evidence+'/private-offline-response.json',JSON.stringify({url:page.url(),status:privateOffline?.status(),headers:await privateOffline?.allHeaders(),responseBody:await privateOffline?.text(),document:await page.content(),workers:await Promise.all(context.serviceWorkers().map(worker=>worker.evaluate(()=>({online:navigator.onLine,url:location.href})))),browser:await page.evaluate(async()=>({online:navigator.onLine,contentType:document.contentType,controller:!!navigator.serviceWorker.controller,cached:await Promise.all((await caches.keys()).filter(name=>name.startsWith('mahima-mayank-public-')).map(async name=>{const response=await(await caches.open(name)).match('/offline.html');return{name,headers:response?Object.fromEntries(response.headers):null,body:response?await response.text():null};}))})),networkRequests,errors},null,2));throw error;}
+  await expect(page.locator('body')).not.toContainText('Continue with Google');await expect(page.locator('a[href="/"]')).toBeVisible();
+  assert.equal(privateOffline.status(),200);assert.equal(privateOffline.fromServiceWorker(),true);assert.equal(await privateOffline.text(),files.get('/offline.html').toString());
+  assert.equal(networkRequests.filter(request=>request.pathname==='/family/').length,privateRequestsBefore,'An explicitly offline family navigation must not fetch a live shell');assert.equal(await page.locator('#workspace, #editor, .guest-list').count(),0);
+  await writeFile(evidence+'/private-offline-after-fix.json',JSON.stringify({browser:browser.version(),build:graph.version,status:privateOffline.status(),fromServiceWorker:privateOffline.fromServiceWorker(),headers:await privateOffline.allHeaders(),responseBody:await privateOffline.text(),offline:await page.evaluate(()=>!navigator.onLine),familyNetworkRequestsDuringOffline:networkRequests.filter(request=>request.pathname==='/family/').length-privateRequestsBefore,privateShellElements:await page.locator('#workspace, #editor, .guest-list').count(),errors},null,2));
+  results.push('Offline invitation keeps artwork/fonts and a live countdown with saved-time notice; offline family route shows only neutral reconnect guidance');
+  await context.setOffline(false);await page.goto(origin+'/family/');await page.waitForFunction(()=>document.body.dataset.pwaState==='registered');await expect(page.getByRole('button',{name:/Continue with Google/})).toBeVisible();
+  assert.ok(!(await cacheEntries()).some(row=>/\/family|firebase|index[.]esm|\/__\//i.test(row.url)));
+  await page.evaluate(()=>{const dialog=document.querySelector('#editor');dialog.innerHTML='<label>LOCAL SYNTHETIC DRAFT<textarea>Keep this unsaved draft</textarea></label>';dialog.showModal();});
+  const update=async()=>page.evaluate(async()=>{const registration=await navigator.serviceWorker.getRegistration();await registration.update();});
+  release='b';broken=true;await update();await expect.poll(()=>page.evaluate(async()=>{const registration=await navigator.serviceWorker.getRegistration();return !registration.installing;})).toBe(true);assert.equal(await page.evaluate(async()=>!!(await navigator.serviceWorker.getRegistration()).waiting),false);await expect(page.locator('#editor textarea')).toHaveValue('Keep this unsaved draft');
+  broken=false;await update();await page.waitForFunction(async()=>!!(await navigator.serviceWorker.getRegistration()).waiting);await expect(page.locator('[data-pwa-notice="update"]')).toBeVisible();await expect(page.locator('#editor')).toHaveJSProperty('open',true);await expect(page.locator('#editor textarea')).toHaveValue('Keep this unsaved draft');await page.screenshot({path:evidence+'/waiting-update-desktop.png'});
+  await context.setOffline(true);const saved=await context.newPage();await saved.goto(origin);await expect(saved.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST A');
+  results.push('Incomplete update cannot activate; complete waiting update preserves an open editor/draft and the prior coherent offline fallback');
+  await page.close();await saved.close();await pause(500);let current=await context.newPage();await current.goto(origin);await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST B');
+  await context.setOffline(false);release='c';await current.reload();await current.evaluate(async()=>{const registration=await navigator.serviceWorker.getRegistration();await registration.update();});await current.waitForFunction(async()=>!!(await navigator.serviceWorker.getRegistration()).waiting);await context.setOffline(true);await current.reload();await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST B');
+  await current.close();await pause(500);current=await context.newPage();await current.goto(origin);await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST C');
+  const cachesLeft=await current.evaluate(()=>caches.keys());assert.deepEqual(cachesLeft.filter(name=>name.startsWith('mahima-mayank-public-v1-')),[versions.c.cacheName]);assert.ok(cachesLeft.includes('another-app-test-cache'));
+  results.push('Two version updates activate naturally after windows close, never overwrite the active fallback, and clean only wedding-owned caches');
+  await context.setOffline(false);const phone=await browser.newContext({viewport:{width:390,height:844},userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'}),iosPage=await phone.newPage();await iosPage.goto(origin);await iosPage.locator('[data-pwa-install]').first().click();await expect(iosPage.locator('.pwa-help')).toBeVisible();await expect(iosPage.locator('.pwa-help')).toContainText('Add to Home Screen');assert.equal(await iosPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.equal(await iosPage.locator('.pwa-help').evaluate(dialog=>dialog.contains(document.activeElement)),true);await iosPage.screenshot({path:evidence+'/install-help-mobile.png'});await iosPage.locator('.pwa-done').click();await iosPage.setViewportSize({width:1440,height:1000});await iosPage.locator('[data-pwa-install]').first().click();await iosPage.screenshot({path:evidence+'/install-help-desktop.png'});await iosPage.locator('.pwa-done').click();
+  await current.setViewportSize({width:1440,height:1000});await current.evaluate(()=>{const event=new Event('beforeinstallprompt');event.prompt=async()=>{window.nativePromptUsed=true;};event.userChoice=Promise.resolve({outcome:'dismissed'});dispatchEvent(event);const button=document.createElement('button');button.textContent='LOCAL DYNAMIC INSTALL TEST';button.dataset.pwaInstall='';document.body.append(button);});await current.getByText('LOCAL DYNAMIC INSTALL TEST').click();assert.equal(await current.evaluate(()=>window.nativePromptUsed),true);await current.evaluate(()=>dispatchEvent(new Event('appinstalled')));await expect(current.locator('[data-pwa-install]').first()).toBeHidden();
+  results.push('iOS instructions, delegated dynamic install controls and installed-state hiding work; native prompt was simulated, not a device-install claim');
+  assert.deepEqual(errors,[]);await writeFile(evidence+'/results.json',JSON.stringify({origin,browser:browser.version(),build:graph.version,results,errors,versions:Object.fromEntries(Object.entries(versions).map(([key,value])=>[key,value.id]))},null,2));console.log(`PASS ${results.length} PWA acceptance scenarios`);
+} finally {await browser?.close();await new Promise(resolve=>server.close(resolve));}

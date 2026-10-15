@@ -1,0 +1,12 @@
+.guest-footer { flex-wrap: wrap; }
+.invitation-actions { display: flex; justify-content: center; align-items: center; gap: 12px 25px; flex-wrap: wrap; width: 100%; margin-top: 6px; }
+.invitation-actions .text-button { font-family: var(--sans); font-size: 13px; font-style: normal; padding: 9px 3px; }
+#share-status { width: 100%; margin: 0; font: 13px/1.6 var(--sans); color: var(--sage-ink); text-align: center; }
+#share-status:empty { display: none; }
+.share-link-dialog { max-width: 460px; width: calc(100% - 36px); padding: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--body); }
+.share-link-dialog::backdrop { background: #43332e66; }
+.share-link-dialog h2 { font-family: var(--serif); color: var(--ink); font-size: 30px; margin: 0 0 14px; }
+.share-link-dialog p { line-height: 1.7; }
+.share-link-dialog label { display: block; margin-top: 20px; font-size: 13px; }
+.share-link-dialog input { width: 100%; box-sizing: border-box; padding: 12px; margin: 8px 0 20px; border: 1px solid var(--line); border-radius: 5px; font: 14px var(--sans); color: var(--ink); background: #fffdf8; }
+.share-link-dialog form { text-align: right; }

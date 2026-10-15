@@ -10,6 +10,8 @@ The public page is a Botanical save-the-date invitation: names, the **planned** 
 
 ## Purpose
 
+The illustrated catering extension uses compact Botanical food-family cues beside the complete recorded proposals, with dish/category search and selected-pair comparison. Artwork is indicative; unclear names retain their verification markers. The same wedding app can be installed from the invitation or family account menu. Only the public invitation is saved offline; family planning needs a connection. Sharing uses a dedicated versioned image. See [extension evidence](design/illustrated-pwa/BRIEF.md) and [offline behavior](design/illustrated-pwa/PWA.md).
+
 One personal digital home for Mahima and Mayank's wedding: **a welcoming invitation for guests** and **a private, coherent planning space for family**. It should reduce uncertainty without turning the celebration into a generic project-management product.
 
 | Experience | Audience | Promise |

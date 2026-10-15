@@ -1,0 +1,26 @@
+{
+  "cycle": 3,
+  "reviewer": "/root",
+  "evidence": [
+    {
+      "path": "wedding-planner/design/illustrated-pwa/round3-category-search-1440.png",
+      "sha256": "1ff3295de62dbff60c4f73331aa9b708b1416c7c74ab9aba4ffad737b8cb9c13"
+    },
+    {
+      "path": "wedding-planner/design/illustrated-pwa/round3-compare-search-390.png",
+      "sha256": "c4c2155942845f23d331c042ebf21a667626e4626c23ccccbef313a8178ea0bc"
+    },
+    {
+      "path": "wedding-planner/design/illustrated-pwa/round3-compare-compact-360.png",
+      "sha256": "805f6f56474ef50b9cc0ae1778ff31b5805e3708604fd504e1cd0b588f8c35f0"
+    }
+  ],
+  "scores": {
+    "identity": 8.2,
+    "hierarchy": 8,
+    "craft": 8
+  },
+  "overall": 8.1,
+  "judgment": "Parent personally viewed these exact recaptured images after the stronger critic scores: source-written category context, readable compact food cues, proposed/undated labels and full date labels pass. Collapsed comparison contains all category entrances; search brings the selected food together. Original full-page skip-link overlay was a capture artifact, confirmed absent in actual viewport and corrected by capture scroll reset. No owner taste acceptance inferred.",
+  "qa": "All10 projected menus match the parsed source in browser; every explicit uncertain reading uses neutral art; search/clear and selected-pair dates pass390. Separate13wedding rules,9Venture and actual emulator collaboration/role/draft tests pass."
+}

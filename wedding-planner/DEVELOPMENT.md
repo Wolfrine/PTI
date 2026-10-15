@@ -24,7 +24,7 @@ The release script imports the documented proposals atomically only when the wor
 
 1. Obtain family approval for the public facts and each function's audience. Record operational changes privately first.
 2. Edit only the approved public snapshot in `src/public-content.ts`. Times require an exact offset/UTC instant. Maps must be secure approved Google Maps links. Keep the countdown's labelled midnight-IST date boundary unless the family chooses another exact target; do not imply that it is an event time. Setting it to `null` removes the timer.
-3. Review the public wording and social metadata in `index.html`. When public names/dates or art change, regenerate `public/share.png` with `node scripts/share-image.mjs` after installing the matching Playwright Chromium browser. The image is a native rendering of the invitation, not reference artwork.
+3. Review public wording and social metadata in both entry HTML files. When names/dates or art change, update `design/illustrated-pwa/share-card.html`, regenerate the versioned JPEG with `node scripts/share-image.mjs`, and update its absolute metadata URL. Keep the names/planned dates in the centre safe area. The image contains no countdown or private information.
 4. Run tests/build/browser checks, review desktop and mobile, then release through the wedding workflow. Private edits do not publish themselves. Keep an available maintainer for urgent changes near the wedding.
 
 The site discourages search indexing. Its open invitation is still public to anyone with the URL. Do not put guest lists, room allocations, dietary/health details, vendor costs, draft menus or internal contacts in the public snapshot. Hosting serves only `dist`, never this documentation/source directory.
@@ -39,6 +39,8 @@ From the repo root, after installing dependencies:
 firebase emulators:exec --only firestore --project demo-wedding-tests --config firebase.wedding-tests.json "npm run test:rules --prefix wedding-planner"
 firebase emulators:exec --only firestore,auth --project demo-wedding-tests --config firebase.wedding-tests.json "node wedding-planner/tests/store-browser.mjs"
 node wedding-planner/tests/browser.mjs
+node wedding-planner/tests/sharing-browser.mjs
+node wedding-planner/tests/pwa-browser.mjs
 ```
 
 The store/browser test also needs `personal-functions` dependencies for the Admin SDK, configured strictly against emulators. Browser tests use the matching Playwright Chromium; optionally set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed compatible Chromium. `.wedding-qa` outputs are local/CI artifacts and contain synthetic records only. The original 65 research scenarios remain a reference pack; these targeted tests do not claim all 65 have run.
@@ -51,7 +53,9 @@ For reproducible design-state captures, start a fresh dev server and run `node d
 
 Live authorization checks use temporary synthetic accounts and an isolated verification workspace, then remove them. They test registration isolation, all roles, protected owner, self-promotion denial, reads/writes, history, stale revisions and revocation. They do not claim a real human Google popup login. Hosting verification compares every deployed asset with the build and checks private/development source routes return 404. The countdown/access extension's visual evidence and exact candidate are in `design/countdown-access/`; its fixture renders are separate from emulator-backed role-transition tests.
 
-Hosting-only recovery can release a previous reviewed wedding build through `hosting:wedding`. Do not restore older shared rules that omit wedding isolation while private data exists. Before any rule rollback, retain `weddingData` exclusion and its reviewed access block and rerun security regressions. No service worker caches obsolete invitation details.
+Hosting-only recovery can release a previous reviewed wedding build through `hosting:wedding`. Do not restore older shared rules that omit wedding isolation while private data exists. Before any rule rollback, retain `weddingData` exclusion and its reviewed access block and rerun security regressions.
+
+The service worker keeps a hash-verified complete public invitation version. Public navigations try the network first; an offline fallback explicitly shows its saved time. Family routes show a neutral reconnect page offline, and private application/data/Auth requests never enter its cache. Updates wait until all wedding windows close, preserving open drafts. For rollback, rebuild the chosen reviewed content with the current PWA generator and publish the stable `/sw.js` path too; simply removing the worker file does not unregister already installed workers. Verify the rollback online and offline and retain its version. Only `mahima-mayank-public-v1-` caches belong to this app. Browser storage eviction or never having visited online can prevent offline access; this is not a backup of the private plan.
 
 CI builds committed LF text. A Windows working tree may produce CR-only differences in HTML, SVG and license files during a byte comparison. For a clean comparison, archive with `git -c core.autocrlf=false archive HEAD wedding-planner`, build that source with the locked dependencies, and compare its `dist` with Hosting. The countdown/access release retains both fingerprints and the exact CR-only deltas in `design/countdown-access/deployment-binding.json`; original screenshot acceptance keeps its own byte binding.
 

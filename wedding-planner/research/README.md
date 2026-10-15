@@ -8,6 +8,8 @@ Chat records the base intent; Work researches the domain and develops evaluation
 
 Start with the [project intent](../README.md) and [live wedding record](../WEDDING_RECORD.md) for actual family-supplied facts; then the [guest intent](../guest-experience/README.md) and [family intent](../family-workspace/README.md). Read the [domain guide](DOMAIN_GUIDE.md) for the subject at hand and [eval guide](../evals/README.md) before evaluating. The machine-readable [cases](../evals/cases.json) contain synthetic situations and expected outcomes.
 
+For the current food decision, read the [**source-backed menu review**](MENU_REVIEW.md): ten listed services, within-service overlaps, cross-event repeats, flavour and texture profiles, targeted substitutions, combinations and guest-preference limits. It includes its own 29-source register. All recommendations are proposals; the [Wedding Record](../WEDDING_RECORD.md) remains canonical for actual selections, and no tasting or guest survey has been performed.
+
 **The coverage map is a research reference, not a feature backlog or a requirement to create one page per topic.** A family can handle an arrangement outside the app, mark it irrelevant, or express it through a simple note. Evaluate whether the intended outcome is supported with reasonable effort. Keep the celebration lightweight.
 
 ## Established context and open facts

@@ -2,7 +2,7 @@
 
 ## Application
 
-The dedicated invitation and family workspace are implemented in this directory. The wedding Hosting target is `wedding`, using the existing `pti-app-2ab59` Firebase project and the separately named site `mahima-mayank-2027`. See [delivery and verification](IMPLEMENTATION.md) for the current release status and evidence, and [maintainer instructions](DEVELOPMENT.md) for local use, access and publication.
+The dedicated invitation and family workspace are implemented in this directory. The wedding Hosting target is `wedding`, using the existing `pti-app-2ab59` Firebase project and the separately named site `mahima-mayank`. See [delivery and verification](IMPLEMENTATION.md) for the current release status and evidence, and [maintainer instructions](DEVELOPMENT.md) for local use, access and publication.
 
 The initial public release is a save-the-date invitation: names and the **planned** 18–20 January window. Event times, venues, a contact and an exact countdown remain absent until the family approves them. The private workspace supports events/menus, decisions, individual guests, event attendance, stays, arrangements, costs, family access and a portable export. Local preview fixtures are synthetic and are excluded from production.
 
@@ -24,7 +24,8 @@ One personal digital home for Mahima and Mayank's wedding: **a welcoming invitat
 - **20 January:** Morning breakfast is listed; **guest tiffin boxes** are an open question.
 - A substantial **Reception** menu exists, **without a written date**. Its placement must not be guessed.
 - The intended overall planning journey is **baraat arrival through vidai**; ceremony dates, order, and times are still unconfirmed.
-- **Venues, city, invitation wording, timings, countdown target, guest counts and accommodation** have not yet been supplied. The implemented public identity uses the couple's names; final family visual acceptance is still pending.
+- **Website naming preference:** `mahima_mayank.web.app` (requested by the family). Firebase Hosting does not allow `_` in site IDs. The implementation uses the closest valid hyphenated identity, `mahima-mayank.web.app`, subject to the cloud release's availability check.
+- **Venues, city, invitation wording, timings, countdown target, guest counts and accommodation** have not yet been supplied. Final family visual acceptance is still pending.
 
 The [**Wedding Record**](WEDDING_RECORD.md) preserves the initial timeline, complete proposed menus, provenance, ambiguities and unresolved details. The reviewed release imports it once into the private shared workspace; after successful activation, Firestore is the operational record. An existing workspace is never overwritten by later deployments. Neither this initial transcript nor its import is proof of approved menus, reservations or public invitation details.
 
@@ -44,6 +45,6 @@ The [**Wedding Record**](WEDDING_RECORD.md) preserves the initial timeline, comp
 - [Guest experience](guest-experience/README.md) and [family workspace](family-workspace/README.md) — the two audience intents.
 - [Domain research](research/README.md) and [evaluation references](evals/README.md) — optional supporting knowledge, **not facts about this wedding or a required feature backlog**.
 
-This belongs within **Wolfrine/PTI**, reusing the existing **PTI Firebase project** with a separately named Hosting site. No separate repository or Firebase project is intended.
+This belongs within **Wolfrine/PTI**, reusing the existing **PTI Firebase project** with a separately named Hosting site. No separate repository or Firebase project is intended. The desired website identity is **Mahima and Mayank**; the actual Hosting site ID must be valid and available before its URL can be confirmed.
 
 After activation, record evolving arrangements in the shared family workspace. Keep this initial record as provenance and update audience documentation when intent changes. Public snapshots are separately reviewed release artifacts, not an automatic mirror of private edits.

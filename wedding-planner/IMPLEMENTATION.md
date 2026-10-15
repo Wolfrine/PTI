@@ -1,5 +1,23 @@
 # Wedding implementation and verification
 
+## Current Botanical redesign
+
+The owner rejected the earlier folded-invitation design for weak appearance and excessive journey burden. Its historical visual scores below are superseded. Current implementation and acceptance evidence are tracked in [the Botanical brief](design/botanical/BRIEF.md), [independent critique](design/botanical/CRITIQUE.md), and the current release record that follows. Family approval of the new aesthetic remains pending.
+
+Implementation base: main `2fe53ab`, branch `codex/wedding-botanical`. Same PTI repository, Firebase project, owner/workspace, and Hosting identity. No record migration, reseed or security-rule change is part of this redesign. Original floral artwork is imagined scenery; [provenance and final image-generation prompt](design/botanical/ARTWORK.md) are retained separately from wedding facts.
+
+The public experience now uses the selected Romantic Botanical scene and a short, truthful save-the-date composition. The family home has a function timeline and four entrances. Catering groups services by day; comparison shows two selected menus. Guests, stays/travel and tasks use readable detail pages with focused editors. Responsibilities has direct access beside decisions. Real hash routes, breadcrumbs and browser Back replace the former overloaded tab journey. Source/provenance and account actions remain secondary. Static guest content needs no JavaScript or Firebase request.
+
+Observed redesign verification: TypeScript/Vite production build; ten model tests; twelve browser task scenarios at 1440/390/360; nine wedding rules tests and thirteen Venture tests on shared emulators; production dependency audit with zero reported vulnerabilities. Actual Auth/Firestore emulator tests cover two-account collaboration, full hidden-field preservation after a menu-only edit, revision conflicts, cancel/reopen recovery, archive/history export, immediate draft/toast clearing on active membership removal, and sign-out. The underlying store, model, schema and rules are unchanged.
+
+The original Angular production build passes with existing stylesheet advisories. Its unrelated Karma baseline still has one pass/eight failures because specs lack Firebase Auth/Firestore providers; Angular code and dependencies were not changed. These failing checks are not presented as passing.
+
+The final UI was rendered and personally inspected on desktop and phone, including complete documented menus and labelled synthetic logistics, focused forms, empty/search/loading/offline/validation states and actual emulator access removal. Five substantive implementation rounds follow three distinct direction candidates. The randomly selected round-3 stronger review used gpt-6-astra/high; it identified hierarchy gaps subsequently addressed. Screenshots and review records are under `design/botanical`; reference boards and generated scenery do not establish wedding facts. This is agent review, with family aesthetic approval and real human Google popup sign-in still pending.
+
+Release status: verification complete locally; remote verification and Hosting release pending. The pre-redesign live read-only snapshot contained ten proposed services and seven open decisions, with no guest, attendance or arrangement records. Deployment must preserve those existing documents and must not import test fixtures.
+
+## Historical first release — visual direction subsequently rejected
+
 Base reviewed: PTI main `8548e6c4d59fadd979fac4ff21ed3b5be3e5668b`. Delivery branch: `codex/wedding-home`. This record is updated with observed release results; configuration alone is not deployment evidence.
 
 Integrated subsequent main context through `ba4d473`: the family's requested `mahima_mayank.web.app` identity (underscores are invalid; closest valid target configured as `mahima-mayank`) and the additional source-backed menu review. Those culinary suggestions remain proposals; the initial menu selections were preserved.

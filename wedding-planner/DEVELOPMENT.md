@@ -10,7 +10,9 @@ Normal development family access defaults to the Auth/Firestore emulators at 909
 
 ## Shared family record
 
-The initial owner is the connected PTI owner's existing Firebase UID, configured in `src/config.ts`. The owner signs in with their existing Google account, adds family emails through **Family access**, and shares `/family/`. Adding access sends no message. An invited verified account can coordinate the family plan; the owner manages membership. An open guest link never grants family access.
+The initial owner is the connected PTI owner's existing Firebase UID, configured in `src/config.ts`. The owner signs in with their existing Google account, opens the round **family account** menu and adds family emails through **Family access**, then shares `/family/`. Adding access sends no message. An invited verified account can coordinate the family plan; the owner manages membership. An open guest link never grants family access. The same menu contains the private export and sign-out actions.
+
+The four home entrances use hash routes (`#/catering`, `#/guests`, `#/stays`, `#/tasks`) with record deep links and browser Back. Catering retains meals and food counters separately from the function programme. Record pages are read-first; menu, timing/venue, guest basics, food needs, stay, travel, decisions, and provider/costs use focused editors. Failed saves retain the open draft; cancelling discards it so reopening reads the latest shared revision.
 
 The release script imports the documented proposals atomically only when the workspace does not exist. It never resets live edits. Guests start empty. Event times/venues/countdown are not invented. All seed menus remain proposed; ambiguous items keep their verification markers. Subsequent records have atomic private history and revision checks. Archiving preserves records/history; exports include them. Confirmed, tentative, unknown and declined attendance remain separate per person/occasion. Nightly stay figures count people, not rooms or bookings.
 
@@ -36,6 +38,8 @@ node wedding-planner/tests/browser.mjs
 ```
 
 The store/browser test also needs `personal-functions` dependencies for the Admin SDK, configured strictly against emulators. Browser tests use the matching Playwright Chromium; optionally set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed compatible Chromium. `.wedding-qa` outputs are local/CI artifacts and contain synthetic records only. The original 65 research scenarios remain a reference pack; these targeted tests do not claim all 65 have run.
+
+For reproducible design-state captures, start a fresh dev server and run `node design/botanical/capture-final.mjs` from `wedding-planner`. Its default origin is port 5177; set `WEDDING_REVIEW_ORIGIN` for another port and the Chromium environment variable above if needed. It intercepts only the local demo module with a documented-menu/synthetic-person fixture, writes state-identified images and a manifest, and never writes live wedding records. Actual revocation screenshots come from the emulator integration test.
 
 ## Release and recovery
 

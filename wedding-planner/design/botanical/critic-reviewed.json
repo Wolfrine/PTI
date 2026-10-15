@@ -1,0 +1,128 @@
+{
+  "candidate": "4623ff3e66a198a526ce4a3953241db5d917f9e6aab568bcde89702f6569baf4",
+  "reviewer": "wedding_critic",
+  "scores": {
+    "identity": 8.2,
+    "hierarchy": 8.1,
+    "craft": 8.1
+  },
+  "overall": 8.1,
+  "verdict": "pass",
+  "owner_accepted": false,
+  "evidence": [
+    {
+      "path": "design/botanical/cycle5-invitation-1440.png",
+      "sha256": "6d57dec656de60cb43ae5d15d4b7402b73d035ad164587df7f12489f2b50832c"
+    },
+    {
+      "path": "design/botanical/cycle5-invitation-390.png",
+      "sha256": "3eb0b1707f2fb0cc5fca29e1688f4f231cf3c94cad4ff91158a0410cbd82caf8"
+    },
+    {
+      "path": "design/botanical/cycle5-home-1440.png",
+      "sha256": "7074cc979e17da1d11f5d6a084713ce039aed32676619410fcb66967c55db680"
+    },
+    {
+      "path": "design/botanical/cycle5-home-390.png",
+      "sha256": "95bdac48d45f0a3044dedcacf60d92a0b9ca551b4d305b03ce398cfe3c3b0773"
+    },
+    {
+      "path": "design/botanical/cycle5-catering-1440.png",
+      "sha256": "2839760e7bf308bce838a49b5e039104d2b499eae46ac249fa3f57f92ba30e40"
+    },
+    {
+      "path": "design/botanical/cycle5-catering-390.png",
+      "sha256": "988a89084a92cd86747e09f32ffca66958bba96e00d35881470d31dd09ff7ee0"
+    },
+    {
+      "path": "design/botanical/cycle5-sangeet-1440.png",
+      "sha256": "dafe1e3a26231545d1d360b810f17b5d5fd55c846364569c744221cccfe4d043"
+    },
+    {
+      "path": "design/botanical/cycle5-sangeet-390.png",
+      "sha256": "c5ccae99322c76432e7022edf1579699b5024049f9bf6fa9077c8efa70c9ab8c"
+    },
+    {
+      "path": "design/botanical/cycle5-menu-edit-1440.png",
+      "sha256": "34b13e94bc2dbb6f73a8c7b9fa2d3e0a78376c374dcbb4d60923440f11fbb02c"
+    },
+    {
+      "path": "design/botanical/cycle5-menu-edit-390.png",
+      "sha256": "7714c0b960075757e454e59595cd571940c12df308369198707b3784dbc2317e"
+    },
+    {
+      "path": "design/botanical/cycle5-reception-1440.png",
+      "sha256": "51c5773e8c10d359fad379731b6f3f573908b1a9ecad30652b577173a8e2019b"
+    },
+    {
+      "path": "design/botanical/cycle5-reception-390.png",
+      "sha256": "f4bf00baff837954de3eb97213e55d3bcb695889301c899b253905cec3688a85"
+    },
+    {
+      "path": "design/botanical/cycle5-login-1440.png",
+      "sha256": "0562423a8799f46b966f27b131c8d137d5efd2591937fab7d902de6822188064"
+    },
+    {
+      "path": "design/botanical/cycle5-login-390.png",
+      "sha256": "b394252623a88dabe7a9a078ef4944a68efa768eb0165bccca2f2f8f14fccaa9"
+    },
+    {
+      "path": "design/botanical/cycle5-validation-390.png",
+      "sha256": "f964bd6065f1c22bfe6eeb725412570ae8fd9dd83b5af9d3b6e8a40839bdd3ca"
+    },
+    {
+      "path": "design/botanical/cycle5-offline-390.png",
+      "sha256": "c5c1a0f92cf467b8e94da30f8d1c623581eaa77c51021f96ef2bb00a84fab41c"
+    },
+    {
+      "path": "design/botanical/cycle5-loading-390.png",
+      "sha256": "814aa9a5c8af633f31f4db2e0487bbd393c5dee6e7714a758ea06d2e68486139"
+    },
+    {
+      "path": "design/botanical/cycle5-unavailable-390.png",
+      "sha256": "1e71ed9196e26e0a15b661db67dff32163fd4d6957fb077d0d76ef3a88a0a441"
+    },
+    {
+      "path": "design/botanical/cycle5-account-390.png",
+      "sha256": "4d3a8f7fb7bf6c1c92aee381ab01fc48974489692975561039eaecefe84ff212"
+    },
+    {
+      "path": "design/botanical/cycle5-empty-home-390.png",
+      "sha256": "7078c76732aba9c667b901beb8134e72818d36e579f9d75bcfdb69fe751b6602"
+    },
+    {
+      "path": "design/botanical/cycle5-empty-search-390.png",
+      "sha256": "064a7435884caad64afb4472ce2b5e2648ba5aa9424e6317513966311a5d6ef9"
+    },
+    {
+      "path": "design/botanical/cycle5-stay-390.png",
+      "sha256": "72cdbca79ec8301b1878ab7c79cdb0cfbd4a74edf9b4dc780099f19c63e0a62a"
+    },
+    {
+      "path": "design/botanical/cycle5-guest-detail-390.png",
+      "sha256": "b1ac25e9ad118e2c2f101e9353ef1c16e7b426a35d83c8a1d1a2a64b50cb098b"
+    },
+    {
+      "path": "design/botanical/cycle5-tasks-390.png",
+      "sha256": "5376fbd8f164be86327f838b5d080bae1e92128ce13dc68ebe462b3b9a6a37e7"
+    },
+    {
+      "path": "design/botanical/cycle5-attendance-390.png",
+      "sha256": "580e242c31de7d032ef5495bb80ab5a86cd61750db4cb465c3c12f13729c5c0a"
+    },
+    {
+      "path": "design/botanical/auth-revoked-1440.png",
+      "sha256": "1c3e9cff56de055967961ed9f0b32cc46274902510cf739e6b2fd90e46d61c0d"
+    },
+    {
+      "path": "design/botanical/auth-revoked-390.png",
+      "sha256": "be09e31808f109506dedfe1a04b1a1ac525ee1477e20c41b3b09f091a3e24e8d"
+    }
+  ],
+  "limitations": [
+    "Only these 27 final images were personally inspected; the 47-state capture manifest is broader coverage, not a claim of critic review.",
+    "Live Chrome interactions at 1440/390/360 were performed during application cycles 1, 2 and 4; final visual evidence is the exact set hashed here.",
+    "Parent owns the full functional QA and emulator test verdict; visual scores do not include those results.",
+    "Reduced-motion static renders do not establish animation quality. Owner aesthetic acceptance and final wedding publication facts remain separate."
+  ]
+}

@@ -22,4 +22,6 @@ Menu judgment should consider the entire stay and each occasion—including live
 
 ## Trust and access
 
+The implemented home uses a compact function programme followed by **Catering, Guests, Stays & Travel, Tasks & Decisions**. Meals and food counters live in Catering. Decisions are recorded once in Tasks & Decisions. Each record opens as a readable summary; focused editors change only the selected task. Vendor/cost details sit inside their arrangement. Account access, export and sign-out are in the family account menu. Breadcrumbs, deep links and browser Back preserve the route through the plan.
+
 Internal notes, guest information, logistics and budgets belong with authorized family members, not the public invitation. Distinguish observed facts from options and final family decisions. Keep coordination light; its value is a reliable shared understanding, not more paperwork.

@@ -1,5 +1,7 @@
 # Mahima & Mayank — design record
 
+**Owner verdict: REJECTED.** The owner rejected this folded-invitation direction for poor visual character and overloaded journeys. The active replacement contract is [Botanical redesign](botanical/BRIEF.md). The record below is historical and does not establish current acceptance.
+
 Central 0.1.0; base ba1235fe7b220842778414f3f70fca38e7df4c53. Designer: wedding_designer. Independent critic and parent maintain acceptance separately. Current verdict: unverified.
 
 ## Product and truth

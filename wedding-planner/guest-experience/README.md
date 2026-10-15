@@ -8,7 +8,9 @@ The public experience can express the couple's story and invitation-card details
 
 ## Known versus ready to publish
 
-The [Wedding Record](../WEDDING_RECORD.md) identifies **18–20 January 2027** in *initial catering notes*, including a **Sangeet evening on 18 January**. The Reception menu is **undated**. These are **planning inputs**, not invitation-approved public details.
+The family directly reaffirmed celebrations **planned for 18–20 January 2027**. Those planned dates and both full names are the current public snapshot. The [Wedding Record](../WEDDING_RECORD.md) also proposes a **Sangeet evening on 18 January** and an **undated Reception** menu. Those arrangements remain private planning inputs until individually approved for the invitation.
+
+The current Botanical page uses original imagined floral scenery, clear names and planned dates, and one concise notice that the programme and visiting details will follow. It has no empty navigation destinations, invented story, ceremony order, RSVP, or countdown. Future approved event details fit the same composition without adding planning controls to the guest journey.
 
 Until the invitation or family confirms them, **do not assume** the exact wedding/Reception dates or times, venue, location, event audience, countdown start/target or final programme. A countdown must not silently assume midnight. Food lists, costs, family responsibilities, room allocations and other private planning information are not public invitation content.
 

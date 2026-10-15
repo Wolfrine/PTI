@@ -5,6 +5,25 @@ import {attendanceCounts, empty, emptyRecords, stayDemand, validateRecord, valid
 import {weddingSeed} from '../scripts/seed-record.mjs';
 import {publicContent,renderInvitation,validatePublicContent} from '../src/public-content.ts';
 import {countdownParts} from '../src/public.ts';
+import {readStableExport} from '../src/export.ts';
+
+test('exports retry overlapping commits, reject continuous writes and cancel changed sessions',async()=>{
+  let revision=1,historyReads=0,recordReads=0;
+  const exported=await readStableExport(async name=>{
+    if(name==='history')return Array.from({length:revision},(_,i)=>({id:`change-${i+1}`,revision:i+1}));
+    if(name==='decisions'){recordReads++;if(recordReads===1)revision=2;return [{id:'decision',revision}];}
+    return [];
+  },()=>{},false);
+  assert.equal(recordReads,2,'A write between the bracketing history reads must retry the whole export.');
+  assert.equal(exported.decisions[0].revision,2);assert.equal(exported.history.length,2);
+  assert.equal('members' in exported,false);
+  await assert.rejects(readStableExport(async name=>name==='history'?[{id:`change-${++historyReads}`}]:[],()=>{},true),/Planning changed/);
+  let memberReads=0;
+  const owned=await readStableExport(async name=>name==='members'?[{id:'family@example.test',name:++memberReads===1?'Before':'After'}]:[],()=>{},true);
+  assert.equal(memberReads,4);assert.equal(owned.members?.[0].name,'After');
+  let sessionChecks=0;
+  await assert.rejects(readStableExport(async()=>[],()=>{if(++sessionChecks===3)throw Error('Access changed');},true),/Access changed/);
+});
 
 const stamp={revision:1,createdAt:'',createdBy:'',updatedAt:'',updatedBy:'',archived:false,lastChangeId:''};
 const guest=(id:string,household='One household')=>({...empty.guests,...stamp,id,name:id,household}) as GuestRecord;

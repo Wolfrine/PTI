@@ -14,6 +14,8 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/pti-wedding-${{ github.run_id }}.json
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,32 +42,15 @@ jobs:
         run: node wedding-planner/tests/browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
+          include-hidden-files: true
           name: wedding-browser-evidence
           path: .wedding-qa/
           retention-days: 14
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wedding-build
-          path: wedding-planner/dist/
-  release:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: verify
-    runs-on: ubuntu-latest
-    env:
-      GOOGLE_APPLICATION_CREDENTIALS: /tmp/pti-wedding-${{ github.run_id }}.json
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm ci --prefix wedding-planner --no-audit --no-fund
-      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
-      - uses: actions/download-artifact@v4
-        with:
-          name: wedding-build
-          path: wedding-planner/dist/
+      # Release the exact verified build without depending on artifact storage quota.
       - name: Use existing PTI deployment identity
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
@@ -74,19 +59,30 @@ jobs:
           umask 077
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
       - name: Protect and initialize the existing wedding workspace
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: node wedding-planner/scripts/provision.mjs
       - name: Check live client authorization with temporary synthetic accounts
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: node wedding-planner/scripts/verify-cloud.mjs
       - name: Release only the wedding Hosting target
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: npx --yes firebase-tools@15.31.0 deploy --project pti-app-2ab59 --config firebase.wedding.json --only hosting:wedding --non-interactive
       - name: Verify the hosted build and private source boundary
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: node wedding-planner/scripts/verify-hosting.mjs https://mahima-mayank.web.app
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        continue-on-error: true
         with:
           name: wedding-activation-report
           path: wedding-activation-report.json
           retention-days: 14
+      - name: Print activation evidence
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          for report in wedding-activation-report.json .wedding-qa/cloud.json .wedding-qa/hosting.json; do
+            if test -f "$report"; then cat "$report"; fi
+          done
       - name: Remove temporary deployment credential
         if: always()
         run: rm -f "$GOOGLE_APPLICATION_CREDENTIALS"

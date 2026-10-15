@@ -1,5 +1,6 @@
 import {collections, emptyRecords, validateRecord, type CollectionName, type Payload, type Records, type RecordMap} from './model';
 import {firebaseConfig, ownerUid, workspacePath} from './config';
+import {readStableExport} from './export';
 import type {Auth, User} from 'firebase/auth';
 import type {Firestore, Unsubscribe} from 'firebase/firestore';
 
@@ -127,10 +128,9 @@ export function createWeddingStore(onChange:(state:StoreState)=>void) {
       check();
       if(state.demo)return JSON.stringify({schemaVersion:1,exportedAt:new Date().toISOString(),private:true,...state.records,history},null,2);
       const startedAt=new Date().toISOString(),exportEpoch=epoch,exportUid=state.user!.uid;
-      const names=[...collections,'history',...(state.isOwner?['members']:[])];
-      const records=await Promise.all(names.map(async name=>[name,(await api.getDocsFromServer(api.collection(db,workspacePath,name))).docs.map(d=>({id:d.id,...d.data()}))]));
-      if(epoch!==exportEpoch||state.user?.uid!==exportUid||state.access!=='ready')throw Error('Your access changed during export. Sign in again before exporting.');
-      return JSON.stringify({schemaVersion:1,readStartedAt:startedAt,exportedAt:new Date().toISOString(),private:true,...Object.fromEntries(records)},null,2);
+      const session=()=>{if(epoch!==exportEpoch||state.user?.uid!==exportUid||state.access!=='ready')throw Error('Your access changed during export. Sign in again before exporting.');};
+      const records=await readStableExport(async name=>(await api.getDocsFromServer(api.collection(db,workspacePath,name))).docs.map(d=>({id:d.id,...d.data()})),session,state.isOwner);
+      return JSON.stringify({schemaVersion:1,readStartedAt:startedAt,exportedAt:new Date().toISOString(),private:true,...records},null,2);
     },
   };
   return store;

@@ -8,7 +8,7 @@ Integrated subsequent main context through `ba4d473`: the family's requested `ma
 
 - Static, responsive invitation with couple identity, planned celebration dates, approved-content rendering, optional exact-moment countdown, safe venue directions, approved contact and a native social sharing image. Current public content is deliberately a save-the-date state because detailed invitation facts remain unconfirmed.
 - Private shared family workspace: decisions, events/menus, individual guests grouped by household, per-event attendance, nightly stay demand, travel/stay notes, arrangements/vendors/costs, owner-managed membership and export.
-- Same PTI Firebase project/database/Auth with a dedicated wedding Hosting target. The original broad signed-in rules exclude `weddingData`; verified family membership is separately enforced. A direct self-membership listener clears an already-open editor on revocation. Edits have revision checks and atomic immutable history. Export reads complete collections, including archived records/history, and is cancelled when the session changes.
+- Same PTI Firebase project/database/Auth with a dedicated wedding Hosting target. The original broad signed-in rules exclude `weddingData`; verified family membership is separately enforced. A direct self-membership listener clears an already-open editor on revocation. Edits have revision checks and atomic immutable history. Export reads complete collections, including archived records/history, retries overlapping edits using bracketing immutable-history reads, and is cancelled when the session changes.
 - One-time import of all ten documented food/event services and seven genuine open decisions. No guest fixtures, invented ceremony order, venue or precise time is imported. All menu proposals and unclear readings keep their status/source. Existing operational records survive deployment.
 - Dedicated verification/release workflow, exact baseline rule-drift guard, identical-rule race tolerance, temporary synthetic live-client checks and exact hosted-build/source-boundary checks. Wedding-only commits no longer trigger the general PTI Hosting workflow.
 
@@ -26,7 +26,7 @@ Verdict: **independently reviewed; family aesthetic acceptance pending**. No att
 
 | Check | Observed result |
 |---|---|
-| Model/public-content tests | 9 pass: people/attendance, nightly demand, validation, India wall-time conversion, honest decision/cost semantics, all-menu import, public truth, safe cross-midnight information, exact countdown |
+| Model/public-content tests | 10 pass: consistent concurrent export/retry/session cancellation, people/attendance, nightly demand, validation, India wall-time conversion, honest decision/cost semantics, all-menu import, public truth, safe cross-midnight information, exact countdown |
 | Family access/rules | 9 pass: anonymous/non-family denial, verified membership, escalation prevention, logged collaboration, stale/forged edits, attendance identity, input guards, archive-linked updates, revocation |
 | Existing Venture shared-rules regressions | 9 pass against the combined rules, including membership, private sibling isolation and revocation |
 | Actual Auth + Firestore emulator browser/store | Pass: two-account updates, competing editor conflict, complete archive/history export, already-open editor removal on revocation, sign-out clearing |
@@ -41,5 +41,7 @@ Independent security review also verified self-membership observation and archiv
 ## Release and remaining facts
 
 Release state: **local implementation verified; remote CI and cloud activation pending**. The main-branch workflow will supply activation evidence for rules, Google provider configuration, seed preservation, live client checks and Hosting asset comparison. Do not infer these outcomes from source configuration.
+
+The first remote run passed all wedding tests but failed on the account's exhausted GitHub artifact quota. Release now uses the exact tested build in the same job; optional evidence uploads may warn without blocking it, and activation evidence is also printed in the job log. Existing Personal PWA verification likewise passed its checks and failed only at artifact upload. Two unrelated SEFPO workflow definitions already fail on main.
 
 Still needed from the family: approved programme/audiences, venue addresses and maps, actual start/arrival times, exact countdown moment, contact, guest and stay records, final catering approvals, and optional photographs/Hindi wording. Missing facts do not block maintaining the private proposed record. Countdown, venue details and contact appear publicly only after an approved developer release.

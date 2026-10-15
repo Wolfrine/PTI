@@ -4,10 +4,9 @@ import {readFile,readdir,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,relative,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {setTimeout as pause} from 'node:timers/promises';
 import {chromium,expect} from '@playwright/test';
 
-const root=fileURLToPath(new URL('../dist/',import.meta.url)),evidence=fileURLToPath(new URL('../../.wedding-qa/pwa/',import.meta.url)),files=new Map(),results=[],errors=[],networkRequests=[];
+const root=fileURLToPath(new URL('../dist/',import.meta.url)),evidence=fileURLToPath(new URL('../../.wedding-qa/pwa/',import.meta.url)),files=new Map(),results=[],errors=[],networkRequests=[],activationProofs=[];
 const digest=value=>createHash('sha256').update(value).digest('hex');
 async function walk(path){for(const item of await readdir(path,{withFileTypes:true})){const name=resolve(path,item.name);if(item.isDirectory())await walk(name);else files.set('/'+relative(root,name).replaceAll('\\','/'),await readFile(name));}}
 await walk(root);await mkdir(evidence,{recursive:true});
@@ -35,6 +34,44 @@ const server=createServer((request,response)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
 let browser;
+async function closeWindowsAndAwaitActivation(context,expected,pages,label) {
+  let candidate,observed=[];
+  await expect.poll(async()=>{
+    const workers=await Promise.all(context.serviceWorkers().map(async worker=>{
+      try{return{worker,...await worker.evaluate(()=>({version:typeof VERSION==='undefined'?null:VERSION,state:self.serviceWorker?.state??null,ownsWaiting:self.registration.waiting===self.serviceWorker,ownsActive:self.registration.active===self.serviceWorker}))};}catch(error){return{worker,error:error.message};}
+    }));
+    observed=workers.map(({worker,...state})=>({url:worker.url(),...state}));candidate=workers.find(state=>state.version===expected.id&&state.state==='installed'&&state.ownsWaiting)?.worker;
+    return !!candidate;
+  },{timeout:10000,message:`Find the installed ${label} service worker`}).toBe(true).catch(async error=>{await writeFile(evidence+`/activation-${label}-failure.json`,JSON.stringify({browser:browser.version(),build:graph.version,expectedVersion:expected.id,observed,pages:context.pages().map(page=>page.url()),error:error.message},null,2));throw error;});
+  // Observe the waiting worker directly; opening an observer page would itself delay activation.
+  const activation=candidate.evaluate(async expectedVersion=>{
+    const registration=self.registration,target=self.serviceWorker;
+    if(typeof VERSION==='undefined'||VERSION!==expectedVersion||!target||target.state!=='installed'||registration.waiting!==target)throw Error('Unexpected waiting update worker');
+    const startedAt=Date.now(),transitions=[];
+    const snapshot=async()=>({version:VERSION,state:target.state,activeState:registration.active?.state??null,waitingState:registration.waiting?.state??null,ownsActive:registration.active===target,caches:await caches.keys(),clients:(await self.clients.matchAll({type:'window',includeUncontrolled:true})).map(client=>client.url),transitions,elapsedMs:Date.now()-startedAt});
+    return new Promise((resolve,reject)=>{
+      let finished=false;
+      const timer=setTimeout(async()=>{if(finished)return;finished=true;target.removeEventListener('statechange',changed);try{reject(Error('Natural activation timed out: '+JSON.stringify(await snapshot())));}catch(error){reject(Error('Natural activation timed out; state snapshot failed: '+error.message));}},20000);
+      async function changed(){
+        if(finished)return;transitions.push({state:target.state,atMs:Date.now()-startedAt});
+        if(target.state!=='activated'&&target.state!=='redundant')return;
+        finished=true;clearTimeout(timer);target.removeEventListener('statechange',changed);
+        try{const proof=await snapshot();if(proof.state==='activated'&&proof.ownsActive)resolve(proof);else reject(Error('Unexpected natural activation state: '+JSON.stringify(proof)));}catch(error){reject(error);}
+      }
+      target.addEventListener('statechange',changed);void changed();
+    });
+  },expected.id).then(value=>({value}),error=>({error}));
+  let activationResult;
+  try {
+    await Promise.all(pages.map(page=>page.close()));
+    const outcome=await activation;if(outcome.error)throw outcome.error;activationResult=outcome.value;
+    const proof={label,selected:observed.find(state=>state.version===expected.id&&state.state==='installed'&&state.ownsWaiting),...outcome.value};assert.equal(proof.state,'activated');assert.equal(proof.ownsActive,true);assert.deepEqual(proof.clients,[],'All wedding windows must remain closed during natural activation');
+    assert.deepEqual(proof.caches.filter(name=>name.startsWith('mahima-mayank-public-v1-')),[expected.cacheName]);activationProofs.push(proof);
+    await writeFile(evidence+'/natural-activation.json',JSON.stringify({browser:browser.version(),build:graph.version,activationProofs},null,2));
+  }catch(error){
+    await writeFile(evidence+`/activation-${label}-failure.json`,JSON.stringify({browser:browser.version(),build:graph.version,expected:{id:expected.id,cacheName:expected.cacheName},observed,pages:context.pages().map(page=>page.url()),error:error.message,activationResult,activationProofs},null,2));throw error;
+  }
+}
 try {
   browser=await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH}:{});
   const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
@@ -65,13 +102,13 @@ try {
   broken=false;await update();await page.waitForFunction(async()=>!!(await navigator.serviceWorker.getRegistration()).waiting);await expect(page.locator('[data-pwa-notice="update"]')).toBeVisible();await expect(page.locator('#editor')).toHaveJSProperty('open',true);await expect(page.locator('#editor textarea')).toHaveValue('Keep this unsaved draft');await page.screenshot({path:evidence+'/waiting-update-desktop.png'});
   await context.setOffline(true);const saved=await context.newPage();await saved.goto(origin);await expect(saved.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST A');
   results.push('Incomplete update cannot activate; complete waiting update preserves an open editor/draft and the prior coherent offline fallback');
-  await page.close();await saved.close();await pause(500);let current=await context.newPage();await current.goto(origin);await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST B');
+  await closeWindowsAndAwaitActivation(context,versions.b,[page,saved],'b');let current=await context.newPage();await current.goto(origin);await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST B');
   await context.setOffline(false);release='c';await current.reload();await current.evaluate(async()=>{const registration=await navigator.serviceWorker.getRegistration();await registration.update();});await current.waitForFunction(async()=>!!(await navigator.serviceWorker.getRegistration()).waiting);await context.setOffline(true);await current.reload();await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST B');
-  await current.close();await pause(500);current=await context.newPage();await current.goto(origin);await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST C');
+  await closeWindowsAndAwaitActivation(context,versions.c,[current],'c');current=await context.newPage();await current.goto(origin);await expect(current.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST C');
   const cachesLeft=await current.evaluate(()=>caches.keys());assert.deepEqual(cachesLeft.filter(name=>name.startsWith('mahima-mayank-public-v1-')),[versions.c.cacheName]);assert.ok(cachesLeft.includes('another-app-test-cache'));
   results.push('Two version updates activate naturally after windows close, never overwrite the active fallback, and clean only wedding-owned caches');
   await context.setOffline(false);const phone=await browser.newContext({viewport:{width:390,height:844},userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'}),iosPage=await phone.newPage();await iosPage.goto(origin);await iosPage.locator('[data-pwa-install]').first().click();await expect(iosPage.locator('.pwa-help')).toBeVisible();await expect(iosPage.locator('.pwa-help')).toContainText('Add to Home Screen');assert.equal(await iosPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.equal(await iosPage.locator('.pwa-help').evaluate(dialog=>dialog.contains(document.activeElement)),true);await iosPage.screenshot({path:evidence+'/install-help-mobile.png'});await iosPage.locator('.pwa-done').click();await iosPage.setViewportSize({width:1440,height:1000});await iosPage.locator('[data-pwa-install]').first().click();await iosPage.screenshot({path:evidence+'/install-help-desktop.png'});await iosPage.locator('.pwa-done').click();
   await current.setViewportSize({width:1440,height:1000});await current.evaluate(()=>{const event=new Event('beforeinstallprompt');event.prompt=async()=>{window.nativePromptUsed=true;};event.userChoice=Promise.resolve({outcome:'dismissed'});dispatchEvent(event);const button=document.createElement('button');button.textContent='LOCAL DYNAMIC INSTALL TEST';button.dataset.pwaInstall='';document.body.append(button);});await current.getByText('LOCAL DYNAMIC INSTALL TEST').click();assert.equal(await current.evaluate(()=>window.nativePromptUsed),true);await current.evaluate(()=>dispatchEvent(new Event('appinstalled')));await expect(current.locator('[data-pwa-install]').first()).toBeHidden();
   results.push('iOS instructions, delegated dynamic install controls and installed-state hiding work; native prompt was simulated, not a device-install claim');
-  assert.deepEqual(errors,[]);await writeFile(evidence+'/results.json',JSON.stringify({origin,browser:browser.version(),build:graph.version,results,errors,versions:Object.fromEntries(Object.entries(versions).map(([key,value])=>[key,value.id]))},null,2));console.log(`PASS ${results.length} PWA acceptance scenarios`);
+  assert.deepEqual(errors,[]);await writeFile(evidence+'/results.json',JSON.stringify({origin,browser:browser.version(),build:graph.version,results,errors,activationProofs,versions:Object.fromEntries(Object.entries(versions).map(([key,value])=>[key,value.id]))},null,2));console.log(`PASS ${results.length} PWA acceptance scenarios`);
 } finally {await browser?.close();await new Promise(resolve=>server.close(resolve));}

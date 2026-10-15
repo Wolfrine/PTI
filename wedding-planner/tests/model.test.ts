@@ -62,7 +62,7 @@ test('one-time import preserves all menus and uncertainty without fixture data',
   assert.ok(seed.decisions.some(d=>d.id==='tiffin'));assert.ok(seed.events.every(e=>!e.menuText.includes('Guest tiffin box')));
 });
 test('public snapshot remains truthful and contains no proposed private menus',()=>{
-  assert.equal(publicContent.events.length,0);assert.equal(publicContent.countdown,null);assert.equal(publicContent.contact,null);
+  assert.equal(publicContent.events.length,0);assert.deepEqual(publicContent.countdown,{label:'18 January 2027 · midnight IST',at:'2027-01-18T00:00:00+05:30'});assert.equal(publicContent.contact,null);
   const html=renderInvitation(publicContent);assert.match(html,/CELEBRATIONS PLANNED FOR/);assert.match(html,/Mahima/);assert.match(html,/Mayank/);assert.ok(!html.includes('Paneer'));assert.ok(!html.includes('Reception'));
   const bad=structuredClone(publicContent);bad.countdown={label:'Example',at:'2027-01-18T19:00'};assert.throws(()=>validatePublicContent(bad),/timezone/);
   bad.countdown={label:'Example',at:'2027-02-30T19:00:00+05:30'};assert.throws(()=>validatePublicContent(bad),/timezone/);

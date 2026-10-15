@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
+  "sourceCommit": "4d9bc0a088756c10bc538e8517740a82d934dc9c",
+  "releaseCommit": "4ae2224f4d658acea84797cfa1c4ee57d9553166",
+  "pullRequests": [
+    40,
+    41
+  ],
+  "verifiedRelease": {
+    "run": 38780093361,
+    "url": "https://github.com/Wolfrine/PTI/actions/runs/38780093361",
+    "conclusion": "success",
+    "permissionChecks": 64,
+    "hostedAssets": 45,
+    "seeded": false
+  },
+  "correctivePrCheck": {
+    "run": 38779622418,
+    "conclusion": "success"
+  },
+  "canonicalBuild": {
+    "method": "git archive of sourceCommit with committed LF bytes, existing locked dependencies, fresh TypeScript/Vite build and fingerprint generation",
+    "candidate": "dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95",
+    "exactMatch": true,
+    "sourceTreeEqualsMergedRelease": true,
+    "inputCount": 103
+  },
+  "pwa": {
+    "version": "d040b4180b3f8fe06bc6",
+    "publicAssetCount": 20,
+    "privateCacheEntries": 0,
+    "naturalUpdates": true
+  },
+  "parentLiveCheck": {
+    "checkedAt": "2026-10-15T17:50:56.251Z",
+    "origin": "https://mahima-mayank.web.app",
+    "resultGroups": 4,
+    "hostedFilesExactlyMatched": 45,
+    "publicAndSignedOutFamilyWidths": [
+      1440,
+      390,
+      360
+    ],
+    "personallyViewedScreenshots": 8,
+    "retainedScreenshots": [
+      "live-invitation-1440.png",
+      "live-invitation-360.png",
+      "live-family-390.png",
+      "live-private-offline-390.png"
+    ],
+    "results": "live-results.json",
+    "actualOfflineFamilyNeutralBody": true,
+    "offlineToInvitationRecovery": true,
+    "pageOrCspErrors": 0
+  },
+  "dataReadback": {
+    "report": "data-preservation.json",
+    "finishedAt": "2026-10-15T17:52:10.223Z",
+    "ownerAdmin": true,
+    "allTenMenuTextsUnchanged": true,
+    "originalMembershipDocumentsUnchanged": true,
+    "allOriginalPlanningIdsRetained": true,
+    "concurrentOperationalChangesPreserved": true,
+    "counts": {
+      "events": 10,
+      "decisions": 7,
+      "guests": 0,
+      "attendance": 0,
+      "arrangements": 0,
+      "history": 2,
+      "members": 5,
+      "accessRequests": 5
+    }
+  },
+  "history": {
+    "initialReleaseCommit": "1a4634b5b928a9e5918715e8e42f8a46bea09c3d",
+    "initialReleaseRun": 38776919140,
+    "productionGateFailed": "Redirected cached neutral Response caused offline family ERR_FAILED; public invitation and online family worked.",
+    "causalRegression": "Old worker fails real302/Brotli simulation; fresh Response repair passes six PWA scenarios and actual Hosting301 navigation."
+  },
+  "limits": [
+    "Artwork is indicative; DEV family review fixture is document-derived proposals with synthetic people/logistics.",
+    "Native prompt/share events and iPhone user agent are simulations. Physical phone installation, human Google popup and WhatsApp recipient rendering remain unverified.",
+    "Owner aesthetic approval is pending.",
+    "Unchanged shared PTI Angular baseline has8 missing-provider failures; optional GitHub artifact uploads hit storage quota."
+  ]
+}

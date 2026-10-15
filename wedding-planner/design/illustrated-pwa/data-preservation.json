@@ -1,20 +1,18 @@
 {
-  "recordedAt": "2026-10-15T17:40:52.379Z",
-  "method": "Read-only PTI MCP bounded collection queries compared with the private pre-implementation snapshot; private documents/emails are not included.",
+  "readbackStartedAt": "2026-10-15T17:52:00.669Z",
+  "readbackFinishedAt": "2026-10-15T17:52:10.223Z",
+  "method": "Read-only PTI MCP bounded queries compared with the private pre-implementation snapshot. Private emails/documents are omitted.",
+  "ownerAdmin": true,
   "allTenMenuTextsUnchanged": true,
   "originalMembersUnchanged": true,
   "allOriginalPlanningIdsRetained": true,
-  "receptionUpdateMatchesHistory": true,
-  "receptionActorCurrentRole": "admin",
-  "receptionUpdateAt": "2026-10-15T17:20:35.071Z",
-  "ownerAdmin": true,
   "counts": {
     "events": 10,
     "decisions": 7,
     "guests": 0,
     "attendance": 0,
     "arrangements": 0,
-    "history": 1,
+    "history": 2,
     "members": 5,
     "accessRequests": 5
   },
@@ -46,7 +44,7 @@
     },
     "history": {
       "before": 0,
-      "after": 1,
+      "after": 2,
       "exactIncludingUpdateTime": false
     },
     "members": {
@@ -60,6 +58,25 @@
       "exactIncludingUpdateTime": false
     }
   },
-  "interpretation": "All ten menu texts, seven decisions and both original membership documents match. Concurrent authenticated admin activity changed Reception date/start/status (revision2) with matching immutable history and added three memberships/access profiles. Preserve these operational changes; this feature implementation performed no live wedding data write.",
-  "limits": "No baseline root-document snapshot was taken; no claim of an unchanged entire database. Readback is a point-in-time observation."
+  "unchangedSincePostPR40Readback": false,
+  "concurrentActivity": "Two authenticated admin event updates are present in immutable history, including the earlier Reception revision2 and the additional update listed here. Three memberships/access profiles were added during the task. All are retained; all ten menu texts and original membership documents remain unchanged.",
+  "limits": "Point-in-time collection comparison; no baseline root-document snapshot. No claim that the entire database remained unchanged. No live wedding data write was performed for this feature implementation.",
+  "additionalConcurrentUpdates": [
+    {
+      "collection": "events",
+      "recordId": "18-4",
+      "title": "Sangeet evening / Dinner",
+      "at": "2026-10-15T17:35:19.937Z",
+      "action": "updated",
+      "actorCurrentRole": "admin",
+      "changedFields": [
+        "status",
+        "revision",
+        "updatedAt",
+        "lastChangeId"
+      ],
+      "beforeMatchesPriorSnapshot": true,
+      "afterMatchesFinalSnapshot": true
+    }
+  ]
 }

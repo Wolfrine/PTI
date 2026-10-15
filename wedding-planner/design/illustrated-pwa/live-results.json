@@ -1,0 +1,302 @@
+{
+  "origin": "https://mahima-mayank.web.app",
+  "checkedAt": "2026-10-15T17:50:56.251Z",
+  "build": "d040b4180b3f8fe06bc6",
+  "results": [
+    "All45 hosted files exactly match the reviewed local production build",
+    "Live invitation1440/390/360, four-unit centered countdown, footer actions, no overflow or public Firebase requests",
+    "Published cache matches all20 public asset hashes; family sign-in shell loads online without a demo bypass/private cache",
+    "Live actual saved invitation/countdown→exact neutral family offline→saved invitation→online recovery passes"
+  ],
+  "errors": [],
+  "hosted": [
+    {
+      "path": "/art/botanical-scene-640.webp",
+      "sha256": "bf1edb56306f06704931b1216f6c34a311281457366a8f8d469b3fbc96519b17"
+    },
+    {
+      "path": "/art/botanical-scene-960.webp",
+      "sha256": "ccdbad2cb9f66c835bad5a559b566d4e98e5339960514b3da852167748ba7287"
+    },
+    {
+      "path": "/art/botanical-scene.webp",
+      "sha256": "ea0f4a41521728de0450f62eefce1f184b8f4eb139070308759c3317d06807e6"
+    },
+    {
+      "path": "/art/food/breads.webp",
+      "sha256": "36b5a1e476de1a7166ff71e18e33fc381b35a664126163c9cafea70091a7f7e2"
+    },
+    {
+      "path": "/art/food/breakfast.webp",
+      "sha256": "3bfbb2a715bf1dd9c31070f02670b9965111e12d7b1ac2e731b0744e02a676c4"
+    },
+    {
+      "path": "/art/food/chaat.webp",
+      "sha256": "d400469c5fb678f9f1823924f22ea97c62a6b5b7178f5df5f99cc54230f2d6dd"
+    },
+    {
+      "path": "/art/food/curry.webp",
+      "sha256": "68d7d7c767437271cdde52d40ed9bcf46901e8df61e3340d4fb6bc6af5c36044"
+    },
+    {
+      "path": "/art/food/drinks.webp",
+      "sha256": "32cbbab2b0e7b29448e5edfa3616dc83e5f3a37c82f7555c31f9db881b307c63"
+    },
+    {
+      "path": "/art/food/fruit.webp",
+      "sha256": "c2d0eef890f3f280a789e68f453cbbe85988ef05e1ed298a889b11f3537ad18f"
+    },
+    {
+      "path": "/art/food/noodles.webp",
+      "sha256": "6671044f164c8e416703955c143f2162b3471a8e22d812f7774952c42eef012b"
+    },
+    {
+      "path": "/art/food/pasta.webp",
+      "sha256": "ab0970fea73fa167014e8d286e66e85922f711458eb9295200ab39cb45ee5c03"
+    },
+    {
+      "path": "/art/food/setting.webp",
+      "sha256": "f3f8a2007659869027152c833e274d7df0c6b73a9ab6fc593994140724e403c3"
+    },
+    {
+      "path": "/art/food/snacks.webp",
+      "sha256": "640cdafd52b8d8ec2ed7e8ab0fc233298bba65d60586bac9a80a4b7ab9234e89"
+    },
+    {
+      "path": "/art/food/soup.webp",
+      "sha256": "11674de51d1fb03dc0a0c63e34d45735b3d9bfe9b5bfd2acb52cadf20efcf015"
+    },
+    {
+      "path": "/art/food/south-indian.webp",
+      "sha256": "e0e5f8a8e9db2f30d477a2a28baed2afd7943dcac64ac103a0207ec5d78c9add"
+    },
+    {
+      "path": "/art/food/sweets.webp",
+      "sha256": "3a32319d2da78d1b15057985a02cfad3b7816d0430439219f323ccfa4bda42c3"
+    },
+    {
+      "path": "/assets/family-pRl4zFlt.js",
+      "sha256": "b282a7e5a25ba41b65f72cbbade1b2aa935d63c5af87163412b29c21aaf9cc6c"
+    },
+    {
+      "path": "/assets/index.esm-BlY-EhdR.js",
+      "sha256": "c50f6342df5c0b646a7ac7e45e7cfa77362d37fe15d3c27416a5459216c9f5ff"
+    },
+    {
+      "path": "/assets/index.esm-CAfxpO0J.js",
+      "sha256": "3590b7b3a60ee7d633c30d98219640e9082b89eb4a98d25d4425b8640d3b634a"
+    },
+    {
+      "path": "/assets/index.esm-ChFjBI-R.js",
+      "sha256": "39284ce5549e7096214da320acd3e6d529c0ff3c9880d0d253f8aeb19fb71846"
+    },
+    {
+      "path": "/assets/index.esm-pSDtD01t.js",
+      "sha256": "36f06a7e56fd6dc301dcdac8b2f553da1b32e9217a56a54f702c063b2c25f68c"
+    },
+    {
+      "path": "/assets/invitation-B4ecOb54.js",
+      "sha256": "c1a8a4596721a79510d8f65e8bcd99a7e9cdf73f20b983f0e705128ab4599d81"
+    },
+    {
+      "path": "/assets/preload-helper-CHsmrOs4.css",
+      "sha256": "76343812d9384aff6e83cfb474f863003dafd6bbed6724ab9ab0311be2d817f3"
+    },
+    {
+      "path": "/assets/preload-helper-CsV6_7Lo.js",
+      "sha256": "d161c8ac37addb3cb4ff1d1618bc83d91b1e3962ef00dafc0af8db1cc4c4a054"
+    },
+    {
+      "path": "/assets/pwa-B5siTsgX.css",
+      "sha256": "f54024c47fa31b749fc38f53ed58ab232f8ca9717646c3c98da2bac035cd2e82"
+    },
+    {
+      "path": "/assets/pwa-CWh4su9L.js",
+      "sha256": "d0d76dfa88b79aee3d74fe4ff8681e5a2ed7f745d946122e1fe64c6a40e09b34"
+    },
+    {
+      "path": "/assets/sharing-BcTNlxZT.js",
+      "sha256": "d5685537ab0efc8c1929f171e290ffc934a17258ec7230041e3c2adf88504f17"
+    },
+    {
+      "path": "/assets/sharing-V3kA-a7V.css",
+      "sha256": "3b9100ce932c6241b0dc9799287074036d5702ebe0d19d7945312fd063a46694"
+    },
+    {
+      "path": "/family/index.html",
+      "sha256": "10dcee78d083617e960a552ef46263f58c5ac1b805119d3a7ab8651bc99d4137"
+    },
+    {
+      "path": "/fonts/cormorant-garamond.woff2",
+      "sha256": "5661597bce90af31f1b6a6d4809bfb5d90b5e411f64f72cea96b9ddc4faae253"
+    },
+    {
+      "path": "/fonts/CormorantGaramond-LICENSE.txt",
+      "sha256": "6f5a41d57400577a50aae88475b11f292f3d7de78ee7d5113c69577331d8ad31"
+    },
+    {
+      "path": "/fonts/dm-sans.woff2",
+      "sha256": "5aea616cba5a07d662b68b933bfbcb7479a604c10a81ddfc1e18ee56f61607f3"
+    },
+    {
+      "path": "/fonts/DMSans-LICENSE.txt",
+      "sha256": "7ec15e79c59bc14b86436a17e5eb7926b46cbcaeb08e1a7e6c110b415e6eb2a2"
+    },
+    {
+      "path": "/icons/apple-touch-icon.png",
+      "sha256": "7a2ddf08e36a0f88030176c7d4ae2b745e7f61745e84792c6b44ff2023369b11"
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "sha256": "0c03b1866991a975d5cf6d32b1f0552095cc12ee25294eb337a7ba4b68c3a05d"
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "sha256": "a78aa6ead07bbc3ad0a4d4a50b025fec5e47f8c47fc34e67286eb5df18d8637d"
+    },
+    {
+      "path": "/icons/maskable-512.png",
+      "sha256": "54bbe26629512d469e25a303b8fc9249b6195aeb83f5cf1b86d7612ef2fa4b04"
+    },
+    {
+      "path": "/index.html",
+      "sha256": "a28068a5a82854b70a5b1ddbc2ca5e88f3198643c091b456e338a802bce873b9"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "sha256": "a19a0f4300a269d5aee0ad8fed9689192cbf5851f04c51b84ddee32b798021ac"
+    },
+    {
+      "path": "/monogram.svg",
+      "sha256": "a9a759dd4e78e8c0e9bea17ab5028e8a5f340ae7ef8d58a44c64330268e98101"
+    },
+    {
+      "path": "/offline.html",
+      "sha256": "3471e6c9e451c4c94b67acf32bb694b330a1a57aff7bf001154524a012e7a206"
+    },
+    {
+      "path": "/pwa-assets.json",
+      "sha256": "605e3681dfcb83f3f21569afe7dc15430198c88631c8a4a0f26e1a59f4270b1a"
+    },
+    {
+      "path": "/share/wedding-invitation-v2.jpg",
+      "sha256": "ece544c6ccc3692eb53083c9fa4ab10677863eb63873fc853dc9898bc0cf528a"
+    },
+    {
+      "path": "/share.png",
+      "sha256": "a873e6ad2a3824bfcf0ae4d324adde3e175fba0f75ffd7a62af8c45c94f77312"
+    },
+    {
+      "path": "/sw.js",
+      "sha256": "4d583127b35f4efb63089e47b5671eac164775bc21abfb028b34593105edffde"
+    }
+  ],
+  "cached": [
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/art/botanical-scene-640.webp",
+      "sha256": "bf1edb56306f06704931b1216f6c34a311281457366a8f8d469b3fbc96519b17"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/assets/preload-helper-CHsmrOs4.css",
+      "sha256": "76343812d9384aff6e83cfb474f863003dafd6bbed6724ab9ab0311be2d817f3"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/assets/pwa-B5siTsgX.css",
+      "sha256": "f54024c47fa31b749fc38f53ed58ab232f8ca9717646c3c98da2bac035cd2e82"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/assets/sharing-V3kA-a7V.css",
+      "sha256": "3b9100ce932c6241b0dc9799287074036d5702ebe0d19d7945312fd063a46694"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/fonts/cormorant-garamond.woff2",
+      "sha256": "5661597bce90af31f1b6a6d4809bfb5d90b5e411f64f72cea96b9ddc4faae253"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/icons/apple-touch-icon.png",
+      "sha256": "7a2ddf08e36a0f88030176c7d4ae2b745e7f61745e84792c6b44ff2023369b11"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/icons/icon-192.png",
+      "sha256": "0c03b1866991a975d5cf6d32b1f0552095cc12ee25294eb337a7ba4b68c3a05d"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/icons/icon-512.png",
+      "sha256": "a78aa6ead07bbc3ad0a4d4a50b025fec5e47f8c47fc34e67286eb5df18d8637d"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/icons/maskable-512.png",
+      "sha256": "54bbe26629512d469e25a303b8fc9249b6195aeb83f5cf1b86d7612ef2fa4b04"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/index.html",
+      "sha256": "a28068a5a82854b70a5b1ddbc2ca5e88f3198643c091b456e338a802bce873b9"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/manifest.webmanifest",
+      "sha256": "a19a0f4300a269d5aee0ad8fed9689192cbf5851f04c51b84ddee32b798021ac"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/monogram.svg",
+      "sha256": "a9a759dd4e78e8c0e9bea17ab5028e8a5f340ae7ef8d58a44c64330268e98101"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/offline.html",
+      "sha256": "3471e6c9e451c4c94b67acf32bb694b330a1a57aff7bf001154524a012e7a206"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/art/botanical-scene-960.webp",
+      "sha256": "ccdbad2cb9f66c835bad5a559b566d4e98e5339960514b3da852167748ba7287"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/fonts/dm-sans.woff2",
+      "sha256": "5aea616cba5a07d662b68b933bfbcb7479a604c10a81ddfc1e18ee56f61607f3"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/assets/invitation-B4ecOb54.js",
+      "sha256": "c1a8a4596721a79510d8f65e8bcd99a7e9cdf73f20b983f0e705128ab4599d81"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/assets/preload-helper-CsV6_7Lo.js",
+      "sha256": "d161c8ac37addb3cb4ff1d1618bc83d91b1e3962ef00dafc0af8db1cc4c4a054"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/assets/pwa-CWh4su9L.js",
+      "sha256": "d0d76dfa88b79aee3d74fe4ff8681e5a2ed7f745d946122e1fe64c6a40e09b34"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/assets/sharing-BcTNlxZT.js",
+      "sha256": "d5685537ab0efc8c1929f171e290ffc934a17258ec7230041e3c2adf88504f17"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/art/botanical-scene.webp",
+      "sha256": "ea0f4a41521728de0450f62eefce1f184b8f4eb139070308759c3317d06807e6"
+    },
+    {
+      "name": "mahima-mayank-public-v1-d040b4180b3f8fe06bc6",
+      "path": "/pwa-install-metadata.json",
+      "sha256": "2c0ffe3d16abe5fb6a359473644d4c14b61568249686eee710c539aea4e463c5"
+    }
+  ],
+  "limits": "Signed-out family entry and service-worker behavior tested. No real Google popup, phone installation or WhatsApp recipient preview."
+}

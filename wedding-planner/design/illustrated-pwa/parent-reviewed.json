@@ -22,5 +22,6 @@
     "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
     "65a4fade2858ea7335a2739e572052c305299d0e5cdc7e674f40ea1381fa5d96"
   ],
-  "reason": "Parent personally viewed all13 newly captured exact images after the clean-URL repair and rehashed103 inputs and every image. Menus/search/comparison remain compact and literal; names/date/countdown dominate the invitation; share/install dialogs fit; the redirected-cache neutral reconnect state is clear and its public recovery link is visible. Only sw.js and pwa-assets.json differ across45 build files; no visual treatment changed. Local six-scenario redirect/Brotli regression passes; actual new production readback is pending. Owner aesthetic acceptance is not inferred."
+  "reason": "Parent personally viewed all13 newly captured exact images after the clean-URL repair and rehashed103 inputs and every image. Menus/search/comparison remain compact and literal; names/date/countdown dominate the invitation; share/install dialogs fit; the redirected-cache neutral reconnect state is clear and its public recovery link is visible. Only sw.js and pwa-assets.json differ across45 build files; no visual treatment changed. Local six-scenario redirect/Brotli regression passes; actual new production readback subsequently passed (see deployment-binding.json). Owner aesthetic acceptance is not inferred.",
+  "productionEvidence": "deployment-binding.json"
 }

@@ -37,6 +37,7 @@ The [**Wedding Record**](WEDDING_RECORD.md) is the single source for the current
 
 - [Wedding Record](WEDDING_RECORD.md) — **live wedding facts, timeline, draft menus and open decisions**.
 - [Guest experience](guest-experience/README.md) and [family workspace](family-workspace/README.md) — the two audience intents.
+- [UI/UX concept references](design/concepts/README.md) — four exploratory styles and schematic image references, not a selected design.
 - [Domain research](research/README.md) and [evaluation references](evals/README.md) — optional supporting knowledge, **not facts about this wedding or a required feature backlog**.
 
 This belongs within **Wolfrine/PTI**, reusing the existing **PTI Firebase project** with a separately named Hosting site. No separate repository or Firebase project is intended. The desired website identity is **Mahima and Mayank**; the actual Hosting site ID must be valid and available before its URL can be confirmed.

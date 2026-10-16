@@ -1,12 +1,14 @@
 # Motion, invitation access and remembered sign-in — 16 October 2026
 
+**Live and verified:** [PR42](https://github.com/Wolfrine/PTI/pull/42), mergecc704f5, [successful main release38848250044](https://github.com/Wolfrine/PTI/actions/runs/38848250044). All64 live permission probes and47 exact hosted-file checks pass; parent independently verified live motion/offline behavior and PTI MCP preservation. Protected owner remains Admin. [Release evidence](design/motion-session/RELEASE.md).
+
 The invitation now has a restrained opening and a gently moving botanical graphic, with remembered Pause/Resume and OS reduced-motion support. Names, planned dates and the centred countdown remain primary. The family header exposes **Invitation ↗** directly on desktop and phones, and **Family workspace** returns to planning.
 
 Firebase Auth now persists on the same browser/device across closure and reopening. Existing sessions migrate; restored users still need current approved membership. Manual logout clears private views and other tabs, including a specifically reproduced legacy-migration edge case. Firestore remains memory-only and private planning still needs a connection. No operational wedding record, permission rule, owner role or public wedding fact changes belong to this extension.
 
 Exact candidate `3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505` is agent-reviewed after five substantive visual cycles, independent critic/parent desktop/phone review, actual temporal samples and a separate stronger round2 review. All121 inputs and12 final captures are bound; owner aesthetic acceptance is pending. Local tests include17 model/menu cases,13 wedding/9 Venture rules, existing store integration,5 persistent-session journeys with actual browser-process restarts and logout/revocation,12 existing UI scenarios, all10 menus, sharing, production motion at1440/390/360 and6PWA cases. Shared PTI build passes; its unchanged8 missing-Firebase-provider Karma failures remain documented. Human Google-popup and physical installed-phone restart are not claimed.
 
-[Design and candidate](design/motion-session/BRIEF.md) · [QA and limits](design/motion-session/QA.md). Release and actual Hosting preservation evidence follow in `design/motion-session/RELEASE.md`.
+[Design and candidate](design/motion-session/BRIEF.md) · [QA and limits](design/motion-session/QA.md) · [Release and preservation](design/motion-session/RELEASE.md).
 
 ---
 

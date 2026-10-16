@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-16 04:05:12 UTC",
+  "method": "PTI MCP bounded reads after production release; complete collections below100, recursive field/value equality including update metadata",
+  "collections": {
+    "events": {
+      "before": 10,
+      "after": 10,
+      "unchanged": true
+    },
+    "decisions": {
+      "before": 7,
+      "after": 7,
+      "unchanged": true
+    },
+    "guests": {
+      "before": 0,
+      "after": 0,
+      "unchanged": true
+    },
+    "attendance": {
+      "before": 0,
+      "after": 0,
+      "unchanged": true
+    },
+    "arrangements": {
+      "before": 0,
+      "after": 0,
+      "unchanged": true
+    },
+    "history": {
+      "before": 2,
+      "after": 2,
+      "unchanged": true
+    },
+    "members": {
+      "before": 5,
+      "after": 5,
+      "unchanged": true
+    },
+    "accessRequests": {
+      "before": 5,
+      "after": 5,
+      "unchanged": true
+    }
+  },
+  "ownerUidMatches": true,
+  "ownerRole": "admin",
+  "privateRawDocumentsCommitted": false
+}

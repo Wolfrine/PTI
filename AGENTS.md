@@ -13,6 +13,8 @@ This repository contains an Angular application "PTI App" for tracking time inve
 
 ### Shared design protocol
 
+**Owner-authorized scope exception (16 October 2026):** `visual-experiments/**` is an output-first design laboratory. Within that subtree, use [visual-experiments/AGENTS.md](visual-experiments/AGENTS.md) and Work's versioned evals **instead of** the Central design-reading mandates, fixed direction counts, and compulsory 5–10 review cycles below. Codex chooses its own concept. The general PTI Angular `new-` route convention does not govern isolated lab experiments. All security, privacy, visual verification and release safeguards remain binding. The numbered rules below continue to apply outside this subtree.
+
 For any UI, UX, layout, styling, landing-page, dashboard, motion, or visual-quality work:
 
 1. Before work, read the shared design operating standard in `Wolfrine/Central/design/README.md`, `Wolfrine/Central/design/UI_AGENT_PROTOCOL.md`, `Wolfrine/Central/design/EXECUTION_ROUTING.md`, `Wolfrine/Central/design/DESIGN_REVIEW_LOOP.md`, and `Wolfrine/Central/design/skills/visual-design-director/SKILL.md`.

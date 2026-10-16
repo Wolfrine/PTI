@@ -15,4 +15,4 @@ Keep each attempt in `experiments/<slug>/`. Include source and one short `README
 
 A single successful experiment does not establish a general design rule.
 
-**Status at setup (16 October 2026):** harness only. Work evals, Codex concept, implementation and hosting have not been created in this folder.
+**Status (16 October 2026):** [Work evals v1.0.0](evals/README.md) are ready for use. Codex has not selected a concept; no experience, acceptance or hosting is established.

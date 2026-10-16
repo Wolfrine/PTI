@@ -1,0 +1,15 @@
+/* A quiet opening; static content is the default when JavaScript is absent. */
+.garden-hero .invitation-copy { position: relative; z-index: 2; }
+.motion-botanical { position: absolute; z-index: 1; left: 3%; bottom: 14px; width: 125px; height: 180px; color: #768460; opacity: .65; transform-origin: 50% 100%; pointer-events: none; }
+.motion-botanical svg { display: block; width: 100%; height: 100%; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.motion-botanical path:nth-child(2) { fill: #eff0e366; }
+.motion-toggle { position: absolute; z-index: 3; right: 20px; bottom: 44px; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #c5b39c; border-radius: 24px; background: #fffcf7ed; color: var(--ink); font: 12px var(--sans); cursor: pointer; }
+.motion-toggle svg { width: 13px; height: 14px; fill: currentColor; }
+.motion-toggle[hidden] { display: none; }
+@media (max-width: 700px) {
+  .motion-botanical { left: -25px; bottom: 0; width: 94px; height: 136px; opacity: .6; }
+  .motion-toggle { right: 18px; bottom: 48px; padding: 10px 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-toggle { display: none; }
+}

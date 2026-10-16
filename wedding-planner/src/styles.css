@@ -151,6 +151,7 @@ p + p {
   font: 27px var(--serif);
   color: var(--ink);
 }
+.family-brand .family-title-short { display: none; }
 .family-brand span {
   display: block;
   font-size: 9px;
@@ -1836,8 +1837,11 @@ dialog.menu-editor {
     letter-spacing: 0.1em;
   }
   .app-header .invitation-link {
-    display: none;
+    display: flex;
+    font-size: 13px;
   }
+  .family-brand .family-title-wide { display: none; }
+  .family-brand .family-title-short { display: block; }
   .login-header .invitation-link {
     display: flex;
     font-size: 12px;

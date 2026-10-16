@@ -16,6 +16,12 @@ Share `/family/`. Each verified account that enters family access registers its 
 
 Approvals and role changes update open sessions. Losing edit permission closes unsaved private editors; losing access clears private records and admin lists. Roles are enforced by Firestore rules as well as the page. Access changes send no message. The account menu also contains private export and sign-out.
 
+Auth initializes with browser-local persistence first, with existing session/IndexedDB sign-ins available for migration, and explicitly selects local persistence before subscribing. This avoids an initialization-time switch between different storage listeners in newly opened tabs. Firebase retains the identity across browser restarts; each restored identity still registers and checks current membership online. Manual sign-out clears private views and propagates to other open tabs. Firestore remains memory-only. Clearing browser data, a different browser/origin, or invalid/revoked credentials can require sign-in again. See [Firebase persistence semantics](https://firebase.google.com/docs/auth/web/auth-state-persistence).
+
+A logout-only `wedding-sign-out` storage event also clears a still-open legacy migration tab whose SDK listener began on session storage. It contains only a random notification value, never an identity or permission; receiving it invokes Firebase sign-out and clears private views. It cannot restore sign-in. A dedicated emulator regression reproduces the missing logout without the safeguard and passes with it.
+
+`src/motion.ts` progressively enhances the public invitation with native SVG/Web Animations; no animation library or Firebase import is added to the public bundle. The one-off entrance settles fully when paused; the quiet ambient accent pauses offscreen/backgrounded and resumes on return. The optional `wedding-motion` local preference contains only `paused`/`playing`. OS reduced-motion removes animation and hides the unnecessary toggle. `Invitation ↗` is always visible in the authenticated header, including phones; the public return is labelled Family workspace.
+
 The four home entrances use hash routes (`#/catering`, `#/guests`, `#/stays`, `#/tasks`) with record deep links and browser Back. Catering retains meals and food counters separately from the function programme. Record pages are read-first; menu, timing/venue, guest basics, food needs, stay, travel, decisions, and provider/costs use focused editors. Failed saves retain the open draft; cancelling discards it so reopening reads the latest shared revision.
 
 The release script imports the documented proposals atomically only when the workspace does not exist. It never resets live edits. Guests start empty. Event times and venues are not invented. The public countdown targets the clearly labelled start of **18 January 2027 at midnight IST**, a date boundary rather than a ceremony time. All seed menus remain proposed; ambiguous items keep their verification markers. Subsequent records have atomic private history and revision checks. Archiving preserves records/history; exports include them. Confirmed, tentative, unknown and declined attendance remain separate per person/occasion. Nightly stay figures count people, not rooms or bookings.
@@ -37,13 +43,16 @@ From the repo root, after installing dependencies:
 
 ```text
 firebase emulators:exec --only firestore --project demo-wedding-tests --config firebase.wedding-tests.json "npm run test:rules --prefix wedding-planner"
-firebase emulators:exec --only firestore,auth --project demo-wedding-tests --config firebase.wedding-tests.json "node wedding-planner/tests/store-browser.mjs"
+firebase emulators:exec --only firestore,auth --project demo-wedding-tests --config firebase.wedding-tests.json "node wedding-planner/tests/store-browser.mjs && node wedding-planner/tests/session-browser.mjs"
 node wedding-planner/tests/browser.mjs
 node wedding-planner/tests/sharing-browser.mjs
+node wedding-planner/tests/motion-browser.mjs
 node wedding-planner/tests/pwa-browser.mjs
 ```
 
 The store/browser test also needs `personal-functions` dependencies for the Admin SDK, configured strictly against emulators. Browser tests use the matching Playwright Chromium; optionally set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed compatible Chromium. `.wedding-qa` outputs are local/CI artifacts and contain synthetic records only. The original 65 research scenarios remain a reference pack; these targeted tests do not claim all 65 have run.
+
+The session test uses a real persistent Chromium profile, closes/reopens the browser process, checks old-session migration and an authenticated Invitation→Family round trip, then verifies revoked membership and cross-tab manual logout/restart. Its accounts/records are synthetic and emulator-only, and it removes only its own data/profile. This does not claim a human Google popup or a physical installed-phone restart. The production motion test samples actual animation time, early pause, reload preference, OS preference changes and a genuinely offscreen hero at1440/390/360. Current design/capture evidence is under `design/motion-session/`.
 
 For reproducible design-state captures, start a fresh dev server and run `node design/botanical/capture-final.mjs` from `wedding-planner`. Its default origin is port 5177; set `WEDDING_REVIEW_ORIGIN` for another port and the Chromium environment variable above if needed. It intercepts only the local demo module with a documented-menu/synthetic-person fixture, writes state-identified images and a manifest, and never writes live wedding records. Actual revocation screenshots come from the emulator integration test.
 

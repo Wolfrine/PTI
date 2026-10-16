@@ -1,0 +1,699 @@
+{
+  "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+  "verified": "All candidate entries unchanged before/after captures",
+  "fixtureSha256": "f536666a85d2a3eda08fa29b9b7b99c35610ed65a07c2d7e2ec25a3652875185",
+  "scope": "Actual built motion/reduced/offline/native BFCache and DEV-only family menu/nav fixtures. Auth persistence/restart is separate parent emulator QA. No physical-device claim.",
+  "requiredStates": [
+    {
+      "id": "invitation",
+      "width": 1440
+    },
+    {
+      "id": "invitation",
+      "width": 360
+    },
+    {
+      "id": "family-home",
+      "width": 1440
+    },
+    {
+      "id": "family-home",
+      "width": 390
+    },
+    {
+      "id": "working-menu",
+      "width": 390
+    },
+    {
+      "id": "account-menu",
+      "width": 390
+    },
+    {
+      "id": "paused",
+      "width": 390
+    },
+    {
+      "id": "reduced",
+      "width": 390
+    },
+    {
+      "id": "saved-offline",
+      "width": 390
+    },
+    {
+      "id": "private-offline",
+      "width": 390
+    },
+    {
+      "id": "bfcache-return",
+      "width": 390
+    },
+    {
+      "id": "keyboard-invitation",
+      "width": 390
+    }
+  ],
+  "states": [
+    {
+      "id": "invitation",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/motion-session/final-invitation-1440.png",
+      "sha256": "dfdc2116e50eb03b219314f6e27009f30277bbe640c739544d0a686c7e53de19",
+      "observedMarker": "Family workspace",
+      "route": "http://127.0.0.1:63392/",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "invitation",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "path": "design/motion-session/final-invitation-360.png",
+      "sha256": "8530bf406898cba6299fd06448052933643b4acff7ebc63426dec7cbc375909e",
+      "observedMarker": "Family workspace",
+      "route": "http://127.0.0.1:63392/",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "family-home",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "design/motion-session/final-family-home-1440.png",
+      "sha256": "6f9cbecb8c67be8c7d2fcb44f5d8a791aa3397fd28dab87b01f5f4a1d6b29549",
+      "observedMarker": "Invitation ↗",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/home",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "family-home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-family-home-390.png",
+      "sha256": "82204a7de5b29689014bc20fd48ed80fecafd94f06c4c4ff2f1253db77cd2fc8",
+      "observedMarker": "Invitation ↗",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/home",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "working-menu",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-working-menu-390.png",
+      "sha256": "5ee5b8db1bd9560545c7c1c400e45787dfbf46715fd12f4027fc6ede4ade3ed2",
+      "observedMarker": "Reception",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/reception-undated",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "keyboard-invitation",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-keyboard-invitation-390.png",
+      "sha256": "6b9745a7fd54946d035bc92d6a2d292270ea8cb3cae28e5156039aa6a31667dd",
+      "observedMarker": "Reception",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/reception-undated",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "account-menu",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-account-menu-390.png",
+      "sha256": "a1445508ff8196e81c85189bded5cf995a93b91720c8ce0c1dd142885debbdf0",
+      "observedMarker": "Export private plan",
+      "route": "http://127.0.0.1:5177/family/?demo=1#/catering/reception-undated",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "paused",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-paused-390.png",
+      "sha256": "c0f6d3cfba7bb1c8a8780212762a46107d45521a97959f5ff57776952149c6d3",
+      "observedMarker": "Resume motion",
+      "route": "http://127.0.0.1:63392/",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "reduced",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-reduced-390.png",
+      "sha256": "5e4d00b5eab7c6902bb579b08d38c291a9a23c99214614e8ab0c73e753d93ae5",
+      "observedMarker": "Family workspace",
+      "route": "http://127.0.0.1:63392/",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "saved-offline",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-saved-offline-390.png",
+      "sha256": "7a2ade69ab7f6f2bf06792935b5f030fa94cfebfc975b28f120db28aa827bd96",
+      "observedMarker": "Saved invitation",
+      "route": "http://127.0.0.1:63392/",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "private-offline",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-private-offline-390.png",
+      "sha256": "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
+      "observedMarker": "Let’s reconnect.",
+      "route": "http://127.0.0.1:63392/family/",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    },
+    {
+      "id": "bfcache-return",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "path": "design/motion-session/final-bfcache-return-390.png",
+      "sha256": "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740",
+      "observedMarker": "Family workspace",
+      "route": "http://127.0.0.1:63392/",
+      "checks": {
+        "overflow": false,
+        "brokenImages": false
+      },
+      "pageErrors": []
+    }
+  ],
+  "temporal": [
+    {
+      "id": "built-opening-and-ambient",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "first": {
+        "time": 110.29999999701977,
+        "state": "playing",
+        "opacity": "0.7",
+        "nameTransform": "matrix(1, 0, 0, 1, 0, 10)",
+        "botanicalTransform": "matrix(0.999848, -0.0174524, 0.0174524, 0.999848, 0, 0)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 0,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 0,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 0,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 0,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 0,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 0,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 0,
+            "state": "running"
+          }
+        ]
+      },
+      "middle": {
+        "time": 577.1000000089407,
+        "state": "playing",
+        "opacity": "0.973013",
+        "nameTransform": "matrix(1, 0, 0, 1, 0, 0.899554)",
+        "botanicalTransform": "matrix(0.999854, -0.0171093, 0.0171093, 0.999854, 0.0196634, -0.0393267)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 433.28099999217784,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 433.28099999217784,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 433.28099999217784,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 433.28099999217784,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 433.28099999217784,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 433.28099999217784,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 433.28099999217784,
+            "state": "running"
+          }
+        ]
+      },
+      "settled": {
+        "time": 2392,
+        "state": "playing",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(0.999971, -0.00759778, 0.00759778, 0.999971, 0.564675, -1.12935)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 2250.038999992178,
+            "state": "running"
+          }
+        ]
+      },
+      "moving": {
+        "time": 3057.1000000089407,
+        "state": "playing",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(1, -0.000869524, 0.000869524, 1, 0.95018, -1.90036)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 2899.9589999921777,
+            "state": "running"
+          }
+        ]
+      }
+    },
+    {
+      "id": "built-opening-and-ambient",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "first": {
+        "time": 117.5,
+        "state": "playing",
+        "opacity": "0.7",
+        "nameTransform": "matrix(1, 0, 0, 1, 0, 10)",
+        "botanicalTransform": "matrix(0.999848, -0.0174504, 0.0174504, 0.999848, 0.00011435, -0.000228699)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 33.322000000238425,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 33.322000000238425,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 33.322000000238425,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 33.322000000238425,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 33.322000000238425,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 33.322000000238425,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 33.322000000238425,
+            "state": "running"
+          }
+        ]
+      },
+      "middle": {
+        "time": 571.9000000059605,
+        "state": "playing",
+        "opacity": "0.98141",
+        "nameTransform": "matrix(1, 0, 0, 1, 0, 0.619663)",
+        "botanicalTransform": "matrix(0.999855, -0.0170247, 0.0170247, 0.999855, 0.0245106, -0.0490212)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 483.2480000002384,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 483.2480000002384,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 483.2480000002384,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 483.2480000002384,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 483.2480000002384,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 483.2480000002384,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 483.2480000002384,
+            "state": "running"
+          }
+        ]
+      },
+      "settled": {
+        "time": 2379.7000000029802,
+        "state": "playing",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(0.999975, -0.00714002, 0.00714002, 0.999975, 0.590903, -1.18181)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 2300.2780000002385,
+            "state": "running"
+          }
+        ]
+      },
+      "moving": {
+        "time": 3040.0999999940395,
+        "state": "playing",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(1, -0.000277368, 0.000277368, 1, 0.984108, -1.96822)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 2950.2640000002384,
+            "state": "running"
+          }
+        ]
+      }
+    },
+    {
+      "id": "actual-video",
+      "path": "design/motion-session/final-motion-360.webm",
+      "sha256": "aaf13403143e8dd31749f1e1419be46fa9be94af662b0fc4b0a913a106620d17",
+      "scope": "Actual production public opening and ambient, 360px browser viewport"
+    },
+    {
+      "id": "actual-paused",
+      "paused": {
+        "time": 134.90000000596046,
+        "state": "paused",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(0.999848, -0.0174504, 0.0174504, 0.999848, 0.000115693, -0.000231385)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 33.51699999913107,
+            "state": "paused"
+          }
+        ]
+      },
+      "pausedAfter": {
+        "time": 795.1000000089407,
+        "state": "paused",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(0.999848, -0.0174504, 0.0174504, 0.999848, 0.000115693, -0.000231385)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 33.51699999913107,
+            "state": "paused"
+          }
+        ]
+      }
+    },
+    {
+      "id": "os-reduced",
+      "observed": {
+        "time": 948.8000000119209,
+        "state": "reduced",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "none",
+        "animations": []
+      }
+    },
+    {
+      "id": "actual-offline-motion",
+      "offlineBefore": {
+        "time": 74.30000001192093,
+        "state": "playing",
+        "opacity": "0.7",
+        "nameTransform": "matrix(1, 0, 0, 1, 0, 10)",
+        "botanicalTransform": "matrix(0.999848, -0.0174519, 0.0174519, 0.999848, 2.91428e-05, -5.82855e-05)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 16.828000005840323,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 16.828000005840323,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 16.828000005840323,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 16.828000005840323,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 16.828000005840323,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 16.828000005840323,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 16.828000005840323,
+            "state": "running"
+          }
+        ]
+      },
+      "offlineAfter": {
+        "time": 735.2000000029802,
+        "state": "playing",
+        "opacity": "0.997613",
+        "nameTransform": "matrix(1, 0, 0, 1, 0, 0.079569)",
+        "botanicalTransform": "matrix(0.999862, -0.0165898, 0.0165898, 0.999862, 0.0494305, -0.098861)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 683.4800000058403,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 683.4800000058403,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 683.4800000058403,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 683.4800000058403,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 683.4800000058403,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 683.4800000058403,
+            "state": "running"
+          },
+          {
+            "id": "",
+            "time": 683.4800000058403,
+            "state": "running"
+          }
+        ]
+      }
+    },
+    {
+      "id": "actual-native-bfcache",
+      "events": [
+        {
+          "type": "pageshow",
+          "persisted": false,
+          "time": 66
+        },
+        {
+          "type": "pagehide",
+          "persisted": true,
+          "time": 2193.5
+        },
+        {
+          "type": "pageshow",
+          "persisted": true,
+          "time": 2257
+        }
+      ],
+      "historyBefore": {
+        "time": 2122.7000000029802,
+        "state": "playing",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(0.999955, -0.00945, 0.00945, 0.999955, 0.458547, -0.917094)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 2033.427999997886,
+            "state": "running"
+          }
+        ]
+      },
+      "restored": {
+        "time": 2381.7000000029802,
+        "state": "playing",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(0.999972, -0.00744756, 0.00744756, 0.999972, 0.573282, -1.14656)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 2266.6549999997924,
+            "state": "running"
+          }
+        ]
+      },
+      "restoredAfter": {
+        "time": 3487.9000000059605,
+        "state": "playing",
+        "opacity": "1",
+        "nameTransform": "none",
+        "botanicalTransform": "matrix(0.999988, 0.00499792, -0.00499792, 0.999988, 1.28636, -2.57272)",
+        "animations": [
+          {
+            "id": "botanical-sway",
+            "time": 3366.816999999792,
+            "state": "running"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -89,6 +89,8 @@ try {
   assert.ok(!(await cacheEntries()).some(row=>/\/__\/|\/firestore\//.test(row.url)));
   results.push('Initial install saves one complete public version; auth/private endpoints never enter CacheStorage');
   await context.setOffline(true);await page.reload();await expect(page.locator('[data-pwa-notice="offline"]')).toContainText('Saved invitation');await expect(page.locator('[data-release-marker]')).toHaveText('LOCAL PWA TEST A');await expect(page.locator('[data-countdown] > span')).toHaveCount(4);
+  await expect(page.locator('[data-motion-toggle]')).toBeVisible();
+  await page.waitForFunction(()=>document.getAnimations().some(animation=>animation.id==='botanical-sway'&&animation.currentTime>0));
   const before=await page.locator('[data-countdown]').innerText();await expect.poll(()=>page.locator('[data-countdown]').innerText()).not.toBe(before);
   assert.ok(await page.locator('img').evaluateAll(images=>images.every(image=>image.complete&&image.naturalWidth>0)));assert.equal(await page.evaluate(()=>document.fonts.check('16px DM')),true);
   await page.screenshot({path:evidence+'/offline-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:evidence+'/offline-mobile.png',fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);

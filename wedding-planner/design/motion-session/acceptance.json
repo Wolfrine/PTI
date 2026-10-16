@@ -1,0 +1,456 @@
+{
+  "schema_version": 2,
+  "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+  "status": "agent-reviewed",
+  "owner_verdict": {
+    "status": "not-reviewed"
+  },
+  "blockers": [],
+  "perception_packet": {
+    "product_object": "Mahima and Mayank Botanical invitation and private family planning environment",
+    "user_job": "Enjoy the invitation after family login, return to planning, and reopen the same browser without another sign-in.",
+    "screen_state": "Desktop/phone public entrance, ambient/pause/reduced states, family working navigation, account, actual offline and native history return.",
+    "eye_path": "Names/date and garden, centred countdown, clear Family workspace or Invitation route; motion remains peripheral.",
+    "outcome_100ms": "Names and garden should establish the personal invitation.",
+    "outcome_1s": "The planned date window and countdown boundary should remain readable.",
+    "outcome_5s": "Motion controls and the direct route between invitation and family should be findable. These are hypotheses, not timed human measurements."
+  },
+  "critical_dimensions": {
+    "identity": "Restrained Botanical movement belongs to the retained scene/stationery; names and centred timer remain primary, with no flashing or obstruction.",
+    "hierarchy": "Invitation is directly visible in authenticated desktop/phone headers; public Family workspace clearly returns to the plan without extra journey branches.",
+    "craft": "Desktop1440 and phone390/360 fit; pause/reduced-motion yield fully readable content; actual offscreen and native history/offline motion states remain coherent."
+  },
+  "roles": {
+    "designer": "wedding_designer",
+    "visual_critic": "wedding_critic",
+    "parent": "/root",
+    "qa": "/root"
+  },
+  "baseline": {
+    "description": "Previous static Botanical invitation with centred countdown; mobile family header hid Invitation.",
+    "evidence": {
+      "path": "wedding-planner/design/illustrated-pwa/final-invitation-360.png",
+      "sha256": "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517"
+    }
+  },
+  "comparisons": [
+    {
+      "reference": "Original Romantic Botanical concept",
+      "matched_task_state": "Personal invitation and coherent public/private identity",
+      "observed_gap": "Added motion could compete with names or add another crowded journey.",
+      "disposition": "Retain quiet name area and floral composition; use one marginal stationery accent and direct navigation.",
+      "evidence": {
+        "path": "wedding-planner/design/concepts/01-romantic-botanical.png",
+        "sha256": "0432552ae98639dfa9daf81629de9a7f28903f0c6d65623a898ba786e9d55922"
+      }
+    },
+    {
+      "reference": "Retained static illustrated-PWA invitation",
+      "matched_task_state": "Public phone invitation with centred countdown",
+      "observed_gap": "The current scene was completely static, and Family access sounded like repeat authentication.",
+      "disposition": "Brief opening, controlled ambient sway and a clear Family workspace return; no new public facts.",
+      "evidence": {
+        "path": "wedding-planner/design/illustrated-pwa/final-invitation-360.png",
+        "sha256": "bfeddc059f9bfd08837f62784a234061cb9cbbc8feda52daf04fee0105e75517"
+      }
+    },
+    {
+      "reference": "Prior Botanical authenticated phone home",
+      "matched_task_state": "Working family navigation at360px",
+      "observed_gap": "Invitation was hidden on mobile.",
+      "disposition": "Short visible Family title preserves its full accessible name while the Invitation link fits directly in the same header.",
+      "evidence": {
+        "path": "wedding-planner/design/countdown-access/round5-viewer-home-360.png",
+        "sha256": "51b44f279bb5bedc93bf40e99bbb209e9ad909ed1c62390b3932b561b335df5b"
+      }
+    }
+  ],
+  "direction_mode": "accepted-direction-refinement",
+  "existing_direction_evidence": {
+    "path": "wedding-planner/design/illustrated-pwa/final-invitation-1440.png",
+    "sha256": "08b72d2a8fea28fabe538415ad9e0a0c36dd6819214a33099e1549cecc3ee3d3"
+  },
+  "required_states": [
+    {
+      "id": "invitation-1440",
+      "marker": "Family workspace",
+      "viewport": "desktop"
+    },
+    {
+      "id": "invitation-360",
+      "marker": "Family workspace",
+      "viewport": "mobile"
+    },
+    {
+      "id": "family-home-1440",
+      "marker": "Invitation ↗",
+      "viewport": "desktop"
+    },
+    {
+      "id": "family-home-390",
+      "marker": "Invitation ↗",
+      "viewport": "mobile"
+    },
+    {
+      "id": "working-menu-390",
+      "marker": "Reception",
+      "viewport": "mobile"
+    },
+    {
+      "id": "keyboard-invitation-390",
+      "marker": "Reception",
+      "viewport": "mobile"
+    },
+    {
+      "id": "account-menu-390",
+      "marker": "Export private plan",
+      "viewport": "mobile"
+    },
+    {
+      "id": "paused-390",
+      "marker": "Resume motion",
+      "viewport": "mobile"
+    },
+    {
+      "id": "reduced-390",
+      "marker": "Family workspace",
+      "viewport": "mobile"
+    },
+    {
+      "id": "saved-offline-390",
+      "marker": "Saved invitation",
+      "viewport": "mobile"
+    },
+    {
+      "id": "private-offline-390",
+      "marker": "Let’s reconnect.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "bfcache-return-390",
+      "marker": "Family workspace",
+      "viewport": "mobile"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "wedding-planner/design/motion-session/final-invitation-1440.png",
+      "sha256": "dfdc2116e50eb03b219314f6e27009f30277bbe640c739544d0a686c7e53de19",
+      "state": "invitation-1440",
+      "viewport": "desktop",
+      "observed_marker": "Family workspace",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-invitation-360.png",
+      "sha256": "8530bf406898cba6299fd06448052933643b4acff7ebc63426dec7cbc375909e",
+      "state": "invitation-360",
+      "viewport": "mobile",
+      "observed_marker": "Family workspace",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-family-home-1440.png",
+      "sha256": "6f9cbecb8c67be8c7d2fcb44f5d8a791aa3397fd28dab87b01f5f4a1d6b29549",
+      "state": "family-home-1440",
+      "viewport": "desktop",
+      "observed_marker": "Invitation ↗",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-family-home-390.png",
+      "sha256": "82204a7de5b29689014bc20fd48ed80fecafd94f06c4c4ff2f1253db77cd2fc8",
+      "state": "family-home-390",
+      "viewport": "mobile",
+      "observed_marker": "Invitation ↗",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-working-menu-390.png",
+      "sha256": "5ee5b8db1bd9560545c7c1c400e45787dfbf46715fd12f4027fc6ede4ade3ed2",
+      "state": "working-menu-390",
+      "viewport": "mobile",
+      "observed_marker": "Reception",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-keyboard-invitation-390.png",
+      "sha256": "6b9745a7fd54946d035bc92d6a2d292270ea8cb3cae28e5156039aa6a31667dd",
+      "state": "keyboard-invitation-390",
+      "viewport": "mobile",
+      "observed_marker": "Reception",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-account-menu-390.png",
+      "sha256": "a1445508ff8196e81c85189bded5cf995a93b91720c8ce0c1dd142885debbdf0",
+      "state": "account-menu-390",
+      "viewport": "mobile",
+      "observed_marker": "Export private plan",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-paused-390.png",
+      "sha256": "c0f6d3cfba7bb1c8a8780212762a46107d45521a97959f5ff57776952149c6d3",
+      "state": "paused-390",
+      "viewport": "mobile",
+      "observed_marker": "Resume motion",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-reduced-390.png",
+      "sha256": "5e4d00b5eab7c6902bb579b08d38c291a9a23c99214614e8ab0c73e753d93ae5",
+      "state": "reduced-390",
+      "viewport": "mobile",
+      "observed_marker": "Family workspace",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-saved-offline-390.png",
+      "sha256": "7a2ade69ab7f6f2bf06792935b5f030fa94cfebfc975b28f120db28aa827bd96",
+      "state": "saved-offline-390",
+      "viewport": "mobile",
+      "observed_marker": "Saved invitation",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-private-offline-390.png",
+      "sha256": "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
+      "state": "private-offline-390",
+      "viewport": "mobile",
+      "observed_marker": "Let’s reconnect.",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "path": "wedding-planner/design/motion-session/final-bfcache-return-390.png",
+      "sha256": "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740",
+      "state": "bfcache-return-390",
+      "viewport": "mobile",
+      "observed_marker": "Family workspace",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    }
+  ],
+  "cycles": [
+    {
+      "id": 1,
+      "evidence": {
+        "path": "wedding-planner/design/motion-session/round1-opening-360-1000.png",
+        "sha256": "2e7b46e9712e6a4fd8863b0812a3d84a9eff847dc15f8443b880dfa0c8969e5c"
+      },
+      "visual_finding": "Opening entrance retained the names/date hierarchy; early Pause defect held text mid-fade. Critic8.1/7.5/7.7.",
+      "qa_finding": "Actual desktop/phone temporal samples and overflow checks; concrete early-pause failure recorded."
+    },
+    {
+      "id": 2,
+      "evidence": {
+        "path": "wedding-planner/design/motion-session/round2-ambient-360-1.png",
+        "sha256": "bab1f7db3bf9ffabfbc710de35cbcefde8a9f736bbafa172700bca1c7f603285"
+      },
+      "visual_finding": "Ambient stationery sprig and fully settled explicit pause. Stronger actual gpt-6-astra/high pass identified detached phone sprig and hidden Invitation.",
+      "qa_finding": "Time samples prove stable650ms pause and resumed movement; no authentication claim from DEV fixtures."
+    },
+    {
+      "id": 3,
+      "evidence": {
+        "path": "wedding-planner/design/motion-session/round3-refined-ambient-360.png",
+        "sha256": "cc46577bfeafeffa981fc91bb5e577a7f67745c794d928fac5feb1ad8c656e40"
+      },
+      "visual_finding": "Smaller phone-edge sprig and direct same-row Invitation corrected the stronger findings. Critic8.1 each.",
+      "qa_finding": "Actual reduced preference changes and offscreen pause/resume; synthetic visibility events explicitly labelled. Parent personally viewed desktop/mobile and own actual time-separated frames."
+    },
+    {
+      "id": 4,
+      "evidence": {
+        "path": "wedding-planner/design/motion-session/round4-working-menu-keyboard-360.png",
+        "sha256": "326fcd0934ced8ef5d68ac564ac95ca7620e22679ca81017178a41842b309c6e"
+      },
+      "visual_finding": "Long working menu, open account and keyboard navigation fit; retained pause choice remains readable. Critic8.1 each.",
+      "qa_finding": "Keyboard/Space pause-resume and reload/DEV-family return tested; actual authentication belongs to separate emulator QA."
+    },
+    {
+      "id": 5,
+      "evidence": {
+        "path": "wedding-planner/design/motion-session/final-bfcache-return-390.png",
+        "sha256": "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740"
+      },
+      "visual_finding": "Final12 views retain quiet names/countdown and clear direct navigation; current critic8.1 each/overall before parent judgment.",
+      "qa_finding": "Actual immutable public offline motion, neutral private offline and native BFCache persisted return with one advancing sway. Two auth QA holds repaired; strengthened actual-account-menu readiness passes."
+    }
+  ],
+  "parent_checkpoints": [
+    {
+      "cycle": 3,
+      "evidence": {
+        "path": "wedding-planner/design/motion-session/round3-refined-ambient-360.png",
+        "sha256": "cc46577bfeafeffa981fc91bb5e577a7f67745c794d928fac5feb1ad8c656e40"
+      },
+      "judgment": "After critic scores, parent personally viewed exact desktop/mobile renders, own1.8s paired moving frames and stable650ms pause. Identity8.1/hierarchy8.2/craft8.1/overall8.1. Small clipped sprig integrates and direct phone Invitation remains readable."
+    },
+    {
+      "cycle": 5,
+      "evidence": {
+        "path": "wedding-planner/design/motion-session/final-bfcache-return-390.png",
+        "sha256": "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740"
+      },
+      "judgment": "After final independent critic scores, parent personally re-viewed all12 current images and measured temporal manifest, plus actual emulator-authenticated phone/desktop screenshots. Identity8.1/hierarchy8.2/craft8.1/overall8.1; no aesthetic blocker. Separate auth/logout and exact build QA pass. Owner taste remains unreviewed."
+    }
+  ],
+  "designer_capability_record": "Designer and critic used inherited capabilities. Parent actually randomly selected round2 via Get-Random2–5. Separate motion_stronger_r2 was explicitly spawned gpt-6-astra/high and inspected current desktop/phone source-bound renders/time samples. Its independent7.5 overall caused the sprig/mobile-navigation repairs; STRONGER-ROUND2.md retains exact limits. No stronger final recheck is claimed.",
+  "reviews": {
+    "visual_critic": {
+      "reviewer": "wedding_critic",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "verdict": "pass",
+      "scores": {
+        "identity": 8.1,
+        "hierarchy": 8.1,
+        "craft": 8.1
+      },
+      "overall": 8.1,
+      "inspected_sha256": [
+        "dfdc2116e50eb03b219314f6e27009f30277bbe640c739544d0a686c7e53de19",
+        "8530bf406898cba6299fd06448052933643b4acff7ebc63426dec7cbc375909e",
+        "6f9cbecb8c67be8c7d2fcb44f5d8a791aa3397fd28dab87b01f5f4a1d6b29549",
+        "82204a7de5b29689014bc20fd48ed80fecafd94f06c4c4ff2f1253db77cd2fc8",
+        "5ee5b8db1bd9560545c7c1c400e45787dfbf46715fd12f4027fc6ede4ade3ed2",
+        "6b9745a7fd54946d035bc92d6a2d292270ea8cb3cae28e5156039aa6a31667dd",
+        "a1445508ff8196e81c85189bded5cf995a93b91720c8ce0c1dd142885debbdf0",
+        "c0f6d3cfba7bb1c8a8780212762a46107d45521a97959f5ff57776952149c6d3",
+        "5e4d00b5eab7c6902bb579b08d38c291a9a23c99214614e8ab0c73e753d93ae5",
+        "7a2ade69ab7f6f2bf06792935b5f030fa94cfebfc975b28f120db28aa827bd96",
+        "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
+        "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740"
+      ],
+      "reason": "All 12 current exact images personally inspected. Restrained opening and sparse marginal botanical sprig preserve the name/timer hierarchy. Direct Invitation fits desktop and phone family headers, working menus and account states. Pause/reduced-motion text is fully visible. Actual own sampled transforms, preference/offscreen interactions and built native BFCache/offline observations establish temporal behavior separately from stills.",
+      "generic_cues": [
+        "A brief fade/rise is resolved by fully visible static pause and reduced-motion fallback.",
+        "One sparse botanical line accent is justified by the retained stationery divider and scene-edge placement.",
+        "A direct Invitation entry and secondary account popup are justified by the primary journey and constrained phone header."
+      ]
+    },
+    "parent": {
+      "reviewer": "/root",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "verdict": "pass",
+      "scores": {
+        "identity": 8.1,
+        "hierarchy": 8.2,
+        "craft": 8.1
+      },
+      "overall": 8.1,
+      "inspected_sha256": [
+        "dfdc2116e50eb03b219314f6e27009f30277bbe640c739544d0a686c7e53de19",
+        "8530bf406898cba6299fd06448052933643b4acff7ebc63426dec7cbc375909e",
+        "6f9cbecb8c67be8c7d2fcb44f5d8a791aa3397fd28dab87b01f5f4a1d6b29549",
+        "82204a7de5b29689014bc20fd48ed80fecafd94f06c4c4ff2f1253db77cd2fc8",
+        "5ee5b8db1bd9560545c7c1c400e45787dfbf46715fd12f4027fc6ede4ade3ed2",
+        "6b9745a7fd54946d035bc92d6a2d292270ea8cb3cae28e5156039aa6a31667dd",
+        "a1445508ff8196e81c85189bded5cf995a93b91720c8ce0c1dd142885debbdf0",
+        "c0f6d3cfba7bb1c8a8780212762a46107d45521a97959f5ff57776952149c6d3",
+        "5e4d00b5eab7c6902bb579b08d38c291a9a23c99214614e8ab0c73e753d93ae5",
+        "7a2ade69ab7f6f2bf06792935b5f030fa94cfebfc975b28f120db28aa827bd96",
+        "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
+        "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740"
+      ],
+      "reason": "Personally viewed all12 exact current PNGs, retained original/static references and own time-separated actual moving frames. Names/countdown remain calm; the small marginal line sprig relates to stationery; visible phone Invitation fits without another header row. Keyboard/account/pause/reduced/offline states retain hierarchy and readable copy. Temporal metrics and direct real-browser QA are separate from still-image aesthetic judgment.",
+      "generic_cues": [
+        "A brief fade/rise is resolved by fully visible static pause and reduced-motion fallback.",
+        "One sparse botanical line accent is justified by the retained stationery divider and scene-edge placement.",
+        "A direct Invitation entry and secondary account popup are justified by the primary journey and constrained phone header."
+      ]
+    },
+    "qa": {
+      "reviewer": "/root",
+      "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+      "verdict": "pass",
+      "inspected_sha256": [
+        "dfdc2116e50eb03b219314f6e27009f30277bbe640c739544d0a686c7e53de19",
+        "8530bf406898cba6299fd06448052933643b4acff7ebc63426dec7cbc375909e",
+        "6f9cbecb8c67be8c7d2fcb44f5d8a791aa3397fd28dab87b01f5f4a1d6b29549",
+        "82204a7de5b29689014bc20fd48ed80fecafd94f06c4c4ff2f1253db77cd2fc8",
+        "5ee5b8db1bd9560545c7c1c400e45787dfbf46715fd12f4027fc6ede4ade3ed2",
+        "6b9745a7fd54946d035bc92d6a2d292270ea8cb3cae28e5156039aa6a31667dd",
+        "a1445508ff8196e81c85189bded5cf995a93b91720c8ce0c1dd142885debbdf0",
+        "c0f6d3cfba7bb1c8a8780212762a46107d45521a97959f5ff57776952149c6d3",
+        "5e4d00b5eab7c6902bb579b08d38c291a9a23c99214614e8ab0c73e753d93ae5",
+        "7a2ade69ab7f6f2bf06792935b5f030fa94cfebfc975b28f120db28aa827bd96",
+        "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13",
+        "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740"
+      ],
+      "reason": "17 unit tests and wedding/shared PTI builds pass;13 wedding/9 Venture rules; existing store integration;5 actual persistent-profile emulator journeys including ready-state-identified invitation round trip, revocation, manual logout/new-tab/legacy migration clearing;12 existing browser tasks; all10 menu projections; sharing fallbacks; production motion1440/390/360 and6PWA scenarios pass. All121 inputs and12 current captures rehashed. Shared PTI existing1pass/8missing-provider failures remain outside wedding changes. CI/release/live preservation follow separately in RELEASE.md."
+    }
+  },
+  "coverage_limitations": "Agent-reviewed refinement, not owner acceptance. Actual public runtime/offline/native BFCache and temporal samples are separate from static screenshots. DEV family visuals derive from documented proposed menus and synthetic people/logistics, not real wedding records. Auth uses real Firebase emulators and a real on-disk browser profile; no human Google popup/physical installed-phone restart or actual OS backgrounding/full accessibility certification is claimed. Videos retained and hashed, not claimed as watched playback. Initial1dc final candidate was QA-held;84f repair passed but test-marker strengthening required final339 rebind/recapture without runtime change. No operational wedding data changes belong to this feature."
+}

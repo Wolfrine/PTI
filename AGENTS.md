@@ -2,6 +2,8 @@
 
 This repository contains an Angular application "PTI App" for tracking time investment across domains using Firebase/Firestore and Google authentication. Components include login, dashboard, domain management, activities, and activity reports. Services manage domains, targets/tasks, activities, and local storage. The app uses Angular's standalone component architecture and Chart.js for visualisations.
 
+For changes in `visual-experiments/**`, follow [visual-experiments/AGENTS.md](visual-experiments/AGENTS.md) instead of the PTI Angular UI guidelines and Central design procedure below. Repo-wide security, data and deployment restrictions still apply.
+
 ## UI development guidelines
 - Existing pages are basic; redesigned pages live alongside them using Angular Material.
 - When creating redesigned pages, prefix component and route names with `new-`.
@@ -12,8 +14,6 @@ This repository contains an Angular application "PTI App" for tracking time inve
 - If the task depends on visual judgment, route implementation through a rendered-browser/Codex loop rather than treating Chat-generated code as visually accepted. Correct known material defects and rerender before completion.
 
 ### Shared design protocol
-
-**Owner-authorized scope exception (16 October 2026):** `visual-experiments/**` is an output-first design laboratory. Within that subtree, use [visual-experiments/AGENTS.md](visual-experiments/AGENTS.md) and Work's versioned evals **instead of** the Central design-reading mandates, fixed direction counts, and compulsory 5–10 review cycles below. Codex chooses its own concept. The general PTI Angular `new-` route convention does not govern isolated lab experiments. All security, privacy, visual verification and release safeguards remain binding. The numbered rules below continue to apply outside this subtree.
 
 For any UI, UX, layout, styling, landing-page, dashboard, motion, or visual-quality work:
 

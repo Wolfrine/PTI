@@ -1,3 +1,15 @@
+# Motion, invitation access and remembered sign-in — 16 October 2026
+
+The invitation now has a restrained opening and a gently moving botanical graphic, with remembered Pause/Resume and OS reduced-motion support. Names, planned dates and the centred countdown remain primary. The family header exposes **Invitation ↗** directly on desktop and phones, and **Family workspace** returns to planning.
+
+Firebase Auth now persists on the same browser/device across closure and reopening. Existing sessions migrate; restored users still need current approved membership. Manual logout clears private views and other tabs, including a specifically reproduced legacy-migration edge case. Firestore remains memory-only and private planning still needs a connection. No operational wedding record, permission rule, owner role or public wedding fact changes belong to this extension.
+
+Exact candidate `3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505` is agent-reviewed after five substantive visual cycles, independent critic/parent desktop/phone review, actual temporal samples and a separate stronger round2 review. All121 inputs and12 final captures are bound; owner aesthetic acceptance is pending. Local tests include17 model/menu cases,13 wedding/9 Venture rules, existing store integration,5 persistent-session journeys with actual browser-process restarts and logout/revocation,12 existing UI scenarios, all10 menus, sharing, production motion at1440/390/360 and6PWA cases. Shared PTI build passes; its unchanged8 missing-Firebase-provider Karma failures remain documented. Human Google-popup and physical installed-phone restart are not claimed.
+
+[Design and candidate](design/motion-session/BRIEF.md) · [QA and limits](design/motion-session/QA.md). Release and actual Hosting preservation evidence follow in `design/motion-session/RELEASE.md`.
+
+---
+
 # Illustrated menus, sharing and one wedding PWA — 15 October 2026
 
 **Live and verified:** [PR #40](https://github.com/Wolfrine/PTI/pull/40) adds illustrated catering, invitation sharing and one PWA; [PR #41](https://github.com/Wolfrine/PTI/pull/41) closes the actual Hosting clean-URL offline repair. Merge4ae2224, [successful release38780093361](https://github.com/Wolfrine/PTI/actions/runs/38780093361):64 live permission checks and45 exact hosted files pass. Parent independently inspected live desktop/mobile and actual public/private offline recovery. Candidate dcb38f0da0400cea56595938af4ef16d89933aae92d64440c6ee436c4bd92e95; cache d040b4180b3f8fe06bc6. The protected owner remains Admin, all10 menu texts remain exact, and concurrent family changes are preserved. [Full release evidence](design/illustrated-pwa/RELEASE.md).

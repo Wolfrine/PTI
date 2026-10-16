@@ -78,6 +78,9 @@ export function createWeddingStore(onChange:(state:StoreState)=>void) {
   const store={
     state,
     async start() {
+      // A just-migrated legacy tab can still listen to its old Auth storage.
+      // This logout-only signal contains no identity and never grants access.
+      addEventListener('storage',event=>{if(event.key==='wedding-sign-out'&&event.newValue&&auth?.currentUser)void store.signOut(false);});
       addEventListener('offline',()=>{state={...state,offline:true};emit();});
       addEventListener('online',()=>{state={...state,offline:false};emit();if(auth?.currentUser&&(state.access==='denied'||state.access==='pending'))void open(auth.currentUser);});
       if(import.meta.env.DEV && new URLSearchParams(location.search).get('demo')==='1') {
@@ -89,18 +92,27 @@ export function createWeddingStore(onChange:(state:StoreState)=>void) {
         const appApi=await import('firebase/app');authApi=await import('firebase/auth');api=await import('firebase/firestore');
         // Development uses emulators by default. Live development needs an explicit opt-in.
         const emulated=import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS!=='0';
-        const app=appApi.initializeApp(emulated?{...firebaseConfig,projectId:'demo-wedding-tests',apiKey:'demo-key'}:firebaseConfig,'wedding');auth=authApi.getAuth(app);db=api.initializeFirestore(app,{localCache:api.memoryLocalCache()});
+        const app=appApi.initializeApp(emulated?{...firebaseConfig,projectId:'demo-wedding-tests',apiKey:'demo-key'}:firebaseConfig,'wedding');
+        // Select durable storage at initialization so new tabs listen to the same store.
+        // Session/IndexedDB entries are included to restore and migrate existing sign-ins.
+        auth=authApi.initializeAuth(app,{persistence:[authApi.browserLocalPersistence,authApi.browserSessionPersistence,authApi.indexedDBLocalPersistence],popupRedirectResolver:authApi.browserPopupRedirectResolver});
+        db=api.initializeFirestore(app,{localCache:api.memoryLocalCache()});
         if(emulated) {
           authApi.connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});
           api.connectFirestoreEmulator(db,'127.0.0.1',8085);
         }
-        await authApi.setPersistence(auth,authApi.browserSessionPersistence);
+        // Remember this device across browser/app restarts; roles are still checked online.
+        await authApi.setPersistence(auth,authApi.browserLocalPersistence);
         authApi.onAuthStateChanged(auth,user=>void open(user),()=>deny('Sign-in could not be restored. Please try again.'));
         addEventListener('focus',()=>{if(auth.currentUser&&state.access==='denied')void open(auth.currentUser);else if(auth.currentUser&&state.access==='ready')api.getDocFromServer(api.doc(db,workspacePath)).catch(()=>deny('Your access could not be verified. Please sign in again.'));});
       } catch { deny('Sign-in is temporarily unavailable. Please check your connection and try again.'); }
     },
     async signIn() {return guard(async()=>{if(!auth)throw Error('Sign-in is loading. Refresh if this continues.');await authApi.signInWithPopup(auth,new authApi.GoogleAuthProvider());});},
-    async signOut() {epoch++;clear();state={...state,user:null,isOwner:false,access:'signed-out',loading:false,isAdmin:false,canEdit:false,role:'pending',error:''};emit();if(auth)await authApi.signOut(auth);},
+    async signOut(notify=true) {
+      epoch++;clear();state={...state,user:null,isOwner:false,access:'signed-out',loading:false,isAdmin:false,canEdit:false,role:'pending',error:''};emit();
+      if(notify)try{localStorage.setItem('wedding-sign-out',crypto.randomUUID());}catch{/* Firebase still clears this tab when optional storage is unavailable. */}
+      if(auth)await authApi.signOut(auth);
+    },
     async save<K extends CollectionName>(collection:K,payload:Payload,id?:string,expectedRevision?:number) {
       return guard(async()=>{
         check(true);const cleaned=validateRecord(collection,payload),actor=state.user!.uid;

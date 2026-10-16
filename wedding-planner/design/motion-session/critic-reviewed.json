@@ -1,0 +1,95 @@
+{
+  "candidate": "3399717616f513235eeac31e3d9ac6f3e8d5b72527df58934b6f4c0be62ca505",
+  "reviewer": "wedding_critic",
+  "scores": {
+    "identity": 8.1,
+    "hierarchy": 8.1,
+    "craft": 8.1
+  },
+  "overall": 8.1,
+  "verdict": "pass",
+  "owner_accepted": false,
+  "evidence": [
+    {
+      "path": "design/motion-session/final-invitation-1440.png",
+      "sha256": "dfdc2116e50eb03b219314f6e27009f30277bbe640c739544d0a686c7e53de19"
+    },
+    {
+      "path": "design/motion-session/final-invitation-360.png",
+      "sha256": "8530bf406898cba6299fd06448052933643b4acff7ebc63426dec7cbc375909e"
+    },
+    {
+      "path": "design/motion-session/final-family-home-1440.png",
+      "sha256": "6f9cbecb8c67be8c7d2fcb44f5d8a791aa3397fd28dab87b01f5f4a1d6b29549"
+    },
+    {
+      "path": "design/motion-session/final-family-home-390.png",
+      "sha256": "82204a7de5b29689014bc20fd48ed80fecafd94f06c4c4ff2f1253db77cd2fc8"
+    },
+    {
+      "path": "design/motion-session/final-working-menu-390.png",
+      "sha256": "5ee5b8db1bd9560545c7c1c400e45787dfbf46715fd12f4027fc6ede4ade3ed2"
+    },
+    {
+      "path": "design/motion-session/final-keyboard-invitation-390.png",
+      "sha256": "6b9745a7fd54946d035bc92d6a2d292270ea8cb3cae28e5156039aa6a31667dd"
+    },
+    {
+      "path": "design/motion-session/final-account-menu-390.png",
+      "sha256": "a1445508ff8196e81c85189bded5cf995a93b91720c8ce0c1dd142885debbdf0"
+    },
+    {
+      "path": "design/motion-session/final-paused-390.png",
+      "sha256": "c0f6d3cfba7bb1c8a8780212762a46107d45521a97959f5ff57776952149c6d3"
+    },
+    {
+      "path": "design/motion-session/final-reduced-390.png",
+      "sha256": "5e4d00b5eab7c6902bb579b08d38c291a9a23c99214614e8ab0c73e753d93ae5"
+    },
+    {
+      "path": "design/motion-session/final-saved-offline-390.png",
+      "sha256": "7a2ade69ab7f6f2bf06792935b5f030fa94cfebfc975b28f120db28aa827bd96"
+    },
+    {
+      "path": "design/motion-session/final-private-offline-390.png",
+      "sha256": "15b88d5d6b7d39741d11427ec32d3b42535eb25e1796ee49dff3cac8e708ef13"
+    },
+    {
+      "path": "design/motion-session/final-bfcache-return-390.png",
+      "sha256": "5096d12f6e95ed9955acb47cc80e09cb4bb5309fc8b95cdb32d4d0b4fd2b1740"
+    }
+  ],
+  "reason": "All 12 current exact images personally inspected. Restrained opening and sparse marginal botanical sprig preserve the name/timer hierarchy. Direct Invitation fits desktop and phone family headers, working menus and account states. Pause/reduced-motion text is fully visible. Actual own sampled transforms, preference/offscreen interactions and built native BFCache/offline observations establish temporal behavior separately from stills.",
+  "generic_risks": [
+    {
+      "decision": "Opening fade and rise",
+      "assessment": "resolved",
+      "reason": "Early Pause now settles names/date fully; reduced-motion is static and fully visible."
+    },
+    {
+      "decision": "Botanical line accent",
+      "assessment": "justified",
+      "reason": "One slow sparse edge sprig echoes existing stationery marks; phone crop anchors it at the scene edge."
+    },
+    {
+      "decision": "Direct Invitation plus account control",
+      "assessment": "justified",
+      "reason": "Primary public navigation is discoverable; secondary private actions stay in a viewport-fitting menu."
+    }
+  ],
+  "verification": {
+    "candidateInputs": 121,
+    "inputHashesVerified": true,
+    "aggregateVerified": true,
+    "screenshotHashesVerified": 12,
+    "temporalMethod": "Own actual browser sampled transforms/currentTime and keyboard interactions at 1440/390/360 in rounds1-4; own immutable runtime native BFCache/offline at390 under local301 simulator in round5. Latest update is test-only; runtime/dist are unchanged. Current final temporal manifest inspected and WebM bytes hashed; no critic video-playback claim.",
+    "ownBuiltObservation": ".wedding-qa/critic-motion-session/round5-built-observed.json"
+  },
+  "limitations": [
+    "Independent visual pass is not owner aesthetic approval, physical-device proof or deployed Firebase verification. Parent final judgment and functional QA remain separate.",
+    "Family renders use Node-intercepted document-derived proposed menus plus labelled synthetic DEV records, not actual production sign-in. Public/offline renders use immutable built bytes. Artwork is illustrative; wedding names/planned dates are unchanged.",
+    "Initial1dc7ea candidate was QA-held for a proven legacy migration cross-tab logout defect. Repaired84f109 was visually reviewed but a test-only readiness correction required this final binding. Parent reports negative regression, repaired old store tests and five strengthened actual session journeys passing. Earlier holds remain documented.",
+    "Physical-phone installation/auth, native messaging delivery and measured user attention remain unobserved. Own synthetic hidden-handler evidence does not claim real background-tab behavior; native BFCache was actually observed.",
+    "Parent round3 numbers arrived after independent round4 judgment. No parent final score file or final numbers were consulted before this final independent score."
+  ]
+}

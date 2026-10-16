@@ -37,11 +37,13 @@ jobs:
       - run: npx --prefix wedding-planner playwright install --with-deps chromium
       - run: npm install --prefix personal-functions --ignore-scripts --no-audit --no-fund
       - name: Verify active sessions, competing edits and complete exports on emulators
-        run: npx --yes firebase-tools@15.31.0 emulators:exec --only firestore,auth --project demo-wedding-tests --config firebase.wedding-tests.json 'node wedding-planner/tests/store-browser.mjs'
+        run: npx --yes firebase-tools@15.31.0 emulators:exec --only firestore,auth --project demo-wedding-tests --config firebase.wedding-tests.json 'node wedding-planner/tests/store-browser.mjs && node wedding-planner/tests/session-browser.mjs'
       - name: Verify the rendered invitation and family workflows
         run: node wedding-planner/tests/browser.mjs
       - name: Verify sharing metadata and canonical invitation sharing
         run: node wedding-planner/tests/sharing-browser.mjs
+      - name: Verify invitation motion and accessible motion controls
+        run: node wedding-planner/tests/motion-browser.mjs
       - name: Verify complete illustrated menus, uncertainty and comparison
         working-directory: wedding-planner
         run: node --import tsx tests/illustrated-browser.mjs

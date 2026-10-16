@@ -5,6 +5,7 @@ export function countdownParts(target:string,now=Date.now()) {
   return {days:Math.floor(seconds/86400),hours:Math.floor(seconds%86400/3600),minutes:Math.floor(seconds%3600/60),seconds:seconds%60,complete:end<=now};
 }
 if (typeof document !== 'undefined') {
+  void import('./motion').then(({startInvitationMotion}) => startInvitationMotion());
   void Promise.all([import('./pwa').then(({startPwa})=>startPwa()), import('./sharing')]).then(()=>{
     document.querySelector<HTMLElement>('.invitation-actions')?.removeAttribute('hidden');
   });

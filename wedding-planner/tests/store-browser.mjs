@@ -285,6 +285,7 @@ try {
       'Private unsaved text',
     ),
   );
+  await mkdir('.wedding-qa/session-access', { recursive: true });
   for (const width of [1440, 390]) {
     await pageB.setViewportSize({ width, height: 900 });
     await pageB.screenshot({
@@ -344,7 +345,7 @@ try {
   await pageB.locator('[data-add="decisions"]').waitFor();
   for (const width of [1440, 390]) {
     await pageA.setViewportSize({ width, height: 900 });
-    await pageA.screenshot({ path: `${cwd}/design/countdown-access/auth-access-${width}.png`, fullPage: true });
+    await pageA.screenshot({ path: `.wedding-qa/session-access/auth-access-${width}.png`, fullPage: true });
   }
   // Signing out immediately clears a second open private editor as well.
   await pageA.goto(origin + '/family/#/tasks');

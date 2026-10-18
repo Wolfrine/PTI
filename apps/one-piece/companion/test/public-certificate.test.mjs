@@ -6,6 +6,7 @@ import {EventEmitter} from 'node:events';
 import {PassThrough} from 'node:stream';
 import os from 'node:os';
 import path from 'node:path';
+import {SETUP_POWERSHELL} from '../src/runtime/setup.mjs';
 import {certificatePaths,renewalDue,validateCertificatePair,legoArguments,ownsCaddy,deployPair,runLego,restartManagedCaddy,renewPublicCertificate} from '../src/runtime/public-certificate.mjs';
 
 // Generated test identity. This CA and its published leaf key are never trusted by production.
@@ -40,6 +41,13 @@ TLkBJY3Yo1QlBjm1sPwZShgG6beNGPm53pFjIAlA0dVFlrvFC6dk6oYJ
 const HOST='pti-onepiece-home.duckdns.org',leaf=new X509Certificate(CERTIFICATE),NOW=Date.parse(leaf.validFrom)+86400000;
 const validate=(certificate,key,host)=>validateCertificatePair(certificate,key,host,{now:NOW,trustRoots:[ROOT]});
 const configuration=()=>({privateRoot:'H:/PTI-OnePiece/runtime/private',configPath:'H:/PTI-OnePiece/runtime/private/config.json',nodeExecutable:'H:/PTI-OnePiece/tools/node/node.exe',serverEntry:'H:/PTI-OnePiece/releases/'+ 'a'.repeat(40)+'/apps/one-piece/companion/src/server.mjs',tls:{mode:'public-certificate',hostname:HOST,certificatePath:`H:/PTI-OnePiece/runtime/private/public-tls/${HOST}.crt`,privateKeyPath:`H:/PTI-OnePiece/runtime/private/public-tls/${HOST}.key`},caddy:{executable:'H:/PTI-OnePiece/pilot/network/runtime/caddy.exe',configurationPath:'H:/PTI-OnePiece/runtime/private/Caddyfile'}});
+test('renewal task uses the existing setup PowerShell runtime without policy bypass or legacy fallback',async()=>{
+ const script=await readFile(new URL('../scripts/install-certificate-renewal.ps1',import.meta.url),'utf8');
+ const executable=script.match(/\$powershell='([^']+)'/)?.[1];assert.equal(path.win32.normalize(executable),path.win32.normalize(SETUP_POWERSHELL));
+ assert.match(script,/\$shellFile -isnot \[IO\.FileInfo\]/);assert.match(script,/\$shellFile\.Attributes -band \[IO\.FileAttributes\]::ReparsePoint/);
+ assert.match(script,/New-ScheduledTaskAction -Execute \$powershell/);assert.match(script,/-WindowStyle Hidden -File/);
+ assert.equal(/ExecutionPolicy|WindowsPowerShell\\v1\.0/.test(script),false);
+});
 test('renewal paths are limited to the configured DuckDNS identity and protected directory',()=>{
  const config=configuration();assert.equal(certificatePaths(config).root,'H:\\PTI-OnePiece\\runtime\\private\\public-tls');
  for(const mutate of [x=>x.tls.hostname='someone-else.duckdns.org',x=>x.tls.certificatePath='H:/PTI-OnePiece/runtime/public/example.crt',x=>x.tls.privateKeyPath='C:/outside.key',x=>x.tls.mode='household-ca']){const sample=configuration();mutate(sample);assert.throws(()=>certificatePaths(sample));}

@@ -9,6 +9,10 @@ try {
  if($release -notmatch '^H:\\PTI-OnePiece\\releases\\[a-f0-9]{40}$'){throw 'active-release-required'}
  $entry=Join-Path $release 'apps\one-piece\companion\scripts\renew-public-certificate.mjs'
  if(-not (Test-Path -LiteralPath $entry -PathType Leaf)){throw 'renewal-script-missing'}
+ # Match SETUP_POWERSHELL: this existing runtime supports the configured script policy.
+ $powershell='C:\Users\Sachit Tewary\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe'
+ $shellFile=Get-Item -LiteralPath $powershell -Force
+ if($shellFile -isnot [IO.FileInfo] -or ($shellFile.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'renewal-powershell-required'}
  $taskName='PTI-OnePiece-CertificateRenewal'
  # The wrapper resolves the protected CURRENT config on each run; future releases do not leave a stale script path.
  $wrapper=Join-Path $root 'renew-public-certificate.ps1'
@@ -27,7 +31,6 @@ try {
  if($CheckOnly){[ordered]@{checked=$true;taskName=$taskName;scriptPresent=$true;dailyLocalTime='04:00';windowsPasswordStored=$false}|ConvertTo-Json -Compress;exit 0}
  if((Get-Item -LiteralPath $root).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'private-directory'}
  [IO.File]::WriteAllText($wrapper,$body,[Text.UTF8Encoding]::new($false))
- $powershell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
  $arguments='-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -File "'+$wrapper+'"'
  $action=New-ScheduledTaskAction -Execute $powershell -Argument $arguments -WorkingDirectory $root
  $trigger=New-ScheduledTaskTrigger -Daily -At '04:00'

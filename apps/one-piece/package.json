@@ -6,7 +6,7 @@
   "engines": { "node": ">=22.12.0" },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/integration.test.mjs tests/auth-return.test.mjs web/src/frontend.test.mjs",
+    "test": "node --test tests/integration.test.mjs tests/auth-return.test.mjs tests/artwork.test.mjs tests/theme.test.mjs web/src/frontend.test.mjs",
     "test:rules": "node --test tests/rules.test.mjs",
     "test:emulator": "node scripts/test-emulator.mjs"
   },

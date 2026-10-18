@@ -6,11 +6,13 @@ import { LocalPlayer } from './player.mjs';
 import { handleWatchKeyboard } from './keyboard.mjs';
 import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identity.mjs';
 import { disconnectBeforeSignOut } from './signout.mjs';
+import { applyTheme, readTheme } from './theme.mjs';
+import { withArtwork } from './artwork.mjs';
 import { page, rows, dialogContent, button, iconButton, ready, connectionLabel, loginUrl } from './views.mjs';
 const store={get:(key,fallback)=>{try{const raw=localStorage.getItem(key);return raw&&raw.length<1048576?JSON.parse(raw):fallback;}catch{return fallback;}},set:(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}}};
 const deviceId=store.get('one-piece-device',null)??crypto.randomUUID();store.set('one-piece-device',deviceId);
 
-export function startApp(options={}){const app=new ViewingApp();if(__DEV__&&options.fixture){app.fixture=options.fixture;app.request=options.fixture.request;app.s={...app.s,...options.fixture.initial,fixture:true};app.render();void options.fixture.start?.(app);}else void app.start();return app;}
+export function startApp(options={}){const app=new ViewingApp();if(__DEV__&&options.fixture){app.fixture=options.fixture;app.request=options.fixture.request;app.s={...app.s,...options.fixture.initial,fixture:true};app.s.catalog=withArtwork(app.s.catalog);app.render();void options.fixture.start?.(app);}else void app.start();return app;}
 class ViewingApp {
  constructor(){
   this.root=document.querySelector('#app');this.accountGeneration=0;this.player=null;this.loadedKey=null;this.delivery=null;this.eventQueue=[];this.sending=false;this.polling=false;this.loading=false;this.lastHeartbeat=0;this.pendingPosition=null;
@@ -21,6 +23,7 @@ class ViewingApp {
   this.root.addEventListener('submit',e=>void this.submit(e));
   this.root.addEventListener('change',e=>{const account=this.account();void this.change(e).catch(()=>{if(this.current(account))this.failure();});});
   this.root.addEventListener('input',e=>{if(e.target.id==='episode-search'){this.s.query=e.target.value;this.renderRows();}});
+  this.root.addEventListener('error',e=>{if(e.target instanceof HTMLImageElement){e.target.hidden=true;e.target.closest('.episode-art,.hero-art,.remote-art')?.classList.add('art-unavailable');}},true);
   document.addEventListener('keydown',e=>this.keyboard(e));
   window.addEventListener('online',()=>{void this.connect();void this.flush();});
   window.addEventListener('offline',()=>{this.s.network='offline';this.s.notice='You are offline. Your place is saved on this device.';this.patch();});
@@ -30,7 +33,7 @@ class ViewingApp {
  }
  async start(){
   this.render();
-  try{const r=await fetch('/one-piece/catalog.json',{cache:'no-cache'});if(!r.ok)throw 0;this.s.catalog=await r.json();}catch{this.s.error=['The library could not load','Reconnect and try again.'];}
+  try{const r=await fetch('/one-piece/catalog.json',{cache:'no-cache'});if(!r.ok)throw 0;this.s.catalog=withArtwork(await r.json());}catch{this.s.error=['The library could not load','Reconnect and try again.'];}
   observeAccount(async user=>{const changed=resetAccountContext(this,user,defaults);this.s.booting=false;if(user&&changed)this.restore();this.render();if(user)await this.connect();});
   this.pollTimer=setInterval(()=>void this.poll(),2000);
   this.renewTimer=setInterval(()=>{if(this.s.lease){const account=this.account();void this.request(`/api/sessions/${this.s.lease.sessionId}/renew`,{}).then(r=>{if(this.current(account))this.mergeLease(r.lease);}).catch(e=>{if(this.current(account))this.runtimeError(e);});}},30000);
@@ -124,7 +127,7 @@ class ViewingApp {
  async disconnect(){if(this.fixture){this.fixture.disconnect(this);return;}const account=this.account();try{this.pendingAutoplay=this.s.session?.cast?.state==='PLAYING';const result=await this.request(`/api/sessions/${this.s.lease.sessionId}/disconnect`,{receiverId:this.s.session?.cast?.receiverId});if(!this.current(account))return;this.mergeLease(result.lease);this.pendingPosition=result.positionSeconds;this.targetId=result.episodeId;this.s.session.cast=null;this.loadedKey=null;this.render();await this.poll();if(this.current(account))await this.loadDelivery();}catch(e){if(this.current(account)){this.s.notice=errorCopy(e.code).join('. ');this.patch();}}}
  runtimeError(e){if(e.code==='identity-changed')return;if(['session-replaced-or-expired','stale-progress-authority'].includes(e.code)){this.player?.pause();this.s.sessionError=errorCopy(e.code);this.s.lease=null;this.render();}else{this.s.network='offline';this.s.notice='The home connection was interrupted. Your place is saved.';this.patch();}}
  failure(){this.s.notice='That action did not finish. Check your connection and try again.';this.patch();}
- render(){const video=this.player?.video;this.s.hasLocalPlayer=Boolean(this.player);document.body.removeAttribute('data-direction');this.root.innerHTML=`${__DEV__&&this.fixture?`<div class="dev-banner">DEVELOPMENT FIXTURE · ${esc(this.s.designRevision??'')} · ${this.fixture.realMedia?'Real cached video and English captions; synthetic account.':'Synthetic account, progress and device states.'}${this.fixture.realMedia?'<div class="dev-media-controls"><button data-action="dev-dialogue">Dialogue at 10:00</button><button data-action="dev-play-pause">Play / pause</button><button data-action="dev-source" data-number="1000">Source 1 · 1000</button><button data-action="dev-source" data-number="1001">Source 2 · 1001</button></div>':''}</div>`:''}${page(this.s)}`;
+ render(){this.s.theme=applyTheme(readTheme());const video=this.player?.video;this.s.hasLocalPlayer=Boolean(this.player);document.body.removeAttribute('data-direction');this.root.innerHTML=`${__DEV__&&this.fixture?`<div class="dev-banner">DEVELOPMENT FIXTURE · ${esc(this.s.designRevision??'')} · ${this.fixture.realMedia?'Real cached video and English captions; synthetic account.':'Synthetic account, progress and device states.'}${this.fixture.realMedia?'<div class="dev-media-controls"><button data-action="dev-dialogue">Dialogue at 10:00</button><button data-action="dev-play-pause">Play / pause</button><button data-action="dev-source" data-number="1000">Source 1 · 1000</button><button data-action="dev-source" data-number="1001">Source 2 · 1001</button></div>':''}</div>`:''}${page(this.s)}`;
   if(video&&this.s.route==='watch'&&this.s.lease?.destination!=='cast'&&ready(this.s.session)){const target=this.root.querySelector('#episode-video');if(target)target.replaceWith(video);}this.renderRows();this.patch();if(this.s.dialog)this.dialog();}
  renderRows(){const target=this.root.querySelector('#episode-results');if(target)target.innerHTML=rows(this.s);const search=this.root.querySelector('#episode-search'),label=this.root.querySelector('.search .sr-only');if(search)search.placeholder=this.s.profile.showTitles?'Find episode or title':'Find episode number';if(label)label.textContent=`Find an episode number${this.s.profile.showTitles?' or verified title':''}`;for(const el of this.root.querySelectorAll('.range-select,.range-paging'))el.hidden=Boolean(this.s.query);const clear=this.root.querySelector('#clear-search');if(clear)clear.hidden=!this.s.query;this.root.querySelector('.browse-tools')?.classList.toggle('searching',Boolean(this.s.query));}
  patch(){
@@ -146,6 +149,8 @@ class ViewingApp {
  closeDialog(){this.s.dialog=null;this.s.dialogError=null;this.root.querySelector('dialog')?.close();}
  async click(event){const t=event.target.closest('[data-action]');if(!t||t.disabled)return;const account=this.account(),a=t.dataset.action,n=Number(t.dataset.number),s=this.s;
   if(!this.current(account))return;
+  if(a==='toggle-theme'){s.theme=applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');return;}
+  if(a==='browse-episodes'){this.root.querySelector('#catalogue-title')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});this.root.querySelector('#episode-search')?.focus({preventScroll:true});return;}
   if(a==='close-dialog'){this.closeDialog();return;}if(a==='dismiss-notice'){s.notice='';this.patch();return;}
   if(__DEV__&&this.fixture?.realMedia){if(a==='dev-dialogue'){this.player?.seek(600);return;}if(a==='dev-play-pause'){if(this.player?.video.paused)await this.player.play();else this.player?.pause();return;}if(a==='dev-source'){await this.open(n);return;}}
   if(a==='library'){this.player?.pause();this.closeDialog();s.route='library';this.render();window.scrollTo({top:store.get(this.key('library-scroll'),0)});return;}
@@ -185,7 +190,7 @@ class ViewingApp {
   if(!this.current(account))return;
   if(id==='episode-range'){s.range=Number(el.value);s.query='';store.set(this.key('range'),s.range);this.render();return;}
   if(id==='autoplay'||id==='account-autoplay'){await this.preference({autoplay:el.checked});return;}
-  if(id==='show-titles'){await this.preference({showTitles:el.checked});if(this.current(account))this.renderRows();return;}
+  if(id==='show-titles'||id==='account-show-titles'){await this.preference({showTitles:el.checked});if(this.current(account))this.render();return;}
   if(id==='subtitle-choice'){if(s.lease?.destination==='cast'&&!await this.command('subtitles',el.value!=='off'))return;if(!this.current(account))return;await this.preference({subtitleLanguage:el.value});if(!this.current(account))return;this.player?.subtitles(el.value!=='off');this.patch();return;}
   if(id==='audio-track'){const index=Number(el.value),track=s.session.playback.tracks.find(t=>t.index===index);this.closeDialog();await this.preference({audioLanguage:['eng','en'].includes(track?.language)?'en':'ja'});if(this.current(account))await this.open(s.session.episodeNumber,{audioIndex:index});return;}
   if(id==='remote-seek'){await this.command('seek',Math.min(Number(el.value),s.session.cast.durationSeconds-.1));return;}if(id==='remote-volume'){await this.command('volume',Number(el.value));return;}if(id==='remote-subtitles'){await this.command('subtitles',el.checked);if(this.current(account))await this.preference({subtitleLanguage:el.checked?'en':'off'});}

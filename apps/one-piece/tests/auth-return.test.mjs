@@ -6,6 +6,30 @@ const source = await readFile(new URL('../../../pti-app/src/app/services/login-r
 const { code } = await transform(source, { loader: 'ts', format: 'esm' });
 const { safeLoginReturn, navigateAfterLogin, onePieceEntry } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
+test('the actual PWA sign-in link resolves to PTI login and preserves the bookmarked episode', async () => {
+  const routesSource = await readFile(new URL('../../../pti-app/src/app/app.routes.ts', import.meta.url), 'utf8');
+  // Evaluate the owning route table with inert component identities; no Firebase or production auth bypass.
+  const names = [...routesSource.matchAll(/^import \{ (\w+) \} from '\.\/[^']+';/gm)].map(match => match[1]);
+  const routeCode = await transform(names.map(name => `const ${name}=Symbol('${name}');`).join('\n') + '\n' + routesSource.replace(/^import .*;\r?\n/gm, ''), { loader: 'ts', format: 'esm' });
+  const { routes } = await import(`data:text/javascript;base64,${Buffer.from(routeCode.code).toString('base64')}`);
+  const { loginUrl } = await import('../web/src/views.mjs');
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'location');
+  try {
+    const bookmark = '/one-piece/watch?episode=one-piece-1001&from=continue#player';
+    const url = new URL(bookmark, 'https://pti.invalid');
+    Object.defineProperty(globalThis, 'location', { configurable: true, value: { pathname: url.pathname, search: url.search, hash: url.hash } });
+    const signIn = new URL(loginUrl(), url.origin);
+    const matched = routes.find(route => '/' + route.path === signIn.pathname);
+    assert.ok(matched, 'the generated sign-in path must exist in the actual PTI route table');
+    assert.equal(matched.component, routes.find(route => route.path === '').component);
+    assert.equal(signIn.searchParams.get('redirect'), bookmark);
+    assert.deepEqual(safeLoginReturn(signIn.searchParams.get('redirect')), { path: bookmark, fullPage: true });
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'location', previous);
+    else delete globalThis.location;
+  }
+});
+
 test('all existing PTI login routes preserve query strings and use Angular navigation', () => {
   for (const route of ['/home','/dashboard','/new-dashboard','/domains','/domains/domain-1','/activities','/codex-command','/codex-command/projects/project-1?tab=notes#recent']) {
     assert.deepEqual(safeLoginReturn(route), { path: route, fullPage: false });

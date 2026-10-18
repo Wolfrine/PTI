@@ -13,7 +13,13 @@ const release=await get(`${base}/projects/${project}/releases/cloud.firestore`);
 const ruleset=await get(`${base}/${release.rulesetName}`);
 const files=ruleset.source?.files;if(files?.length!==1)throw new Error('Unexpected multi-file rules; review required');
 const sourceHash=createHash('sha256').update(files[0].content).digest('hex');
+// Retain the actual complete-site Hosting predecessor for a Hosting-only rollback.
+// Omit deployer identity and all configuration; this remains a read-only preflight.
+const channel=await get(`https://firebasehosting.googleapis.com/v1beta1/projects/${project}/sites/${project}/channels/live`);
+const hostingRelease={name:channel.release?.name??null,versionName:channel.release?.version?.name??null,releaseTime:channel.release?.releaseTime??null};
+if(typeof hostingRelease.versionName!=='string'||!new RegExp(`^(?:projects/[A-Za-z0-9-]+/)?sites/${project}/versions/[A-Za-z0-9-]+$`).test(hostingRelease.versionName))throw new Error('No verified default Hosting predecessor');
 const report={kind:'read-only-one-piece-rules-preflight',project,checkedAt:new Date().toISOString(),rulesetName:release.rulesetName,sourceHash,
+ hostingRelease,
  matchesReviewedBase:sourceHash==='4dadb9232ddfa27ca6f09bae844adb8cff3d3a4854a6d034a9f221d1d1525c0b',
  databaseDataRead:false,writesPerformed:false};
 console.log(JSON.stringify(report,null,2));

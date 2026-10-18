@@ -1,0 +1,6 @@
+# Preserve the exact bytes used by the frozen rendered One Piece candidate.
+# These existing files use CRLF; checkout normalization must not change their
+# development-fixture binding or introduce an unreviewed source-byte variant.
+/apps/one-piece/web/src/fixture.mjs -text
+/apps/one-piece/web/src/layout.css -text
+/apps/one-piece/web/src/views.mjs -text

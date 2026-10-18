@@ -1,0 +1,282 @@
+{"Protocol":1,"Id":"3136857ba127549d78047f94b8b83f94","Path":"https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20%2801-1000%29%20%5B720p%5D%20%28Batch%29/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv","EncoderPath":null,"EncoderProtocol":null,"Type":0,"Container":"mkv","Size":204,"Name":"One Piece - 0001","IsRemote":true,"ETag":"a72e92e90de9dc2b6b79b17f71642e0a","RunTimeTicks":15001250000,"ReadAtNativeFramerate":false,"IgnoreDts":false,"IgnoreIndex":false,"GenPtsInput":false,"SupportsTranscoding":true,"SupportsDirectStream":true,"SupportsDirectPlay":true,"IsInfiniteStream":false,"UseMostCompatibleTranscodingProfile":false,"RequiresOpening":false,"OpenToken":null,"RequiresClosing":false,"LiveStreamId":null,"BufferMs":null,"RequiresLooping":false,"SupportsProbing":true,"VideoType":0,"IsoType":null,"Video3DFormat":null,"MediaStreams":[{"Codec":"h264","CodecTag":null,"Language":null,"ColorRange":null,"ColorSpace":null,"ColorTransfer":null,"ColorPrimaries":null,"DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":null,"Hdr10PlusPresentFlag":null,"VideoRange":1,"VideoRangeType":1,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":null,"LocalizedDefault":null,"LocalizedForced":null,"LocalizedExternal":null,"LocalizedHearingImpaired":null,"LocalizedLanguage":null,"LocalizedOriginal":null,"DisplayTitle":"720p H264 SDR","NalLengthSize":"4","IsInterlaced":false,"IsAVC":true,"ChannelLayout":null,"BitRate":1773272,"BitDepth":8,"RefFrames":null,"PacketLength":null,"Channels":null,"SampleRate":null,"IsDefault":true,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":720,"Width":1280,"AverageFrameRate":23.976,"RealFrameRate":23.976,"ReferenceFrameRate":23.976,"Profile":"High","Type":1,"AspectRatio":"16:9","Index":0,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":false,"SupportsExternalStream":false,"Path":null,"PixelFormat":"yuv420p","Level":40,"IsAnamorphic":false},{"Codec":"aac","CodecTag":null,"Language":"jpn","ColorRange":null,"ColorSpace":null,"ColorTransfer":null,"ColorPrimaries":null,"DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":null,"Hdr10PlusPresentFlag":null,"VideoRange":0,"VideoRangeType":0,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":null,"LocalizedDefault":"Default","LocalizedForced":null,"LocalizedExternal":"External","LocalizedHearingImpaired":null,"LocalizedLanguage":"Japanese","LocalizedOriginal":"Original","DisplayTitle":"Japanese - AAC - Stereo - Default","NalLengthSize":null,"IsInterlaced":false,"IsAVC":null,"ChannelLayout":"stereo","BitRate":128000,"BitDepth":null,"RefFrames":null,"PacketLength":null,"Channels":2,"SampleRate":44100,"IsDefault":true,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":null,"Width":null,"AverageFrameRate":null,"RealFrameRate":null,"ReferenceFrameRate":null,"Profile":"LC","Type":0,"AspectRatio":null,"Index":1,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":false,"SupportsExternalStream":false,"Path":null,"PixelFormat":null,"Level":null,"IsAnamorphic":null},{"Codec":"ass","CodecTag":null,"Language":"eng","ColorRange":null,"ColorSpace":null,"ColorTransfer":null,"ColorPrimaries":null,"DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":null,"Hdr10PlusPresentFlag":null,"VideoRange":0,"VideoRangeType":0,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":"Undefined","LocalizedDefault":"Default","LocalizedForced":"Forced","LocalizedExternal":"External","LocalizedHearingImpaired":"Hearing Impaired","LocalizedLanguage":"English","LocalizedOriginal":null,"DisplayTitle":"English - Default - ASS","NalLengthSize":null,"IsInterlaced":false,"IsAVC":null,"ChannelLayout":null,"BitRate":null,"BitDepth":null,"RefFrames":null,"PacketLength":null,"Channels":null,"SampleRate":null,"IsDefault":true,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":null,"Width":null,"AverageFrameRate":null,"RealFrameRate":null,"ReferenceFrameRate":null,"Profile":null,"Type":2,"AspectRatio":null,"Index":2,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":true,"SupportsExternalStream":true,"Path":null,"PixelFormat":null,"Level":null,"IsAnamorphic":null}],"MediaAttachments":[{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":3,"FileName":"OpenSans-Semibold.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null}],"Formats":[],"Bitrate":1904733,"FallbackMaxStreamingBitrate":null,"Timestamp":null,"RequiredHttpHeaders":{},"TranscodingUrl":null,"TranscodingSubProtocol":0,"TranscodingContainer":null,"AnalyzeDurationMs":null,"DefaultAudioStreamIndex":null,"DefaultSubtitleStreamIndex":null,"HasSegments":false}
+
+H:\PTI-OnePiece\pilot\jellyfin\runtime\jellyfin\ffmpeg.exe -analyzeduration 200M -probesize 1G -fflags +genpts  -i "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20%2801-1000%29%20%5B720p%5D%20%28Batch%29/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv" -map_metadata -1 -map_chapters -1 -threads 0 -map 0:0 -map 0:1 -map -0:s -codec:v:0 copy -bsf:v h264_mp4toannexb -start_at_zero -codec:a:0 copy -copyts -avoid_negative_ts disabled -max_muxing_queue_size 2048 -f hls -max_delay 5000000 -hls_time 3 -hls_segment_type mpegts -start_number 0 -hls_segment_filename "H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018%d.ts" -hls_playlist_type vod -hls_list_size 0 -y "H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018.m3u8"
+
+
+ffmpeg version 8.1.3-Jellyfin Copyright (c) 2000-2026 the FFmpeg developers
+  built with clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)
+  configuration: --cc=clang --cxx=clang++ --pkg-config-flags=--static --extra-cflags=-I/clang64/ffbuild/include --extra-ldflags=-L/clang64/ffbuild/lib --prefix=/clang64/ffbuild/jellyfin-ffmpeg --extra-version=Jellyfin --disable-unstable --disable-ffplay --disable-debug --disable-doc --disable-sdl2 --enable-lto=thin --enable-gpl --enable-version3 --enable-schannel --enable-iconv --enable-libxml2 --enable-zlib --enable-lzma --enable-gmp --enable-chromaprint --enable-libfreetype --enable-libfribidi --enable-libfontconfig --enable-libharfbuzz --enable-libass --enable-libbluray --enable-libmp3lame --enable-libopus --enable-libtheora --enable-libvorbis --enable-libopenmpt --enable-libwebp --enable-libvpx --enable-libzimg --enable-libx264 --enable-libx265 --enable-libsvtav1 --enable-libdav1d --enable-libfdk-aac --enable-libshaderc --enable-libplacebo --enable-vulkan --enable-opencl --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-mediafoundation --enable-amf --enable-libvpl --enable-ffnvcodec --enable-cuda --enable-cuda-llvm --enable-cuvid --enable-nvdec --enable-nvenc
+  libavutil      60. 26.103 / 60. 26.103
+  libavcodec     62. 28.103 / 62. 28.103
+  libavformat    62. 12.103 / 62. 12.103
+  libavdevice    62.  3.103 / 62.  3.103
+  libavfilter    11. 14.103 / 11. 14.103
+  libswscale      9.  5.103 /  9.  5.103
+  libswresample   6.  3.103 /  6.  3.103
+Input #0, matroska,webm, from 'https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20%2801-1000%29%20%5B720p%5D%20%28Batch%29/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv':
+  Metadata:
+    encoder         : no_variable_data
+    creation_time   : 1970-01-01T00:00:00.000000Z
+  Duration: 00:25:00.13, start: 0.000000, bitrate: 1904 kb/s
+  Stream #0:0: Video: h264 (High), yuv420p(progressive), 1280x720 [SAR 1:1 DAR 16:9], 23.98 fps, 23.98 tbr, 1k tbn (default)
+    Metadata:
+      BPS             : 1773272
+      BPS-eng         : 1773272
+      DURATION        : 00:25:00.042000000
+      DURATION-eng    : 00:25:00.042000000
+      NUMBER_OF_FRAMES: 35965
+      NUMBER_OF_FRAMES-eng: 35965
+      NUMBER_OF_BYTES : 332497815
+      NUMBER_OF_BYTES-eng: 332497815
+      _STATISTICS_WRITING_APP: no_variable_data
+      _STATISTICS_WRITING_APP-eng: no_variable_data
+      _STATISTICS_WRITING_DATE_UTC: 1970-01-01 00:00:00
+      _STATISTICS_WRITING_DATE_UTC-eng: 1970-01-01 00:00:00
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+      _STATISTICS_TAGS-eng: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:1(jpn): Audio: aac (LC), 44100 Hz, stereo, fltp (default)
+    Metadata:
+      BPS             : 128000
+      BPS-eng         : 128000
+      DURATION        : 00:25:00.125000000
+      DURATION-eng    : 00:25:00.125000000
+      NUMBER_OF_FRAMES: 64605
+      NUMBER_OF_FRAMES-eng: 64605
+      NUMBER_OF_BYTES : 24002002
+      NUMBER_OF_BYTES-eng: 24002002
+      _STATISTICS_WRITING_APP: no_variable_data
+      _STATISTICS_WRITING_APP-eng: no_variable_data
+      _STATISTICS_WRITING_DATE_UTC: 1970-01-01 00:00:00
+      _STATISTICS_WRITING_DATE_UTC-eng: 1970-01-01 00:00:00
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+      _STATISTICS_TAGS-eng: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:2(eng): Subtitle: ass (ssa) (default)
+    Metadata:
+      BPS             : 101
+      BPS-eng         : 101
+      DURATION        : 00:24:31.970000000
+      DURATION-eng    : 00:24:31.970000000
+      NUMBER_OF_FRAMES: 302
+      NUMBER_OF_FRAMES-eng: 302
+      NUMBER_OF_BYTES : 18739
+      NUMBER_OF_BYTES-eng: 18739
+      _STATISTICS_WRITING_APP: no_variable_data
+      _STATISTICS_WRITING_APP-eng: no_variable_data
+      _STATISTICS_WRITING_DATE_UTC: 1970-01-01 00:00:00
+      _STATISTICS_WRITING_DATE_UTC-eng: 1970-01-01 00:00:00
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+      _STATISTICS_TAGS-eng: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:3: Attachment: ttf
+    Metadata:
+      filename        : OpenSans-Semibold.ttf
+      mimetype        : application/x-truetype-font
+Stream mapping:
+  Stream #0:0 -> #0:0 (copy)
+  Stream #0:1 -> #0:1 (copy)
+Output #0, hls, to 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018.m3u8':
+  Metadata:
+    encoder         : Lavf62.12.103
+  Stream #0:0: Video: h264 (High), yuv420p(progressive), 1280x720 [SAR 1:1 DAR 16:9], q=2-31, 23.98 fps, 23.98 tbr, 90k tbn (default)
+  Stream #0:1: Audio: aac (LC), 44100 Hz, stereo, fltp (default)
+Press [q] to stop, [?] for help
+frame=   82 fps=0.0 q=-1.0 size=N/A time=00:00:00.00 bitrate=N/A speed=   0x elapsed=0:00:00.49    
+frame=  120 fps=120 q=-1.0 size=N/A time=00:00:01.58 bitrate=N/A speed=1.58x elapsed=0:00:01.00    
+frame=  208 fps=137 q=-1.0 size=N/A time=00:00:05.25 bitrate=N/A speed=3.47x elapsed=0:00:01.51    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530180.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530181.ts' for writing
+frame=  551 fps=272 q=-1.0 size=N/A time=00:00:19.56 bitrate=N/A speed=9.67x elapsed=0:00:02.02    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530182.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530183.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530184.ts' for writing
+frame= 1024 fps=405 q=-1.0 size=N/A time=00:00:39.28 bitrate=N/A speed=15.5x elapsed=0:00:02.52    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530185.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530186.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530187.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530188.ts' for writing
+frame= 1238 fps=408 q=-1.0 size=N/A time=00:00:48.21 bitrate=N/A speed=15.9x elapsed=0:00:03.03    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed367530189.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301810.ts' for writing
+frame= 1426 fps=403 q=-1.0 size=N/A time=00:00:56.05 bitrate=N/A speed=15.8x elapsed=0:00:03.53    
+frame= 1490 fps=368 q=-1.0 size=N/A time=00:00:58.72 bitrate=N/A speed=14.5x elapsed=0:00:04.04    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301811.ts' for writing
+frame= 1559 fps=343 q=-1.0 size=N/A time=00:01:01.60 bitrate=N/A speed=13.5x elapsed=0:00:04.54    
+frame= 1625 fps=322 q=-1.0 size=N/A time=00:01:04.35 bitrate=N/A speed=12.7x elapsed=0:00:05.05    
+frame= 1671 fps=301 q=-1.0 size=N/A time=00:01:06.27 bitrate=N/A speed=11.9x elapsed=0:00:05.56    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301812.ts' for writing
+frame= 1746 fps=288 q=-1.0 size=N/A time=00:01:09.40 bitrate=N/A speed=11.4x elapsed=0:00:06.06    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301813.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301814.ts' for writing
+frame= 2020 fps=307 q=-1.0 size=N/A time=00:01:20.83 bitrate=N/A speed=12.3x elapsed=0:00:06.57    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301815.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301816.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301817.ts' for writing
+frame= 2247 fps=317 q=-1.0 size=N/A time=00:01:30.29 bitrate=N/A speed=12.8x elapsed=0:00:07.08    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301818.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301819.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301820.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301821.ts' for writing
+frame= 2518 fps=332 q=-1.0 size=N/A time=00:01:41.60 bitrate=N/A speed=13.4x elapsed=0:00:07.58    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301822.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301823.ts' for writing
+frame= 2839 fps=351 q=-1.0 size=N/A time=00:01:54.99 bitrate=N/A speed=14.2x elapsed=0:00:08.08    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301824.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301825.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301826.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301827.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301828.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301829.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301830.ts' for writing
+frame= 3305 fps=384 q=-1.0 size=N/A time=00:02:14.42 bitrate=N/A speed=15.6x elapsed=0:00:08.59    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301831.ts' for writing
+frame= 3643 fps=399 q=-1.0 size=N/A time=00:02:28.52 bitrate=N/A speed=16.3x elapsed=0:00:09.11    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301832.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301833.ts' for writing
+frame= 4120 fps=428 q=-1.0 size=N/A time=00:02:48.41 bitrate=N/A speed=17.5x elapsed=0:00:09.62    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301834.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301835.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301836.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301837.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301838.ts' for writing
+frame= 4586 fps=452 q=-1.0 size=N/A time=00:03:07.85 bitrate=N/A speed=18.5x elapsed=0:00:10.13    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301839.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301840.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301841.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301842.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301843.ts' for writing
+frame= 5283 fps=496 q=-1.0 size=N/A time=00:03:36.92 bitrate=N/A speed=20.4x elapsed=0:00:10.65    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301844.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301845.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301846.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301847.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301848.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301849.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301850.ts' for writing
+frame= 5661 fps=507 q=-1.0 size=N/A time=00:03:52.69 bitrate=N/A speed=20.8x elapsed=0:00:11.16    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301851.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301852.ts' for writing
+frame= 5953 fps=510 q=-1.0 size=N/A time=00:04:04.87 bitrate=N/A speed=  21x elapsed=0:00:11.66    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301853.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301854.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301855.ts' for writing
+frame= 6117 fps=503 q=-1.0 size=N/A time=00:04:11.71 bitrate=N/A speed=20.7x elapsed=0:00:12.16    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301856.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301857.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301858.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301859.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301860.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301861.ts' for writing
+frame= 6536 fps=515 q=-1.0 size=N/A time=00:04:29.18 bitrate=N/A speed=21.2x elapsed=0:00:12.67    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301862.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301863.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301864.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301865.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301866.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301867.ts' for writing
+frame= 6888 fps=522 q=-1.0 size=N/A time=00:04:43.86 bitrate=N/A speed=21.5x elapsed=0:00:13.18    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301868.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301869.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301870.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301871.ts' for writing
+frame= 7405 fps=541 q=-1.0 size=N/A time=00:05:05.43 bitrate=N/A speed=22.3x elapsed=0:00:13.69    
+frame= 7566 fps=533 q=-1.0 size=N/A time=00:05:12.14 bitrate=N/A speed=  22x elapsed=0:00:14.20    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301872.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301873.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301874.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301875.ts' for writing
+frame= 7846 fps=533 q=-1.0 size=N/A time=00:05:23.82 bitrate=N/A speed=  22x elapsed=0:00:14.72    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301876.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301877.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301878.ts' for writing
+frame= 8166 fps=536 q=-1.0 size=N/A time=00:05:37.17 bitrate=N/A speed=22.1x elapsed=0:00:15.23    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301879.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301880.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301881.ts' for writing
+frame= 8387 fps=533 q=-1.0 size=N/A time=00:05:46.38 bitrate=N/A speed=  22x elapsed=0:00:15.73    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301882.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301883.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301884.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301885.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301886.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301887.ts' for writing
+frame= 8658 fps=533 q=-1.0 size=N/A time=00:05:57.69 bitrate=N/A speed=  22x elapsed=0:00:16.23    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301888.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301889.ts' for writing
+frame= 8923 fps=533 q=-1.0 size=N/A time=00:06:08.74 bitrate=N/A speed=  22x elapsed=0:00:16.74    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301890.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301891.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301892.ts' for writing
+frame= 9150 fps=530 q=-1.0 size=N/A time=00:06:18.33 bitrate=N/A speed=21.9x elapsed=0:00:17.25    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301893.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301894.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301895.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301896.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301897.ts' for writing
+frame= 9468 fps=533 q=-1.0 size=N/A time=00:06:31.47 bitrate=N/A speed=  22x elapsed=0:00:17.75    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301898.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed3675301899.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018100.ts' for writing
+frame= 9859 fps=540 q=-1.0 size=N/A time=00:06:47.78 bitrate=N/A speed=22.3x elapsed=0:00:18.26    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018101.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018102.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018103.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018104.ts' for writing
+frame=10294 fps=548 q=-1.0 size=N/A time=00:07:05.92 bitrate=N/A speed=22.7x elapsed=0:00:18.77    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018105.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018106.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018107.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018108.ts' for writing
+frame=10763 fps=558 q=-1.0 size=N/A time=00:07:25.48 bitrate=N/A speed=23.1x elapsed=0:00:19.28    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018109.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018110.ts' for writing
+frame=10972 fps=554 q=-1.0 size=N/A time=00:07:34.20 bitrate=N/A speed=22.9x elapsed=0:00:19.79    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018111.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018112.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018113.ts' for writing
+frame=11384 fps=561 q=-1.0 size=N/A time=00:07:51.38 bitrate=N/A speed=23.2x elapsed=0:00:20.30    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018114.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018115.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018116.ts' for writing
+frame=11746 fps=564 q=-1.0 size=N/A time=00:08:06.48 bitrate=N/A speed=23.4x elapsed=0:00:20.81    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018117.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018118.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018119.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018120.ts' for writing
+frame=12085 fps=567 q=-1.0 size=N/A time=00:08:20.62 bitrate=N/A speed=23.5x elapsed=0:00:21.32    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018121.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018122.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018123.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018124.ts' for writing
+frame=12281 fps=563 q=-1.0 size=N/A time=00:08:28.80 bitrate=N/A speed=23.3x elapsed=0:00:21.83    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018125.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018126.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018127.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018128.ts' for writing
+frame=12506 fps=560 q=-1.0 size=N/A time=00:08:38.22 bitrate=N/A speed=23.2x elapsed=0:00:22.34    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018129.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018130.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018131.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018132.ts' for writing
+frame=12794 fps=560 q=-1.0 size=N/A time=00:08:50.19 bitrate=N/A speed=23.2x elapsed=0:00:22.84    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018133.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018134.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018135.ts' for writing
+frame=13024 fps=558 q=-1.0 size=N/A time=00:08:59.79 bitrate=N/A speed=23.1x elapsed=0:00:23.35    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018136.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018137.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018138.ts' for writing
+frame=13216 fps=554 q=-1.0 size=N/A time=00:09:07.79 bitrate=N/A speed=  23x elapsed=0:00:23.85    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018139.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018140.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018141.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018142.ts' for writing
+frame=13393 fps=549 q=-1.0 size=N/A time=00:09:15.18 bitrate=N/A speed=22.8x elapsed=0:00:24.37    
+frame=13580 fps=546 q=-1.0 size=N/A time=00:09:22.98 bitrate=N/A speed=22.6x elapsed=0:00:24.88    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018143.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018144.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018145.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018146.ts' for writing
+frame=13887 fps=547 q=-1.0 size=N/A time=00:09:35.78 bitrate=N/A speed=22.7x elapsed=0:00:25.39    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018147.ts' for writing
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018148.ts' for writing
+frame=14214 fps=549 q=-1.0 size=N/A time=00:09:49.42 bitrate=N/A speed=22.7x elapsed=0:00:25.91    
+[hls @ 000001f6e43e0b00] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\ac863a7933e4f0c30fe4e1ed36753018149.ts' for writing

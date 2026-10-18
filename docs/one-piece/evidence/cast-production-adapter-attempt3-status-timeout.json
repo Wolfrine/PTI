@@ -1,0 +1,267 @@
+{
+  "kind": "production-adapter-real-hls-cast",
+  "startedAt": "2026-10-18T09:28:41.918Z",
+  "identity": "synthetic technical identities in this standalone harness only; production Firebase authentication is NOT verified",
+  "engine": "isolated existing Jellyfin 127.0.0.1:18096",
+  "originalsAllowed": [
+    1,
+    1000,
+    1001
+  ],
+  "newNetworkDownloads": 0,
+  "mediaTransport": "approved LAN HTTP episode-scoped capabilities, mDNS preferred",
+  "controlTransport": "loopback technical fixture; production HTTPS/PWA not verified",
+  "humanVisualVerification": false,
+  "humanJapaneseAudioVerification": false,
+  "subtitleTimingVisuallyVerified": false,
+  "wholeEpisodeViewing": false,
+  "phoneSleepVerified": false,
+  "threeStreamSixtyMinutes": false,
+  "steps": [
+    {
+      "name": "initialize-cached-engine",
+      "ok": true,
+      "elapsedMs": 908,
+      "value": {
+        "version": "12.2.0"
+      }
+    },
+    {
+      "name": "temporary-mdns",
+      "ok": true,
+      "elapsedMs": 2572,
+      "value": {
+        "hostname": "onepiece.local",
+        "address": "192.168.68.105"
+      }
+    },
+    {
+      "name": "discover-without-takeover",
+      "ok": true,
+      "elapsedMs": 6052,
+      "value": [
+        {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "name": "Bedroom TV",
+          "model": "BRAVIA VU31",
+          "owned": false,
+          "busy": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "prepare-full-episode-1000",
+      "ok": true,
+      "elapsedMs": 1651,
+      "value": {
+        "sessionId": "2de26126-3b7f-499d-bb12-0a7228d72f3f",
+        "selected": {
+          "audioIndex": 1,
+          "subtitleIndex": 2,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "durationSeconds": 1430.79,
+        "mode": "compatible-h264"
+      }
+    },
+    {
+      "name": "load-real-hls-and-webvtt",
+      "ok": false,
+      "elapsedMs": 10940,
+      "code": "cast-unavailable"
+    }
+  ],
+  "requests": [
+    {
+      "atMs": 18801,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "38e3830cc8f68c6b",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 1064,
+      "status": 200,
+      "completedAtMs": 18823,
+      "closed": true
+    },
+    {
+      "atMs": 18950,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "d38939fb0154ea0c",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 486776,
+      "status": 200,
+      "completedAtMs": 19011,
+      "closed": true
+    },
+    {
+      "atMs": 19203,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "6a2410f059d6b1a3",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 2921708,
+      "status": 200,
+      "completedAtMs": 19296,
+      "closed": true
+    },
+    {
+      "atMs": 19801,
+      "method": "HEAD",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "6a2410f059d6b1a3",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 0,
+      "status": 200,
+      "completedAtMs": 19842,
+      "closed": true
+    },
+    {
+      "atMs": 20045,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "e0d18f2b5164cfa5",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 3055188,
+      "status": 200,
+      "completedAtMs": 21273,
+      "closed": true
+    },
+    {
+      "atMs": 22069,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "webvtt",
+      "resourceHash": "ae34691a5737d0db",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 14478,
+      "status": 200,
+      "completedAtMs": 22115,
+      "closed": true
+    }
+  ],
+  "states": [],
+  "diagnostics": [
+    {
+      "qaDiagnostic": true,
+      "command": "load",
+      "errorType": "RequestTimeout",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 8,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 207,
+          "function": "execute"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 192,
+          "function": "load"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 138,
+          "function": "refresh"
+        },
+        {
+          "file": "response_handler.py",
+          "line": 54,
+          "function": "wait_response"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "disconnect",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 8,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 215,
+          "function": "execute"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 161,
+          "function": "admitted"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "stage": "node-load",
+      "errorType": "Error",
+      "code": "cast-unavailable",
+      "frames": [
+        {
+          "file": "cast.mjs",
+          "line": 59,
+          "column": 122
+        }
+      ]
+    }
+  ],
+  "cleanup": {
+    "castClosed": true,
+    "listenersClosed": true,
+    "pilotEncodersStopped": true,
+    "temporaryMdnsStopped": true
+  },
+  "receiver": {
+    "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+    "name": "Bedroom TV",
+    "model": "BRAVIA VU31",
+    "owned": false,
+    "busy": false,
+    "available": true
+  },
+  "error": {
+    "code": "cast-unavailable",
+    "name": "Error"
+  },
+  "completedAt": "2026-10-18T09:29:08.288Z",
+  "elapsedMs": 26370,
+  "requestSummary": {
+    "requests": 6,
+    "bytes": 6479214,
+    "receiverRequests": 6,
+    "episodes": {
+      "one-piece-1000": {
+        "playlists": 2,
+        "segments": 3,
+        "subtitles": 1
+      },
+      "one-piece-1001": {
+        "playlists": 0,
+        "segments": 0,
+        "subtitles": 0
+      }
+    }
+  }
+}

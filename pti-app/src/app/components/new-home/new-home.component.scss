@@ -95,7 +95,8 @@
   backdrop-filter: blur(10px);
 }
 
-.home-tile[data-tile='pti-dashboard'] {
+.home-tile[data-tile='pti-dashboard'],
+.home-tile[data-tile='one-piece'] {
   color: #152329;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(230, 241, 238, 0.9)),
@@ -120,7 +121,8 @@
   background: #d2a32c;
 }
 
-.home-tile[data-tile='pti-dashboard'] .tile-icon {
+.home-tile[data-tile='pti-dashboard'] .tile-icon,
+.home-tile[data-tile='one-piece'] .tile-icon {
   color: #ffffff;
   background: #1c6f63;
 }

@@ -1,0 +1,32 @@
+{
+  "label": "hls-seek-600",
+  "seekSeconds": 600.0,
+  "sourceIsVerifiedLocalFile": true,
+  "upstreamMediaBytesDuringPlayback": 0,
+  "renderedOrListened": false,
+  "requests": [
+    {
+      "path": "/videos/53fbc8df-5061-a2b1-f41d-0bfa2f3c77a7/master.m3u8",
+      "bytes": 749,
+      "mime": "application/vnd.apple.mpegurl",
+      "elapsedSeconds": 0.0779999999795109
+    },
+    {
+      "path": "/videos/53fbc8df-5061-a2b1-f41d-0bfa2f3c77a7/main.m3u8",
+      "bytes": 256990,
+      "mime": "application/vnd.apple.mpegurl",
+      "elapsedSeconds": 0.10899999999674037
+    },
+    {
+      "path": "/videos/53fbc8df-5061-a2b1-f41d-0bfa2f3c77a7/hls1/main/150.ts",
+      "bytes": 1540472,
+      "mime": "video/mp2t",
+      "elapsedSeconds": 0.125
+    }
+  ],
+  "playlistSegmentStartSeconds": 596.346,
+  "seconds": 0.125,
+  "outputBytes": 1540472,
+  "sha256": "b23321d902ad5401ab0c773544164ce725cc3939bbefce96fdab0644a0ce3083",
+  "encoderChildrenStopped": true
+}

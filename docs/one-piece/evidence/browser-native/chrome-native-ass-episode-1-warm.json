@@ -1,0 +1,352 @@
+{
+  "kind": "technical-browser-pilot",
+  "mode": "native-original-with-incremental-ASS",
+  "at": "2026-10-18T07:32:12.055Z",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "events": [
+    {
+      "atMs": 1,
+      "event": "begin",
+      "mode": "native-original-with-incremental-ASS",
+      "episode": 1,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+      "source": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+      "sourceBytes": 357167311,
+      "memory": {
+        "usedJSHeap": 4493573,
+        "totalJSHeap": 5935225
+      },
+      "capabilities": {
+        "mp4H264": "probably",
+        "mp4HEVC": "probably",
+        "mkv": "maybe",
+        "webcodecs": true,
+        "isolated": false
+      }
+    },
+    {
+      "atMs": 37,
+      "event": "waiting",
+      "position": 0,
+      "readyState": 0,
+      "dimensions": [
+        0,
+        0
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 39,
+      "event": "loadstart",
+      "position": 0,
+      "readyState": 0,
+      "dimensions": [
+        0,
+        0
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 1044,
+      "event": "loadedmetadata",
+      "position": 0,
+      "readyState": 1,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 1135,
+      "event": "loadeddata",
+      "position": 0,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 1138,
+      "event": "canplay",
+      "position": 0,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 1138,
+      "event": "playing",
+      "position": 0,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 4416,
+      "event": "probe",
+      "ms": 4413,
+      "bytes": 1700047,
+      "streams": [
+        {
+          "ptr": 1487680,
+          "index": 0,
+          "codecpar": 1496768,
+          "codec_type": 0,
+          "codec_id": 27,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": 1500125,
+          "duration": 1500.125,
+          "metadata": {
+            "BPS": "1773272",
+            "BPS-eng": "1773272",
+            "DURATION": "00:25:00.042000000",
+            "DURATION-eng": "00:25:00.042000000",
+            "NUMBER_OF_FRAMES": "35965",
+            "NUMBER_OF_FRAMES-eng": "35965",
+            "NUMBER_OF_BYTES": "332497815",
+            "NUMBER_OF_BYTES-eng": "332497815",
+            "_STATISTICS_WRITING_APP": "no_variable_data",
+            "_STATISTICS_WRITING_APP-eng": "no_variable_data",
+            "_STATISTICS_WRITING_DATE_UTC": "1970-01-01 00:00:00",
+            "_STATISTICS_WRITING_DATE_UTC-eng": "1970-01-01 00:00:00",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES",
+            "_STATISTICS_TAGS-eng": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "h264"
+        },
+        {
+          "ptr": 1489264,
+          "index": 1,
+          "codecpar": 1500144,
+          "codec_type": 1,
+          "codec_id": 86018,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": -9223372036854776000,
+          "duration": -9223372036854776,
+          "metadata": {
+            "language": "jpn",
+            "BPS": "128000",
+            "BPS-eng": "128000",
+            "DURATION": "00:25:00.125000000",
+            "DURATION-eng": "00:25:00.125000000",
+            "NUMBER_OF_FRAMES": "64605",
+            "NUMBER_OF_FRAMES-eng": "64605",
+            "NUMBER_OF_BYTES": "24002002",
+            "NUMBER_OF_BYTES-eng": "24002002",
+            "_STATISTICS_WRITING_APP": "no_variable_data",
+            "_STATISTICS_WRITING_APP-eng": "no_variable_data",
+            "_STATISTICS_WRITING_DATE_UTC": "1970-01-01 00:00:00",
+            "_STATISTICS_WRITING_DATE_UTC-eng": "1970-01-01 00:00:00",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES",
+            "_STATISTICS_TAGS-eng": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "aac"
+        },
+        {
+          "ptr": 1501440,
+          "index": 2,
+          "codecpar": 1502240,
+          "codec_type": 3,
+          "codec_id": 94230,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": 1500125,
+          "duration": 1500.125,
+          "metadata": {
+            "language": "eng",
+            "BPS": "101",
+            "BPS-eng": "101",
+            "DURATION": "00:24:31.970000000",
+            "DURATION-eng": "00:24:31.970000000",
+            "NUMBER_OF_FRAMES": "302",
+            "NUMBER_OF_FRAMES-eng": "302",
+            "NUMBER_OF_BYTES": "18739",
+            "NUMBER_OF_BYTES-eng": "18739",
+            "_STATISTICS_WRITING_APP": "no_variable_data",
+            "_STATISTICS_WRITING_APP-eng": "no_variable_data",
+            "_STATISTICS_WRITING_DATE_UTC": "1970-01-01 00:00:00",
+            "_STATISTICS_WRITING_DATE_UTC-eng": "1970-01-01 00:00:00",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES",
+            "_STATISTICS_TAGS-eng": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "ass"
+        },
+        {
+          "ptr": 1505072,
+          "index": 3,
+          "codecpar": 1505840,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 135011250,
+          "duration": 1500.125,
+          "metadata": {
+            "filename": "OpenSans-Semibold.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        }
+      ],
+      "selected": {
+        "video": 0,
+        "japanese": 1,
+        "fullEnglish": 2
+      }
+    },
+    {
+      "atMs": 17427,
+      "event": "subtitle-window",
+      "start": 0,
+      "lastVideoTime": 20.771,
+      "firstSubtitleTime": 16.73,
+      "subtitleEvents": 3,
+      "ms": 13007,
+      "inputBytes": 4194304
+    },
+    {
+      "atMs": 17713,
+      "event": "native-original-with-ASS-ready",
+      "events": 3,
+      "firstSubtitle": 16.73,
+      "bytes": 5894351,
+      "position": 15.136099,
+      "memory": {
+        "usedJSHeap": 16720679,
+        "totalJSHeap": 18711455
+      }
+    },
+    {
+      "atMs": 77431,
+      "event": "seeking",
+      "position": 0,
+      "readyState": 1,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 77462,
+      "event": "seeking",
+      "position": 15.00125,
+      "readyState": 1,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 77716,
+      "event": "seeked",
+      "position": 15.00125,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 77717,
+      "event": "canplay",
+      "position": 15.00125,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 102096,
+      "event": "playing",
+      "position": 15.017785,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    }
+  ],
+  "inputMetrics": {
+    "bytes": 5894351,
+    "requests": [
+      {
+        "start": 0,
+        "bytes": 1048576,
+        "ms": 3293
+      },
+      {
+        "start": 356515840,
+        "bytes": 651471,
+        "ms": 924
+      },
+      {
+        "start": 1048576,
+        "bytes": 1048576,
+        "ms": 6350
+      },
+      {
+        "start": 2097152,
+        "bytes": 1048576,
+        "ms": 2071
+      },
+      {
+        "start": 3145728,
+        "bytes": 1048576,
+        "ms": 1759
+      },
+      {
+        "start": 4194304,
+        "bytes": 1048576,
+        "ms": 2794
+      }
+    ],
+    "startedAt": "2026-10-18T07:29:44.657Z",
+    "probeMs": 4413
+  },
+  "memory": {
+    "usedJSHeap": 11864193,
+    "totalJSHeap": 12750017
+  },
+  "humanJapaneseAudioVerified": false,
+  "humanEnglishSubtitlesVerified": false,
+  "tvVerified": false
+}

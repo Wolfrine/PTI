@@ -1,0 +1,47 @@
+[
+  {
+    "KeyFile": "onepiece-tls.local.key",
+    "Access": [
+      {
+        "Role": "SYSTEM",
+        "Rights": "FullControl",
+        "Inherited": true
+      },
+      {
+        "Role": "current user",
+        "Rights": "FullControl",
+        "Inherited": true
+      }
+    ]
+  },
+  {
+    "KeyFile": "intermediate.key",
+    "Access": [
+      {
+        "Role": "SYSTEM",
+        "Rights": "FullControl",
+        "Inherited": true
+      },
+      {
+        "Role": "current user",
+        "Rights": "FullControl",
+        "Inherited": true
+      }
+    ]
+  },
+  {
+    "KeyFile": "root.key",
+    "Access": [
+      {
+        "Role": "SYSTEM",
+        "Rights": "FullControl",
+        "Inherited": true
+      },
+      {
+        "Role": "current user",
+        "Rights": "FullControl",
+        "Inherited": true
+      }
+    ]
+  }
+]

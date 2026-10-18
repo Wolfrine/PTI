@@ -1,0 +1,14 @@
+{
+  "name": "pti-one-piece-companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node test/run.mjs"
+  },
+  "dependencies": {
+    "jose": "6.2.12"
+  }
+}

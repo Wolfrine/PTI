@@ -1,0 +1,22 @@
+[
+  {
+    "episode": 1,
+    "mode": "cold",
+    "seconds": 88.14000000001397,
+    "bytes": 29159,
+    "dialogueLines": 302,
+    "sha256": "5ae5167da9a57d478342711356732aeef23f8e8741b7e543f31b5e68fa1559af",
+    "containsAssEvents": true,
+    "listenedOrRendered": false
+  },
+  {
+    "episode": 1,
+    "mode": "warm",
+    "seconds": 8.73499999998603,
+    "bytes": 29159,
+    "dialogueLines": 302,
+    "sha256": "5ae5167da9a57d478342711356732aeef23f8e8741b7e543f31b5e68fa1559af",
+    "containsAssEvents": true,
+    "listenedOrRendered": false
+  }
+]

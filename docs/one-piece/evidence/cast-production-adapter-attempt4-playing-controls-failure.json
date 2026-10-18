@@ -1,0 +1,540 @@
+{
+  "kind": "production-adapter-real-hls-cast",
+  "startedAt": "2026-10-18T09:44:29.980Z",
+  "identity": "synthetic technical identities in this standalone harness only; production Firebase authentication is NOT verified",
+  "engine": "isolated existing Jellyfin 127.0.0.1:18096",
+  "originalsAllowed": [
+    1,
+    1000,
+    1001
+  ],
+  "newNetworkDownloads": 0,
+  "mediaTransport": "approved LAN HTTP episode-scoped capabilities, mDNS preferred",
+  "controlTransport": "loopback technical fixture; production HTTPS/PWA not verified",
+  "humanVisualVerification": false,
+  "humanJapaneseAudioVerification": false,
+  "subtitleTimingVisuallyVerified": false,
+  "wholeEpisodeViewing": false,
+  "phoneSleepVerified": false,
+  "threeStreamSixtyMinutes": false,
+  "steps": [
+    {
+      "name": "initialize-cached-engine",
+      "ok": true,
+      "elapsedMs": 749,
+      "value": {
+        "version": "12.2.0"
+      }
+    },
+    {
+      "name": "temporary-mdns",
+      "ok": true,
+      "elapsedMs": 2563,
+      "value": {
+        "hostname": "onepiece.local",
+        "address": "192.168.68.105"
+      }
+    },
+    {
+      "name": "discover-without-takeover",
+      "ok": true,
+      "elapsedMs": 5859,
+      "value": [
+        {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "name": "Bedroom TV",
+          "model": "BRAVIA VU31",
+          "owned": false,
+          "busy": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "prepare-full-episode-1000",
+      "ok": true,
+      "elapsedMs": 1583,
+      "value": {
+        "sessionId": "04f26d99-e262-4ba2-9067-ad9ce233f120",
+        "selected": {
+          "audioIndex": 1,
+          "subtitleIndex": 2,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "durationSeconds": 1430.79,
+        "mode": "compatible-h264"
+      }
+    },
+    {
+      "name": "load-real-hls-and-webvtt",
+      "ok": true,
+      "elapsedMs": 11309,
+      "value": {
+        "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+        "owned": true,
+        "episodeId": "one-piece-1000",
+        "state": "PLAYING",
+        "positionSeconds": 600.320926,
+        "durationSeconds": 1430.79,
+        "subtitleEnabled": true,
+        "volume": 0.23000000417232513,
+        "muted": false,
+        "idleReason": null
+      }
+    },
+    {
+      "name": "SOURCE1-PLAYING600-HUMAN-HOLD-40S",
+      "ok": true,
+      "elapsedMs": 40006,
+      "value": {
+        "observationWindowSeconds": 40,
+        "telemetry": {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "owned": true,
+          "episodeId": "one-piece-1000",
+          "state": "PLAYING",
+          "positionSeconds": 600.320926,
+          "durationSeconds": 1430.79,
+          "subtitleEnabled": true,
+          "volume": 0.23000000417232513,
+          "muted": false,
+          "idleReason": null
+        },
+        "humanConfirmation": "parent must record any owner reply separately"
+      }
+    },
+    {
+      "name": "source1-pause-play-subtitles-off-on",
+      "ok": false,
+      "elapsedMs": 6,
+      "code": "cast-ownership-lost"
+    }
+  ],
+  "requests": [
+    {
+      "atMs": 16210,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "53265eed1f5337b3",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 1064,
+      "status": 200,
+      "completedAtMs": 16232,
+      "closed": true
+    },
+    {
+      "atMs": 16324,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "7efbe58bd5dd99f9",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 486776,
+      "status": 200,
+      "completedAtMs": 16380,
+      "closed": true
+    },
+    {
+      "atMs": 16565,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "c590bc841eefdc7d",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 2921708,
+      "status": 200,
+      "completedAtMs": 16668,
+      "closed": true
+    },
+    {
+      "atMs": 17171,
+      "method": "HEAD",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "c590bc841eefdc7d",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 0,
+      "status": 200,
+      "completedAtMs": 17209,
+      "closed": true
+    },
+    {
+      "atMs": 17438,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "b39f500ddffa4014",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 3055188,
+      "status": 200,
+      "completedAtMs": 18769,
+      "closed": true
+    },
+    {
+      "atMs": 19618,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "webvtt",
+      "resourceHash": "ae34691a5737d0db",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 14478,
+      "status": 200,
+      "completedAtMs": 19643,
+      "closed": true
+    },
+    {
+      "atMs": 20006,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "237e647081162411",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 1428048,
+      "status": 200,
+      "completedAtMs": 20067,
+      "closed": true
+    },
+    {
+      "atMs": 20781,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "48cfa195dcabf53a",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 2820940,
+      "status": 200,
+      "completedAtMs": 20870,
+      "closed": true
+    },
+    {
+      "atMs": 21280,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "87cac5fc3062bc0b",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 1698204,
+      "status": 200,
+      "completedAtMs": 21331,
+      "closed": true
+    },
+    {
+      "atMs": 22771,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "bc0d2868d96aa979",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 2445316,
+      "status": 200,
+      "completedAtMs": 22850,
+      "closed": true
+    },
+    {
+      "atMs": 26899,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "7181147862cb4788",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 1774344,
+      "status": 200,
+      "completedAtMs": 26958,
+      "closed": true
+    },
+    {
+      "atMs": 28855,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "3a16c4a089db0b1b",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 3192240,
+      "status": 200,
+      "completedAtMs": 28949,
+      "closed": true
+    },
+    {
+      "atMs": 32898,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "50f3e6a39604513e",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 32899,
+      "closed": true
+    },
+    {
+      "atMs": 33178,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "50f3e6a39604513e",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 33179,
+      "closed": true
+    },
+    {
+      "atMs": 33730,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "50f3e6a39604513e",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 33731,
+      "closed": true
+    },
+    {
+      "atMs": 34958,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-segment",
+      "resourceHash": "50f3e6a39604513e",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 34959,
+      "closed": true
+    },
+    {
+      "atMs": 35673,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "a1e3b614d2fa753d",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 35673,
+      "closed": true
+    },
+    {
+      "atMs": 36332,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "a1e3b614d2fa753d",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 36333,
+      "closed": true
+    },
+    {
+      "atMs": 36950,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "a1e3b614d2fa753d",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 36950,
+      "closed": true
+    },
+    {
+      "atMs": 38116,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "hls-playlist",
+      "resourceHash": "a1e3b614d2fa753d",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 38116,
+      "closed": true
+    }
+  ],
+  "states": [
+    {
+      "atMs": 22081,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 600.320926,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 23039,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 601.063151,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 23548,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 601.474252,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 24011,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 602.041364,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 25036,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 603.055418,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 26048,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 604.066444,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 27100,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 605.127205,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 28015,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 606.064735,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 29182,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 607.098625,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 29997,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": false,
+      "state": "DISCONNECTED",
+      "error": "cast-ownership-lost"
+    }
+  ],
+  "diagnostics": [],
+  "cleanup": {
+    "castClosed": true,
+    "listenersClosed": true,
+    "pilotEncodersStopped": true,
+    "temporaryMdnsStopped": true
+  },
+  "receiver": {
+    "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+    "name": "Bedroom TV",
+    "model": "BRAVIA VU31",
+    "owned": false,
+    "busy": false,
+    "available": true
+  },
+  "error": {
+    "code": "cast-ownership-lost",
+    "name": "Error"
+  },
+  "completedAt": "2026-10-18T09:45:39.562Z",
+  "elapsedMs": 69582,
+  "requestSummary": {
+    "requests": 20,
+    "bytes": 19838522,
+    "receiverRequests": 20,
+    "episodes": {
+      "one-piece-1000": {
+        "playlists": 2,
+        "segments": 9,
+        "subtitles": 1
+      },
+      "one-piece-1001": {
+        "playlists": 0,
+        "segments": 0,
+        "subtitles": 0
+      }
+    }
+  }
+}

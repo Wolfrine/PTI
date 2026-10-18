@@ -1,0 +1,8 @@
+{
+  "purpose": "Isolate local-original seek from pre-existing generated HLS segments",
+  "localOnlyPrefix": "571a060cb269ba0627a3f39833b0d6be",
+  "movedGeneratedFiles": 249,
+  "movedGeneratedBytes": 244147516,
+  "sourceOriginalRetained": true,
+  "remotePilotFilesUntouched": true
+}

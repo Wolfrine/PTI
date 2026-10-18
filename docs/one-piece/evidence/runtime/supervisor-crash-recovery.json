@@ -1,0 +1,27 @@
+{
+  "recordedAt": "2026-10-18T09:15:16.177Z",
+  "test": "actual unpaired fatal-supervisor crash; persistent H launcher restart plus guarded orphan cleanup",
+  "recovered": true,
+  "elapsedMilliseconds": 27929,
+  "previousSupervisorPid": 80116,
+  "currentSupervisorPid": 71116,
+  "allChildrenReplaced": true,
+  "health": {
+    "jellyfin": true,
+    "backend": true,
+    "mdns": true,
+    "caddy": true,
+    "checkedAt": "2026-10-18T09:15:15.41Z"
+  },
+  "dpapiSecretsLoadedAfterRecovery": true,
+  "orphanCleanup": {
+    "recordedAt": "2026-10-18T09:14:49.362Z",
+    "verified": true,
+    "stoppedProcesses": 0,
+    "stoppedDescendants": 0,
+    "supervisorAbsent": true
+  },
+  "mediaOrTvSessionStarted": false,
+  "rebootTest": false,
+  "evidenceCorrection": "The test harness originally called this TaskScheduler restart; launcher-state proves the persistent H launcher actually performed the successful retry. Scheduler-only failed evidence is retained separately."
+}

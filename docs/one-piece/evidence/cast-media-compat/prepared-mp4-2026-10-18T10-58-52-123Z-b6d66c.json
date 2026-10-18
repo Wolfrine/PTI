@@ -1,0 +1,162 @@
+{
+  "kind": "complete-mp4-jellyfin-private-preparation-static-range-pilot",
+  "runId": "2026-10-18T10-58-52-123Z-b6d66c",
+  "startedAt": "2026-10-18T10:58:52.128Z",
+  "newOriginalDownloads": 0,
+  "actualCast": false,
+  "productionApiAuthenticated": false,
+  "heardJapanese": false,
+  "subtitlesVisuallyVerified": false,
+  "scope": "technical private engine and exact loopback test relay; no production media policy",
+  "reusedPreparedEvidence": "prepared-mp4-2026-10-18T10-56-02-456Z-317aea.json",
+  "episodes": [
+    {
+      "episode": 1000,
+      "phase": "static-import-and-range-verification",
+      "ranges": [],
+      "streamedSeeks": [],
+      "original": {
+        "bytes": 742925306,
+        "md5": "ebeeadb99c7c1f27ba1f90aade7ccce1"
+      },
+      "selected": {
+        "audioIndex": 1,
+        "subtitleIndex": 2,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "durationSeconds": 1430.79,
+      "containerDurationSeconds": 1430.79,
+      "captions": {
+        "bytes": 14478,
+        "cues": 233,
+        "sha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+        "source": "inspected original full-English track; no timing shift"
+      },
+      "negotiation": {
+        "protocol": "http",
+        "container": "mp4",
+        "video": "h264",
+        "audio": "aac",
+        "allowVideoCopy": true,
+        "maxBitrate": 10000000,
+        "selectedAudioIndex": 1,
+        "selectedSubtitleIndex": 2,
+        "role": "private preparation only, never delivered as a seekable object"
+      },
+      "progressiveHeaders": {
+        "contentType": "video/mp4",
+        "acceptRanges": "none"
+      },
+      "progressiveBytesReceived": 737657691,
+      "conversion": {
+        "elapsedMs": 8496,
+        "bytes": 737657691,
+        "eof": true,
+        "osChildExitCodeAvailableViaHttp": false
+      },
+      "rawAtoms": {
+        "bytes": 737657691,
+        "boxCount": 1433,
+        "types": [
+          "ftyp",
+          "moov",
+          "moof",
+          "mdat",
+          "mfra"
+        ],
+        "fragmented": true,
+        "moovBeforeMedia": true
+      },
+      "finalization": {
+        "needed": true,
+        "codecCopy": true,
+        "elapsedMs": 2630,
+        "exitCode": 0
+      },
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "profile": "High",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "level": 40,
+            "start_time": "0.000000",
+            "duration": "1430.722000",
+            "tags": {
+              "language": "und"
+            }
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "start_time": "0.000000",
+            "duration": "1430.789705",
+            "tags": {
+              "language": "jpn"
+            }
+          }
+        ],
+        "format": {
+          "start_time": "0.000000",
+          "duration": "1430.789705",
+          "size": "737980951"
+        }
+      },
+      "atoms": {
+        "bytes": 737980951,
+        "boxCount": 4,
+        "types": [
+          "ftyp",
+          "moov",
+          "free",
+          "mdat"
+        ],
+        "fragmented": false,
+        "moovBeforeMedia": true
+      },
+      "sha256": "0b96bcf9a820609b2e98619c4100cef9f78195366109a9baed30131b159cff36",
+      "bytes": 737980951,
+      "jobs": [
+        {
+          "log": "FFmpeg.Remux-2026-10-18_16-26-06_bb7d87b1386c66c3b26ffe4cd97636e2_e99a9ce6.log",
+          "videoCopy": true,
+          "nvenc": false,
+          "selectedJapaneseMap": true,
+          "noSubtitleBurnFilter": true,
+          "normalFinalStatistics": true,
+          "conversionFailureMarker": false
+        }
+      ],
+      "readyPreparationMs": null,
+      "originalPreparationMs": 16928
+    }
+  ],
+  "steps": [],
+  "cleanup": {
+    "temporaryLibraryRemoved": true,
+    "encodingRestored": true,
+    "children": [],
+    "verifiedOriginalCountChecked": 3,
+    "verifiedOriginalsRetained": true,
+    "completedAssetCountChecked": 1,
+    "completedAssetsOnH": true,
+    "ownedPartialFilesRemoved": []
+  },
+  "engineVersion": "12.2.0",
+  "error": {
+    "name": "Error",
+    "code": null,
+    "message": "Exact temporary library import did not discover prepared file; no global scan fallback"
+  }
+}

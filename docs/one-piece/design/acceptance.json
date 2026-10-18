@@ -1,0 +1,1492 @@
+{
+  "schema_version": 2,
+  "status": "agent-reviewed",
+  "owner_verdict": {
+    "status": "not-reviewed"
+  },
+  "blockers": [],
+  "acceptance_scope": "Frontend visual layout and actual LocalPlayer/native-MP4 control/caption presentation in desktop Chrome and responsive viewports. Catalogue and prepared media are real; account/progress/lease/receiver fixtures are synthetic. Actual media uses an isolated mature-engine review harness. This is not production transport, family authentication, hardware, full product or owner acceptance.",
+  "not_established_by_this_record": [
+    "Firebase family sign-in, identity-session interoperability and durable cloud progress",
+    "Physical Android/tablet installation, private-CA trust and browser local-network permission",
+    "Physical HDMI/Cast playback, phone sleep/reconnection and three-user endurance",
+    "Deployed PTI preservation, installed-worker upgrade and operational recovery",
+    "Japanese listening, subtitle/audio synchronization, full-episode continuity and performance thresholds",
+    "Production prepared-MP4 API/authorization/static transport; current actual media uses isolated review delivery"
+  ],
+  "perception_packet": {
+    "product_object": "One private family library of 1,084 numbered episodes, followed by the current picture or TV remote.",
+    "user_job": "Continue a personal episode or find an episode number, then watch with Japanese audio and English dialogue subtitles.",
+    "screen_state": "Library/continue/fresh/offline/search; local real-media Watch; TV remote; preparation; missing590 and collection-end boundaries.",
+    "eye_path": "Library: current episode/Continue → search/ranges → ruled episode sequence. Watch: picture/captions or remote transport → current episode/destination → next and language settings.",
+    "outcome_100ms": "Hypothetical prompt, not a measured study: Continue/Start, actual picture, or remote is the dominant task object.",
+    "outcome_1s": "Hypothetical prompt: identify the current episode, destination and preparation/unavailable state.",
+    "outcome_5s": "Hypothetical prompt: find episode944, continue the current episode, or pause the TV without parsing source filenames."
+  },
+  "critical_dimensions": {
+    "Viewing purpose / focal hierarchy": "One primary Continue/Start/Resume action, or one dominant actual picture/remote; episode, destination and preparation state are explicit.",
+    "Sequence and state clarity": "Readable aligned numbers; explicit unavailable590/end1085; bounded search/range navigation; honest preparation and retry actions.",
+    "Composition and rhythm": "Continue/browse/watch task determines containment; ruled rows avoid equal-weight cards; sparse states remain composed.",
+    "Typography and material craft": "Readable deliberate episode/action/metadata hierarchy, aligned tabular numerals and meaningful phone metadata at least14px.",
+    "Product identity and imagery discipline": "Number/type/rule identity survives sparse states without copied artwork, fake titles/arcs/stats or future-story imagery by default.",
+    "Responsive Watch continuity": "Phone controls are comfortable and grouped; no horizontal document overflow; actual picture/captions dominate; remote replaces inactive local picture."
+  },
+  "roles": {
+    "designer": "/root/visual_designer",
+    "visual_critic": "/root/visual_critic_final",
+    "parent": "/root",
+    "qa": "/root"
+  },
+  "historical_critics": {
+    "cycles_1_to_3": "/root/visual_critic",
+    "cycles_4_to_5": "/root/visual_critic_final"
+  },
+  "baseline": {
+    "description": "New One Piece sub-app; before this work there was a terminal/media feasibility pilot and no previous product interface.",
+    "none_reason": "No prior One Piece UI existed. Historical A/B/C candidates are retained as direction evidence rather than misrepresented as an existing accepted product."
+  },
+  "comparisons": [
+    {
+      "reference": "Historical Jellyfin desktop library",
+      "matched_task_state": "Browsing a long library on desktop",
+      "observed_gap": "Poster dependence does not serve spoiler-free episode numbers; an art-free cinematic hero left redundant empty space.",
+      "disposition": "Retained aligned object rhythm and index mechanism; selected ruled numbered rows plus explicit ranges, with no copied poster assets.",
+      "evidence": {
+        "path": "evidence/reference/jellyfin-library.jpg",
+        "sha256": "b08d758fd03ef4363bfaa2aa5a06fdcdf9273827b9c5b84d12fb89463ae49e7c"
+      }
+    },
+    {
+      "reference": "Historical Crunchyroll phone series page",
+      "matched_task_state": "Finding and selecting a numbered episode on a narrow screen",
+      "observed_gap": "Thumbnail/synopsis density obscures Continue and can reveal future story content.",
+      "disposition": "Retained ordered touch rows and list-adjacent range controls; placed Continue first and hid unverified/future story content by default.",
+      "evidence": {
+        "path": "evidence/reference/crunchyroll-mobile.jpg",
+        "sha256": "b544ab3b9d94db6c384e4c730eed470db184e67b6a8de0cf21db8df4e6472d0e"
+      }
+    },
+    {
+      "reference": "Historical Crunchyroll user-skin Watch screenshot",
+      "matched_task_state": "Watching a real episode and choosing an adjacent episode",
+      "observed_gap": "Initial fixture had no actual picture/caption evidence, and the TV remote used an inactive giant rectangle.",
+      "disposition": "Actual LocalPlayer/video and English captions observed from both collections; compact TV remote and numbered Next/Previous preserve picture-first hierarchy without future thumbnails.",
+      "evidence": {
+        "path": "evidence/reference/crunchyroll-player.jpg",
+        "sha256": "42fda46366eb9255ac36f0c4fe485fd05aa069e3c785d0bb81a8b0d6b1d07c9f"
+      }
+    }
+  ],
+  "direction_mode": "new-or-reset",
+  "direction_candidates": [
+    {
+      "id": "A",
+      "visual_difference": "Blue-hour cinema: a large current-episode hero, sparse cinema composition and large actions.",
+      "evidence": {
+        "path": "evidence/direction-a-desktop.jpg",
+        "sha256": "9d9d5fd7480548d9eef35db268e2530f0f5b656fb17f107df9536bfa925e4231"
+      }
+    },
+    {
+      "id": "B",
+      "visual_difference": "The ship log: serif/mono serial typography, ruled episode sequence, compact Continue and a quiet range rail.",
+      "evidence": {
+        "path": "evidence/direction-b-desktop.jpg",
+        "sha256": "82f486cd8b5590b51ccbb3609b1a27f7836d839211dfd1aa02ead59fc1a0046a"
+      }
+    },
+    {
+      "id": "C",
+      "visual_difference": "Episode guide: denser master/detail programme index with persistent selected-episode detail.",
+      "evidence": {
+        "path": "evidence/direction-c-desktop.jpg",
+        "sha256": "b73791ec4a3c539961c92b37fa1d7680c611a560b252796d8c0e6f421d1116dc"
+      }
+    }
+  ],
+  "selected_direction": {
+    "id": "B",
+    "reason": "Independent critic and parent found the readable serial hierarchy and ordered list strongest without spoiler art. A left a vacant ornamental hero; C left most detail space vacant and its Watch lost the proposed index."
+  },
+  "designer_capability_record": "Designer /root/visual_designer inherited the parent model; no unexposed model identity or escalation is claimed. Capabilities actually used: inspected three actual reference images; built and rendered three materially distinct ESM/CSS directions; implemented code-native icons, responsive states and the production LocalPlayer; inspected desktop/390/320/tablet frames; used a DEV-only real-media harness and production dead-code proof. Independent critics rejected/refined directions and inspected five substantive cycles. The parent personally inspected rounds3/5 and final fresh states. No AI-generated bitmap or copied reference art was used.",
+  "candidate_change_after_cycle5": "The current candidate includes keyboard/identity/play-promise/logout/MIME/paused-ready corrections plus DEV-only frame diagnostics and explicit final-state fixtures. All26 active evidence images are fresh current-candidate captures; old4de711/967e and earlier media remain historical with original labels. These are final validation updates, not additional substantive visual cycles.",
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "draft": false,
+  "visual_blockers": [],
+  "candidate_binding": {
+    "path": "evidence/candidate-fingerprint.json",
+    "sha256": "3992d7a80389b36bc4d2693bbb374e53da79cb7f9363905ab9c82979eef9a592",
+    "algorithm": "SHA256 of compact UTF-8 JSON binding: sorted exact production asset paths/hashes plus fixture.mjs and DEV review-frames.mjs source hashes",
+    "build_directory": "H:/PTI-OnePiece/design-candidate-20261018/complete-site/one-piece",
+    "designer_recomputation": "Designer, critic and parent independently reproduced current2b9695; parent built actual complete F Hosting child. See parent-final-qa-2b9695.json and critic-final-review.json."
+  },
+  "cycles": [
+    {
+      "id": 1,
+      "visual_finding": "Replaced the inactive Cast picture/fullscreen with a compact destination-aware remote; one Resume and larger row metadata. Critic found offline false readiness, clipped account text and separated Next icon/label.",
+      "qa_finding": "Fixture Pause/Play and missing590 were exercised; these were synthetic receiver/progress states, not actual Cast proof.",
+      "evidence": {
+        "path": "evidence/cycle-1-remote-mobile.jpg",
+        "sha256": "02245007c210d619ff4695e44d9ad30d4b3c0ab6443f9f2faa825b86b9008b65"
+      }
+    },
+    {
+      "id": 2,
+      "visual_finding": "Explicit Connect to watch and household trust setup repaired false readiness; deliberate phone account label and coherent Next alignment. Critic next found context-free recovery.",
+      "qa_finding": "Opened and scrolled rendered connection details/fingerprint on desktop/mobile; no certificate installation or Android success was claimed.",
+      "evidence": {
+        "path": "evidence/cycle-2-connection-mobile.jpg",
+        "sha256": "75c0eb586ec26fe90ed878c0c91c39adbb5ac46a9f7ba4cb5ad9513999256f50"
+      }
+    },
+    {
+      "id": 3,
+      "visual_finding": "Episode/destination/known10:00 retained through failure; unknown position explicit; preparation retry and cancel preserve context. Critic confirmed repair.",
+      "qa_finding": "Parent directly inspected current desktop/390 known/unknown error states and found no overflow. Premature stale content was not counted as a cycle.",
+      "evidence": {
+        "path": "evidence/cycle-3-error-mobile.jpg",
+        "sha256": "d33296b6c78220b30ceb03d4569b9848fdde32224fdd57d8db85a55d2cb33dda"
+      }
+    },
+    {
+      "id": 4,
+      "visual_finding": "Working preference, rewind, takeover, end, long320/tablet and empty-search states reviewed; no new visual blocker. Real picture/captions remained the reference gap.",
+      "qa_finding": "Synthetic local0:20 choice, subtitle/audio summaries, TV takeover/return and end were exercised. Pause-preserving delivery renewal was covered by a targeted regression; physical receiver/auth remained separate.",
+      "evidence": {
+        "path": "evidence/cycle-4-settings-mobile.jpg",
+        "sha256": "26210c34819203221c640d0a8d046549c73bcdc14f80fb2c3f498dcdfd5997c3"
+      }
+    },
+    {
+      "id": 5,
+      "visual_finding": "Actual cached sources1000/1001 picture and English captions rendered; native controls and product Next/Previous remain coherent at1440/390/320. Critic found no visual blocker.",
+      "qa_finding": "Designer/critic/parent observed real seek600, pause/play, source boundary and caption off/on with paused position preserved. This proves browser presentation/control behavior with synthetic identity, not full-episode/auth/TV/performance acceptance.",
+      "evidence": {
+        "path": "evidence/parent-cycle-5-source2-mobile.png",
+        "sha256": "d73ed5ff4bab027a148c373fa621c9a19fca121d742c57be3b59263a5bda5690"
+      }
+    }
+  ],
+  "parent_checkpoints": [
+    {
+      "cycle": 3,
+      "evidence": {
+        "path": "evidence/cycle-3-error-mobile.jpg",
+        "sha256": "d33296b6c78220b30ceb03d4569b9848fdde32224fdd57d8db85a55d2cb33dda"
+      },
+      "judgment": "Parent personally inspected rebuilt desktop/390 known and unknown recovery: episode/destination and saved10:00 retained, unknown truthful, no overflow."
+    },
+    {
+      "cycle": 5,
+      "evidence": {
+        "path": "evidence/parent-cycle-5-source2-mobile.png",
+        "sha256": "d73ed5ff4bab027a148c373fa621c9a19fca121d742c57be3b59263a5bda5690"
+      },
+      "judgment": "Parent personally inspected real1000/1001 at1440/390, Next/Previous across source boundary, pause and caption off/on at612.58s. All six visual dimensions and overall8 in this scope; full product acceptance excluded."
+    }
+  ],
+  "required_states": [
+    {
+      "id": "library-desktop",
+      "marker": "Continue watching",
+      "viewport": "desktop"
+    },
+    {
+      "id": "fresh-desktop",
+      "marker": "Start watching",
+      "viewport": "desktop"
+    },
+    {
+      "id": "remote-desktop",
+      "marker": "Bedroom TV (fixture)",
+      "viewport": "desktop"
+    },
+    {
+      "id": "preparing-desktop",
+      "marker": "Downloading episode",
+      "viewport": "desktop"
+    },
+    {
+      "id": "offline-desktop",
+      "marker": "Connect to watch",
+      "viewport": "desktop"
+    },
+    {
+      "id": "empty-desktop",
+      "marker": "No episode found.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "disconnect-unconfirmed-desktop",
+      "marker": "Sign out on this device?",
+      "viewport": "desktop"
+    },
+    {
+      "id": "unsupported-delivery-desktop",
+      "marker": "This video format could not be opened",
+      "viewport": "desktop"
+    },
+    {
+      "id": "missing-desktop",
+      "marker": "Episode 590 is missing.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "end-desktop",
+      "marker": "Through episode 1085.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "title-search-desktop",
+      "marker": "A Risky Invitation A Plot To Eliminate Queen",
+      "viewport": "desktop"
+    },
+    {
+      "id": "library-mobile",
+      "marker": "Continue watching",
+      "viewport": "mobile"
+    },
+    {
+      "id": "fresh-mobile",
+      "marker": "Start watching",
+      "viewport": "mobile"
+    },
+    {
+      "id": "remote-mobile",
+      "marker": "Bedroom TV (fixture)",
+      "viewport": "mobile"
+    },
+    {
+      "id": "preparing-mobile",
+      "marker": "Downloading episode",
+      "viewport": "mobile"
+    },
+    {
+      "id": "offline-mobile",
+      "marker": "Connect to watch",
+      "viewport": "mobile"
+    },
+    {
+      "id": "empty-mobile",
+      "marker": "No episode found.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "disconnect-unconfirmed-mobile",
+      "marker": "Sign out on this device?",
+      "viewport": "mobile"
+    },
+    {
+      "id": "unsupported-delivery-mobile",
+      "marker": "This video format could not be opened",
+      "viewport": "mobile"
+    },
+    {
+      "id": "missing-mobile",
+      "marker": "Episode 590 is missing.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "end-mobile",
+      "marker": "Through episode 1085.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "title-search-mobile",
+      "marker": "A Risky Invitation A Plot To Eliminate Queen",
+      "viewport": "mobile"
+    },
+    {
+      "id": "watch-source1-desktop",
+      "marker": "Episode 1000",
+      "viewport": "desktop"
+    },
+    {
+      "id": "watch-source1-mobile",
+      "marker": "Episode 1000",
+      "viewport": "mobile"
+    },
+    {
+      "id": "watch-source2-mobile",
+      "marker": "Episode 1001",
+      "viewport": "mobile"
+    },
+    {
+      "id": "watch-source2-desktop",
+      "marker": "Episode 1001",
+      "viewport": "desktop"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "evidence/final2b9695-state-library-desktop.png",
+      "sha256": "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+      "state": "library-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Continue watching",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:04:28.326Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-library-desktop.ax.txt",
+        "sha256": "d71542f809fb0d861b3a28d78bf8d93ab2d9de60d61b9dc3f7b197d30e5ebe12"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-fresh-desktop.png",
+      "sha256": "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+      "state": "fresh-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Start watching",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:04:39.313Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-fresh-desktop.ax.txt",
+        "sha256": "23e8eaa38260e0e488c81545aafec54b78df1edefdd5e131dc3c4cdeff9ae8d4"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-remote-desktop.png",
+      "sha256": "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+      "state": "remote-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Bedroom TV (fixture)",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:04:44.130Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-remote-desktop.ax.txt",
+        "sha256": "dcccafcdeecce205df19a0c35b7c1c6e12fc98c4cb9da292e7aeef6e111e4969"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-preparing-desktop.png",
+      "sha256": "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+      "state": "preparing-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Downloading episode",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:04:57.575Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Getting your\nepisode ready.",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-preparing-desktop.ax.txt",
+        "sha256": "2e604baf0a33d733c6feaf076121b7b6db879a00f18d25a8e1f78af428b57670"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-offline-desktop.png",
+      "sha256": "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+      "state": "offline-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Connect to watch",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:05:02.315Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-offline-desktop.ax.txt",
+        "sha256": "ebccc8eec79487f1c43c06fe94b271c9565e934c5f45e75e770fe482ac5515f5"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-empty-desktop.png",
+      "sha256": "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+      "state": "empty-desktop",
+      "viewport": "desktop",
+      "observed_marker": "No episode found.",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:05:06.932Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "not-an-episode",
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-empty-desktop.ax.txt",
+        "sha256": "6517f0a3d3ee660aa1b321a072d8f51682e35f0a2e3e0c5c3ef07958efb2f793"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-disconnect-unconfirmed-desktop.png",
+      "sha256": "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+      "state": "disconnect-unconfirmed-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Sign out on this device?",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:05:14.295Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Sign out on this device?",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-disconnect-unconfirmed-desktop.ax.txt",
+        "sha256": "2e629e5db76cdb8cc9c749551fe2df8169d2cf12038af452b662372e42010523"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-unsupported-delivery-desktop.png",
+      "sha256": "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+      "state": "unsupported-delivery-desktop",
+      "viewport": "desktop",
+      "observed_marker": "This video format could not be opened",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:05:22.703Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "This video format could not be opened",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-unsupported-delivery-desktop.ax.txt",
+        "sha256": "d6a72944edf0f9cae880a95cb52ff3e359bceb0748fbc31d54a6f1f3195b7824"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-missing-desktop.png",
+      "sha256": "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+      "state": "missing-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Episode 590 is missing.",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:05:30.261Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Episode 590 is missing.",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-missing-desktop.ax.txt",
+        "sha256": "54acb14019d45af75281ddb698f6ff6e519c5b3611892fe82afc377597cf4221"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-end-desktop.png",
+      "sha256": "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+      "state": "end-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Through episode 1085.",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:05:45.777Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Through episode 1085.",
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1085",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-end-desktop.ax.txt",
+        "sha256": "612b367487e5e162072c7410f41ccf30c020579caec5097e9dc414d87f0d711c"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-title-search-desktop.png",
+      "sha256": "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+      "state": "title-search-desktop",
+      "viewport": "desktop",
+      "observed_marker": "A Risky Invitation A Plot To Eliminate Queen",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:06:01.516Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": "Family viewer",
+        "episodeRows": 1,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "Risky Invitation",
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-title-search-desktop.ax.txt",
+        "sha256": "3bcd3b05147707122fb99a6eafced48317971eec263f8ae36bbab51b61a9bf6e"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-library-mobile.png",
+      "sha256": "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+      "state": "library-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Continue watching",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:06:07.089Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-library-mobile.ax.txt",
+        "sha256": "e9f6f1156a6227bdc0236ef70ed2e1f3b69a21b8c8e42af78acd9f7fa2d79839"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-fresh-mobile.png",
+      "sha256": "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+      "state": "fresh-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Start watching",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:06:11.318Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-fresh-mobile.ax.txt",
+        "sha256": "3c80e8c97fc25f5ec62e2271ca1207cb9d8748541e36381f32daa0c30989408b"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-remote-mobile.png",
+      "sha256": "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+      "state": "remote-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Bedroom TV (fixture)",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:06:15.926Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-remote-mobile.ax.txt",
+        "sha256": "f88f1ccd41e0771b14ce5d717305389dd7f5bbda91ab6e255873a8b941682b58"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-preparing-mobile.png",
+      "sha256": "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+      "state": "preparing-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Downloading episode",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:06:26.948Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Getting your\nepisode ready.",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-preparing-mobile.ax.txt",
+        "sha256": "d298225d2c5bffe8ee8d68318ad769a71d77e7ddd2cabaab9f312514ae89426d"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-offline-mobile.png",
+      "sha256": "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+      "state": "offline-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Connect to watch",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:06:31.638Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-offline-mobile.ax.txt",
+        "sha256": "61f62acba31bfa2d263da498f7344bd54c3c43bee68315daa20d57747bb448ef"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-empty-mobile.png",
+      "sha256": "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+      "state": "empty-mobile",
+      "viewport": "mobile",
+      "observed_marker": "No episode found.",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:06:47.644Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "not-an-episode",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-empty-mobile.ax.txt",
+        "sha256": "eb50c46ad3c2245f8ba8b59d0f80bffbd0e201383615c954647cd4f472207749"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-disconnect-unconfirmed-mobile.png",
+      "sha256": "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+      "state": "disconnect-unconfirmed-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Sign out on this device?",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:07:02.747Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Sign out on this device?",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-disconnect-unconfirmed-mobile.ax.txt",
+        "sha256": "233910dbada0f6745ea453fc9de218d8bfaf1c76f590079886ba18594c04ae4c"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-unsupported-delivery-mobile.png",
+      "sha256": "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+      "state": "unsupported-delivery-mobile",
+      "viewport": "mobile",
+      "observed_marker": "This video format could not be opened",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:07:08.187Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "This video format could not be opened",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-unsupported-delivery-mobile.ax.txt",
+        "sha256": "0b20c3198f6c70d7695e10f77b1decf165c142abfabc146e17d15b376f415c20"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-missing-mobile.png",
+      "sha256": "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+      "state": "missing-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Episode 590 is missing.",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:07:20.148Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Episode 590 is missing.",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-missing-mobile.ax.txt",
+        "sha256": "a43619b02ba337541da93e842f749481d526760d4a0f0738f9a4140eadbfb95b"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-end-mobile.png",
+      "sha256": "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+      "state": "end-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Through episode 1085.",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:07:28.055Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Through episode 1085.",
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1085",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-end-mobile.ax.txt",
+        "sha256": "89ef79e6e34ce4fb12f4272422aaf0a8778356a22c705ec82d00859cb03b4001"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-state-title-search-mobile.png",
+      "sha256": "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+      "state": "title-search-mobile",
+      "viewport": "mobile",
+      "observed_marker": "A Risky Invitation A Plot To Eliminate Queen",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:07:34.934Z",
+      "diagnostics_started_at": "2026-10-18T12:03:58.527Z",
+      "observations": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": "Family viewer",
+        "episodeRows": 1,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "Risky Invitation",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "paired_ax": {
+        "path": "evidence/final2b9695-state-title-search-mobile.ax.txt",
+        "sha256": "5cb09224e5e7440f48b42386dfbdeb367830801430827530a29bdfd4b64c4bd9"
+      },
+      "content": "Exact production catalogue; labelled synthetic account/progress/destination/preparation. No media engine request.",
+      "source_manifest": "evidence/final2b9695-state-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-media-source1-desktop.png",
+      "sha256": "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+      "state": "watch-source1-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Episode 1000",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T11:57:59.632Z",
+      "diagnostics_started_at": "2026-10-18T11:55:14.664Z",
+      "observations": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 1425,
+        "width": 1425,
+        "media": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 652.983154,
+          "readyState": 4
+        },
+        "mime": "video/mp4",
+        "englishCaptionVisible": true,
+        "parentVisuallyInspected": true,
+        "heardJapaneseOnPc": false
+      },
+      "content": "Real prepared native-MP4 video and full English VTT via isolated mature-engine review harness. Account/progress remain synthetic; no production transport/authentication claim.",
+      "source_manifest": "evidence/final-media-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-media-source1-mobile.png",
+      "sha256": "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+      "state": "watch-source1-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Episode 1000",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T11:58:16.685Z",
+      "diagnostics_started_at": "2026-10-18T11:55:14.664Z",
+      "observations": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 375,
+        "width": 375,
+        "media": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 652.983154,
+          "readyState": 4
+        },
+        "mime": "video/mp4",
+        "englishCaptionVisible": true,
+        "parentVisuallyInspected": true,
+        "heardJapaneseOnPc": false
+      },
+      "content": "Real prepared native-MP4 video and full English VTT via isolated mature-engine review harness. Account/progress remain synthetic; no production transport/authentication claim.",
+      "source_manifest": "evidence/final-media-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-media-source2-mobile.png",
+      "sha256": "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+      "state": "watch-source2-mobile",
+      "viewport": "mobile",
+      "observed_marker": "Episode 1001",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captured_at": "2026-10-18T12:01:35.259Z",
+      "diagnostics_started_at": "2026-10-18T11:55:14.664Z",
+      "observations": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 375,
+        "width": 375,
+        "media": {
+          "duration": 1419.041917,
+          "error": 0,
+          "paused": true,
+          "position": 605.220843,
+          "readyState": 4
+        },
+        "mime": "video/mp4",
+        "englishCaptionVisible": true,
+        "parentVisuallyInspected": true,
+        "heardJapaneseOnPc": false
+      },
+      "content": "Real prepared native-MP4 video and full English VTT via isolated mature-engine review harness. Account/progress remain synthetic; no production transport/authentication claim.",
+      "source_manifest": "evidence/final-media-captures.json"
+    },
+    {
+      "path": "evidence/final2b9695-media-source2-desktop.png",
+      "sha256": "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67",
+      "state": "watch-source2-desktop",
+      "viewport": "desktop",
+      "observed_marker": "Episode 1001",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "requested_viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captured_at": "2026-10-18T12:01:49.483Z",
+      "diagnostics_started_at": "2026-10-18T11:55:14.664Z",
+      "observations": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 1425,
+        "width": 1425,
+        "media": {
+          "duration": 1419.041917,
+          "error": 0,
+          "paused": true,
+          "position": 605.220843,
+          "readyState": 4
+        },
+        "mime": "video/mp4",
+        "englishCaptionVisible": true,
+        "parentVisuallyInspected": true,
+        "heardJapaneseOnPc": false
+      },
+      "content": "Real prepared native-MP4 video and full English VTT via isolated mature-engine review harness. Account/progress remain synthetic; no production transport/authentication claim.",
+      "source_manifest": "evidence/final-media-captures.json"
+    }
+  ],
+  "required_states_declaration": "Current26-state refresh checklist declared in ACCEPTANCE_REFRESH.md before new capture: eleven nonmedia/title kinds at desktop/mobile plus real source1000/1001 Watch at both viewports. Marker identities follow actual fixture controls/dialogs and source-filename search.",
+  "reviews": {
+    "visual_critic": {
+      "reviewer": "/root/visual_critic_final",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "verdict": "pass",
+      "scores": {
+        "Viewing purpose / focal hierarchy": 8,
+        "Sequence and state clarity": 8,
+        "Composition and rhythm": 8,
+        "Typography and material craft": 8,
+        "Product identity and imagery discipline": 8,
+        "Responsive Watch continuity": 8
+      },
+      "overall": 8,
+      "inspected_sha256": [
+        "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+        "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+        "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+        "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+        "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+        "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+        "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+        "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+        "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+        "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+        "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+        "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+        "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+        "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+        "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+        "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+        "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+        "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+        "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+        "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+        "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+        "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+        "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+        "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+        "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+        "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67"
+      ],
+      "generic_cues": [
+        "{\"risk\":\"Poster/card dependence\",\"assessment\":\"resolved\",\"reason\":\"Numbered ruled rows remain useful with future titles hidden; authentic video supplies the Watch focus.\"}",
+        "{\"risk\":\"Context-free utility states\",\"assessment\":\"resolved\",\"reason\":\"Episode/destination/saved-time context remains in failures and boundaries; PC disconnection uncertainty is explicit.\"}",
+        "{\"risk\":\"Uniform quiet surfaces or generic player shell\",\"assessment\":\"justified\",\"reason\":\"Consistent serial typography supports the family library while actual-picture and dedicated-remote compositions prioritize their different tasks.\"}"
+      ],
+      "reason": "Final visual acknowledgment for26 current labelled development/harness renders:22 nonmedia/title and4 real prepared nativeMP4 video/English-caption frames. This does not establish production authenticated playback, static transport API correctness, device acceptance or product release. Independent critic personally viewed all26 original renders, verified hashes and reproduced both H and F candidate fingerprints."
+    },
+    "parent": {
+      "reviewer": "/root",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "verdict": "pass",
+      "scores": {
+        "Viewing purpose / focal hierarchy": 8,
+        "Sequence and state clarity": 8,
+        "Composition and rhythm": 8,
+        "Typography and material craft": 8,
+        "Product identity and imagery discipline": 8,
+        "Responsive Watch continuity": 8
+      },
+      "overall": 8,
+      "inspected_sha256": [
+        "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+        "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+        "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+        "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+        "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+        "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+        "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+        "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+        "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+        "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+        "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+        "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+        "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+        "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+        "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+        "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+        "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+        "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+        "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+        "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+        "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+        "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+        "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+        "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+        "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+        "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67"
+      ],
+      "generic_cues": [
+        "Poster/card repetition was resolved with ruled numbered rows and explicit ranges; real optional source titles remain opt-in.",
+        "An inactive oversized TV picture was replaced by a destination-aware remote with readable grouped controls.",
+        "Sparse/error states retain the episode and primary recovery action rather than dropping into an uninformative generic error card."
+      ],
+      "reason": "Parent personally inspected all22 current nonmedia original renders and four real video/English-caption captures. Continue/episode hierarchy, serial rows, state-specific recovery, dialog actions and narrow-screen controls are clear and composed. Actual media captions are readable at desktop/mobile sizes. This is a rendered visual judgment, separate from the QA and unrun product/device gates."
+    },
+    "qa": {
+      "reviewer": "/root",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "verdict": "pass",
+      "inspected_sha256": [
+        "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+        "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+        "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+        "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+        "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+        "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+        "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+        "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+        "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+        "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+        "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+        "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+        "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+        "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+        "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+        "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+        "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+        "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+        "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+        "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+        "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+        "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+        "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+        "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+        "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+        "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67"
+      ],
+      "reason": "All26 current image hashes and22 paired AX hashes independently verified; capture records show correct state identity and no document overflow, broken images or page errors, with diagnostics initialized before navigation. Parent personally observed native1000/1001 playback, keyboard routing, paused readiness, next-source control and English subtitle off/on. Designer supplied rendered22 nonmedia state checks. RealGoogle identity, physical mobile, production media transport, one-hour capacity and deployment remain separate acceptance gates."
+    }
+  },
+  "historical_evidence_policy": "Original4de711 images/manifests/reviews and earlier source-media failures/captures remain labelled with original candidates and are not relabelled as current."
+}

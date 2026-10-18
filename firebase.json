@@ -64,6 +64,33 @@
               "value": "no-cache"
             }
           ]
+        },
+        {
+          "source": "/one-piece{,/**}",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" },
+            { "key": "Referrer-Policy", "value": "no-referrer" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "DENY" }
+          ]
+        },
+        {
+          "source": "/one-piece/index.html",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        },
+        {
+          "source": "/one-piece/sw.js",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" },
+            { "key": "Service-Worker-Allowed", "value": "/one-piece/" }
+          ]
+        },
+        {
+          "source": "/one-piece/household-ca.crt",
+          "headers": [
+            { "key": "Content-Type", "value": "application/x-x509-ca-cert" },
+            { "key": "Content-Disposition", "value": "attachment; filename=pti-household-ca.crt" }
+          ]
         }
       ],
       "public": "pti-app/dist/pti-app/browser",
@@ -80,6 +107,10 @@
         {
           "source": "/food{,/**}",
           "destination": "/food/index.html"
+        },
+        {
+          "source": "/one-piece{,/**}",
+          "destination": "/one-piece/index.html"
         },
         {
           "source": "**",

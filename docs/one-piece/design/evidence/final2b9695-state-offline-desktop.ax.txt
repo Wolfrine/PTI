@@ -1,0 +1,287 @@
+- generic: DEVELOPMENT FIXTURE · Cycle 4 · settings and continuity · Synthetic account, progress and device states.
+- link "Skip to content":
+  - /url: "#main-content"
+- banner:
+  - button "One Piece library":
+    - generic: OP
+    - text: One Piece
+    - generic: FAMILY VIEWING
+  - navigation "Main navigation":
+    - button "Library"
+    - button "Watch"
+  - button "Cast to TV":
+    - generic: Cast to TV
+  - button "Account and preferences for Family viewer":
+    - generic: F
+    - generic: Family viewer
+- status:
+  - generic: The home PC is not connected. You can still browse your library.
+  - button "Dismiss message":
+- main:
+  - paragraph: Continue watching
+  - heading "Episode 1000" [level=1]
+  - paragraph: 10:00 of 24:00·Japanese audio / English subtitles
+  - progressbar "Episode progress"
+  - button "Connect to watch":
+    - text: Connect to watch
+  - generic: ONE PIECE
+  - generic: "1000"
+  - region "All episodes":
+    - heading "All episodes" [level=2]
+    - generic: 1,084 listed
+    - generic: Find an episode number
+    - textbox "Find an episode number":
+      - /placeholder: Find episode number
+    - generic: Episode range
+    - combobox "Episode range":
+      - option "1–50"
+      - option "51–100"
+      - option "101–150"
+      - option "151–200"
+      - option "201–250"
+      - option "251–300"
+      - option "301–350"
+      - option "351–400"
+      - option "401–450"
+      - option "451–500"
+      - option "501–550"
+      - option "551–600"
+      - option "601–650"
+      - option "651–700"
+      - option "701–750"
+      - option "751–800"
+      - option "801–850"
+      - option "851–900"
+      - option "901–950"
+      - option "951–1000" [selected]
+      - option "1001–1050"
+      - option "1051–1085"
+    - status: Episodes 951–1000
+    - button "Episode 951":
+      - generic: "0951"
+      - strong: Episode 951
+      - generic: Not watched
+    - button "Episode 952":
+      - generic: "0952"
+      - strong: Episode 952
+      - generic: Not watched
+    - button "Episode 953":
+      - generic: "0953"
+      - strong: Episode 953
+      - generic: Not watched
+    - button "Episode 954":
+      - generic: "0954"
+      - strong: Episode 954
+      - generic: Not watched
+    - button "Episode 955":
+      - generic: "0955"
+      - strong: Episode 955
+      - generic: Not watched
+    - button "Episode 956":
+      - generic: "0956"
+      - strong: Episode 956
+      - generic: Not watched
+    - button "Episode 957":
+      - generic: "0957"
+      - strong: Episode 957
+      - generic: Not watched
+    - button "Episode 958":
+      - generic: "0958"
+      - strong: Episode 958
+      - generic: Not watched
+    - button "Episode 959":
+      - generic: "0959"
+      - strong: Episode 959
+      - generic: Not watched
+    - button "Episode 960":
+      - generic: "0960"
+      - strong: Episode 960
+      - generic: Not watched
+    - button "Episode 961":
+      - generic: "0961"
+      - strong: Episode 961
+      - generic: Not watched
+    - button "Episode 962":
+      - generic: "0962"
+      - strong: Episode 962
+      - generic: Not watched
+    - button "Episode 963":
+      - generic: "0963"
+      - strong: Episode 963
+      - generic: Not watched
+    - button "Episode 964":
+      - generic: "0964"
+      - strong: Episode 964
+      - generic: Not watched
+    - button "Episode 965":
+      - generic: "0965"
+      - strong: Episode 965
+      - generic: Not watched
+    - button "Episode 966":
+      - generic: "0966"
+      - strong: Episode 966
+      - generic: Not watched
+    - button "Episode 967":
+      - generic: "0967"
+      - strong: Episode 967
+      - generic: Not watched
+    - button "Episode 968":
+      - generic: "0968"
+      - strong: Episode 968
+      - generic: Not watched
+    - button "Episode 969":
+      - generic: "0969"
+      - strong: Episode 969
+      - generic: Not watched
+    - button "Episode 970":
+      - generic: "0970"
+      - strong: Episode 970
+      - generic: Not watched
+    - button "Episode 971":
+      - generic: "0971"
+      - strong: Episode 971
+      - generic: Not watched
+    - button "Episode 972":
+      - generic: "0972"
+      - strong: Episode 972
+      - generic: Not watched
+    - button "Episode 973":
+      - generic: "0973"
+      - strong: Episode 973
+      - generic: Not watched
+    - button "Episode 974":
+      - generic: "0974"
+      - strong: Episode 974
+      - generic: Not watched
+    - button "Episode 975":
+      - generic: "0975"
+      - strong: Episode 975
+      - generic: Not watched
+    - button "Episode 976":
+      - generic: "0976"
+      - strong: Episode 976
+      - generic: Not watched
+    - button "Episode 977":
+      - generic: "0977"
+      - strong: Episode 977
+      - generic: Not watched
+    - button "Episode 978":
+      - generic: "0978"
+      - strong: Episode 978
+      - generic: Not watched
+    - button "Episode 979":
+      - generic: "0979"
+      - strong: Episode 979
+      - generic: Not watched
+    - button "Episode 980":
+      - generic: "0980"
+      - strong: Episode 980
+      - generic: Not watched
+    - button "Episode 981":
+      - generic: "0981"
+      - strong: Episode 981
+      - generic: Not watched
+    - button "Episode 982":
+      - generic: "0982"
+      - strong: Episode 982
+      - generic: Not watched
+    - button "Episode 983":
+      - generic: "0983"
+      - strong: Episode 983
+      - generic: Not watched
+    - button "Episode 984":
+      - generic: "0984"
+      - strong: Episode 984
+      - generic: Not watched
+    - button "Episode 985":
+      - generic: "0985"
+      - strong: Episode 985
+      - generic: Not watched
+    - button "Episode 986":
+      - generic: "0986"
+      - strong: Episode 986
+      - generic: Not watched
+    - button "Episode 987":
+      - generic: "0987"
+      - strong: Episode 987
+      - generic: Not watched
+    - button "Episode 988":
+      - generic: "0988"
+      - strong: Episode 988
+      - generic: Not watched
+    - button "Episode 989":
+      - generic: "0989"
+      - strong: Episode 989
+      - generic: Not watched
+    - button "Episode 990":
+      - generic: "0990"
+      - strong: Episode 990
+      - generic: Not watched
+    - button "Episode 991":
+      - generic: "0991"
+      - strong: Episode 991
+      - generic: Not watched
+    - button "Episode 992":
+      - generic: "0992"
+      - strong: Episode 992
+      - generic: Not watched
+    - button "Episode 993":
+      - generic: "0993"
+      - strong: Episode 993
+      - generic: Not watched
+    - button "Episode 994":
+      - generic: "0994"
+      - strong: Episode 994
+      - generic: Not watched
+    - button "Episode 995":
+      - generic: "0995"
+      - strong: Episode 995
+      - generic: Not watched
+    - button "Episode 996":
+      - generic: "0996"
+      - strong: Episode 996
+      - generic: Not watched
+    - button "Episode 997":
+      - generic: "0997"
+      - strong: Episode 997
+      - generic: Not watched
+    - button "Episode 998":
+      - generic: "0998"
+      - strong: Episode 998
+      - generic: Not watched
+    - button "Episode 999":
+      - generic: "0999"
+      - strong: Episode 999
+      - generic: Not watched
+    - button "Episode 1000, continue":
+      - generic: "1000"
+      - strong: Episode 1000
+      - generic: Continue at 10:00
+    - button "Previous 50":
+      - text: Previous 50
+    - button "Next 50":
+      - text: Next 50
+    - paragraph: Episode 590 is missing. These collections end at 1085.
+  - complementary:
+    - navigation "Quick episode ranges":
+      - generic: Jump to episode
+      - button "1–200"
+      - button "201–400"
+      - button "401–600"
+      - button "601–800"
+      - button "801–1000"
+      - button "1001–1085"
+    - strong: Home PC offline
+    - button "Connection details"
+    - paragraph:
+      - text: Future titles are hidden by default.
+      - text: Your adventure stays yours.
+- contentinfo:
+  - generic: One Piece, at your pace.
+  - button "Home PC offline":
+    - generic: Home PC offline
+  - button "Install app":
+    - text: Install app
+  - link "Back to PTI":
+    - /url: /home
+    - text: Back to PTI

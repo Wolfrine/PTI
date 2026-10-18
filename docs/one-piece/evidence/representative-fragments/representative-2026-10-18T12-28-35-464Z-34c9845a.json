@@ -1,0 +1,2728 @@
+{
+  "kind": "bounded-original-fragment-track-codec-decode",
+  "runId": "2026-10-18T12-28-35-464Z-34c9845a",
+  "startedAt": "2026-10-18T12:28:35.467Z",
+  "requestedEpisodes": [
+    500,
+    944,
+    1044,
+    1085
+  ],
+  "maximumOriginalFragmentBytes": 8388608,
+  "maximumTotalRequestedRangeBytes": 33554432,
+  "upstreamConcurrency": 2,
+  "fragmentFormat": "Original MKV head bytes; owned-tool marker extension is not a conversion",
+  "privateFragments": "H:\\PTI-OnePiece\\production-media\\representative-probes\\currentrun\\2026-10-18T12-28-35-464Z-34c9845a",
+  "fullOriginalIntegrityVerified": false,
+  "heardJapanese": false,
+  "renderedSubtitles": false,
+  "fullPlaybackVerified": false,
+  "fullSeekingVerified": false,
+  "preparationVerified": false,
+  "actualCast": false,
+  "episodes": [
+    {
+      "episode": 500,
+      "candidateId": "archive-68d8d491229a826ba528",
+      "collection": "one-piece-0001-1000-1999-horrible-subs",
+      "fileName": "[HorribleSubs] One Piece (01-1000) [720p] (Batch)/[HorribleSubs] One Piece - 500 [720p].mkv",
+      "parserReleaseGroup": "HorribleSubs",
+      "sourceBytes": 342757053,
+      "listedOriginalMd5": "d8128df7df393bf00ee0d945bc5cffd5",
+      "fragmentId": "40811a41-082c-4313-b69a-4d6816724eb8",
+      "requestedBytes": 8388608,
+      "receivedBytes": 8388608,
+      "ranges": [
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 0-1048575/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=0-1048575",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 3419,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 1048576-2097151/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=1048576-2097151",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 4577,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 2097152-3145727/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=2097152-3145727",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2606,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 3145728-4194303/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=3145728-4194303",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2712,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn800300.us.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn800300.us.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 4194304-5242879/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=4194304-5242879",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2692,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 5242880-6291455/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=5242880-6291455",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2719,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 6291456-7340031/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=6291456-7340031",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2130,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 7340032-8388607/342757053",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641826cd-146e0ebd\"",
+            "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=7340032-8388607",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 4897,
+          "bytesRead": 1048576,
+          "history": []
+        }
+      ],
+      "privateFile": "40811a41-082c-4313-b69a-4d6816724eb8.video.part.mp4",
+      "partialOriginal": true,
+      "fragmentSha256": "f8709197f117ee924b889a71b7b218c015a413556d5140dc4e52839b38fa5a0d",
+      "downloadMs": 25824,
+      "completeHeadFragment": true,
+      "accountingAfterFragment": {
+        "usedBytes": 10114982801,
+        "limitBytes": 21474836480,
+        "freeBytes": 297720184832,
+        "minimumFreeBytes": 2147483648
+      },
+      "probe": {
+        "elapsedMs": 176,
+        "exitCode": 0,
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "profile": "High",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "level": 40,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            }
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "jpn"
+            }
+          },
+          {
+            "index": 2,
+            "codec_name": "ass",
+            "codec_type": "subtitle",
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng"
+            }
+          },
+          {
+            "index": 3,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          }
+        ],
+        "format": {
+          "format_name": "matroska,webm",
+          "duration": "1440.171000"
+        },
+        "diagnostic": {
+          "bytes": 52,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": true
+        },
+        "durationMeaning": "Declared original-container duration; this head fragment does not verify the whole timeline"
+      },
+      "selected": {
+        "audioIndex": 1,
+        "subtitleIndex": 2,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng",
+        "indices": "ffprobe native original stream indices; no derived/Jellyfin index claim"
+      },
+      "shortSoftwareDecode": {
+        "elapsedMs": 184,
+        "exitCode": 0,
+        "requestedSeconds": 0.5,
+        "frames": 12,
+        "decodedSeconds": 0.5,
+        "completed": true,
+        "diagnostic": {
+          "bytes": 0,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "audioStreamIndex": 1,
+        "heard": false,
+        "displayed": false
+      },
+      "englishCaptionFragment": {
+        "elapsedMs": 107,
+        "exitCode": 0,
+        "bytes": 7,
+        "cues": 0,
+        "sha256": "73420fdc06730575e08b8a09b5b3824e0f2a9d2dd742640613490ef3abac2bd0",
+        "diagnostic": {
+          "bytes": 186,
+          "prematureEnd": true,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "rendered": false,
+        "spokenDialogueVerified": false
+      },
+      "localPacketReplay": {
+        "at": "2026-10-18T12:31:11.086Z",
+        "command": "ffprobe -v warning -count_packets -show_entries stream=index,codec_type,nb_read_packets -of json PRIVATE_FRAGMENT",
+        "elapsedMs": 113,
+        "exitCode": 0,
+        "streams": [
+          {
+            "index": 0,
+            "codec_type": "video",
+            "nb_read_packets": "672"
+          },
+          {
+            "index": 1,
+            "codec_type": "audio",
+            "nb_read_packets": "1212"
+          },
+          {
+            "index": 2,
+            "codec_type": "subtitle"
+          },
+          {
+            "index": 3,
+            "codec_type": "attachment"
+          }
+        ],
+        "unsupportedCodecWarnings": [
+          {
+            "codecId": 98304,
+            "streamIndex": 3,
+            "type": "attachment"
+          }
+        ],
+        "allUnsupportedCodecWarningsAreAttachments": true,
+        "prematureEnd": true
+      }
+    },
+    {
+      "episode": 944,
+      "candidateId": "archive-e7351cd69fa19da131e5",
+      "collection": "one-piece-0001-1000-1999-horrible-subs",
+      "fileName": "[HorribleSubs] One Piece (01-1000) [720p] (Batch)/[SubsPlease] One Piece - 944 (720p) [B064FE69].mkv",
+      "parserReleaseGroup": "SubsPlease",
+      "sourceBytes": 741471207,
+      "listedOriginalMd5": "bcb0fad7bf3cfa69ca063867cf874743",
+      "fragmentId": "def09a9c-1bf0-464c-96ae-3adb5688f998",
+      "requestedBytes": 8388608,
+      "receivedBytes": 8388608,
+      "ranges": [
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 0-1048575/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=0-1048575",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 5888,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 1048576-2097151/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=1048576-2097151",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1831,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 2097152-3145727/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=2097152-3145727",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2923,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 3145728-4194303/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=3145728-4194303",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1834,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 4194304-5242879/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=4194304-5242879",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2719,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 5242880-6291455/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=5242880-6291455",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1859,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 6291456-7340031/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=6291456-7340031",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1508,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 7340032-8388607/741471207",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"641830e2-2c31f3e7\"",
+            "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=7340032-8388607",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1676,
+          "bytesRead": 1048576,
+          "history": []
+        }
+      ],
+      "privateFile": "def09a9c-1bf0-464c-96ae-3adb5688f998.video.part.mp4",
+      "partialOriginal": true,
+      "fragmentSha256": "f7eb683a21b9662cde1814f9c6fc30ed5e1cb3eb4a16c1ca561c40b76c568a10",
+      "downloadMs": 20427,
+      "completeHeadFragment": true,
+      "accountingAfterFragment": {
+        "usedBytes": 10110788497,
+        "limitBytes": 21474836480,
+        "freeBytes": 297724379136,
+        "minimumFreeBytes": 2147483648
+      },
+      "probe": {
+        "elapsedMs": 199,
+        "exitCode": 0,
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "profile": "High",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "level": 40,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            }
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "jpn"
+            }
+          },
+          {
+            "index": 2,
+            "codec_name": "ass",
+            "codec_type": "subtitle",
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng",
+              "title": "Eng subs"
+            }
+          },
+          {
+            "index": 3,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 4,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 5,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 6,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 7,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 8,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 9,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 10,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 11,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 12,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 13,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 14,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          }
+        ],
+        "format": {
+          "format_name": "matroska,webm",
+          "duration": "1430.721000"
+        },
+        "diagnostic": {
+          "bytes": 629,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": true
+        },
+        "durationMeaning": "Declared original-container duration; this head fragment does not verify the whole timeline"
+      },
+      "selected": {
+        "audioIndex": 1,
+        "subtitleIndex": 2,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng",
+        "indices": "ffprobe native original stream indices; no derived/Jellyfin index claim"
+      },
+      "shortSoftwareDecode": {
+        "elapsedMs": 360,
+        "exitCode": 0,
+        "requestedSeconds": 0.5,
+        "frames": 12,
+        "decodedSeconds": 0.5,
+        "completed": true,
+        "diagnostic": {
+          "bytes": 0,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "audioStreamIndex": 1,
+        "heard": false,
+        "displayed": false
+      },
+      "englishCaptionFragment": {
+        "elapsedMs": 199,
+        "exitCode": 0,
+        "bytes": 7,
+        "cues": 0,
+        "sha256": "73420fdc06730575e08b8a09b5b3824e0f2a9d2dd742640613490ef3abac2bd0",
+        "diagnostic": {
+          "bytes": 186,
+          "prematureEnd": true,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "rendered": false,
+        "spokenDialogueVerified": false
+      },
+      "localPacketReplay": {
+        "at": "2026-10-18T12:31:11.318Z",
+        "command": "ffprobe -v warning -count_packets -show_entries stream=index,codec_type,nb_read_packets -of json PRIVATE_FRAGMENT",
+        "elapsedMs": 206,
+        "exitCode": 0,
+        "streams": [
+          {
+            "index": 0,
+            "codec_type": "video",
+            "nb_read_packets": "89"
+          },
+          {
+            "index": 1,
+            "codec_type": "audio",
+            "nb_read_packets": "164"
+          },
+          {
+            "index": 2,
+            "codec_type": "subtitle"
+          },
+          {
+            "index": 3,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 4,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 5,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 6,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 7,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 8,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 9,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 10,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 11,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 12,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 13,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 14,
+            "codec_type": "attachment"
+          }
+        ],
+        "unsupportedCodecWarnings": [
+          {
+            "codecId": 98304,
+            "streamIndex": 3,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 4,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 5,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 6,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 7,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 8,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 9,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 10,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 11,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 12,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 13,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 14,
+            "type": "attachment"
+          }
+        ],
+        "allUnsupportedCodecWarningsAreAttachments": true,
+        "prematureEnd": true
+      }
+    },
+    {
+      "episode": 1044,
+      "candidateId": "archive-a37186b01d1c653315bf",
+      "collection": "20260622_20260622_0310",
+      "fileName": "[Anime Time] One Piece - 1044 - Clutch! A Demon Incarnate, Robin!.mkv",
+      "parserReleaseGroup": "Anime Time",
+      "sourceBytes": 695857598,
+      "listedOriginalMd5": "f5fa143c1e701298d732be87405c222e",
+      "fragmentId": "70ea5b26-90fa-4631-a58d-1d1d5aa24348",
+      "requestedBytes": 8388608,
+      "receivedBytes": 8388608,
+      "ranges": [
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 0-1048575/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=0-1048575",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2877,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 1048576-2097151/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=1048576-2097151",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1113,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 2097152-3145727/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=2097152-3145727",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2923,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 3145728-4194303/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=3145728-4194303",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1836,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 4194304-5242879/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=4194304-5242879",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1086,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 5242880-6291455/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=5242880-6291455",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2703,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 6291456-7340031/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=6291456-7340031",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2649,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 7340032-8388607/695857598",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38c076-2979f1be\"",
+            "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=7340032-8388607",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 2101,
+          "bytesRead": 1048576,
+          "history": []
+        }
+      ],
+      "privateFile": "70ea5b26-90fa-4631-a58d-1d1d5aa24348.video.part.mp4",
+      "partialOriginal": true,
+      "fragmentSha256": "24cd8bf505b8d8e89feff393bf83263c97af27978d96d86adb4600b72d7af7ca",
+      "downloadMs": 17378,
+      "completeHeadFragment": true,
+      "accountingAfterFragment": {
+        "usedBytes": 10129662865,
+        "limitBytes": 21474836480,
+        "freeBytes": 297707008000,
+        "minimumFreeBytes": 2147483648
+      },
+      "probe": {
+        "elapsedMs": 125,
+        "exitCode": 0,
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "hevc",
+            "profile": "Main 10",
+            "codec_type": "video",
+            "width": 1920,
+            "height": 1080,
+            "pix_fmt": "yuv420p10le",
+            "level": 120,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            }
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng",
+              "title": "English"
+            }
+          },
+          {
+            "index": 2,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {
+              "language": "jpn",
+              "title": "Japanese"
+            }
+          },
+          {
+            "index": 3,
+            "codec_name": "ass",
+            "codec_type": "subtitle",
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng",
+              "title": "Song & Signs"
+            }
+          },
+          {
+            "index": 4,
+            "codec_name": "ass",
+            "codec_type": "subtitle",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng",
+              "title": "English"
+            }
+          },
+          {
+            "index": 5,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 6,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 7,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 8,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 9,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 10,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 11,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 12,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 13,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 14,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 15,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 16,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 17,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 18,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 19,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 20,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 21,
+            "codec_name": "otf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 22,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 23,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 24,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          }
+        ],
+        "format": {
+          "format_name": "matroska,webm",
+          "duration": "1430.767000"
+        },
+        "diagnostic": {
+          "bytes": 1055,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": true
+        },
+        "durationMeaning": "Declared original-container duration; this head fragment does not verify the whole timeline"
+      },
+      "selected": {
+        "audioIndex": 2,
+        "subtitleIndex": 4,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng",
+        "indices": "ffprobe native original stream indices; no derived/Jellyfin index claim"
+      },
+      "shortSoftwareDecode": {
+        "elapsedMs": 698,
+        "exitCode": 0,
+        "requestedSeconds": 0.5,
+        "frames": 12,
+        "decodedSeconds": 0.5,
+        "completed": true,
+        "diagnostic": {
+          "bytes": 0,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "audioStreamIndex": 2,
+        "heard": false,
+        "displayed": false
+      },
+      "englishCaptionFragment": {
+        "elapsedMs": 167,
+        "exitCode": 0,
+        "bytes": 7,
+        "cues": 0,
+        "sha256": "73420fdc06730575e08b8a09b5b3824e0f2a9d2dd742640613490ef3abac2bd0",
+        "diagnostic": {
+          "bytes": 186,
+          "prematureEnd": true,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "rendered": false,
+        "spokenDialogueVerified": false
+      },
+      "localPacketReplay": {
+        "at": "2026-10-18T12:31:11.472Z",
+        "command": "ffprobe -v warning -count_packets -show_entries stream=index,codec_type,nb_read_packets -of json PRIVATE_FRAGMENT",
+        "elapsedMs": 129,
+        "exitCode": 0,
+        "streams": [
+          {
+            "index": 0,
+            "codec_type": "video",
+            "nb_read_packets": "27"
+          },
+          {
+            "index": 1,
+            "codec_type": "audio",
+            "nb_read_packets": "56"
+          },
+          {
+            "index": 2,
+            "codec_type": "audio",
+            "nb_read_packets": "64"
+          },
+          {
+            "index": 3,
+            "codec_type": "subtitle"
+          },
+          {
+            "index": 4,
+            "codec_type": "subtitle"
+          },
+          {
+            "index": 5,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 6,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 7,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 8,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 9,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 10,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 11,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 12,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 13,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 14,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 15,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 16,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 17,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 18,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 19,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 20,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 21,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 22,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 23,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 24,
+            "codec_type": "attachment"
+          }
+        ],
+        "unsupportedCodecWarnings": [
+          {
+            "codecId": 98304,
+            "streamIndex": 5,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 6,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 7,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 8,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 9,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 10,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 11,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 12,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 13,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 14,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 15,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 16,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 17,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 18,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 19,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 20,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98310,
+            "streamIndex": 21,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 22,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 23,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 24,
+            "type": "attachment"
+          }
+        ],
+        "allUnsupportedCodecWarningsAreAttachments": true,
+        "prematureEnd": true
+      }
+    },
+    {
+      "episode": 1085,
+      "candidateId": "archive-f55557a892c948ed035d",
+      "collection": "20260622_20260622_0310",
+      "fileName": "[Anime Time] One Piece - 1085 - The Last Curtain Luffy And Momonosuke's Vow_Land_Of_Wano_ACT_III_End.mkv",
+      "parserReleaseGroup": "Anime Time",
+      "sourceBytes": 659097962,
+      "listedOriginalMd5": "267c4edd7c7b8dee4f1de38e4ad2c1c4",
+      "fragmentId": "b7b6ca4e-c5fb-4f71-97e9-94f2f2745e6f",
+      "requestedBytes": 8388608,
+      "receivedBytes": 8388608,
+      "ranges": [
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 0-1048575/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=0-1048575",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1459,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 1048576-2097151/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=1048576-2097151",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 886,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 2097152-3145727/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=2097152-3145727",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 849,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 3145728-4194303/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=3145728-4194303",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 860,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 4194304-5242879/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=4194304-5242879",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 862,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 5242880-6291455/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=5242880-6291455",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 880,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 6291456-7340031/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=6291456-7340031",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1899,
+          "bytesRead": 1048576,
+          "history": []
+        },
+        {
+          "attempt": 1,
+          "status": 206,
+          "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": "application/octet-stream",
+            "content-length": "1048576",
+            "content-range": "bytes 7340032-8388607/659097962",
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": "\"6a38ef3d-2749096a\"",
+            "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+          },
+          "request": {
+            "method": "GET",
+            "range": "bytes=7340032-8388607",
+            "origin": "https://pti-app-2ab59.web.app"
+          },
+          "elapsedMs": 1632,
+          "bytesRead": 1048576,
+          "history": []
+        }
+      ],
+      "privateFile": "b7b6ca4e-c5fb-4f71-97e9-94f2f2745e6f.video.part.mp4",
+      "partialOriginal": true,
+      "fragmentSha256": "c61ab01c003134e74a21a5a40fe7e28dc460c8d4303317e2b455cd4e279d5247",
+      "downloadMs": 9432,
+      "completeHeadFragment": true,
+      "accountingAfterFragment": {
+        "usedBytes": 10127565713,
+        "limitBytes": 21474836480,
+        "freeBytes": 297707532288,
+        "minimumFreeBytes": 2147483648
+      },
+      "probe": {
+        "elapsedMs": 151,
+        "exitCode": 0,
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "hevc",
+            "profile": "Main 10",
+            "codec_type": "video",
+            "width": 1920,
+            "height": 1080,
+            "pix_fmt": "yuv420p10le",
+            "level": 120,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            }
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng",
+              "title": "English"
+            }
+          },
+          {
+            "index": 2,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {
+              "language": "jpn",
+              "title": "Japanese"
+            }
+          },
+          {
+            "index": 3,
+            "codec_name": "ass",
+            "codec_type": "subtitle",
+            "disposition": {
+              "default": 1,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng",
+              "title": "Songs & Subs"
+            }
+          },
+          {
+            "index": 4,
+            "codec_name": "ass",
+            "codec_type": "subtitle",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {
+              "language": "eng",
+              "title": "English"
+            }
+          },
+          {
+            "index": 5,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 6,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 7,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 8,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 9,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 10,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 11,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 12,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 13,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 14,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 15,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 16,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 17,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          },
+          {
+            "index": 18,
+            "codec_name": "ttf",
+            "codec_type": "attachment",
+            "disposition": {
+              "default": 0,
+              "forced": 0
+            },
+            "tags": {}
+          }
+        ],
+        "format": {
+          "format_name": "matroska,webm",
+          "duration": "1431.880000"
+        },
+        "diagnostic": {
+          "bytes": 737,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": true
+        },
+        "durationMeaning": "Declared original-container duration; this head fragment does not verify the whole timeline"
+      },
+      "selected": {
+        "audioIndex": 2,
+        "subtitleIndex": 4,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng",
+        "indices": "ffprobe native original stream indices; no derived/Jellyfin index claim"
+      },
+      "shortSoftwareDecode": {
+        "elapsedMs": 1016,
+        "exitCode": 0,
+        "requestedSeconds": 0.5,
+        "frames": 12,
+        "decodedSeconds": 0.5,
+        "completed": true,
+        "diagnostic": {
+          "bytes": 0,
+          "prematureEnd": false,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "audioStreamIndex": 2,
+        "heard": false,
+        "displayed": false
+      },
+      "englishCaptionFragment": {
+        "elapsedMs": 222,
+        "exitCode": 0,
+        "bytes": 7,
+        "cues": 0,
+        "sha256": "73420fdc06730575e08b8a09b5b3824e0f2a9d2dd742640613490ef3abac2bd0",
+        "diagnostic": {
+          "bytes": 186,
+          "prematureEnd": true,
+          "invalidData": false,
+          "unknownCodec": false
+        },
+        "rendered": false,
+        "spokenDialogueVerified": false
+      },
+      "localPacketReplay": {
+        "at": "2026-10-18T12:31:11.623Z",
+        "command": "ffprobe -v warning -count_packets -show_entries stream=index,codec_type,nb_read_packets -of json PRIVATE_FRAGMENT",
+        "elapsedMs": 121,
+        "exitCode": 0,
+        "streams": [
+          {
+            "index": 0,
+            "codec_type": "video",
+            "nb_read_packets": "41"
+          },
+          {
+            "index": 1,
+            "codec_type": "audio",
+            "nb_read_packets": "79"
+          },
+          {
+            "index": 2,
+            "codec_type": "audio",
+            "nb_read_packets": "81"
+          },
+          {
+            "index": 3,
+            "codec_type": "subtitle"
+          },
+          {
+            "index": 4,
+            "codec_type": "subtitle"
+          },
+          {
+            "index": 5,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 6,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 7,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 8,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 9,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 10,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 11,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 12,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 13,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 14,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 15,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 16,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 17,
+            "codec_type": "attachment"
+          },
+          {
+            "index": 18,
+            "codec_type": "attachment"
+          }
+        ],
+        "unsupportedCodecWarnings": [
+          {
+            "codecId": 98304,
+            "streamIndex": 5,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 6,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 7,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 8,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 9,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 10,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 11,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 12,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 13,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 14,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 15,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 16,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 17,
+            "type": "attachment"
+          },
+          {
+            "codecId": 98304,
+            "streamIndex": 18,
+            "type": "attachment"
+          }
+        ],
+        "allUnsupportedCodecWarningsAreAttachments": true,
+        "prematureEnd": true
+      }
+    }
+  ],
+  "tools": {
+    "ffmpeg": {
+      "executable": "ffmpeg.exe",
+      "sha256": "47495334f74912826bc474d246fe69fb4c01cd0d3c612d24b6a06000fe4c1483",
+      "version": "ffmpeg version 8.1.3-Jellyfin Copyright (c) 2000-2026 the FFmpeg developers"
+    },
+    "ffprobe": {
+      "executable": "ffprobe.exe",
+      "sha256": "673949ee5d0406529863232eb1053517a3b518e669fe600a45a3e7a638b22fec",
+      "version": "ffprobe version 8.1.3-Jellyfin Copyright (c) 2007-2026 the FFmpeg developers"
+    }
+  },
+  "errors": [],
+  "catalogSha256": "472299ae329efd515947a4c1c40fa5efbe2f3339ee54ccc8d828f48dad379bf5",
+  "preflight": {
+    "usedBytes": 10096108433,
+    "limitBytes": 21474836480,
+    "freeBytes": 297740632064,
+    "minimumFreeBytes": 2147483648
+  },
+  "requestedRangeBytes": 33554432,
+  "receivedFragmentBytes": 33554432,
+  "finalUsage": {
+    "usedBytes": 10129662865,
+    "limitBytes": 21474836480,
+    "freeBytes": 297707008000,
+    "minimumFreeBytes": 2147483648
+  },
+  "completedAt": "2026-10-18T12:29:22.447Z",
+  "noFullOriginalDownloads": true,
+  "allBoundedInspectionsCompleted": false,
+  "localOnlyReplayCompletedAt": "2026-10-18T12:31:11.623Z",
+  "harnessSha256": "36c8b8c451db8b84a2d5e224a54eb3362c8b5428a69a4e416ca871c88c14f2ea",
+  "allTrackCodecAndShortDecodeChecksPassed": true,
+  "subtitlePayloadInFragmentsVerified": false,
+  "toolCleanup": {
+    "ownedLedgerFilesRemaining": 0,
+    "helperReturnsOnlyAfterChildCloseOrNeverSpawn": true,
+    "globalProcessCleanupUsed": false
+  },
+  "evidenceValidatedAt": "2026-10-18T12:32:36.996Z"
+}

@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-18T07:51:10.758500+00:00",
+  "experiment": "Cast discovery and status only",
+  "pychromecast_version": "14.0.10",
+  "requested_name": "Bedroom TV",
+  "devices": [
+    {
+      "name": "Bedroom TV",
+      "model": "BRAVIA VU31",
+      "connected": true,
+      "application_id": null,
+      "application_name": null,
+      "standby": false,
+      "active_input": true
+    }
+  ],
+  "limitations": [
+    "Discovery does not establish media, audio, subtitle or control compatibility.",
+    "No receiver application or media was launched by this probe."
+  ]
+}

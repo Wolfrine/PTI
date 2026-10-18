@@ -1,0 +1,34 @@
+{
+  "kind": "synthetic-status-review",
+  "actualReceiver": false,
+  "causalAttributionToFailedHardwareRun": false,
+  "cases": [
+    {
+      "inputActiveTrackIds": [],
+      "ok": true,
+      "subtitleEnabled": false
+    },
+    {
+      "inputActiveTrackIds": [
+        1
+      ],
+      "ok": true,
+      "subtitleEnabled": true
+    },
+    {
+      "inputActiveTrackIds": null,
+      "ok": false,
+      "errorType": "TypeError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 12
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 153
+        }
+      ]
+    }
+  ]
+}

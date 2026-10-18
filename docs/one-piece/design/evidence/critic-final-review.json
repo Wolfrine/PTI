@@ -1,0 +1,739 @@
+{
+  "schema": 1,
+  "reviewer": "/root/visual_critic_final",
+  "role": "independent visual critic",
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "candidateIndependentlyRecomputed": true,
+  "fingerprintCommands": [
+    "H:/PTI-OnePiece/tools/node/node.exe docs/one-piece/design/fingerprint.mjs H:/PTI-OnePiece/design-candidate-20261018/complete-site/one-piece",
+    "H:/PTI-OnePiece/tools/node/node.exe docs/one-piece/design/fingerprint.mjs F:/Workspace/Worktrees/PTI/one-piece-family/pti-app/dist/pti-app/browser/one-piece"
+  ],
+  "reviewedAt": "2026-10-18T12:12:58.144Z",
+  "verdict": "pass",
+  "status": "agent-reviewed",
+  "scope": "Final visual acknowledgment for26 current labelled development/harness renders:22 nonmedia/title and4 real prepared nativeMP4 video/English-caption frames. This does not establish production authenticated playback, static transport API correctness, device acceptance or product release.",
+  "fullCandidateVisualAcknowledgment": "pass-for26-inspected-renders",
+  "reviewType": "Final changed-candidate verification after five substantive design cycles; no sixth cycle invented",
+  "scores": {
+    "Viewing purpose / focal hierarchy": 8,
+    "Sequence and state clarity": 8,
+    "Composition and rhythm": 8,
+    "Typography and material craft": 8,
+    "Product identity and imagery discipline": 8,
+    "Responsive Watch continuity": 8
+  },
+  "dimensions": [
+    {
+      "dimension": "Viewing purpose / focal hierarchy",
+      "score": 8,
+      "visibleReason": "Continue/Start, remote transport, actual picture or a specific recovery action dominates each corresponding state."
+    },
+    {
+      "dimension": "Sequence and state clarity",
+      "score": 8,
+      "visibleReason": "Episode numbers, explicit590choice,1085ending, destination, known saved position and selected subtitle summary retain context."
+    },
+    {
+      "dimension": "Composition and rhythm",
+      "score": 8,
+      "visibleReason": "Ruled catalogue, quiet context dialogs, dedicated remote and full-width phone picture use task-based grouping."
+    },
+    {
+      "dimension": "Typography and material craft",
+      "score": 8,
+      "visibleReason": "Serif episode/status headings, aligned metadata, wrapped title results and native English caption backplates remain readable at both sizes."
+    },
+    {
+      "dimension": "Product identity and imagery discipline",
+      "score": 8,
+      "visibleReason": "The type-and-number language survives sparse and failure states; only authentic episode media and source-derived optional titles supply content."
+    },
+    {
+      "dimension": "Responsive Watch continuity",
+      "score": 8,
+      "visibleReason": "Both current actual media sources show legible English captions, a distinct native control bar and clear episode/next/language actions on desktop and390phone."
+    }
+  ],
+  "overall": 8,
+  "reason": "All26 current original PNGs were personally inspected. Missing/end/title states are actually painted. Both supplied-source episodes show authentic picture with visible English dialogue and native controls at desktop/mobile widths. No visible blocker was found. Scores are supported by current pixels rather than copied from an old candidate or inferred from manifest checks.",
+  "generic_risks": [
+    {
+      "risk": "Poster/card dependence",
+      "assessment": "resolved",
+      "reason": "Numbered ruled rows remain useful with future titles hidden; authentic video supplies the Watch focus."
+    },
+    {
+      "risk": "Context-free utility states",
+      "assessment": "resolved",
+      "reason": "Episode/destination/saved-time context remains in failures and boundaries; PC disconnection uncertainty is explicit."
+    },
+    {
+      "risk": "Uniform quiet surfaces or generic player shell",
+      "assessment": "justified",
+      "reason": "Consistent serial typography supports the family library while actual-picture and dedicated-remote compositions prioritize their different tasks."
+    }
+  ],
+  "layer_decisions": {
+    "type": "retain",
+    "color": "retain",
+    "spacing": "retain",
+    "composition": "retain",
+    "imagery": "retain authentic media; no invented imagery",
+    "navigation": "retain; prior overlap false positive remains closed"
+  },
+  "visible_blockers": [],
+  "captures": [
+    {
+      "path": "evidence/final2b9695-state-library-desktop.png",
+      "sha256": "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+      "kind": "library",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:04:28.326Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-fresh-desktop.png",
+      "sha256": "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+      "kind": "fresh",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:04:39.313Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-remote-desktop.png",
+      "sha256": "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+      "kind": "remote",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:04:44.130Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-preparing-desktop.png",
+      "sha256": "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+      "kind": "preparing",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:04:57.575Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-offline-desktop.png",
+      "sha256": "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+      "kind": "offline",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:05:02.315Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-empty-desktop.png",
+      "sha256": "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+      "kind": "empty",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:05:06.932Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-disconnect-unconfirmed-desktop.png",
+      "sha256": "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+      "kind": "disconnect-unconfirmed",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:05:14.295Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-unsupported-delivery-desktop.png",
+      "sha256": "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+      "kind": "unsupported-delivery",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:05:22.703Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-missing-desktop.png",
+      "sha256": "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+      "kind": "missing",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:05:30.261Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-end-desktop.png",
+      "sha256": "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+      "kind": "end",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:05:45.777Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-title-search-desktop.png",
+      "sha256": "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+      "kind": "title-search",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:06:01.516Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-library-mobile.png",
+      "sha256": "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+      "kind": "library",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:06:07.089Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-fresh-mobile.png",
+      "sha256": "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+      "kind": "fresh",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:06:11.318Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-remote-mobile.png",
+      "sha256": "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+      "kind": "remote",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:06:15.926Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-preparing-mobile.png",
+      "sha256": "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+      "kind": "preparing",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:06:26.948Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-offline-mobile.png",
+      "sha256": "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+      "kind": "offline",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:06:31.638Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-empty-mobile.png",
+      "sha256": "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+      "kind": "empty",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:06:47.644Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-disconnect-unconfirmed-mobile.png",
+      "sha256": "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+      "kind": "disconnect-unconfirmed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:07:02.747Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-unsupported-delivery-mobile.png",
+      "sha256": "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+      "kind": "unsupported-delivery",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:07:08.187Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-missing-mobile.png",
+      "sha256": "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+      "kind": "missing",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:07:20.148Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-end-mobile.png",
+      "sha256": "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+      "kind": "end",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:07:28.055Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-state-title-search-mobile.png",
+      "sha256": "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+      "kind": "title-search",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:07:34.934Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "nonmedia",
+      "realMedia": false,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T12:03:58.527Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-media-source1-desktop.png",
+      "sha256": "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+      "kind": "media-1000",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T11:57:59.632Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "real-media",
+      "realMedia": true,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T11:55:14.664Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-media-source1-mobile.png",
+      "sha256": "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+      "kind": "media-1000",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T11:58:16.685Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "real-media",
+      "realMedia": true,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T11:55:14.664Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-media-source2-mobile.png",
+      "sha256": "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+      "kind": "media-1001",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "capturedAt": "2026-10-18T12:01:35.259Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "real-media",
+      "realMedia": true,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T11:55:14.664Z",
+        "page_errors": false
+      }
+    },
+    {
+      "path": "evidence/final2b9695-media-source2-desktop.png",
+      "sha256": "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67",
+      "kind": "media-1001",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "capturedAt": "2026-10-18T12:01:49.483Z",
+      "personallyViewed": true,
+      "pixelStateIdentityConfirmed": true,
+      "mode": "Personally inspected original retained PNG pixels from current-candidate CUA renders",
+      "type": "real-media",
+      "realMedia": true,
+      "technicalIdentitySynthetic": true,
+      "diagnostics": {
+        "source": "Capture manifest; browser diagnostics not independently sampled in this refresh",
+        "startedAt": "2026-10-18T11:55:14.664Z",
+        "page_errors": false
+      }
+    }
+  ],
+  "render_hashes": [
+    "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+    "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+    "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+    "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+    "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+    "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+    "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+    "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+    "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+    "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+    "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+    "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+    "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+    "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+    "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+    "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+    "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+    "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+    "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+    "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+    "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+    "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+    "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+    "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+    "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+    "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67"
+  ],
+  "historicalMediaCaptures": [
+    {
+      "path": "evidence/critic-cycle-5-source1-desktop.jpg",
+      "sha256": "a62f5f7641112c9c33d3b191cb971db44edcdd2ca6d0df9626b38b50ad8b2b04",
+      "personallyViewed": true,
+      "mode": "own live-CUA review and retained pixels; unchanged media presentation",
+      "candidate": "e087d987c034e8adcf785cf54e77547ad2da26c10e707bdd4a3e52165dd8df5e",
+      "currentCandidateEvidence": false
+    },
+    {
+      "path": "evidence/critic-cycle-5-source1-mobile.jpg",
+      "sha256": "e98e82ad3eb8cbdaa56bd6bd7c827da169b0e59dd9744dc3da2c706234009af4",
+      "personallyViewed": true,
+      "mode": "own live-CUA review and retained pixels; unchanged media presentation",
+      "candidate": "e087d987c034e8adcf785cf54e77547ad2da26c10e707bdd4a3e52165dd8df5e",
+      "currentCandidateEvidence": false
+    },
+    {
+      "path": "evidence/critic-cycle-5-source2-desktop.jpg",
+      "sha256": "ba767c0ed632e6c93d690000729f51f82f79fd15eb7e8b566dad6e49cc55ece8",
+      "personallyViewed": true,
+      "mode": "own live-CUA review and retained pixels; unchanged media presentation",
+      "candidate": "e087d987c034e8adcf785cf54e77547ad2da26c10e707bdd4a3e52165dd8df5e",
+      "currentCandidateEvidence": false
+    },
+    {
+      "path": "evidence/critic-cycle-5-source2-mobile.jpg",
+      "sha256": "5a2cdaea1a8cdb0b81606bf5b32fccd5e136afb3a984da7e268d0678a25ac9f2",
+      "personallyViewed": true,
+      "mode": "own live-CUA review and retained pixels; unchanged media presentation",
+      "candidate": "e087d987c034e8adcf785cf54e77547ad2da26c10e707bdd4a3e52165dd8df5e",
+      "currentCandidateEvidence": false
+    }
+  ],
+  "pendingEvidence": [],
+  "not_verified": [
+    "Firebase sign-in and family data authorization",
+    "Authenticated production static-media transport and complete playback flow",
+    "PWA installation and deployed PTI",
+    "Physical Android/tablet/HDMI/Cast hardware",
+    "Japanese listening and subtitle/audio timing",
+    "Phone sleep/reconnection",
+    "Long-duration playback and five-second performance target"
+  ],
+  "productionMarkerCheck": {
+    "bundleBytes": 1273073,
+    "checks": [
+      {
+        "label": "development-banner",
+        "present": false
+      },
+      {
+        "label": "synthetic-account",
+        "present": false
+      },
+      {
+        "label": "loopback-media-harness",
+        "present": false
+      },
+      {
+        "label": "review-dialogue-control",
+        "present": false
+      },
+      {
+        "label": "direction-A",
+        "present": false
+      },
+      {
+        "label": "direction-B",
+        "present": false
+      }
+    ],
+    "devOnlyInputs": []
+  },
+  "diagnosticsQualification": "Manifest diagnostics began before the listed captures and report no errors; critic inspected those records but did not independently access browser diagnostics in this final local-file pass.",
+  "mediaQualification": "Current media pictures/captions are from real prepared MP4s in an isolated technical harness with synthetic account/progress. The source manifest expressly separates this from the new production static transport.",
+  "historicalQualification": "Olde087/4de/HLS captures are not relabelled or counted among the26 current renders. Prior false-positive navigation overlap remains retracted.",
+  "acceptanceAssembly": "Parent/designer own formal v2 acceptance packet and separate QA; use these exact26 hashes for the critic review only."
+}

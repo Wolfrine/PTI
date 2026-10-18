@@ -1,0 +1,301 @@
+{
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "recordedAt": "2026-10-18T12:02:29.088Z",
+  "diagnosticsStartedAt": "2026-10-18T11:55:14.664Z",
+  "records": [
+    {
+      "episodeNumber": 1000,
+      "viewport": "desktop",
+      "file": "final2b9695-media-source1-desktop.png",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "capturedAt": "2026-10-18T11:57:59.632Z",
+      "diagnosticsStartedAt": "2026-10-18T11:55:14.664Z",
+      "sha256": "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+      "media": {
+        "duration": 1430.789705,
+        "error": 0,
+        "paused": true,
+        "position": 652.983154,
+        "readyState": 4
+      },
+      "layout": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "realMedia": true,
+      "identity": "synthetic technical review; no Firebase/account writes",
+      "mime": "video/mp4",
+      "englishCaptionVisible": true,
+      "parentVisuallyInspected": true,
+      "heardJapaneseOnPc": false
+    },
+    {
+      "episodeNumber": 1000,
+      "viewport": "mobile",
+      "file": "final2b9695-media-source1-mobile.png",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "capturedAt": "2026-10-18T11:58:16.685Z",
+      "diagnosticsStartedAt": "2026-10-18T11:55:14.664Z",
+      "sha256": "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+      "media": {
+        "duration": 1430.789705,
+        "error": 0,
+        "paused": true,
+        "position": 652.983154,
+        "readyState": 4
+      },
+      "layout": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "realMedia": true,
+      "identity": "synthetic technical review; no Firebase/account writes",
+      "mime": "video/mp4",
+      "englishCaptionVisible": true,
+      "parentVisuallyInspected": true,
+      "heardJapaneseOnPc": false
+    },
+    {
+      "episodeNumber": 1001,
+      "viewport": "mobile",
+      "file": "final2b9695-media-source2-mobile.png",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "capturedAt": "2026-10-18T12:01:35.259Z",
+      "diagnosticsStartedAt": "2026-10-18T11:55:14.664Z",
+      "sha256": "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+      "media": {
+        "duration": 1419.041917,
+        "error": 0,
+        "paused": true,
+        "position": 605.220843,
+        "readyState": 4
+      },
+      "layout": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "realMedia": true,
+      "identity": "synthetic technical review; no Firebase/account writes",
+      "mime": "video/mp4",
+      "englishCaptionVisible": true,
+      "parentVisuallyInspected": true,
+      "heardJapaneseOnPc": false
+    },
+    {
+      "episodeNumber": 1001,
+      "viewport": "desktop",
+      "file": "final2b9695-media-source2-desktop.png",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "capturedAt": "2026-10-18T12:01:49.483Z",
+      "diagnosticsStartedAt": "2026-10-18T11:55:14.664Z",
+      "sha256": "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67",
+      "media": {
+        "duration": 1419.041917,
+        "error": 0,
+        "paused": true,
+        "position": 605.220843,
+        "readyState": 4
+      },
+      "layout": {
+        "brokenImages": 0,
+        "bufferingLabel": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "realMedia": true,
+      "identity": "synthetic technical review; no Firebase/account writes",
+      "mime": "video/mp4",
+      "englishCaptionVisible": true,
+      "parentVisuallyInspected": true,
+      "heardJapaneseOnPc": false
+    }
+  ],
+  "logs": [
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"first-frame\",\"elapsedMs\":165,\"mediaTime\":0,\"frameCount\":1,\"paused\":false,\"seeking\":false,\"seekSequence\":null,\"seekTargetSeconds\":null,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:55:15.175Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":89.3,\"mediaTime\":599.975,\"frameCount\":284,\"paused\":false,\"seeking\":false,\"seekSequence\":1,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:55:27.072Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":89.3,\"mediaTime\":599.975,\"frameCount\":284,\"paused\":false,\"seeking\":false,\"seekSequence\":1,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:55:27.072Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":60.528,\"mediaTime\":599.975,\"frameCount\":1045,\"paused\":true,\"seeking\":false,\"seekSequence\":2,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:55:59.890Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":60.528,\"mediaTime\":599.975,\"frameCount\":1045,\"paused\":true,\"seeking\":false,\"seekSequence\":2,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:55:59.890Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":46.98,\"mediaTime\":625.667,\"frameCount\":1046,\"paused\":true,\"seeking\":false,\"seekSequence\":9,\"seekTargetSeconds\":625.692,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:05.023Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":46.98,\"mediaTime\":625.667,\"frameCount\":1046,\"paused\":true,\"seeking\":false,\"seekSequence\":9,\"seekTargetSeconds\":625.692,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:05.024Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":81.3,\"mediaTime\":1416.458,\"frameCount\":1047,\"paused\":true,\"seeking\":false,\"seekSequence\":11,\"seekTargetSeconds\":1416.482,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:10.574Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":81.3,\"mediaTime\":1416.458,\"frameCount\":1047,\"paused\":true,\"seeking\":false,\"seekSequence\":11,\"seekTargetSeconds\":1416.482,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:10.574Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":13.2,\"mediaTime\":599.975,\"frameCount\":1048,\"paused\":true,\"seeking\":false,\"seekSequence\":12,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:30.455Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":13.2,\"mediaTime\":599.975,\"frameCount\":1048,\"paused\":true,\"seeking\":false,\"seekSequence\":12,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:30.456Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":877.6,\"mediaTime\":649.983,\"frameCount\":1049,\"paused\":true,\"seeking\":false,\"seekSequence\":17,\"seekTargetSeconds\":650,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:31.673Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":877.6,\"mediaTime\":649.983,\"frameCount\":1049,\"paused\":true,\"seeking\":false,\"seekSequence\":17,\"seekTargetSeconds\":650,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:56:31.674Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":81.564,\"mediaTime\":599.975,\"frameCount\":1358,\"paused\":true,\"seeking\":false,\"seekSequence\":18,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:57:45.935Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":81.564,\"mediaTime\":599.975,\"frameCount\":1358,\"paused\":true,\"seeking\":false,\"seekSequence\":18,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:57:45.936Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame-observed\",\"elapsedMs\":874.4,\"mediaTime\":649.983,\"frameCount\":1359,\"paused\":true,\"seeking\":false,\"seekSequence\":23,\"seekTargetSeconds\":650,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:57:47.090Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":874.4,\"mediaTime\":649.983,\"frameCount\":1359,\"paused\":true,\"seeking\":false,\"seekSequence\":23,\"seekTargetSeconds\":650,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:57:47.090Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"first-frame\",\"elapsedMs\":286.6,\"mediaTime\":0.124,\"frameCount\":3,\"paused\":false,\"seeking\":false,\"seekSequence\":null,\"seekTargetSeconds\":null,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:58:31.642Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame-observed\",\"elapsedMs\":239.9,\"mediaTime\":599.974,\"frameCount\":1468,\"paused\":false,\"seeking\":true,\"seekSequence\":1,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:59:33.040Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame-observed\",\"elapsedMs\":339.9,\"mediaTime\":600.015,\"frameCount\":1469,\"paused\":false,\"seeking\":false,\"seekSequence\":1,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:59:33.127Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame\",\"elapsedMs\":339.9,\"mediaTime\":600.015,\"frameCount\":1469,\"paused\":false,\"seeking\":false,\"seekSequence\":1,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:59:33.128Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame-observed\",\"elapsedMs\":27.1,\"mediaTime\":625.791,\"frameCount\":2178,\"paused\":true,\"seeking\":true,\"seekSequence\":9,\"seekTargetSeconds\":625.81,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T12:00:04.018Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame-observed\",\"elapsedMs\":381.352,\"mediaTime\":1404.819,\"frameCount\":2179,\"paused\":true,\"seeking\":false,\"seekSequence\":11,\"seekTargetSeconds\":1404.85,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T12:00:12.059Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame\",\"elapsedMs\":381.352,\"mediaTime\":1404.819,\"frameCount\":2179,\"paused\":true,\"seeking\":false,\"seekSequence\":11,\"seekTargetSeconds\":1404.85,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T12:00:12.059Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame-observed\",\"elapsedMs\":1014.326,\"mediaTime\":599.974,\"frameCount\":2180,\"paused\":true,\"seeking\":false,\"seekSequence\":12,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T12:00:46.859Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame\",\"elapsedMs\":1014.326,\"mediaTime\":599.974,\"frameCount\":2180,\"paused\":true,\"seeking\":false,\"seekSequence\":12,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T12:00:46.859Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame-observed\",\"elapsedMs\":198.426,\"mediaTime\":599.974,\"frameCount\":2253,\"paused\":true,\"seeking\":false,\"seekSequence\":13,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T12:01:21.861Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame\",\"elapsedMs\":198.426,\"mediaTime\":599.974,\"frameCount\":2253,\"paused\":true,\"seeking\":false,\"seekSequence\":13,\"seekTargetSeconds\":600,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T12:01:21.861Z"
+    }
+  ],
+  "realMedia": true,
+  "source": "actual prepared1000/1001 via isolatedJellyfin18106 and boundedbrowserharness18102; no productionGoogleAuth/staticAPIclaim",
+  "captionControl": {
+    "disabledObserved": true,
+    "restored": [
+      {
+        "language": "en",
+        "mode": "showing"
+      }
+    ]
+  },
+  "limitations": [
+    "No PCaudio listening claim; TVlanguage separately confirmed by owner",
+    "Mobile-sized desktopChrome is not a physicalAndroid installation test",
+    "Headless/pilot adapter is separate from new productionstatictransport"
+  ]
+}

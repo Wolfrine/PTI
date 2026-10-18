@@ -1,0 +1,889 @@
+{
+  "episode": 1001,
+  "kind": "Node technical demux test; not browser audiovisual proof",
+  "events": [
+    {
+      "event": "probe",
+      "ms": 42736,
+      "bytes": 12147475,
+      "streams": [
+        {
+          "ptr": 1505232,
+          "index": 0,
+          "codecpar": 1497728,
+          "codec_type": 0,
+          "codec_id": 172,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": -9223372036854776000,
+          "duration": -9223372036854776,
+          "metadata": {
+            "BPS": "4368802",
+            "DURATION": "00:23:39.001000000",
+            "NUMBER_OF_FRAMES": "34022",
+            "NUMBER_OF_BYTES": "774916936",
+            "_STATISTICS_WRITING_APP": "mkvmerge v86.0 ('Winter') 64-bit",
+            "_STATISTICS_WRITING_DATE_UTC": "2024-08-22 18:35:19",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "hevc"
+        },
+        {
+          "ptr": 13392592,
+          "index": 1,
+          "codecpar": 13393392,
+          "codec_type": 1,
+          "codec_id": 86018,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": -9223372036854776000,
+          "duration": -9223372036854776,
+          "metadata": {
+            "language": "eng",
+            "title": "English",
+            "BPS": "160679",
+            "DURATION": "00:23:52.415000000",
+            "NUMBER_OF_FRAMES": "61689",
+            "NUMBER_OF_BYTES": "28769959",
+            "_STATISTICS_WRITING_APP": "mkvmerge v86.0 ('Winter') 64-bit",
+            "_STATISTICS_WRITING_DATE_UTC": "2024-08-22 18:35:19",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "aac"
+        },
+        {
+          "ptr": 13394640,
+          "index": 2,
+          "codecpar": 13395440,
+          "codec_type": 1,
+          "codec_id": 86018,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": -9223372036854776000,
+          "duration": -9223372036854776,
+          "metadata": {
+            "language": "jpn",
+            "title": "Stereo",
+            "BPS": "161251",
+            "DURATION": "00:23:39.040000000",
+            "NUMBER_OF_FRAMES": "61113",
+            "NUMBER_OF_BYTES": "28602705",
+            "_STATISTICS_WRITING_APP": "mkvmerge v86.0 ('Winter') 64-bit",
+            "_STATISTICS_WRITING_DATE_UTC": "2024-08-22 18:35:19",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "aac"
+        },
+        {
+          "ptr": 13396688,
+          "index": 3,
+          "codecpar": 13397456,
+          "codec_type": 3,
+          "codec_id": 94230,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": 1432415,
+          "duration": 1432.415,
+          "metadata": {
+            "language": "eng",
+            "title": "Song & Signs",
+            "BPS": "22",
+            "DURATION": "00:23:34.540000000",
+            "NUMBER_OF_FRAMES": "64",
+            "NUMBER_OF_BYTES": "4039",
+            "_STATISTICS_WRITING_APP": "mkvmerge v86.0 ('Winter') 64-bit",
+            "_STATISTICS_WRITING_DATE_UTC": "2024-08-22 18:35:19",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "ass"
+        },
+        {
+          "ptr": 13401264,
+          "index": 4,
+          "codecpar": 13402064,
+          "codec_type": 3,
+          "codec_id": 94230,
+          "time_base_num": 1,
+          "time_base_den": 1000,
+          "duration_time_base": 1432415,
+          "duration": 1432.415,
+          "metadata": {
+            "language": "eng",
+            "title": "English",
+            "BPS": "95",
+            "DURATION": "00:23:34.540000000",
+            "NUMBER_OF_FRAMES": "328",
+            "NUMBER_OF_BYTES": "16972",
+            "_STATISTICS_WRITING_APP": "mkvmerge v86.0 ('Winter') 64-bit",
+            "_STATISTICS_WRITING_DATE_UTC": "2024-08-22 18:35:19",
+            "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+          },
+          "codecName": "ass"
+        },
+        {
+          "ptr": 13405488,
+          "index": 5,
+          "codecpar": 13406288,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Roboto-Medium.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 13759248,
+          "index": 6,
+          "codecpar": 13760016,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Roboto-MediumItalic.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 14139792,
+          "index": 7,
+          "codecpar": 14140592,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "arial.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 15034528,
+          "index": 8,
+          "codecpar": 15035296,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "arialbd.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 15891296,
+          "index": 9,
+          "codecpar": 15892096,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "comic.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 16133936,
+          "index": 10,
+          "codecpar": 16134704,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "comicbd.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 16360528,
+          "index": 11,
+          "codecpar": 16361328,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "times.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 17337792,
+          "index": 12,
+          "codecpar": 17338560,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "timesbd.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 18320112,
+          "index": 13,
+          "codecpar": 18320912,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "trebuc.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 18540608,
+          "index": 14,
+          "codecpar": 18541408,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "trebucbd.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 18749536,
+          "index": 15,
+          "codecpar": 18750336,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "verdana.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 18992064,
+          "index": 16,
+          "codecpar": 18992832,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "verdanab.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 19202768,
+          "index": 17,
+          "codecpar": 19203568,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "comic_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 19331168,
+          "index": 18,
+          "codecpar": 19331936,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "georgia_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 19490480,
+          "index": 19,
+          "codecpar": 19491248,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "impact_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 19630016,
+          "index": 20,
+          "codecpar": 19630816,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Tahoma_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 20330592,
+          "index": 21,
+          "codecpar": 20331392,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "times_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 20663040,
+          "index": 22,
+          "codecpar": 20663808,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "trebuc_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 20801456,
+          "index": 23,
+          "codecpar": 20802224,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "verdana_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 20975312,
+          "index": 24,
+          "codecpar": 20976080,
+          "codec_type": 4,
+          "codec_id": 98310,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "AdobeArabic-Bold.otf",
+            "mimetype": "application/vnd.ms-opentype"
+          },
+          "codecName": "otf"
+        },
+        {
+          "ptr": 21255568,
+          "index": 25,
+          "codecpar": 21256368,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Arial_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 21533200,
+          "index": 26,
+          "codecpar": 21534000,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "calibri.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 23128672,
+          "index": 27,
+          "codecpar": 23129440,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "ariali_0.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 23780000,
+          "index": 28,
+          "codecpar": 23780800,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "ARLRDBD.TTF",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 23827440,
+          "index": 29,
+          "codecpar": 23828208,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "blue highway linocut.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 23887056,
+          "index": 30,
+          "codecpar": 23887856,
+          "codec_type": 4,
+          "codec_id": 98310,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Brushie Brushie.otf",
+            "mimetype": "application/vnd.ms-opentype"
+          },
+          "codecName": "otf"
+        },
+        {
+          "ptr": 24191680,
+          "index": 31,
+          "codecpar": 24192480,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Brushy_Cre.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 24458864,
+          "index": 32,
+          "codecpar": 24459632,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "CantoraOne-Regular.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 24624176,
+          "index": 33,
+          "codecpar": 24624976,
+          "codec_type": 4,
+          "codec_id": 98310,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Dinobots.otf",
+            "mimetype": "application/vnd.ms-opentype"
+          },
+          "codecName": "otf"
+        },
+        {
+          "ptr": 24819168,
+          "index": 34,
+          "codecpar": 24819968,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Felt Regular.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 24847184,
+          "index": 35,
+          "codecpar": 24847952,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "GODOFWAR.TTF",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 24874176,
+          "index": 36,
+          "codecpar": 24874944,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "OnePiece.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 24919280,
+          "index": 37,
+          "codecpar": 24920080,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "SUSANNA.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 24985824,
+          "index": 38,
+          "codecpar": 24986624,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "Toledo.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 25051376,
+          "index": 39,
+          "codecpar": 25052144,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "urwvestad.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 25122400,
+          "index": 40,
+          "codecpar": 25123200,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "QlassikBold_TB.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 25183712,
+          "index": 41,
+          "codecpar": 25184512,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "OldSansBlack.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        },
+        {
+          "ptr": 25227376,
+          "index": 42,
+          "codecpar": 25228144,
+          "codec_type": 4,
+          "codec_id": 98310,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "ClearfaceGothicLTStd-Roman.otf",
+            "mimetype": "application/vnd.ms-opentype"
+          },
+          "codecName": "otf"
+        },
+        {
+          "ptr": 25262256,
+          "index": 43,
+          "codecpar": 25263056,
+          "codec_type": 4,
+          "codec_id": 98304,
+          "time_base_num": 1,
+          "time_base_den": 90000,
+          "duration_time_base": 128917350,
+          "duration": 1432.415,
+          "metadata": {
+            "filename": "RetroBoldy-Regular.ttf",
+            "mimetype": "application/x-truetype-font"
+          },
+          "codecName": "ttf"
+        }
+      ],
+      "selected": {
+        "video": 0,
+        "japanese": 2,
+        "fullEnglish": 4
+      }
+    }
+  ],
+  "metrics": {
+    "bytes": 12147475,
+    "requests": [
+      {
+        "start": 0,
+        "bytes": 524288,
+        "ms": 4576
+      },
+      {
+        "start": 524288,
+        "bytes": 524288,
+        "ms": 1919
+      },
+      {
+        "start": 1048576,
+        "bytes": 524288,
+        "ms": 1175
+      },
+      {
+        "start": 1572864,
+        "bytes": 524288,
+        "ms": 3263
+      },
+      {
+        "start": 2097152,
+        "bytes": 524288,
+        "ms": 2085
+      },
+      {
+        "start": 2621440,
+        "bytes": 524288,
+        "ms": 828
+      },
+      {
+        "start": 3145728,
+        "bytes": 524288,
+        "ms": 2652
+      },
+      {
+        "start": 3670016,
+        "bytes": 524288,
+        "ms": 1860
+      },
+      {
+        "start": 4194304,
+        "bytes": 524288,
+        "ms": 2253
+      },
+      {
+        "start": 4718592,
+        "bytes": 524288,
+        "ms": 1367
+      },
+      {
+        "start": 5242880,
+        "bytes": 524288,
+        "ms": 1212
+      },
+      {
+        "start": 5767168,
+        "bytes": 524288,
+        "ms": 1108
+      },
+      {
+        "start": 6291456,
+        "bytes": 524288,
+        "ms": 1118
+      },
+      {
+        "start": 6815744,
+        "bytes": 524288,
+        "ms": 1125
+      },
+      {
+        "start": 7340032,
+        "bytes": 524288,
+        "ms": 840
+      },
+      {
+        "start": 7864320,
+        "bytes": 524288,
+        "ms": 833
+      },
+      {
+        "start": 8388608,
+        "bytes": 524288,
+        "ms": 917
+      },
+      {
+        "start": 8912896,
+        "bytes": 524288,
+        "ms": 3131
+      },
+      {
+        "start": 9437184,
+        "bytes": 524288,
+        "ms": 1093
+      },
+      {
+        "start": 9961472,
+        "bytes": 524288,
+        "ms": 2197
+      },
+      {
+        "start": 10485760,
+        "bytes": 524288,
+        "ms": 869
+      },
+      {
+        "start": 11010048,
+        "bytes": 524288,
+        "ms": 3167
+      },
+      {
+        "start": 11534336,
+        "bytes": 524288,
+        "ms": 2388
+      },
+      {
+        "start": 844627968,
+        "bytes": 88851,
+        "ms": 616
+      }
+    ],
+    "startedAt": "2026-10-18T07:26:06.139Z",
+    "probeMs": 42736
+  },
+  "memory": {
+    "rss": 129499136,
+    "heapTotal": 10977280,
+    "heapUsed": 9876272,
+    "external": 73050931,
+    "arrayBuffers": 17413855
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "episode": 1001,
+  "startSeconds": 0,
+  "upstreamBytes": null,
+  "upstreamBytesNote": "not instrumented; segment bytes below measure Jellyfin output only",
+  "renderedOrListened": false,
+  "seconds": 26.030999999959022,
+  "outputBytes": 1781488,
+  "sha256": "48c22e6215e06cb11a53328dea307f28c0ee4d5536d699382e6ee373667042bc",
+  "transportStreamSyncByte": true,
+  "requests": [
+    {
+      "path": "/videos/4a300eef-8598-9ba7-2351-0648881bd044/master.m3u8",
+      "bytes": 780,
+      "mime": "application/vnd.apple.mpegurl",
+      "elapsedSeconds": 0.35899999999674037
+    },
+    {
+      "path": "/videos/4a300eef-8598-9ba7-2351-0648881bd044/main.m3u8",
+      "bytes": 340208,
+      "mime": "application/vnd.apple.mpegurl",
+      "elapsedSeconds": 0.4059999999590218
+    },
+    {
+      "path": "/videos/4a300eef-8598-9ba7-2351-0648881bd044/hls1/main/0.ts",
+      "bytes": 1781488,
+      "mime": "video/mp2t",
+      "elapsedSeconds": 26.030999999959022
+    }
+  ]
+}

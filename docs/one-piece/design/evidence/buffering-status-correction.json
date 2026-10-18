@@ -1,0 +1,30 @@
+{
+  "previousCandidate": "967e76463431f31343644234ba5d81cfd615883669248d32af87d1bc9b4ccc04",
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "changes": [
+    "player.mjs buffering readiness state",
+    "four focused frontend regressions"
+  ],
+  "testsPassed": 41,
+  "fixtureAndObserverUnchanged": true,
+  "production": [
+    {
+      "path": "app.js",
+      "sha256": "02fc82068b94e1f58fed8d4d03bc1693a32495f8d1999fbe6b3b1acf8c54cbff",
+      "bytes": 1273073
+    },
+    {
+      "path": "app.css",
+      "sha256": "f62f8ccbfaeb13556b14a7e2f5c3d63370481a4fbbc5aed16b21666fd0ff4035",
+      "bytes": 27000
+    },
+    {
+      "path": "catalog.json",
+      "sha256": "18de1a533dbc4307b2db2ebf5dcbe715d8233345b4806b7466ef0c7d4834b4cc",
+      "bytes": 118257
+    }
+  ],
+  "browserOrEngineActions": false,
+  "actualUiVerification": "pending parent",
+  "acceptance": "not claimed"
+}

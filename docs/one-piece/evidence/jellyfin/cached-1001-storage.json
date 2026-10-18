@@ -1,0 +1,22 @@
+{
+  "sharedPilotDataBytesConservative": 1837692082,
+  "sharedMediaBytes": 1796209750,
+  "maximumMediaBytes": 21474836480,
+  "within20GiB": true,
+  "cachedOriginalEpisodes": [
+    1,
+    1001
+  ],
+  "originalFileBytes": {
+    "1": 357167311,
+    "1001": 844716819
+  },
+  "allOtherOriginalsDownloaded": false,
+  "finalLiveEncoderChildren": 0,
+  "cached1001Logs": [
+    "cached-1001-console.out.log",
+    "cached-1001-FFmpeg.Transcode-2026-10-18_13-11-31_6641c4b1990f1643e23d63c7fabf7727_0a0f4060.log",
+    "cached-1001-FFmpeg.Transcode-2026-10-18_13-11-40_6641c4b1990f1643e23d63c7fabf7727_7144d2d5.log",
+    "cached-1001-log_20261018.log"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@libav.js/variant-webcodecs": "6.10.9",
+    "esbuild": "0.25.12",
+    "jassub": "2.5.21"
+  }
+}

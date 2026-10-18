@@ -1,0 +1,14 @@
+✔ all existing PTI login routes preserve query strings and use Angular navigation (4.1448ms)
+✔ One Piece episode links use a full-page same-origin sibling return (0.7574ms)
+✔ external, protocol-relative, separator, traversal and layered-encoding returns fail closed (0.5482ms)
+✔ public catalogue derives exact real availability and excludes source paths or media URLs (25.4166ms)
+✔ Hosting extends the existing default artifact; worker excludes root and nested sibling paths (4.0105ms)
+✔ production build retains PTI and removes guarded development auth paths (62.0997ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 233.1743

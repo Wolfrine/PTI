@@ -1,0 +1,36 @@
+{
+  "kind": "offline-actual-encoder-sps-and-recorded-output-profile",
+  "checkedAt": "2026-10-18T10:29:01.822Z",
+  "engineOrGpuInvoked": false,
+  "actualTvControlled": false,
+  "rows": [
+    {
+      "episode": 1000,
+      "sample": "1000-cast-h264-segment-0.ts",
+      "sha256": "8b4ac850912d672095bc2d96fe21b2b2078692d1950438b7f80144d029ea1577",
+      "sps": [
+        {
+          "profileIdc": 100,
+          "constraintFlags": 0,
+          "levelIdc": 31
+        }
+      ],
+      "outputPixelFormatFromRecordedEncoderLog": "yuv420p (8-bit 4:2:0)",
+      "heardOrDisplayed": false
+    },
+    {
+      "episode": 1001,
+      "sample": "1001-cast-h264-segment-0.ts",
+      "sha256": "f3bc9f40fd9cf66c8eb76dcaea301e52ac6569d18c28ad3f3caf92fe516484eb",
+      "sps": [
+        {
+          "profileIdc": 77,
+          "constraintFlags": 64,
+          "levelIdc": 40
+        }
+      ],
+      "outputPixelFormatFromRecordedEncoderLog": "yuv420p (8-bit 4:2:0)",
+      "heardOrDisplayed": false
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "candidate": "21c687d2c27fe1dc27f1318053251ebaa054be48821a55b0498764fda0397935",
+  "at": "2026-10-18T10:40:50.477Z",
+  "scope": "Real cached1000, paused settled native timeline then MAIN page focus in Chrome; noauth/hardwareclaim",
+  "native": {
+    "before": {
+      "duration": 1430.789525,
+      "paused": true,
+      "time": 600
+    },
+    "after": {
+      "paused": true,
+      "target": "VIDEO",
+      "time": 585.692104
+    },
+    "delta": 14.307896000000028,
+    "expectedFraction": 0.01
+  },
+  "page": {
+    "before": {
+      "paused": true,
+      "time": 585.692104
+    },
+    "after": {
+      "paused": true,
+      "target": "MAIN",
+      "time": 575.692104
+    },
+    "delta": 10,
+    "expectedSeconds": 10
+  },
+  "space": {
+    "pageSpacePlay": false,
+    "pageSpacePause": true,
+    "nativeSpacePlay": false,
+    "nativeSpacePause": true
+  }
+}

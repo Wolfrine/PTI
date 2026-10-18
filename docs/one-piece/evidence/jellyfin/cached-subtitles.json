@@ -1,0 +1,18 @@
+[
+  {
+    "mode": "cold",
+    "seconds": 0.46799999999348074,
+    "bytes": 29159,
+    "dialogueLines": 302,
+    "sha256": "5ae5167da9a57d478342711356732aeef23f8e8741b7e543f31b5e68fa1559af",
+    "renderedOrListened": false
+  },
+  {
+    "mode": "warm",
+    "seconds": 0.01600000000325963,
+    "bytes": 29159,
+    "dialogueLines": 302,
+    "sha256": "5ae5167da9a57d478342711356732aeef23f8e8741b7e543f31b5e68fa1559af",
+    "renderedOrListened": false
+  }
+]

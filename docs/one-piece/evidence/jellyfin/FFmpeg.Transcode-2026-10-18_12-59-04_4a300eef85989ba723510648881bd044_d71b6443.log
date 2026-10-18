@@ -1,0 +1,389 @@
+{"Protocol":1,"Id":"4a300eef85989ba723510648881bd044","Path":"https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv","EncoderPath":null,"EncoderProtocol":null,"Type":0,"Container":"mkv","Size":166,"Name":"One Piece - 1001","IsRemote":true,"ETag":"d9c165da83e2b5c2198cc98679d8f9b1","RunTimeTicks":14324150000,"ReadAtNativeFramerate":false,"IgnoreDts":false,"IgnoreIndex":false,"GenPtsInput":false,"SupportsTranscoding":true,"SupportsDirectStream":true,"SupportsDirectPlay":true,"IsInfiniteStream":false,"UseMostCompatibleTranscodingProfile":false,"RequiresOpening":false,"OpenToken":null,"RequiresClosing":false,"LiveStreamId":null,"BufferMs":null,"RequiresLooping":false,"SupportsProbing":true,"VideoType":0,"IsoType":null,"Video3DFormat":null,"MediaStreams":[{"Codec":"hevc","CodecTag":null,"Language":null,"ColorRange":null,"ColorSpace":"bt709","ColorTransfer":"bt709","ColorPrimaries":"bt709","DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":null,"Hdr10PlusPresentFlag":null,"VideoRange":1,"VideoRangeType":1,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":null,"LocalizedDefault":null,"LocalizedForced":null,"LocalizedExternal":null,"LocalizedHearingImpaired":null,"LocalizedLanguage":null,"LocalizedOriginal":null,"DisplayTitle":"1080p HEVC SDR","NalLengthSize":null,"IsInterlaced":false,"IsAVC":null,"ChannelLayout":null,"BitRate":4368802,"BitDepth":10,"RefFrames":null,"PacketLength":null,"Channels":null,"SampleRate":null,"IsDefault":true,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":1080,"Width":1920,"AverageFrameRate":23.976025,"RealFrameRate":23.976025,"ReferenceFrameRate":23.976025,"Profile":"Main 10","Type":1,"AspectRatio":"16:9","Index":0,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":false,"SupportsExternalStream":false,"Path":null,"PixelFormat":"yuv420p10le","Level":120,"IsAnamorphic":false},{"Codec":"aac","CodecTag":null,"Language":"eng","ColorRange":null,"ColorSpace":null,"ColorTransfer":null,"ColorPrimaries":null,"DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":"English","Hdr10PlusPresentFlag":null,"VideoRange":0,"VideoRangeType":0,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":null,"LocalizedDefault":"Default","LocalizedForced":null,"LocalizedExternal":"External","LocalizedHearingImpaired":null,"LocalizedLanguage":"English","LocalizedOriginal":"Original","DisplayTitle":"English - AAC - Stereo - Default","NalLengthSize":null,"IsInterlaced":false,"IsAVC":null,"ChannelLayout":"stereo","BitRate":160679,"BitDepth":null,"RefFrames":null,"PacketLength":null,"Channels":2,"SampleRate":44100,"IsDefault":true,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":null,"Width":null,"AverageFrameRate":null,"RealFrameRate":null,"ReferenceFrameRate":null,"Profile":"LC","Type":0,"AspectRatio":null,"Index":1,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":false,"SupportsExternalStream":false,"Path":null,"PixelFormat":null,"Level":null,"IsAnamorphic":null},{"Codec":"aac","CodecTag":null,"Language":"jpn","ColorRange":null,"ColorSpace":null,"ColorTransfer":null,"ColorPrimaries":null,"DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":"Stereo","Hdr10PlusPresentFlag":null,"VideoRange":0,"VideoRangeType":0,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":null,"LocalizedDefault":"Default","LocalizedForced":null,"LocalizedExternal":"External","LocalizedHearingImpaired":null,"LocalizedLanguage":"Japanese","LocalizedOriginal":"Original","DisplayTitle":"Stereo - Japanese - AAC","NalLengthSize":null,"IsInterlaced":false,"IsAVC":null,"ChannelLayout":"stereo","BitRate":161251,"BitDepth":null,"RefFrames":null,"PacketLength":null,"Channels":2,"SampleRate":44100,"IsDefault":false,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":null,"Width":null,"AverageFrameRate":null,"RealFrameRate":null,"ReferenceFrameRate":null,"Profile":"LC","Type":0,"AspectRatio":null,"Index":2,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":false,"SupportsExternalStream":false,"Path":null,"PixelFormat":null,"Level":null,"IsAnamorphic":null},{"Codec":"ass","CodecTag":null,"Language":"eng","ColorRange":null,"ColorSpace":null,"ColorTransfer":null,"ColorPrimaries":null,"DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":"Song \u0026 Signs","Hdr10PlusPresentFlag":null,"VideoRange":0,"VideoRangeType":0,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":"Undefined","LocalizedDefault":"Default","LocalizedForced":"Forced","LocalizedExternal":"External","LocalizedHearingImpaired":"Hearing Impaired","LocalizedLanguage":"English","LocalizedOriginal":null,"DisplayTitle":"Song \u0026 Signs - English - Default - ASS","NalLengthSize":null,"IsInterlaced":false,"IsAVC":null,"ChannelLayout":null,"BitRate":null,"BitDepth":null,"RefFrames":null,"PacketLength":null,"Channels":null,"SampleRate":null,"IsDefault":true,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":null,"Width":null,"AverageFrameRate":null,"RealFrameRate":null,"ReferenceFrameRate":null,"Profile":null,"Type":2,"AspectRatio":null,"Index":3,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":true,"SupportsExternalStream":true,"Path":null,"PixelFormat":null,"Level":null,"IsAnamorphic":null},{"Codec":"ass","CodecTag":null,"Language":"eng","ColorRange":null,"ColorSpace":null,"ColorTransfer":null,"ColorPrimaries":null,"DvVersionMajor":null,"DvVersionMinor":null,"DvProfile":null,"DvLevel":null,"RpuPresentFlag":null,"ElPresentFlag":null,"BlPresentFlag":null,"DvBlSignalCompatibilityId":null,"Rotation":null,"Comment":null,"TimeBase":"1/1000","CodecTimeBase":null,"Title":"English","Hdr10PlusPresentFlag":null,"VideoRange":0,"VideoRangeType":0,"VideoDoViTitle":null,"AudioSpatialFormat":0,"LocalizedUndefined":"Undefined","LocalizedDefault":"Default","LocalizedForced":"Forced","LocalizedExternal":"External","LocalizedHearingImpaired":"Hearing Impaired","LocalizedLanguage":"English","LocalizedOriginal":null,"DisplayTitle":"English - ASS","NalLengthSize":null,"IsInterlaced":false,"IsAVC":null,"ChannelLayout":null,"BitRate":null,"BitDepth":null,"RefFrames":null,"PacketLength":null,"Channels":null,"SampleRate":null,"IsDefault":false,"IsForced":false,"IsHearingImpaired":false,"IsOriginal":false,"Height":null,"Width":null,"AverageFrameRate":null,"RealFrameRate":null,"ReferenceFrameRate":null,"Profile":null,"Type":2,"AspectRatio":null,"Index":4,"Score":null,"IsExternal":false,"DeliveryMethod":null,"DeliveryUrl":null,"IsExternalUrl":null,"IsTextSubtitleStream":true,"SupportsExternalStream":true,"Path":null,"PixelFormat":null,"Level":null,"IsAnamorphic":null}],"MediaAttachments":[{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":5,"FileName":"Roboto-Medium.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":6,"FileName":"Roboto-MediumItalic.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":7,"FileName":"arial.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":8,"FileName":"arialbd.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":9,"FileName":"comic.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":10,"FileName":"comicbd.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":11,"FileName":"times.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":12,"FileName":"timesbd.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":13,"FileName":"trebuc.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":14,"FileName":"trebucbd.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":15,"FileName":"verdana.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":16,"FileName":"verdanab.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":17,"FileName":"comic_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":18,"FileName":"georgia_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":19,"FileName":"impact_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":20,"FileName":"Tahoma_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":21,"FileName":"times_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":22,"FileName":"trebuc_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":23,"FileName":"verdana_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"otf","CodecTag":"[0][0][0][0]","Comment":null,"Index":24,"FileName":"AdobeArabic-Bold.otf","MimeType":"application/vnd.ms-opentype","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":25,"FileName":"Arial_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":26,"FileName":"calibri.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":27,"FileName":"ariali_0.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":28,"FileName":"ARLRDBD.TTF","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":29,"FileName":"blue highway linocut.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"otf","CodecTag":"[0][0][0][0]","Comment":null,"Index":30,"FileName":"Brushie Brushie.otf","MimeType":"application/vnd.ms-opentype","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":31,"FileName":"Brushy_Cre.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":32,"FileName":"CantoraOne-Regular.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"otf","CodecTag":"[0][0][0][0]","Comment":null,"Index":33,"FileName":"Dinobots.otf","MimeType":"application/vnd.ms-opentype","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":34,"FileName":"Felt Regular.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":35,"FileName":"GODOFWAR.TTF","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":36,"FileName":"OnePiece.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":37,"FileName":"SUSANNA.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":38,"FileName":"Toledo.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":39,"FileName":"urwvestad.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":40,"FileName":"QlassikBold_TB.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":41,"FileName":"OldSansBlack.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null},{"Codec":"otf","CodecTag":"[0][0][0][0]","Comment":null,"Index":42,"FileName":"ClearfaceGothicLTStd-Roman.otf","MimeType":"application/vnd.ms-opentype","DeliveryUrl":null},{"Codec":"ttf","CodecTag":"[0][0][0][0]","Comment":null,"Index":43,"FileName":"RetroBoldy-Regular.ttf","MimeType":"application/x-truetype-font","DeliveryUrl":null}],"Formats":[],"Bitrate":4717721,"FallbackMaxStreamingBitrate":null,"Timestamp":null,"RequiredHttpHeaders":{},"TranscodingUrl":null,"TranscodingSubProtocol":0,"TranscodingContainer":null,"AnalyzeDurationMs":null,"DefaultAudioStreamIndex":null,"DefaultSubtitleStreamIndex":null,"HasSegments":false}
+
+H:\PTI-OnePiece\pilot\jellyfin\runtime\jellyfin\ffmpeg.exe -analyzeduration 200M -probesize 1G  -i "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv" -map_metadata -1 -map_chapters -1 -threads 0 -map 0:0 -map 0:2 -map -0:s -codec:v:0 libx264 -preset veryfast -crf 23 -maxrate 8737603 -bufsize 17475206 -x264opts:0 subme=0:me_range=16:rc_lookahead=10:me=hex:open_gop=0 -force_key_frames:0 "expr:gte(t,n_forced*3)" -sc_threshold:v:0 0 -vf "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,scale=trunc(min(max(iw\,ih*a)\,min(1920\,1080*a))/2)*2:trunc(min(max(iw/a\,ih)\,min(1920/a\,1080))/2)*2,format=yuv420p" -codec:a:0 copy -copyts -avoid_negative_ts disabled -max_muxing_queue_size 2048 -f hls -max_delay 5000000 -hls_time 3 -hls_segment_type mpegts -start_number 0 -hls_segment_filename "H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e419495%d.ts" -hls_playlist_type vod -hls_list_size 0 -y "H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e419495.m3u8"
+
+
+ffmpeg version 8.1.3-Jellyfin Copyright (c) 2000-2026 the FFmpeg developers
+  built with clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)
+  configuration: --cc=clang --cxx=clang++ --pkg-config-flags=--static --extra-cflags=-I/clang64/ffbuild/include --extra-ldflags=-L/clang64/ffbuild/lib --prefix=/clang64/ffbuild/jellyfin-ffmpeg --extra-version=Jellyfin --disable-unstable --disable-ffplay --disable-debug --disable-doc --disable-sdl2 --enable-lto=thin --enable-gpl --enable-version3 --enable-schannel --enable-iconv --enable-libxml2 --enable-zlib --enable-lzma --enable-gmp --enable-chromaprint --enable-libfreetype --enable-libfribidi --enable-libfontconfig --enable-libharfbuzz --enable-libass --enable-libbluray --enable-libmp3lame --enable-libopus --enable-libtheora --enable-libvorbis --enable-libopenmpt --enable-libwebp --enable-libvpx --enable-libzimg --enable-libx264 --enable-libx265 --enable-libsvtav1 --enable-libdav1d --enable-libfdk-aac --enable-libshaderc --enable-libplacebo --enable-vulkan --enable-opencl --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-mediafoundation --enable-amf --enable-libvpl --enable-ffnvcodec --enable-cuda --enable-cuda-llvm --enable-cuvid --enable-nvdec --enable-nvenc
+  libavutil      60. 26.103 / 60. 26.103
+  libavcodec     62. 28.103 / 62. 28.103
+  libavformat    62. 12.103 / 62. 12.103
+  libavdevice    62.  3.103 / 62.  3.103
+  libavfilter    11. 14.103 / 11. 14.103
+  libswscale      9.  5.103 /  9.  5.103
+  libswresample   6.  3.103 /  6.  3.103
+Input #0, matroska,webm, from 'https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv':
+  Metadata:
+    encoder         : libebml v1.4.5 + libmatroska v1.7.1
+    creation_time   : 2024-08-22T18:35:19.000000Z
+  Duration: 00:23:52.42, start: 0.000000, bitrate: 4717 kb/s
+  Chapters:
+    Chapter #0:0: start 0.000000, end 120.000000
+      Metadata:
+        title           : Opening
+    Chapter #0:1: start 120.000000, end 280.320000
+      Metadata:
+        title           : Part A
+    Chapter #0:2: start 280.320000, end 289.525000
+      Metadata:
+        title           : Episode Name
+    Chapter #0:3: start 289.525000, end 905.641000
+      Metadata:
+        title           : Part B
+    Chapter #0:4: start 905.641000, end 920.197000
+      Metadata:
+        title           : Eyecatch
+    Chapter #0:5: start 920.197000, end 1384.994000
+      Metadata:
+        title           : Part C
+    Chapter #0:6: start 1384.994000, end 1432.415000
+      Metadata:
+        title           : Preview
+  Stream #0:0: Video: hevc (Main 10), yuv420p10le(tv, bt709), 1920x1080 [SAR 1:1 DAR 16:9], 23.98 fps, 23.98 tbr, 1k tbn, start 0.028000 (default)
+    Metadata:
+      BPS             : 4368802
+      DURATION        : 00:23:39.001000000
+      NUMBER_OF_FRAMES: 34022
+      NUMBER_OF_BYTES : 774916936
+      _STATISTICS_WRITING_APP: mkvmerge v86.0 ('Winter') 64-bit
+      _STATISTICS_WRITING_DATE_UTC: 2024-08-22 18:35:19
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:1(eng): Audio: aac (LC), 44100 Hz, stereo, fltp (default)
+    Metadata:
+      title           : English
+      BPS             : 160679
+      DURATION        : 00:23:52.415000000
+      NUMBER_OF_FRAMES: 61689
+      NUMBER_OF_BYTES : 28769959
+      _STATISTICS_WRITING_APP: mkvmerge v86.0 ('Winter') 64-bit
+      _STATISTICS_WRITING_DATE_UTC: 2024-08-22 18:35:19
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:2(jpn): Audio: aac (LC), 44100 Hz, stereo, fltp
+    Metadata:
+      title           : Stereo
+      BPS             : 161251
+      DURATION        : 00:23:39.040000000
+      NUMBER_OF_FRAMES: 61113
+      NUMBER_OF_BYTES : 28602705
+      _STATISTICS_WRITING_APP: mkvmerge v86.0 ('Winter') 64-bit
+      _STATISTICS_WRITING_DATE_UTC: 2024-08-22 18:35:19
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:3(eng): Subtitle: ass (ssa), start 0.120000 (default)
+    Metadata:
+      title           : Song & Signs
+      BPS             : 22
+      DURATION        : 00:23:34.540000000
+      NUMBER_OF_FRAMES: 64
+      NUMBER_OF_BYTES : 4039
+      _STATISTICS_WRITING_APP: mkvmerge v86.0 ('Winter') 64-bit
+      _STATISTICS_WRITING_DATE_UTC: 2024-08-22 18:35:19
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:4(eng): Subtitle: ass (ssa), start 0.120000
+    Metadata:
+      title           : English
+      BPS             : 95
+      DURATION        : 00:23:34.540000000
+      NUMBER_OF_FRAMES: 328
+      NUMBER_OF_BYTES : 16972
+      _STATISTICS_WRITING_APP: mkvmerge v86.0 ('Winter') 64-bit
+      _STATISTICS_WRITING_DATE_UTC: 2024-08-22 18:35:19
+      _STATISTICS_TAGS: BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES
+  Stream #0:5: Attachment: ttf
+    Metadata:
+      filename        : Roboto-Medium.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:6: Attachment: ttf
+    Metadata:
+      filename        : Roboto-MediumItalic.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:7: Attachment: ttf
+    Metadata:
+      filename        : arial.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:8: Attachment: ttf
+    Metadata:
+      filename        : arialbd.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:9: Attachment: ttf
+    Metadata:
+      filename        : comic.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:10: Attachment: ttf
+    Metadata:
+      filename        : comicbd.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:11: Attachment: ttf
+    Metadata:
+      filename        : times.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:12: Attachment: ttf
+    Metadata:
+      filename        : timesbd.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:13: Attachment: ttf
+    Metadata:
+      filename        : trebuc.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:14: Attachment: ttf
+    Metadata:
+      filename        : trebucbd.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:15: Attachment: ttf
+    Metadata:
+      filename        : verdana.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:16: Attachment: ttf
+    Metadata:
+      filename        : verdanab.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:17: Attachment: ttf
+    Metadata:
+      filename        : comic_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:18: Attachment: ttf
+    Metadata:
+      filename        : georgia_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:19: Attachment: ttf
+    Metadata:
+      filename        : impact_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:20: Attachment: ttf
+    Metadata:
+      filename        : Tahoma_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:21: Attachment: ttf
+    Metadata:
+      filename        : times_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:22: Attachment: ttf
+    Metadata:
+      filename        : trebuc_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:23: Attachment: ttf
+    Metadata:
+      filename        : verdana_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:24: Attachment: otf
+    Metadata:
+      filename        : AdobeArabic-Bold.otf
+      mimetype        : application/vnd.ms-opentype
+  Stream #0:25: Attachment: ttf
+    Metadata:
+      filename        : Arial_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:26: Attachment: ttf
+    Metadata:
+      filename        : calibri.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:27: Attachment: ttf
+    Metadata:
+      filename        : ariali_0.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:28: Attachment: ttf
+    Metadata:
+      filename        : ARLRDBD.TTF
+      mimetype        : application/x-truetype-font
+  Stream #0:29: Attachment: ttf
+    Metadata:
+      filename        : blue highway linocut.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:30: Attachment: otf
+    Metadata:
+      filename        : Brushie Brushie.otf
+      mimetype        : application/vnd.ms-opentype
+  Stream #0:31: Attachment: ttf
+    Metadata:
+      filename        : Brushy_Cre.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:32: Attachment: ttf
+    Metadata:
+      filename        : CantoraOne-Regular.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:33: Attachment: otf
+    Metadata:
+      filename        : Dinobots.otf
+      mimetype        : application/vnd.ms-opentype
+  Stream #0:34: Attachment: ttf
+    Metadata:
+      filename        : Felt Regular.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:35: Attachment: ttf
+    Metadata:
+      filename        : GODOFWAR.TTF
+      mimetype        : application/x-truetype-font
+  Stream #0:36: Attachment: ttf
+    Metadata:
+      filename        : OnePiece.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:37: Attachment: ttf
+    Metadata:
+      filename        : SUSANNA.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:38: Attachment: ttf
+    Metadata:
+      filename        : Toledo.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:39: Attachment: ttf
+    Metadata:
+      filename        : urwvestad.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:40: Attachment: ttf
+    Metadata:
+      filename        : QlassikBold_TB.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:41: Attachment: ttf
+    Metadata:
+      filename        : OldSansBlack.ttf
+      mimetype        : application/x-truetype-font
+  Stream #0:42: Attachment: otf
+    Metadata:
+      filename        : ClearfaceGothicLTStd-Roman.otf
+      mimetype        : application/vnd.ms-opentype
+  Stream #0:43: Attachment: ttf
+    Metadata:
+      filename        : RetroBoldy-Regular.ttf
+      mimetype        : application/x-truetype-font
+Stream mapping:
+  Stream #0:0 -> #0:0 (hevc (native) -> h264 (libx264))
+  Stream #0:2 -> #0:1 (copy)
+Press [q] to stop, [?] for help
+[libx264 @ 000001fe563c8880] using SAR=1/1
+[libx264 @ 000001fe563c8880] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2
+[libx264 @ 000001fe563c8880] profile High, level 4.0, 4:2:0, 8-bit
+[libx264 @ 000001fe563c8880] 264 - core 165 r3223M 0480cb0 - H.264/MPEG-4 AVC codec - Copyleft 2003-2025 - http://www.videolan.org/x264.html - options: cabac=1 ref=1 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=0 psy=1 psy_rd=1.00:0.00 mixed_ref=0 me_range=16 chroma_me=1 trellis=0 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=0 threads=18 lookahead_threads=3 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=1 keyint=250 keyint_min=23 scenecut=0 intra_refresh=0 rc_lookahead=10 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 vbv_maxrate=8737 vbv_bufsize=17475 crf_max=0.0 nal_hrd=none filler=0 ip_ratio=1.40 aq=1:1.00
+Output #0, hls, to 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e419495.m3u8':
+  Metadata:
+    encoder         : Lavf62.12.103
+  Stream #0:0: Video: h264, yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 23.98 fps, 90k tbn (default)
+    Metadata:
+      encoder         : Lavc62.28.103 libx264
+    Side data:
+      CPB properties: bitrate max/min/avg: 8737000/0/0 buffer size: 17475000 vbv_delay: N/A
+  Stream #0:1: Audio: aac (LC), 44100 Hz, stereo, fltp
+frame=    0 fps=0.0 q=0.0 size=N/A time=N/A bitrate=N/A speed=N/A elapsed=0:00:00.50    
+frame=    0 fps=0.0 q=0.0 size=N/A time=N/A bitrate=N/A speed=N/A elapsed=0:00:01.02    
+frame=    0 fps=0.0 q=0.0 size=N/A time=N/A bitrate=N/A speed=N/A elapsed=0:00:01.53    
+frame=   32 fps= 16 q=28.0 size=N/A time=00:00:00.00 bitrate=N/A speed=   0x elapsed=0:00:02.04    
+frame=   68 fps= 27 q=28.0 size=N/A time=00:00:01.50 bitrate=N/A speed=0.585x elapsed=0:00:02.56    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194950.ts' for writing
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194951.ts' for writing
+frame=  151 fps= 42 q=28.0 size=N/A time=00:00:04.96 bitrate=N/A speed=1.38x elapsed=0:00:03.58    
+frame=  191 fps= 47 q=28.0 size=N/A time=00:00:06.63 bitrate=N/A speed=1.62x elapsed=0:00:04.10    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194952.ts' for writing
+frame=  228 fps= 49 q=28.0 size=N/A time=00:00:08.17 bitrate=N/A speed=1.77x elapsed=0:00:04.62    
+frame=  263 fps= 51 q=28.0 size=N/A time=00:00:09.63 bitrate=N/A speed=1.87x elapsed=0:00:05.14    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194953.ts' for writing
+frame=  296 fps= 52 q=28.0 size=N/A time=00:00:11.01 bitrate=N/A speed=1.94x elapsed=0:00:05.67    
+frame=  328 fps= 53 q=28.0 size=N/A time=00:00:12.34 bitrate=N/A speed=   2x elapsed=0:00:06.18    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194954.ts' for writing
+frame=  361 fps= 54 q=28.0 size=N/A time=00:00:13.72 bitrate=N/A speed=2.05x elapsed=0:00:06.70    
+frame=  396 fps= 55 q=28.0 size=N/A time=00:00:15.18 bitrate=N/A speed= 2.1x elapsed=0:00:07.21    
+frame=  427 fps= 55 q=28.0 size=N/A time=00:00:16.47 bitrate=N/A speed=2.14x elapsed=0:00:07.71    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194955.ts' for writing
+frame=  462 fps= 56 q=28.0 size=N/A time=00:00:17.93 bitrate=N/A speed=2.18x elapsed=0:00:08.21    
+frame=  504 fps= 58 q=28.0 size=N/A time=00:00:19.68 bitrate=N/A speed=2.26x elapsed=0:00:08.72    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194956.ts' for writing
+frame=  554 fps= 60 q=28.0 size=N/A time=00:00:21.77 bitrate=N/A speed=2.35x elapsed=0:00:09.24    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194957.ts' for writing
+frame=  593 fps= 61 q=28.0 size=N/A time=00:00:23.39 bitrate=N/A speed= 2.4x elapsed=0:00:09.75    
+frame=  640 fps= 62 q=28.0 size=N/A time=00:00:25.35 bitrate=N/A speed=2.46x elapsed=0:00:10.28    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194958.ts' for writing
+frame=  682 fps= 63 q=28.0 size=N/A time=00:00:27.11 bitrate=N/A speed=2.51x elapsed=0:00:10.79    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e4194959.ts' for writing
+frame=  731 fps= 65 q=28.0 size=N/A time=00:00:29.15 bitrate=N/A speed=2.58x elapsed=0:00:11.31    
+frame=  774 fps= 65 q=28.0 size=N/A time=00:00:30.94 bitrate=N/A speed=2.62x elapsed=0:00:11.82    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949510.ts' for writing
+frame=  816 fps= 66 q=28.0 size=N/A time=00:00:32.69 bitrate=N/A speed=2.65x elapsed=0:00:12.32    
+frame=  858 fps= 67 q=28.0 size=N/A time=00:00:34.45 bitrate=N/A speed=2.68x elapsed=0:00:12.83    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949511.ts' for writing
+frame=  898 fps= 67 q=28.0 size=N/A time=00:00:36.16 bitrate=N/A speed=2.71x elapsed=0:00:13.34    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949512.ts' for writing
+frame=  941 fps= 68 q=28.0 size=N/A time=00:00:37.91 bitrate=N/A speed=2.74x elapsed=0:00:13.84    
+frame=  988 fps= 69 q=28.0 size=N/A time=00:00:39.87 bitrate=N/A speed=2.78x elapsed=0:00:14.35    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949513.ts' for writing
+frame= 1028 fps= 69 q=28.0 size=N/A time=00:00:41.54 bitrate=N/A speed= 2.8x elapsed=0:00:14.85    
+frame= 1071 fps= 70 q=28.0 size=N/A time=00:00:43.33 bitrate=N/A speed=2.82x elapsed=0:00:15.36    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949514.ts' for writing
+frame= 1117 fps= 70 q=28.0 size=N/A time=00:00:45.25 bitrate=N/A speed=2.85x elapsed=0:00:15.88    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949515.ts' for writing
+frame= 1163 fps= 71 q=28.0 size=N/A time=00:00:47.17 bitrate=N/A speed=2.88x elapsed=0:00:16.40    
+frame= 1205 fps= 71 q=28.0 size=N/A time=00:00:48.92 bitrate=N/A speed=2.89x elapsed=0:00:16.91    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949516.ts' for writing
+frame= 1251 fps= 72 q=28.0 size=N/A time=00:00:50.84 bitrate=N/A speed=2.92x elapsed=0:00:17.44    
+frame= 1294 fps= 72 q=28.0 size=N/A time=00:00:52.63 bitrate=N/A speed=2.93x elapsed=0:00:17.95    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949517.ts' for writing
+frame= 1344 fps= 73 q=28.0 size=N/A time=00:00:54.72 bitrate=N/A speed=2.96x elapsed=0:00:18.49    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949518.ts' for writing
+frame= 1374 fps= 72 q=28.0 size=N/A time=00:00:55.97 bitrate=N/A speed=2.94x elapsed=0:00:19.01    
+frame= 1420 fps= 73 q=28.0 size=N/A time=00:00:57.89 bitrate=N/A speed=2.96x elapsed=0:00:19.52    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949519.ts' for writing
+frame= 1459 fps= 73 q=28.0 size=N/A time=00:00:59.51 bitrate=N/A speed=2.97x elapsed=0:00:20.04    
+frame= 1499 fps= 73 q=28.0 size=N/A time=00:01:01.18 bitrate=N/A speed=2.98x elapsed=0:00:20.56    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949520.ts' for writing
+frame= 1551 fps= 74 q=28.0 size=N/A time=00:01:03.35 bitrate=N/A speed=3.01x elapsed=0:00:21.07    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949521.ts' for writing
+frame= 1592 fps= 74 q=28.0 size=N/A time=00:01:05.06 bitrate=N/A speed=3.01x elapsed=0:00:21.58    
+frame= 1639 fps= 74 q=25.0 size=N/A time=00:01:07.02 bitrate=N/A speed=3.03x elapsed=0:00:22.09    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949522.ts' for writing
+frame= 1681 fps= 74 q=28.0 size=N/A time=00:01:08.77 bitrate=N/A speed=3.04x elapsed=0:00:22.60    
+frame= 1726 fps= 75 q=28.0 size=N/A time=00:01:10.65 bitrate=N/A speed=3.06x elapsed=0:00:23.11    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949523.ts' for writing
+frame= 1761 fps= 75 q=28.0 size=N/A time=00:01:12.11 bitrate=N/A speed=3.05x elapsed=0:00:23.61    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949524.ts' for writing
+frame= 1803 fps= 75 q=28.0 size=N/A time=00:01:13.86 bitrate=N/A speed=3.06x elapsed=0:00:24.14    
+frame= 1842 fps= 75 q=28.0 size=N/A time=00:01:15.49 bitrate=N/A speed=3.06x elapsed=0:00:24.66    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949525.ts' for writing
+frame= 1874 fps= 74 q=28.0 size=N/A time=00:01:16.82 bitrate=N/A speed=3.05x elapsed=0:00:25.17    
+frame= 1904 fps= 74 q=28.0 size=N/A time=00:01:18.07 bitrate=N/A speed=3.04x elapsed=0:00:25.68    
+frame= 1931 fps= 74 q=28.0 size=N/A time=00:01:19.20 bitrate=N/A speed=3.02x elapsed=0:00:26.19    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949526.ts' for writing
+frame= 1968 fps= 74 q=28.0 size=N/A time=00:01:20.74 bitrate=N/A speed=3.02x elapsed=0:00:26.73    
+frame= 2006 fps= 74 q=28.0 size=N/A time=00:01:22.33 bitrate=N/A speed=3.02x elapsed=0:00:27.24    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949527.ts' for writing
+frame= 2047 fps= 74 q=28.0 size=N/A time=00:01:24.04 bitrate=N/A speed=3.03x elapsed=0:00:27.76    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949528.ts' for writing
+frame= 2093 fps= 74 q=28.0 size=N/A time=00:01:25.96 bitrate=N/A speed=3.04x elapsed=0:00:28.27    
+frame= 2140 fps= 74 q=28.0 size=N/A time=00:01:27.92 bitrate=N/A speed=3.05x elapsed=0:00:28.78    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949529.ts' for writing
+frame= 2185 fps= 75 q=28.0 size=N/A time=00:01:29.79 bitrate=N/A speed=3.06x elapsed=0:00:29.29    
+frame= 2228 fps= 75 q=28.0 size=N/A time=00:01:31.59 bitrate=N/A speed=3.07x elapsed=0:00:29.80    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949530.ts' for writing
+frame= 2268 fps= 75 q=28.0 size=N/A time=00:01:33.25 bitrate=N/A speed=3.08x elapsed=0:00:30.31    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949531.ts' for writing
+frame= 2314 fps= 75 q=28.0 size=N/A time=00:01:35.17 bitrate=N/A speed=3.09x elapsed=0:00:30.83    
+frame= 2362 fps= 75 q=28.0 size=N/A time=00:01:37.18 bitrate=N/A speed= 3.1x elapsed=0:00:31.34    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949532.ts' for writing
+frame= 2400 fps= 75 q=28.0 size=N/A time=00:01:38.76 bitrate=N/A speed= 3.1x elapsed=0:00:31.84    
+frame= 2441 fps= 75 q=28.0 size=N/A time=00:01:40.47 bitrate=N/A speed= 3.1x elapsed=0:00:32.36    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949533.ts' for writing
+frame= 2481 fps= 75 q=28.0 size=N/A time=00:01:42.14 bitrate=N/A speed=3.11x elapsed=0:00:32.87    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949534.ts' for writing
+frame= 2521 fps= 76 q=28.0 size=N/A time=00:01:43.81 bitrate=N/A speed=3.11x elapsed=0:00:33.37    
+frame= 2556 fps= 75 q=28.0 size=N/A time=00:01:45.27 bitrate=N/A speed=3.11x elapsed=0:00:33.88    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949535.ts' for writing
+frame= 2597 fps= 76 q=28.0 size=N/A time=00:01:46.98 bitrate=N/A speed=3.11x elapsed=0:00:34.39    
+frame= 2638 fps= 76 q=28.0 size=N/A time=00:01:48.69 bitrate=N/A speed=3.11x elapsed=0:00:34.91    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949536.ts' for writing
+frame= 2680 fps= 76 q=28.0 size=N/A time=00:01:50.44 bitrate=N/A speed=3.12x elapsed=0:00:35.42    
+frame= 2722 fps= 76 q=28.0 size=N/A time=00:01:52.19 bitrate=N/A speed=3.12x elapsed=0:00:35.93    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949537.ts' for writing
+frame= 2769 fps= 76 q=28.0 size=N/A time=00:01:54.15 bitrate=N/A speed=3.13x elapsed=0:00:36.44    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949538.ts' for writing
+frame= 2818 fps= 76 q=28.0 size=N/A time=00:01:56.19 bitrate=N/A speed=3.14x elapsed=0:00:36.95    
+frame= 2871 fps= 77 q=28.0 size=N/A time=00:01:58.40 bitrate=N/A speed=3.16x elapsed=0:00:37.46    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949539.ts' for writing
+frame= 2914 fps= 77 q=28.0 size=N/A time=00:02:00.20 bitrate=N/A speed=3.17x elapsed=0:00:37.97    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949540.ts' for writing
+frame= 2959 fps= 77 q=28.0 size=N/A time=00:02:02.08 bitrate=N/A speed=3.17x elapsed=0:00:38.48    
+frame= 3000 fps= 77 q=28.0 size=N/A time=00:02:03.79 bitrate=N/A speed=3.17x elapsed=0:00:38.99    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949541.ts' for writing
+frame= 3041 fps= 77 q=28.0 size=N/A time=00:02:05.50 bitrate=N/A speed=3.18x elapsed=0:00:39.51    
+frame= 3076 fps= 77 q=28.0 size=N/A time=00:02:06.96 bitrate=N/A speed=3.17x elapsed=0:00:40.02    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949542.ts' for writing
+frame= 3107 fps= 77 q=28.0 size=N/A time=00:02:08.25 bitrate=N/A speed=3.16x elapsed=0:00:40.53    
+frame= 3133 fps= 76 q=28.0 size=N/A time=00:02:09.33 bitrate=N/A speed=3.15x elapsed=0:00:41.04    
+frame= 3164 fps= 76 q=28.0 size=N/A time=00:02:10.63 bitrate=N/A speed=3.14x elapsed=0:00:41.56    
+[hls @ 000001fe5342dc40] Opening 'H:\PTI-OnePiece\pilot\jellyfin\cache\transcodes\2dace4e322e34a3b88454fbc6e41949543.ts' for writing
+frame= 3193 fps= 76 q=28.0 size=N/A time=00:02:11.84 bitrate=N/A speed=3.13x elapsed=0:00:42.07    

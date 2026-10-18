@@ -1,0 +1,215 @@
+TAP version 13
+# Subtest: numbered search retains the unavailable 590 and source boundary without duplicates
+ok 1 - numbered search retains the unavailable 590 and source boundary without duplicates
+  ---
+  duration_ms: 4.3316
+  ...
+# Subtest: title search needs both an explicit spoiler preference and verified provenance
+ok 2 - title search needs both an explicit spoiler preference and verified provenance
+  ---
+  duration_ms: 0.3449
+  ...
+# Subtest: continue respects the latest intentional rewind instead of maximum position
+ok 3 - continue respects the latest intentional rewind instead of maximum position
+  ---
+  duration_ms: 0.4119
+  ...
+# Subtest: corrupt local caches cannot invent episodes or poison a resumed event
+ok 4 - corrupt local caches cannot invent episodes or poison a resumed event
+  ---
+  duration_ms: 0.6996
+  ...
+# Subtest: renewing an expiring local stream preserves pause state while explicit starts may play
+ok 5 - renewing an expiring local stream preserves pause state while explicit starts may play
+  ---
+  duration_ms: 0.3204
+  ...
+# Subtest: control client sends identity only to the fixed HTTPS origin, without cookies or cache
+ok 6 - control client sends identity only to the fixed HTTPS origin, without cookies or cache
+  ---
+  duration_ms: 34.1216
+  ...
+# Subtest: an expired Firebase token is refreshed once and the same event is retried
+ok 7 - an expired Firebase token is refreshed once and the same event is retried
+  ---
+  duration_ms: 1.153
+  ...
+# Subtest: native video Space and Arrow events never receive an additional app action or cancellation
+ok 8 - native video Space and Arrow events never receive an additional app action or cancellation
+  ---
+  duration_ms: 0.5737
+  ...
+# Subtest: page-level arrows still seek exactly ten seconds and Space toggles once
+ok 9 - page-level arrows still seek exactly ten seconds and Space toggles once
+  ---
+  duration_ms: 0.4529
+  ...
+# Subtest: native video retains nonoverlapping K/F app shortcuts
+ok 10 - native video retains nonoverlapping K/F app shortcuts
+  ---
+  duration_ms: 0.443
+  ...
+# Subtest: interactive controls, dialogs, modifiers and other routes retain ownership of their keys
+ok 11 - interactive controls, dialogs, modifiers and other routes retain ownership of their keys
+  ---
+  duration_ms: 0.9166
+  ...
+# Subtest: page-level Cast shortcuts retain receiver controls and seek bounds
+ok 12 - page-level Cast shortcuts retain receiver controls and seek bounds
+  ---
+  duration_ms: 0.4039
+  ...
+# Subtest: UID changes destroy playback and replace private state while retaining catalogue and deep link
+ok 13 - UID changes destroy playback and replace private state while retaining catalogue and deep link
+  ---
+  duration_ms: 0.9026
+  ...
+# Subtest: a UID switch while a token resolves sends no request with the old identity
+ok 14 - a UID switch while a token resolves sends no request with the old identity
+  ---
+  duration_ms: 0.6545
+  ...
+# Subtest: switch and sign-out during a deferred response never expose its old-account value
+ok 15 - switch and sign-out during a deferred response never expose its old-account value
+  ---
+  duration_ms: 0.9482
+  ...
+# Subtest: old-account 401 responses cannot trigger a refresh or retry after switching
+ok 16 - old-account 401 responses cannot trigger a refresh or retry after switching
+  ---
+  duration_ms: 2.5936
+  ...
+# Subtest: generation guards reject A to B to A responses and switches during JSON parsing
+ok 17 - generation guards reject A to B to A responses and switches during JSON parsing
+  ---
+  duration_ms: 0.7399
+  ...
+# Subtest: a rejected old fetch after sign-out stays an identity change rather than a new-account offline error
+ok 18 - a rejected old fetch after sign-out stays an identity change rather than a new-account offline error
+  ---
+  duration_ms: 0.6801
+  ...
+# Subtest: switching during an already started token refresh prevents its second fetch
+ok 19 - switching during an already started token refresh prevents its second fetch
+  ---
+  duration_ms: 1.3762
+  ...
+# Subtest: an intentional play then pause settles AbortError without a rejected promise or failure UI
+ok 20 - an intentional play then pause settles AbortError without a rejected promise or failure UI
+  ---
+  duration_ms: 1.0754
+  ...
+# Subtest: native pause also makes its interrupted play AbortError harmless
+ok 21 - native pause also makes its interrupted play AbortError harmless
+  ---
+  duration_ms: 0.3694
+  ...
+# Subtest: NotAllowedError produces tap-to-play while genuine unsupported playback remains a failure
+ok 22 - NotAllowedError produces tap-to-play while genuine unsupported playback remains a failure
+  ---
+  duration_ms: 0.8552
+  ...
+# Subtest: disposed or replacement-source play completions cannot affect the current player state
+ok 23 - disposed or replacement-source play completions cannot affect the current player state
+  ---
+  duration_ms: 1.2644
+  ...
+# Subtest: autoplay uses the same normalized play path
+ok 24 - autoplay uses the same normalized play path
+  ---
+  duration_ms: 0.6417
+  ...
+# Subtest: playback diagnostics expose only allowlisted codes and numeric state
+ok 25 - playback diagnostics expose only allowlisted codes and numeric state
+  ---
+  duration_ms: 0.4977
+  ...
+# Subtest: HLS diagnostics precede destructive failure handling; nonfatal and stale events are distinct
+ok 26 - HLS diagnostics precede destructive failure handling; nonfatal and stale events are distinct
+  ---
+  duration_ms: 0.6572
+  ...
+# Subtest: acknowledged successful PC revocation signs out locally, including an empty 204
+ok 27 - acknowledged successful PC revocation signs out locally, including an empty 204
+  ---
+  duration_ms: 1.8767
+  ...
+# Subtest: 401, 403 and network disconnect failures require the explicit local-only choice
+ok 28 - 401, 403 and network disconnect failures require the explicit local-only choice
+  ---
+  duration_ms: 2.3653
+  ...
+# Subtest: an account switch during disconnect success or failure cannot sign out the replacement account or show its dialog
+ok 29 - an account switch during disconnect success or failure cannot sign out the replacement account or show its dialog
+  ---
+  duration_ms: 1.4249
+  ...
+# Subtest: declared MP4 uses native media without HLS and preserves English captions, resume clamping and one autoplay
+ok 30 - declared MP4 uses native media without HLS and preserves English captions, resume clamping and one autoplay
+  ---
+  duration_ms: 1.1943
+  ...
+# Subtest: both recognized HLS MIME types retain native-HLS or hls.js routing and explicit start position
+ok 31 - both recognized HLS MIME types retain native-HLS or hls.js routing and explicit start position
+  ---
+  duration_ms: 1.6315
+  ...
+# Subtest: missing or unknown delivery MIME fails explicitly and never guesses HLS from a media URL
+ok 32 - missing or unknown delivery MIME fails explicitly and never guesses HLS from a media URL
+  ---
+  duration_ms: 1.1203
+  ...
+# Subtest: HLS and MP4 source replacements detach old tracks and HLS callbacks while retaining paused renewal intent
+ok 33 - HLS and MP4 source replacements detach old tracks and HLS callbacks while retaining paused renewal intent
+  ---
+  duration_ms: 1.2506
+  ...
+# Subtest: pending native MP4 play and track/metadata events become inert after source replacement or destroy
+ok 34 - pending native MP4 play and track/metadata events become inert after source replacement or destroy
+  ---
+  duration_ms: 1.0518
+  ...
+# Subtest: review frame timing requires presented callbacks, measures first/post-seek frames and logs only allowed fields
+ok 35 - review frame timing requires presented callbacks, measures first/post-seek frames and logs only allowed fields
+  ---
+  duration_ms: 1.1586
+  ...
+# Subtest: review frame observation marks a missing frame API unmeasured and ignores nonallowlisted episodes
+ok 36 - review frame observation marks a missing frame API unmeasured and ignores nonallowlisted episodes
+  ---
+  duration_ms: 1.1994
+  ...
+# Subtest: pending-frame observations are bounded without suppressing completion or conflating later seek targets
+ok 37 - pending-frame observations are bounded without suppressing completion or conflating later seek targets
+  ---
+  duration_ms: 4.6292
+  ...
+# Subtest: a paused ready seek clears buffering without claiming playing or resuming the video
+ok 38 - a paused ready seek clears buffering without claiming playing or resuming the video
+  ---
+  duration_ms: 0.742
+  ...
+# Subtest: canplay clears a ready buffer independently of paused state and only playing can claim playing
+ok 39 - canplay clears a ready buffer independently of paused state and only playing can claim playing
+  ---
+  duration_ms: 0.5976
+  ...
+# Subtest: readiness cannot clear buffering while loading, seeking, insufficiently ready, errored, stale or disposed
+ok 40 - readiness cannot clear buffering while loading, seeking, insufficiently ready, errored, stale or disposed
+  ---
+  duration_ms: 0.7999
+  ...
+# Subtest: ready events retain a required tap-to-play and cannot revive a failed load
+ok 41 - ready events retain a required tap-to-play and cannot revive a failed load
+  ---
+  duration_ms: 0.6802
+  ...
+1..41
+# tests 41
+# suites 0
+# pass 41
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 274.5003

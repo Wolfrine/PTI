@@ -1,0 +1,77 @@
+{
+  "completedAt": "2026-10-18T07:17:58.760Z",
+  "userAgent": "PTI-OnePiece-Feasibility/0.1 (private family playback research; bounded requests)",
+  "command": "node apps/one-piece/companion/pilot/transport/inventory.mjs",
+  "requests": [
+    {
+      "itemId": "one-piece-0001-1000-1999-horrible-subs",
+      "fetchedAt": "2026-10-18T07:17:58.305Z",
+      "attempt": 1,
+      "status": 200,
+      "finalUrl": "https://archive.org/metadata/one-piece-0001-1000-1999-horrible-subs",
+      "redirects": [],
+      "headers": {
+        "content-type": "application/json",
+        "content-length": null,
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "GET",
+        "range": null,
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 2806,
+      "bytesRead": 1137238,
+      "history": []
+    },
+    {
+      "itemId": "20260622_20260622_0310",
+      "fetchedAt": "2026-10-18T07:17:58.709Z",
+      "attempt": 1,
+      "status": 200,
+      "finalUrl": "https://archive.org/metadata/20260622_20260622_0310",
+      "redirects": [],
+      "headers": {
+        "content-type": "application/json",
+        "content-length": null,
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "GET",
+        "range": null,
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 378,
+      "bytesRead": 208702,
+      "history": []
+    }
+  ],
+  "summary": {
+    "listedEpisodes": 1084,
+    "missing": [
+      590
+    ],
+    "overlapEpisodes": [],
+    "videoCandidates": 1169,
+    "subtitleCandidates": 3
+  },
+  "catalogSha256": "de2e86b0063c738ff5884bd8f6ad7a163ab0086d1d4b3f18a424d8b82e97c78e",
+  "mediaBytesDownloaded": 0,
+  "findingsAre": "File inventories only; no codec/language/subtitle/playback verification."
+}

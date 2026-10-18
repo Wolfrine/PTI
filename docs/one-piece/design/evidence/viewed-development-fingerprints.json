@@ -1,0 +1,22 @@
+[
+  {
+    "path": "H:/PTI-OnePiece/web-dev/site/one-piece/app.js",
+    "sha256": "de865032f9c85b3b4cc4f9b2844172b9b09e02a0e47a0150f6b66109afb6be65",
+    "bytes": 2896149
+  },
+  {
+    "path": "H:/PTI-OnePiece/web-dev/site/one-piece/app.css",
+    "sha256": "0eb46743d9df83f48ed0881068e79e70e364d87cb89c427effd23b76e912611a",
+    "bytes": 35020
+  },
+  {
+    "path": "H:/PTI-OnePiece/web-dev/site/one-piece/catalog.json",
+    "sha256": "18de1a533dbc4307b2db2ebf5dcbe715d8233345b4806b7466ef0c7d4834b4cc",
+    "bytes": 118257
+  },
+  {
+    "path": "apps/one-piece/web/src/fixture.mjs",
+    "sha256": "7fa44c212828bdb637a1f0b1b4721e32c97371012ea8d3ac1c866fa18ac483fb",
+    "bytes": 9798
+  }
+]

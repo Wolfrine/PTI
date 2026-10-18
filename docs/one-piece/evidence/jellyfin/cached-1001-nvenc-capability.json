@@ -1,0 +1,10 @@
+{
+  "purpose": "quick NVIDIA hardware-encode availability check",
+  "syntheticInput": "24 black 1080p frames",
+  "seconds": 0.6719999999622814,
+  "exitCode": 0,
+  "hardwareEncodeSucceeded": true,
+  "actualHEVCSourceDecodeOrSubtitlesTested": false,
+  "capacityBenchmark": false,
+  "diagnostic": ""
+}

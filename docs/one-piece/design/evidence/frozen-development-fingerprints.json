@@ -1,0 +1,31 @@
+{
+  "status": "Built offline after paused-ready status correction; awaiting fresh rendered/media evidence",
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "files": [
+    {
+      "path": "H:/PTI-OnePiece/web-dev/site/one-piece/app.js",
+      "sha256": "007ea98c8fbebdf69abba556617ac3fbb92d1186b4d5d890654110dc2b7a7cd4",
+      "bytes": 2911090
+    },
+    {
+      "path": "H:/PTI-OnePiece/web-dev/site/one-piece/app.css",
+      "sha256": "3068fd510fa5010c7dea1c0fdd1df503e72a490f26efc2eb9edf85061f62a120",
+      "bytes": 34932
+    },
+    {
+      "path": "H:/PTI-OnePiece/web-dev/site/one-piece/catalog.json",
+      "sha256": "18de1a533dbc4307b2db2ebf5dcbe715d8233345b4806b7466ef0c7d4834b4cc",
+      "bytes": 118257
+    },
+    {
+      "path": "apps/one-piece/web/src/fixture.mjs",
+      "sha256": "afd5af37427331a2e6fb142b060ac763b74aa2fd51df3a52e7fac82ec3d37208",
+      "bytes": 10290
+    },
+    {
+      "path": "apps/one-piece/web/src/review-frames.mjs",
+      "sha256": "6cb70a6f76ba3d84980c14ed19f51758feb6a227c4bd8f94be31b2ba32d77ca9",
+      "bytes": 2500
+    }
+  ]
+}

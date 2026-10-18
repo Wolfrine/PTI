@@ -1,0 +1,31 @@
+{
+  "kind": "narrow-failed-test-recovery",
+  "expectedResourceHash": "38e3830cc8f68c6b",
+  "sourceArtifact": "cast-production-adapter-attempt3-status-timeout.json",
+  "observations": [
+    {
+      "at": 1792316075.4801693,
+      "appId": "CC1AD845",
+      "receiverSession": "6218a80e-e4cf-41ef-aecf-dbc198d532a1",
+      "mediaSessionId": null,
+      "contentDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "resourceHash": null,
+      "state": "UNKNOWN",
+      "positionSeconds": 0.0,
+      "exactFailedTestMatch": false
+    },
+    {
+      "at": 1792316076.0098925,
+      "appId": "CC1AD845",
+      "receiverSession": "6218a80e-e4cf-41ef-aecf-dbc198d532a1",
+      "mediaSessionId": null,
+      "contentDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "resourceHash": null,
+      "state": "UNKNOWN",
+      "positionSeconds": 0.0,
+      "exactFailedTestMatch": false
+    }
+  ],
+  "stopped": false,
+  "skip": "Receiver content/session did not exactly match our failed test"
+}

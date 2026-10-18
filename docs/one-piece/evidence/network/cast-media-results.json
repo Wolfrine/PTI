@@ -1,0 +1,419 @@
+{
+  "timestamp": "2026-10-18T07:40:55.020182+00:00",
+  "experiment": "Real 30-second episode1 Cast pilot with Japanese audio and English WebVTT",
+  "pychromecast_version": "14.0.10",
+  "production_transport_accepted": false,
+  "human_video_observation": "pending",
+  "human_japanese_audio_observation": "pending",
+  "human_subtitle_visibility_and_sync": "pending",
+  "limits": {
+    "seconds": 900,
+    "response_budget_bytes": 104857600,
+    "endpoint": "LAN-only HTTP, RAM-only random scoped capability",
+    "assets": "exact MP4/WebVTT allowlist",
+    "external_exposure_changes": false
+  },
+  "requests": [
+    {
+      "timestamp": "2026-10-18T07:40:58.315048+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=0-31",
+      "status": 206,
+      "response_bytes_reserved": 32,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 32
+    },
+    {
+      "timestamp": "2026-10-18T07:40:58.319243+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=999999999-",
+      "status": 416,
+      "response_bytes_reserved": 0,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 0
+    },
+    {
+      "timestamp": "2026-10-18T07:40:58.320339+00:00",
+      "asset": "english.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 663,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 663
+    },
+    {
+      "timestamp": "2026-10-18T07:41:05.269041+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=0-",
+      "status": 206,
+      "response_bytes_reserved": 3811672,
+      "peer": "receiver",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 3811672
+    },
+    {
+      "timestamp": "2026-10-18T07:41:05.788548+00:00",
+      "asset": "english.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 663,
+      "peer": "receiver",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 663
+    },
+    {
+      "timestamp": "2026-10-18T07:41:15.444946+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=0-",
+      "status": 206,
+      "response_bytes_reserved": 3811672,
+      "peer": "receiver",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 3811672
+    },
+    {
+      "timestamp": "2026-10-18T07:41:15.650102+00:00",
+      "asset": "english.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 663,
+      "peer": "receiver",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 663
+    }
+  ],
+  "states": [
+    {
+      "timestamp": "2026-10-18T07:40:59.660600+00:00",
+      "label": "initial status, before media launch",
+      "application_id": null,
+      "media_owned_by_pilot": false,
+      "state": "UNKNOWN",
+      "time": 0.0,
+      "adjusted_time": 0.0,
+      "duration": null,
+      "active_track_ids": [],
+      "subtitle_track_count": 0,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:06.189773+00:00",
+      "label": "LAN IP playing",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 0,
+      "adjusted_time": 0.200342,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:09.195183+00:00",
+      "label": "LAN IP progressed",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 2.058888,
+      "adjusted_time": 2.529594,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:09.737344+00:00",
+      "label": "LAN IP paused",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PAUSED",
+      "time": 2.561176,
+      "adjusted_time": 2.561176,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:10.705345+00:00",
+      "label": "LAN IP seeked",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.2,
+      "adjusted_time": 12.630723999999999,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:11.226623+00:00",
+      "label": "LAN IP playing after command",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.410938,
+      "adjusted_time": 12.882217,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:13.227854+00:00",
+      "label": "LAN IP final observed status",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.410938,
+      "adjusted_time": 14.883448,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:15.732555+00:00",
+      "label": "mDNS .local playing",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 0,
+      "adjusted_time": 0.069942,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:18.736300+00:00",
+      "label": "mDNS .local progressed",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 2.207659,
+      "adjusted_time": 2.68929,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:19.286724+00:00",
+      "label": "mDNS .local paused",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PAUSED",
+      "time": 2.712079,
+      "adjusted_time": 2.712079,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:20.290958+00:00",
+      "label": "mDNS .local seeked",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.26,
+      "adjusted_time": 12.710841,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:20.816227+00:00",
+      "label": "mDNS .local playing after command",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.434373,
+      "adjusted_time": 12.906779,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:41:22.817961+00:00",
+      "label": "mDNS .local final observed status",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.434373,
+      "adjusted_time": 14.908513000000001,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    }
+  ],
+  "commands": [
+    {
+      "transport": "LAN IP",
+      "command": "pause"
+    },
+    {
+      "transport": "LAN IP",
+      "command": "seek",
+      "target_seconds": 12
+    },
+    {
+      "transport": "LAN IP",
+      "command": "play"
+    },
+    {
+      "transport": "mDNS .local",
+      "command": "pause"
+    },
+    {
+      "transport": "mDNS .local",
+      "command": "seek",
+      "target_seconds": 12
+    },
+    {
+      "transport": "mDNS .local",
+      "command": "play"
+    }
+  ],
+  "cases": [
+    {
+      "transport": "LAN IP",
+      "loaded_playing": true,
+      "load_to_playing_seconds": 5.016,
+      "pause_confirmed": true,
+      "seek_confirmed": true,
+      "play_confirmed": true,
+      "english_track_active": true
+    },
+    {
+      "transport": "mDNS .local",
+      "loaded_playing": true,
+      "load_to_playing_seconds": 2.5,
+      "pause_confirmed": true,
+      "seek_confirmed": true,
+      "play_confirmed": true,
+      "english_track_active": true
+    }
+  ],
+  "prepared": {
+    "source": "verified cached Archive episode 1",
+    "source_window_seconds": [
+      600,
+      630
+    ],
+    "preparation_seconds": 3.172,
+    "source_audio_index": 1,
+    "source_audio_language": "jpn",
+    "source_subtitle_index": 2,
+    "source_subtitle_language": "eng",
+    "subtitle_conversion": "ffmpeg ASS to WebVTT, clipped to 600..630 and shifted -600s",
+    "cue_count": 9,
+    "first_cue_seconds": [
+      0,
+      1.0199999999999818
+    ],
+    "last_cue_seconds": [
+      25.269999999999982,
+      29.600000000000023
+    ],
+    "duration_seconds": 30.03003,
+    "clip_bytes": 3811672,
+    "clip_sha256": "6c493ac9c45616a506bb05203f246e4c8f7f45a5b8f6274f0c76ad8ac5dd07ac",
+    "subtitle_bytes": 663,
+    "subtitle_sha256": "8d7c8e69f853f4cdaeca7c8895fe1ab406dd9ed0274986ea61dcd642dba919c0",
+    "streams": [
+      {
+        "codec": "h264",
+        "type": "video",
+        "language": "und",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "codec": "aac",
+        "type": "audio",
+        "language": "jpn",
+        "width": null,
+        "height": null
+      }
+    ]
+  },
+  "response_bytes_reserved": 7625365,
+  "http_self_checks": [
+    {
+      "asset": "episode1.mp4",
+      "range": "bytes=0-31",
+      "status": 206,
+      "bytes": 32,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "episode1.mp4",
+      "range": "bytes=999999999-",
+      "status": 416,
+      "bytes": 0,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "english.vtt",
+      "range": null,
+      "status": 200,
+      "bytes": 663,
+      "allow_origin": "https://www.gstatic.com"
+    }
+  ],
+  "receiver": {
+    "name": "Bedroom TV",
+    "model": "BRAVIA VU31"
+  },
+  "cleanup": "Stopped and quit only the receiver session owned by this pilot",
+  "stopped_at": "2026-10-18T07:41:23.794949+00:00",
+  "ticket_retained": false
+}

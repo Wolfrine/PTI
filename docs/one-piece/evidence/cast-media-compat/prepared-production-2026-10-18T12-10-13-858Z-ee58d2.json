@@ -1,0 +1,429 @@
+{
+  "kind": "real-production-prepared-media-core",
+  "runId": "2026-10-18T12-10-13-858Z-ee58d2",
+  "startedAt": "2026-10-18T12:10:13.861Z",
+  "newOriginalDownloads": 0,
+  "productionMediaModules": true,
+  "productionFirebaseAuth": false,
+  "actualCast": false,
+  "audibleLanguageVerified": false,
+  "visualSubtitlesVerified": false,
+  "events": [
+    {
+      "phase": "verified-original-import",
+      "episode": 1000,
+      "bytes": 742925306,
+      "md5": "ebeeadb99c7c1f27ba1f90aade7ccce1"
+    },
+    {
+      "phase": "verified-original-import",
+      "episode": 1001,
+      "bytes": 844716819,
+      "md5": "2610511c93fae62d4791e8284b6b96eb"
+    },
+    {
+      "phase": "shared-production-prepare-one-cancel",
+      "episode": 1000,
+      "elapsedMs": 32952,
+      "preparations": 1,
+      "remainingReady": true
+    },
+    {
+      "phase": "queued-production-prepare",
+      "episode": 1001,
+      "elapsedMs": 61858,
+      "preparations": 2
+    },
+    {
+      "phase": "production-cross-source-queue-adoption",
+      "elapsedMs": 1,
+      "noDuplicatePreparation": true
+    },
+    {
+      "phase": "production-restart-no-original",
+      "elapsedMs": 88,
+      "originalMissing": true,
+      "newPreparations": 0,
+      "newDownloads": 0
+    }
+  ],
+  "episodes": [
+    {
+      "episode": 1000,
+      "selected": {
+        "audioIndex": 1,
+        "subtitleIndex": 2,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "durationSeconds": 1430.79,
+      "contentType": "video/mp4",
+      "renditionId": "1b9f5c38e9ab1ab4dfd2efedbc6eb125540eae75393c36612f1d7ec5430b9c7d",
+      "recipe": {
+        "version": "jellyfin-12.2-ffmpeg-8.1.3-mp4-v1",
+        "original": {
+          "id": "archive-1e32a8bb848fcfc16cb9",
+          "md5": "ebeeadb99c7c1f27ba1f90aade7ccce1",
+          "bytes": 742925306
+        },
+        "durationSeconds": 1430.79,
+        "videoPolicy": "copy-compatible-h264",
+        "maxBitrate": 10000000,
+        "video": {
+          "index": 0,
+          "codec": "h264",
+          "bitDepth": 8,
+          "profile": "High",
+          "width": 1280,
+          "height": 720,
+          "level": 40
+        },
+        "audio": {
+          "index": 1,
+          "language": "jpn",
+          "inputCodec": "aac",
+          "channels": 2,
+          "outputCodec": "aac",
+          "allowCopy": true
+        },
+        "subtitle": {
+          "index": 2,
+          "language": "eng",
+          "fingerprint": "35b8fcbe19663d9381a1a1fddfdaccbde811cd34b1646c0359098fa47b9987da"
+        }
+      },
+      "video": {
+        "bytes": 737980951,
+        "sha256": "0b96bcf9a820609b2e98619c4100cef9f78195366109a9baed30131b159cff36"
+      },
+      "captions": {
+        "bytes": 14478,
+        "sha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+        "cueIdentity": {
+          "version": "vtt-dialogue-and-millisecond-timing-v1",
+          "sha256": "c85ed95104c98c266dbcc1fd46fbfff004d253e6d982d809e6f940a266e1aa4d",
+          "cues": 233
+        },
+        "lineage": {
+          "index": 2,
+          "language": "eng",
+          "fingerprint": "35b8fcbe19663d9381a1a1fddfdaccbde811cd34b1646c0359098fa47b9987da"
+        }
+      },
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "profile": "High",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "level": 40,
+            "start_time": "0.000000",
+            "duration": "1430.722000",
+            "tags": {
+              "language": "und"
+            }
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "start_time": "0.000000",
+            "duration": "1430.789705",
+            "tags": {
+              "language": "jpn"
+            }
+          }
+        ],
+        "format": {
+          "start_time": "0.000000",
+          "duration": "1430.789705",
+          "size": "737980951"
+        }
+      },
+      "metrics": {
+        "preparedMs": 23803,
+        "progressiveBytes": 737657691,
+        "faststartCopy": true,
+        "completeHeaderAndDuration": true,
+        "decodedStartMiddleEnd": true,
+        "privateEngineExitCodeExposedByHttp": false
+      },
+      "ranges": [
+        {
+          "range": "bytes=0-65535",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 24,
+          "byteExact": true
+        },
+        {
+          "range": "bytes=368990475-369056010",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 15,
+          "byteExact": true
+        },
+        {
+          "range": "bytes=737915415-737980950",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 29,
+          "byteExact": true
+        },
+        {
+          "range": "bytes=-65536",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 17,
+          "byteExact": true
+        }
+      ],
+      "seeks": [
+        {
+          "positionSeconds": 0,
+          "elapsedMs": 190,
+          "transferredBytes": 9256960,
+          "decodedExitCode": 0,
+          "diagnosticSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "positionSeconds": 600,
+          "elapsedMs": 261,
+          "transferredBytes": 10714824,
+          "decodedExitCode": 0,
+          "diagnosticSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "positionSeconds": 1427.79,
+          "elapsedMs": 197,
+          "transferredBytes": 4586806,
+          "decodedExitCode": 0,
+          "diagnosticSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "servedCaptionSha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+      "servedCues": 233
+    },
+    {
+      "episode": 1001,
+      "selected": {
+        "audioIndex": 2,
+        "subtitleIndex": 4,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "durationSeconds": 1419.04,
+      "contentType": "video/mp4",
+      "renditionId": "ba1d436b4863b7117318aaaee0fdd5693043943bebc89a26a5ab259f0b8ae303",
+      "recipe": {
+        "version": "jellyfin-12.2-ffmpeg-8.1.3-mp4-v1",
+        "original": {
+          "id": "archive-4e9255b8a504eb2e61c6",
+          "md5": "2610511c93fae62d4791e8284b6b96eb",
+          "bytes": 844716819
+        },
+        "durationSeconds": 1419.04,
+        "videoPolicy": "convert-h264-8bit",
+        "maxBitrate": 10000000,
+        "video": {
+          "index": 0,
+          "codec": "hevc",
+          "bitDepth": 10,
+          "profile": "Main 10",
+          "width": 1920,
+          "height": 1080,
+          "level": 120
+        },
+        "audio": {
+          "index": 2,
+          "language": "jpn",
+          "inputCodec": "aac",
+          "channels": 2,
+          "outputCodec": "aac",
+          "allowCopy": true
+        },
+        "subtitle": {
+          "index": 4,
+          "language": "eng",
+          "fingerprint": "0b09c0961266b74bb10c903cb2d72a82f576b7f4a1a83dc6a3d2799a40a8cde1"
+        }
+      },
+      "video": {
+        "bytes": 1323099843,
+        "sha256": "5e39a25fce57721bcf1806d94532e3d05baeda608a1f80c29863035cdb00df14"
+      },
+      "captions": {
+        "bytes": 20618,
+        "sha256": "07b6573849c913e8f44c46db919d840da5bf5a2f510a3e48f2da35e3fe9499d6",
+        "cueIdentity": {
+          "version": "vtt-dialogue-and-millisecond-timing-v1",
+          "sha256": "979568e2c0141aab4b69256cdd71dd20119c00e9c9a11fc1fad18af696104a4e",
+          "cues": 328
+        },
+        "lineage": {
+          "index": 4,
+          "language": "eng",
+          "fingerprint": "0b09c0961266b74bb10c903cb2d72a82f576b7f4a1a83dc6a3d2799a40a8cde1"
+        }
+      },
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "profile": "Main",
+            "codec_type": "video",
+            "width": 1920,
+            "height": 1080,
+            "pix_fmt": "yuv420p",
+            "level": 40,
+            "start_time": "0.041000",
+            "duration": "1419.000917",
+            "tags": {
+              "language": "und"
+            }
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "start_time": "0.000000",
+            "duration": "1419.039932",
+            "tags": {
+              "language": "jpn"
+            }
+          }
+        ],
+        "format": {
+          "start_time": "0.000000",
+          "duration": "1419.041917",
+          "size": "1323099843"
+        }
+      },
+      "metrics": {
+        "preparedMs": 51991,
+        "progressiveBytes": 1322665771,
+        "faststartCopy": true,
+        "completeHeaderAndDuration": true,
+        "decodedStartMiddleEnd": true,
+        "privateEngineExitCodeExposedByHttp": false
+      },
+      "ranges": [
+        {
+          "range": "bytes=0-65535",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 728,
+          "byteExact": true
+        },
+        {
+          "range": "bytes=661549921-661615456",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 459,
+          "byteExact": true
+        },
+        {
+          "range": "bytes=1323034307-1323099842",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 15,
+          "byteExact": true
+        },
+        {
+          "range": "bytes=-65536",
+          "status": 206,
+          "bytes": 65536,
+          "elapsedMs": 17,
+          "byteExact": true
+        }
+      ],
+      "seeks": [
+        {
+          "positionSeconds": 0,
+          "elapsedMs": 260,
+          "transferredBytes": 8732672,
+          "decodedExitCode": 0,
+          "diagnosticSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "positionSeconds": 600,
+          "elapsedMs": 576,
+          "transferredBytes": 23330560,
+          "decodedExitCode": 0,
+          "diagnosticSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "positionSeconds": 1416.04,
+          "elapsedMs": 700,
+          "transferredBytes": 11856155,
+          "decodedExitCode": 0,
+          "diagnosticSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "servedCaptionSha256": "07b6573849c913e8f44c46db919d840da5bf5a2f510a3e48f2da35e3fe9499d6",
+      "servedCues": 328
+    }
+  ],
+  "cleanup": {
+    "engineExit": {
+      "code": 0,
+      "signal": null
+    },
+    "engineStopped": true,
+    "originalDownloads": 0,
+    "assetsPreservedForOwnedRestart": true
+  },
+  "peakAccountedBytes": 17071513219,
+  "preflight": {
+    "usedBytes": 6832139052,
+    "engineBytes": 0,
+    "reservedBytes": 0,
+    "projectedBytes": 6832139052,
+    "limitBytes": 21474836480,
+    "freeBytes": 299803000832,
+    "minimumFreeBytes": 2147483648,
+    "pinnedSources": 0,
+    "pinnedRenditions": 0,
+    "activePreparations": 0
+  },
+  "engineSetup": {
+    "elapsedMs": 22413,
+    "listeners": [
+      {
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 18107
+      }
+    ],
+    "protectedSecrets": true
+  },
+  "initializeMs": 3215,
+  "finalUsage": {
+    "usedBytes": 9742604554,
+    "engineBytes": 57141,
+    "reservedBytes": 0,
+    "projectedBytes": 9742604554,
+    "limitBytes": 21474836480,
+    "freeBytes": 297737113600,
+    "minimumFreeBytes": 2147483648,
+    "pinnedSources": 1,
+    "pinnedRenditions": 1,
+    "activePreparations": 0
+  },
+  "completedAt": "2026-10-18T12:12:27.947Z",
+  "passed": true
+}

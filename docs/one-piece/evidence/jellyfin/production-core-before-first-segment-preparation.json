@@ -1,0 +1,289 @@
+{
+  "kind": "real-media-core-smoke",
+  "originals": [
+    1,
+    1001
+  ],
+  "newNetworkDownloads": 0,
+  "startedAt": "2026-10-18T08:25:51.777Z",
+  "browserRendered": false,
+  "heardJapanese": false,
+  "actualCast": false,
+  "sixtyMinuteConcurrency": false,
+  "baseline": [
+    {
+      "episode": 1,
+      "importedBytes": 357167311,
+      "md5": "f22a5ae5381eb2f541f07de768a7ad89",
+      "readyMs": 2080,
+      "selected": {
+        "audioIndex": 1,
+        "subtitleIndex": 2,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "subtitleBytes": 20068,
+      "webVttCueCount": 302,
+      "start": {
+        "elapsedMs": 2210,
+        "bytes": 2623164,
+        "sha256": "1bbf7bc61738cf3103b7d03758b18e38a6d701095c297e597e460829694d15c0",
+        "positionSeconds": 0,
+        "codecs": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "start_time": "10.083000",
+            "duration": "10.343700"
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "start_time": "10.083000",
+            "duration": "10.170144"
+          }
+        ],
+        "rendered": false,
+        "listened": false
+      },
+      "seek": {
+        "elapsedMs": 1499,
+        "bytes": 1538592,
+        "sha256": "4c78196a4b8adacf9f028ba12a6ad704334deda60910443fd1a66112ec5fd896",
+        "positionSeconds": 600,
+        "codecs": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "start_time": "606.346000",
+            "duration": "10.427700"
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "start_time": "606.358000",
+            "duration": "10.216711"
+          }
+        ],
+        "rendered": false,
+        "listened": false
+      }
+    },
+    {
+      "episode": 1001,
+      "importedBytes": 844716819,
+      "md5": "2610511c93fae62d4791e8284b6b96eb",
+      "readyMs": 632,
+      "selected": {
+        "audioIndex": 2,
+        "subtitleIndex": 4,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "subtitleBytes": 20618,
+      "webVttCueCount": 328,
+      "start": {
+        "elapsedMs": 2467,
+        "bytes": 1781488,
+        "sha256": "48c22e6215e06cb11a53328dea307f28c0ee4d5536d699382e6ee373667042bc",
+        "positionSeconds": 0,
+        "codecs": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "start_time": "10.083422",
+            "duration": "3.002989"
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "start_time": "10.041711",
+            "duration": "2.854733"
+          }
+        ],
+        "rendered": false,
+        "listened": false
+      },
+      "seek": {
+        "elapsedMs": 3474,
+        "bytes": 1931700,
+        "sha256": "b93a7d669ad8622fde4b96dd33f2e5df8217dfd363cdae4fbf317803c8759472",
+        "positionSeconds": 600,
+        "codecs": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "start_time": "607.638711",
+            "duration": "3.002989"
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "start_time": "607.610000",
+            "duration": "2.833911"
+          }
+        ],
+        "rendered": false,
+        "listened": false
+      }
+    }
+  ],
+  "gpu": {
+    "configured": {
+      "version": "12.2.0",
+      "hardwareAcceleration": "nvenc",
+      "libraryId": "f66699ba428ad678b428d0b4591ab296"
+    },
+    "wallMs": 6238,
+    "sessions": [
+      {
+        "sessionId": "gpu-0",
+        "selected": {
+          "audioIndex": 2,
+          "subtitleIndex": 4,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "segment": {
+          "elapsedMs": 5829,
+          "bytes": 3799292,
+          "sha256": "0b1cdb42e12a9f424435b8abb81f35a9d4d717a63dc25f5e2c5fb49a8bad90f7",
+          "positionSeconds": 0,
+          "codecs": [
+            {
+              "codec_name": "h264",
+              "codec_type": "video",
+              "start_time": "10.041711",
+              "duration": "3.002989"
+            },
+            {
+              "codec_name": "aac",
+              "codec_type": "audio",
+              "start_time": "10.000000",
+              "duration": "2.994567"
+            }
+          ],
+          "rendered": false,
+          "listened": false
+        }
+      },
+      {
+        "sessionId": "gpu-1",
+        "selected": {
+          "audioIndex": 2,
+          "subtitleIndex": 4,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "segment": {
+          "elapsedMs": 5417,
+          "bytes": 3390392,
+          "sha256": "6bb718ed4a0b02e3e2839d35f965c5c902410307cee5e4d25d0a2ba7103686ab",
+          "positionSeconds": 600,
+          "codecs": [
+            {
+              "codec_name": "h264",
+              "codec_type": "video",
+              "start_time": "607.638711",
+              "duration": "3.002989"
+            },
+            {
+              "codec_name": "aac",
+              "codec_type": "audio",
+              "start_time": "607.610000",
+              "duration": "2.972711"
+            }
+          ],
+          "rendered": false,
+          "listened": false
+        }
+      },
+      {
+        "sessionId": "gpu-2",
+        "selected": {
+          "audioIndex": 2,
+          "subtitleIndex": 4,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "segment": {
+          "elapsedMs": 5434,
+          "bytes": 3555080,
+          "sha256": "562a110562005e748928eacf30a40e5bc3018f6f706256eb87b30a67c730b88a",
+          "positionSeconds": 1200,
+          "codecs": [
+            {
+              "codec_name": "h264",
+              "codec_type": "video",
+              "start_time": "1208.238711",
+              "duration": "3.002989"
+            },
+            {
+              "codec_name": "aac",
+              "codec_type": "audio",
+              "start_time": "1208.219000",
+              "duration": "2.925144"
+            }
+          ],
+          "rendered": false,
+          "listened": false
+        }
+      }
+    ],
+    "jobs": [
+      {
+        "name": "FFmpeg.Transcode-2026-10-18_13-56-16_d3b57783f978d6a43e7f0dfbce6f205a_73e3e207.log",
+        "nvenc": true,
+        "japaneseMap": true,
+        "localInput": true,
+        "hardwareDecode": true
+      },
+      {
+        "name": "FFmpeg.Transcode-2026-10-18_13-56-16_d3b57783f978d6a43e7f0dfbce6f205a_cf9c0f1f.log",
+        "nvenc": true,
+        "japaneseMap": true,
+        "localInput": true,
+        "hardwareDecode": true
+      },
+      {
+        "name": "FFmpeg.Transcode-2026-10-18_13-56-16_d3b57783f978d6a43e7f0dfbce6f205a_de52766d.log",
+        "nvenc": true,
+        "japaneseMap": true,
+        "localInput": true,
+        "hardwareDecode": true
+      }
+    ],
+    "independentEncoderJobsObserved": 3,
+    "durationClaim": "short real segment jobs only; not 60-minute capacity acceptance"
+  },
+  "initialization": {
+    "engine": {
+      "version": "12.2.0",
+      "hardwareAcceleration": "none",
+      "libraryId": "f66699ba428ad678b428d0b4591ab296"
+    },
+    "cache": {
+      "usedBytes": 2984547326,
+      "engineBytes": 95467,
+      "reservedBytes": 0,
+      "projectedBytes": 2984547326,
+      "limitBytes": 21474836480,
+      "freeBytes": 301792763904,
+      "minimumFreeBytes": 2147483648,
+      "pinnedSources": 0,
+      "activePreparations": 0
+    }
+  },
+  "storage": {
+    "usedBytes": 3003233342,
+    "engineBytes": 161775,
+    "reservedBytes": 0,
+    "projectedBytes": 3003233342,
+    "limitBytes": 21474836480,
+    "freeBytes": 301769490432,
+    "minimumFreeBytes": 2147483648,
+    "pinnedSources": 0,
+    "activePreparations": 0
+  },
+  "completedAt": "2026-10-18T08:26:29.691Z"
+}

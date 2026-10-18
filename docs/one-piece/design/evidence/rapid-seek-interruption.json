@@ -1,0 +1,22 @@
+{
+  "candidate": "21c687d2c27fe1dc27f1318053251ebaa054be48821a55b0498764fda0397935",
+  "observedAt": "2026-10-18T10:44:11.657Z",
+  "steps": [
+    "Paused real1000 at600",
+    "NativeArrowLeft14.307896s",
+    "PageArrowLeft10s",
+    "PageSpaceplay/pause",
+    "NativeSpaceplay/pause",
+    "FivePageArrowRightattempts"
+  ],
+  "observed": "Playback was interrupted; last saved9:35; video removed",
+  "console": [
+    {
+      "level": "error",
+      "message": "AbortError: The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22",
+      "timestamp": "2026-10-18T10:40:50.505Z",
+      "url": "http://127.0.0.1:8910/one-piece/?fixture=media&episode=1000&review=parent-final-auth"
+    }
+  ],
+  "scope": "Cause not established. Expected play/pause AbortError and possible HLS failure require separate diagnosis."
+}

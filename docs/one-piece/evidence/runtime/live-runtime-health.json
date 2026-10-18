@@ -1,0 +1,84 @@
+{
+  "recordedAt": "2026-10-18T09:16:10.227Z",
+  "source": "real local production runtime; no media session or TV was started",
+  "caSha256": "307F6A88C652E429513F47B386F761249F52A30D6FE93B91ECE7501C3C640489",
+  "expectedCaSha256": "307F6A88C652E429513F47B386F761249F52A30D6FE93B91ECE7501C3C640489",
+  "nameResolution": {
+    "address": "192.168.68.105",
+    "family": 4
+  },
+  "httpsName": {
+    "status": 200,
+    "authorized": true,
+    "certificateName": "DNS:onepiece.local",
+    "allowedOrigin": null,
+    "service": "one-piece-local-https",
+    "setupRequired": null
+  },
+  "httpsIp": {
+    "status": 200,
+    "authorized": true,
+    "certificateName": "IP Address:192.168.68.105",
+    "allowedOrigin": null,
+    "service": "one-piece-local-https",
+    "setupRequired": null
+  },
+  "apiHealth": {
+    "status": 200,
+    "authorized": true,
+    "certificateName": "DNS:onepiece.local",
+    "allowedOrigin": "https://pti-app-2ab59.web.app",
+    "service": "online",
+    "setupRequired": true
+  },
+  "supervisor": {
+    "pid": 71116,
+    "processes": {
+      "jellyfin": {
+        "pid": 79992,
+        "executable": "H:\\PTI-OnePiece\\pilot\\jellyfin\\runtime\\jellyfin\\jellyfin.exe",
+        "startedAt": "2026-10-18T09:14:51.701Z",
+        "state": "ready"
+      },
+      "mdns": {
+        "pid": 73416,
+        "executable": "C:\\Users\\Sachit Tewary\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "startedAt": "2026-10-18T09:15:05.291Z",
+        "state": "ready"
+      },
+      "caddy": {
+        "pid": 67516,
+        "executable": "H:\\PTI-OnePiece\\pilot\\network\\runtime\\caddy.exe",
+        "startedAt": "2026-10-18T09:15:05.330Z",
+        "state": "ready"
+      },
+      "backend": {
+        "pid": 68364,
+        "executable": "H:\\PTI-OnePiece\\tools\\node\\node.exe",
+        "startedAt": "2026-10-18T09:15:05.368Z",
+        "state": "ready"
+      }
+    },
+    "health": {
+      "jellyfin": true,
+      "backend": true,
+      "mdns": true,
+      "caddy": true,
+      "checkedAt": "2026-10-18T09:16:05.443Z"
+    },
+    "engineBootstrap": {
+      "authenticated": true,
+      "scheduledTasksDisabled": 20
+    },
+    "startupMode": "current-user-logon",
+    "preLoginVerified": false,
+    "rebootVerified": false
+  },
+  "scope": {
+    "routerDnsChanged": false,
+    "externalDnsAccount": false,
+    "plaintextWindowsPasswordStored": false,
+    "androidInstallationVerified": false,
+    "tvProductionSessionVerified": false
+  }
+}

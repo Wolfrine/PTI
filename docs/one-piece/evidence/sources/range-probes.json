@@ -1,0 +1,1146 @@
+{
+  "completedAt": "2026-10-18T07:19:21.429Z",
+  "userAgent": "PTI-OnePiece-Feasibility/0.1 (private family playback research; bounded requests)",
+  "command": "node apps/one-piece/companion/pilot/transport/probe.mjs",
+  "maxParallelUpstreams": 2,
+  "bytesPerRange": 16384,
+  "totalMediaBytesRead": 344064,
+  "meaning": "Bounded HTTP transport and CORS headers only. 206 responses do not establish player seeking, language, buffering, subtitle or Cast correctness.",
+  "results": [
+    {
+      "episodeNumber": 1,
+      "candidateId": "archive-5e522487ae563a852646",
+      "checkedAt": "2026-10-18T07:18:48.850Z",
+      "position": "start",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 0-16383/357167311",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"64181e48-1549f0cf\"",
+        "last-modified": "Mon, 20 Mar 2023 08:50:16 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=0-16383",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 2513,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "0eee20084901d00ada56afdbbbd0d2a82030a95969f2acedfbc6c04847fa8c68",
+      "magicFirst16Hex": "1a45dfa3a34286810142f7810142f281",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1,
+      "candidateId": "archive-5e522487ae563a852646",
+      "checkedAt": "2026-10-18T07:18:50.514Z",
+      "position": "middle",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 178583655-178600038/357167311",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"64181e48-1549f0cf\"",
+        "last-modified": "Mon, 20 Mar 2023 08:50:16 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=178583655-178600038",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1661,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "8822431711531b0819af6351f8878981a295e11418dd56a54e23a38640ad838a",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1,
+      "candidateId": "archive-5e522487ae563a852646",
+      "checkedAt": "2026-10-18T07:18:51.483Z",
+      "position": "end",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 357150927-357167310/357167311",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"64181e48-1549f0cf\"",
+        "last-modified": "Mon, 20 Mar 2023 08:50:16 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=357150927-357167310",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 969,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "0736507947c878e2a3969b993f801fbc31c48f1ac302d626bba7d6741ac948fb",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1,
+      "position": "preflight-range",
+      "checkedAt": "2026-10-18T07:18:52.563Z",
+      "attempt": 1,
+      "status": 405,
+      "finalUrl": "https://dn800300.us.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "to": "https://dn800300.us.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": null,
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "OPTIONS",
+        "range": "bytes=0-65535",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1079,
+      "bytesRead": 0,
+      "history": []
+    },
+    {
+      "episodeNumber": 500,
+      "candidateId": "archive-68d8d491229a826ba528",
+      "checkedAt": "2026-10-18T07:18:55.996Z",
+      "position": "start",
+      "attempt": 2,
+      "status": 206,
+      "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 0-16383/342757053",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641826cd-146e0ebd\"",
+        "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=0-16383",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1488,
+      "bytesRead": 16384,
+      "history": [
+        {
+          "attempt": 1,
+          "status": 500,
+          "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "redirects": [
+            {
+              "status": 302,
+              "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+              "accessControlAllowOrigin": null
+            }
+          ],
+          "headers": {
+            "content-type": null,
+            "content-length": "170",
+            "content-range": null,
+            "accept-ranges": null,
+            "access-control-allow-origin": null,
+            "access-control-allow-methods": null,
+            "access-control-allow-headers": null,
+            "access-control-expose-headers": null,
+            "retry-after": null,
+            "etag": null,
+            "last-modified": null
+          },
+          "retryWaitMs": 500,
+          "elapsedMs": 1434
+        }
+      ],
+      "sampleSha256": "fa07e62f0f7c1d5df3cea2b1cfe07835cb7606d1fb34bd7353a14324c12322b5",
+      "magicFirst16Hex": "1a45dfa3a34286810142f7810142f281",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 500,
+      "candidateId": "archive-68d8d491229a826ba528",
+      "checkedAt": "2026-10-18T07:18:57.811Z",
+      "position": "middle",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 171378526-171394909/342757053",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641826cd-146e0ebd\"",
+        "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=171378526-171394909",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1814,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "b3f8f0f6a33b53c5d585e5c5908c83984824ee8077adb68798bbeb1602fc9003",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 500,
+      "candidateId": "archive-68d8d491229a826ba528",
+      "checkedAt": "2026-10-18T07:18:59.312Z",
+      "position": "end",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 342740669-342757052/342757053",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641826cd-146e0ebd\"",
+        "last-modified": "Mon, 20 Mar 2023 09:26:37 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=342740669-342757052",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1501,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "dd74b2981f34ec1a30c7605a65290e1ad492c0cd938d84fa4b38b388b1c10753",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 500,
+      "position": "preflight-range",
+      "checkedAt": "2026-10-18T07:19:00.883Z",
+      "attempt": 1,
+      "status": 405,
+      "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%20500%20%5B720p%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "150",
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "OPTIONS",
+        "range": "bytes=0-65535",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1571,
+      "bytesRead": 0,
+      "history": []
+    },
+    {
+      "episodeNumber": 944,
+      "candidateId": "archive-e7351cd69fa19da131e5",
+      "checkedAt": "2026-10-18T07:19:02.378Z",
+      "position": "start",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 0-16383/741471207",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641830e2-2c31f3e7\"",
+        "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=0-16383",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1494,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "3a095bed2ce367629e42252f68f90b109b83088e65952b7660c7c8f0700f80f4",
+      "magicFirst16Hex": "1a45dfa3a34286810142f7810142f281",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 944,
+      "candidateId": "archive-e7351cd69fa19da131e5",
+      "checkedAt": "2026-10-18T07:19:03.480Z",
+      "position": "middle",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 370735603-370751986/741471207",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641830e2-2c31f3e7\"",
+        "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=370735603-370751986",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1102,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "3a06e4f6d6f798d43558d5cdb3f7989b1ec3895e21bb2b495b2f874ce5ac93f4",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 944,
+      "candidateId": "archive-e7351cd69fa19da131e5",
+      "checkedAt": "2026-10-18T07:19:05.065Z",
+      "position": "end",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 741454823-741471206/741471207",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641830e2-2c31f3e7\"",
+        "last-modified": "Mon, 20 Mar 2023 10:09:38 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=741454823-741471206",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1585,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "5dcd18e28e5a9e725f9b4123ef4aebe7f771dd64ef0ad49738bae0e5f293f769",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 944,
+      "position": "preflight-range",
+      "checkedAt": "2026-10-18T07:19:06.453Z",
+      "attempt": 1,
+      "status": 405,
+      "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%20944%20(720p)%20%5BB064FE69%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "150",
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "OPTIONS",
+        "range": "bytes=0-65535",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1387,
+      "bytesRead": 0,
+      "history": []
+    },
+    {
+      "episodeNumber": 1000,
+      "candidateId": "archive-1e32a8bb848fcfc16cb9",
+      "checkedAt": "2026-10-18T07:19:07.500Z",
+      "position": "start",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 0-16383/742925306",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641830cc-2c4823fa\"",
+        "last-modified": "Mon, 20 Mar 2023 10:09:16 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=0-16383",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1047,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "9a7f96fde265b11f1e1958e495147c31c1164f0f258c65a306adb3124987db22",
+      "magicFirst16Hex": "1a45dfa3a34286810142f7810142f281",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1000,
+      "candidateId": "archive-1e32a8bb848fcfc16cb9",
+      "checkedAt": "2026-10-18T07:19:08.629Z",
+      "position": "middle",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "to": "https://dn721909.ca.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 371462653-371479036/742925306",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641830cc-2c4823fa\"",
+        "last-modified": "Mon, 20 Mar 2023 10:09:16 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=371462653-371479036",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1128,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "d3dd713a2118ad61083d887831be551b1721ddd96bdf0df33716146a8761475b",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1000,
+      "candidateId": "archive-1e32a8bb848fcfc16cb9",
+      "checkedAt": "2026-10-18T07:19:10.068Z",
+      "position": "end",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://dn800300.us.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "to": "https://dn800300.us.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 742908922-742925305/742925306",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"641830cc-2c4823fa\"",
+        "last-modified": "Mon, 20 Mar 2023 10:09:16 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=742908922-742925305",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1438,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "9e5b3a15e91f8b999e41864def41b9413232c00a6fb703d01825f0752d5f7c2a",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1000,
+      "position": "preflight-range",
+      "checkedAt": "2026-10-18T07:19:11.599Z",
+      "attempt": 1,
+      "status": 405,
+      "finalUrl": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "to": "https://dn760109.eu.archive.org/0/items/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BSubsPlease%5D%20One%20Piece%20-%201000%20(720p)%20%5BDCD82E5D%5D.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "150",
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "OPTIONS",
+        "range": "bytes=0-65535",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1531,
+      "bytesRead": 0,
+      "history": []
+    },
+    {
+      "episodeNumber": 1001,
+      "candidateId": "archive-4e9255b8a504eb2e61c6",
+      "checkedAt": "2026-10-18T07:19:12.984Z",
+      "position": "start",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 0-16383/844716819",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38a91c-32595b13\"",
+        "last-modified": "Mon, 22 Jun 2026 03:16:44 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=0-16383",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1384,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "cdc18eca2ba207f938e4d3c092fc2c95fac5a0e5cdba6aad56126e47ad9079d7",
+      "magicFirst16Hex": "1a45dfa3a34286810142f7810142f281",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1001,
+      "candidateId": "archive-4e9255b8a504eb2e61c6",
+      "checkedAt": "2026-10-18T07:19:14.386Z",
+      "position": "middle",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 422358409-422374792/844716819",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38a91c-32595b13\"",
+        "last-modified": "Mon, 22 Jun 2026 03:16:44 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=422358409-422374792",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 1402,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "275a9b99209b582df49e7866ebc58f2136d8e7e4052e99cc17b3ba8d8070ab04",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1001,
+      "candidateId": "archive-4e9255b8a504eb2e61c6",
+      "checkedAt": "2026-10-18T07:19:14.970Z",
+      "position": "end",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 844700435-844716818/844716819",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38a91c-32595b13\"",
+        "last-modified": "Mon, 22 Jun 2026 03:16:44 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=844700435-844716818",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 584,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "d3f8950adc075d3e1eab802a88dba04c888adb8108ef8d33ff448694754327ec",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1001,
+      "position": "preflight-range",
+      "checkedAt": "2026-10-18T07:19:15.522Z",
+      "attempt": 1,
+      "status": 405,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": null,
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "OPTIONS",
+        "range": "bytes=0-65535",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 551,
+      "bytesRead": 0,
+      "history": []
+    },
+    {
+      "episodeNumber": 1044,
+      "candidateId": "archive-a37186b01d1c653315bf",
+      "checkedAt": "2026-10-18T07:19:16.376Z",
+      "position": "start",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 0-16383/695857598",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38c076-2979f1be\"",
+        "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=0-16383",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 854,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "ca844aacbb6dedafc620de4be20da3355754a7095b0bee3ce005ccc8bb497bf1",
+      "magicFirst16Hex": "1a45dfa3a34286810142f7810142f281",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1044,
+      "candidateId": "archive-a37186b01d1c653315bf",
+      "checkedAt": "2026-10-18T07:19:16.943Z",
+      "position": "middle",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 347928799-347945182/695857598",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38c076-2979f1be\"",
+        "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=347928799-347945182",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 567,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "a18b73c13bcef00f0134c8730d7c46a42f27907463b0e69f5c42c33ac6290a6d",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1044,
+      "candidateId": "archive-a37186b01d1c653315bf",
+      "checkedAt": "2026-10-18T07:19:17.816Z",
+      "position": "end",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 695841214-695857597/695857598",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38c076-2979f1be\"",
+        "last-modified": "Mon, 22 Jun 2026 04:56:22 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=695841214-695857597",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 873,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "640e1ea3f0cd0f94830d075a6ff85b976a34a5ca6e7fdb083be178e1fead9e4e",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1044,
+      "position": "preflight-range",
+      "checkedAt": "2026-10-18T07:19:18.366Z",
+      "attempt": 1,
+      "status": 405,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201044%20-%20Clutch!%20A%20Demon%20Incarnate%2C%20Robin!.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": null,
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "OPTIONS",
+        "range": "bytes=0-65535",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 550,
+      "bytesRead": 0,
+      "history": []
+    },
+    {
+      "episodeNumber": 1085,
+      "candidateId": "archive-f55557a892c948ed035d",
+      "checkedAt": "2026-10-18T07:19:19.210Z",
+      "position": "start",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 0-16383/659097962",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38ef3d-2749096a\"",
+        "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=0-16383",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 844,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "3d667f16fc6b17450cff40edc942d37ab13b8581482d57c39cdb53b3d87752f5",
+      "magicFirst16Hex": "1a45dfa3a34286810142f7810142f281",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1085,
+      "candidateId": "archive-f55557a892c948ed035d",
+      "checkedAt": "2026-10-18T07:19:20.065Z",
+      "position": "middle",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 329548981-329565364/659097962",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38ef3d-2749096a\"",
+        "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=329548981-329565364",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 855,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "9b7538756f29ebdb0203848d52c5998cb2e7ab4a7be96c589a5386feb0e06e03",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1085,
+      "candidateId": "archive-f55557a892c948ed035d",
+      "checkedAt": "2026-10-18T07:19:20.878Z",
+      "position": "end",
+      "attempt": 1,
+      "status": 206,
+      "finalUrl": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "to": "https://ia600403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "application/octet-stream",
+        "content-length": "16384",
+        "content-range": "bytes 659081578-659097961/659097962",
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": "\"6a38ef3d-2749096a\"",
+        "last-modified": "Mon, 22 Jun 2026 08:15:57 GMT"
+      },
+      "request": {
+        "method": "GET",
+        "range": "bytes=659081578-659097961",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 813,
+      "bytesRead": 16384,
+      "history": [],
+      "sampleSha256": "89914bb4133e920249e6371500e41f11375d9926ad44a6edb979465a2a104e05",
+      "browserCors": false
+    },
+    {
+      "episodeNumber": 1085,
+      "position": "preflight-range",
+      "checkedAt": "2026-10-18T07:19:21.429Z",
+      "attempt": 1,
+      "status": 405,
+      "finalUrl": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+      "redirects": [
+        {
+          "status": 302,
+          "from": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "to": "https://ia800403.us.archive.org/18/items/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201085%20-%20The%20Last%20Curtain%20Luffy%20And%20Momonosuke's%20Vow_Land_Of_Wano_ACT_III_End.mkv",
+          "accessControlAllowOrigin": null
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": null,
+        "content-range": null,
+        "accept-ranges": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null,
+        "access-control-expose-headers": null,
+        "retry-after": null,
+        "etag": null,
+        "last-modified": null
+      },
+      "request": {
+        "method": "OPTIONS",
+        "range": "bytes=0-65535",
+        "origin": "https://pti-app-2ab59.web.app"
+      },
+      "elapsedMs": 550,
+      "bytesRead": 0,
+      "history": []
+    }
+  ]
+}

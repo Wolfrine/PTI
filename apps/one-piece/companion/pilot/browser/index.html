@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>One Piece technical feasibility pilot</title>
+<style>body{font:16px system-ui;max-width:1000px;margin:24px auto;padding:0 16px;background:#f6f7f8;color:#17212b}h1{font-size:25px}fieldset{margin:12px 0;display:flex;gap:12px;flex-wrap:wrap}button,select{font:inherit;padding:8px}video{width:100%;background:black;max-height:480px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:340px;overflow:auto;background:#fff;padding:12px}#stage{position:relative}small{display:block}</style>
+<h1>Real-stream feasibility pilot</h1><p>Development-only test harness. This is not the app UI. Original Archive files; no sample video substitutes. Sound starts only after Play.</p>
+<fieldset><legend>Sample and test</legend><label>Episode <select id="episode"><option>1</option><option>1001</option></select></label><button id="direct">Native browser / direct original</button><button id="relay">Native browser / relayed original</button><button id="overlay">Native original + incremental ASS (episode 1)</button><button id="cue">Show first English cue</button><button id="wasm">Browser demux + Japanese + ASS</button><button id="seek">Demux window at 600 seconds</button><button id="stop">Stop and save evidence</button></fieldset>
+<small>The demux test fetches a bounded 22-second window and copies the original compressed video/audio into fragmented MP4; it does not convert codecs. ASS is extracted incrementally and rendered by JASSUB. A 600-second test fetches a fresh window after an indexed seek. Full continuous playback, all fonts, mobile and casting are not established by this pilot.</small>
+<div id="stage"><video id="video" controls playsinline preload="metadata"></video></div>
+<p id="state" role="status">Ready.</p><pre id="log"></pre>
+<script type="module" src="/app.mjs"></script>
+</html>

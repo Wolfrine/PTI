@@ -1,0 +1,26 @@
+{
+  "kind": "inventory-size-arithmetic-only",
+  "capacity_proven": false,
+  "notes": [
+    "File sizes are Archive metadata; no additional media downloaded.",
+    "Six-largest-original arithmetic excludes conversion/subtitle/output temporaries and eviction safety reserve; it does not establish cache admission correctness."
+  ],
+  "one-piece-0001-1000-1999-horrible-subs": {
+    "files": 999,
+    "totalBytes": 392857680577,
+    "minBytes": 327657989,
+    "medianBytes": 342695094,
+    "maxBytes": 743747617,
+    "sixLargestBytes": 4461967178
+  },
+  "20260622_20260622_0310": {
+    "files": 85,
+    "totalBytes": 63326768948,
+    "minBytes": 537217925,
+    "medianBytes": 746071524,
+    "maxBytes": 940138320,
+    "sixLargestBytes": 5378593529
+  },
+  "combinedSixLargestOriginalBytes": 5378593529,
+  "mediaCacheBudgetBytes": 21474836480
+}

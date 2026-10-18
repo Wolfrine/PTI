@@ -1,0 +1,52 @@
+{
+  "kind": "real-production-prepared-core-handoff",
+  "createdAt": "2026-10-18T12:12:27.947Z",
+  "runId": "2026-10-18T12-10-13-858Z-ee58d2",
+  "runRoot": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2",
+  "cacheRoot": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\cache",
+  "protectedResumeConfigPath": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\private\\resume-config.json",
+  "descriptor": {
+    "version": "12.2",
+    "executable": "H:\\PTI-OnePiece\\pilot\\jellyfin\\runtime\\jellyfin\\jellyfin.exe",
+    "workingDirectory": "H:\\PTI-OnePiece\\pilot\\jellyfin\\runtime\\jellyfin",
+    "args": [
+      "--datadir",
+      "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\data",
+      "--configdir",
+      "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\config",
+      "--cachedir",
+      "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\cache",
+      "--logdir",
+      "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\logs",
+      "--ffmpeg",
+      "H:\\PTI-OnePiece\\pilot\\jellyfin\\runtime\\jellyfin\\ffmpeg.exe",
+      "--nowebclient",
+      "--nonetchange"
+    ],
+    "directories": {
+      "config": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\config",
+      "data": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\data",
+      "cache": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\cache",
+      "logs": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\logs",
+      "transcodes": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\transcodes",
+      "private": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\private"
+    },
+    "networkConfigPath": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\config\\network.xml",
+    "baseUrl": "http://127.0.0.1:18107",
+    "managedRoots": {
+      "transcodes": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\transcodes",
+      "subtitles": "H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-10-13-858Z-ee58d2\\engine\\data\\data\\subtitles"
+    },
+    "networkXml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<NetworkConfiguration>\n<InternalHttpPort>18107</InternalHttpPort><PublicHttpPort>18107</PublicHttpPort>\n<EnableHttps>false</EnableHttps><RequireHttps>false</RequireHttps><AutoDiscovery>false</AutoDiscovery><EnableUPnP>false</EnableUPnP>\n<EnableIPv4>true</EnableIPv4><EnableIPv6>false</EnableIPv6><EnableRemoteAccess>false</EnableRemoteAccess>\n<LocalNetworkAddresses><string>127.0.0.1</string></LocalNetworkAddresses><LocalNetworkSubnets><string>127.0.0.0/8</string></LocalNetworkSubnets>\n</NetworkConfiguration>\n"
+  },
+  "accountingRoots": [
+    "H:/PTI-OnePiece/production-media",
+    "H:/PTI-OnePiece/pilot/jellyfin",
+    "H:/PTI-OnePiece/runtime/media",
+    "H:/PTI-OnePiece/runtime/jellyfin"
+  ],
+  "evidence": "prepared-production-2026-10-18T12-10-13-858Z-ee58d2.json",
+  "actualTV": false,
+  "productionMediaModules": true,
+  "noTokensCredentialsOrMediaURLs": true
+}

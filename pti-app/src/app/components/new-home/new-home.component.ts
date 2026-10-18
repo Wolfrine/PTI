@@ -1,48 +1,143 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
-interface LandingOption {
+type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Creative';
+type AppTone = 'coral' | 'mint' | 'amber' | 'blue' | 'violet' | 'sun' | 'rose' | 'slate' | 'teal' | 'plum';
+
+interface HubApp {
   id: string;
-  label: string;
+  name: string;
+  shortName: string;
   description: string;
-  path: string;
-  tone: 'gold' | 'blue';
+  icon: string;
+  category: AppCategory;
+  tone: AppTone;
+  href: string;
+  external?: boolean;
 }
+
+const PINNED_DEFAULTS = ['pti-dashboard', 'tracker', 'morsel', 'venture', 'personal', 'luminary'];
+const PIN_STORAGE_KEY = 'pti.home.pins.v1';
+const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
 
 @Component({
   selector: 'app-new-home',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule],
   templateUrl: './new-home.component.html',
   styleUrl: './new-home.component.scss',
 })
-export class NewHomeComponent {
-  readonly premiumTiles: LandingOption[] = [
-    { id: 'morsel', label: 'Morsel · Food memory', description: 'Your Zomato history, personal taste and a little help choosing the next meal.', path: 'https://pti-app-2ab59-morsel.web.app/', tone: 'gold' },
-    {
-      id: 'codex-command',
-      label: 'CEO Command Dashboard',
-      description: 'Executive operational posture with strategic project controls and review lanes.',
-      path: '/codex-command',
-      tone: 'gold',
-    },
-    {
-      id: 'pti-dashboard',
-      label: 'PTI Dashboard',
-      description: 'Time-tracking and domain productivity for hands-on execution.',
-      path: '/new-dashboard',
-      tone: 'blue',
-    },
+export class NewHomeComponent implements OnInit {
+  @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
+  @ViewChild('appDirectory') appDirectory?: ElementRef<HTMLElement>;
+
+  readonly apps: readonly HubApp[] = [
+    { id: 'pti-dashboard', name: 'PTI Dashboard', shortName: 'Dashboard', description: 'Time investment, domains and progress', icon: 'dashboard', category: 'Productivity', tone: 'coral', href: '/new-dashboard' },
+    { id: 'tracker', name: 'Self-Tracking', shortName: 'Tracker', description: 'Track outcomes and the progress behind them', icon: 'task_alt', category: 'Productivity', tone: 'mint', href: 'https://pti-app-2ab59-tracker.web.app/', external: true },
+    { id: 'morsel', name: 'Morsel', shortName: 'Morsel', description: 'Your food memories and next meal', icon: 'restaurant_menu', category: 'Personal', tone: 'amber', href: 'https://pti-app-2ab59-morsel.web.app/', external: true },
+    { id: 'venture', name: 'Venture', shortName: 'Venture', description: 'Explore ideas, experiments and opportunities', icon: 'insights', category: 'Ideas', tone: 'blue', href: 'https://pti-app-2ab59-venture.web.app/', external: true },
+    { id: 'personal', name: 'Personal', shortName: 'Personal', description: 'Your daily intelligence and discoveries', icon: 'auto_stories', category: 'Personal', tone: 'violet', href: 'https://pti-app-2ab59-personal.web.app/', external: true },
+    { id: 'luminary', name: 'Luminary', shortName: 'Luminary', description: 'Observe, reflect and understand patterns', icon: 'wb_sunny', category: 'Knowledge', tone: 'sun', href: 'https://pti-app-2ab59-luminary.web.app/', external: true },
+    { id: 'sefpo', name: 'SEFPO Lab', shortName: 'SEFPO Lab', description: 'Connected ideas and structured knowledge', icon: 'hub', category: 'Knowledge', tone: 'plum', href: 'https://pti-app-2ab59-sefpo.web.app/', external: true },
+    { id: 'velum', name: 'Velum', shortName: 'Velum', description: 'Explore and evaluate visual collections', icon: 'collections', category: 'Creative', tone: 'slate', href: 'https://pti-app-2ab59-velum.web.app/', external: true },
+    { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
+    { id: 'ceo-command', name: 'CEO Command', shortName: 'CEO Command', description: 'Portfolio, projects and executive reviews', icon: 'space_dashboard', category: 'Productivity', tone: 'teal', href: '/codex-command' },
+  ];
+  readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Creative'];
+  readonly projects = [
+    { name: 'Visual Experiments', description: 'Research and interactive prototypes', icon: 'science', href: 'https://github.com/Wolfrine/PTI/tree/main/visual-experiments' },
+    { name: 'One Piece Player', description: 'In development — not yet on PTI main', icon: 'movie', href: 'https://github.com/Wolfrine/PTI/tree/codex/one-piece-family' },
   ];
 
-  constructor(private readonly router: Router) {}
+  searchQuery = '';
+  selectedCategory: 'All' | AppCategory = 'All';
+  editingPins = false;
+  pinnedIds: string[] = [...PINNED_DEFAULTS];
+  recentIds: string[] = [];
 
-  open(path: string): void {
-    if (path === 'https://pti-app-2ab59-morsel.web.app/') { window.location.assign(path); return; }
-    this.router.navigate([path]);
+  constructor(private readonly router: Router, @Inject(PLATFORM_ID) private readonly platformId: object) {}
+
+  ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    this.pinnedIds = this.readIds(PIN_STORAGE_KEY, PINNED_DEFAULTS);
+    this.recentIds = this.readIds(RECENT_STORAGE_KEY, []);
+  }
+
+  get pinnedApps(): HubApp[] {
+    return this.pinnedIds.map(id => this.apps.find(app => app.id === id)).filter((app): app is HubApp => !!app);
+  }
+
+  get recentApps(): HubApp[] {
+    return this.recentIds.map(id => this.apps.find(app => app.id === id)).filter((app): app is HubApp => !!app).slice(0, 3);
+  }
+
+  get suggestions(): HubApp[] {
+    return this.recentApps.length ? this.recentApps : ['tracker', 'morsel', 'venture'].map(id => this.apps.find(app => app.id === id)!).filter(Boolean);
+  }
+
+  get filteredApps(): HubApp[] {
+    const query = this.searchQuery.trim().toLocaleLowerCase();
+    return this.apps.filter(app =>
+      (this.selectedCategory === 'All' || app.category === this.selectedCategory) &&
+      (!query || `${app.name} ${app.description} ${app.category}`.toLocaleLowerCase().includes(query))
+    );
+  }
+
+  isPinned(app: HubApp): boolean { return this.pinnedIds.includes(app.id); }
+
+  setCategory(category: 'All' | AppCategory): void { this.selectedCategory = category; }
+
+  openDirectory(): void {
+    this.selectedCategory = 'All';
+    this.appDirectory?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  focusSearch(): void {
+    this.searchBox?.nativeElement.focus();
+    this.appDirectory?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onShortcut(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    const editing = target?.matches('input,textarea,[contenteditable="true"]');
+    if (((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') || (event.key === '/' && !editing)) {
+      event.preventDefault();
+      this.focusSearch();
+    }
+  }
+
+  launch(event: MouseEvent, app: HubApp): void {
+    this.recentIds = [app.id, ...this.recentIds.filter(id => id !== app.id)].slice(0, 8);
+    this.writeIds(RECENT_STORAGE_KEY, this.recentIds);
+    if (!app.external && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) {
+      event.preventDefault();
+      void this.router.navigateByUrl(app.href);
+    }
+  }
+
+  togglePin(event: MouseEvent, app: HubApp): void {
+    event.stopPropagation();
+    this.pinnedIds = this.isPinned(app)
+      ? this.pinnedIds.filter(id => id !== app.id)
+      : [...this.pinnedIds, app.id];
+    this.writeIds(PIN_STORAGE_KEY, this.pinnedIds);
+  }
+
+  private readIds(key: string, fallback: readonly string[]): string[] {
+    try {
+      const stored = window.localStorage.getItem(key);
+      if (stored === null) return [...fallback];
+      const parsed: unknown = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return [...fallback];
+      return [...new Set(parsed.filter((id): id is string => typeof id === 'string' && this.apps.some(app => app.id === id)))];
+    } catch { return [...fallback]; }
+  }
+
+  private writeIds(key: string, ids: string[]): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try { window.localStorage.setItem(key, JSON.stringify(ids)); } catch { /* Private browsing can disable storage. */ }
   }
 }

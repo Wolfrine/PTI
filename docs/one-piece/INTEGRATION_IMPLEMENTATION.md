@@ -1,5 +1,19 @@
 # One Piece PTI integration implementation
 
+## Current integration update — 18 October 2026, 13:05 UTC
+
+The implementation is committed as `27d48d61618d39b7d61e167d7be7709bd9b25052` and published for draft review in PR43, not deployed. Main advanced during this session to `203f81a42db943a6be8c199d9dafdb44a3639d0a`, introducing the accepted personal hub. The merge preserves its HTML, SCSS, global styles, illustration, index and documentation. Only the hub's application data/launch handler changes: add One Piece with full-document navigation and the old-worker bypass, and remove its obsolete development-project link. Existing pin defaults/storage and other app links remain intact.
+
+The merged complete Angular production build passed in 26.015 seconds. Besides the two existing stylesheet-budget warnings, upstream's absolute home stylesheet produces an inlining warning. Its actual production asset exists and matches source; the isolated component browser loaded/applied it successfully. Exact legacy food files and the One Piece child were restored after Angular's clean build. The child fingerprint remains exactly `2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a`.
+
+Independent [launcher QA](evidence/home-integration/README.md) rendered the actual merged Angular component in an H-only fixture with no Firebase/login bypass in production. Desktop/mobile directory, search, optional pin/recent states and plain/Ctrl/middle document navigation passed. The parent independently viewed all seven saved PNGs. This is scoped component evidence; signed-in live PTI and installed-worker upgrade remain release checks. Staged web/build/catalog bytes match the rendered working candidate; three byte-bound CRLF files are preserved explicitly in `.gitattributes`.
+
+Fresh read-only preflight at **13:02:02.497 UTC** confirms unchanged reviewed rules SHA `4dadb9232ddfa27ca6f09bae844adb8cff3d3a4854a6d034a9f221d1d1525c0b`. The current Hosting rollback predecessor is now version **f9215f5f228de12a**, released **12:45:37.880 UTC**, superseding the earlier October15 website version. No database data was read or written. A Hosting fallback must preserve the new family privacy exclusion.
+
+The first H package contains132 verified files/2,355,387bytes and has not been activated. The true three-decoder hour is running **12:51:13.808–13:51:13.808 UTC**, not yet accepted. A read-only PR workflow now checks fixtures, the complete shared rules emulator, complete-site build and exact accepted child candidate before deployment; it has no cloud credentials or deployment step.
+
+The remainder of this document is the historical integration-lane report; the update above supersedes its pending build/launcher/preflight statements.
+
 Implementation in `codex/one-piece-family`, based on `24b4805cf7294ac9850f2a8f0281e189779b5c42`. This document records local integration work and checks on 18 October 2026. It does not claim a deployed PWA, accepted LAN transport, signed-in browser verification, or family-data provisioning.
 
 ## Namespace and identity

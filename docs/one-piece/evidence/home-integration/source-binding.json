@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-10-18T12:59:56.493Z",
+  "head": "27d48d61618d39b7d61e167d7be7709bd9b25052",
+  "upstreamMain": "203f81a42db943a6be8c199d9dafdb44a3639d0a",
+  "sourceRecords": [
+    {
+      "path": "pti-app/src/app/components/new-home/new-home.component.ts",
+      "bytes": 8026,
+      "sha256": "432487f0ae525db035222dae90231d0e77ccb9175c17d7faf4ae2c9c2c0d24e8",
+      "upstreamSha256": "d5a0e1f9d8ae601302c79da96b31055c4b6fcce86bc94595eb619ec008693071",
+      "unchangedRawBytesFromUpstream": false,
+      "normalizedLfSha256": "e2ac538f4eba6cd5fb70a91d81d6f2f8d3a500f6b3a136fa0cdbc7ab30881836",
+      "upstreamNormalizedLfSha256": "d5a0e1f9d8ae601302c79da96b31055c4b6fcce86bc94595eb619ec008693071",
+      "unchangedContentFromUpstream": false
+    },
+    {
+      "path": "pti-app/src/app/components/new-home/new-home.component.html",
+      "bytes": 8315,
+      "sha256": "a079b6095940c445cd5bde04228bacd1ee13606774477682fae1de1ae33c2cd1",
+      "upstreamSha256": "1d3715c71e6c00e93d2ea100d14a1c96571912b28660bae62c5fd81b19338005",
+      "unchangedRawBytesFromUpstream": false,
+      "normalizedLfSha256": "1d3715c71e6c00e93d2ea100d14a1c96571912b28660bae62c5fd81b19338005",
+      "upstreamNormalizedLfSha256": "1d3715c71e6c00e93d2ea100d14a1c96571912b28660bae62c5fd81b19338005",
+      "unchangedContentFromUpstream": true
+    },
+    {
+      "path": "pti-app/src/app/components/new-home/new-home.component.scss",
+      "bytes": 26,
+      "sha256": "d9522d34903ad18c37247280003b67ffb0bf2f6c1654ca7dfa4d5d1bf4080d77",
+      "upstreamSha256": "28b1a079b5e189112fd02c65d391c9b7dd1d7cb190af8b7c04829f7eaa8c5757",
+      "unchangedRawBytesFromUpstream": false,
+      "normalizedLfSha256": "28b1a079b5e189112fd02c65d391c9b7dd1d7cb190af8b7c04829f7eaa8c5757",
+      "upstreamNormalizedLfSha256": "28b1a079b5e189112fd02c65d391c9b7dd1d7cb190af8b7c04829f7eaa8c5757",
+      "unchangedContentFromUpstream": true
+    },
+    {
+      "path": "pti-app/src/styles.scss",
+      "bytes": 1030,
+      "sha256": "1b8dbd451399b917eba75a7b750134020d18c1a748038a3d23952bc15120741d",
+      "upstreamSha256": "bf56ba61b52f2b013702bab3a95cac70f222d35da0a0f05bc4603b660f6e940d",
+      "unchangedRawBytesFromUpstream": false,
+      "normalizedLfSha256": "bf56ba61b52f2b013702bab3a95cac70f222d35da0a0f05bc4603b660f6e940d",
+      "upstreamNormalizedLfSha256": "bf56ba61b52f2b013702bab3a95cac70f222d35da0a0f05bc4603b660f6e940d",
+      "unchangedContentFromUpstream": true
+    },
+    {
+      "path": "pti-app/src/index.html",
+      "bytes": 723,
+      "sha256": "320a96d17385181f03101f972b41f17b7332b11527bbb28bdfca0bdfe30f8b5b",
+      "upstreamSha256": "e2adec434444694d6d10cdb0d51ef1c5d85c35c05eb54d85eb36f1b8b85e6bfd",
+      "unchangedRawBytesFromUpstream": false,
+      "normalizedLfSha256": "e2adec434444694d6d10cdb0d51ef1c5d85c35c05eb54d85eb36f1b8b85e6bfd",
+      "upstreamNormalizedLfSha256": "e2adec434444694d6d10cdb0d51ef1c5d85c35c05eb54d85eb36f1b8b85e6bfd",
+      "unchangedContentFromUpstream": true
+    },
+    {
+      "path": "pti-app/public/assets/styles/pti-home.css",
+      "bytes": 16849,
+      "sha256": "4ed79bedb600eead53d11f5e245b6d13946107363b643cf5aa36fbb2f784f95c",
+      "upstreamSha256": "20dee6a0edf41145f94cfc4aebfd96e5ab90a85f416cae261220815334ffc06a",
+      "unchangedRawBytesFromUpstream": false,
+      "normalizedLfSha256": "20dee6a0edf41145f94cfc4aebfd96e5ab90a85f416cae261220815334ffc06a",
+      "upstreamNormalizedLfSha256": "20dee6a0edf41145f94cfc4aebfd96e5ab90a85f416cae261220815334ffc06a",
+      "unchangedContentFromUpstream": true
+    },
+    {
+      "path": "pti-app/public/assets/images/pti-home-lifestyle.webp",
+      "bytes": 5318,
+      "sha256": "68ab29eba9b92269763131e595b943dfe99a7523a3d21b04442f0a8c74ca000e",
+      "upstreamSha256": "68ab29eba9b92269763131e595b943dfe99a7523a3d21b04442f0a8c74ca000e",
+      "unchangedRawBytesFromUpstream": true,
+      "normalizedLfSha256": "68ab29eba9b92269763131e595b943dfe99a7523a3d21b04442f0a8c74ca000e",
+      "upstreamNormalizedLfSha256": "68ab29eba9b92269763131e595b943dfe99a7523a3d21b04442f0a8c74ca000e",
+      "unchangedContentFromUpstream": true
+    }
+  ],
+  "scope": "Deterministic One Piece launcher integration into current upstream personal hub; no design acceptance renewal."
+}

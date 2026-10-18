@@ -1,0 +1,65 @@
+[
+  {
+    "label": "desktop-home",
+    "at": "2026-10-18T13:00:30.270Z",
+    "pngSha256": "3cd8e5fc0aab4218f024fdc3bf0dbaa0510ee583ad5084213e78bdfc2af5dcf1",
+    "axSha256": "7745d4bc9a2147694e6a3a296cb64000deae528df236c740c0287ef90e1b6b53",
+    "url": "http://127.0.0.1:8917/home",
+    "pngWidth": 65536,
+    "pngHeight": 4292542531
+  },
+  {
+    "label": "desktop-directory",
+    "at": "2026-10-18T13:00:51.431Z",
+    "pngSha256": "e34f7dc60b6e88a7216877b939df95fa3be229d4ab52406d9ed7a8f115f4fdb3",
+    "axSha256": "d88525ca2f1ee45743ccce2e5463990e1ac19e021aa6c4e710b919b61f5c2cb9",
+    "url": "http://127.0.0.1:8917/home",
+    "pngWidth": 65536,
+    "pngHeight": 4292542531
+  },
+  {
+    "label": "plain-click-document-proof",
+    "at": "2026-10-18T13:01:18.298Z",
+    "pngSha256": "fcec3943f97063ae6c3ff5e058864882dbfdc4c9f5a2a5313399ba1a540ee787",
+    "axSha256": "0c7612f5aaf30e7812e534bdde34350bc216d8ec91acf7b313246fd5142a1a1b",
+    "url": "http://127.0.0.1:8917/one-piece/?ngsw-bypass=true",
+    "pngWidth": 65536,
+    "pngHeight": 4292542531
+  },
+  {
+    "label": "mobile-home-recent",
+    "at": "2026-10-18T13:01:27.402Z",
+    "pngSha256": "4d72cb543dd156c503326b23e1d4dff8e3ec55d6d02c1ae31dd464e4f0dd2f3b",
+    "axSha256": "8a1916f09b4c2ed325587c5c3f6730fbf2f9dd5f2131395d6a42129fbb27d1f6",
+    "url": "http://127.0.0.1:8917/home",
+    "pngWidth": 65536,
+    "pngHeight": 4292542531
+  },
+  {
+    "label": "mobile-personal-category",
+    "at": "2026-10-18T13:01:44.898Z",
+    "pngSha256": "af311e0d3079f90cf6bcaad366a528b9d523a36e9627e4d93572bc411129ed07",
+    "axSha256": "7758346a15fff3d472a615f9ac83a3580e925146fe96e9a469e9d5759dfff996",
+    "url": "http://127.0.0.1:8917/home",
+    "pngWidth": 65536,
+    "pngHeight": 4292542531
+  },
+  {
+    "label": "mobile-one-piece-search",
+    "at": "2026-10-18T13:01:56.526Z",
+    "pngSha256": "a737511512784a6370779c3be223f9675e575ce8f518a63325b6bc883536c727",
+    "axSha256": "f9de8052c5b346d0a30310a5c7555af1428c262aa08473a00163e63e8c05b11d",
+    "url": "http://127.0.0.1:8917/home",
+    "pngWidth": 65536,
+    "pngHeight": 4292542531
+  },
+  {
+    "label": "mobile-pinned-one-piece",
+    "at": "2026-10-18T13:02:12.480Z",
+    "pngSha256": "d8e509a840e466893285874388017cb4cb7324bc3b471eab0ebaa398a7dbc25a",
+    "axSha256": "1cc805eb7301de37d39f9e52980789233013236621f70c49fb923bc9e053be4e",
+    "url": "http://127.0.0.1:8917/home",
+    "pngWidth": 65536,
+    "pngHeight": 4292542531
+  }
+]

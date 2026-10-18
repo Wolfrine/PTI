@@ -1,0 +1,17 @@
+Browser tab: 1189485138, Title: "Full document navigation observed · QA only", URL: "http://127.0.0.1:8917/one-piece/?ngsw-bypass=true".
+1 AXWebArea Full document navigation observed · QA only, URL: 127.0.0.1:8917/one-piece/?ngsw-bypass=true
+	2 container
+		3 heading Full document navigation observed, Value: 1
+			4 text Full document navigation observed
+		5 text DEV-ONLY integration target. This is not the One Piece application or an authentication bypass.
+		6 text {
+  "at": "2026-10-18T13:01:11.116Z",
+  "url": "/one-piece/?ngsw-bypass=true",
+  "method": "GET",
+  "secFetchDest": "document",
+  "secFetchMode": "navigate",
+  "secFetchSite": "same-origin"
+}
+		7 link Description: Return to isolated PTI home, Value: 127.0.0.1:8917/home
+
+The focused UI element is 1 AXWebArea Full document navigation observed · QA only, URL: 127.0.0.1:8917/one-piece/?ngsw-bypass=true

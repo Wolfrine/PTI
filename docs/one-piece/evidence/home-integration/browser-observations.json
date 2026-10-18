@@ -1,0 +1,141 @@
+{
+  "observations": [
+    {
+      "state": "desktop-home",
+      "at": "2026-10-18T13:00:43.018Z",
+      "dom": {
+        "bodyScrollWidth": 1425,
+        "brokenImages": [],
+        "clientWidth": 1425,
+        "height": 1000,
+        "onePieceLinks": [
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PieceJapanese audio, English subtitles and family viewingOpen app north_east"
+          }
+        ],
+        "scrollWidth": 1425,
+        "stylesheets": [
+          {
+            "href": "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap",
+            "rules": null
+          },
+          {
+            "href": "https://fonts.googleapis.com/icon?family=Material+Icons",
+            "rules": null
+          },
+          {
+            "href": "http://127.0.0.1:8917/assets/styles/pti-home.css",
+            "rules": 133
+          },
+          {
+            "href": "http://127.0.0.1:8917/styles.css",
+            "rules": 21
+          },
+          {
+            "href": null,
+            "rules": 1
+          },
+          {
+            "href": null,
+            "rules": 1
+          },
+          {
+            "href": null,
+            "rules": 7
+          }
+        ],
+        "width": 1440
+      }
+    },
+    {
+      "state": "mobile-home-recent",
+      "at": "2026-10-18T13:01:27.412Z",
+      "dom": {
+        "bodyScrollWidth": 375,
+        "brokenImages": [],
+        "clientWidth": 375,
+        "height": 844,
+        "onePieceLinks": [
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PieceJapanese audio, English subtitles and family viewingRecently openedchevron_right"
+          },
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PieceJapanese audio, English subtitles and family viewingOpen app north_east"
+          }
+        ],
+        "scrollWidth": 375,
+        "width": 390
+      }
+    },
+    {
+      "state": "mobile-one-piece-search",
+      "at": "2026-10-18T13:01:56.535Z",
+      "dom": {
+        "bodyScrollWidth": 375,
+        "brokenImages": [],
+        "clientWidth": 375,
+        "height": 844,
+        "onePieceLinks": [
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PieceJapanese audio, English subtitles and family viewingRecently openedchevron_right"
+          },
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PieceJapanese audio, English subtitles and family viewingOpen app north_east"
+          }
+        ],
+        "scrollWidth": 375,
+        "width": 390
+      }
+    },
+    {
+      "state": "mobile-pinned-one-piece",
+      "at": "2026-10-18T13:02:12.489Z",
+      "dom": {
+        "bodyScrollWidth": 375,
+        "brokenImages": [],
+        "clientWidth": 375,
+        "height": 844,
+        "onePieceLinks": [
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PiecePersonal"
+          },
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PieceJapanese audio, English subtitles and family viewingRecently openedchevron_right"
+          },
+          {
+            "href": "/one-piece/?ngsw-bypass=true",
+            "target": null,
+            "text": "movieOne PieceJapanese audio, English subtitles and family viewingOpen app north_east"
+          }
+        ],
+        "scrollWidth": 375,
+        "width": 390
+      }
+    }
+  ],
+  "warningsOrErrorsObserved": [],
+  "consoleChecks": [
+    "desktop-home before navigation",
+    "mobile-home after reload"
+  ],
+  "limitations": [
+    "No real Firebase authentication provider in isolated bootstrap",
+    "No physical Android device",
+    "No service worker installed in fixture",
+    "No media or Cast traffic"
+  ]
+}

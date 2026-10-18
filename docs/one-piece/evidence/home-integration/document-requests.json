@@ -1,0 +1,42 @@
+[
+  {
+    "at": "2026-10-18T13:00:58.903Z",
+    "url": "/one-piece/?ngsw-bypass=true",
+    "method": "GET",
+    "secFetchDest": "document",
+    "secFetchMode": "navigate",
+    "secFetchSite": "same-origin"
+  },
+  {
+    "at": "2026-10-18T13:01:05.446Z",
+    "url": "/one-piece/?ngsw-bypass=true",
+    "method": "GET",
+    "secFetchDest": "document",
+    "secFetchMode": "navigate",
+    "secFetchSite": "same-origin"
+  },
+  {
+    "at": "2026-10-18T13:01:11.116Z",
+    "url": "/one-piece/?ngsw-bypass=true",
+    "method": "GET",
+    "secFetchDest": "document",
+    "secFetchMode": "navigate",
+    "secFetchSite": "same-origin"
+  },
+  {
+    "at": "2026-10-18T13:02:12.638Z",
+    "url": "/one-piece/?ngsw-bypass=true",
+    "method": "GET",
+    "secFetchDest": "document",
+    "secFetchMode": "navigate",
+    "secFetchSite": "same-origin"
+  },
+  {
+    "at": "2026-10-18T13:03:02.412Z",
+    "url": "/one-piece/?ngsw-bypass=true",
+    "method": "GET",
+    "secFetchDest": "document",
+    "secFetchMode": "navigate",
+    "secFetchSite": "same-origin"
+  }
+]

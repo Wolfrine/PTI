@@ -1,0 +1,132 @@
+{
+  "at": "2026-10-18T13:03:59.557Z",
+  "reviewer": "/root/home_integration_qa",
+  "scope": "Independent deterministic launcher integration QA; no production source edits or formal new design acceptance.",
+  "central": {
+    "version": "0.1.0",
+    "baseRevision": "ba1235fe7b220842778414f3f70fca38e7df4c53"
+  },
+  "candidate": {
+    "path": "pti-app/src/app/components/new-home/new-home.component.ts",
+    "bytes": 8026,
+    "sha256": "432487f0ae525db035222dae90231d0e77ccb9175c17d7faf4ae2c9c2c0d24e8",
+    "upstreamSha256": "d5a0e1f9d8ae601302c79da96b31055c4b6fcce86bc94595eb619ec008693071",
+    "unchangedRawBytesFromUpstream": false,
+    "normalizedLfSha256": "e2ac538f4eba6cd5fb70a91d81d6f2f8d3a500f6b3a136fa0cdbc7ab30881836",
+    "upstreamNormalizedLfSha256": "d5a0e1f9d8ae601302c79da96b31055c4b6fcce86bc94595eb619ec008693071",
+    "unchangedContentFromUpstream": false
+  },
+  "sourcePreservation": {
+    "normalizedUnchanged": 6,
+    "inspectedFiles": 7,
+    "onlyChanged": "NewHomeComponent TypeScript: optional documentNavigation, canonical One Piece HubApp, full document dispatch branch, removed superseded workbench placeholder"
+  },
+  "angularCompile": {
+    "start": "2026-10-18T12:58:57.5100576Z",
+    "end": "2026-10-18T12:59:17.6698107Z",
+    "generationSeconds": 16.963,
+    "exitCode": 0,
+    "execSession": 86848
+  },
+  "asset": {
+    "url": "http://127.0.0.1:8917/assets/styles/pti-home.css",
+    "status": 200,
+    "bytes": 16849,
+    "sha256": "4ed79bedb600eead53d11f5e245b6d13946107363b643cf5aa36fbb2f784f95c",
+    "matchesProductionSource": true,
+    "productionArtifactPath": "pti-app/dist/pti-app/browser/assets/styles/pti-home.css",
+    "productionArtifactSha256": "4ed79bedb600eead53d11f5e245b6d13946107363b643cf5aa36fbb2f784f95c",
+    "productionIndexReferencesAbsoluteCss": true,
+    "appliedCssRulesObserved": 133
+  },
+  "visual": {
+    "verdict": "pass-scoped-render-check",
+    "newDesignAcceptance": false,
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 1000,
+        "cssClientWidth": 1425
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "cssClientWidth": 375
+      }
+    ],
+    "findings": [
+      "Existing warm-light upstream composition and asset preserved.",
+      "One Piece fits the existing directory card without wrapping or clipping its label.",
+      "Mobile search, Personal category, recent-launch card, and seven-item pinned grid remain readable.",
+      "No horizontal overflow, broken image, or visible overlap in inspected states."
+    ],
+    "captures": [
+      {
+        "label": "desktop-home",
+        "pngSha256": "3cd8e5fc0aab4218f024fdc3bf0dbaa0510ee583ad5084213e78bdfc2af5dcf1"
+      },
+      {
+        "label": "desktop-directory",
+        "pngSha256": "e34f7dc60b6e88a7216877b939df95fa3be229d4ab52406d9ed7a8f115f4fdb3"
+      },
+      {
+        "label": "plain-click-document-proof",
+        "pngSha256": "fcec3943f97063ae6c3ff5e058864882dbfdc4c9f5a2a5313399ba1a540ee787"
+      },
+      {
+        "label": "mobile-home-recent",
+        "pngSha256": "4d72cb543dd156c503326b23e1d4dff8e3ec55d6d02c1ae31dd464e4f0dd2f3b"
+      },
+      {
+        "label": "mobile-personal-category",
+        "pngSha256": "af311e0d3079f90cf6bcaad366a528b9d523a36e9627e4d93572bc411129ed07"
+      },
+      {
+        "label": "mobile-one-piece-search",
+        "pngSha256": "a737511512784a6370779c3be223f9675e575ce8f518a63325b6bc883536c727"
+      },
+      {
+        "label": "mobile-pinned-one-piece",
+        "pngSha256": "d8e509a840e466893285874388017cb4cb7324bc3b471eab0ebaa398a7dbc25a"
+      }
+    ],
+    "ownerAcceptance": "not assessed"
+  },
+  "functional": {
+    "verdict": "pass-scoped-fixture",
+    "documentRequests": 5,
+    "plainDesktopDirectory": true,
+    "plainMobilePinned": true,
+    "plainMobileRecent": true,
+    "ctrlClickNativeNewTab": true,
+    "middleClickNativeNewTab": true,
+    "ctrlAndMiddleDefaultNotPrevented": true,
+    "allHref": "/one-piece/?ngsw-bypass=true",
+    "queryPreserved": true,
+    "onePieceNeverRoutedViaMock": true,
+    "pinPersistsAcrossDocumentLoad": true,
+    "searchAndPersonalCategory": true,
+    "consoleWarningsOrErrorsObserved": 0
+  },
+  "automationAttempt": {
+    "at": "2026-10-18T13:01:28.310Z",
+    "finding": "A batched category action immediately after smooth directory scrolling activated Dashboard via the mock router. The trace is retained. After a fresh snapshot and settled scroll, the Personal category action passed. This is not counted as a category pass or established production app defect."
+  },
+  "limitations": [
+    "DEV-ONLY isolated Angular bootstrap uses the exact production NewHomeComponent and assets but a Router mock, no Firebase.",
+    "The /one-piece/ target is a clearly labelled document-navigation proof page, not the production One Piece app.",
+    "No real sign-in, deep-link auth flow, service-worker upgrade, installed PWA, physical Android, media, Cast, or deployed Hosting check was performed in this lane.",
+    "Meta/Shift modifier behavior inspected in source but not physically exercised on this Windows Chrome fixture.",
+    "This check does not renew upstream personal-hub visual acceptance or One Piece app design acceptance."
+  ],
+  "cleanup": {
+    "onlyOwnBrowserTabsClosed": [
+      "1189485138",
+      "1189485139",
+      "1189485140"
+    ],
+    "viewportOverrideReset": true,
+    "oldLivePtiWorkerTabsUntouched": true,
+    "engineGpuTvMediaUntouched": true
+  }
+}

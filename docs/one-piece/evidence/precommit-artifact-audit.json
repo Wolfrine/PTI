@@ -1,29 +1,184 @@
 {
-  "checkedAt": "2026-10-18T12:53:18.113Z",
+  "checkedAt": "2026-10-18T13:06:15.239Z",
   "scope": "Explicit One Piece code/integration/docs paths only; excludes all installed dependencies and accidental pti-app/pti-app junction",
-  "fileCount": 633,
-  "totalBytes": 16602508,
+  "fileCount": 666,
+  "totalBytes": 17090795,
   "findings": [],
   "files": [
+    {
+      "file": ".github/workflows/one-piece-checks.yml",
+      "bytes": 2679,
+      "sha256": "88bda848e25a1626350f58a71517a2284d795087b67ae34cd486ac52d8966f7d"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/README.md",
+      "bytes": 5163,
+      "sha256": "17cd19ae6896892d8671b6b2705efc08931366c2d7a4989ceddb8877aeb6a64e"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/browser-observations.json",
+      "bytes": 4043,
+      "sha256": "39696db09f670d8da48cedb64fd19c72653f9bf23222399cd3baafadc6a08d64"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/captures.json",
+      "bytes": 2443,
+      "sha256": "ae8b23c32fdbc2a295fdc96eb14098caaf3adb1c29265c823c64c158812c92a6"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/click-events.json",
+      "bytes": 1234,
+      "sha256": "5541b9ace795e2dd28efdfadc00a42f7fb6f8863dceca251dccab64848caff87"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/desktop-directory.ax.txt",
+      "bytes": 4798,
+      "sha256": "d88525ca2f1ee45743ccce2e5463990e1ac19e021aa6c4e710b919b61f5c2cb9"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/desktop-directory.png",
+      "bytes": 77000,
+      "sha256": "e34f7dc60b6e88a7216877b939df95fa3be229d4ab52406d9ed7a8f115f4fdb3"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/desktop-home.ax.txt",
+      "bytes": 4854,
+      "sha256": "7745d4bc9a2147694e6a3a296cb64000deae528df236c740c0287ef90e1b6b53"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/desktop-home.png",
+      "bytes": 90588,
+      "sha256": "3cd8e5fc0aab4218f024fdc3bf0dbaa0510ee583ad5084213e78bdfc2af5dcf1"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/document-requests.json",
+      "bytes": 1047,
+      "sha256": "8bb2e29a190e81a3dc2e9c9450492a7e81a122fabc9e240522a6b9fe3b563764"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/harness-bootstrap.ts",
+      "bytes": 1254,
+      "sha256": "769bd7d6a426f8ee8fc0f1bc7341170c2b26c5fb54e001c1cadd93cb2d77b5cd"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/harness-finalize.mjs",
+      "bytes": 6517,
+      "sha256": "1c7357b17e26c088db9df61c39f4ae05d1b41972fe6b63a8a515ca8fce1b8f4e"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/harness-server.mjs",
+      "bytes": 3233,
+      "sha256": "a514bc7ef0e8f7348cc7cb8268cf08c58ada8077b9c1f4b3bfc3f3faedba3803"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/harness-setup.mjs",
+      "bytes": 5741,
+      "sha256": "31fe295aba415f87f962241e34a5770cb71268b1999fa70758366b74268697a0"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/harness.angular.json",
+      "bytes": 957,
+      "sha256": "62019ddd89e8a9c767e7089666abf469c7c461ed83f8ec010360f80169c44c46"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/integration-verdict.json",
+      "bytes": 5446,
+      "sha256": "f828be00441422763c074a1c1ee4ce09b299c8b50fcece19fc75e8e3b0a0c63b"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-home-recent.ax.txt",
+      "bytes": 4012,
+      "sha256": "8a1916f09b4c2ed325587c5c3f6730fbf2f9dd5f2131395d6a42129fbb27d1f6"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-home-recent.png",
+      "bytes": 31692,
+      "sha256": "4d72cb543dd156c503326b23e1d4dff8e3ec55d6d02c1ae31dd464e4f0dd2f3b"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-one-piece-search.ax.txt",
+      "bytes": 2668,
+      "sha256": "f9de8052c5b346d0a30310a5c7555af1428c262aa08473a00163e63e8c05b11d"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-one-piece-search.png",
+      "bytes": 25239,
+      "sha256": "a737511512784a6370779c3be223f9675e575ce8f518a63325b6bc883536c727"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-personal-category.ax.txt",
+      "bytes": 3097,
+      "sha256": "7758346a15fff3d472a615f9ac83a3580e925146fe96e9a469e9d5759dfff996"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-personal-category.png",
+      "bytes": 31338,
+      "sha256": "af311e0d3079f90cf6bcaad366a528b9d523a36e9627e4d93572bc411129ed07"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-pinned-one-piece.ax.txt",
+      "bytes": 4233,
+      "sha256": "1cc805eb7301de37d39f9e52980789233013236621f70c49fb923bc9e053be4e"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/mobile-pinned-one-piece.png",
+      "bytes": 28952,
+      "sha256": "d8e509a840e466893285874388017cb4cb7324bc3b471eab0ebaa398a7dbc25a"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/parent-review.json",
+      "bytes": 2094,
+      "sha256": "879e50ffaa28cff4c2f87e48ef849aaa41109ca505cf5478c285e0b45f545822"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/plain-click-document-proof.ax.txt",
+      "bytes": 873,
+      "sha256": "0c7612f5aaf30e7812e534bdde34350bc216d8ec91acf7b313246fd5142a1a1b"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/plain-click-document-proof.png",
+      "bytes": 37661,
+      "sha256": "fcec3943f97063ae6c3ff5e058864882dbfdc4c9f5a2a5313399ba1a540ee787"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/source-binding.json",
+      "bytes": 4243,
+      "sha256": "ca7df99b19bd1bc4c332cce6dfa32fca46d281719a348cac641b05ed335c2907"
+    },
+    {
+      "file": "docs/one-piece/evidence/home-integration/upstream-integration.patch",
+      "bytes": 2762,
+      "sha256": "6116a5fa888b7a79b592509531db7c31f87962589e5c21eafb8615c4761b1012"
+    },
+    {
+      "file": "docs/one-piece/evidence/integration/angular-merged-build.txt",
+      "bytes": 1237,
+      "sha256": "dee2d80727f54977a6dde3ba4b5cefdc6db2adf868c816335eb667cb1f57efd4"
+    },
+    {
+      "file": "docs/one-piece/evidence/media-production-duration-external-activity.json",
+      "bytes": 1262,
+      "sha256": "8b08d50fcaec81bd7b8c94380c20c2f98a0c8dc2cc9992debce4e8bb228e971b"
+    },
+    {
+      "file": "docs/one-piece/evidence/media-production-duration.json",
+      "bytes": 87023,
+      "sha256": "f0134cc60ca2551cbaddf7e5ff59ec62babd599141cd0b2590030532214fe344"
+    },
+    {
+      "file": "docs/one-piece/evidence/release-preflight-after-home.json",
+      "bytes": 647,
+      "sha256": "52efa069a2399d3c58c2a39ab369a13b20cc79284ef3d05a95adc17c72f087ff"
+    },
+    {
+      "file": "docs/one-piece/evidence/runtime/initial-package-verification.json",
+      "bytes": 572,
+      "sha256": "a5e05cd813cdb61983e1d07b276951d18a37ed0bfcf7f5aa8daa6b130690b595"
+    },
     {
       "file": ".gitattributes",
       "bytes": 355,
       "sha256": "2cac24487b1c37bf942690207bc05a64204016906967bc367fbf681bb28abcb6"
-    },
-    {
-      "file": "docs/one-piece/evidence/media-production-duration-smoke-attempt-5-success.json",
-      "bytes": 26837,
-      "sha256": "05a86837aaf2cce679f1dbf395b454f20497cf4fa52ffc85dab7c85b767a468f"
-    },
-    {
-      "file": "docs/one-piece/evidence/media-production-duration.json",
-      "bytes": 15080,
-      "sha256": "435d03f346f1c3d0dd113d2bdfa254f2e0ca70543bc2cce350aca196a58d4d87"
-    },
-    {
-      "file": "docs/one-piece/evidence/staged-web-binding.json",
-      "bytes": 7532,
-      "sha256": "8e6e0457c198a406a49f4ff31423eb85f1bb51477b6901ff112c3c6b9b9556f3"
     },
     {
       "file": ".github/workflows/firebase-deploy.yml",
@@ -852,13 +1007,13 @@
     },
     {
       "file": "docs/one-piece/INTEGRATION_IMPLEMENTATION.md",
-      "bytes": 11769,
-      "sha256": "fc219cf16cb4caca66ce0490ecfdfb412568415bd56658df8b10b874a408ff3a"
+      "bytes": 14473,
+      "sha256": "4952dab28050beee7b315a1daf909aa8bc4c1c8f0924000027b41f84f3463606"
     },
     {
       "file": "docs/one-piece/LATEST_CONTINUATION.md",
-      "bytes": 37164,
-      "sha256": "f789cc3d15ce3f036a7b4166539c2167e3abf0461dfe46356ea3dc0c09ed83f9"
+      "bytes": 41796,
+      "sha256": "59c9b6850c1bcbc1624f070869b946c3f94a48f313a5e6193dc3117e50de8795"
     },
     {
       "file": "docs/one-piece/ONEPIECE_RUNTIME.md",
@@ -2851,6 +3006,11 @@
       "sha256": "ff59677abb118472c7ab6dedbe602e9d2ce135d55d676f0cc1d6b1ec0e27c2ab"
     },
     {
+      "file": "docs/one-piece/evidence/media-production-duration-smoke-attempt-5-success.json",
+      "bytes": 26837,
+      "sha256": "05a86837aaf2cce679f1dbf395b454f20497cf4fa52ffc85dab7c85b767a468f"
+    },
+    {
       "file": "docs/one-piece/evidence/network/LOCAL_TLS_DECISION.md",
       "bytes": 7665,
       "sha256": "055f08f7b0c0f7f3bacdb6c7de350584761dcd14a6d3a00e797d5a37dd7a021a"
@@ -3111,6 +3271,11 @@
       "sha256": "595a981974ea734a71758f1c5f408d8ecfcfd8cd77cde93ccb8fe45ce5e22177"
     },
     {
+      "file": "docs/one-piece/evidence/staged-web-binding.json",
+      "bytes": 7532,
+      "sha256": "8e6e0457c198a406a49f4ff31423eb85f1bb51477b6901ff112c3c6b9b9556f3"
+    },
+    {
       "file": "docs/one-piece/evidence/syntax-checks.json",
       "bytes": 2804,
       "sha256": "9ebfe500ba395097f74fd3a984ed86a9226080727dcf8415bc0d512689874c9f"
@@ -3147,18 +3312,18 @@
     },
     {
       "file": "pti-app/src/app/components/new-home/new-home.component.html",
-      "bytes": 1254,
-      "sha256": "880a402f31e6ca313df97471916be6612356756a9433156bb5fd0f583eedd89f"
+      "bytes": 8315,
+      "sha256": "a079b6095940c445cd5bde04228bacd1ee13606774477682fae1de1ae33c2cd1"
     },
     {
       "file": "pti-app/src/app/components/new-home/new-home.component.scss",
-      "bytes": 3716,
-      "sha256": "8c07d4f2b966ec73808c18ad367d053ae4a6c37b6febc8cff9736f82d831df8a"
+      "bytes": 26,
+      "sha256": "d9522d34903ad18c37247280003b67ffb0bf2f6c1654ca7dfa4d5d1bf4080d77"
     },
     {
       "file": "pti-app/src/app/components/new-home/new-home.component.ts",
-      "bytes": 1968,
-      "sha256": "2c7b5529d5ee936f42316ac62e94a545063a9f95ea861be3043d959cfef1fb36"
+      "bytes": 8026,
+      "sha256": "432487f0ae525db035222dae90231d0e77ccb9175c17d7faf4ae2c9c2c0d24e8"
     },
     {
       "file": "pti-app/src/app/services/auth.service.ts",

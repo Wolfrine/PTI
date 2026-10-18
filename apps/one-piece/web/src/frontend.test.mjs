@@ -8,6 +8,7 @@ import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identi
 import { LocalPlayer, sanitizedPlaybackDiagnostic } from './player.mjs';
 import { disconnectBeforeSignOut } from './signout.mjs';
 import { observeReviewFrames } from './review-frames.mjs';
+import { needsGoogleConfirmation, confirmationError, connectionStatus } from './connection.mjs';
 
 test('numbered search retains the unavailable 590 and source boundary without duplicates',()=>{
  const episodes=[589,590,591,1000,1001].map(n=>({episodeNumber:n,availability:n===590?'missing':'listed'}));
@@ -66,6 +67,32 @@ test('home connection uses the trusted endpoint and does not instruct device CA 
  assert.ok(html.includes('Allow local-network access'));
  assert.equal(html.includes('household-ca.crt'),false);
  assert.equal(html.includes('Install a certificate'),false);
+});
+
+test('already paired accounts use one connection screen without unnecessary Google re-pairing',()=>{
+ const s={network:'online',user:{email:'viewer@example.invalid'},me:{role:'owner',playbackAccess:{state:'ready'}}};
+ const account=dialogContent({...s,dialog:'account',profile:{}}),connection=dialogContent({...s,dialog:'connection'});
+ assert.match(account,/Home PC connection/);assert.doesNotMatch(account,/Reconnect home PC account|data-action="pair-viewer"/);
+ assert.match(connection,/ready to watch/);assert.match(connection,/no separate phone pairing/);assert.doesNotMatch(connection,/data-action="pair-viewer"/);
+ assert.equal(connectionStatus({...s,network:'offline'}).kind,'offline');
+ assert.equal(connectionStatus({...s,me:null,error:['Account denied','Access is paused.']}).kind,'account-error');
+});
+
+test('only explicit missing or revoked playback access asks for Google, never service outages',()=>{
+ assert.equal(needsGoogleConfirmation('viewer-not-paired'),true);assert.equal(needsGoogleConfirmation('viewer-reauthentication-required'),true);
+ for(const code of ['viewer-identity-unavailable','viewer-credential-unavailable','companion-offline','viewer-identity-mismatch'])assert.equal(needsGoogleConfirmation(code),false);
+ const base={dialog:'connection',network:'online',user:{email:'viewer@example.invalid'}};
+ assert.match(dialogContent({...base,me:{playbackAccess:{state:'confirmation-required'}}}),/data-action="pair-viewer"/);
+ assert.doesNotMatch(dialogContent({...base,me:{playbackAccess:{state:'unavailable'}}}),/data-action="pair-viewer"/);
+ assert.doesNotMatch(dialogContent({...base,network:'offline',me:{playbackAccess:{state:'confirmation-required'}}}),/data-action="pair-viewer"/);
+});
+
+test('Google window errors and failed PC requests have distinct safe recovery messages',()=>{
+ assert.match(confirmationError({code:'auth/popup-blocked'}),/browser blocked/);
+ assert.match(confirmationError({code:'companion-offline'}),/reach your home PC/);
+ assert.match(confirmationError({code:'auth/user-mismatch'}),/same Google account/);
+ assert.match(confirmationError({code:'viewer-identity-unavailable'}),/temporarily unavailable/);
+ assert.doesNotMatch(confirmationError({code:'secret',message:'PRIVATE-TOKEN'}),/PRIVATE-TOKEN/);
 });
 test('an expired Firebase token is refreshed once and the same event is retried',async()=>{
  const original=globalThis.fetch,tokens=[],bodies=[];

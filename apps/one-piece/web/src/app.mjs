@@ -8,6 +8,7 @@ import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identi
 import { disconnectBeforeSignOut } from './signout.mjs';
 import { applyTheme, readTheme } from './theme.mjs';
 import { withArtwork } from './artwork.mjs';
+import { needsGoogleConfirmation, confirmationError } from './connection.mjs';
 import { page, rows, dialogContent, button, iconButton, ready, connectionLabel, loginUrl } from './views.mjs';
 const store={get:(key,fallback)=>{try{const raw=localStorage.getItem(key);return raw&&raw.length<1048576?JSON.parse(raw):fallback;}catch{return fallback;}},set:(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}}};
 const deviceId=store.get('one-piece-device',null)??crypto.randomUUID();store.set('one-piece-device',deviceId);
@@ -56,7 +57,7 @@ class ViewingApp {
    const data=await this.request('/api/progress');if(!this.current(account))return;this.s.progress={...this.s.progress,...data.progress};this.s.lastEpisodeId=data.lastEpisodeId??this.s.lastEpisodeId;this.s.sync=data.sync;
    const pending=this.eventQueue.at(-1);if(pending&&(!data.lease||pending.generation!==data.lease.generation||pending.authorityEpoch!==data.lease.authorityEpoch)){this.s.resumeConflict={...pending,savedPosition:data.progress[pending.episodeId]?.positionSeconds??0};this.s.notice='This device has a saved place that has not synced. Review it before continuing.';}this.persist();
    if(data.lease&&(data.lease.deviceId===deviceId||data.lease.destination==='cast')){this.mergeLease(data.lease);await this.poll();if(!this.current(account))return;}
-   this.s.error=null;this.render();void this.flush();if(this.s.requestedEpisode&&!this.deepLinkHandled){this.deepLinkHandled=true;await this.open(this.s.requestedEpisode);}
+   this.s.error=null;if(['The home PC is not connected. You can still browse your library.','You are offline. Your place is saved on this device.'].includes(this.s.notice))this.s.notice='';this.render();void this.flush();if(this.s.requestedEpisode&&!this.deepLinkHandled){this.deepLinkHandled=true;await this.open(this.s.requestedEpisode);}
   }catch(e){if(!this.current(account))return;if(['companion-offline','companion-timeout'].includes(e.code)){this.s.network='offline';this.s.notice='The home PC is not connected. You can still browse your library.';}else{this.s.error=errorCopy(e.code);}this.render();}
  }
  mergeLease(value){if(!value)return;const old=this.s.lease;if(old&&old.sessionId===value.sessionId&&old.generation===value.generation&&old.authorityEpoch===value.authorityEpoch)value={...value,revision:Math.max(old.revision,value.revision)};this.s.lease=value;}
@@ -84,7 +85,7 @@ class ViewingApp {
   this.pendingPosition=position;this.player?.pause();await this.flush();if(!this.current(account))return;this.player?.destroy();this.player=null;this.delivery=null;this.loadedKey=null;
   this.s.session={episodeId:this.targetId,episodeNumber:n,state:'preparing',playback:null};this.render();const url=new URL(location.href);url.searchParams.set('episode',n);history.replaceState(null,'',url.pathname+url.search);
   try{const lease=this.s.lease,value=lease&&!takeover?await this.request(`/api/sessions/${lease.sessionId}/episode`,{episodeId:this.targetId,automatic,audioIndex,audioLanguage:this.s.profile.audioLanguage,positionSeconds:position}):await this.request('/api/sessions',{episodeId:this.targetId,deviceId,takeover,audioIndex,audioLanguage:this.s.profile.audioLanguage});if(!this.current(account))return;this.mergeLease(value.lease);this.s.session=value;this.s.awaitingTarget=!this.targetMatches(value);this.render();await this.poll();}
-  catch(e){if(!this.current(account))return;if(e.code==='active-session'){this.s.dialog='takeover';this.s.conflictEpisode=n;}else if(/viewer.*(paired|reauth|credential|session)/.test(e.code)){this.s.dialog='pair-viewer';}else this.s.sessionError=errorCopy(e.code);this.render();}
+  catch(e){if(!this.current(account))return;if(e.code==='active-session'){this.s.dialog='takeover';this.s.conflictEpisode=n;}else if(needsGoogleConfirmation(e.code)){this.s.me={...this.s.me,playbackAccess:{state:'confirmation-required',code:e.code}};this.s.dialog='pair-viewer';}else this.s.sessionError=errorCopy(e.code);this.render();}
  }
  async loadDelivery(){
   const account=this.account(),session=this.s.session,lease=this.s.lease;if(!ready(session)||!this.targetMatches(session)||lease?.destination==='cast'||this.loading)return;
@@ -131,7 +132,7 @@ class ViewingApp {
   if(video&&this.s.route==='watch'&&this.s.lease?.destination!=='cast'&&ready(this.s.session)){const target=this.root.querySelector('#episode-video');if(target)target.replaceWith(video);}this.renderRows();this.patch();if(this.s.dialog)this.dialog();}
  renderRows(){const target=this.root.querySelector('#episode-results');if(target)target.innerHTML=rows(this.s);const search=this.root.querySelector('#episode-search'),label=this.root.querySelector('.search .sr-only');if(search)search.placeholder=this.s.profile.showTitles?'Find episode or title':'Find episode number';if(label)label.textContent=`Find an episode number${this.s.profile.showTitles?' or verified title':''}`;for(const el of this.root.querySelectorAll('.range-select,.range-paging'))el.hidden=Boolean(this.s.query);const clear=this.root.querySelector('#clear-search');if(clear)clear.hidden=!this.s.query;this.root.querySelector('.browse-tools')?.classList.toggle('searching',Boolean(this.s.query));}
  patch(){
-  const notice=this.root.querySelector('#notice');if(notice)notice.innerHTML=this.s.notice?`<div class="notice-bar"><span>${esc(this.s.notice)}</span>${this.s.resumeConflict?button('review-resume','Review saved place','text-button'):''}${iconButton('dismiss-notice','Dismiss message','close')}</div>`:'';
+  const notice=this.root.querySelector('#notice');if(notice)notice.innerHTML=(this.s.updateAvailable?`<div class="notice-bar"><span>An app update is ready.</span>${button('update','Update app','quiet','reload')}</div>`:'')+(this.s.notice?`<div class="notice-bar"><span>${esc(this.s.notice)}</span>${this.s.resumeConflict?button('review-resume','Review saved place','text-button'):''}${iconButton('dismiss-notice','Dismiss message','close')}</div>`:'');
   for(const id of ['connection-label','footer-connection']){const el=this.root.querySelector(`#${id}`);if(el)el.textContent=connectionLabel(this.s);}
   const install=this.root.querySelector('#install-button');if(install)install.hidden=!this.installPrompt;
   const sync=this.root.querySelector('#sync-label');if(sync)sync.textContent=this.eventQueue.length?'Saved here · sync pending':this.s.sync?.state==='pending'?'Saved on PC · cloud sync pending':this.s.progress[this.s.session?.episodeId]?'Your place is saved':'Progress saves as you watch';
@@ -167,13 +168,20 @@ class ViewingApp {
   if(a==='mark-watched'){this.player?.pause();this.record('mark-watched',s.session.playback.durationSeconds);s.notice='Episode marked watched.';this.patch();return;}
   if(a==='retry'){s.sessionError=null;await this.open(s.selectedNumber??s.session?.episodeNumber);return;}
   if(a==='cancel'){if(this.fixture){this.fixture.cancel(this);return;}if(s.lease)await this.request(`/api/sessions/${s.lease.sessionId}`,undefined,{method:'DELETE'});if(!this.current(account))return;s.lease=null;s.session=null;s.route='library';this.render();return;}
-  if(a==='reconnect'){this.closeDialog();await this.connect();return;}
+  if(a==='reconnect'){const reviewing=s.dialog==='connection';this.closeDialog();await this.connect();if(reviewing&&this.current(account)&&!s.setupRequired&&!s.me?.needsWorkspace&&!s.me?.needsClaim){s.dialog='connection';this.dialog();}return;}
   if(a==='cast'){if(s.lease?.destination==='cast'){s.route='watch';this.render();}else await this.devices();return;}if(a==='scan-tv'){await this.devices();return;}if(a==='cast-device'){await this.castTo(t.dataset.receiver);return;}
   if(a==='confirm-takeover'){this.closeDialog();await this.open(s.conflictEpisode,{takeover:true});return;}if(a==='confirm-tv-takeover'){await this.castTo(s.pendingReceiver,true);return;}
   if(a==='remote-play'){await this.command(s.session.cast?.state==='PLAYING'?'pause':'play');return;}
   if(a==='remote-back'||a==='remote-forward'){await this.command('seek',Math.max(0,Math.min(s.session.cast.durationSeconds-.1,s.session.cast.positionSeconds+(a==='remote-back'?-10:10))));return;}if(a==='disconnect'){await this.disconnect();return;}
-  if(a==='pair-viewer'){if(this.fixture)return;try{const googleIdToken=await freshGoogleConfirmation();if(!this.current(account))return;await this.request('/api/pair-viewer',{googleIdToken});if(!this.current(account))return;this.closeDialog();s.notice='Your account is connected to the home PC.';this.render();if(s.selectedNumber)await this.open(s.selectedNumber);}catch{if(this.current(account))this.dialogFailure('Google confirmation did not finish. Please try again.');}return;}
-  if(a==='create-workspace'||a==='claim-invitation'){if(this.fixture)return;try{await(a==='create-workspace'?createWorkspace(s.me.ownerUid):claimInvitation(s.me.ownerUid));if(!this.current(account))return;this.closeDialog();await this.connect();if(!this.current(account))return;s.dialog='pair-viewer';this.dialog();}catch{if(this.current(account))this.dialogFailure('Setup could not be saved. Existing or disabled family settings were kept.');}return;}
+  if(a==='pair-viewer'){
+   if(this.fixture||this.pairing)return;
+   if(s.network!=='online'||s.me?.playbackAccess?.state!=='confirmation-required'){s.dialog='connection';this.dialog();return;}
+   this.pairing=true;t.disabled=true;t.setAttribute('aria-busy','true');
+   try{const googleIdToken=await freshGoogleConfirmation();if(!this.current(account))return;await this.request('/api/pair-viewer',{googleIdToken});if(!this.current(account))return;s.me={...s.me,playbackAccess:{state:'ready'}};this.closeDialog();s.notice='Your account is connected to the home PC.';this.render();if(s.selectedNumber)await this.open(s.selectedNumber);}
+   catch(error){if(this.current(account))this.dialogFailure(confirmationError(error));}
+   finally{this.pairing=false;if(this.current(account)){t.disabled=false;t.removeAttribute('aria-busy');}}return;
+  }
+  if(a==='create-workspace'||a==='claim-invitation'){if(this.fixture)return;try{await(a==='create-workspace'?createWorkspace(s.me.ownerUid):claimInvitation(s.me.ownerUid));if(!this.current(account))return;this.closeDialog();await this.connect();if(!this.current(account))return;if(!s.setupRequired&&!s.me?.needsWorkspace&&!s.me?.needsClaim){s.dialog='connection';this.dialog();}}catch{if(this.current(account))this.dialogFailure('Setup could not be saved. Existing or disabled family settings were kept.');}return;}
   if(a==='family'){if(!this.fixture)s.invitations=await listInvitations(s.me.ownerUid);if(!this.current(account))return;s.dialog='family';this.dialog();return;}
   if(a==='toggle-invite'){if(this.fixture)return;await inviteMember(s.me.ownerUid,{email:t.dataset.email,active:t.dataset.active==='true'});if(!this.current(account))return;s.invitations=await listInvitations(s.me.ownerUid);if(this.current(account))this.dialog();return;}
   if(a==='logout'){if(this.fixture)return;this.player?.pause();await this.flush();if(!this.current(account))return;await disconnectBeforeSignOut({request:this.request,isCurrent:()=>this.current(account),signOut:()=>this.signOutLocal(),onUnconfirmed:()=>{s.dialog='offline-signout';this.dialog();}});return;}

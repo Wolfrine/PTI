@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { readFile,lstat,mkdir } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { createHash,createPrivateKey,X509Certificate } from 'node:crypto';
 import { WindowsProtection } from '../dpapi.mjs';
 import { atomicJson } from '../progress.mjs';
 
@@ -15,6 +15,42 @@ export function managedPath(value){
   return resolved;
 }
 function origin(value,expected){let parsed;try{parsed=new URL(value);}catch{fail('runtime-origin');}if(parsed.origin!==value||parsed.origin!==expected||parsed.username||parsed.password)fail('runtime-origin');return value;}
+export const usesPublicTls=config=>config.tls?.mode==='public-certificate';
+function validateTls(value){
+  if(value.tls===undefined)return;
+  const tls=value.tls;
+  if(!tls||typeof tls!=='object'||Array.isArray(tls))fail('runtime-tls');
+  if(tls.mode==='household-ca'&&Object.keys(tls).length===1)return;
+  if(tls.mode!=='public-certificate'||Object.keys(tls).sort().join(',')!=='certificatePath,hostname,mode,privateKeyPath'
+    ||typeof tls.hostname!=='string'||!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.duckdns\.org$/.test(tls.hostname))fail('runtime-tls');
+  for(const [key,suffix]of [['certificatePath','.crt'],['privateKeyPath','.key']]){
+    tls[key]=managedPath(tls[key]);
+    const relative=path.win32.relative(value.privateRoot,tls[key]);
+    if(!relative||relative.startsWith('..')||path.win32.isAbsolute(relative)||!/^[A-Za-z0-9_.\\-]+$/.test(relative)
+      ||path.win32.basename(tls[key])!==tls.hostname+suffix)fail('runtime-tls-path');
+  }
+  if(path.win32.dirname(tls.certificatePath)!==path.win32.dirname(tls.privateKeyPath))fail('runtime-tls-path');
+}
+export function validatePublicTlsMaterial(tls,certificatePem,privateKeyPem,{now=Date.now()}={}){
+  try{
+    const certificate=new X509Certificate(certificatePem);
+    if(certificate.checkHost(tls.hostname,{subject:'never',wildcards:false})!==tls.hostname
+      ||Date.parse(certificate.validFrom)>now||Date.parse(certificate.validTo)<=now
+      ||!certificate.checkPrivateKey(createPrivateKey(privateKeyPem)))fail('runtime-tls-certificate');
+  }catch{fail('runtime-tls-certificate');}
+}
+async function publicTlsMaterial(config){
+  if(!usesPublicTls(config))return;
+  const bytes=[];
+  try{
+    for(const key of ['certificatePath','privateKeyPath']){
+      const info=await lstat(config.tls[key]);
+      if(!info.isFile()||info.isSymbolicLink()||info.size<1||info.size>262144)fail('runtime-tls-material');
+      bytes.push(await readFile(config.tls[key]));
+    }
+    validatePublicTlsMaterial(config.tls,bytes[0],bytes[1]);
+  }finally{for(const value of bytes)value.fill(0);}
+}
 export function validateRuntimeConfig(input){
   if(!input||input.version!==1||input.backendHost!=='127.0.0.1'||input.backendPort!==18098||input.httpMediaHost!=='192.168.68.105'||input.httpMediaPort!==18099)fail('runtime-network');
   const value=structuredClone(input);
@@ -25,9 +61,10 @@ export function validateRuntimeConfig(input){
   value.cacheAccountingRoots=value.cacheAccountingRoots.map(managedPath);
   if(typeof value.repositoryRoot!=='string'||!path.win32.isAbsolute(value.repositoryRoot)||typeof value.catalogPath!=='string'||!path.win32.isAbsolute(value.catalogPath)||!path.win32.isAbsolute(value.serverEntry??''))fail('runtime-repository');
   if(value.firebaseProjectId!=='pti-app-2ab59'||typeof value.firebaseApiKey!=='string'||value.firebaseApiKey.length<20)fail('runtime-firebase');
-  origin(value.controlsOrigin,'https://onepiece.local:8443');origin(value.mediaOrigin,value.controlsOrigin);
+  validateTls(value);
+  origin(value.controlsOrigin,usesPublicTls(value)?`https://${value.tls.hostname}:8443`:'https://onepiece.local:8443');origin(value.mediaOrigin,value.controlsOrigin);
   origin(value.fallbackControlsOrigin,'https://192.168.68.105:8443');origin(value.castMediaOrigin,'http://onepiece.local:18099');
-  if(!Array.isArray(value.allowedOrigins)||value.allowedOrigins.some(x=>!['https://pti-app-2ab59.web.app',value.controlsOrigin,value.fallbackControlsOrigin].includes(x))||!value.allowedOrigins.includes('https://pti-app-2ab59.web.app'))fail('runtime-origin');
+  if(!Array.isArray(value.allowedOrigins)||value.allowedOrigins.some(x=>!['https://pti-app-2ab59.web.app',value.controlsOrigin,value.fallbackControlsOrigin,...(usesPublicTls(value)?['https://onepiece.local:8443']:[])].includes(x))||!value.allowedOrigins.includes('https://pti-app-2ab59.web.app'))fail('runtime-origin');
   if(value.allowHttpMedia!==true||value.consent?.hybridMediaAccepted!==true||value.consent?.householdCaAccepted!==true||!Number.isFinite(Date.parse(value.consent.recordedAt)))fail('runtime-consent');
   if(value.mdns?.hostname!=='onepiece.local'||value.mdns.address!=='192.168.68.105'||value.mdns.subnet!=='192.168.68.0/24')fail('runtime-mdns');
   value.mdns.toolsPath=managedPath(value.mdns.toolsPath);
@@ -44,7 +81,7 @@ export function validateRuntimeConfig(input){
 }
 export async function loadRuntimeConfig(configPath){
   configPath=managedPath(configPath);const stat=await lstat(configPath);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>65536)fail('runtime-config');
-  return {...validateRuntimeConfig(JSON.parse(await readFile(configPath,'utf8'))),configPath};
+  const config={...validateRuntimeConfig(JSON.parse(await readFile(configPath,'utf8'))),configPath};await publicTlsMaterial(config);return config;
 }
 const entropy=name=>createHash('sha256').update(`pti-one-piece-runtime-v1:${name}`).digest();
 const secretPaths={proxySecret:'proxySecretPath',jellyfinToken:'jellyfinTokenPath',jellyfinCredentials:'jellyfinCredentialsPath',setupChallenge:'setupChallengePath'};

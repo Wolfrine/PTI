@@ -4,7 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import net from 'node:net';
 import https from 'node:https';
-import {loadRuntimeConfig,loadRuntimeSecret,saveRuntimeSecret} from './config.mjs';
+import {loadRuntimeConfig,loadRuntimeSecret,saveRuntimeSecret,usesPublicTls} from './config.mjs';
 import {ensureJellyfinAccount} from './setup.mjs';
 import {dedicatedEngineDescriptor} from '../media/runtime.mjs';
 import {stopVerifiedEngineChildren} from './engine-processes.mjs';
@@ -15,8 +15,13 @@ const HERE=path.dirname(fileURLToPath(import.meta.url));
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export const restartDelay=failures=>Math.min(30000,1000*2**Math.min(5,Math.max(0,failures-1)));
 export async function portFree(host,port){return new Promise(resolve=>{const server=net.createServer();server.once('error',()=>resolve(false));server.listen(port,host,()=>server.close(()=>resolve(true)));});}
+export function tlsHealthOptions(config,ca){
+  return {...(!usesPublicTls(config)?{ca}:{}),servername:new URL(config.controlsOrigin).hostname,
+    rejectUnauthorized:true,
+    lookup:(_name,options,callback)=>options?.all?callback(null,[{address:config.mdns.address,family:4}]):callback(null,config.mdns.address,4),timeout:2000};
+}
 export function strictTlsHealth(config,ca){return new Promise(resolve=>{
-  const request=https.get(config.controlsOrigin+'/runtime-health',{ca,servername:'onepiece.local',lookup:(_name,options,callback)=>options?.all?callback(null,[{address:config.mdns.address,family:4}]):callback(null,config.mdns.address,4),timeout:2000},response=>{response.resume();resolve(response.statusCode===200);});
+  const request=https.get(config.controlsOrigin+'/runtime-health',tlsHealthOptions(config,ca),response=>{response.resume();resolve(response.statusCode===200&&response.socket.authorized===true);});
   request.once('timeout',()=>request.destroy());request.once('error',()=>resolve(false));
 });}
 export class RuntimeSupervisor{
@@ -115,7 +120,7 @@ export class RuntimeSupervisor{
     }finally{this.checking=false;}
   }
   async start(){
-    await this.lock();this.proxySecret=await loadRuntimeSecret(this.config,'proxySecret');this.ca=await readFile(this.config.caddy.rootCertificatePath);
+    await this.lock();this.proxySecret=await loadRuntimeSecret(this.config,'proxySecret');this.ca=usesPublicTls(this.config)?undefined:await readFile(this.config.caddy.rootCertificatePath);
     for(const [host,port]of [['127.0.0.1',18097],['127.0.0.1',18098],[this.config.httpMediaHost,18099],[this.config.httpMediaHost,8443]])if(!await portFree(host,port))throw new Error('runtime-port-in-use');
     await this.startChild('jellyfin');await this.waitForEngine();this.state.engineBootstrap=await this.bootstrap();await this.save();
     await this.startChild('mdns');await this.startChild('caddy');await this.startChild('backend');

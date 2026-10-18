@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { visibleEpisodes, nextBoundary, rangeFor, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
 import { createClient, CONTROL_ORIGIN } from './client.mjs';
+import { dialogContent } from './views.mjs';
 import { handleWatchKeyboard } from './keyboard.mjs';
 import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identity.mjs';
 import { LocalPlayer, sanitizedPlaybackDiagnostic } from './player.mjs';
@@ -49,11 +50,22 @@ test('control client sends identity only to the fixed HTTPS origin, without cook
   const client=createClient(()=>({uid:'alice',getIdToken:async()=> 'test-id-token'}));
   await client('/api/sessions',{episodeId:'one-piece-0001'});
   assert.equal(requests[0].url,CONTROL_ORIGIN+'/api/sessions');
+  assert.equal(new URL(requests[0].url).protocol,'https:');
+  assert.equal(new URL(requests[0].url).hostname,'pti-onepiece-home.duckdns.org');
   assert.equal(requests[0].options.headers.Authorization,'Bearer test-id-token');
   assert.equal(requests[0].options.credentials,'omit');assert.equal(requests[0].options.cache,'no-store');assert.equal(requests[0].options.redirect,'error');
   await assert.rejects(client('http://example.invalid/api/me'),e=>e.code==='invalid-request');
   await assert.rejects(client('/api/me?token=x'),e=>e.code==='invalid-request');assert.equal(requests.length,1);
  }finally{globalThis.fetch=original;}
+});
+
+test('home connection uses the trusted endpoint and does not instruct device CA installation',()=>{
+ const html=dialogContent({dialog:'connection',network:'offline'});
+ assert.ok(html.includes(CONTROL_ORIGIN+'/runtime-health'));
+ assert.ok(html.includes('No certificate installation is needed'));
+ assert.ok(html.includes('Allow local-network access'));
+ assert.equal(html.includes('household-ca.crt'),false);
+ assert.equal(html.includes('Install a certificate'),false);
 });
 test('an expired Firebase token is refreshed once and the same event is retried',async()=>{
  const original=globalThis.fetch,tokens=[],bodies=[];

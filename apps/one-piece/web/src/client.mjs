@@ -1,4 +1,4 @@
-export const CONTROL_ORIGIN='https://onepiece.local:8443';
+export const CONTROL_ORIGIN='https://pti-onepiece-home.duckdns.org:8443';
 export class ClientError extends Error { constructor(code,status=0,detail){super(code);this.code=code;this.status=status;this.detail=detail;} }
 export function createClient(getUser,getGeneration=()=>null) {
  return async function request(route,input,{method=input===undefined?'GET':'POST',signal,timeout=45000}={}) {

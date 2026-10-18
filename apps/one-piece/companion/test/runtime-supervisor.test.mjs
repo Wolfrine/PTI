@@ -6,7 +6,8 @@ import {fileURLToPath} from 'node:url';
 import {mkdtemp,writeFile,unlink,rmdir,access} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {RuntimeSupervisor,restartDelay,stopOwnedEngineChildren} from '../src/runtime/supervisor.mjs';
+import https from 'node:https';
+import {RuntimeSupervisor,restartDelay,stopOwnedEngineChildren,tlsHealthOptions,strictTlsHealth} from '../src/runtime/supervisor.mjs';
 import {requestLocalSetup} from '../src/runtime/local-setup.mjs';
 function fakeChild(){const child=new EventEmitter();Object.assign(child,{pid:123456,stdout:new PassThrough(),stderr:new PassThrough(),stdin:new PassThrough(),connected:true,exitCode:null,signalCode:null});child.send=message=>{child.lastMessage=message;};child.kill=()=>{child.signalCode='SIGTERM';child.emit('exit',null,'SIGTERM');};return child;}
 const configuration=()=>({repositoryRoot:fileURLToPath(new URL('../../../../',import.meta.url)),nodeExecutable:process.execPath,serverEntry:fileURLToPath(new URL('../src/server.mjs',import.meta.url)),configPath:'H:/PTI-OnePiece/runtime/private/config.json',jellyfin:{origin:'http://127.0.0.1:18097'}});
@@ -23,6 +24,26 @@ test('backend health includes exact origin and private proxy proof, never a publ
   const previous=globalThis.fetch,requests=[];const supervisor=new RuntimeSupervisor(configuration(),{tlsHealthImpl:async()=>true});supervisor.proxySecret='private-fixture';supervisor.save=async()=>{};supervisor.children.set('mdns',{});supervisor.ready.add('mdns');
   globalThis.fetch=async(url,options)=>{requests.push({url,options});return{ok:true,body:{cancel:async()=>{}}};};
   try{await supervisor.health();const backend=requests.find(x=>x.url.endsWith('/api/health'));assert.deepEqual(backend.options.headers,{Origin:'https://pti-app-2ab59.web.app','X-OnePiece-Proxy':'private-fixture','X-Forwarded-Proto':'https'});assert.equal(JSON.stringify(supervisor.state).includes('private-fixture'),false);assert.equal(supervisor.state.health.caddy,true);}finally{globalThis.fetch=previous;}
+});
+test('TLS health uses the exact public SNI and normal trust store even when a household CA is supplied',async()=>{
+ const ca=Buffer.from('household-ca-fixture'),publicConfig={controlsOrigin:'https://test-only-onepiece.duckdns.org:8443',tls:{mode:'public-certificate',hostname:'test-only-onepiece.duckdns.org'},mdns:{address:'192.168.68.105'}};
+ const options=tlsHealthOptions(publicConfig,ca);
+ assert.equal(Object.hasOwn(options,'ca'),false);assert.equal(options.servername,'test-only-onepiece.duckdns.org');assert.equal(options.rejectUnauthorized,true);
+ await new Promise(resolve=>options.lookup('untrusted-dns-answer',{},(error,address,family)=>{assert.equal(error,null);assert.equal(address,'192.168.68.105');assert.equal(family,4);resolve();}));
+ await new Promise(resolve=>options.lookup('untrusted-dns-answer',{all:true},(error,addresses)=>{assert.equal(error,null);assert.deepEqual(addresses,[{address:'192.168.68.105',family:4}]);resolve();}));
+ const legacy=tlsHealthOptions({...publicConfig,tls:undefined,controlsOrigin:'https://onepiece.local:8443'},ca);assert.equal(legacy.ca,ca);assert.equal(legacy.servername,'onepiece.local');assert.equal(legacy.rejectUnauthorized,true);
+});
+test('strict TLS health only accepts an authorized successful HTTPS response',async t=>{
+ const config={controlsOrigin:'https://test-only-onepiece.duckdns.org:8443',tls:{mode:'public-certificate'},mdns:{address:'192.168.68.105'}};
+ let behavior={statusCode:200,authorized:true},invocation;
+ t.mock.method(https,'get',(url,options,callback)=>{
+  invocation={url,options};const request=new EventEmitter();request.destroy=()=>request.emit('error',new Error('request-failed'));
+  queueMicrotask(()=>{if(behavior.error)request.emit('error',new Error('certificate-rejected'));else callback({statusCode:behavior.statusCode,socket:{authorized:behavior.authorized},resume(){}});});return request;
+ });
+ assert.equal(await strictTlsHealth(config,Buffer.from('must-not-be-trusted')),true);assert.equal(Object.hasOwn(invocation.options,'ca'),false);assert.equal(invocation.url,config.controlsOrigin+'/runtime-health');
+ behavior={statusCode:200,authorized:false};assert.equal(await strictTlsHealth(config),false);
+ behavior={statusCode:503,authorized:true};assert.equal(await strictTlsHealth(config),false);
+ behavior={error:true};assert.equal(await strictTlsHealth(config),false);
 });
 test('simultaneous core recovery shares one sequence and stops backend before owned engine',async()=>{
   const events=[];const supervisor=new RuntimeSupervisor(configuration(),{bootstrapImpl:async()=>events.push('bootstrap')});

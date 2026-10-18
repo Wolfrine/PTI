@@ -1,99 +1,67 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "609fc13e8f635963c500986ecfb19aa341b62040822f23c7b7b96b7bfb56b158",
-  "checkedAt": "2026-10-18T14:58:40.527Z",
-  "acceptance_scope": "Owner-selected light and dark visual refresh, episode artwork, responsive library/Watch/Cast surfaces. Current record supersedes the art-free design only; it does not relabel historical media or hardware acceptance.",
+  "candidate": "b564dc145005127d105eaa73b8cc0be4cf03679ad59156efa737e05fde09ebc2",
+  "checkedAt": "2026-10-18T19:49:01.421Z",
+  "acceptance_scope": "Narrow trusted-PC-HTTPS endpoint migration and simplified home-connection instructions. Existing light/dark visual design is unchanged. This record does not imply physical Android or TV acceptance.",
   "owner_verdict": {
     "status": "not-reviewed"
   },
   "roles": {
-    "designer": "/root/anime_theme_designer",
-    "visual_critic": "/root/theme_critic",
+    "runtime": "/root/public_tls_runtime",
+    "renewal": "/root/certificate_renewal",
+    "security_review": "/root/public_https_review",
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "THEME_REVIEW.md",
-  "implementation": "THEME_REFRESH.md",
-  "artwork": "ARTWORK.md",
+  "review": "../PUBLIC_HTTPS.md",
   "parent_verdict": {
-    "overall": 8,
-    "critical_dimensions": {
-      "hierarchy": 8,
-      "sequence": 8,
-      "composition": 8,
-      "typography": 8,
-      "imagery": 8,
-      "responsiveContinuity": 8
-    },
-    "reason": "Personally inspected final light/dark desktop/mobile renders, actual artwork loading and working appearance switching; independent review covered Watch/remote and 320px states. Clear coral/gold actions, recognizable artwork, legible controls, no observed horizontal overflow."
+    "status": "scoped-pass",
+    "reason": "Personally inspected the connection dialog at1440x1000 and390x844; instructions fit, no observed horizontal overflow, the connection-test link uses the new exact HTTPS hostname, and device CA installation steps are removed."
   },
   "evidence": [
     {
-      "path": "evidence/theme-refresh/one-piece-light-desktop.png",
-      "sha256": "a79b34c1d98356d1801bddc4d55c2a9ab8837f493dce3d8f7c1680f02d03c610",
-      "theme": "light",
+      "path": "evidence/public-https/one-piece-simple-connection-desktop.jpg",
+      "sha256": "6bb4ec781dcf3e73348505597f0ee16d74eb24b2f9f58d9a16c6d44bfba3e1b3",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "development fixture with real CDN artwork; synthetic account/progress",
+      "kind": "Actual rendered connection dialog in loopback development fixture; synthetic family identity and progress",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/theme-refresh/one-piece-light-mobile.png",
-      "sha256": "4d1471c72802e648294f06a3ebb0a82fbee746e6eb074718206b1e327be35f8e",
-      "theme": "light",
+      "path": "evidence/public-https/one-piece-simple-connection-mobile.jpg",
+      "sha256": "22484b4ef2c3445c682fdd1f44dc2ff7275a7aba88b2ff332ed8b0b5ff3c1220",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "development fixture with real CDN artwork; synthetic account/progress",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/theme-refresh/one-piece-dark-desktop.png",
-      "sha256": "be0d384aa2bb5cdefd690a88d417f0f04ec15db2ff6a501fbd7d084d76be0494",
-      "theme": "dark",
-      "viewport": {
-        "width": 1440,
-        "height": 1000
-      },
-      "kind": "development fixture with real CDN artwork; synthetic account/progress",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/theme-refresh/one-piece-dark-mobile.png",
-      "sha256": "2442c72a3cfa5b91ed014ce591785e37a55e15cfd94350abbe51815d349c6d0a",
-      "theme": "dark",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "kind": "development fixture with real CDN artwork; synthetic account/progress",
+      "kind": "Actual rendered connection dialog in loopback development fixture; synthetic family identity and progress",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 55,
-    "frontendChecksPassed": 55,
-    "completePtiAndChildBuild": "passed",
-    "independentReview": "scoped visual pass; see THEME_REVIEW.md",
-    "realArtwork": true,
+    "frontendChecks": 56,
+    "frontendChecksPassed": 56,
+    "companionChecks": 210,
+    "companionChecksPassed": 210,
+    "completePtiAndChildBuild": "passed with pre-existing Angular CSS warnings",
+    "independentReview": "No blocking migration findings; runtime/source review only",
+    "publicCertificate": "Actual issued Let’s Encrypt certificate accepted by normal Node public trust; temporary loopback endpoint, not yet a physical phone test",
     "syntheticAccountAndProgress": true,
     "mediaEngineUnchanged": true,
     "castTransportUnchanged": true
   },
   "limitations": [
-    "This is agent visual review, not owner acceptance or a new physical-device certification.",
-    "Only seven thumbnail HTTP endpoints were individually sampled; other image failures fall back safely.",
-    "Physical TV playback was not interrupted or retested for this presentation-only update.",
-    "The known TV end-of-episode issue remains unchanged."
+    "Physical Android DNS, trust, browser local-network permission and playback remain to be checked on the actual phone.",
+    "Future CA renewal cannot be claimed from a fresh-certificate no-op; scheduled execution is checked separately during activation.",
+    "Actual TV playback was not started for this connection update; existing TV-end issue remains outside this migration."
   ],
   "historical_record": {
-    "commit": "f96b60d1578d93767171d70cbe57ae9c2009ec0d",
+    "commit": "488da43dd09fc8015b2dfe8a7f635cf2a0df7178",
     "path": "docs/one-piece/design/acceptance.json",
-    "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
-    "policy": "Historical screenshots, scores and real-media checks retain their original candidate and scope."
+    "candidate": "609fc13e8f635963c500986ecfb19aa341b62040822f23c7b7bfb56b158",
+    "policy": "Prior light/dark screenshots, scores and hardware/media claims retain their original candidate and scope."
   }
 }

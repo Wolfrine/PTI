@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { WindowsProtection } from '../dpapi.mjs';
 import { atomicJson } from '../progress.mjs';
 import { dedicatedEngineDescriptor } from '../media/runtime.mjs';
-import { CADDY_SHA256,HOUSEHOLD_CA_SHA256,validateRuntimeConfig,loadRuntimeConfig,loadRuntimeSecret,saveRuntimeSecret } from './config.mjs';
+import { CADDY_SHA256,HOUSEHOLD_CA_SHA256,validateRuntimeConfig,loadRuntimeConfig,loadRuntimeSecret,saveRuntimeSecret,usesPublicTls } from './config.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 export const SETUP_POWERSHELL='C:/Users/Sachit Tewary/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe';
@@ -20,13 +20,19 @@ export async function runPowerShellFile(file,args=[]){
     let output='';const timer=setTimeout(()=>{child.kill();reject(new Error('runtime-setup-timeout'));},20000);child.stdout.setEncoding('utf8');child.stdout.on('data',chunk=>{output+=chunk;if(output.length>65536){child.kill();reject(new Error('runtime-setup-output'));}});child.stderr.on('data',()=>{});child.on('error',()=>{clearTimeout(timer);reject(new Error('runtime-setup-process'));});child.on('close',code=>{clearTimeout(timer);if(code!==0)reject(new Error('runtime-setup-process'));else{try{resolve(JSON.parse(output));}catch{reject(new Error('runtime-setup-response'));}}});
   });
 }
+export async function installRuntimeTrust(config,{installTrust=true,runPowerShellImpl=runPowerShellFile}={}){
+  // Public mode deliberately uses the platform's public trust roots. Retaining
+  // the old SNI listener does not authorize installing its household CA again.
+  if(usesPublicTls(config))return{installed:false,reason:'public-certificate'};
+  return installTrust?runPowerShellImpl(path.resolve(HERE,'../../scripts/install-household-ca.ps1'),['-CertificatePath',config.caddy.rootCertificatePath]):{installed:false,reason:'not-requested'};
+}
 export async function prepareRuntime({repositoryRoot=path.resolve(HERE,'../../../../..'),recordedAt=new Date().toISOString(),installTrust=true}={}){
   const protection=new WindowsProtection(),runtimeRoot='H:/PTI-OnePiece/runtime',privateRoot=runtimeRoot+'/private';
   await protection.secureDirectory(runtimeRoot);await protection.secureDirectory(privateRoot);
   const configurationPath=privateRoot+'/config.json';
   if(await exists(configurationPath)){
     const existing=await loadRuntimeConfig(configurationPath);
-    const trust=installTrust?await runPowerShellFile(path.resolve(HERE,'../../scripts/install-household-ca.ps1'),['-CertificatePath',existing.caddy.rootCertificatePath]):{installed:false,reason:'not-requested'};
+    const trust=await installRuntimeTrust(existing,{installTrust});
     await loadRuntimeSecret(existing,'proxySecret',{protection});
     await atomicJson(privateRoot+'/setup-proof.json',{recordedAt:new Date().toISOString(),dpapiCurrentUserRoundtrip:true,privateDirectoriesSecured:true,ca:trust,windowsPasswordStored:false,firewallChanged:false,preLoginVerified:false,rebootVerified:false});
     return existing;
@@ -55,12 +61,24 @@ export async function prepareRuntime({repositoryRoot=path.resolve(HERE,'../../..
   for(const directory of Object.values(descriptor.directories))await protection.secureDirectory(directory);
   if(!await exists(descriptor.networkConfigPath))await writeFile(descriptor.networkConfigPath,descriptor.networkXml,{mode:0o600});
   await atomicJson(configurationPath,config);
-  const trust=installTrust?await runPowerShellFile(path.resolve(HERE,'../../scripts/install-household-ca.ps1'),['-CertificatePath',config.caddy.rootCertificatePath]):{installed:false,reason:'not-requested'};
+  const trust=await installRuntimeTrust(config,{installTrust});
   await atomicJson(privateRoot+'/setup-proof.json',{recordedAt:new Date().toISOString(),dpapiCurrentUserRoundtrip:true,privateDirectoriesSecured:true,ca:trust,windowsPasswordStored:false,firewallChanged:false,preLoginVerified:false,rebootVerified:false});
   return config;
 }
 export function renderCaddyConfig(config,proxySecret){
   if(!/^[A-Za-z0-9_-]{43,128}$/.test(proxySecret))throw new Error('runtime-proxy-secret');
+  config=validateRuntimeConfig(config);
+  const site=(addresses,tls)=>`${addresses} {
+  bind 192.168.68.105
+  ${tls}
+  @runtimehealth path /runtime-health
+  respond @runtimehealth "{\\"service\\":\\"one-piece-local-https\\",\\"status\\":\\"up\\"}" 200
+  reverse_proxy 127.0.0.1:18098 {
+    header_up X-OnePiece-Proxy ${proxySecret}
+    header_up X-Forwarded-Proto https
+  }
+}
+`;
   return `{
   admin off
   persist_config off
@@ -71,17 +89,7 @@ export function renderCaddyConfig(config,proxySecret){
     protocols h1 h2
   }
 }
-https://onepiece.local:8443, https://192.168.68.105:8443 {
-  bind 192.168.68.105
-  tls internal
-  @runtimehealth path /runtime-health
-  respond @runtimehealth "{\\"service\\":\\"one-piece-local-https\\",\\"status\\":\\"up\\"}" 200
-  reverse_proxy 127.0.0.1:18098 {
-    header_up X-OnePiece-Proxy ${proxySecret}
-    header_up X-Forwarded-Proto https
-  }
-}
-`;
+${site('https://onepiece.local:8443, https://192.168.68.105:8443','tls internal')}${usesPublicTls(config)?site(config.controlsOrigin,`tls "${config.tls.certificatePath.replaceAll('\\','/')}" "${config.tls.privateKeyPath.replaceAll('\\','/')}"`):''}`;
 }
 const HEADER='MediaBrowser Client="PTI One Piece", Device="Always-on PC", DeviceId="pti-onepiece-runtime", Version="1.0"';
 async function engineRequest(config,route,{method='GET',body,token}={}){

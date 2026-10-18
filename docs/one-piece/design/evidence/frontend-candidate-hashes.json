@@ -1,0 +1,132 @@
+{
+  "recordedAt": "2026-10-18T11:54:33.987Z",
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "scope": "Paused ready-seek buffer-status correction; source frozen; no browser acceptance",
+  "files": [
+    {
+      "path": "apps/one-piece/web/household-ca.crt",
+      "sha256": "012f866db1a074cee889e4f5418f30c241a7ef2ab2b66e013b9797090337b76d",
+      "bytes": 627
+    },
+    {
+      "path": "apps/one-piece/web/icons/icon-192.png",
+      "sha256": "d5d759311dd6ca73265581d3a566862ca88f3f8c0f6ede65f3401c053b55c3ae",
+      "bytes": 3194
+    },
+    {
+      "path": "apps/one-piece/web/icons/icon-512.png",
+      "sha256": "43e584db60fbd828785a4f9f8344d9e6e0c2dd7cdec57bbdcd21c91d569bc123",
+      "bytes": 10582
+    },
+    {
+      "path": "apps/one-piece/web/icons/icon.svg",
+      "sha256": "1a61a4d7c251fe0818d065e99cec3011dc214fc9e10804716b27097eac9e020b",
+      "bytes": 409
+    },
+    {
+      "path": "apps/one-piece/web/index.html",
+      "sha256": "0e24c01d86e2378c88b8125c07b377db222d6256918a7119d17be42eaf932b0a",
+      "bytes": 880
+    },
+    {
+      "path": "apps/one-piece/web/manifest.webmanifest",
+      "sha256": "09fd6204a2feb5209b21475a85422d6b763405593861acb43684b7dc4192e874",
+      "bytes": 696
+    },
+    {
+      "path": "apps/one-piece/web/src/account.mjs",
+      "sha256": "8ee28c0b67fb45fcd9b1f5e55890d957679222d0f7a359384d9fd88e4fa74cfa",
+      "bytes": 5057
+    },
+    {
+      "path": "apps/one-piece/web/src/app.mjs",
+      "sha256": "0302a67b10f1c72af3b39109a7bcdd618b1e7fa9ce45edfe7a2f9897f4eebb93",
+      "bytes": 38868
+    },
+    {
+      "path": "apps/one-piece/web/src/client.mjs",
+      "sha256": "93230c5979c64cc0e64c8f518c24dede61f76130630e845f73c5d0e4602a9407",
+      "bytes": 1845
+    },
+    {
+      "path": "apps/one-piece/web/src/directions.css",
+      "sha256": "ceedb48e0540596cfdef0a90d4904faf4895e72f20ed4ba94df417652f6110ae",
+      "bytes": 17329
+    },
+    {
+      "path": "apps/one-piece/web/src/directions.mjs",
+      "sha256": "cf1e77edecb9d4515de549f90595a460f5dd6575dfa928e916730f68fd5530c6",
+      "bytes": 5843
+    },
+    {
+      "path": "apps/one-piece/web/src/fixture.mjs",
+      "sha256": "afd5af37427331a2e6fb142b060ac763b74aa2fd51df3a52e7fac82ec3d37208",
+      "bytes": 10290
+    },
+    {
+      "path": "apps/one-piece/web/src/frontend.test.mjs",
+      "sha256": "3788b279a2fbeecc9e5dbbbd30b80faca1b1021b0dd3a08743089e526f5d956d",
+      "bytes": 39462
+    },
+    {
+      "path": "apps/one-piece/web/src/icons.mjs",
+      "sha256": "fbe2678c68dad6686b7699d737301cabeac01b4e36c4fc22a8d8f0592622fae8",
+      "bytes": 1342
+    },
+    {
+      "path": "apps/one-piece/web/src/identity.mjs",
+      "sha256": "6e4ee3d9f0b818a1deda998639d8b194cdc954ec55ce818053ae0fd36434b8e5",
+      "bytes": 1183
+    },
+    {
+      "path": "apps/one-piece/web/src/keyboard.mjs",
+      "sha256": "956b968a24d1275ae513c1dec66821e7de34fc6d738a2087b2d94e5c2c4258c4",
+      "bytes": 1230
+    },
+    {
+      "path": "apps/one-piece/web/src/layout.css",
+      "sha256": "a08e6d131c1c3519e4d0776dad60c4fa0d78f725f7159759645bf17a238a648a",
+      "bytes": 25214
+    },
+    {
+      "path": "apps/one-piece/web/src/main.mjs",
+      "sha256": "97c10342cd57b24eb568abf9f3eefe85033ed34c49e139878e50ad721a183a8c",
+      "bytes": 436
+    },
+    {
+      "path": "apps/one-piece/web/src/model.mjs",
+      "sha256": "2440b38886716bfbbc6b14d994dc27386b95a54a572b406e76a64858ee0d7b4d",
+      "bytes": 5778
+    },
+    {
+      "path": "apps/one-piece/web/src/player.mjs",
+      "sha256": "e4f94f377eed45f61cfe1e08753d262a30244702c98b906aab4f610901d1473a",
+      "bytes": 7738
+    },
+    {
+      "path": "apps/one-piece/web/src/review-frames.mjs",
+      "sha256": "6cb70a6f76ba3d84980c14ed19f51758feb6a227c4bd8f94be31b2ba32d77ca9",
+      "bytes": 2500
+    },
+    {
+      "path": "apps/one-piece/web/src/signout.mjs",
+      "sha256": "a8b539c948cdc866df544e716f816a1e92bafbf9a625e6a0c65704dce58342eb",
+      "bytes": 475
+    },
+    {
+      "path": "apps/one-piece/web/src/styles.css",
+      "sha256": "6ab6869702e426befdf690bb70d08cb0aebff13c113a25407d9dac9970f41d8d",
+      "bytes": 1873
+    },
+    {
+      "path": "apps/one-piece/web/src/views.mjs",
+      "sha256": "a9b5d07b122ed89e8d171834b1ef8c1492fbb7ef01953f16b42df7276b94a468",
+      "bytes": 25266
+    },
+    {
+      "path": "apps/one-piece/web/sw.js",
+      "sha256": "61b2f9db10c34af671a21eff0dd1c9b5b5f7682cd3ea8b407752cfe8f0f2d564",
+      "bytes": 1755
+    }
+  ]
+}

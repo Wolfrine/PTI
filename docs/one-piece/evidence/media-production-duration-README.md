@@ -1,0 +1,29 @@
+# Production prepared MP4: real sixty-minute capacity
+
+The rewritten opt-in `test/media-real-duration.mjs` uses the real production coordinator with `defaultMode: 'prepared-mp4'`, persisted prepared renditions, `CompanionApi.mediaRequest`, episode-scoped tickets, and three independent `ProgressStore` leases. It does **not** use the earlier two-file prepared-pilot stub. Five offline synthetic acceptance/parser/ownership fixtures pass; they are not capacity evidence. The actual result is `media-production-duration.json` once the parent authorizes and completes the run.
+
+Startup failures are retained: attempt 1 was a corrected harness cache-lookup owner error; attempts 2 and 3 hit an actual upstream Jellyfin HTTP 500 while opening concurrent prepared streams. Attempt 3 records only safe response headers and proves the strict static helper rejected the 500; the media worker correlated the private exception with the engine's `.jellyfin-transcode` marker lock, not video bytes. Each attempt stopped its owned engine/listener/children. No one-hour capacity pass follows from those attempts. A separate `PTI_DURATION_SMOKE=1` mode measures two actual minutes with all three decoders, seeks, saved resume and late EOF/queue adoption, while always keeping the one-hour result false. It must be preserved separately before the real hour.
+
+Attempt 4 (`media-production-duration-attempt-4-marker-warmup-smoke.json`) disproves the first warmup fix: after serial authenticated `System/Info`, episode 1000's first 64 KiB GET still returned HTTP 500 at 12:25:13.962 UTC, while episode 1001 returned its exact 206 at .998 and decoded. No three-decoder barrier or measured hour began. Owned shutdown again exited zero with no engine/listener/media children. A fresh corrected smoke is required; offline fixture passes cannot close this real concurrency failure.
+
+The corrected bounded header-admission queue then passed the actual smoke (`media-production-duration-smoke-attempt-5-success.json`): three decoders advanced concurrently for 120,178 wall-clock ms, all six measured seek/resume/transition recoveries were under five seconds, exact real queued 1000→1001 adoption and independent durable resume passed, no original downloads/HTTP 500 occurred, and owned engine/listener/children cleanup passed. This establishes the short corrected startup gate, not hour-long capacity. Frozen production `jellyfin.mjs` SHA256 was `27883b5ae548807c9cc01613990ca36c2c58061a946df44ad7a71c93e5152552`; the complete offline suite was 194/194.
+
+The actual hour began with all three decoders advancing at **2026-10-18 12:51:13.808 UTC**, expected measurement end **13:51:13.808 UTC**, with cleanup afterward. It is in progress until the final JSON explicitly records completion. Acceptance requires both monotonic and wall-clock hours; the two-minute smoke cannot set that result true.
+
+Run only after the parent grants the dedicated engine lane:
+
+```powershell
+$env:PTI_RUN_REAL_DURATION='1'
+$env:PTI_DURATION_HANDOFF=(Resolve-Path docs/one-piece/evidence/cast-media-compat/prepared-production-handoff.json).Path
+& H:/PTI-OnePiece/tools/node/node.exe apps/one-piece/companion/test/media-real-duration.mjs
+```
+
+The stopped 18107 engine handoff is checked against the pinned executable, exact dedicated arguments, private config, allowed paths and port. DPAPI credentials stay private. The test starts/stops only that engine, and proves its PID, executable, command-line root and loopback listener before cleanup. It never calls the historical 18096/global encoder stop helper. Automatic Archive downloads always fail. Existing verified originals 1/1000/1001 may be imported locally; complete persisted renditions reopen without their originals. All supplied production, retained pilot and managed media accounting roots count toward the 20 GiB limit.
+
+Three FFmpeg processes decode real video **and audio** at one-timespeed (`-re`) through the production scoped HTTP path for at least 3,600,000 actual wall-clock milliseconds after all three advance. Exact loopback-only aliases keep scoped URLs out of process arguments. The aliases accept no arbitrary file/URL. HTTP requests and transferred bytes have finite budgets. Each response records range/status, bytes and consumer cancellation separately from complete delivery. English WebVTT is fetched and its cue count/SHA recorded for every episode; this is no visual timing claim.
+
+Saved positions come from actual FFmpeg frame/output timestamps, not elapsed-wall-clock simulation. The harness tests deliberate forward/backward seeks, a three-second pause/restart from fresh persisted progress, real decoder EOF, exact queued 1000→1001 context adoption under the same viewing lease, and explicitly labelled manual loops among the three allowed episodes. One-minute samples include CPU, GPU, RAM, disk, cache/projected reservations and owned processes. Every five seconds records actual decoder progress. Checkpoints are written at least once per minute.
+
+Passing requires a real hour, three distinct sustained decoders, actual EOF/queue adoption, independent durable resume, a persisted rewind, no source network fetch, no unplanned advancement gap over 7.5 seconds, and quota/cleanup proof. A separate five-second recovery result retains every seek/resume/transition miss. Cold preparation/import/engine startup are excluded from warm timings and retained separately. A 75-minute overall bound prevents an endless run.
+
+This establishes technical **warm prepared delivery and PC decode capacity**, if it passes. It does not establish three simultaneous unique cold HEVC encodes, three physical family devices, Firebase account permissions/cloud synchronization, PWA installation, TV/HDMI, audible Japanese or visually timed subtitles. PC CPU decoding adds work that viewing devices normally perform.

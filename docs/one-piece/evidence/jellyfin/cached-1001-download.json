@@ -1,0 +1,20 @@
+{
+  "episode": 1001,
+  "expectedBytes": 844716819,
+  "expectedArchiveMd5": "2610511c93fae62d4791e8284b6b96eb",
+  "maximumBytes": 2147483648,
+  "maximumSeconds": 180,
+  "totalBudgetBeforeBytes": 965940145,
+  "source": "https://archive.org/download/20260622_20260622_0310/%5BAnime%20Time%5D%20One%20Piece%20-%201001%20-%20A%20Risky%20Invitation%20A%20Plot%20To%20Eliminate%20Queen.mkv",
+  "newDownload": true,
+  "wallSeconds": 127.92200000002049,
+  "curlExitCode": 0,
+  "downloadBytes": 844716819,
+  "downloadSeconds": 127.871119,
+  "reportedNetworkDownloadBytes": 844716819,
+  "httpStatus": 200,
+  "averageBytesPerSecond": 6606001,
+  "actualFileBytes": 844716819,
+  "actualMd5": "2610511c93fae62d4791e8284b6b96eb",
+  "verified": true
+}

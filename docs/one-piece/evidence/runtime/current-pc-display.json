@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-10-18T13:18:50.5419005Z",
+  "method": "Windows WmiMonitorID active friendly names and Win32_OperatingSystem; serials and device instance IDs omitted",
+  "operatingSystem": {"caption":"Microsoft Windows 10 Pro","version":"10.0.19045","buildNumber":"19045"},
+  "activeMonitors": [{"active":true,"friendlyName":"LG IPS FULLHD"}],
+  "hdmiTvTest": {"performed":false,"limitation":"Sony TV is not currently exposed as an active Windows display. This does not establish whether a cable is available; physical connection and TV picture/sound confirmation remain separate."},
+  "physicalAndroidTest": {"performed":false,"limitation":"No physical Android trust, installation or playback interaction is established by this PC inventory."}
+}

@@ -1,0 +1,51 @@
+{
+  "reviewedAt": "2026-10-18T13:04:39.799Z",
+  "reviewer": "root parent, independently inspected all seven saved PNGs with view_image",
+  "scope": "Deterministic launcher integration into upstream203f81a accepted home design; no new visual language or child PWA asset changes",
+  "reviewed": [
+    {
+      "image": "desktop-home.png",
+      "sha256": "3cd8e5fc0aab4218f024fdc3bf0dbaa0510ee583ad5084213e78bdfc2af5dcf1"
+    },
+    {
+      "image": "desktop-directory.png",
+      "sha256": "e34f7dc60b6e88a7216877b939df95fa3be229d4ab52406d9ed7a8f115f4fdb3"
+    },
+    {
+      "image": "mobile-home-recent.png",
+      "sha256": "4d72cb543dd156c503326b23e1d4dff8e3ec55d6d02c1ae31dd464e4f0dd2f3b"
+    },
+    {
+      "image": "mobile-one-piece-search.png",
+      "sha256": "a737511512784a6370779c3be223f9675e575ce8f518a63325b6bc883536c727"
+    },
+    {
+      "image": "mobile-personal-category.png",
+      "sha256": "af311e0d3079f90cf6bcaad366a528b9d523a36e9627e4d93572bc411129ed07"
+    },
+    {
+      "image": "mobile-pinned-one-piece.png",
+      "sha256": "d8e509a840e466893285874388017cb4cb7324bc3b471eab0ebaa398a7dbc25a"
+    },
+    {
+      "image": "plain-click-document-proof.png",
+      "sha256": "fcec3943f97063ae6c3ff5e058864882dbfdc4c9f5a2a5313399ba1a540ee787"
+    }
+  ],
+  "visualVerdict": {
+    "passed": true,
+    "findings": [
+      "Existing upstream composition and navigation preserved",
+      "One Piece directory card, filtered result, recent card and optional pinned card match existing components",
+      "Desktop and mobile-sized labels remain readable; no visible clipping/overlap attributable to added entry"
+    ]
+  },
+  "qaVerdict": {
+    "passed": true,
+    "evidence": "browser-observations.json and isolated document-request proof inspected; browser agent observed ordinary/mobile, Ctrl and middle click document navigation with ngsw-bypass preserved"
+  },
+  "limitations": [
+    "H-only isolated actual Angular component, no Firebase or production login bypass",
+    "Not a real signed-in hosted PTI, physical Android, installed worker or final live release check"
+  ]
+}

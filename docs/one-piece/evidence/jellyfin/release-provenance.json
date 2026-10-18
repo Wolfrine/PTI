@@ -1,0 +1,12 @@
+{
+  "serverVersion": "12.2",
+  "ffmpegVersion": "8.1.3-Jellyfin",
+  "source": "https://repo.jellyfin.org/files/server/windows/stable/v12.2/amd64/jellyfin_12.2-amd64.zip",
+  "publisherChecksumPublished": false,
+  "publisherChecksumAttempt": "sibling .sha256sum returned 404",
+  "archiveBytes": 208835205,
+  "sha256": "ab247745b54cea9af2460c3d62622f5f30a323b02b92d11cea501b67b9a8d83f",
+  "releaseApi": "https://api.github.com/repos/jellyfin/jellyfin/releases/latest",
+  "latestReleaseTagObserved": "v12.2",
+  "releasePublished": "2026-10-05T23:07:59Z"
+}

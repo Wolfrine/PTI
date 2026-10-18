@@ -1,0 +1,23 @@
+{
+  "kind": "real-production-prepared-media-core",
+  "runId": "2026-10-18T12-06-00-753Z-e565fd",
+  "startedAt": "2026-10-18T12:06:00.754Z",
+  "newOriginalDownloads": 0,
+  "productionMediaModules": true,
+  "productionFirebaseAuth": false,
+  "actualCast": false,
+  "audibleLanguageVerified": false,
+  "visualSubtitlesVerified": false,
+  "events": [],
+  "episodes": [],
+  "cleanup": {
+    "engineStopped": true,
+    "originalDownloads": 0,
+    "assetsPreservedForOwnedRestart": true
+  },
+  "failed": {
+    "code": "ENOENT",
+    "name": "Error",
+    "message": "ENOENT: no such file or directory, statfs 'H:\\PTI-OnePiece\\production-media\\prepared-core-pilot\\2026-10-18T12-06-00-753Z-e565fd\\cache'"
+  }
+}

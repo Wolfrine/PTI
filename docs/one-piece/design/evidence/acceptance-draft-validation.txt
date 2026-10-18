@@ -1,0 +1,14 @@
+Observed validator run, 18 October 2026. This is an expected failed draft gate, not a pass.
+
+Command:
+python <Central0.1.0>/skills/visual-design-director/scripts/validate_design_acceptance.py docs/one-piece/design/acceptance.json --evidence-root docs/one-piece/design --candidate e087d987c034e8adcf785cf54e77547ad2da26c10e707bdd4a3e52165dd8df5e
+
+Exit status: 1
+Remaining failures:
+- Draft status is not accepted for design completion.
+- Explicit unresolved formal-evidence blocker remains.
+- Four media captures have page_errors=null pending capture-time diagnostics.
+- Parent final verdict/hash endorsement remains pending.
+- QA final verdict/all22-image hash coverage remains pending.
+
+Reference retention, direction evidence, five distinct cycle artifacts, parent checkpoint links, critical-dimension declarations, current candidate binding and independent critic review produced no other validator errors in this run.

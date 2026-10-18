@@ -1,0 +1,2167 @@
+{
+  "kind": "cached-engine-timestamp-comparison",
+  "startedAt": "2026-10-18T10:22:25.109Z",
+  "runId": "2026-10-18T10-22-25-109Z",
+  "noTvDiscoveredOrControlled": true,
+  "newNetworkDownloads": 0,
+  "browserRendered": false,
+  "heardJapanese": false,
+  "subtitlesVisuallyVerified": false,
+  "policies": [
+    {
+      "episode": 1000,
+      "policy": "copy-ts-2s",
+      "requested": {
+        "copy": true,
+        "container": "ts",
+        "seconds": 2
+      },
+      "samples": [
+        {
+          "targetSeconds": 0,
+          "segments": [
+            {
+              "index": 0,
+              "startSeconds": 0,
+              "durationSeconds": 2.002,
+              "elapsedMs": 34,
+              "bytes": 1296260,
+              "sha256": "28e6384c6d0a676bce6be1143eb368b3e5fdf01be4ed05b2ae1b5a78ed18379c",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "10.000000",
+                    "duration": "2.001700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "10.000000",
+                      "dts_time": "10.000000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "11.960000",
+                      "dts_time": "11.960000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 10,
+                    "maximumPts": 11.96,
+                    "packetEndSeconds": 12.001700000000001,
+                    "keyframes": [
+                      10
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "10.000000",
+                    "duration": "1.973578",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 87,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "10.000000",
+                      "dts_time": "10.000000",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "11.996800",
+                      "dts_time": "11.996800",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 10,
+                    "maximumPts": 11.9968,
+                    "packetEndSeconds": 12.020011
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          ],
+          "fetchMs": 34,
+          "fetchAndProbeMs": 147,
+          "bytes": 1296260,
+          "probe": {
+            "streams": [
+              {
+                "index": 0,
+                "codec_name": "h264",
+                "codec_type": "video",
+                "time_base": "1/90000",
+                "start_time": "10.000000",
+                "duration": "2.001700",
+                "disposition": {
+                  "default": 0,
+                  "dub": 0,
+                  "original": 0,
+                  "comment": 0,
+                  "lyrics": 0,
+                  "karaoke": 0,
+                  "forced": 0,
+                  "hearing_impaired": 0,
+                  "visual_impaired": 0,
+                  "clean_effects": 0,
+                  "attached_pic": 0,
+                  "timed_thumbnails": 0,
+                  "non_diegetic": 0,
+                  "captions": 0,
+                  "descriptions": 0,
+                  "metadata": 0,
+                  "dependent": 0,
+                  "still_image": 0,
+                  "multilayer": 0
+                },
+                "packetCount": 48,
+                "firstPacket": {
+                  "stream_index": 0,
+                  "pts_time": "10.000000",
+                  "dts_time": "10.000000",
+                  "duration_time": "0.041700",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 224
+                    }
+                  ]
+                },
+                "lastPacket": {
+                  "stream_index": 0,
+                  "pts_time": "11.960000",
+                  "dts_time": "11.960000",
+                  "duration_time": "0.041700",
+                  "flags": "___",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 224
+                    }
+                  ]
+                },
+                "minimumPts": 10,
+                "maximumPts": 11.96,
+                "packetEndSeconds": 12.001700000000001,
+                "keyframes": [
+                  10
+                ]
+              },
+              {
+                "index": 1,
+                "codec_name": "aac",
+                "codec_type": "audio",
+                "time_base": "1/90000",
+                "start_time": "10.000000",
+                "duration": "1.973578",
+                "disposition": {
+                  "default": 0,
+                  "dub": 0,
+                  "original": 0,
+                  "comment": 0,
+                  "lyrics": 0,
+                  "karaoke": 0,
+                  "forced": 0,
+                  "hearing_impaired": 0,
+                  "visual_impaired": 0,
+                  "clean_effects": 0,
+                  "attached_pic": 0,
+                  "timed_thumbnails": 0,
+                  "non_diegetic": 0,
+                  "captions": 0,
+                  "descriptions": 0,
+                  "metadata": 0,
+                  "dependent": 0,
+                  "still_image": 0,
+                  "multilayer": 0
+                },
+                "packetCount": 87,
+                "firstPacket": {
+                  "stream_index": 1,
+                  "pts_time": "10.000000",
+                  "dts_time": "10.000000",
+                  "duration_time": "0.023211",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 192
+                    }
+                  ]
+                },
+                "lastPacket": {
+                  "stream_index": 1,
+                  "pts_time": "11.996800",
+                  "dts_time": "11.996800",
+                  "duration_time": "0.023211",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 192
+                    }
+                  ]
+                },
+                "minimumPts": 10,
+                "maximumPts": 11.9968,
+                "packetEndSeconds": 12.020011
+              }
+            ],
+            "stderr": ""
+          },
+          "decode": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "targetSeconds": 600,
+          "segments": [
+            {
+              "index": 299,
+              "startSeconds": 598.5989999999996,
+              "durationSeconds": 2.002,
+              "elapsedMs": 1001,
+              "bytes": 1077616,
+              "sha256": "28ed13211e85cf7f39bb1fee4bb529b7d881c76116a8146f89450362ec8e356d",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "608.599000",
+                    "duration": "2.001700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "608.599000",
+                      "dts_time": "608.599000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "610.559000",
+                      "dts_time": "610.559000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 608.599,
+                    "maximumPts": 610.559,
+                    "packetEndSeconds": 610.6007,
+                    "keyframes": [
+                      608.599
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "608.610000",
+                    "duration": "1.950356",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "608.610000",
+                      "dts_time": "608.610000",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "610.583578",
+                      "dts_time": "610.583578",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 608.61,
+                    "maximumPts": 610.583578,
+                    "packetEndSeconds": 610.6067889999999
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 300,
+              "startSeconds": 600.6009999999995,
+              "durationSeconds": 2.002,
+              "elapsedMs": 144,
+              "bytes": 1977760,
+              "sha256": "ff279232545b372efbd8c40588e1c0c59263af78188659d927d7baa8488c5397",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "610.601000",
+                    "duration": "2.001700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "610.601000",
+                      "dts_time": "610.601000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "612.561000",
+                      "dts_time": "612.561000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 610.601,
+                    "maximumPts": 612.561,
+                    "packetEndSeconds": 612.6027,
+                    "keyframes": [
+                      610.601
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "610.606733",
+                    "duration": "1.903956",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "610.606733",
+                      "dts_time": "610.606733",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "612.580356",
+                      "dts_time": "612.580356",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 610.606733,
+                    "maximumPts": 612.580356,
+                    "packetEndSeconds": 612.603567
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 301,
+              "startSeconds": 602.6029999999995,
+              "durationSeconds": 2.002,
+              "elapsedMs": 48,
+              "bytes": 1428048,
+              "sha256": "bcc8495f9377ab1be5dab142aebc91459b939604a431c06faf91a3fc71e148fa",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "612.603000",
+                    "duration": "2.001700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "612.603000",
+                      "dts_time": "612.603000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "614.563000",
+                      "dts_time": "614.563000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 612.603,
+                    "maximumPts": 614.563,
+                    "packetEndSeconds": 614.6047,
+                    "keyframes": [
+                      612.603
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "612.603578",
+                    "duration": "1.997144",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 87,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "612.603578",
+                      "dts_time": "612.603578",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "614.600733",
+                      "dts_time": "614.600733",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 612.603578,
+                    "maximumPts": 614.600733,
+                    "packetEndSeconds": 614.6239439999999
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 302,
+              "startSeconds": 604.6049999999994,
+              "durationSeconds": 2.002,
+              "elapsedMs": 37,
+              "bytes": 1204892,
+              "sha256": "c94492f42e1bd2c5a235245eb761db3314b593fbc8162cfc54c23c7e8db2b161",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "614.605000",
+                    "duration": "2.001700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "614.605000",
+                      "dts_time": "614.605000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "616.565000",
+                      "dts_time": "616.565000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 614.605,
+                    "maximumPts": 616.565,
+                    "packetEndSeconds": 616.6067,
+                    "keyframes": [
+                      614.605
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "614.623744",
+                    "duration": "1.856978",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "614.623744",
+                      "dts_time": "614.623744",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "616.596833",
+                      "dts_time": "616.596833",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 614.623744,
+                    "maximumPts": 616.596833,
+                    "packetEndSeconds": 616.6200439999999
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          ],
+          "fetchMs": 1230,
+          "fetchAndProbeMs": 1747,
+          "bytes": 5688316,
+          "probe": {
+            "streams": [
+              {
+                "index": 0,
+                "codec_name": "h264",
+                "codec_type": "video",
+                "time_base": "1/90000",
+                "start_time": "608.599000",
+                "duration": "8.007700",
+                "disposition": {
+                  "default": 0,
+                  "dub": 0,
+                  "original": 0,
+                  "comment": 0,
+                  "lyrics": 0,
+                  "karaoke": 0,
+                  "forced": 0,
+                  "hearing_impaired": 0,
+                  "visual_impaired": 0,
+                  "clean_effects": 0,
+                  "attached_pic": 0,
+                  "timed_thumbnails": 0,
+                  "non_diegetic": 0,
+                  "captions": 0,
+                  "descriptions": 0,
+                  "metadata": 0,
+                  "dependent": 0,
+                  "still_image": 0,
+                  "multilayer": 0
+                },
+                "packetCount": 192,
+                "firstPacket": {
+                  "stream_index": 0,
+                  "pts_time": "608.599000",
+                  "dts_time": "608.599000",
+                  "duration_time": "0.041700",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 224
+                    }
+                  ]
+                },
+                "lastPacket": {
+                  "stream_index": 0,
+                  "pts_time": "616.565000",
+                  "dts_time": "616.565000",
+                  "duration_time": "0.041700",
+                  "flags": "___",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 224
+                    }
+                  ]
+                },
+                "minimumPts": 608.599,
+                "maximumPts": 616.565,
+                "packetEndSeconds": 616.6067,
+                "keyframes": [
+                  608.599,
+                  610.601,
+                  612.603,
+                  614.605
+                ]
+              },
+              {
+                "index": 1,
+                "codec_name": "aac",
+                "codec_type": "audio",
+                "time_base": "1/90000",
+                "start_time": "608.610000",
+                "duration": "7.870722",
+                "disposition": {
+                  "default": 0,
+                  "dub": 0,
+                  "original": 0,
+                  "comment": 0,
+                  "lyrics": 0,
+                  "karaoke": 0,
+                  "forced": 0,
+                  "hearing_impaired": 0,
+                  "visual_impaired": 0,
+                  "clean_effects": 0,
+                  "attached_pic": 0,
+                  "timed_thumbnails": 0,
+                  "non_diegetic": 0,
+                  "captions": 0,
+                  "descriptions": 0,
+                  "metadata": 0,
+                  "dependent": 0,
+                  "still_image": 0,
+                  "multilayer": 0
+                },
+                "packetCount": 345,
+                "firstPacket": {
+                  "stream_index": 1,
+                  "pts_time": "608.610000",
+                  "dts_time": "608.610000",
+                  "duration_time": "0.023211",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 192
+                    }
+                  ]
+                },
+                "lastPacket": {
+                  "stream_index": 1,
+                  "pts_time": "616.596833",
+                  "dts_time": "616.596833",
+                  "duration_time": "0.023211",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 192
+                    }
+                  ]
+                },
+                "minimumPts": 608.61,
+                "maximumPts": 616.596833,
+                "packetEndSeconds": 616.6200439999999
+              }
+            ],
+            "stderr": ""
+          },
+          "decode": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "targetSeconds": 1418.79,
+          "segments": [
+            {
+              "index": 708,
+              "startSeconds": 1417.4169999999804,
+              "durationSeconds": 2.002,
+              "elapsedMs": 1019,
+              "bytes": 851076,
+              "sha256": "4a0a23748f4fa38ca375eba020d054baf898be176ab31c4b2cf66d1e6d9181b6",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "1427.417000",
+                    "duration": "2.002700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1427.417000",
+                      "dts_time": "1427.417000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1429.378000",
+                      "dts_time": "1429.378000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 1427.417,
+                    "maximumPts": 1429.378,
+                    "packetEndSeconds": 1429.4197,
+                    "keyframes": [
+                      1427.417
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "1427.439000",
+                    "duration": "1.996733",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1427.439000",
+                      "dts_time": "1427.439000",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1429.412522",
+                      "dts_time": "1429.412522",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 1427.439,
+                    "maximumPts": 1429.412522,
+                    "packetEndSeconds": 1429.435733
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 709,
+              "startSeconds": 1419.4189999999803,
+              "durationSeconds": 2.002,
+              "elapsedMs": 35,
+              "bytes": 846376,
+              "sha256": "d189435baab8610b71ee3afbdae2a242e5f1901d2c80385f37b32e9293f3f27a",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "1429.419000",
+                    "duration": "2.002700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1429.419000",
+                      "dts_time": "1429.419000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1431.380000",
+                      "dts_time": "1431.380000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 1429.419,
+                    "maximumPts": 1431.38,
+                    "packetEndSeconds": 1431.4217,
+                    "keyframes": [
+                      1429.419
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "1429.435733",
+                    "duration": "1.880200",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1429.435733",
+                      "dts_time": "1429.435733",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1431.408822",
+                      "dts_time": "1431.408822",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 1429.435733,
+                    "maximumPts": 1431.408822,
+                    "packetEndSeconds": 1431.432033
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 710,
+              "startSeconds": 1421.4209999999803,
+              "durationSeconds": 2.002,
+              "elapsedMs": 151,
+              "bytes": 434844,
+              "sha256": "31540eb6810b7b9a84a69dd675edb711334c8f20ccdaec34ca7630c980cbbee8",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "1431.421000",
+                    "duration": "2.002700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1431.421000",
+                      "dts_time": "1431.421000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1433.382000",
+                      "dts_time": "1433.382000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 1431.421,
+                    "maximumPts": 1433.382,
+                    "packetEndSeconds": 1433.4237,
+                    "keyframes": [
+                      1431.421
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "1431.432489",
+                    "duration": "1.857233",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1431.432489",
+                      "dts_time": "1431.432489",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1433.405833",
+                      "dts_time": "1433.405833",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 1431.432489,
+                    "maximumPts": 1433.405833,
+                    "packetEndSeconds": 1433.429044
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 711,
+              "startSeconds": 1423.4229999999802,
+              "durationSeconds": 2.002,
+              "elapsedMs": 122,
+              "bytes": 216576,
+              "sha256": "6336dfe8d8586aeef73e5036ca3872e357a296983a7aaf61c217f9a26b2ec99c",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "1433.423000",
+                    "duration": "2.002700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1433.423000",
+                      "dts_time": "1433.423000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1435.384000",
+                      "dts_time": "1435.384000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 1433.423,
+                    "maximumPts": 1435.384,
+                    "packetEndSeconds": 1435.4257,
+                    "keyframes": [
+                      1433.423
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "1433.429478",
+                    "duration": "1.996256",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1433.429478",
+                      "dts_time": "1433.429478",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1435.402522",
+                      "dts_time": "1435.402522",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 1433.429478,
+                    "maximumPts": 1435.402522,
+                    "packetEndSeconds": 1435.425733
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 712,
+              "startSeconds": 1425.4249999999802,
+              "durationSeconds": 2.002,
+              "elapsedMs": 24,
+              "bytes": 147392,
+              "sha256": "4d67bb9e980af9feb81a2884142448a5b407e0aa3f1c1f79e79f1ae8c2840191",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "1435.425000",
+                    "duration": "2.002700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1435.425000",
+                      "dts_time": "1435.425000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1437.386000",
+                      "dts_time": "1437.386000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 1435.425,
+                    "maximumPts": 1437.386,
+                    "packetEndSeconds": 1437.4277,
+                    "keyframes": [
+                      1435.425
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "1435.426489",
+                    "duration": "1.973089",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 87,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1435.426489",
+                      "dts_time": "1435.426489",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1437.422800",
+                      "dts_time": "1437.422800",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 1435.426489,
+                    "maximumPts": 1437.4228,
+                    "packetEndSeconds": 1437.446011
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 713,
+              "startSeconds": 1427.4269999999801,
+              "durationSeconds": 2.002,
+              "elapsedMs": 148,
+              "bytes": 56776,
+              "sha256": "b7a093942bb99b8c60d5f3e12257fe0fa6206451fd6cd1d6447d3731c37d9cd0",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "1437.427000",
+                    "duration": "2.002700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 48,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1437.427000",
+                      "dts_time": "1437.427000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1439.388000",
+                      "dts_time": "1439.388000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 1437.427,
+                    "maximumPts": 1439.388,
+                    "packetEndSeconds": 1439.4297,
+                    "keyframes": [
+                      1437.427
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "1437.446489",
+                    "duration": "1.973233",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 86,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1437.446489",
+                      "dts_time": "1437.446489",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1439.419733",
+                      "dts_time": "1439.419733",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 1437.446489,
+                    "maximumPts": 1439.419733,
+                    "packetEndSeconds": 1439.442944
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            {
+              "index": 714,
+              "startSeconds": 1429.42899999998,
+              "durationSeconds": 1.361,
+              "elapsedMs": 25,
+              "bytes": 41548,
+              "sha256": "ee110b420e64a3e7292fb5bf43529e1e69d75f2636f9c1212429156370203236",
+              "probe": {
+                "streams": [
+                  {
+                    "index": 0,
+                    "codec_name": "h264",
+                    "codec_type": "video",
+                    "time_base": "1/90000",
+                    "start_time": "1439.429000",
+                    "duration": "1.293700",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 31,
+                    "firstPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1439.429000",
+                      "dts_time": "1439.429000",
+                      "duration_time": "0.041700",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 0,
+                      "pts_time": "1440.681000",
+                      "dts_time": "1440.681000",
+                      "duration_time": "0.041700",
+                      "flags": "___",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 224
+                        }
+                      ]
+                    },
+                    "minimumPts": 1439.429,
+                    "maximumPts": 1440.681,
+                    "packetEndSeconds": 1440.7227,
+                    "keyframes": [
+                      1439.429
+                    ]
+                  },
+                  {
+                    "index": 1,
+                    "codec_name": "aac",
+                    "codec_type": "audio",
+                    "time_base": "1/90000",
+                    "start_time": "1439.443489",
+                    "duration": "1.323211",
+                    "disposition": {
+                      "default": 0,
+                      "dub": 0,
+                      "original": 0,
+                      "comment": 0,
+                      "lyrics": 0,
+                      "karaoke": 0,
+                      "forced": 0,
+                      "hearing_impaired": 0,
+                      "visual_impaired": 0,
+                      "clean_effects": 0,
+                      "attached_pic": 0,
+                      "timed_thumbnails": 0,
+                      "non_diegetic": 0,
+                      "captions": 0,
+                      "descriptions": 0,
+                      "metadata": 0,
+                      "dependent": 0,
+                      "still_image": 0,
+                      "multilayer": 0
+                    },
+                    "packetCount": 58,
+                    "firstPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1439.443489",
+                      "dts_time": "1439.443489",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "lastPacket": {
+                      "stream_index": 1,
+                      "pts_time": "1440.766711",
+                      "dts_time": "1440.766711",
+                      "duration_time": "0.023211",
+                      "flags": "K__",
+                      "side_data_list": [
+                        {
+                          "side_data_type": "MPEGTS Stream ID",
+                          "id": 192
+                        }
+                      ]
+                    },
+                    "minimumPts": 1439.443489,
+                    "maximumPts": 1440.766711,
+                    "packetEndSeconds": 1440.789922
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          ],
+          "fetchMs": 1524,
+          "fetchAndProbeMs": 2130,
+          "bytes": 2594588,
+          "probe": {
+            "streams": [
+              {
+                "index": 0,
+                "codec_name": "h264",
+                "codec_type": "video",
+                "time_base": "1/90000",
+                "start_time": "1427.417000",
+                "duration": "13.305700",
+                "disposition": {
+                  "default": 0,
+                  "dub": 0,
+                  "original": 0,
+                  "comment": 0,
+                  "lyrics": 0,
+                  "karaoke": 0,
+                  "forced": 0,
+                  "hearing_impaired": 0,
+                  "visual_impaired": 0,
+                  "clean_effects": 0,
+                  "attached_pic": 0,
+                  "timed_thumbnails": 0,
+                  "non_diegetic": 0,
+                  "captions": 0,
+                  "descriptions": 0,
+                  "metadata": 0,
+                  "dependent": 0,
+                  "still_image": 0,
+                  "multilayer": 0
+                },
+                "packetCount": 319,
+                "firstPacket": {
+                  "stream_index": 0,
+                  "pts_time": "1427.417000",
+                  "dts_time": "1427.417000",
+                  "duration_time": "0.041700",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 224
+                    }
+                  ]
+                },
+                "lastPacket": {
+                  "stream_index": 0,
+                  "pts_time": "1440.681000",
+                  "dts_time": "1440.681000",
+                  "duration_time": "0.041700",
+                  "flags": "___",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 224
+                    }
+                  ]
+                },
+                "minimumPts": 1427.417,
+                "maximumPts": 1440.681,
+                "packetEndSeconds": 1440.7227,
+                "keyframes": [
+                  1427.417,
+                  1429.419,
+                  1431.421,
+                  1433.423,
+                  1435.425,
+                  1437.427,
+                  1439.429
+                ]
+              },
+              {
+                "index": 1,
+                "codec_name": "aac",
+                "codec_type": "audio",
+                "time_base": "1/90000",
+                "start_time": "1427.439000",
+                "duration": "13.327700",
+                "disposition": {
+                  "default": 0,
+                  "dub": 0,
+                  "original": 0,
+                  "comment": 0,
+                  "lyrics": 0,
+                  "karaoke": 0,
+                  "forced": 0,
+                  "hearing_impaired": 0,
+                  "visual_impaired": 0,
+                  "clean_effects": 0,
+                  "attached_pic": 0,
+                  "timed_thumbnails": 0,
+                  "non_diegetic": 0,
+                  "captions": 0,
+                  "descriptions": 0,
+                  "metadata": 0,
+                  "dependent": 0,
+                  "still_image": 0,
+                  "multilayer": 0
+                },
+                "packetCount": 575,
+                "firstPacket": {
+                  "stream_index": 1,
+                  "pts_time": "1427.439000",
+                  "dts_time": "1427.439000",
+                  "duration_time": "0.023211",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 192
+                    }
+                  ]
+                },
+                "lastPacket": {
+                  "stream_index": 1,
+                  "pts_time": "1440.766711",
+                  "dts_time": "1440.766711",
+                  "duration_time": "0.023211",
+                  "flags": "K__",
+                  "side_data_list": [
+                    {
+                      "side_data_type": "MPEGTS Stream ID",
+                      "id": 192
+                    }
+                  ]
+                },
+                "minimumPts": 1427.439,
+                "maximumPts": 1440.766711,
+                "packetEndSeconds": 1440.789922
+              }
+            ],
+            "stderr": ""
+          },
+          "decode": {
+            "code": 0,
+            "stderr": ""
+          }
+        }
+      ],
+      "readyMs": 1576,
+      "selected": {
+        "audioIndex": 1,
+        "subtitleIndex": 2,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "durationSeconds": 1430.79,
+      "timing": {
+        "effectiveDurationSeconds": 1430.79,
+        "containerDurationSeconds": 1430.79,
+        "tracks": [
+          {
+            "index": 0,
+            "type": "video",
+            "endSeconds": 1430.722,
+            "declaredEndSeconds": 1430.723
+          },
+          {
+            "index": 1,
+            "type": "audio",
+            "endSeconds": 1430.79,
+            "declaredEndSeconds": 1430.79
+          }
+        ],
+        "source": "bounded-cached-ffprobe"
+      },
+      "containerDurationSeconds": 1430.79,
+      "preparation": {
+        "firstSegmentBytes": 1296260,
+        "firstSegmentMs": 679,
+        "note": "Visible preparation includes selected audio, full-English WebVTT, and real first-segment availability; rendering is a separate check."
+      },
+      "playlist": {
+        "segmentCount": 715,
+        "totalSeconds": 1430.7899999999802,
+        "bytes": 504231,
+        "targetDuration": 3,
+        "version": 3,
+        "endList": true
+      },
+      "commands": [
+        {
+          "log": "FFmpeg.Remux-2026-10-18_15-52-26_bb7d87b1386c66c3b26ffe4cd97636e2_2185bb4c.log",
+          "videoCopy": true,
+          "nvenc": false,
+          "seekOffset": null,
+          "copyTimestamps": true,
+          "startAtZero": true,
+          "outputTimestampOffset": null,
+          "startNumber": 0,
+          "warnings": []
+        },
+        {
+          "log": "FFmpeg.Remux-2026-10-18_15-52-28_bb7d87b1386c66c3b26ffe4cd97636e2_a7f2a8b5.log",
+          "videoCopy": true,
+          "nvenc": false,
+          "seekOffset": "00:09:59.099",
+          "copyTimestamps": true,
+          "startAtZero": true,
+          "outputTimestampOffset": null,
+          "startNumber": 299,
+          "warnings": []
+        },
+        {
+          "log": "FFmpeg.Remux-2026-10-18_15-52-30_bb7d87b1386c66c3b26ffe4cd97636e2_d4f6d3d3.log",
+          "videoCopy": true,
+          "nvenc": false,
+          "seekOffset": "00:23:37.917",
+          "copyTimestamps": true,
+          "startAtZero": true,
+          "outputTimestampOffset": null,
+          "startNumber": 708,
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "episode": 1000,
+      "bytes": 742925306,
+      "md5": "ebeeadb99c7c1f27ba1f90aade7ccce1"
+    }
+  ],
+  "initialization": {
+    "engine": {
+      "version": "12.2.0",
+      "hardwareAcceleration": "nvenc",
+      "libraryId": "f66699ba428ad678b428d0b4591ab296"
+    },
+    "cache": {
+      "usedBytes": 3998092170,
+      "engineBytes": 181795,
+      "reservedBytes": 0,
+      "projectedBytes": 3998092170,
+      "limitBytes": 21474836480,
+      "freeBytes": 301891264512,
+      "minimumFreeBytes": 2147483648,
+      "pinnedSources": 0,
+      "activePreparations": 0
+    }
+  },
+  "storage": {
+    "usedBytes": 4043015096,
+    "engineBytes": 25946393,
+    "reservedBytes": 0,
+    "projectedBytes": 4043015096,
+    "limitBytes": 21474836480,
+    "freeBytes": 301846151168,
+    "minimumFreeBytes": 2147483648,
+    "pinnedSources": 0,
+    "activePreparations": 0
+  },
+  "completedAt": "2026-10-18T10:22:32.897Z"
+}

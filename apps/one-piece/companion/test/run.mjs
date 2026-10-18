@@ -1,0 +1,8 @@
+import {readdir} from 'node:fs/promises';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+const directory=new URL('./',import.meta.url);
+const files=(await readdir(directory)).filter(name=>name.endsWith('.test.mjs')).sort().map(name=>fileURLToPath(new URL(name,directory)));
+// Explicit discovery is portable on Windows and deliberately excludes opt-in real-media harnesses.
+const child=spawn(process.execPath,['--test',...files],{stdio:'inherit',windowsHide:true});
+child.on('error',()=>{process.exitCode=1;});child.on('exit',code=>{process.exitCode=code??1;});

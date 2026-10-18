@@ -1,0 +1,6724 @@
+{
+  "kind": "prepared-static-mp4-real-cast",
+  "preparedStatic": true,
+  "startedAt": "2026-10-18T11:32:39.967Z",
+  "identity": "synthetic technical identities in this standalone harness only; production Firebase authentication is NOT verified",
+  "engine": "owned isolated prepared Jellyfin 127.0.0.1:18106",
+  "originalsAllowed": [
+    1000,
+    1001
+  ],
+  "newNetworkDownloads": 0,
+  "mediaTransport": "approved LAN HTTP episode-scoped capabilities, mDNS preferred",
+  "controlTransport": "loopback technical fixture; production HTTPS/PWA not verified",
+  "humanVisualVerification": false,
+  "humanJapaneseAudioVerification": false,
+  "subtitleTimingVisuallyVerified": false,
+  "wholeEpisodeViewing": false,
+  "phoneSleepVerified": false,
+  "threeStreamSixtyMinutes": false,
+  "focus": "prepared-static-mp4-observations-only-no-seek-performance-claim",
+  "steps": [
+    {
+      "name": "initialize-cached-engine",
+      "ok": true,
+      "elapsedMs": 11736,
+      "value": {
+        "version": "12.2.0"
+      }
+    },
+    {
+      "name": "temporary-mdns",
+      "ok": true,
+      "elapsedMs": 2037,
+      "value": {
+        "hostname": "onepiece.local",
+        "address": "192.168.68.105"
+      }
+    },
+    {
+      "name": "discover-without-takeover",
+      "ok": true,
+      "elapsedMs": 5867,
+      "value": [
+        {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "name": "Bedroom TV",
+          "model": "BRAVIA VU31",
+          "owned": false,
+          "busy": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "prepare-full-episode-1000",
+      "ok": true,
+      "elapsedMs": 62,
+      "value": {
+        "sessionId": "5ff79386-54b7-40f9-a3ca-d2a5c875ae65",
+        "selected": {
+          "audioIndex": 2,
+          "subtitleIndex": 0,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "durationSeconds": 1430.79,
+        "mode": "prepared-mp4"
+      }
+    },
+    {
+      "name": "load-real-static-mp4-and-webvtt",
+      "ok": true,
+      "elapsedMs": 7688,
+      "value": {
+        "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+        "owned": true,
+        "episodeId": "one-piece-1000",
+        "state": "PLAYING",
+        "positionSeconds": 600,
+        "durationSeconds": 1430.79,
+        "subtitleEnabled": true,
+        "volume": 0.23000000417232513,
+        "muted": false,
+        "idleReason": null
+      }
+    },
+    {
+      "name": "MP4-SOURCE1-OBSERVATION-120S",
+      "ok": true,
+      "elapsedMs": 123030,
+      "value": {
+        "beganAt": "2026-10-18T11:33:10.402Z",
+        "expectedEndAt": "2026-10-18T11:35:10.402Z",
+        "endedAt": "2026-10-18T11:35:10.425Z",
+        "observationWindowSeconds": 120,
+        "noPlaybackCommandsDuringWindow": true,
+        "before": {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "owned": true,
+          "episodeId": "one-piece-1000",
+          "state": "PLAYING",
+          "positionSeconds": 600.428727,
+          "durationSeconds": 1430.79,
+          "subtitleEnabled": true,
+          "volume": 0.23000000417232513,
+          "muted": false,
+          "idleReason": null
+        },
+        "after": {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "owned": true,
+          "episodeId": "one-piece-1000",
+          "state": "PLAYING",
+          "positionSeconds": 721.161245,
+          "durationSeconds": 1430.79,
+          "subtitleEnabled": true,
+          "volume": 0.05000000074505806,
+          "muted": false,
+          "idleReason": null
+        },
+        "telemetrySamples": 103,
+        "nonPlayingSamples": 0,
+        "humanConfirmation": "parent must separately record an explicit reply during THIS episode window; unanswered or late replies are not inferred"
+      }
+    },
+    {
+      "name": "explicit-source2-selection-for-observation-NOT-natural-proof",
+      "ok": true,
+      "elapsedMs": 11862,
+      "value": {
+        "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+        "owned": true,
+        "episodeId": "one-piece-1001",
+        "state": "PLAYING",
+        "positionSeconds": 601.062949,
+        "durationSeconds": 1419.04,
+        "subtitleEnabled": true,
+        "volume": 0.05000000074505806,
+        "muted": false,
+        "idleReason": null
+      }
+    },
+    {
+      "name": "MP4-SOURCE2-OBSERVATION-120S",
+      "ok": true,
+      "elapsedMs": 123030,
+      "value": {
+        "beganAt": "2026-10-18T11:35:25.303Z",
+        "expectedEndAt": "2026-10-18T11:37:25.303Z",
+        "endedAt": "2026-10-18T11:37:25.319Z",
+        "observationWindowSeconds": 120,
+        "noPlaybackCommandsDuringWindow": true,
+        "before": {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "owned": true,
+          "episodeId": "one-piece-1001",
+          "state": "PLAYING",
+          "positionSeconds": 604.103256,
+          "durationSeconds": 1419.04,
+          "subtitleEnabled": true,
+          "volume": 0.05000000074505806,
+          "muted": false,
+          "idleReason": null
+        },
+        "after": {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "owned": true,
+          "episodeId": "one-piece-1001",
+          "state": "PLAYING",
+          "positionSeconds": 723.036175,
+          "durationSeconds": 1419.04,
+          "subtitleEnabled": true,
+          "volume": 0.05000000074505806,
+          "muted": false,
+          "idleReason": null
+        },
+        "telemetrySamples": 100,
+        "nonPlayingSamples": 0,
+        "humanConfirmation": "parent must separately record an explicit reply during THIS episode window; unanswered or late replies are not inferred"
+      }
+    },
+    {
+      "name": "position-preserving-return-and-revoked-ticket",
+      "ok": true,
+      "elapsedMs": 2592,
+      "value": {
+        "episodeId": "one-piece-1001",
+        "positionSeconds": 726.473972,
+        "destination": "local",
+        "oldTicketStatus": 404
+      }
+    },
+    {
+      "name": "real-receiver-resource-graph",
+      "ok": true,
+      "elapsedMs": 1,
+      "value": {
+        "one-piece-1000": {
+          "video-file": 2,
+          "webvtt": 1
+        },
+        "one-piece-1001": {
+          "video-file": 2,
+          "webvtt": 1
+        }
+      }
+    }
+  ],
+  "requests": [
+    {
+      "atMs": 26515,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-file",
+      "resourceHash": "8038b1ef7a6ab0bf",
+      "receiverRequest": true,
+      "range": "bytes=0-",
+      "bytes": 7127040,
+      "status": 206,
+      "closed": true
+    },
+    {
+      "atMs": 27202,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "webvtt",
+      "resourceHash": "ff0ccebaedd90600",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 14478,
+      "status": 200,
+      "completedAtMs": 27204,
+      "closed": true
+    },
+    {
+      "atMs": 27249,
+      "method": "GET",
+      "episodeId": "one-piece-1000",
+      "resourceKind": "video-file",
+      "resourceHash": "8038b1ef7a6ab0bf",
+      "receiverRequest": true,
+      "range": "bytes=320077824-",
+      "bytes": 90587136,
+      "status": 206,
+      "closed": true
+    },
+    {
+      "atMs": 157927,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "video-file",
+      "resourceHash": "02002343836fbfed",
+      "receiverRequest": true,
+      "range": "bytes=0-",
+      "bytes": 7503872,
+      "status": 206,
+      "closed": true
+    },
+    {
+      "atMs": 158802,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "webvtt",
+      "resourceHash": "c013ae5da6ef9afc",
+      "receiverRequest": true,
+      "range": null,
+      "bytes": 20618,
+      "status": 200,
+      "completedAtMs": 158804,
+      "closed": true
+    },
+    {
+      "atMs": 158804,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "video-file",
+      "resourceHash": "02002343836fbfed",
+      "receiverRequest": true,
+      "range": "bytes=585826304-",
+      "bytes": 145030854,
+      "status": 206,
+      "closed": true
+    },
+    {
+      "atMs": 287947,
+      "method": "GET",
+      "episodeId": "one-piece-1001",
+      "resourceKind": "video-file",
+      "resourceHash": "02002343836fbfed",
+      "receiverRequest": false,
+      "range": null,
+      "bytes": 27,
+      "status": 404,
+      "completedAtMs": 287948,
+      "closed": true
+    }
+  ],
+  "states": [
+    {
+      "atMs": 27426,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 600,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 27976,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "BUFFERING",
+      "positionSeconds": 600,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 28984,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 600.428727,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 32484,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 603.614914,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 32995,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 604.12215,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 34001,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 605.154502,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 34987,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 606.129779,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 36031,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 607.143668,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 37009,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 608.146095,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 38012,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 609.149324,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 39009,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 610.157346,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 40026,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 611.160127,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 41009,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 612.165528,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 42134,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 613.277274,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 45500,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 616.576162,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 46083,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 617.233838,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 47064,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 618.225112,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 48084,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 619.240705,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 49089,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 620.246139,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 50117,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 621.257236,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 51217,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 622.373393,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 52125,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 623.276953,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 53117,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 624.280162,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 54169,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 625.296461,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 55158,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 626.303809,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 58580,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 629.710899,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 59212,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 630.336577,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 60175,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 631.335139,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 61183,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 632.343191,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 62298,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 633.356508,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 63200,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 634.357315,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 64210,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 635.359362,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 65333,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 636.474074,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 66233,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 637.378885,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 67270,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 638.394511,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 68278,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 639.413805,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 71750,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 642.865837,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 72306,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 643.465298,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 73333,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 644.480918,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 74333,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 645.491805,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 75375,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 646.499929,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 76375,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 647.506504,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 77362,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 648.508355,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 78400,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 649.523214,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 79372,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 650.535882,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 80394,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 651.527857,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 81391,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 652.534791,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 84843,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 655.969718,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 85416,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 656.565229,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 86441,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 657.585626,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 87444,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 658.596824,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 88449,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 659.602894,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 89455,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 660.618065,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 90507,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 661.631817,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 91611,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 662.744498,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 92499,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 663.645334,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 93491,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 664.639638,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 94507,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 665.653752,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 97932,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 669.092478,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 98555,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 669.694984,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 99566,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 670.714189,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 100574,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 671.726168,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 101571,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 672.735968,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 102599,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 673.741766,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 103641,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 674.755538,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 104624,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 675.764372,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 105649,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 676.772118,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 106640,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 677.787798,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.23000000417232513,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 107705,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 678.832224,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.20999999344348907,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 108740,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 679.846881,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.10000000149011612,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 109740,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 680.824204,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.009999999776482582,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 110687,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 681.830418,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0,
+      "muted": true,
+      "idleReason": null
+    },
+    {
+      "atMs": 111690,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 682.821199,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0,
+      "muted": true,
+      "idleReason": null
+    },
+    {
+      "atMs": 112681,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 683.832064,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0,
+      "muted": true,
+      "idleReason": null
+    },
+    {
+      "atMs": 113710,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 684.844137,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0,
+      "muted": true,
+      "idleReason": null
+    },
+    {
+      "atMs": 114738,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 685.852295,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0,
+      "muted": true,
+      "idleReason": null
+    },
+    {
+      "atMs": 115723,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 686.871299,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.019999999552965164,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 116717,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 687.870035,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.029999999329447746,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 117757,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 688.886744,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 121173,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 692.297604,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 121762,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 692.920174,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 122798,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 693.922831,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 123812,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 694.920418,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 124781,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 695.926812,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 125781,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 696.927477,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 126781,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 697.942911,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 127806,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 698.959241,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 128847,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 699.974476,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 129831,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 700.97744,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 130839,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 701.996812,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 133215,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 704.310757,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 133881,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 705.029516,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 134898,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 706.03905,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 135909,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 707.045789,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 136882,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 708.048437,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 137908,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 709.063052,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 138939,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 710.07104,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 139922,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 711.074251,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 140931,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 712.073012,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 141919,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 713.077699,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 142948,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 714.095475,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 146391,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 717.496756,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 146947,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 718.112647,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 147982,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 719.134603,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 149022,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 720.149815,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 150014,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PLAYING",
+      "positionSeconds": 721.161245,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 150689,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1000",
+      "state": "PAUSED",
+      "positionSeconds": 721.693004,
+      "durationSeconds": 1430.79,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 158896,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 600,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 159124,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 600,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 160138,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "BUFFERING",
+      "positionSeconds": 600,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 161105,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "BUFFERING",
+      "positionSeconds": 600.394839,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 162116,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 601.062949,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 163122,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 602.081632,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 164130,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 603.082921,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 165129,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 604.103256,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 166130,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 605.105148,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 169646,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 608.610392,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 170156,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 609.147087,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 171163,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 610.14942,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 172179,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 611.160823,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 173179,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 612.156879,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 174179,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 613.158812,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 175172,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 614.160675,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 176233,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 615.169201,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 177216,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 616.166136,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 178196,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 617.173845,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 179298,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 618.2916,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 182713,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 621.638421,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 183288,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 622.229454,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 184262,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 623.223,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 185229,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 624.215143,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 186229,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 625.222074,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 187238,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 626.228319,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 188237,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 627.236684,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 189265,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 628.247661,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 190290,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 629.257773,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 191296,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 630.277202,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 192293,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 631.288317,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 195737,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 634.695308,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 196329,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 635.32115,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 197462,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 636.432077,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 198371,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 637.341703,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 199389,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 638.35391,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 200370,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 639.353106,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 201368,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 640.362197,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 202393,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 641.359503,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 203387,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 642.373022,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 204376,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 643.368637,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 205504,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 644.483156,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 208911,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 647.893055,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 209481,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 648.424121,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 210445,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 649.426465,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 211437,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 650.428338,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 212453,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 651.435876,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 213486,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 652.443343,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 214467,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 653.459239,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 215487,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 654.467443,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 216495,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 655.474106,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 217519,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 656.481928,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 218548,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 657.487405,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 222020,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 661.019271,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 222538,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 661.524895,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 223661,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 662.639152,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 224583,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 663.574179,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 225594,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 664.566359,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 226575,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 665.565796,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 227602,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 666.576466,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 228611,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 667.576944,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 229602,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 668.579419,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 230588,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 669.577135,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 231731,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 670.693133,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 235033,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 674.001594,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 235661,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 674.63538,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 236644,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 675.636446,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 237769,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 676.753639,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 238677,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 677.656878,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 239710,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 678.68492,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 240696,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 679.688869,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 241703,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 680.686565,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 242706,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 681.685973,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 243719,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 682.696811,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 244724,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 683.716762,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 248143,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 687.111597,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 248755,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 687.730416,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 249794,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 688.746331,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 250744,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 689.742048,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 251763,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 690.746888,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 252785,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 691.754711,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 253897,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 692.874267,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 254802,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 693.786601,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 255802,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 694.785817,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 256852,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 695.797784,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 257810,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 696.797499,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 261234,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 700.221421,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 261845,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 700.826828,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 262968,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 701.934452,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 263866,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 702.859883,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 264874,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 703.866784,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 265885,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 704.8737,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 266893,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 705.87478,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 267885,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 706.876693,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 269001,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 707.994327,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 269943,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 708.907658,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 270946,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 709.917387,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 274509,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 713.45348,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 274953,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 713.941741,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 275968,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 714.957893,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 276999,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 715.964212,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 278018,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 716.978661,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 279009,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 717.988122,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 280088,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 719.001452,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 281026,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 719.996841,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 282009,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 721.009026,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 283142,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 722.124248,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 284087,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 723.036175,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 287359,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 726.337766,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 287429,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 726.405699,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    {
+      "atMs": 287500,
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 726.473972,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    }
+  ],
+  "diagnostics": [
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "ownership-lost",
+      "appId": null,
+      "receiverSessionDigest": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+      "expectedSessionDigest": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+      "contentDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "resourceHash": null,
+      "episodeId": null,
+      "state": "UNKNOWN",
+      "mediaSessionId": null
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    },
+    {
+      "qaDiagnostic": true,
+      "command": "status",
+      "errorType": "CastError",
+      "frames": [
+        {
+          "file": "<string>",
+          "line": 24,
+          "function": "observed"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 417,
+          "function": "execute"
+        },
+        {
+          "file": "<string>",
+          "line": 66,
+          "function": "phase_refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 312,
+          "function": "refresh"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 277,
+          "function": "query_media"
+        },
+        {
+          "file": "cast-bridge.py",
+          "line": 29,
+          "function": "require"
+        }
+      ]
+    }
+  ],
+  "phaseEvents": [
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323179767.2393,
+      "elapsedMs": 2.837,
+      "atMs": 19800
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323179819.6897,
+      "elapsedMs": 51.451,
+      "atMs": 19853
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323179970.2212,
+      "elapsedMs": 0,
+      "atMs": 20003
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323180123.6907,
+      "elapsedMs": 0,
+      "atMs": 20157
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323180282.7822,
+      "elapsedMs": 3.76,
+      "atMs": 20316
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323180433.172,
+      "elapsedMs": 0,
+      "atMs": 20466
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323180589.0925,
+      "elapsedMs": 2.515,
+      "atMs": 20622
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323180741.9934,
+      "elapsedMs": 2,
+      "atMs": 20775
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323180892.989,
+      "elapsedMs": 0,
+      "atMs": 20926
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323181050.8513,
+      "elapsedMs": 4.001,
+      "atMs": 21084
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323181207.5579,
+      "elapsedMs": 5.002,
+      "atMs": 21241
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323181361.1318,
+      "elapsedMs": 2.593,
+      "atMs": 21394
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323181512.0032,
+      "elapsedMs": 0,
+      "atMs": 21545
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323181668.322,
+      "elapsedMs": 3,
+      "atMs": 21701
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323181819.1616,
+      "elapsedMs": 0,
+      "atMs": 21852
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323181972.2583,
+      "elapsedMs": 0,
+      "atMs": 22005
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323182129.3845,
+      "elapsedMs": 4.001,
+      "atMs": 22162
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323182280.237,
+      "elapsedMs": 0,
+      "atMs": 22313
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323182436.146,
+      "elapsedMs": 3,
+      "atMs": 22469
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323182588.8235,
+      "elapsedMs": 2.018,
+      "atMs": 22622
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323182740.1587,
+      "elapsedMs": 0,
+      "atMs": 22773
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323182900.0005,
+      "elapsedMs": 7.001,
+      "atMs": 22933
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323183050.4548,
+      "elapsedMs": 0,
+      "atMs": 23083
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323183208.6758,
+      "elapsedMs": 4,
+      "atMs": 23242
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323183362.9402,
+      "elapsedMs": 2.994,
+      "atMs": 23396
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323183521.29,
+      "elapsedMs": 7.615,
+      "atMs": 23554
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323183678.8237,
+      "elapsedMs": 6.517,
+      "atMs": 23712
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323183844.8687,
+      "elapsedMs": 14.071,
+      "atMs": 23878
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323183998.9597,
+      "elapsedMs": 3.517,
+      "atMs": 24032
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323184151.3499,
+      "elapsedMs": 0,
+      "atMs": 24184
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323184305.239,
+      "elapsedMs": 0,
+      "atMs": 24338
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323184462.7185,
+      "elapsedMs": 3.075,
+      "atMs": 24496
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323184615.289,
+      "elapsedMs": 1.613,
+      "atMs": 24648
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323184769.2717,
+      "elapsedMs": 1.517,
+      "atMs": 24802
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323184929.4773,
+      "elapsedMs": 8.001,
+      "atMs": 24962
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323185082.1975,
+      "elapsedMs": 1.723,
+      "atMs": 25115
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323185238.5225,
+      "elapsedMs": 4.001,
+      "atMs": 25272
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323185392.943,
+      "elapsedMs": 4.017,
+      "atMs": 25426
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323185548.9485,
+      "elapsedMs": 1.516,
+      "atMs": 25582
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323185704.3506,
+      "elapsedMs": 2,
+      "atMs": 25737
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323185858.8484,
+      "elapsedMs": 3.518,
+      "atMs": 25892
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323186010.185,
+      "elapsedMs": 0,
+      "atMs": 26043
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323186308.164,
+      "elapsedMs": 144.386,
+      "atMs": 26341
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323186988.8606,
+      "elapsedMs": 529.647,
+      "atMs": 27022
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323187353.2563,
+      "elapsedMs": 214.069,
+      "atMs": 27386
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323311282.1177,
+      "elapsedMs": 10.419,
+      "atMs": 151315
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323311348.9011,
+      "elapsedMs": 65.783,
+      "atMs": 151382
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323311499.4705,
+      "elapsedMs": 0,
+      "atMs": 151532
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323311659.281,
+      "elapsedMs": 2,
+      "atMs": 151692
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323311810.5898,
+      "elapsedMs": 0,
+      "atMs": 151844
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323311969.2769,
+      "elapsedMs": 4.515,
+      "atMs": 152002
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323312123.7683,
+      "elapsedMs": 3.997,
+      "atMs": 152157
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323312276.2393,
+      "elapsedMs": 2.001,
+      "atMs": 152309
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323312439.2825,
+      "elapsedMs": 11.686,
+      "atMs": 152472
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323312609.5066,
+      "elapsedMs": 18.286,
+      "atMs": 152643
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323312760.1775,
+      "elapsedMs": 0,
+      "atMs": 152793
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323312917.6362,
+      "elapsedMs": 4.064,
+      "atMs": 152951
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323313073.4155,
+      "elapsedMs": 4.066,
+      "atMs": 153106
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323313224.4375,
+      "elapsedMs": 0,
+      "atMs": 153257
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323313381.4326,
+      "elapsedMs": 3.66,
+      "atMs": 153414
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323313536.4841,
+      "elapsedMs": 4,
+      "atMs": 153569
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323313693.4873,
+      "elapsedMs": 6.001,
+      "atMs": 153726
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323313848.163,
+      "elapsedMs": 4.001,
+      "atMs": 153881
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323313999.4602,
+      "elapsedMs": 0.728,
+      "atMs": 154032
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323314165.5254,
+      "elapsedMs": 12.577,
+      "atMs": 154199
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323314321.1255,
+      "elapsedMs": 2.737,
+      "atMs": 154354
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323314479.412,
+      "elapsedMs": 7.058,
+      "atMs": 154512
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323314632.1353,
+      "elapsedMs": 0,
+      "atMs": 154665
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323314791.3647,
+      "elapsedMs": 5.294,
+      "atMs": 154824
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323314942.0662,
+      "elapsedMs": 0,
+      "atMs": 154975
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323315098.786,
+      "elapsedMs": 4.001,
+      "atMs": 155132
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323315249.8733,
+      "elapsedMs": 0,
+      "atMs": 155283
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323315409.1746,
+      "elapsedMs": 4,
+      "atMs": 155442
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323315575.0066,
+      "elapsedMs": 15.047,
+      "atMs": 155608
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323315728.899,
+      "elapsedMs": 3,
+      "atMs": 155762
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323315881.974,
+      "elapsedMs": 2.039,
+      "atMs": 155915
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323316034.8682,
+      "elapsedMs": 0,
+      "atMs": 156068
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323316192.2993,
+      "elapsedMs": 3,
+      "atMs": 156225
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323316343.5464,
+      "elapsedMs": 0,
+      "atMs": 156377
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323316499.163,
+      "elapsedMs": 2.014,
+      "atMs": 156532
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323316674.398,
+      "elapsedMs": 23.645,
+      "atMs": 156707
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323316830.0913,
+      "elapsedMs": 5.094,
+      "atMs": 156863
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323316986.552,
+      "elapsedMs": 5.143,
+      "atMs": 157020
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323317139.113,
+      "elapsedMs": 2.016,
+      "atMs": 157172
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323317297.0293,
+      "elapsedMs": 5.001,
+      "atMs": 157330
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323317466.104,
+      "elapsedMs": 18.376,
+      "atMs": 157499
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323317700.8135,
+      "elapsedMs": 82.555,
+      "atMs": 157734
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323318577.4744,
+      "elapsedMs": 726.116,
+      "atMs": 158610
+    },
+    {
+      "qaDiagnostic": true,
+      "event": "phase",
+      "phase": "fresh-refresh-return",
+      "command": "load",
+      "atEpochMs": 1792323318838.823,
+      "elapsedMs": 110.891,
+      "atMs": 158872
+    }
+  ],
+  "workerEvents": [
+    {
+      "event": "start",
+      "atMs": 13824,
+      "pid": 76796
+    },
+    {
+      "event": "exit",
+      "atMs": 288027,
+      "pid": 76796,
+      "code": null,
+      "signal": "SIGTERM"
+    }
+  ],
+  "rpc": [
+    {
+      "command": "discover",
+      "atMs": 13815,
+      "pid": null,
+      "ok": true,
+      "elapsedMs": 5858
+    },
+    {
+      "command": "load",
+      "atMs": 19795,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 7593
+    },
+    {
+      "command": "status",
+      "atMs": 27863,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 85
+    },
+    {
+      "command": "status",
+      "atMs": 28864,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 83
+    },
+    {
+      "command": "status",
+      "atMs": 29880,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 782
+    },
+    {
+      "command": "status",
+      "atMs": 30881,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1568
+    },
+    {
+      "command": "status",
+      "atMs": 32897,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 59
+    },
+    {
+      "command": "status",
+      "atMs": 33912,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 59
+    },
+    {
+      "command": "status",
+      "atMs": 34914,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 35921,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 36
+    },
+    {
+      "command": "status",
+      "atMs": 36930,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 37931,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 33
+    },
+    {
+      "command": "status",
+      "atMs": 38944,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 39946,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 40951,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 41971,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 131
+    },
+    {
+      "command": "status",
+      "atMs": 42981,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 756
+    },
+    {
+      "command": "status",
+      "atMs": 43991,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1418
+    },
+    {
+      "command": "status",
+      "atMs": 46001,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 46
+    },
+    {
+      "command": "status",
+      "atMs": 47011,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 48021,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 35
+    },
+    {
+      "command": "status",
+      "atMs": 49032,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 50045,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 51047,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 143
+    },
+    {
+      "command": "status",
+      "atMs": 52062,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 53063,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 54078,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 55091,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 56112,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 772
+    },
+    {
+      "command": "status",
+      "atMs": 57111,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1446
+    },
+    {
+      "command": "status",
+      "atMs": 59112,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 60118,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 61130,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 62141,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 134
+    },
+    {
+      "command": "status",
+      "atMs": 63145,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 64147,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 65163,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 133
+    },
+    {
+      "command": "status",
+      "atMs": 66164,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 67179,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 68202,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 69222,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 769
+    },
+    {
+      "command": "status",
+      "atMs": 70228,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1480
+    },
+    {
+      "command": "status",
+      "atMs": 72251,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 73262,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 74266,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 41
+    },
+    {
+      "command": "status",
+      "atMs": 75280,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 62
+    },
+    {
+      "command": "status",
+      "atMs": 76295,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 77294,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 78302,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 58
+    },
+    {
+      "command": "status",
+      "atMs": 79310,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 43
+    },
+    {
+      "command": "status",
+      "atMs": 80312,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 33
+    },
+    {
+      "command": "status",
+      "atMs": 81322,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 82332,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 768
+    },
+    {
+      "command": "status",
+      "atMs": 83332,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1478
+    },
+    {
+      "command": "status",
+      "atMs": 85352,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 86372,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 87379,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 88382,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 33
+    },
+    {
+      "command": "status",
+      "atMs": 89402,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 90412,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 58
+    },
+    {
+      "command": "status",
+      "atMs": 91426,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 147
+    },
+    {
+      "command": "status",
+      "atMs": 92427,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 93428,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 94442,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 95447,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 766
+    },
+    {
+      "command": "status",
+      "atMs": 96464,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1442
+    },
+    {
+      "command": "status",
+      "atMs": 98477,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 99502,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 100509,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 101522,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 102531,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 103542,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 57
+    },
+    {
+      "command": "status",
+      "atMs": 104552,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 105552,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 106572,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 33
+    },
+    {
+      "command": "status",
+      "atMs": 107583,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 96
+    },
+    {
+      "command": "status",
+      "atMs": 108592,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 121
+    },
+    {
+      "command": "status",
+      "atMs": 109597,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 114
+    },
+    {
+      "command": "status",
+      "atMs": 110603,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 111603,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 112617,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 113631,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 114639,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 115653,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 116653,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 117664,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 60
+    },
+    {
+      "command": "status",
+      "atMs": 118677,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 767
+    },
+    {
+      "command": "status",
+      "atMs": 119692,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1443
+    },
+    {
+      "command": "status",
+      "atMs": 121697,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 40
+    },
+    {
+      "command": "status",
+      "atMs": 122702,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 60
+    },
+    {
+      "command": "status",
+      "atMs": 123702,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 84
+    },
+    {
+      "command": "status",
+      "atMs": 124712,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 125715,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 126731,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 127747,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 128762,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 57
+    },
+    {
+      "command": "status",
+      "atMs": 129764,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 130782,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 131802,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 771
+    },
+    {
+      "command": "status",
+      "atMs": 132803,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 369
+    },
+    {
+      "command": "status",
+      "atMs": 133817,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 134823,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 33
+    },
+    {
+      "command": "status",
+      "atMs": 135830,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 136835,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 137849,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 138853,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 139862,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 140861,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 141867,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 142872,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 41
+    },
+    {
+      "command": "status",
+      "atMs": 143882,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 781
+    },
+    {
+      "command": "status",
+      "atMs": 144883,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1455
+    },
+    {
+      "command": "status",
+      "atMs": 146902,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 147922,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 148937,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 149948,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "pause",
+      "atMs": 150471,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 177
+    },
+    {
+      "command": "disconnect",
+      "atMs": 150729,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 572
+    },
+    {
+      "command": "load",
+      "atMs": 151304,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 7567
+    },
+    {
+      "command": "status",
+      "atMs": 158991,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 104
+    },
+    {
+      "command": "status",
+      "atMs": 159996,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 114
+    },
+    {
+      "command": "status",
+      "atMs": 161012,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 61
+    },
+    {
+      "command": "status",
+      "atMs": 162014,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 57
+    },
+    {
+      "command": "status",
+      "atMs": 163025,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 60
+    },
+    {
+      "command": "status",
+      "atMs": 164037,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 165042,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 166047,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 57
+    },
+    {
+      "command": "status",
+      "atMs": 167072,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 743
+    },
+    {
+      "command": "status",
+      "atMs": 168081,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1534
+    },
+    {
+      "command": "status",
+      "atMs": 170098,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 171101,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 172112,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 173112,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 174114,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 175117,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 176122,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 54
+    },
+    {
+      "command": "status",
+      "atMs": 177122,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 178128,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 179132,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 138
+    },
+    {
+      "command": "status",
+      "atMs": 180152,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 743
+    },
+    {
+      "command": "status",
+      "atMs": 181163,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1522
+    },
+    {
+      "command": "status",
+      "atMs": 183167,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 83
+    },
+    {
+      "command": "status",
+      "atMs": 184172,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 58
+    },
+    {
+      "command": "status",
+      "atMs": 185172,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 186179,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 187182,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 188192,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 189202,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 190215,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 191231,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 192243,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 193246,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 744
+    },
+    {
+      "command": "status",
+      "atMs": 194252,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1450
+    },
+    {
+      "command": "status",
+      "atMs": 196277,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 197292,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 131
+    },
+    {
+      "command": "status",
+      "atMs": 198292,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 59
+    },
+    {
+      "command": "status",
+      "atMs": 199294,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 68
+    },
+    {
+      "command": "status",
+      "atMs": 200302,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 36
+    },
+    {
+      "command": "status",
+      "atMs": 201312,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 202315,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 55
+    },
+    {
+      "command": "status",
+      "atMs": 203322,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 34
+    },
+    {
+      "command": "status",
+      "atMs": 204322,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 205331,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 142
+    },
+    {
+      "command": "status",
+      "atMs": 206345,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 757
+    },
+    {
+      "command": "status",
+      "atMs": 207352,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1543
+    },
+    {
+      "command": "status",
+      "atMs": 209381,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 54
+    },
+    {
+      "command": "status",
+      "atMs": 210382,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 211382,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 212392,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 213398,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 214412,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 215425,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 216429,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 217432,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 218442,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 219453,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 769
+    },
+    {
+      "command": "status",
+      "atMs": 220464,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1539
+    },
+    {
+      "command": "status",
+      "atMs": 222482,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 223498,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 131
+    },
+    {
+      "command": "status",
+      "atMs": 224512,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 45
+    },
+    {
+      "command": "status",
+      "atMs": 225522,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 226522,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 227531,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 228532,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 229532,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 230532,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 231552,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 134
+    },
+    {
+      "command": "status",
+      "atMs": 232572,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 783
+    },
+    {
+      "command": "status",
+      "atMs": 233587,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1420
+    },
+    {
+      "command": "status",
+      "atMs": 235592,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 236592,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 237612,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 132
+    },
+    {
+      "command": "status",
+      "atMs": 238613,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 239631,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 59
+    },
+    {
+      "command": "status",
+      "atMs": 240639,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 241641,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 242642,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 243652,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 244657,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 46
+    },
+    {
+      "command": "status",
+      "atMs": 245672,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 742
+    },
+    {
+      "command": "status",
+      "atMs": 246672,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1440
+    },
+    {
+      "command": "status",
+      "atMs": 248684,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 249692,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 60
+    },
+    {
+      "command": "status",
+      "atMs": 250692,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 251698,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 33
+    },
+    {
+      "command": "status",
+      "atMs": 252712,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 253732,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 131
+    },
+    {
+      "command": "status",
+      "atMs": 254742,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 255742,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 29
+    },
+    {
+      "command": "status",
+      "atMs": 256752,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 257752,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 258752,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 783
+    },
+    {
+      "command": "status",
+      "atMs": 259762,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1458
+    },
+    {
+      "command": "status",
+      "atMs": 261782,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 262802,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 132
+    },
+    {
+      "command": "status",
+      "atMs": 263812,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 264822,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 265828,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 266830,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 267831,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 268852,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 117
+    },
+    {
+      "command": "status",
+      "atMs": 269863,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 270872,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 271882,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 768
+    },
+    {
+      "command": "status",
+      "atMs": 272884,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1590
+    },
+    {
+      "command": "status",
+      "atMs": 274897,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 275911,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 32
+    },
+    {
+      "command": "status",
+      "atMs": 276915,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 61
+    },
+    {
+      "command": "status",
+      "atMs": 277929,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 60
+    },
+    {
+      "command": "status",
+      "atMs": 278942,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 279947,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 35
+    },
+    {
+      "command": "status",
+      "atMs": 280949,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 35
+    },
+    {
+      "command": "status",
+      "atMs": 281964,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "status",
+      "atMs": 282981,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 131
+    },
+    {
+      "command": "status",
+      "atMs": 283992,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 56
+    },
+    {
+      "command": "status",
+      "atMs": 284998,
+      "pid": 76796,
+      "ok": false,
+      "code": "cast-status-not-fresh",
+      "elapsedMs": 739
+    },
+    {
+      "command": "status",
+      "atMs": 285738,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 1598
+    },
+    {
+      "command": "status",
+      "atMs": 287362,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 31
+    },
+    {
+      "command": "status",
+      "atMs": 287429,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 30
+    },
+    {
+      "command": "disconnect",
+      "atMs": 287501,
+      "pid": 76796,
+      "ok": true,
+      "elapsedMs": 420
+    }
+  ],
+  "cleanup": {
+    "castClosed": true,
+    "listenersClosed": true,
+    "preparedEngineStopped": true,
+    "temporaryMdnsStopped": true
+  },
+  "receiver": {
+    "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+    "name": "Bedroom TV",
+    "model": "BRAVIA VU31",
+    "owned": false,
+    "busy": false,
+    "available": true
+  },
+  "castPresentation": {
+    "mode": "prepared-mp4",
+    "durationSeconds": 1430.79,
+    "containerDurationSeconds": 1430.789705,
+    "selected": {
+      "audioIndex": 2,
+      "subtitleIndex": 0,
+      "audioLanguage": "jpn",
+      "subtitleLanguage": "eng"
+    }
+  },
+  "returnEvidence": {
+    "before": {
+      "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+      "owned": true,
+      "episodeId": "one-piece-1001",
+      "state": "PLAYING",
+      "positionSeconds": 726.337766,
+      "durationSeconds": 1419.04,
+      "subtitleEnabled": true,
+      "volume": 0.05000000074505806,
+      "muted": false,
+      "idleReason": null
+    },
+    "returned": {
+      "lease": {
+        "sessionId": "5ff79386-54b7-40f9-a3ca-d2a5c875ae65",
+        "deviceId": "technical-cast-test",
+        "destination": "local",
+        "generation": 1,
+        "authorityEpoch": 4,
+        "revision": 218,
+        "expiresAt": 1792323567426,
+        "updatedAt": 1792323447887
+      },
+      "positionSeconds": 726.473972,
+      "episodeId": "one-piece-1001"
+    }
+  },
+  "storage": {
+    "usedBytes": 4298832529,
+    "projectedBytes": 4298832529,
+    "limitBytes": 21474836480,
+    "scope": "entire production-media including preserved pilot copies; separate runtime roots are not a production quota proof"
+  },
+  "observationAcceptance": {
+    "bothTimedWindowsCompleted": true,
+    "naturalTransitionProvedByThisRun": false,
+    "seekPerformanceProvedByThisRun": false,
+    "humanConfirmationStillSeparate": true
+  },
+  "preparedPilot": {
+    "kind": "test-only-two-prepared-items",
+    "newOriginalDownloads": 0,
+    "productionStaticTransport": false,
+    "startedAt": "2026-10-18T11:32:39.997Z",
+    "handoffEvidence": "prepared-mp4-2026-10-18T11-15-45-793Z-80ecd8.json",
+    "assetRunId": "2026-10-18T10-56-02-456Z-317aea",
+    "episodes": [
+      {
+        "episode": 1000,
+        "videoBytes": 737980951,
+        "videoSha256FromPriorValidatedHandoff": "0b96bcf9a820609b2e98619c4100cef9f78195366109a9baed30131b159cff36",
+        "videoSizeRechecked": true,
+        "fullVideoShaRecomputed": false,
+        "originalSelected": {
+          "audioIndex": 1,
+          "subtitleIndex": 2,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "derivedSelected": {
+          "audioIndex": 2,
+          "subtitleIndex": 0,
+          "tracks": [
+            {
+              "index": 2,
+              "type": "audio",
+              "language": "jpn",
+              "codec": "aac"
+            },
+            {
+              "index": 0,
+              "type": "subtitle",
+              "language": "eng",
+              "codec": "webvtt",
+              "fullEnglish": true,
+              "external": true
+            }
+          ]
+        },
+        "captionBytes": 14478,
+        "captionSha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+        "handoffCaptionSha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+        "canonicalCueCount": 233,
+        "canonicalCueTextAndTimingEqual": true,
+        "captionDelivery": "Jellyfin-served external English bytes verified and retained in bounded RAM"
+      },
+      {
+        "episode": 1001,
+        "videoBytes": 1323099843,
+        "videoSha256FromPriorValidatedHandoff": "5e39a25fce57721bcf1806d94532e3d05baeda608a1f80c29863035cdb00df14",
+        "videoSizeRechecked": true,
+        "fullVideoShaRecomputed": false,
+        "originalSelected": {
+          "audioIndex": 2,
+          "subtitleIndex": 4,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        },
+        "derivedSelected": {
+          "audioIndex": 2,
+          "subtitleIndex": 0,
+          "tracks": [
+            {
+              "index": 2,
+              "type": "audio",
+              "language": "jpn",
+              "codec": "aac"
+            },
+            {
+              "index": 0,
+              "type": "subtitle",
+              "language": "eng",
+              "codec": "webvtt",
+              "fullEnglish": true,
+              "external": true
+            }
+          ]
+        },
+        "captionBytes": 20618,
+        "captionSha256": "07b6573849c913e8f44c46db919d840da5bf5a2f510a3e48f2da35e3fe9499d6",
+        "handoffCaptionSha256": "07b6573849c913e8f44c46db919d840da5bf5a2f510a3e48f2da35e3fe9499d6",
+        "canonicalCueCount": 328,
+        "canonicalCueTextAndTimingEqual": true,
+        "captionDelivery": "Jellyfin-served external English bytes verified and retained in bounded RAM"
+      }
+    ],
+    "preflightRanges": [
+      {
+        "episode": 1000,
+        "start": 0,
+        "bytes": 65536,
+        "status": 206,
+        "byteIdenticalToPreparedFile": true,
+        "sha256": "f695b08f954ef987931bb30c3803cf55fd444d00e8f0827872c6666949fdc5c5"
+      },
+      {
+        "episode": 1000,
+        "start": 368990475,
+        "bytes": 65536,
+        "status": 206,
+        "byteIdenticalToPreparedFile": true,
+        "sha256": "8f991208bbfba816b953902f8f6d72cb9894d03426af9f60080a06e9604ca4f7"
+      },
+      {
+        "episode": 1000,
+        "start": 737915415,
+        "bytes": 65536,
+        "status": 206,
+        "byteIdenticalToPreparedFile": true,
+        "sha256": "6fabcf7f275fa7c70ede6e9db923943bafb6ba25ceb07fc4618e88ac20902b17"
+      },
+      {
+        "episode": 1001,
+        "start": 0,
+        "bytes": 65536,
+        "status": 206,
+        "byteIdenticalToPreparedFile": true,
+        "sha256": "86a26fca9d9f86577650b7e220387f797354bcc2d4acf49de32a3f4f0cea6de9"
+      },
+      {
+        "episode": 1001,
+        "start": 661549921,
+        "bytes": 65536,
+        "status": 206,
+        "byteIdenticalToPreparedFile": true,
+        "sha256": "e4f51072f99cba6850963a58642d66a714961d8ab0f45ea10781b770540e1265"
+      },
+      {
+        "episode": 1001,
+        "start": 1323034307,
+        "bytes": 65536,
+        "status": 206,
+        "byteIdenticalToPreparedFile": true,
+        "sha256": "e749843825add0b0c9d43aae36a4f848cc4f6ae56fbf37d4c781ed6399d07d4b"
+      }
+    ],
+    "requests": [
+      {
+        "sessionId": "preflight",
+        "episode": 1000,
+        "start": 0,
+        "end": 65535,
+        "expectedBytes": 65536,
+        "status": 206,
+        "receivedBytes": 65536,
+        "complete": true,
+        "cancelled": false
+      },
+      {
+        "sessionId": "preflight",
+        "episode": 1000,
+        "start": 368990475,
+        "end": 369056010,
+        "expectedBytes": 65536,
+        "status": 206,
+        "receivedBytes": 65536,
+        "complete": true,
+        "cancelled": false
+      },
+      {
+        "sessionId": "preflight",
+        "episode": 1000,
+        "start": 737915415,
+        "end": 737980950,
+        "expectedBytes": 65536,
+        "status": 206,
+        "receivedBytes": 65536,
+        "complete": true,
+        "cancelled": false
+      },
+      {
+        "sessionId": "preflight",
+        "episode": 1001,
+        "start": 0,
+        "end": 65535,
+        "expectedBytes": 65536,
+        "status": 206,
+        "receivedBytes": 65536,
+        "complete": true,
+        "cancelled": false
+      },
+      {
+        "sessionId": "preflight",
+        "episode": 1001,
+        "start": 661549921,
+        "end": 661615456,
+        "expectedBytes": 65536,
+        "status": 206,
+        "receivedBytes": 65536,
+        "complete": true,
+        "cancelled": false
+      },
+      {
+        "sessionId": "preflight",
+        "episode": 1001,
+        "start": 1323034307,
+        "end": 1323099842,
+        "expectedBytes": 65536,
+        "status": 206,
+        "receivedBytes": 65536,
+        "complete": true,
+        "cancelled": false
+      },
+      {
+        "sessionId": "5ff79386-54b7-40f9-a3ca-d2a5c875ae65",
+        "episode": 1000,
+        "start": 0,
+        "end": 737980950,
+        "expectedBytes": 737980951,
+        "status": 206,
+        "receivedBytes": 7389184,
+        "complete": false,
+        "cancelled": true
+      },
+      {
+        "sessionId": "5ff79386-54b7-40f9-a3ca-d2a5c875ae65",
+        "episode": 1000,
+        "start": 320077824,
+        "end": 737980950,
+        "expectedBytes": 417903127,
+        "status": 206,
+        "receivedBytes": 90849280,
+        "complete": false,
+        "cancelled": true
+      },
+      {
+        "sessionId": "5ff79386-54b7-40f9-a3ca-d2a5c875ae65",
+        "episode": 1001,
+        "start": 0,
+        "end": 1323099842,
+        "expectedBytes": 1323099843,
+        "status": 206,
+        "receivedBytes": 7766016,
+        "complete": false,
+        "cancelled": true
+      },
+      {
+        "sessionId": "5ff79386-54b7-40f9-a3ca-d2a5c875ae65",
+        "episode": 1001,
+        "start": 585826304,
+        "end": 1323099842,
+        "expectedBytes": 737273539,
+        "status": 206,
+        "receivedBytes": 145292998,
+        "complete": false,
+        "cancelled": true
+      }
+    ],
+    "cleanup": {
+      "shutdownRequested": true,
+      "ownedProcessExit": {
+        "code": 0,
+        "signal": null
+      },
+      "noOwnedProcess": true,
+      "noListener": true,
+      "noMediaChildren": true
+    },
+    "process": {
+      "pid": 79196,
+      "identity": true,
+      "onlyLoopback": true,
+      "noOwnedProcess": false,
+      "noListener": false,
+      "noMediaChildren": true
+    }
+  },
+  "completedAt": "2026-10-18T11:37:31.151Z",
+  "elapsedMs": 291184,
+  "outcome": "passed",
+  "requestSummary": {
+    "requests": 7,
+    "bytes": 250284025,
+    "receiverRequests": 6,
+    "episodes": {
+      "one-piece-1000": {
+        "playlists": 0,
+        "segments": 0,
+        "videoFiles": 2,
+        "subtitles": 1
+      },
+      "one-piece-1001": {
+        "playlists": 0,
+        "segments": 0,
+        "videoFiles": 2,
+        "subtitles": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "candidate": "4de71152f25208902c4d05a17366fc4046f13bd15a81d81c8042f89b06e4c1b1",
+  "diagnosticsStartedAt": "2026-10-18T11:39:21.065Z",
+  "recordedAt": "2026-10-18T11:50:17.536Z",
+  "sequences": {
+    "1000": [
+      {
+        "step": "paused600",
+        "at": "2026-10-18T11:42:06.977Z",
+        "video": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 600,
+          "readyState": 4
+        }
+      },
+      {
+        "step": "nativeArrowLeft",
+        "video": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 585.692102,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "pageArrowLeft",
+        "video": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 575.692102,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "pageRapidPlayPause",
+        "video": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 575.692102,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "nativeRapidPlayPause",
+        "video": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 575.692102,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "fiveRapidPageArrowRight",
+        "video": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 625.692102,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "lateSeekRecovered",
+        "video": {
+          "duration": 1430.789705,
+          "error": 0,
+          "paused": true,
+          "position": 1416.481807,
+          "readyState": 4
+        }
+      }
+    ],
+    "1001": [
+      {
+        "step": "paused600",
+        "video": {
+          "duration": 1419.041917,
+          "error": 0,
+          "paused": true,
+          "position": 600,
+          "readyState": 4
+        }
+      },
+      {
+        "step": "nativeArrowLeft",
+        "video": {
+          "duration": 1419.041917,
+          "error": 0,
+          "paused": true,
+          "position": 585.80958,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "pageArrowLeft",
+        "video": {
+          "duration": 1419.041917,
+          "error": 0,
+          "paused": true,
+          "position": 575.80958,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "fiveRapidArrows",
+        "video": {
+          "duration": 1419.041917,
+          "error": 0,
+          "paused": true,
+          "position": 625.80958,
+          "readyState": 1
+        }
+      },
+      {
+        "step": "immediatePlay",
+        "video": {
+          "duration": 1419.041917,
+          "error": 0,
+          "paused": false,
+          "position": 625.822419,
+          "readyState": 4
+        }
+      }
+    ]
+  },
+  "logs": [
+    {
+      "level": "info",
+      "message": "ONE_PIECE_PLAYER_DIAGNOSTIC {\"source\":\"play\",\"type\":\"none\",\"details\":\"NotAllowedError\",\"fatal\":false,\"videoErrorCode\":0,\"positionSeconds\":0,\"readyState\":1,\"paused\":true,\"seeking\":false}",
+      "timestamp": "2026-10-18T11:39:21.628Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"first-frame\",\"elapsedMs\":1110.9,\"mediaTime\":0,\"frameCount\":1,\"paused\":true,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:39:22.619Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":85.53,\"mediaTime\":599.975,\"frameCount\":2,\"paused\":true,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:40:18.847Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":6346.5,\"mediaTime\":625.709,\"frameCount\":4,\"paused\":false,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:42:13.818Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1000,\"event\":\"seek-frame\",\"elapsedMs\":65.166,\"mediaTime\":1416.458,\"frameCount\":652,\"paused\":true,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:43:58.772Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"first-frame\",\"elapsedMs\":105.2,\"mediaTime\":0.041,\"frameCount\":1,\"paused\":false,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:44:11.711Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame\",\"elapsedMs\":1314.6,\"mediaTime\":600.975,\"frameCount\":789,\"paused\":false,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:44:44.987Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame\",\"elapsedMs\":232.658,\"mediaTime\":599.974,\"frameCount\":1233,\"paused\":true,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:45:04.733Z"
+    },
+    {
+      "level": "info",
+      "message": "ONE_PIECE_REVIEW_FRAME {\"episode\":1001,\"event\":\"seek-frame\",\"elapsedMs\":686,\"mediaTime\":625.791,\"frameCount\":1234,\"paused\":true,\"seeking\":false,\"englishTrackReadyState\":2,\"englishTrackMode\":\"showing\"}",
+      "timestamp": "2026-10-18T11:45:14.487Z"
+    }
+  ],
+  "limitation": "The 6346.5 ms completion interval includes paused dwell; observer omitted frames seen while seeking. Retained without performance-pass inference. No decoder error observed during these sequences."
+}

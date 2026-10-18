@@ -1,0 +1,17 @@
+# Rapid playback interruption: bounded diagnosis
+
+Status: **unresolved actual playback failure; web frozen**. This record separates a corrected play-promise rejection from a persistent decode failure. It is not a root-cause or acceptance claim.
+
+Reproduced candidate: `0be193f44d499edf42a8c95bc9f511aca76330b9a08e4f7fbb6c5fe8d4e86126`. Evidence was captured by the parent in Chrome using real cached episode 1000 through the development-only scoped media harness. Identity/progress were synthetic; media and selected subtitle delivery were real. The designer inspected the retained JSON, and did not perform the browser reproduction. Later candidate `12254809a5d182d347e4263eee652ebf34bc77523e0e78a90903a2a3f4faf01f` enables an explicit native-MP4 comparison; it has not been browser-tested by this lane and does not erase this failure.
+
+| Evidence | What it establishes |
+|---|---|
+| `evidence/actual-keyboard-routing.json`, candidate 21c687… | Native ArrowLeft moved 1% of duration; page ArrowLeft moved exactly 10 seconds. Immediate page/native Space toggles occurred once. |
+| `evidence/rapid-seek-interruption.json`, candidate 21c687… | A rapid play/pause/seek sequence emitted an unhandled play AbortError and later showed interruption at saved 9:35 with the video removed. It did not establish that the promise rejection caused the interruption. |
+| `evidence/rapid-seek-diagnosis.json`, current 0be193… | The reproduction captured nonfatal autoplay NotAllowedError at 10:50:09.307Z and native MediaError code 3 at 10:50:45.361Z, position 575.692, paused=true, seeking=false, readyState 4. Captured error entries were empty, and no HLS diagnostic appeared before removal. |
+
+The current result supports the narrow play-promise fix: the expected play/pause AbortError was no longer unhandled in the repeated scenario. It also shows that the actual decode failure remains. Native MediaError code 3 identifies the decoder failure category; it does not identify malformed timestamps, a demux fault, an invalid encoded sample, a browser/MSE state failure, or any particular production mode as its cause. No captured HLS diagnostic is an instrumentation observation, not proof that HLS was uninvolved. The parent's preceding 206 responses establish successful range responses, not correct media bytes or decodability.
+
+The parent owns the next measured comparison: fully prepared MP4/mature-engine playback versus the present HLS path, followed where useful by a forced compatible H.264 encode versus stream copy of the same episode and matching interactions. Record actual modes, position/actions, selected tracks, native error state and sanitized HLS events. Change one delivery variable at a time; retain source, audio/subtitles and the pause/seek sequence. The comparison has not yet been performed in this design lane.
+
+No speculative recovery, codec choice or automatic mode fallback has been implemented. The later frontend enablement adds explicit delivery-MIME routing and a development-only presented-frame observer, not an architecture decision or a decoder fix. Web remains frozen, 36 unit regressions pass, and no additional visual cycle is claimed. Dependable-playback acceptance and the final candidate-bound packet remain pending until the measured failure is resolved and the resulting candidate is checked again.

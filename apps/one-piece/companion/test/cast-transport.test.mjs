@@ -1,0 +1,301 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import { PassThrough,Writable } from 'node:stream';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { CastPythonTransport } from '../src/cast.mjs';
+
+function childFixture(handler){
+  const child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.killed=false;
+  child.stdin=new Writable({write(chunk,_encoding,done){queueMicrotask(()=>handler(JSON.parse(chunk.toString()),child));done();}});
+  child.kill=()=>{if(!child.killed){child.killed=true;child.emit('exit',0);}};
+  return child;
+}
+test('capability URL stays on private stdin and never appears in executable arguments or worker environment',async()=>{
+  const marker='https://onepiece.local:8796/m/'+ 'Q'.repeat(32)+'/one-piece-0001/L3ZpZGVv';let invocation,received;
+  const child=childFixture((request,worker)=>{received=request;worker.stdout.write(JSON.stringify({id:request.id,ok:true,result:{owned:true}})+'\n');});
+  const transport=new CastPythonTransport({mediaOrigins:['https://onepiece.local:8796'],spawnImpl:(...args)=>{invocation=args;return child;}});
+  try{
+    assert.deepEqual(await transport.request('load',{episode:{mediaUrl:marker}}),{owned:true});
+    assert.equal(received.episode.mediaUrl,marker);
+    assert.equal(JSON.stringify(invocation).includes('Q'.repeat(32)),false);
+    assert.equal(invocation[2].windowsHide,true);assert.deepEqual(invocation[2].stdio,['pipe','pipe','pipe']);
+    assert.equal(invocation[2].env.ONE_PIECE_CAST_CONFIG.includes('allowHttpMedia":false'),true);
+  }finally{transport.close();}
+});
+test('malformed worker output terminates the owned subprocess and fails pending work without raw diagnostics',async()=>{
+  const child=childFixture((_request,worker)=>worker.stdout.write('not JSON, potentially sensitive\n'));
+  const transport=new CastPythonTransport({mediaOrigins:['https://onepiece.local'],spawnImpl:()=>child});
+  await assert.rejects(transport.request('status'),{code:'cast-unavailable'});assert.equal(child.killed,true);transport.close();
+});
+test('arbitrary worker errors containing media URLs are replaced by a safe error code',async()=>{
+  const child=childFixture((request,worker)=>worker.stdout.write(JSON.stringify({id:request.id,ok:false,error:'load failed https://onepiece.local/m/private-capability'})+'\n'));
+  const transport=new CastPythonTransport({mediaOrigins:['https://onepiece.local'],spawnImpl:()=>child});
+  try{await assert.rejects(transport.request('load'),error=>error.code==='cast-unavailable'&&!error.message.includes('http'));}finally{transport.close();}
+});
+test('Python never auto-launches a media app during foreign status inspection, and session identity gates ownership',t=>{
+  const script=String.raw`
+import importlib.util, json, sys
+from types import SimpleNamespace
+spec=importlib.util.spec_from_file_location('cast_worker',sys.argv[1]); module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+worker=module.Worker.__new__(module.Worker);worker.receiver_app='CC1AD845';worker.backdrop='E8C28D3C'
+class Wait:
+    def __init__(self,*_): self.callback=lambda *_args:None
+    def wait_response(self): pass
+worker.wait_response=Wait
+class Media:
+    def update_status(self,**_): raise AssertionError('Would auto-launch the media receiver')
+foreign=SimpleNamespace(status=SimpleNamespace(app_id='UNRELATED',session_id='foreign'),socket_client=SimpleNamespace(receiver_controller=SimpleNamespace(update_status=lambda **_:None)),media_controller=Media())
+worker.refresh(foreign)
+url='https://onepiece.local/m/'+('A'*32)+'/one-piece-0001/L3ZpZGVv'
+entry={'episodeId':'one-piece-0001','mediaUid':'fixture-uid','durationSeconds':1500}
+binding={'receiverSession':'ours','media':{module.digest(url):entry},'queued':None}
+status=SimpleNamespace(app_id='CC1AD845',session_id='ours',volume_level=0.4,volume_muted=False)
+media=SimpleNamespace(content_id=url,current_time=12,player_state='PLAYING',current_subtitle_tracks=[1],idle_reason=None)
+cast=SimpleNamespace(status=status,media_controller=SimpleNamespace(status=media))
+assert worker.owned(cast,binding)
+state=worker.state('fixture',cast,binding);assert state['positionSeconds']==12 and 'http' not in json.dumps(state)
+for tracks,enabled in [(None,False),([],False),([1],True)]:
+    media.current_subtitle_tracks=tracks
+    assert worker.state('fixture',cast,binding)['subtitleEnabled'] is enabled
+status.session_id='another';assert not worker.owned(cast,binding)
+state=worker.state('fixture',cast,binding);assert state['positionSeconds'] is None and not state['owned']
+events=[]
+from uuid import UUID
+identifier=UUID('7bca3240-e383-4cb0-a18b-24eaa6aa1591')
+stale=SimpleNamespace(socket_client=SimpleNamespace(is_connected=False),disconnect=lambda:events.append('old disconnected'))
+fresh=SimpleNamespace(uuid=identifier,name='Fixture TV',socket_client=SimpleNamespace(is_connected=True,receiver_controller=SimpleNamespace()),status=SimpleNamespace(app_id=None),cast_info=SimpleNamespace(model_name='Fixture'),wait=lambda **_:events.append('wait'),disconnect=lambda:events.append('new disconnected'))
+fresh.media_controller=SimpleNamespace(register_status_listener=lambda _:None)
+worker.devices={str(identifier):stale};worker.bindings={};worker.media_receipts={};worker.media_listeners={};worker.raw_media={}
+worker.pc=SimpleNamespace(get_chromecasts=lambda **_:([fresh],'browser'),stop_discovery=lambda _:events.append('discovery stopped'))
+worker.refresh=lambda *_args,**_kwargs:events.append('refreshed while discovery active')
+result=worker.discover();assert result[0]['busy'] is False and worker.devices[str(identifier)] is fresh
+assert events.index('refreshed while discovery active') < events.index('discovery stopped')
+print('Python ownership and foreign-app status fixtures passed')
+`;
+  const result=spawnSync('python',['-c',script,fileURLToPath(new URL('../src/cast-bridge.py',import.meta.url))],{encoding:'utf8',windowsHide:true,timeout:10000});
+  if(result.error?.code==='ENOENT'){t.skip('Python runtime unavailable for isolated worker fixture');return;}
+  assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/fixtures passed/);
+});
+
+test('Python accepts fresh unsolicited media status, rejects stale/foreign state, and retries bounded load timeouts with safe cleanup',t=>{
+ const script=String.raw`
+import importlib.util,sys
+from types import SimpleNamespace
+spec=importlib.util.spec_from_file_location('cast_worker',sys.argv[1]);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+clock=[100.0];module.time.monotonic=lambda:clock[0];module.time.sleep=lambda seconds:clock.__setitem__(0,clock[0]+seconds)
+class Timeout(Exception): pass
+class Disconnected(Exception): pass
+class Failed(Exception): pass
+url='https://onepiece.local/m/'+('A'*32)+'/one-piece-0001/L3ZpZGVv'
+context={'uid':'viewer','sessionId':'session-fixture','generation':1,'authorityEpoch':1}
+episode={'episodeId':'one-piece-0001','mediaUid':'00000000-0000-4000-8000-000000000001','durationSeconds':1500,'contentType':'video/mp4','mediaUrl':url,'subtitleUrl':url}
+class Wait:
+    def __init__(self,*_): self.callback=lambda *_args:None
+    def wait_response(self):
+        if worker.timeout_next:
+            worker.timeout_next=False
+            raise Timeout()
+        if worker.failed_next or worker.failed_forever:
+            worker.failed_next=False
+            if worker.failed_foreign:cast.status.app_id='FOREIGN_APP';cast.status.session_id='foreign'
+            raise Failed()
+class Media:
+    def __init__(self):
+        self.status=SimpleNamespace(content_id=url,current_time=600,player_state='PLAYING',current_subtitle_tracks=[1],idle_reason=None,media_session_id=5)
+        self.mode='fresh';self.updates=0;self.stops=0;self.loads=0;self.listener=None;self.raw=None
+    def register_status_listener(self,value): self.listener=value
+    def receive_message(self,_message,data):
+        rows=data.get('status',[])
+        if rows:
+            item=rows[0];self.status.content_id=(item.get('media') or {}).get('contentId',self.status.content_id)
+            self.status.media_session_id=item.get('mediaSessionId',self.status.media_session_id);self.status.player_state=item.get('playerState',self.status.player_state)
+        self.listener.new_media_status(self.status)
+    @property
+    def is_active(self):return 'urn:x-cast:com.google.cast.media' in cast.socket_client.app_namespaces
+    def update_status(self,**_):raise AssertionError('Status must never use an auto-launching controller method')
+    def send_message_nocheck(self,data,**_):
+        assert data=={'type':'GET_STATUS'}
+        self.updates+=1
+        if self.mode=='disconnect-notification':
+            self.status.content_id=None;self.status.media_session_id=None;self.status.player_state='UNKNOWN';self.listener.new_media_status(self.status)
+            return
+        if self.mode=='fresh' or (self.mode=='second-fresh' and self.updates>1):
+            if self.raw is not None:self.receive_message(None,self.raw)
+            else:self.receive_message(None,{'type':'MEDIA_STATUS','status':[{'mediaSessionId':self.status.media_session_id,'playerState':self.status.player_state,'media':{'contentId':self.status.content_id}}]})
+    def play_media(self,*_args,**_kwargs):
+        self.loads+=1
+        if self.mode=='load-rejected':raise Failed()
+        cast.status.app_id='CC1AD845';cast.status.session_id='ours'
+        if self.mode=='receiver-timeout-once':worker.timeout_next=True;self.mode='fresh'
+        if self.mode in ('receiver-failed-once','receiver-failed-forever','receiver-failed-foreign'):
+            worker.failed_next=True;worker.failed_forever=self.mode=='receiver-failed-forever';worker.failed_foreign=self.mode=='receiver-failed-foreign';self.mode='fresh'
+        if self.mode in ('reconnect-once','reconnect-forever','reconnect-foreign'):
+            worker.disconnect_mode=self.mode;self.mode='fresh'
+    def stop(self,**_): self.stops+=1
+def fixture():
+    global worker,cast
+    worker=module.Worker.__new__(module.Worker);worker.receiver_app='CC1AD845';worker.backdrop='E8C28D3C';worker.wait_response=Wait;worker.request_timeout=Timeout;worker.status_failed=Failed;worker.connection_errors=(Disconnected,);worker.timeout_next=False;worker.disconnect_mode=None;worker.failed_next=False;worker.failed_forever=False;worker.failed_foreign=False
+    worker.devices={};worker.bindings={};worker.media_receipts={};worker.media_listeners={};worker.raw_media={};worker.origins={'https://onepiece.local'}
+    def receiver_update(**_):
+        mode=worker.disconnect_mode
+        if mode:
+            if mode!='reconnect-forever':worker.disconnect_mode=None
+            if mode=='reconnect-foreign':cast.status.app_id='FOREIGN_APP';cast.status.session_id='foreign'
+            raise Disconnected()
+        receiver.receive_message(None,{'type':'RECEIVER_STATUS','status':{'applications':[{'appId':cast.status.app_id,'sessionId':cast.status.session_id,'transportId':cast.status.transport_id,'namespaces':[{'name':'urn:x-cast:com.google.cast.media'}]}]}})
+    media=Media();receiver=SimpleNamespace(update_status=receiver_update,receive_message=lambda *_args:True,send_message=lambda *_args,**_kwargs:None)
+    cast=SimpleNamespace(status=SimpleNamespace(app_id='CC1AD845',session_id='ours',transport_id='transport-ours',volume_level=.4,volume_muted=False),socket_client=SimpleNamespace(receiver_controller=receiver,is_connected=True,is_stopped=False,app_namespaces=['urn:x-cast:com.google.cast.media'],destination_id='transport-ours'),media_controller=media)
+    worker.devices['fixture']=cast;worker.device=lambda _:cast;worker.observe_media('fixture',cast)
+    return media
+media=fixture();worker.refresh(cast);assert worker.media_receipts['fixture']['version']==1
+# One unanswered query is retried read-only inside the same freshness window.
+media=fixture();media.mode='second-fresh';began=clock[0];worker.refresh(cast)
+assert media.updates==2 and .75<=clock[0]-began<1
+# A new listener receipt works without a request-id callback.
+assert worker.state('fixture',cast,{'receiverSession':'ours','media':{module.digest(url):episode},'queued':None})['owned']
+media.mode='stale';began=clock[0];before_updates=media.updates
+try:worker.refresh(cast);raise AssertionError('Unchanged cached PLAYING was accepted')
+except module.CastError as error:assert str(error)=='cast-status-not-fresh'
+assert 3 <= clock[0]-began < 3.1
+assert media.updates-before_updates==4
+media.mode='disconnect-notification'
+try:worker.refresh(cast);raise AssertionError('Local channel-reset callback accepted as actual receiver status')
+except module.CastError as error:assert str(error)=='cast-status-not-fresh'
+media.status.content_id=url;media.status.media_session_id=5;media.status.player_state='PLAYING'
+# A fresh status from a different receiver session never grants old ownership.
+binding={'receiverSession':'ours','context':context,'media':{module.digest(url):episode},'queued':None};worker.bindings['fixture']=binding
+cast.status.session_id='foreign';media.mode='fresh'
+try:worker.admitted({'receiverId':'fixture','context':context});raise AssertionError('Foreign session accepted')
+except module.CastError as error:assert str(error)=='cast-ownership-lost'
+assert media.stops==0
+cast.status.app_id='FOREIGN_APP';before=media.updates;worker.refresh(cast);assert media.updates==before
+# An absent namespace or disconnected socket cannot trigger an implicit app launch.
+for changed_key,changed_value in [('app_namespaces',[]),('is_connected',False),('is_stopped',True)]:
+    media=fixture();original=getattr(cast.socket_client,changed_key);setattr(cast.socket_client,changed_key,changed_value)
+    before=media.updates
+    try:worker.refresh(cast);raise AssertionError('Unavailable media namespace queried')
+    except module.CastError as error:assert str(error)=='cast-status-not-fresh'
+    assert media.updates==before
+    setattr(cast.socket_client,changed_key,original)
+# One lost status response is retried inside the finite LOAD window.
+for mode in ['second-fresh','receiver-timeout-once','reconnect-once','receiver-failed-once']:
+    media=fixture();cast.status.app_id=worker.backdrop;media.mode=mode;began=clock[0]
+    state=worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600})
+    assert state['owned'] and state['state']=='PLAYING' and clock[0]-began<18
+    assert worker.bindings['fixture']['receiverSession']=='ours'
+    assert media.loads==1
+# A full real-shaped raw status proves the exact loaded media and current session.
+valid_raw={'type':'MEDIA_STATUS','status':[{'mediaSessionId':5,'playerState':'PLAYING','currentTime':600,
+    'activeTrackIds':[1],'media':{'contentId':url,'contentType':'video/mp4','duration':1500,'streamType':'BUFFERED'}}]}
+media=fixture();cast.status.app_id=worker.backdrop;media.raw=valid_raw
+state=worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600})
+assert state['owned'] and state['state']=='PLAYING' and media.loads==1
+assert worker.recent_admitted(cast,worker.bindings['fixture'])
+assert worker.execute('status',{'receiverId':'fixture','context':context})['owned']
+assert worker.execute('disconnect',{'receiverId':'fixture','context':context})['disconnected'] and media.stops==1
+# The parser legitimately preserves cached fields on empty/partial updates. None
+# of these NEW raw receipts proves that the cached content is actually playing.
+for bad_raw in [
+    {'type':'MEDIA_STATUS','status':[]},
+    {'type':'MEDIA_STATUS','status':[{'mediaSessionId':999,'playerState':'PLAYING'}]},
+    {'type':'MEDIA_STATUS','status':[{'mediaSessionId':5,'playerState':'PLAYING','media':[]}]},
+]:
+    media=fixture();cast.status.app_id=worker.backdrop;media.raw=bad_raw;began=clock[0]
+    try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Cached fields confirmed LOAD')
+    except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+    assert 18<=clock[0]-began<18.2 and media.loads==1 and media.stops==0
+    for operation in ['status','disconnect']:
+        media=fixture();media.raw=bad_raw
+        binding={'receiverSession':'ours','context':context,'media':{module.digest(url):episode},'queued':None};worker.bindings['fixture']=binding
+        try:worker.execute(operation,{'receiverId':'fixture','context':context});raise AssertionError('Cached fields admitted '+operation)
+        except module.CastError as error:assert str(error)=='cast-status-not-fresh'
+        assert media.stops==0
+    media=fixture();media.raw=bad_raw
+    binding={'receiverSession':'ours','context':context,'media':{module.digest(url):episode},'queued':None};worker.bindings['fixture']=binding
+    try:worker.wait_state('fixture',cast,binding,lambda state:state['owned'] and state['state']=='PLAYING');raise AssertionError('Cached fields confirmed a command')
+    except module.CastError as error:assert str(error)=='cast-status-not-fresh'
+    # Cached old content cannot bypass takeover. Two proven empty observations
+    # still permit LOAD, but they cannot confirm its eventual playback.
+    media=fixture();media.raw=bad_raw;worker.bindings['fixture']={'receiverSession':'ours','context':context,'media':{module.digest(url):episode},'queued':None}
+    try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Cached fields bypassed takeover')
+    except module.CastError as error:assert str(error)==('cast-load-not-confirmed' if not bad_raw['status'] else 'cast-tv-busy')
+    assert media.loads==(1 if not bad_raw['status'] else 0) and media.stops==0
+# A read-only platform rejection stays bounded; a LOAD rejection is not retried.
+media=fixture();cast.status.app_id=worker.backdrop;media.mode='receiver-failed-forever';began=clock[0]
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Failed status accepted')
+except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+assert 18<=clock[0]-began<18.2 and media.loads==1
+media=fixture();cast.status.app_id=worker.backdrop;media.mode='load-rejected'
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Rejected LOAD accepted')
+except Failed:pass
+assert media.loads==1
+media=fixture();cast.status.app_id=worker.backdrop;media.mode='receiver-failed-foreign'
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Foreign app accepted after failed status')
+except module.CastError as error:assert str(error)=='cast-ownership-lost'
+assert media.loads==1 and media.stops==0
+# A callback without a new raw RECEIVER_STATUS is not fresh LOAD admission.
+media=fixture();cast.status.app_id=worker.backdrop;cast.socket_client.receiver_controller.receive_message=lambda *_args:True;began=clock[0]
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Callback-only platform status accepted')
+except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+assert 18<=clock[0]-began<18.2 and media.loads==1
+# A prolonged disconnected socket is bounded, and reconnecting to foreign content
+# never converts old cached PLAYING into ownership or re-sends the original LOAD.
+media=fixture();cast.status.app_id=worker.backdrop;media.mode='reconnect-forever';began=clock[0]
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Disconnected load accepted')
+except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+assert 18<=clock[0]-began<18.2
+media=fixture();cast.status.app_id=worker.backdrop;media.mode='reconnect-foreign'
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Foreign app accepted after reconnect')
+except module.CastError as error:assert str(error)=='cast-ownership-lost'
+assert media.stops==0
+# Failure retains the captured receiver session so cleanup can stop ONLY that session.
+media=fixture();cast.status.app_id=worker.backdrop;media.mode='stale';began=clock[0]
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600});raise AssertionError('Stale load accepted')
+except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+assert 18<=clock[0]-began<21.1
+assert worker.bindings['fixture']['receiverSession']=='ours'
+media.mode='fresh';result=worker.execute('disconnect',{'receiverId':'fixture','context':context});assert result['disconnected'] and media.stops==1
+# Empty Default Receiver admission requires two new raw observations, never cached emptiness.
+media=fixture();media.status.content_id=None;media.status.media_session_id=None;media.status.player_state='UNKNOWN';media.raw={'type':'MEDIA_STATUS','status':[]}
+assert worker.empty_default(cast)
+for item in [
+    {'mediaSessionId':7,'playerState':'PLAYING','media':{'contentId':url}},
+    {'mediaSessionId':7,'playerState':'PAUSED','media':{'contentId':url}},
+    {'playerState':'UNKNOWN','loadingItemId':9},
+    {'playerState':'IDLE','items':[{'itemId':3}]},
+    {'playerState':'IDLE','extendedStatus':{'playerState':'LOADING'}},
+    {'playerState':'IDLE','extendedStatus':[]},
+    {'playerState':'IDLE','media':''},
+]:
+    media.raw={'type':'MEDIA_STATUS','status':[item]};assert not worker.empty_default(cast)
+media.raw={'type':'MEDIA_STATUS','status':[]};assert worker.empty_default(cast)
+media.mode='stale';assert not worker.empty_default(cast)
+media.mode='fresh';cast.status.app_id='FOREIGN_APP';before=media.updates;assert not worker.empty_default(cast);assert media.updates==before
+# Recent command proof requires actual raw platform AND media receipt, not just
+# a successful callback or unchanged controller PLAYING fields.
+media=fixture();binding={'receiverSession':'ours','context':context,'media':{module.digest(url):episode},'queued':None};worker.bindings['fixture']=binding
+worker.refresh(cast);worker.platform_receipts['fixture']={'version':0};assert not worker.recent_admitted(cast,binding)
+platform={'type':'RECEIVER_STATUS','status':{'applications':[{'appId':'CC1AD845','sessionId':'ours','transportId':'transport-ours','namespaces':[{'name':'urn:x-cast:com.google.cast.media'}]}]}}
+cast.socket_client.receiver_controller.receive_message(None,platform)
+assert worker.recent_admitted(cast,binding)
+before=media.updates;worker.admitted({'receiverId':'fixture','context':context});assert media.updates==before
+for container,key,value in [(media.status,'content_id','foreign-content'),(media.status,'media_session_id',999),(media.status,'player_state','UNKNOWN'),(cast.status,'session_id','foreign'),(cast.socket_client,'is_connected',False),(cast.socket_client,'is_stopped',True),(cast.socket_client,'app_namespaces',[]),(cast.socket_client,'destination_id','foreign-transport')]:
+    original=getattr(container,key);setattr(container,key,value)
+    assert not worker.recent_admitted(cast,binding),(key,value)
+    setattr(container,key,original)
+changed_context={**context,'authorityEpoch':2}
+try:worker.admitted({'receiverId':'fixture','context':changed_context});raise AssertionError('Changed context accepted recent proof')
+except module.CastError as error:assert str(error)=='cast-ownership-lost'
+worker.raw_media['fixture']['version']+=1;assert not worker.recent_admitted(cast,binding)
+worker.raw_media['fixture']['version']-=1
+clock[0]+=1.01;assert not worker.recent_admitted(cast,binding)
+# A new media receipt does not make old platform proof fresh.
+media.send_message_nocheck({'type':'GET_STATUS'});assert not worker.recent_admitted(cast,binding)
+print('Freshness, timeout and owned-cleanup fixtures passed')
+`;
+ const result=spawnSync('python',['-c',script,fileURLToPath(new URL('../src/cast-bridge.py',import.meta.url))],{encoding:'utf8',windowsHide:true,timeout:10000});
+ if(result.error?.code==='ENOENT'){t.skip('Python runtime unavailable for isolated worker fixture');return;}
+ assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/fixtures passed/);
+});

@@ -1,0 +1,253 @@
+{
+  "candidate": "4de71152f25208902c4d05a17366fc4046f13bd15a81d81c8042f89b06e4c1b1",
+  "records": [
+    {
+      "kind": "title-search",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final4de711-state-title-search-desktop-unsettled.png",
+      "capturedAt": "2026-10-18T11:23:50.047Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "observedMarker": "A Risky Invitation A Plot To Eliminate Queen",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": false,
+      "accepted": false,
+      "reason": "DOM result was ready beneath a stale painted account dialog; invalid visual evidence."
+    },
+    {
+      "kind": "title-search",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final4de711-state-title-search-mobile-unsettled.png",
+      "capturedAt": "2026-10-18T11:24:29.589Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "c2a6a7126b2a6973198c2a2697a857c4b9cd6ad59f193d91e5fa9812d97b7fdf",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "observedMarker": "A Risky Invitation A Plot To Eliminate Queen",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": true,
+      "accepted": false,
+      "reason": "DOM result was ready beneath a stale painted account dialog; invalid visual evidence."
+    },
+    {
+      "kind": "missing",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final4de711-state-missing-desktop-unsettled.png",
+      "capturedAt": "2026-10-18T11:23:00.666Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "5305ec6ec457a1a62b1ba809885aee3e3961e5b88c8c1a0bdac9fa7f5b16596f",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "observedMarker": "Episode 590 is missing.",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": false,
+      "accepted": false,
+      "reason": "Independent pixel inspection found an outgoing or incomplete painted state."
+    },
+    {
+      "kind": "end",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final4de711-state-end-desktop-unsettled.png",
+      "capturedAt": "2026-10-18T11:23:01.964Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "5723b0199dfad290f3e6d313d500399b3f6e593e10bb69e7f528bb04b44dc564",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1085",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "observedMarker": "Through episode 1085.",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": false,
+      "accepted": false,
+      "reason": "Independent pixel inspection found an outgoing or incomplete painted state."
+    },
+    {
+      "kind": "remote",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final4de711-state-remote-mobile-unsettled.png",
+      "capturedAt": "2026-10-18T11:24:00.499Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "observedMarker": "Bedroom TV",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": true,
+      "accepted": false,
+      "reason": "Independent pixel inspection found an outgoing or incomplete painted state."
+    },
+    {
+      "kind": "offline",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final4de711-state-offline-mobile-unsettled.png",
+      "capturedAt": "2026-10-18T11:24:00.995Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "observedMarker": "Connect to watch",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": false,
+      "accepted": false,
+      "reason": "Independent pixel inspection found an outgoing or incomplete painted state."
+    },
+    {
+      "kind": "missing",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final4de711-state-missing-mobile-unsettled.png",
+      "capturedAt": "2026-10-18T11:24:14.475Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "7d27ffa4f10749d6d57e7964a8afecc588622cf94596fbdbc11183f9087c3f07",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "observedMarker": "Episode 590 is missing.",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": false,
+      "accepted": false,
+      "reason": "Independent pixel inspection found an outgoing or incomplete painted state."
+    },
+    {
+      "kind": "end",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final4de711-state-end-mobile-unsettled.png",
+      "capturedAt": "2026-10-18T11:24:15.771Z",
+      "diagnosticsStartedAt": "2026-10-18T11:20:34.590Z",
+      "sha256": "4f9c7b91bfa4daa02ba6324e9d2301fbd95dd674294913d55ce7d9cf15bef25f",
+      "facts": {
+        "brokenImages": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1085",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "observedMarker": "Through episode 1085.",
+      "checks": {
+        "state_identity": false,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "fixtureBanner": true,
+      "parentVisualInspected": false,
+      "accepted": false,
+      "reason": "Independent pixel inspection found an outgoing or incomplete painted state."
+    }
+  ]
+}

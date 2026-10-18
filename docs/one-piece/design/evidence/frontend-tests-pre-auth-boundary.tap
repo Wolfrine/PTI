@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: numbered search retains the unavailable 590 and source boundary without duplicates
+ok 1 - numbered search retains the unavailable 590 and source boundary without duplicates
+  ---
+  duration_ms: 4.1814
+  ...
+# Subtest: title search needs both an explicit spoiler preference and verified provenance
+ok 2 - title search needs both an explicit spoiler preference and verified provenance
+  ---
+  duration_ms: 0.4072
+  ...
+# Subtest: continue respects the latest intentional rewind instead of maximum position
+ok 3 - continue respects the latest intentional rewind instead of maximum position
+  ---
+  duration_ms: 0.5292
+  ...
+# Subtest: corrupt local caches cannot invent episodes or poison a resumed event
+ok 4 - corrupt local caches cannot invent episodes or poison a resumed event
+  ---
+  duration_ms: 0.6945
+  ...
+# Subtest: renewing an expiring local stream preserves pause state while explicit starts may play
+ok 5 - renewing an expiring local stream preserves pause state while explicit starts may play
+  ---
+  duration_ms: 0.2389
+  ...
+# Subtest: control client sends identity only to the fixed HTTPS origin, without cookies or cache
+ok 6 - control client sends identity only to the fixed HTTPS origin, without cookies or cache
+  ---
+  duration_ms: 40.9477
+  ...
+# Subtest: an expired Firebase token is refreshed once and the same event is retried
+ok 7 - an expired Firebase token is refreshed once and the same event is retried
+  ---
+  duration_ms: 1.4476
+  ...
+# Subtest: native video Space and Arrow events never receive an additional app action or cancellation
+ok 8 - native video Space and Arrow events never receive an additional app action or cancellation
+  ---
+  duration_ms: 0.952
+  ...
+# Subtest: page-level arrows still seek exactly ten seconds and Space toggles once
+ok 9 - page-level arrows still seek exactly ten seconds and Space toggles once
+  ---
+  duration_ms: 0.758
+  ...
+# Subtest: native video retains nonoverlapping K/F app shortcuts
+ok 10 - native video retains nonoverlapping K/F app shortcuts
+  ---
+  duration_ms: 0.483
+  ...
+# Subtest: interactive controls, dialogs, modifiers and other routes retain ownership of their keys
+ok 11 - interactive controls, dialogs, modifiers and other routes retain ownership of their keys
+  ---
+  duration_ms: 0.6309
+  ...
+# Subtest: page-level Cast shortcuts retain receiver controls and seek bounds
+ok 12 - page-level Cast shortcuts retain receiver controls and seek bounds
+  ---
+  duration_ms: 0.3093
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 192.4139

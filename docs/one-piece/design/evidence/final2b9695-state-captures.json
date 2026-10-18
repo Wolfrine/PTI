@@ -1,0 +1,866 @@
+{
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "source": "Actual Chrome CUA captures; diagnostics initialized before first route; each preparation and paired AX/screenshot in separate calls",
+  "content": "Exact production catalogue; synthetic labelled identity/progress/devices; no media or engine requests",
+  "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+  "records": [
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "library",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-library-desktop.png",
+      "sha256": "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+      "axFile": "final2b9695-state-library-desktop.ax.txt",
+      "axSha256": "d71542f809fb0d861b3a28d78bf8d93ab2d9de60d61b9dc3f7b197d30e5ebe12",
+      "capturedAt": "2026-10-18T12:04:28.326Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Continue watching",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "fresh",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-fresh-desktop.png",
+      "sha256": "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+      "axFile": "final2b9695-state-fresh-desktop.ax.txt",
+      "axSha256": "23e8eaa38260e0e488c81545aafec54b78df1edefdd5e131dc3c4cdeff9ae8d4",
+      "capturedAt": "2026-10-18T12:04:39.313Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Start watching",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "remote",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-remote-desktop.png",
+      "sha256": "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+      "axFile": "final2b9695-state-remote-desktop.ax.txt",
+      "axSha256": "dcccafcdeecce205df19a0c35b7c1c6e12fc98c4cb9da292e7aeef6e111e4969",
+      "capturedAt": "2026-10-18T12:04:44.130Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Bedroom TV (fixture)",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "preparing",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-preparing-desktop.png",
+      "sha256": "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+      "axFile": "final2b9695-state-preparing-desktop.ax.txt",
+      "axSha256": "2e604baf0a33d733c6feaf076121b7b6db879a00f18d25a8e1f78af428b57670",
+      "capturedAt": "2026-10-18T12:04:57.575Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Downloading episode",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Getting your\nepisode ready.",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "offline",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-offline-desktop.png",
+      "sha256": "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+      "axFile": "final2b9695-state-offline-desktop.ax.txt",
+      "axSha256": "ebccc8eec79487f1c43c06fe94b271c9565e934c5f45e75e770fe482ac5515f5",
+      "capturedAt": "2026-10-18T12:05:02.315Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Connect to watch",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "empty",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-empty-desktop.png",
+      "sha256": "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+      "axFile": "final2b9695-state-empty-desktop.ax.txt",
+      "axSha256": "6517f0a3d3ee660aa1b321a072d8f51682e35f0a2e3e0c5c3ef07958efb2f793",
+      "capturedAt": "2026-10-18T12:05:06.932Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "No episode found.",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "not-an-episode",
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "disconnect-unconfirmed",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-disconnect-unconfirmed-desktop.png",
+      "sha256": "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+      "axFile": "final2b9695-state-disconnect-unconfirmed-desktop.ax.txt",
+      "axSha256": "2e629e5db76cdb8cc9c749551fe2df8169d2cf12038af452b662372e42010523",
+      "capturedAt": "2026-10-18T12:05:14.295Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Sign out on this device?",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Sign out on this device?",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "unsupported-delivery",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-unsupported-delivery-desktop.png",
+      "sha256": "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+      "axFile": "final2b9695-state-unsupported-delivery-desktop.ax.txt",
+      "axSha256": "d6a72944edf0f9cae880a95cb52ff3e359bceb0748fbc31d54a6f1f3195b7824",
+      "capturedAt": "2026-10-18T12:05:22.703Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "This video format could not be opened",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "This video format could not be opened",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "missing",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-missing-desktop.png",
+      "sha256": "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+      "axFile": "final2b9695-state-missing-desktop.ax.txt",
+      "axSha256": "54acb14019d45af75281ddb698f6ff6e519c5b3611892fe82afc377597cf4221",
+      "capturedAt": "2026-10-18T12:05:30.261Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Episode 590 is missing.",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Episode 590 is missing.",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "",
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "end",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-end-desktop.png",
+      "sha256": "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+      "axFile": "final2b9695-state-end-desktop.ax.txt",
+      "axSha256": "612b367487e5e162072c7410f41ccf30c020579caec5097e9dc414d87f0d711c",
+      "capturedAt": "2026-10-18T12:05:45.777Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Through episode 1085.",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Through episode 1085.",
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1085",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": null,
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "title-search",
+      "viewport": "desktop",
+      "requestedViewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "file": "final2b9695-state-title-search-desktop.png",
+      "sha256": "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+      "axFile": "final2b9695-state-title-search-desktop.ax.txt",
+      "axSha256": "3bcd3b05147707122fb99a6eafced48317971eec263f8ae36bbab51b61a9bf6e",
+      "capturedAt": "2026-10-18T12:06:01.516Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "A Risky Invitation A Plot To Eliminate Queen",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": "Family viewer",
+        "episodeRows": 1,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 1000,
+        "innerWidth": 1440,
+        "query": "Risky Invitation",
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "library",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-library-mobile.png",
+      "sha256": "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+      "axFile": "final2b9695-state-library-mobile.ax.txt",
+      "axSha256": "e9f6f1156a6227bdc0236ef70ed2e1f3b69a21b8c8e42af78acd9f7fa2d79839",
+      "capturedAt": "2026-10-18T12:06:07.089Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Continue watching",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "fresh",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-fresh-mobile.png",
+      "sha256": "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+      "axFile": "final2b9695-state-fresh-mobile.ax.txt",
+      "axSha256": "3c80e8c97fc25f5ec62e2271ca1207cb9d8748541e36381f32daa0c30989408b",
+      "capturedAt": "2026-10-18T12:06:11.318Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Start watching",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "remote",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-remote-mobile.png",
+      "sha256": "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+      "axFile": "final2b9695-state-remote-mobile.ax.txt",
+      "axSha256": "f88f1ccd41e0771b14ce5d717305389dd7f5bbda91ab6e255873a8b941682b58",
+      "capturedAt": "2026-10-18T12:06:15.926Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Bedroom TV (fixture)",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "preparing",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-preparing-mobile.png",
+      "sha256": "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+      "axFile": "final2b9695-state-preparing-mobile.ax.txt",
+      "axSha256": "d298225d2c5bffe8ee8d68318ad769a71d77e7ddd2cabaab9f312514ae89426d",
+      "capturedAt": "2026-10-18T12:06:26.948Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Downloading episode",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Getting your\nepisode ready.",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "offline",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-offline-mobile.png",
+      "sha256": "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+      "axFile": "final2b9695-state-offline-mobile.ax.txt",
+      "axSha256": "61f62acba31bfa2d263da498f7344bd54c3c43bee68315daa20d57747bb448ef",
+      "capturedAt": "2026-10-18T12:06:31.638Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Connect to watch",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "empty",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-empty-mobile.png",
+      "sha256": "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+      "axFile": "final2b9695-state-empty-mobile.ax.txt",
+      "axSha256": "eb50c46ad3c2245f8ba8b59d0f80bffbd0e201383615c954647cd4f472207749",
+      "capturedAt": "2026-10-18T12:06:47.644Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "No episode found.",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "not-an-episode",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "disconnect-unconfirmed",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-disconnect-unconfirmed-mobile.png",
+      "sha256": "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+      "axFile": "final2b9695-state-disconnect-unconfirmed-mobile.ax.txt",
+      "axSha256": "233910dbada0f6745ea453fc9de218d8bfaf1c76f590079886ba18594c04ae4c",
+      "capturedAt": "2026-10-18T12:07:02.747Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Sign out on this device?",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Sign out on this device?",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "unsupported-delivery",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-unsupported-delivery-mobile.png",
+      "sha256": "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+      "axFile": "final2b9695-state-unsupported-delivery-mobile.ax.txt",
+      "axSha256": "0b20c3198f6c70d7695e10f77b1decf165c142abfabc146e17d15b376f415c20",
+      "capturedAt": "2026-10-18T12:07:08.187Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "This video format could not be opened",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": null,
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "This video format could not be opened",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "missing",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-missing-mobile.png",
+      "sha256": "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+      "axFile": "final2b9695-state-missing-mobile.ax.txt",
+      "axSha256": "a43619b02ba337541da93e842f749481d526760d4a0f0738f9a4140eadbfb95b",
+      "capturedAt": "2026-10-18T12:07:20.148Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Episode 590 is missing.",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Episode 590 is missing.",
+        "episodeRows": 50,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "",
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "end",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-end-mobile.png",
+      "sha256": "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+      "axFile": "final2b9695-state-end-mobile.ax.txt",
+      "axSha256": "89ef79e6e34ce4fb12f4272422aaf0a8778356a22c705ec82d00859cb03b4001",
+      "capturedAt": "2026-10-18T12:07:28.055Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "Through episode 1085.",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": true,
+        "dialogTitle": "Through episode 1085.",
+        "episodeRows": 0,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1085",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": null,
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    },
+    {
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "kind": "title-search",
+      "viewport": "mobile",
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "file": "final2b9695-state-title-search-mobile.png",
+      "sha256": "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+      "axFile": "final2b9695-state-title-search-mobile.ax.txt",
+      "axSha256": "5cb09224e5e7440f48b42386dfbdeb367830801430827530a29bdfd4b64c4bd9",
+      "capturedAt": "2026-10-18T12:07:34.934Z",
+      "diagnosticsStartedAt": "2026-10-18T12:03:58.527Z",
+      "observedMarker": "A Risky Invitation A Plot To Eliminate Queen",
+      "facts": {
+        "brokenImages": 0,
+        "dialogOpen": false,
+        "dialogTitle": "Family viewer",
+        "episodeRows": 1,
+        "fixtureBanner": true,
+        "fontsReady": true,
+        "heading": "Episode 1000",
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "query": "Risky Invitation",
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      },
+      "consoleErrorCount": 0,
+      "personallyViewedBy": "/root/visual_designer",
+      "savedAndEmittedIdenticalBytes": true
+    }
+  ]
+}

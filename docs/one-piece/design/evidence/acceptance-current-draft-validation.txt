@@ -1,0 +1,24 @@
+FAIL: status is not accepted for design completion
+FAIL: unresolved or undeclared blockers
+FAIL: visual_critic has not passed
+FAIL: visual_critic visual overall below 8 or invalid
+FAIL: visual_critic critical visual dimension below 8: Viewing purpose / focal hierarchy
+FAIL: visual_critic critical visual dimension below 8: Sequence and state clarity
+FAIL: visual_critic critical visual dimension below 8: Composition and rhythm
+FAIL: visual_critic critical visual dimension below 8: Typography and material craft
+FAIL: visual_critic critical visual dimension below 8: Product identity and imagery discipline
+FAIL: visual_critic critical visual dimension below 8: Responsive Watch continuity
+FAIL: visual_critic did not identify every reviewed render
+FAIL: visual_critic must identify at least three generic/amateur cues or explicitly resolved cues
+FAIL: parent has not passed
+FAIL: parent visual overall below 8 or invalid
+FAIL: parent critical visual dimension below 8: Viewing purpose / focal hierarchy
+FAIL: parent critical visual dimension below 8: Sequence and state clarity
+FAIL: parent critical visual dimension below 8: Composition and rhythm
+FAIL: parent critical visual dimension below 8: Typography and material craft
+FAIL: parent critical visual dimension below 8: Product identity and imagery discipline
+FAIL: parent critical visual dimension below 8: Responsive Watch continuity
+FAIL: parent did not identify every reviewed render
+FAIL: parent must identify at least three generic/amateur cues or explicitly resolved cues
+FAIL: qa has not passed
+FAIL: qa did not identify every reviewed render

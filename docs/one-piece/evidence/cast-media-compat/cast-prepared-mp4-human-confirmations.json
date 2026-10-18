@@ -1,0 +1,38 @@
+{
+  "kind": "parent-relayed-human-observations-of-actual-prepared-mp4-tv-playback",
+  "earlierHlsObservationsReused": false,
+  "source1": {
+    "episode": 1000,
+    "presentation": "complete prepared static MP4 through the scoped production Cast bridge, with verified Jellyfin external full-English WebVTT",
+    "actualPlayingStartedAt": "2026-10-18T11:33:10.402Z",
+    "untouchedObservationEndedAt": "2026-10-18T11:35:10.425Z",
+    "beforePositionSeconds": 600.428727,
+    "afterPositionSeconds": 721.161245,
+    "englishActiveThroughoutEndpoints": true,
+    "ownerReply": "Japanese audio and English subtitles both work",
+    "questionScope": "Explicit prepared-MP4 episode1000 Japanese dialogue and full-English dialogue subtitles",
+    "replyTiming": "Parent confirmed the human reply arrived during this exact1000 window, before the explicit1001 switch",
+    "exactReplyTimestamp": null,
+    "acceptedForObservedJapaneseAndEnglishPresentation": true
+  },
+  "source2": {
+    "episode": 1001,
+    "actualPlayingStartedAt": "2026-10-18T11:35:25.303Z",
+    "expectedObservationEndAt": "2026-10-18T11:37:25.303Z",
+    "untouchedObservationEndedAt": "2026-10-18T11:37:25.319Z",
+    "beforePositionSeconds": 604.103256,
+    "afterPositionSeconds": 723.036175,
+    "englishActiveThroughoutEndpoints": true,
+    "ownerReply": "Japanese audio and English subtitles both work",
+    "questionScope": "Separate explicit prepared-MP4 episode1001 Japanese dialogue and full-English dialogue subtitles, ending5:07:25pmIST",
+    "replyTiming": "Parent confirmed a separate human reply to the explicit1001 question; this is not source1's reply",
+    "exactReplyTimestamp": null,
+    "acceptedForObservedJapaneseAndEnglishPresentation": true
+  },
+  "limits": [
+    "Human reports are separate from automated receiver telemetry; raw harness listening/visual flags remain false",
+    "This does not establish quantified subtitle synchronization or a complete24-minute episode viewing",
+    "Technical synthetic identities do not verify production Firebase, HTTPS, family authentication or a PWA sender",
+    "The observation replay uses explicit episode selection; natural transition is proven separately in the automated MP4 run"
+  ]
+}

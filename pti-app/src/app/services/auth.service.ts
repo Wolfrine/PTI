@@ -10,6 +10,7 @@ import {
 import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { navigateAfterLogin } from './login-return';
 
 declare global {
     interface Window {
@@ -104,7 +105,7 @@ export class AuthService {
 
             await this.storeUserInFirestore(user);
             this.userSubject.next(user);
-            this.router.navigate([redirectRoute]);
+            navigateAfterLogin(redirectRoute, this.router);
         } catch (error) {
             console.error('Login Error:', error);
         }

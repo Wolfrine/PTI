@@ -24,3 +24,13 @@ wedding-planner/playwright-report/
 wedding-activation-report.json
 wedding-preview.json
 .wedding-qa/
+
+# One Piece: source and sanitized evidence belong in Git; runtime does not.
+apps/one-piece/**/node_modules/
+apps/one-piece/**/.env*
+apps/one-piece/**/runtime/
+apps/one-piece/**/secrets/
+apps/one-piece/**/__pycache__/
+apps/one-piece/**/.pytest_cache/
+!apps/one-piece/companion/src/runtime/
+!apps/one-piece/companion/src/runtime/**

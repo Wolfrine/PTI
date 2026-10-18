@@ -1,0 +1,39 @@
+{
+  "programs": [
+    {
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "start_time": "607.638711",
+          "duration": "3.002989"
+        },
+        {
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "start_time": "607.610000",
+          "duration": "2.833911"
+        }
+      ]
+    }
+  ],
+  "stream_groups": [],
+  "streams": [
+    {
+      "codec_name": "h264",
+      "codec_type": "video",
+      "start_time": "607.638711",
+      "duration": "3.002989"
+    },
+    {
+      "codec_name": "aac",
+      "codec_type": "audio",
+      "start_time": "607.610000",
+      "duration": "2.833911"
+    }
+  ],
+  "format": {
+    "start_time": "607.610000",
+    "duration": "3.031700"
+  }
+}

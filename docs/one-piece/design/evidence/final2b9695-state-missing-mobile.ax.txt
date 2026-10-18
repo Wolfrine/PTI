@@ -1,0 +1,277 @@
+- generic: DEVELOPMENT FIXTURE · Cycle 4 · settings and continuity · Synthetic account, progress and device states.
+- link "Skip to content":
+  - /url: "#main-content"
+- banner:
+  - button "One Piece library":
+    - generic: OP
+    - text: One Piece
+    - generic: FAMILY VIEWING
+  - navigation "Main navigation":
+    - button "Library"
+    - button "Watch"
+  - button "Cast to TV":
+  - button "Account and preferences for Family viewer":
+    - generic: F
+    - generic: Family
+- status
+- main:
+  - paragraph: Continue watching
+  - heading "Episode 1000" [level=1]
+  - paragraph: 10:00 of 24:00·Japanese audio / English subtitles
+  - progressbar "Episode progress"
+  - button "Resume episode":
+    - text: Resume episode
+  - region "All episodes":
+    - heading "All episodes" [level=2]
+    - generic: 1,084 listed
+    - generic: Find an episode number
+    - textbox "Find an episode number":
+      - /placeholder: Find episode number
+    - generic: Episode range
+    - combobox "Episode range":
+      - option "1–50"
+      - option "51–100"
+      - option "101–150"
+      - option "151–200"
+      - option "201–250"
+      - option "251–300"
+      - option "301–350"
+      - option "351–400"
+      - option "401–450"
+      - option "451–500"
+      - option "501–550"
+      - option "551–600" [selected]
+      - option "601–650"
+      - option "651–700"
+      - option "701–750"
+      - option "751–800"
+      - option "801–850"
+      - option "851–900"
+      - option "901–950"
+      - option "951–1000"
+      - option "1001–1050"
+      - option "1051–1085"
+    - status: Episodes 551–600
+    - button "Episode 551":
+      - generic: "0551"
+      - strong: Episode 551
+      - generic: Not watched
+    - button "Episode 552":
+      - generic: "0552"
+      - strong: Episode 552
+      - generic: Not watched
+    - button "Episode 553":
+      - generic: "0553"
+      - strong: Episode 553
+      - generic: Not watched
+    - button "Episode 554":
+      - generic: "0554"
+      - strong: Episode 554
+      - generic: Not watched
+    - button "Episode 555":
+      - generic: "0555"
+      - strong: Episode 555
+      - generic: Not watched
+    - button "Episode 556":
+      - generic: "0556"
+      - strong: Episode 556
+      - generic: Not watched
+    - button "Episode 557":
+      - generic: "0557"
+      - strong: Episode 557
+      - generic: Not watched
+    - button "Episode 558":
+      - generic: "0558"
+      - strong: Episode 558
+      - generic: Not watched
+    - button "Episode 559":
+      - generic: "0559"
+      - strong: Episode 559
+      - generic: Not watched
+    - button "Episode 560":
+      - generic: "0560"
+      - strong: Episode 560
+      - generic: Not watched
+    - button "Episode 561":
+      - generic: "0561"
+      - strong: Episode 561
+      - generic: Not watched
+    - button "Episode 562":
+      - generic: "0562"
+      - strong: Episode 562
+      - generic: Not watched
+    - button "Episode 563":
+      - generic: "0563"
+      - strong: Episode 563
+      - generic: Not watched
+    - button "Episode 564":
+      - generic: "0564"
+      - strong: Episode 564
+      - generic: Not watched
+    - button "Episode 565":
+      - generic: "0565"
+      - strong: Episode 565
+      - generic: Not watched
+    - button "Episode 566":
+      - generic: "0566"
+      - strong: Episode 566
+      - generic: Not watched
+    - button "Episode 567":
+      - generic: "0567"
+      - strong: Episode 567
+      - generic: Not watched
+    - button "Episode 568":
+      - generic: "0568"
+      - strong: Episode 568
+      - generic: Not watched
+    - button "Episode 569":
+      - generic: "0569"
+      - strong: Episode 569
+      - generic: Not watched
+    - button "Episode 570":
+      - generic: "0570"
+      - strong: Episode 570
+      - generic: Not watched
+    - button "Episode 571":
+      - generic: "0571"
+      - strong: Episode 571
+      - generic: Not watched
+    - button "Episode 572":
+      - generic: "0572"
+      - strong: Episode 572
+      - generic: Not watched
+    - button "Episode 573":
+      - generic: "0573"
+      - strong: Episode 573
+      - generic: Not watched
+    - button "Episode 574":
+      - generic: "0574"
+      - strong: Episode 574
+      - generic: Not watched
+    - button "Episode 575":
+      - generic: "0575"
+      - strong: Episode 575
+      - generic: Not watched
+    - button "Episode 576":
+      - generic: "0576"
+      - strong: Episode 576
+      - generic: Not watched
+    - button "Episode 577":
+      - generic: "0577"
+      - strong: Episode 577
+      - generic: Not watched
+    - button "Episode 578":
+      - generic: "0578"
+      - strong: Episode 578
+      - generic: Not watched
+    - button "Episode 579":
+      - generic: "0579"
+      - strong: Episode 579
+      - generic: Not watched
+    - button "Episode 580":
+      - generic: "0580"
+      - strong: Episode 580
+      - generic: Not watched
+    - button "Episode 581":
+      - generic: "0581"
+      - strong: Episode 581
+      - generic: Not watched
+    - button "Episode 582":
+      - generic: "0582"
+      - strong: Episode 582
+      - generic: Not watched
+    - button "Episode 583":
+      - generic: "0583"
+      - strong: Episode 583
+      - generic: Not watched
+    - button "Episode 584":
+      - generic: "0584"
+      - strong: Episode 584
+      - generic: Not watched
+    - button "Episode 585":
+      - generic: "0585"
+      - strong: Episode 585
+      - generic: Not watched
+    - button "Episode 586":
+      - generic: "0586"
+      - strong: Episode 586
+      - generic: Not watched
+    - button "Episode 587":
+      - generic: "0587"
+      - strong: Episode 587
+      - generic: Not watched
+    - button "Episode 588":
+      - generic: "0588"
+      - strong: Episode 588
+      - generic: Not watched
+    - button "Episode 589":
+      - generic: "0589"
+      - strong: Episode 589
+      - generic: Not watched
+    - button "Episode 590, unavailable":
+      - generic: "0590"
+      - strong: Episode 590
+      - generic: Missing from these collections
+      - generic: —
+    - button "Episode 591":
+      - generic: "0591"
+      - strong: Episode 591
+      - generic: Not watched
+    - button "Episode 592":
+      - generic: "0592"
+      - strong: Episode 592
+      - generic: Not watched
+    - button "Episode 593":
+      - generic: "0593"
+      - strong: Episode 593
+      - generic: Not watched
+    - button "Episode 594":
+      - generic: "0594"
+      - strong: Episode 594
+      - generic: Not watched
+    - button "Episode 595":
+      - generic: "0595"
+      - strong: Episode 595
+      - generic: Not watched
+    - button "Episode 596":
+      - generic: "0596"
+      - strong: Episode 596
+      - generic: Not watched
+    - button "Episode 597":
+      - generic: "0597"
+      - strong: Episode 597
+      - generic: Not watched
+    - button "Episode 598":
+      - generic: "0598"
+      - strong: Episode 598
+      - generic: Not watched
+    - button "Episode 599":
+      - generic: "0599"
+      - strong: Episode 599
+      - generic: Not watched
+    - button "Episode 600":
+      - generic: "0600"
+      - strong: Episode 600
+      - generic: Not watched
+    - button "Previous 50":
+      - text: Previous 50
+    - button "Next 50":
+      - text: Next 50
+    - paragraph: Episode 590 is missing. These collections end at 1085.
+- contentinfo:
+  - generic: One Piece, at your pace.
+  - button "Home PC connected":
+    - generic: Home PC connected
+  - button "Install app":
+    - text: Install app
+  - link "Back to PTI":
+    - /url: /home
+    - text: Back to PTI
+- dialog "Episode 590 is missing.":
+  - button "Close" [active]:
+  - paragraph: A gap in the collection
+  - heading "Episode 590 is missing." [level=2]
+  - paragraph: This episode is unavailable in both supplied collections. Playback stops here so nothing is skipped without you choosing.
+  - button "Continue with episode 591":
+    - text: Continue with episode 591
+  - button "Stay here"

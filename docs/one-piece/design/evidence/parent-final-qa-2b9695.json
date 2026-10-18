@@ -1,0 +1,340 @@
+{
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "reviewer": "/root",
+  "role": "parent-ui-qa",
+  "checkedAt": "2026-10-18T12:10:15.543Z",
+  "productionBuild": "apps/one-piece/scripts/build.mjs into actual complete PTI Hosting artifact",
+  "fingerprint": {
+    "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+    "binding": {
+      "schema": 1,
+      "productionAssets": [
+        {
+          "path": "app.css",
+          "sha256": "f62f8ccbfaeb13556b14a7e2f5c3d63370481a4fbbc5aed16b21666fd0ff4035"
+        },
+        {
+          "path": "app.js",
+          "sha256": "02fc82068b94e1f58fed8d4d03bc1693a32495f8d1999fbe6b3b1acf8c54cbff"
+        },
+        {
+          "path": "catalog.json",
+          "sha256": "18de1a533dbc4307b2db2ebf5dcbe715d8233345b4806b7466ef0c7d4834b4cc"
+        },
+        {
+          "path": "household-ca.crt",
+          "sha256": "012f866db1a074cee889e4f5418f30c241a7ef2ab2b66e013b9797090337b76d"
+        },
+        {
+          "path": "icons/icon-192.png",
+          "sha256": "d5d759311dd6ca73265581d3a566862ca88f3f8c0f6ede65f3401c053b55c3ae"
+        },
+        {
+          "path": "icons/icon-512.png",
+          "sha256": "43e584db60fbd828785a4f9f8344d9e6e0c2dd7cdec57bbdcd21c91d569bc123"
+        },
+        {
+          "path": "icons/icon.svg",
+          "sha256": "1a61a4d7c251fe0818d065e99cec3011dc214fc9e10804716b27097eac9e020b"
+        },
+        {
+          "path": "index.html",
+          "sha256": "6e2d7305d115f5af9d9b50e2212c214ffa15e06b4d8b83ddbf4dd9b4ea09b54b"
+        },
+        {
+          "path": "manifest.webmanifest",
+          "sha256": "09fd6204a2feb5209b21475a85422d6b763405593861acb43684b7dc4192e874"
+        },
+        {
+          "path": "sw.js",
+          "sha256": "14a2cdb71705c6dc2dc0e92c432be5bcc8527b20d2c6454e0f6f75d87c734663"
+        }
+      ],
+      "fixture": {
+        "path": "apps/one-piece/web/src/fixture.mjs",
+        "sha256": "afd5af37427331a2e6fb142b060ac763b74aa2fd51df3a52e7fac82ec3d37208"
+      },
+      "reviewObserver": {
+        "path": "apps/one-piece/web/src/review-frames.mjs",
+        "sha256": "6cb70a6f76ba3d84980c14ed19f51758feb6a227c4bd8f94be31b2ba32d77ca9"
+      }
+    }
+  },
+  "personallyInspected": {
+    "nonMedia": 22,
+    "realMedia": 4,
+    "method": "All22 original PNGs opened through view_image; four real native-media states directly inspected via CUA, then saved paired captures."
+  },
+  "verdict": "pass for the inspected desktop/mobile rendered scope",
+  "observations": [
+    "No clipped/overlapping controls or horizontal overflow in inspected states",
+    "Missing590 and end1085 dialogs visible; no silent skip",
+    "Search opt-in returns source-derived1001 title",
+    "Real1000/1001 native video and English dialogue visible at both viewport sizes",
+    "Paused recovered player no longer retains Buffering label; subtitle off/on observed disabled/showing"
+  ],
+  "limitations": [
+    "Synthetic labelled identity/progress/devices in visual fixtures",
+    "No authenticated Google family or physical Android installation claim",
+    "No PC audio listening claim; owner TV language confirmations recorded separately",
+    "This design verdict does not approve unrun duration/runtime/live PTI gates"
+  ],
+  "evidence": [
+    {
+      "file": "final2b9695-state-library-desktop.png",
+      "sha256": "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "library",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-fresh-desktop.png",
+      "sha256": "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "fresh",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-remote-desktop.png",
+      "sha256": "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "remote",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-preparing-desktop.png",
+      "sha256": "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "preparing",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-offline-desktop.png",
+      "sha256": "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "offline",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-empty-desktop.png",
+      "sha256": "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "empty",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-disconnect-unconfirmed-desktop.png",
+      "sha256": "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "disconnect-unconfirmed",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-unsupported-delivery-desktop.png",
+      "sha256": "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "unsupported-delivery",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-missing-desktop.png",
+      "sha256": "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "missing",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-end-desktop.png",
+      "sha256": "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "end",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-title-search-desktop.png",
+      "sha256": "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "title-search",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-library-mobile.png",
+      "sha256": "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "library",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-fresh-mobile.png",
+      "sha256": "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "fresh",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-remote-mobile.png",
+      "sha256": "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "remote",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-preparing-mobile.png",
+      "sha256": "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "preparing",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-offline-mobile.png",
+      "sha256": "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "offline",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-empty-mobile.png",
+      "sha256": "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "empty",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-disconnect-unconfirmed-mobile.png",
+      "sha256": "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "disconnect-unconfirmed",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-unsupported-delivery-mobile.png",
+      "sha256": "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "unsupported-delivery",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-missing-mobile.png",
+      "sha256": "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "missing",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-end-mobile.png",
+      "sha256": "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "end",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-state-title-search-mobile.png",
+      "sha256": "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "title-search",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-media-source1-desktop.png",
+      "sha256": "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "media-1000",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-media-source1-mobile.png",
+      "sha256": "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "media-1000",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-media-source2-mobile.png",
+      "sha256": "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "mobile",
+      "state": "media-1001",
+      "personallyInspected": true
+    },
+    {
+      "file": "final2b9695-media-source2-desktop.png",
+      "sha256": "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67",
+      "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+      "viewport": "desktop",
+      "state": "media-1001",
+      "personallyInspected": true
+    }
+  ],
+  "visualReview": {
+    "reviewer": "/root",
+    "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+    "verdict": "pass",
+    "scores": {
+      "Viewing purpose / focal hierarchy": 8,
+      "Sequence and state clarity": 8,
+      "Composition and rhythm": 8,
+      "Typography and material craft": 8,
+      "Product identity and imagery discipline": 8,
+      "Responsive Watch continuity": 8
+    },
+    "overall": 8,
+    "inspected_sha256": [
+      "287209c41dd372bc9157efe18ef0910dc9dcf41363d7fc004eae40864aafc92d",
+      "facf201212250469ab808c1fef3acdc3d14eb216ddc80bfe8a81f8f424493fb4",
+      "6a6030b3c14c95fa0abc5be94cf77706f5acc6c8f3a7eebceed512b8356bf326",
+      "2a2ec0d4d61ecfd311f3ce38073a5522374adffe975e1b93e67fa4092d81b288",
+      "62455a122459ead1f9c0e485205c4f2cb12c0ae1c53e32c57af9c7653ac64a2e",
+      "c8b65d677156b00ae3aa753000edda6cab356f5e583a7c2034ee84f859cdaa61",
+      "2ebdd970b8d413f4f83b452d4c87ce177a295af308f7cb8e8f6a4fc351cf01ab",
+      "4935582e73320ab8ba85d2a6fef01e8d5a99acecda252ef1933c535724e738f9",
+      "c14cd7a3997f3d740f316544c64f030bdc3ed827e9612faf62d3e3da964c4586",
+      "a65b276e9bc6a8ddd200b64f5ab6fcc470e436a6a60eb0fe884a1aa9f73a0f0d",
+      "c685134a548722fbf9be0bfc6125672cc674efb8cbd01ef025e39acf95e1e6a5",
+      "af2c20ed7d1033882c40a3a02de5ef731cead284e79f626c99dd9f75f77f1502",
+      "e4ddb7c6a9f5bcd80bdedecc1e0b1c7353e886b37a959dbbae82962af1182159",
+      "d101231471aaf9166adc739f403a576edd2ac36ce8ab0ceb70d6b9d998cc41a7",
+      "064885d320f411faee15a1eb4410047fe27f6845bbf3888d93e8730a87a750e4",
+      "c016405204284f2d88f4263a1881e1e6e29ce69a77c9e584ea1d4d268a4fc424",
+      "42c82b3b4a5567d84d3bac766ce9731f8b7e8afaa9a15dd87af7147cd66efdf1",
+      "35b7ca4a2a3a33d571a2c37efbc2b4db470304d4ba9ca76dcfe6ddba2cb5653c",
+      "e6ae203dce9998d9d69f7959ffe9b15de628136dfcfc148bfb0938568ad374a8",
+      "b7c99985c27d1a05f1ddc16a6d730e70dfa6e7fdb28f22ce8e030fdd96d5607b",
+      "1afe0482efce8127d6f0438f96accd17f8e93c3e9eb18d5d170ce09e2348024b",
+      "abcfe975d01d042b418a8dbbf869f0bf16bfca200fc9058edf80738fe78b3032",
+      "7dee6143e39df6a5f600055cefb33d367f63498ef4fb6b2daad0bde356f860b7",
+      "f2684445c4f42f2a994ece14aa9e4df4e934c19741779b4479fc233ffd2ff460",
+      "d3351d3bd3bb4e61440ea29135ed15dcee04a3a1b3a2f688fa441103ac375aa2",
+      "5edf6839ec8443233a8d064fd548b3265c139a207d386e76ae6bef0fb0c35f67"
+    ],
+    "generic_cues": [
+      "Poster/card repetition was resolved with ruled numbered rows and explicit ranges; real optional source titles remain opt-in.",
+      "An inactive oversized TV picture was replaced by a destination-aware remote with readable grouped controls.",
+      "Sparse/error states retain the episode and primary recovery action rather than dropping into an uninformative generic error card."
+    ],
+    "reason": "Parent personally inspected all22 current nonmedia original renders and four real video/English-caption captures. Continue/episode hierarchy, serial rows, state-specific recovery, dialog actions and narrow-screen controls are clear and composed. Actual media captions are readable at desktop/mobile sizes. This is a rendered visual judgment, separate from the QA and unrun product/device gates."
+  }
+}

@@ -1,0 +1,414 @@
+{
+  "timestamp": "2026-10-18T08:04:17.946681+00:00",
+  "experiment": "Real 30-second episode1 Cast pilot with Japanese audio and English WebVTT",
+  "pychromecast_version": "14.0.10",
+  "production_transport_accepted": false,
+  "human_video_observation": "pending",
+  "human_japanese_audio_observation": "pending",
+  "human_subtitle_visibility_and_sync": "pending",
+  "limits": {
+    "seconds": 900,
+    "response_budget_bytes": 104857600,
+    "endpoint": "LAN-only HTTP, RAM-only random scoped capability",
+    "assets": "exact MP4/WebVTT allowlist",
+    "external_exposure_changes": false
+  },
+  "requests": [
+    {
+      "timestamp": "2026-10-18T08:04:20.757476+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=0-31",
+      "status": 206,
+      "response_bytes_reserved": 32,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 32
+    },
+    {
+      "timestamp": "2026-10-18T08:04:20.767635+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=999999999-",
+      "status": 416,
+      "response_bytes_reserved": 0,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 0
+    },
+    {
+      "timestamp": "2026-10-18T08:04:20.767635+00:00",
+      "asset": "english-1.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 663,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 663
+    },
+    {
+      "timestamp": "2026-10-18T08:04:20.767635+00:00",
+      "asset": "episode1.mp4",
+      "method": "HEAD",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 0,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 0
+    },
+    {
+      "timestamp": "2026-10-18T08:04:45.250645+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=0-",
+      "status": 206,
+      "response_bytes_reserved": 3811672,
+      "peer": "receiver",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 3811672
+    },
+    {
+      "timestamp": "2026-10-18T08:04:45.614315+00:00",
+      "asset": "english-1.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 663,
+      "peer": "receiver",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 663
+    }
+  ],
+  "states": [
+    {
+      "timestamp": "2026-10-18T08:04:23.543266+00:00",
+      "label": "initial status, before media launch",
+      "application_id": null,
+      "media_owned_by_pilot": false,
+      "state": "UNKNOWN",
+      "time": 0.0,
+      "adjusted_time": 0.0,
+      "duration": null,
+      "active_track_ids": [],
+      "subtitle_track_count": 0,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T08:04:45.062198+00:00",
+      "label": "Private CA HTTPS .local playing timeout",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "IDLE",
+      "time": 0,
+      "adjusted_time": 0,
+      "duration": null,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 1,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T08:04:46.065029+00:00",
+      "label": "HTTP same .local hostname baseline playing",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 0,
+      "adjusted_time": 0.147482,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T08:04:49.071044+00:00",
+      "label": "HTTP same .local hostname baseline reported progression",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 2.319617,
+      "adjusted_time": 2.781541,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    }
+  ],
+  "commands": [],
+  "cases": [
+    {
+      "transport": "Private CA HTTPS .local",
+      "loaded_playing": false,
+      "load_to_playing_seconds": 20.016
+    },
+    {
+      "transport": "HTTP same .local hostname baseline",
+      "loaded_playing": true,
+      "load_to_playing_seconds": 1.016,
+      "progression_confirmed": true,
+      "english_track_active": true
+    }
+  ],
+  "prepared": {
+    "source": "verified cached Archive episode 1",
+    "source_window_seconds": [
+      600,
+      630
+    ],
+    "preparation_seconds": 2.719,
+    "source_audio_index": 1,
+    "source_audio_language": "jpn",
+    "source_subtitle_index": 2,
+    "source_subtitle_language": "eng",
+    "source_subtitle_title": null,
+    "subtitle_conversion": "ffmpeg ASS to WebVTT, clipped to 600..630 and shifted -600s",
+    "cue_count": 9,
+    "first_cue_seconds": [
+      0,
+      1.0199999999999818
+    ],
+    "last_cue_seconds": [
+      25.269999999999982,
+      29.600000000000023
+    ],
+    "duration_seconds": 30.03003,
+    "clip_bytes": 3811672,
+    "clip_sha256": "6c493ac9c45616a506bb05203f246e4c8f7f45a5b8f6274f0c76ad8ac5dd07ac",
+    "subtitle_bytes": 663,
+    "subtitle_sha256": "8d7c8e69f853f4cdaeca7c8895fe1ab406dd9ed0274986ea61dcd642dba919c0",
+    "streams": [
+      {
+        "codec": "h264",
+        "type": "video",
+        "language": "und",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "codec": "aac",
+        "type": "audio",
+        "language": "jpn",
+        "width": null,
+        "height": null
+      }
+    ]
+  },
+  "response_bytes_reserved": 3813030,
+  "http_self_checks": [
+    {
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=0-31",
+      "status": 206,
+      "bytes": 32,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=999999999-",
+      "status": 416,
+      "bytes": 0,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "english-1.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "bytes": 663,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "episode1.mp4",
+      "method": "HEAD",
+      "range": null,
+      "status": 200,
+      "bytes": 0,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "english-1.vtt",
+      "method": "OPTIONS",
+      "range": null,
+      "status": 204,
+      "bytes": 0,
+      "allow_origin": "https://www.gstatic.com"
+    }
+  ],
+  "tls_pilot": {
+    "hostname": "onepiece-tls.local",
+    "port": 8796,
+    "private_ca_installed": false,
+    "external_dns_account": false,
+    "firewall_changed": false,
+    "admin_enabled": false,
+    "diagnostics": [
+      {
+        "timestamp_unix": 1792310661.5106497,
+        "logger": "tls.cache.maintenance",
+        "message": "started background certificate maintenance"
+      },
+      {
+        "timestamp_unix": 1792310661.511683,
+        "logger": "pki.ca.local",
+        "message": "root certificate trust store installation disabled; unconfigured clients may show warnings"
+      },
+      {
+        "timestamp_unix": 1792310661.5132794,
+        "logger": "http",
+        "message": "enabling automatic TLS certificate management"
+      },
+      {
+        "timestamp_unix": 1792310661.6189876,
+        "logger": "tls.obtain",
+        "message": "acquiring lock"
+      },
+      {
+        "timestamp_unix": 1792310661.8473911,
+        "logger": "tls.obtain",
+        "message": "lock acquired"
+      },
+      {
+        "timestamp_unix": 1792310661.8755465,
+        "logger": "tls.obtain",
+        "message": "obtaining certificate"
+      },
+      {
+        "timestamp_unix": 1792310661.8760731,
+        "logger": "tls.obtain",
+        "message": "trying issuer 1/1"
+      },
+      {
+        "timestamp_unix": 1792310661.89916,
+        "logger": "tls.handshake",
+        "message": "no matching certificates and no custom selection logic"
+      },
+      {
+        "timestamp_unix": 1792310661.8996632,
+        "logger": "tls.handshake",
+        "message": "no matching certificates and no custom selection logic"
+      },
+      {
+        "timestamp_unix": 1792310661.8996694,
+        "logger": "tls.handshake",
+        "message": "no matching certificates and no custom selection logic"
+      },
+      {
+        "timestamp_unix": 1792310661.8996773,
+        "logger": "tls.handshake",
+        "message": "no certificate matching TLS ClientHello"
+      },
+      {
+        "timestamp_unix": 1792310661.8996773,
+        "logger": "http.stdlib",
+        "message": "http: TLS handshake error from [LAN peer]: no certificate available for 'onepiece-tls.local'",
+        "peer": "same PC"
+      },
+      {
+        "timestamp_unix": 1792310662.0760996,
+        "logger": "tls.obtain",
+        "message": "certificate obtained successfully"
+      },
+      {
+        "timestamp_unix": 1792310662.0766878,
+        "logger": "tls.obtain",
+        "message": "releasing lock"
+      },
+      {
+        "timestamp_unix": 1792310662.08494,
+        "logger": "tls.cache",
+        "message": "added certificate to cache"
+      },
+      {
+        "timestamp_unix": 1792310662.2047534,
+        "logger": "tls.handshake",
+        "message": "choosing certificate"
+      },
+      {
+        "timestamp_unix": 1792310662.2047534,
+        "logger": "tls.handshake",
+        "message": "default certificate selection results"
+      },
+      {
+        "timestamp_unix": 1792310662.2047534,
+        "logger": "tls.handshake",
+        "message": "matched certificate in cache"
+      },
+      {
+        "timestamp_unix": 1792310662.2622185,
+        "logger": "tls.handshake",
+        "message": "choosing certificate"
+      },
+      {
+        "timestamp_unix": 1792310662.2622185,
+        "logger": "tls.handshake",
+        "message": "default certificate selection results"
+      },
+      {
+        "timestamp_unix": 1792310662.2622185,
+        "logger": "tls.handshake",
+        "message": "matched certificate in cache"
+      },
+      {
+        "timestamp_unix": 1792310662.2642288,
+        "logger": "http.stdlib",
+        "message": "http: TLS handshake error from [LAN peer]: local error: tls: bad record MAC",
+        "peer": "same PC"
+      }
+    ],
+    "caddy_sha256": "4B709838F21C4A641DF02D4561E2243C100B862011444EBABB1517AC88C11243",
+    "caddy_version": "v2.11.7 h1:yj0Y4fYZGPkSvibBJ1sTWE33xC0fxztVyXEW5iIdUT4=",
+    "runtime_acl_restricted_to_current_user_and_system": true,
+    "configuration_validated": true,
+    "explicit_process_ca_probe": {
+      "accepted": true,
+      "check_hostname": true,
+      "verify_mode": "CERT_REQUIRED",
+      "tls_version": "TLSv1.3",
+      "subject_alt_names": [
+        [
+          "DNS",
+          "onepiece-tls.local"
+        ]
+      ],
+      "issuer": [
+        [
+          [
+            "commonName",
+            "Caddy Local Authority - ECC Intermediate"
+          ]
+        ]
+      ]
+    },
+    "root_ca_certificate_sha256": "307f6a88c652e429513f47b386f761249f52a30d6fe93b91ece7501c3c640489",
+    "root_ca_present_in_windows_root_store": false,
+    "default_pc_trust": {
+      "accepted": false,
+      "error": "SSLCertVerificationError",
+      "verify_code": 20,
+      "verify_message": "unable to get local issuer certificate"
+    },
+    "caddy_stopped": true
+  },
+  "receiver": {
+    "name": "Bedroom TV",
+    "model": "BRAVIA VU31"
+  },
+  "cleanup": "Stopped and quit only the receiver session owned by this pilot",
+  "stopped_at": "2026-10-18T08:04:49.667596+00:00",
+  "ticket_retained": false
+}

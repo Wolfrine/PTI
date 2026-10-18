@@ -1,0 +1,169 @@
+{
+  "kind": "private-prepared-mp4-isolated-jellyfin-handoff",
+  "createdAt": "2026-10-18T11:16:35.706Z",
+  "evidence": "prepared-mp4-2026-10-18T11-15-45-793Z-80ecd8.json",
+  "assetRunId": "2026-10-18T10-56-02-456Z-317aea",
+  "runtimeRoot": "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\isolated-engine\\2026-10-18T11-15-45-793Z-80ecd8",
+  "protectedResumeConfigPath": "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\isolated-engine\\2026-10-18T11-15-45-793Z-80ecd8\\private\\resume-config.json",
+  "executable": "H:\\PTI-OnePiece\\pilot\\jellyfin\\runtime\\jellyfin\\jellyfin.exe",
+  "args": [
+    "--datadir",
+    "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\isolated-engine\\2026-10-18T11-15-45-793Z-80ecd8\\data",
+    "--configdir",
+    "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\isolated-engine\\2026-10-18T11-15-45-793Z-80ecd8\\config",
+    "--cachedir",
+    "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\isolated-engine\\2026-10-18T11-15-45-793Z-80ecd8\\cache",
+    "--logdir",
+    "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\isolated-engine\\2026-10-18T11-15-45-793Z-80ecd8\\logs",
+    "--ffmpeg",
+    "H:\\PTI-OnePiece\\pilot\\jellyfin\\runtime\\jellyfin\\ffmpeg.exe",
+    "--nowebclient",
+    "--nonetchange"
+  ],
+  "loopbackHost": "127.0.0.1",
+  "port": 18106,
+  "library": {
+    "id": "9343c01d3843287967a364aee59accf7",
+    "root": "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\library",
+    "nativePathsRequired": true
+  },
+  "episodes": [
+    {
+      "episode": 1000,
+      "original": {
+        "bytes": 742925306,
+        "md5": "ebeeadb99c7c1f27ba1f90aade7ccce1"
+      },
+      "selected": {
+        "audioIndex": 1,
+        "subtitleIndex": 2,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "durationSeconds": 1430.79,
+      "video": {
+        "itemId": "7bfe8ff5b6339b9b709d51f8ac1917a9",
+        "mediaSourceId": "7bfe8ff5b6339b9b709d51f8ac1917a9",
+        "path": "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\library\\episode-1000\\One Piece 1000.mp4",
+        "bytes": 737980951,
+        "sha256": "0b96bcf9a820609b2e98619c4100cef9f78195366109a9baed30131b159cff36",
+        "metadata": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "index": 0,
+              "codec_name": "h264",
+              "profile": "High",
+              "codec_type": "video",
+              "width": 1280,
+              "height": 720,
+              "pix_fmt": "yuv420p",
+              "level": 40,
+              "start_time": "0.000000",
+              "duration": "1430.722000",
+              "tags": {
+                "language": "und"
+              }
+            },
+            {
+              "index": 1,
+              "codec_name": "aac",
+              "profile": "LC",
+              "codec_type": "audio",
+              "sample_rate": "44100",
+              "channels": 2,
+              "start_time": "0.000000",
+              "duration": "1430.789705",
+              "tags": {
+                "language": "jpn"
+              }
+            }
+          ],
+          "format": {
+            "start_time": "0.000000",
+            "duration": "1430.789705",
+            "size": "737980951"
+          }
+        }
+      },
+      "fullEnglishCaptions": {
+        "bytes": 14478,
+        "cues": 233,
+        "sha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+        "source": "inspected original full-English track; no timing shift",
+        "path": "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\captions\\1000.en.vtt"
+      }
+    },
+    {
+      "episode": 1001,
+      "original": {
+        "bytes": 844716819,
+        "md5": "2610511c93fae62d4791e8284b6b96eb"
+      },
+      "selected": {
+        "audioIndex": 2,
+        "subtitleIndex": 4,
+        "audioLanguage": "jpn",
+        "subtitleLanguage": "eng"
+      },
+      "durationSeconds": 1419.04,
+      "video": {
+        "itemId": "befcca6cb531509d84bc5f96df3354c5",
+        "mediaSourceId": "befcca6cb531509d84bc5f96df3354c5",
+        "path": "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\library\\episode-1001\\One Piece 1001.mp4",
+        "bytes": 1323099843,
+        "sha256": "5e39a25fce57721bcf1806d94532e3d05baeda608a1f80c29863035cdb00df14",
+        "metadata": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "index": 0,
+              "codec_name": "h264",
+              "profile": "Main",
+              "codec_type": "video",
+              "width": 1920,
+              "height": 1080,
+              "pix_fmt": "yuv420p",
+              "level": 40,
+              "start_time": "0.041000",
+              "duration": "1419.000917",
+              "tags": {
+                "language": "und"
+              }
+            },
+            {
+              "index": 1,
+              "codec_name": "aac",
+              "profile": "LC",
+              "codec_type": "audio",
+              "sample_rate": "44100",
+              "channels": 2,
+              "start_time": "0.000000",
+              "duration": "1419.039932",
+              "tags": {
+                "language": "jpn"
+              }
+            }
+          ],
+          "format": {
+            "start_time": "0.000000",
+            "duration": "1419.041917",
+            "size": "1323099843"
+          }
+        }
+      },
+      "fullEnglishCaptions": {
+        "bytes": 20618,
+        "cues": 328,
+        "sha256": "07b6573849c913e8f44c46db919d840da5bf5a2f510a3e48f2da35e3fe9499d6",
+        "source": "inspected original full-English track; no timing shift",
+        "path": "H:\\PTI-OnePiece\\production-media\\prepared-mp4-pilot\\2026-10-18T10-56-02-456Z-317aea\\captions\\1001.en.vtt"
+      }
+    }
+  ],
+  "noCredentialsTokensOrMediaUrls": true,
+  "productionPolicy": false,
+  "actualTvPassed": false
+}

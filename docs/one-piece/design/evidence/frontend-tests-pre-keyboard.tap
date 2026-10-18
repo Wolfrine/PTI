@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: numbered search retains the unavailable 590 and source boundary without duplicates
+ok 1 - numbered search retains the unavailable 590 and source boundary without duplicates
+  ---
+  duration_ms: 3.256
+  ...
+# Subtest: title search needs both an explicit spoiler preference and verified provenance
+ok 2 - title search needs both an explicit spoiler preference and verified provenance
+  ---
+  duration_ms: 0.4837
+  ...
+# Subtest: continue respects the latest intentional rewind instead of maximum position
+ok 3 - continue respects the latest intentional rewind instead of maximum position
+  ---
+  duration_ms: 0.4427
+  ...
+# Subtest: corrupt local caches cannot invent episodes or poison a resumed event
+ok 4 - corrupt local caches cannot invent episodes or poison a resumed event
+  ---
+  duration_ms: 0.7018
+  ...
+# Subtest: renewing an expiring local stream preserves pause state while explicit starts may play
+ok 5 - renewing an expiring local stream preserves pause state while explicit starts may play
+  ---
+  duration_ms: 0.3432
+  ...
+# Subtest: control client sends identity only to the fixed HTTPS origin, without cookies or cache
+ok 6 - control client sends identity only to the fixed HTTPS origin, without cookies or cache
+  ---
+  duration_ms: 33.8149
+  ...
+# Subtest: an expired Firebase token is refreshed once and the same event is retried
+ok 7 - an expired Firebase token is refreshed once and the same event is retried
+  ---
+  duration_ms: 1.9446
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 157.6091

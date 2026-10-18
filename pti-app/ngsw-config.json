@@ -1,5 +1,13 @@
 {
   "index": "/index.html",
+  "navigationUrls": [
+    "/**",
+    "!/**/*.*",
+    "!/**/*__*",
+    "!/**/*__*/**",
+    "!/one-piece",
+    "!/one-piece/**"
+  ],
   "assetGroups": [
     {
       "name": "app",

@@ -1,0 +1,39 @@
+# Local DNS works; the Sony rejects our uninstalled private CA
+
+**Decision required before production HTTP media:** keep authentication and control on trusted local HTTPS, and permit only short-lived, episode-scoped Cast media over home-LAN HTTP. This hybrid has not been silently adopted. No root CA was installed, no firewall/router setting changed, and all pilot listeners and TV sessions were cleaned up.
+
+## Measured result
+
+The actual Sony BRAVIA VU31 reached `onepiece-tls.local` through a Python TCP forwarder to loopback Caddy. It exchanged 547 client bytes and 1,434 server bytes, then Caddy recorded **`remote error: tls: unknown certificate`** at the matching connection time. The receiver stayed **IDLE / ERROR** and made no HTTPS media/subtitle request. This is an observed certificate rejection, not an inference from browser playback or a timeout alone.
+
+The identical prepared Japanese/English excerpt on **HTTP using the same `.local` hostname** then reached PLAYING in **0.500 seconds**, progressed beyond two reported seconds, and kept English track 1 active. The TV fetched actual MP4 bytes with HTTP 206 and WebVTT with HTTP 200. These are prepared-clip timings, not cold episode preparation or full playback acceptance.
+
+The same certificate passed TLS 1.3 verification with a **process-scoped known CA**, hostname checking, and `CERT_REQUIRED`. The normal PC trust store rejected it with `unable to get local issuer certificate`. The new CA was absent from the Windows ROOT store. No certificate-error bypass was used. The earlier direct-Caddy LAN test was inconclusive about network filtering; the TCP-forwarded repeat established the actual TV TLS rejection.
+
+Evidence: `local-tls-cast-proxy-results.json` (decisive repeat), `local-tls-cast-results.json` (initial comparison), `local-tls-key-access.json` (NTFS key access), and `local-tls-final-listeners.json` (no listeners on 8795/8796/8798). Code: `apps/one-piece/companion/pilot/network/local_tls_caddy.py`, invoked through `cast-media-pilot.py --tls-test`.
+
+## Certificate and test endpoints
+
+- Public CA certificate: `H:/PTI-OnePiece/pilot/network/private-ca-pilot/storage/pki/authorities/local/root.crt`.
+- **Public CA certificate SHA256, over DER:** `307F6A88C652E429513F47B386F761249F52A30D6FE93B91ECE7501C3C640489`.
+- Isolated configuration: `H:/PTI-OnePiece/pilot/network/private-ca-pilot/Caddyfile`; Caddy 2.11.7, executable SHA256 matches the retained vendor-download provenance.
+- Tested URLs had the forms `https://onepiece-tls.local:8796/<temporary-capability>/episode1.mp4` and its WebVTT sibling, compared with `http://onepiece-tls.local:8795/<temporary-capability>/...`. **No usable capability is retained here.**
+- The final repeat bound the Python TLS forwarder to the private LAN address, Caddy only to `127.0.0.1:8798`, disabled its admin API, disabled automatic trust installation, and retained no access logs. NTFS checks found only current-user and SYSTEM access to all generated private key files. Private keys stay on H: and must never be distributed with the public certificate.
+
+## Proposed production boundary, pending approval
+
+1. PTI remains an HTTPS PWA. Resolve `onepiece.local` to the companion using local DNS/mDNS. Serve family authentication, capability issuance, session renewal/revocation, progress, and controls through **trusted local HTTPS**. Firebase identity/admin tokens never use HTTP.
+2. Browsers that trust the household CA use HTTPS media. The Default Media Receiver gets a separate **LAN-only HTTP media port**, serving only the currently authorized episode's video/segments and full-English WebVTT. It exposes no catalogue administration, account data, progress API, arbitrary proxy URL, filesystem path, or engine administration.
+3. Use unpredictable per-playback capabilities, scoped to one episode/rendition, required resources, profile/session, and bounded expiry. Revoke immediately when stopped, access is removed, or a session is replaced; redact capabilities from logs; reject wrong/expired/revoked capabilities. Issue the next episode separately over HTTPS and ensure its lifetime covers the approved unattended queue window. Do not use a permanent family-wide media secret. A proposed starting policy is a maximum **two-hour hard expiry** per episode, renewable through authenticated HTTPS, plus earlier revocation on session closure. Validate phone-sleep/queue behavior against that policy before release.
+4. **Tradeoff:** HTTP video, captions, and bearer capability paths are visible to an observer on the home LAN. A captured capability may be replayed within its episode/session scope until revocation or expiry. CORS is not protection against LAN observers. HTTPS protects identity/control, but does not encrypt this Cast media leg. This requires the owner's explicit acceptance.
+
+If all media must stay encrypted, alternatives are a TV application explicitly configured to trust the household CA, or a publicly trusted certificate for an owner-controlled public hostname with local/private address resolution. Neither is established by this test; a public CA cannot simply make our arbitrary `.local` name globally trusted. No external DNS account or paid service has been created.
+
+## One-time household setup still required
+
+- **Windows/Chrome:** compare the public certificate fingerprint, then explicitly trust only the household public CA using the current user's trusted-root store or Chrome's certificate manager. Chrome documents consuming locally managed Windows roots. Reopen the app and verify local HTTPS without an interstitial. Do not distribute a private key. This pilot did not perform the import. [Chrome trust behavior](https://chromium.googlesource.com/chromium/src/+/main/net/data/ssl/chrome_root_store/faq.md), [Microsoft certificate import](https://learn.microsoft.com/en-us/powershell/module/pki/import-certificate).
+- **Android browsers:** the owner installs the verified public CA through each device's credential/certificate settings, then tests Chrome and the installed PWA. Exact menus vary; OS/native applications do not all honor user-added roots. Installing trust on a phone does not install it in the Sony receiver. The actual family devices remain an acceptance gate. [Google certificate setup](https://support.google.com/pixelphone/answer/2844832?hl=en), [Android app trust rules](https://developer.android.com/privacy-and-security/security-config).
+- **Network/firewall:** current PC interface is Ethernet, address `192.168.68.105/24`, network category **Public**. A future rule must name the actual serving executable/ports and restrict local address/interface and remote home subnet `192.168.68.0/24`; do not open all interfaces, all profiles, or internet port forwarding. A Private-profile-only rule would not match the current interface. Changing the network category is a separate intentional setup action. No firewall rule was added here.
+- Confirm stable PC addressing, actual Android `.local` resolution, local-network permission from the HTTPS PTI origin, certificate renewal, and restart recovery. Keep DNS discovery separate from TLS trust. Chrome documents a permission-gated local HTTP exception, but this does not encrypt HTTP or authorize passing Firebase tokens over it. [Chrome local-network access](https://developer.chrome.com/blog/local-network-access).
+
+Google explicitly documents that receiver **content** can use HTTP even when the receiver application is HTTPS; this supports the hybrid's technical validity, while the household security tradeoff remains explicit. [Google Cast registration requirements](https://developers.google.com/cast/docs/registration).

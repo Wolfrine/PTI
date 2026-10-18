@@ -1,0 +1,13 @@
+{
+  "count": 85,
+  "range": [
+    1001,
+    1085
+  ],
+  "provenance": "source-filename",
+  "exactSourceFilenameTitleMatches": true,
+  "failures": [],
+  "officialTitleClaim": false,
+  "parser": "apps/one-piece/companion/src/sources/archive.mjs:parseEpisodeFile",
+  "catalog": "docs/one-piece/evidence/sources/catalog.json"
+}

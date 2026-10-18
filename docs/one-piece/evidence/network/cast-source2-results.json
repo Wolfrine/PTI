@@ -1,0 +1,512 @@
+{
+  "timestamp": "2026-10-18T07:45:50.240411+00:00",
+  "experiment": "Real 30-second episode1001 Cast pilot with Japanese audio and English WebVTT",
+  "pychromecast_version": "14.0.10",
+  "production_transport_accepted": false,
+  "human_video_observation": "pending",
+  "human_japanese_audio_observation": "pending",
+  "human_subtitle_visibility_and_sync": "pending",
+  "limits": {
+    "seconds": 900,
+    "response_budget_bytes": 104857600,
+    "endpoint": "LAN-only HTTP, RAM-only random scoped capability",
+    "assets": "exact MP4/WebVTT allowlist",
+    "external_exposure_changes": false
+  },
+  "requests": [
+    {
+      "timestamp": "2026-10-18T07:46:02.185209+00:00",
+      "asset": "episode1001.mp4",
+      "method": "GET",
+      "range": "bytes=0-31",
+      "status": 206,
+      "response_bytes_reserved": 32,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 32
+    },
+    {
+      "timestamp": "2026-10-18T07:46:02.185209+00:00",
+      "asset": "episode1001.mp4",
+      "method": "GET",
+      "range": "bytes=999999999-",
+      "status": 416,
+      "response_bytes_reserved": 0,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 0
+    },
+    {
+      "timestamp": "2026-10-18T07:46:02.185209+00:00",
+      "asset": "english-1001.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 794,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 794
+    },
+    {
+      "timestamp": "2026-10-18T07:46:02.195334+00:00",
+      "asset": "episode1001.mp4",
+      "method": "HEAD",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 0,
+      "peer": "local",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Python-urllib/3.12",
+      "body_bytes_written": 0
+    },
+    {
+      "timestamp": "2026-10-18T07:46:07.106838+00:00",
+      "asset": "episode1001.mp4",
+      "method": "GET",
+      "range": "bytes=0-",
+      "status": 206,
+      "response_bytes_reserved": 5584185,
+      "peer": "receiver",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 5584185
+    },
+    {
+      "timestamp": "2026-10-18T07:46:07.605054+00:00",
+      "asset": "english-1001.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 794,
+      "peer": "receiver",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 794
+    },
+    {
+      "timestamp": "2026-10-18T07:46:17.040993+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=0-",
+      "status": 206,
+      "response_bytes_reserved": 3811672,
+      "peer": "receiver",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "disconnect": "ConnectionResetError",
+      "body_bytes_written": 2621440
+    },
+    {
+      "timestamp": "2026-10-18T07:46:17.345190+00:00",
+      "asset": "english-1.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 663,
+      "peer": "receiver",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 663
+    },
+    {
+      "timestamp": "2026-10-18T07:46:17.405127+00:00",
+      "asset": "episode1.mp4",
+      "method": "GET",
+      "range": "bytes=3178496-",
+      "status": 206,
+      "response_bytes_reserved": 633176,
+      "peer": "receiver",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 633176
+    },
+    {
+      "timestamp": "2026-10-18T07:46:23.395500+00:00",
+      "asset": "episode1001.mp4",
+      "method": "GET",
+      "range": "bytes=2588672-",
+      "status": 206,
+      "response_bytes_reserved": 2995513,
+      "peer": "receiver",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 2995513
+    },
+    {
+      "timestamp": "2026-10-18T07:46:23.585526+00:00",
+      "asset": "english-1001.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "response_bytes_reserved": 794,
+      "peer": "receiver",
+      "origin": "https://www.gstatic.com",
+      "user_agent": "Mozilla/5.0 (Linux; Android 14.0; Build/UKR1.240726.001) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.0 Safari/537.36 CrKey/1.56.500000 DeviceType/AndroidTV",
+      "body_bytes_written": 794
+    }
+  ],
+  "states": [
+    {
+      "timestamp": "2026-10-18T07:46:03.577891+00:00",
+      "label": "initial status, before media launch",
+      "application_id": null,
+      "media_owned_by_pilot": false,
+      "state": "UNKNOWN",
+      "time": 0.0,
+      "adjusted_time": 0.0,
+      "duration": null,
+      "active_track_ids": [],
+      "subtitle_track_count": 0,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:07.582916+00:00",
+      "label": "LAN IP playing",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 0,
+      "adjusted_time": 0.027441,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:11.086984+00:00",
+      "label": "LAN IP progressed",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 2.39122,
+      "adjusted_time": 2.864611,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:11.627238+00:00",
+      "label": "LAN IP paused",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PAUSED",
+      "time": 2.894961,
+      "adjusted_time": 2.894961,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:13.276192+00:00",
+      "label": "LAN IP seeked",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.288488,
+      "adjusted_time": 12.689499999999999,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:13.806354+00:00",
+      "label": "LAN IP playing after command",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.436729,
+      "adjusted_time": 12.917639,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:14.332831+00:00",
+      "label": "LAN IP subtitles off",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 12.961914,
+      "adjusted_time": 13.429236,
+      "duration": 30.03,
+      "active_track_ids": [],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:14.865464+00:00",
+      "label": "LAN IP English subtitles on",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 13.50011,
+      "adjusted_time": 13.950201999999999,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:16.867037+00:00",
+      "label": "LAN IP final observed status",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 13.50011,
+      "adjusted_time": 15.951775,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:18.262079+00:00",
+      "label": "queue source1 near end",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 25.292355,
+      "adjusted_time": 25.308949000000002,
+      "duration": 30.031,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:23.770927+00:00",
+      "label": "queue auto transition to source2",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 0,
+      "adjusted_time": 0.205822,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    },
+    {
+      "timestamp": "2026-10-18T07:46:26.772364+00:00",
+      "label": "queue source2 progression",
+      "application_id": "CC1AD845",
+      "media_owned_by_pilot": true,
+      "state": "PLAYING",
+      "time": 0,
+      "adjusted_time": 3.207259,
+      "duration": 30.03,
+      "active_track_ids": [
+        1
+      ],
+      "subtitle_track_count": 2,
+      "idle_reason": null
+    }
+  ],
+  "commands": [
+    {
+      "transport": "LAN IP",
+      "command": "pause"
+    },
+    {
+      "transport": "LAN IP",
+      "command": "seek",
+      "target_seconds": 12
+    },
+    {
+      "transport": "LAN IP",
+      "command": "play"
+    },
+    {
+      "transport": "LAN IP",
+      "command": "subtitles off"
+    },
+    {
+      "transport": "LAN IP",
+      "command": "English subtitles on"
+    }
+  ],
+  "cases": [
+    {
+      "transport": "LAN IP",
+      "loaded_playing": true,
+      "load_to_playing_seconds": 4.015,
+      "pause_confirmed": true,
+      "seek_confirmed": true,
+      "play_confirmed": true,
+      "english_track_active": true,
+      "subtitles_off_confirmed": true,
+      "subtitles_on_confirmed": true
+    }
+  ],
+  "prepared": {
+    "source": "verified cached Archive episode 1001",
+    "source_window_seconds": [
+      600,
+      630
+    ],
+    "preparation_seconds": 8.75,
+    "source_audio_index": 2,
+    "source_audio_language": "jpn",
+    "source_subtitle_index": 4,
+    "source_subtitle_language": "eng",
+    "source_subtitle_title": "English",
+    "subtitle_conversion": "ffmpeg ASS to WebVTT, clipped to 600..630 and shifted -600s",
+    "cue_count": 10,
+    "first_cue_seconds": [
+      0,
+      2.17999999999995
+    ],
+    "last_cue_seconds": [
+      29.789999999999964,
+      30
+    ],
+    "duration_seconds": 30.03,
+    "clip_bytes": 5584185,
+    "clip_sha256": "b64a36e0b7b6ff67ba551f24d2a8cbf7d0fe7a468336513339bc93894609794e",
+    "subtitle_bytes": 794,
+    "subtitle_sha256": "a5027c34f989599dbe72f2e9f1b27321d3f85573bb2279f0278677c7d7013f9b",
+    "streams": [
+      {
+        "codec": "h264",
+        "type": "video",
+        "language": "und",
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "codec": "aac",
+        "type": "audio",
+        "language": "jpn",
+        "width": null,
+        "height": null
+      }
+    ]
+  },
+  "prepared_queue_from_1": {
+    "source": "verified cached Archive episode 1",
+    "source_window_seconds": [
+      600,
+      630
+    ],
+    "preparation_seconds": 3.0,
+    "source_audio_index": 1,
+    "source_audio_language": "jpn",
+    "source_subtitle_index": 2,
+    "source_subtitle_language": "eng",
+    "source_subtitle_title": null,
+    "subtitle_conversion": "ffmpeg ASS to WebVTT, clipped to 600..630 and shifted -600s",
+    "cue_count": 9,
+    "first_cue_seconds": [
+      0,
+      1.0199999999999818
+    ],
+    "last_cue_seconds": [
+      25.269999999999982,
+      29.600000000000023
+    ],
+    "duration_seconds": 30.03003,
+    "clip_bytes": 3811672,
+    "clip_sha256": "6c493ac9c45616a506bb05203f246e4c8f7f45a5b8f6274f0c76ad8ac5dd07ac",
+    "subtitle_bytes": 663,
+    "subtitle_sha256": "8d7c8e69f853f4cdaeca7c8895fe1ab406dd9ed0274986ea61dcd642dba919c0",
+    "streams": [
+      {
+        "codec": "h264",
+        "type": "video",
+        "language": "und",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "codec": "aac",
+        "type": "audio",
+        "language": "jpn",
+        "width": null,
+        "height": null
+      }
+    ]
+  },
+  "response_bytes_reserved": 13027623,
+  "http_self_checks": [
+    {
+      "asset": "episode1001.mp4",
+      "method": "GET",
+      "range": "bytes=0-31",
+      "status": 206,
+      "bytes": 32,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "episode1001.mp4",
+      "method": "GET",
+      "range": "bytes=999999999-",
+      "status": 416,
+      "bytes": 0,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "english-1001.vtt",
+      "method": "GET",
+      "range": null,
+      "status": 200,
+      "bytes": 794,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "episode1001.mp4",
+      "method": "HEAD",
+      "range": null,
+      "status": 200,
+      "bytes": 0,
+      "allow_origin": "https://www.gstatic.com"
+    },
+    {
+      "asset": "english-1001.vtt",
+      "method": "OPTIONS",
+      "range": null,
+      "status": 204,
+      "bytes": 0,
+      "allow_origin": "https://www.gstatic.com"
+    }
+  ],
+  "receiver": {
+    "name": "Bedroom TV",
+    "model": "BRAVIA VU31"
+  },
+  "representative_cross_source_queue": {
+    "first_episode": 1,
+    "second_episode": 1001,
+    "first_clip_start_seconds": 25,
+    "first_playing_confirmed": true,
+    "second_automatically_playing_confirmed": true,
+    "second_English_track_active": true,
+    "scope": "Prepared 30-second excerpts from both actual collections; not full episode1000 to episode1001 acceptance"
+  },
+  "cleanup": "Stopped and quit only the receiver session owned by this pilot",
+  "stopped_at": "2026-10-18T07:46:27.095468+00:00",
+  "ticket_retained": false
+}

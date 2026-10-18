@@ -1,0 +1,20 @@
+{
+  "episode": 1,
+  "expectedBytes": 357167311,
+  "expectedArchiveMd5": "f22a5ae5381eb2f541f07de768a7ad89",
+  "maximumBytes": 524288000,
+  "maximumSeconds": 180,
+  "totalBudgetBeforeBytes": 101717979,
+  "source": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20%2801-1000%29%20%5B720p%5D%20%28Batch%29/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+  "newDownload": true,
+  "wallSeconds": 29.29700000002049,
+  "curlExitCode": 0,
+  "downloadBytes": 357167311,
+  "downloadSeconds": 29.220142,
+  "reportedNetworkDownloadBytes": 357167311,
+  "httpStatus": 200,
+  "averageBytesPerSecond": 12223325,
+  "actualFileBytes": 357167311,
+  "actualMd5": "f22a5ae5381eb2f541f07de768a7ad89",
+  "verified": true
+}

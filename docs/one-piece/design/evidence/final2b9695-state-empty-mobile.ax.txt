@@ -1,0 +1,44 @@
+- generic: DEVELOPMENT FIXTURE · Cycle 4 · settings and continuity · Synthetic account, progress and device states.
+- link "Skip to content":
+  - /url: "#main-content"
+- banner:
+  - button "One Piece library":
+    - generic: OP
+    - text: One Piece
+    - generic: FAMILY VIEWING
+  - navigation "Main navigation":
+    - button "Library"
+    - button "Watch"
+  - button "Cast to TV":
+  - button "Account and preferences for Family viewer":
+    - generic: F
+    - generic: Family
+- status
+- main:
+  - paragraph: Continue watching
+  - heading "Episode 1000" [level=1]
+  - paragraph: 10:00 of 24:00·Japanese audio / English subtitles
+  - progressbar "Episode progress"
+  - button "Resume episode":
+    - text: Resume episode
+  - region "All episodes":
+    - heading "All episodes" [level=2]
+    - generic: 1,084 listed
+    - generic: Find an episode number
+    - textbox "Find an episode number":
+      - /placeholder: Find episode number
+      - text: not-an-episode
+    - button "Clear search":
+    - heading "No episode found." [level=3]
+    - paragraph: Try a number from 1 to 1085.
+    - button "Clear search"
+    - paragraph: Episode 590 is missing. These collections end at 1085.
+- contentinfo:
+  - generic: One Piece, at your pace.
+  - button "Home PC connected":
+    - generic: Home PC connected
+  - button "Install app":
+    - text: Install app
+  - link "Back to PTI":
+    - /url: /home
+    - text: Back to PTI

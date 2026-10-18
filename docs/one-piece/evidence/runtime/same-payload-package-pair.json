@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-18T13:17:58.526Z",
+  "kind": "same-payload-retained-package-pair",
+  "commits": [
+    "27d48d61618d39b7d61e167d7be7709bd9b25052",
+    "6e5e18ec431038a8922e251469180942a8a917a8"
+  ],
+  "filesPerPackage": 132,
+  "bytesPerPackage": 2355387,
+  "allFileHashesEqual": true,
+  "verifiedFromPackagedModule": true,
+  "activated": false,
+  "rollbackExecuted": false,
+  "scope": "Integrity-verified first-release code packages for future operational path switching; byte-identical runtime payloads are not a semantic regression fallback"
+}

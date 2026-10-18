@@ -1,0 +1,57 @@
+[
+  {
+    "at": "2026-10-18T13:00:58.897Z",
+    "kind": "click",
+    "href": "/one-piece/?ngsw-bypass=true",
+    "ctrlKey": true,
+    "metaKey": false,
+    "shiftKey": false,
+    "button": 0,
+    "defaultPrevented": false
+  },
+  {
+    "at": "2026-10-18T13:01:05.486Z",
+    "kind": "auxclick",
+    "href": "/one-piece/?ngsw-bypass=true",
+    "ctrlKey": false,
+    "metaKey": false,
+    "shiftKey": false,
+    "button": 1,
+    "defaultPrevented": false
+  },
+  {
+    "at": "2026-10-18T13:01:11.117Z",
+    "kind": "click",
+    "href": "/one-piece/?ngsw-bypass=true",
+    "ctrlKey": false,
+    "metaKey": false,
+    "shiftKey": false,
+    "button": 0,
+    "defaultPrevented": true
+  },
+  {
+    "at": "2026-10-18T13:01:28.310Z",
+    "kind": "router-mock",
+    "href": "/new-dashboard"
+  },
+  {
+    "at": "2026-10-18T13:02:12.639Z",
+    "kind": "click",
+    "href": "/one-piece/?ngsw-bypass=true",
+    "ctrlKey": false,
+    "metaKey": false,
+    "shiftKey": false,
+    "button": 0,
+    "defaultPrevented": true
+  },
+  {
+    "at": "2026-10-18T13:03:02.412Z",
+    "kind": "click",
+    "href": "/one-piece/?ngsw-bypass=true",
+    "ctrlKey": false,
+    "metaKey": false,
+    "shiftKey": false,
+    "button": 0,
+    "defaultPrevented": true
+  }
+]

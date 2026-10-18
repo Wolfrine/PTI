@@ -1,0 +1,38 @@
+[
+  {
+    "path": "/health.json",
+    "request_origin": "https://pti-app-2ab59.web.app",
+    "status": 200,
+    "allow_origin": "https://pti-app-2ab59.web.app",
+    "cache_control": "no-store",
+    "body": {
+      "status": "pilot-only",
+      "service": "one-piece-local-dns",
+      "media": false,
+      "tls": false
+    }
+  },
+  {
+    "path": "/health.json",
+    "request_origin": "https://example.invalid",
+    "status": 200,
+    "allow_origin": null,
+    "cache_control": "no-store",
+    "body": {
+      "status": "pilot-only",
+      "service": "one-piece-local-dns",
+      "media": false,
+      "tls": false
+    }
+  },
+  {
+    "path": "/not-a-file",
+    "request_origin": null,
+    "status": 404,
+    "allow_origin": null,
+    "cache_control": "no-store",
+    "body": {
+      "error": "not_found"
+    }
+  }
+]

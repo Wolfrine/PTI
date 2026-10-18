@@ -6,7 +6,103 @@ service cloud.firestore {
    match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'users' && collection != '_ptiMcpAuth' && collection != 'mcpAuditLog'; }
   match /users/{uid} {
    allow read, write: if request.auth != null;
-    match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData'; }
+    match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData'; }
+  }
+  // One Piece: the owner path is fixed by the paired app/companion configuration.
+  // No recursive grant here: unknown records and collections stay private.
+  match /users/{familyUid}/onePieceData/workspace {
+   function google() { return request.auth != null && request.auth.token.get('email_verified',false) == true
+    && request.auth.token.get('email','') is string && request.auth.token.email.size() <= 254
+    && request.auth.token.email.lower().matches('[^/@ ]+@[^/@ ]+[.][^/@ ]+')
+    && request.auth.token.get('firebase',{}).get('sign_in_provider','') == 'google.com'; }
+   function admin() { return google() && request.auth.uid == familyUid; }
+   function workspace() { return get(/databases/$(database)/documents/users/$(familyUid)/onePieceData/workspace).data; }
+   function membership() { return get(/databases/$(database)/documents/users/$(familyUid)/onePieceData/workspace/members/$(request.auth.token.email.lower())).data; }
+   function active() { return google() && workspace().ownerUid == familyUid && workspace().active == true
+    && (admin() || (membership().email == request.auth.token.email.lower() && membership().uid == request.auth.uid && membership().role == 'member' && membership().active == true)); }
+   function self(profileUid) { return active() && request.auth.uid == profileUid; }
+   function text(d,k,n) { return d[k] is string && d[k].size() <= n; }
+   function label(d,k,n) { return text(d,k,n) && d[k].matches('[^<>]*'); }
+   function instant(d,k) { return d[k] is int && d[k] >= 0 && d[k] <= request.time.toMillis() + 300000; }
+   function counter(d,k) { return d[k] is int && d[k] >= 1 && d[k] <= 9007199254740991; }
+   function episode(id) { return id is string && id != 'one-piece-0590'
+    && id.matches('one-piece-(000[1-9]|00[1-9][0-9]|0[1-9][0-9]{2}|10[0-7][0-9]|108[0-5])'); }
+   function validWorkspace(d) { return d.keys().hasAll(['schemaVersion','ownerUid','active','label','revision','createdAt','updatedAt'])
+    && d.keys().hasOnly(['schemaVersion','ownerUid','active','label','revision','createdAt','updatedAt']) && d.schemaVersion == 1
+    && d.ownerUid == familyUid && d.active is bool && label(d,'label',80) && d.label.size() > 0
+    && counter(d,'revision') && instant(d,'createdAt') && instant(d,'updatedAt'); }
+   allow get: if active();
+   allow create: if admin() && validWorkspace(request.resource.data) && request.resource.data.revision == 1;
+   allow update: if admin() && validWorkspace(request.resource.data) && request.resource.data.revision == resource.data.revision + 1
+    && request.resource.data.createdAt == resource.data.createdAt;
+   allow delete: if false;
+   match /members/{email} {
+    function valid(d) { return d.keys().hasAll(['email','uid','role','active','name','invitedBy','invitedAt','updatedAt','revision'])
+     && d.keys().hasOnly(['email','uid','role','active','name','invitedBy','invitedAt','updatedAt','revision'])
+     && email == email.lower() && email.size() <= 254 && email.matches('[^/@ ]+@[^/@ ]+[.][^/@ ]+') && d.email == email
+     && text(d,'uid',128) && (d.uid == '' || d.uid.matches('[A-Za-z0-9_-]{1,128}'))
+     && d.role in ['owner','member','blocked'] && d.active is bool && label(d,'name',80)
+     && d.invitedBy == familyUid && instant(d,'invitedAt') && instant(d,'updatedAt') && counter(d,'revision')
+     && (d.role != 'owner' || (d.uid == familyUid && email == request.auth.token.email.lower())); }
+    allow get: if admin() || (google() && request.auth.token.email.lower() == email);
+    allow list: if admin();
+    allow create: if admin() && valid(request.resource.data) && request.resource.data.revision == 1;
+    allow update: if valid(request.resource.data) && request.resource.data.revision == resource.data.revision + 1
+     && request.resource.data.invitedAt == resource.data.invitedAt && request.resource.data.invitedBy == resource.data.invitedBy
+     && ((admin() && (resource.data.uid == '' || request.resource.data.uid == resource.data.uid))
+      || (google() && request.auth.token.email.lower() == email && resource.data.uid == ''
+       && resource.data.role == 'member' && resource.data.active == true && workspace().active == true
+       && request.resource.data.uid == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid','revision','updatedAt'])));
+    allow delete: if admin() && resource.data.role != 'owner';
+   }
+   match /profiles/{profileUid} {
+    function valid(d) { return d.keys().hasAll(['uid','displayName','audioLanguage','subtitleLanguage','autoplay','showTitles','revision','updatedAt'])
+     && d.keys().hasOnly(['uid','displayName','audioLanguage','subtitleLanguage','autoplay','showTitles','revision','updatedAt'])
+     && d.uid == profileUid && label(d,'displayName',80) && d.audioLanguage in ['ja','en'] && d.subtitleLanguage in ['en','off']
+     && d.autoplay is bool && d.showTitles is bool && counter(d,'revision') && instant(d,'updatedAt'); }
+    allow get: if self(profileUid) || (admin() && workspace().active == true);
+    allow list: if false;
+    allow create: if self(profileUid) && valid(request.resource.data) && request.resource.data.revision == 1;
+    allow update: if valid(request.resource.data) && request.resource.data.revision == resource.data.revision + 1
+     && (self(profileUid) || (admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','revision','updatedAt'])));
+    allow delete: if false;
+    match /progress/{episodeId} {
+     function currentLease() { return getAfter(/databases/$(database)/documents/users/$(familyUid)/onePieceData/workspace/leases/$(profileUid)).data; }
+     function valid(d) { return d.keys().hasAll(['episodeId','sessionId','generation','authorityEpoch','revision','positionSeconds','durationSeconds','watched','reason','updatedAt'])
+      && d.keys().hasOnly(['episodeId','sessionId','generation','authorityEpoch','revision','positionSeconds','durationSeconds','watched','reason','updatedAt'])
+      && d.episodeId == episodeId && episode(episodeId) && text(d,'sessionId',128) && d.sessionId.size() >= 16
+      && counter(d,'generation') && counter(d,'authorityEpoch') && counter(d,'revision')
+      && d.positionSeconds is number && d.positionSeconds >= 0 && d.durationSeconds is number && d.durationSeconds > 0 && d.durationSeconds <= 21600 && d.positionSeconds <= d.durationSeconds
+      && d.watched is bool && d.reason in ['heartbeat','pause','seek','restart','ended','transition','mark-watched'] && instant(d,'updatedAt')
+      && currentLease().sessionId == d.sessionId && currentLease().generation == d.generation && currentLease().authorityEpoch == d.authorityEpoch
+      && currentLease().revision == d.revision && currentLease().expiresAt > request.time.toMillis(); }
+     allow get, list: if self(profileUid);
+     allow create: if self(profileUid) && valid(request.resource.data);
+     allow update: if self(profileUid) && valid(request.resource.data)
+      && (request.resource.data == resource.data || request.resource.data.generation > resource.data.generation
+       || (request.resource.data.generation == resource.data.generation && request.resource.data.authorityEpoch >= resource.data.authorityEpoch && request.resource.data.revision > resource.data.revision));
+     allow delete: if false;
+    }
+   }
+   match /leases/{profileUid} {
+    function valid(d) { return d.keys().hasAll(['sessionId','deviceId','destination','generation','authorityEpoch','revision','expiresAt','updatedAt'])
+     && d.keys().hasOnly(['sessionId','deviceId','destination','generation','authorityEpoch','revision','expiresAt','updatedAt'])
+     && text(d,'sessionId',128) && d.sessionId.size() >= 16 && text(d,'deviceId',128) && d.deviceId.size() > 0
+     && d.destination in ['local','cast','hdmi'] && counter(d,'generation') && counter(d,'authorityEpoch')
+     && d.revision is int && d.revision >= 0 && d.revision <= 9007199254740991 && instant(d,'updatedAt')
+     && d.expiresAt is int && d.expiresAt >= request.time.toMillis() - 300000 && d.expiresAt <= request.time.toMillis() + 14400000; }
+    allow get: if self(profileUid);
+    allow list, delete: if false;
+    // This is a latest-state mirror, not an event journal. The PC may have made
+    // several accepted transitions while cloud writes were unavailable.
+    allow create: if self(profileUid) && valid(request.resource.data);
+    allow update: if self(profileUid) && valid(request.resource.data)
+     && ((request.resource.data.generation > resource.data.generation && request.resource.data.sessionId != resource.data.sessionId)
+      || (request.resource.data.generation == resource.data.generation && request.resource.data.sessionId == resource.data.sessionId && request.resource.data.deviceId == resource.data.deviceId
+       && request.resource.data.revision >= resource.data.revision
+       && ((request.resource.data.destination == resource.data.destination && request.resource.data.authorityEpoch == resource.data.authorityEpoch)
+        || request.resource.data.authorityEpoch > resource.data.authorityEpoch)));
+   }
   }
    // Wedding: one shared family record. A public invitation never reads this namespace.
    match /users/{uid}/weddingData/workspace {

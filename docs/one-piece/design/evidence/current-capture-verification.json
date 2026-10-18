@@ -1,0 +1,25 @@
+{
+  "candidate": "2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a",
+  "verifiedBy": "/root/visual_designer",
+  "recordedAt": "2026-10-18T12:09:14.343Z",
+  "nonmediaCount": 22,
+  "mediaCount": 4,
+  "all26ImageHashesVerified": true,
+  "all22PairedAxHashesVerified": true,
+  "all26CaptureChecksReportedPass": true,
+  "designerPersonallyViewedNonmedia": 22,
+  "designerPersonallyViewedParentMediaImages": 4,
+  "visualScoresAssignedByDesigner": false,
+  "parentAndCriticEndorsements": "pending",
+  "formalAcceptance": false,
+  "manifestHashes": [
+    {
+      "path": "evidence/final2b9695-state-captures.json",
+      "sha256": "d08dcf04a7cc701f83351ee683cc9ff55ca7412e9ad7583a3075a8b2f3bf7c5f"
+    },
+    {
+      "path": "evidence/final-media-captures.json",
+      "sha256": "d4e85d64fd5830f009f3fa538bc52b20631d12f14142b3d963df99a71a3b00f0"
+    }
+  ]
+}

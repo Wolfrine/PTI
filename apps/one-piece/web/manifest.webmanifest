@@ -1,0 +1,17 @@
+{
+  "id": "/one-piece/",
+  "name": "One Piece · Family Viewing",
+  "short_name": "One Piece",
+  "description": "Your family's One Piece library, in Japanese with English subtitles.",
+  "start_url": "/one-piece/",
+  "scope": "/one-piece/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f5f0",
+  "theme_color": "#123b3d",
+  "icons": [
+    { "src": "/one-piece/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/one-piece/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/one-piece/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "kind": "read-only-one-piece-rules-preflight",
+  "project": "pti-app-2ab59",
+  "checkedAt": "2026-10-18T13:02:02.497Z",
+  "rulesetName": "projects/pti-app-2ab59/rulesets/e3b21b48-8f50-40d7-80d9-a3b2c782efb8",
+  "sourceHash": "4dadb9232ddfa27ca6f09bae844adb8cff3d3a4854a6d034a9f221d1d1525c0b",
+  "hostingRelease": {
+    "name": "projects/pti-app-2ab59/sites/pti-app-2ab59/channels/live/releases/1792327537880000",
+    "versionName": "projects/pti-app-2ab59/sites/pti-app-2ab59/versions/f9215f5f228de12a",
+    "releaseTime": "2026-10-18T12:45:37.880Z"
+  },
+  "matchesReviewedBase": true,
+  "databaseDataRead": false,
+  "writesPerformed": false
+}

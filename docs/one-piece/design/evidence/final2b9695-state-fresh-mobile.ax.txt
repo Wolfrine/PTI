@@ -1,0 +1,268 @@
+- generic: DEVELOPMENT FIXTURE · Cycle 4 · settings and continuity · Synthetic account, progress and device states.
+- link "Skip to content":
+  - /url: "#main-content"
+- banner:
+  - button "One Piece library":
+    - generic: OP
+    - text: One Piece
+    - generic: FAMILY VIEWING
+  - navigation "Main navigation":
+    - button "Library"
+    - button "Watch"
+  - button "Cast to TV":
+  - button "Account and preferences for Family viewer":
+    - generic: F
+    - generic: Family
+- status
+- main:
+  - paragraph: Start watching
+  - heading "Episode 1" [level=1]
+  - paragraph: Japanese audio / English subtitles
+  - paragraph: Choose where to continue.
+  - button "Watch episode 1":
+    - text: Watch episode 1
+  - region "All episodes":
+    - heading "All episodes" [level=2]
+    - generic: 1,084 listed
+    - generic: Find an episode number
+    - textbox "Find an episode number":
+      - /placeholder: Find episode number
+    - generic: Episode range
+    - combobox "Episode range":
+      - option "1–50" [selected]
+      - option "51–100"
+      - option "101–150"
+      - option "151–200"
+      - option "201–250"
+      - option "251–300"
+      - option "301–350"
+      - option "351–400"
+      - option "401–450"
+      - option "451–500"
+      - option "501–550"
+      - option "551–600"
+      - option "601–650"
+      - option "651–700"
+      - option "701–750"
+      - option "751–800"
+      - option "801–850"
+      - option "851–900"
+      - option "901–950"
+      - option "951–1000"
+      - option "1001–1050"
+      - option "1051–1085"
+    - status: Episodes 1–50
+    - button "Episode 1":
+      - generic: "0001"
+      - strong: Episode 1
+      - generic: Not watched
+    - button "Episode 2":
+      - generic: "0002"
+      - strong: Episode 2
+      - generic: Not watched
+    - button "Episode 3":
+      - generic: "0003"
+      - strong: Episode 3
+      - generic: Not watched
+    - button "Episode 4":
+      - generic: "0004"
+      - strong: Episode 4
+      - generic: Not watched
+    - button "Episode 5":
+      - generic: "0005"
+      - strong: Episode 5
+      - generic: Not watched
+    - button "Episode 6":
+      - generic: "0006"
+      - strong: Episode 6
+      - generic: Not watched
+    - button "Episode 7":
+      - generic: "0007"
+      - strong: Episode 7
+      - generic: Not watched
+    - button "Episode 8":
+      - generic: "0008"
+      - strong: Episode 8
+      - generic: Not watched
+    - button "Episode 9":
+      - generic: "0009"
+      - strong: Episode 9
+      - generic: Not watched
+    - button "Episode 10":
+      - generic: "0010"
+      - strong: Episode 10
+      - generic: Not watched
+    - button "Episode 11":
+      - generic: "0011"
+      - strong: Episode 11
+      - generic: Not watched
+    - button "Episode 12":
+      - generic: "0012"
+      - strong: Episode 12
+      - generic: Not watched
+    - button "Episode 13":
+      - generic: "0013"
+      - strong: Episode 13
+      - generic: Not watched
+    - button "Episode 14":
+      - generic: "0014"
+      - strong: Episode 14
+      - generic: Not watched
+    - button "Episode 15":
+      - generic: "0015"
+      - strong: Episode 15
+      - generic: Not watched
+    - button "Episode 16":
+      - generic: "0016"
+      - strong: Episode 16
+      - generic: Not watched
+    - button "Episode 17":
+      - generic: "0017"
+      - strong: Episode 17
+      - generic: Not watched
+    - button "Episode 18":
+      - generic: "0018"
+      - strong: Episode 18
+      - generic: Not watched
+    - button "Episode 19":
+      - generic: "0019"
+      - strong: Episode 19
+      - generic: Not watched
+    - button "Episode 20":
+      - generic: "0020"
+      - strong: Episode 20
+      - generic: Not watched
+    - button "Episode 21":
+      - generic: "0021"
+      - strong: Episode 21
+      - generic: Not watched
+    - button "Episode 22":
+      - generic: "0022"
+      - strong: Episode 22
+      - generic: Not watched
+    - button "Episode 23":
+      - generic: "0023"
+      - strong: Episode 23
+      - generic: Not watched
+    - button "Episode 24":
+      - generic: "0024"
+      - strong: Episode 24
+      - generic: Not watched
+    - button "Episode 25":
+      - generic: "0025"
+      - strong: Episode 25
+      - generic: Not watched
+    - button "Episode 26":
+      - generic: "0026"
+      - strong: Episode 26
+      - generic: Not watched
+    - button "Episode 27":
+      - generic: "0027"
+      - strong: Episode 27
+      - generic: Not watched
+    - button "Episode 28":
+      - generic: "0028"
+      - strong: Episode 28
+      - generic: Not watched
+    - button "Episode 29":
+      - generic: "0029"
+      - strong: Episode 29
+      - generic: Not watched
+    - button "Episode 30":
+      - generic: "0030"
+      - strong: Episode 30
+      - generic: Not watched
+    - button "Episode 31":
+      - generic: "0031"
+      - strong: Episode 31
+      - generic: Not watched
+    - button "Episode 32":
+      - generic: "0032"
+      - strong: Episode 32
+      - generic: Not watched
+    - button "Episode 33":
+      - generic: "0033"
+      - strong: Episode 33
+      - generic: Not watched
+    - button "Episode 34":
+      - generic: "0034"
+      - strong: Episode 34
+      - generic: Not watched
+    - button "Episode 35":
+      - generic: "0035"
+      - strong: Episode 35
+      - generic: Not watched
+    - button "Episode 36":
+      - generic: "0036"
+      - strong: Episode 36
+      - generic: Not watched
+    - button "Episode 37":
+      - generic: "0037"
+      - strong: Episode 37
+      - generic: Not watched
+    - button "Episode 38":
+      - generic: "0038"
+      - strong: Episode 38
+      - generic: Not watched
+    - button "Episode 39":
+      - generic: "0039"
+      - strong: Episode 39
+      - generic: Not watched
+    - button "Episode 40":
+      - generic: "0040"
+      - strong: Episode 40
+      - generic: Not watched
+    - button "Episode 41":
+      - generic: "0041"
+      - strong: Episode 41
+      - generic: Not watched
+    - button "Episode 42":
+      - generic: "0042"
+      - strong: Episode 42
+      - generic: Not watched
+    - button "Episode 43":
+      - generic: "0043"
+      - strong: Episode 43
+      - generic: Not watched
+    - button "Episode 44":
+      - generic: "0044"
+      - strong: Episode 44
+      - generic: Not watched
+    - button "Episode 45":
+      - generic: "0045"
+      - strong: Episode 45
+      - generic: Not watched
+    - button "Episode 46":
+      - generic: "0046"
+      - strong: Episode 46
+      - generic: Not watched
+    - button "Episode 47":
+      - generic: "0047"
+      - strong: Episode 47
+      - generic: Not watched
+    - button "Episode 48":
+      - generic: "0048"
+      - strong: Episode 48
+      - generic: Not watched
+    - button "Episode 49":
+      - generic: "0049"
+      - strong: Episode 49
+      - generic: Not watched
+    - button "Episode 50":
+      - generic: "0050"
+      - strong: Episode 50
+      - generic: Not watched
+    - button "Previous 50" [disabled]:
+      - text: Previous 50
+    - button "Next 50":
+      - text: Next 50
+    - paragraph: Episode 590 is missing. These collections end at 1085.
+- contentinfo:
+  - generic: One Piece, at your pace.
+  - button "Home PC connected":
+    - generic: Home PC connected
+  - button "Install app":
+    - text: Install app
+  - link "Back to PTI":
+    - /url: /home
+    - text: Back to PTI

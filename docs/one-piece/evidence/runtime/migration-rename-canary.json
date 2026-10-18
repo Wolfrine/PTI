@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-10-18T13:27:33.647Z",
+  "kind": "actual-H-volume-directory-rename-canary",
+  "passed": true,
+  "bytes": 31,
+  "before": [
+    {
+      "relative": "",
+      "mtimeMs": 1792330053638.944,
+      "size": null
+    },
+    {
+      "relative": "empty-work",
+      "mtimeMs": 1792330053637.9436,
+      "size": null
+    },
+    {
+      "relative": "fixture.txt",
+      "mtimeMs": 1792330053639.9438,
+      "size": 31
+    }
+  ],
+  "after": [
+    {
+      "relative": "",
+      "mtimeMs": 1792330053638.944,
+      "size": null
+    },
+    {
+      "relative": "empty-work",
+      "mtimeMs": 1792330053637.9436,
+      "size": null
+    },
+    {
+      "relative": "fixture.txt",
+      "mtimeMs": 1792330053639.9438,
+      "size": 31
+    }
+  ],
+  "realMediaAccessed": false,
+  "sourceTargetBoundsVerified": true,
+  "cleanup": "Only exact canary file and empty created directories removed; base retained"
+}

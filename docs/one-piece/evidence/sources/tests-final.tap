@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: parses release filenames, not parent batch numbers or unrelated assets
+ok 1 - parses release filenames, not parent batch numbers or unrelated assets
+  ---
+  duration_ms: 3.2612
+  ...
+# Subtest: deduplicates identities and derivatives without inventing languages or provenance
+ok 2 - deduplicates identities and derivatives without inventing languages or provenance
+  ---
+  duration_ms: 4.5444
+  ...
+# Subtest: rejects unknown items, unsafe filenames, restricted inventories and unparsed video
+ok 3 - rejects unknown items, unsafe filenames, restricted inventories and unparsed video
+  ---
+  duration_ms: 0.8362
+  ...
+# Subtest: bounded transport does not consume range-ignoring full file
+ok 4 - bounded transport does not consume range-ignoring full file
+  ---
+  duration_ms: 29.2206
+  ...
+# Subtest: range must match, and redirect cannot escape Archive item allowlist
+ok 5 - range must match, and redirect cannot escape Archive item allowlist
+  ---
+  duration_ms: 3.2266
+  ...
+# Subtest: 429 honors bounded Retry-After and has a finite retry count
+ok 6 - 429 honors bounded Retry-After and has a finite retry count
+  ---
+  duration_ms: 4.891
+  ...
+# Subtest: changed upstream resource size is rejected before presenting stale seek metadata
+ok 7 - changed upstream resource size is rejected before presenting stale seek metadata
+  ---
+  duration_ms: 1.9797
+  ...
+# Subtest: shared limiter permits at most two active upstreams including body consumption
+ok 8 - shared limiter permits at most two active upstreams including body consumption
+  ---
+  duration_ms: 61.2868
+  ...
+# Subtest: saved real inventories yield exactly the verified coverage and rendition counts
+ok 9 - saved real inventories yield exactly the verified coverage and rendition counts
+  ---
+  duration_ms: 41.1023
+  ...
+# Subtest: aborted queued requests do not consume an upstream slot
+ok 10 - aborted queued requests do not consume an upstream slot
+  ---
+  duration_ms: 2.9642
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 278.4437

@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-18T13:00:41.308Z",
+  "kind": "independent-H-package-integrity",
+  "commit": "27d48d61618d39b7d61e167d7be7709bd9b25052",
+  "verifiedFromPackagedModule": true,
+  "verifiedFiles": 132,
+  "totalBytes": 2355387,
+  "sourceFileBinding": "a444109da5cba794746f726c2135f849558875971568e4ce0c3f9859e21c02a7",
+  "activated": false,
+  "privateConfigurationCopied": false,
+  "mediaCopied": false,
+  "scope": "All packaged file hashes/sizes and pinned Node checked from H release; no engine, private config mutation, activation, or operational rollback test"
+}

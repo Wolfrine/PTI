@@ -1,0 +1,32 @@
+{
+  "episode": 1,
+  "positionSeconds": 0,
+  "cueCountWithin30Seconds": 5,
+  "cueTimes": [
+    {
+      "start": 16.73,
+      "end": 18.83
+    },
+    {
+      "start": 18.83,
+      "end": 20.75
+    },
+    {
+      "start": 20.75,
+      "end": 22.66
+    },
+    {
+      "start": 23.0,
+      "end": 26.84
+    },
+    {
+      "start": 26.84,
+      "end": 30.62
+    }
+  ],
+  "subtitleDeliveryMode": "complete extracted ASS; no separate extraction required to seek to this position",
+  "rendered": false,
+  "fullFileCueCount": 302,
+  "firstCueSeconds": 16.73,
+  "lastCueSeconds": 1488.7
+}

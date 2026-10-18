@@ -1,0 +1,61 @@
+name: One Piece pull request checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/one-piece-checks.yml'
+      - 'apps/one-piece/**'
+      - 'docs/one-piece/design/acceptance.json'
+      - 'docs/one-piece/design/fingerprint.mjs'
+      - 'docs/one-piece/evidence/sources/catalog.json'
+      - 'personal-harness/firestore.rules'
+      - 'firebase*.json'
+      - 'pti-app/src/**'
+      - 'pti-app/public/**'
+      - 'pti-app/ngsw-config.json'
+      - '.gitattributes'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install scoped test dependencies
+        run: |
+          npm ci --prefix apps/one-piece --ignore-scripts --no-audit --no-fund
+          npm ci --prefix apps/one-piece/companion --ignore-scripts --no-audit --no-fund
+          npm ci --prefix wedding-planner --ignore-scripts --no-audit --no-fund
+          npm ci --prefix venture-lab/tests --ignore-scripts --no-audit --no-fund
+      - name: Check frontend and companion fixtures
+        run: |
+          npm test --prefix apps/one-piece
+          npm test --prefix apps/one-piece/companion
+      - name: Check the complete shared Firestore rules without live data
+        run: npm run test:emulator --prefix apps/one-piece
+      - name: Build complete PTI artifact and One Piece sibling
+        run: |
+          npm install --prefix pti-app --no-audit --no-fund
+          npm run build --prefix pti-app -- --configuration production
+          mkdir -p pti-app/dist/pti-app/browser/food
+          cp food-app/legacy-index.html pti-app/dist/pti-app/browser/food/index.html
+          cp food-app/legacy-sw.js pti-app/dist/pti-app/browser/food/sw.js
+          npm run build --prefix apps/one-piece
+      - name: Require the rendered candidate's exact release bytes
+        run: |
+          node docs/one-piece/design/fingerprint.mjs pti-app/dist/pti-app/browser/one-piece > /tmp/one-piece-fingerprint.json
+          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; const actual=JSON.parse(fs.readFileSync('/tmp/one-piece-fingerprint.json')); const accepted=JSON.parse(fs.readFileSync('docs/one-piece/design/acceptance.json')); assert.equal(actual.candidate,accepted.candidate); console.log('Rendered candidate matches complete artifact:',actual.candidate);"

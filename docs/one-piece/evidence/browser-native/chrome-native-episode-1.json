@@ -1,0 +1,125 @@
+{
+  "kind": "technical-browser-pilot",
+  "mode": "direct-original",
+  "at": "2026-10-18T07:26:37.088Z",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "events": [
+    {
+      "atMs": 1,
+      "event": "begin",
+      "mode": "direct-original",
+      "episode": 1,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+      "source": "https://archive.org/download/one-piece-0001-1000-1999-horrible-subs/%5BHorribleSubs%5D%20One%20Piece%20(01-1000)%20%5B720p%5D%20(Batch)/%5BHorribleSubs%5D%20One%20Piece%20-%2001%20%5B720p%5D.mkv",
+      "sourceBytes": 357167311,
+      "memory": {
+        "usedJSHeap": 2371875,
+        "totalJSHeap": 3961635
+      },
+      "capabilities": {
+        "mp4H264": "probably",
+        "mp4HEVC": "probably",
+        "mkv": "maybe",
+        "webcodecs": true,
+        "isolated": false
+      }
+    },
+    {
+      "atMs": 29,
+      "event": "waiting",
+      "position": 0,
+      "readyState": 0,
+      "dimensions": [
+        0,
+        0
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 34,
+      "event": "loadstart",
+      "position": 0,
+      "readyState": 0,
+      "dimensions": [
+        0,
+        0
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 5448,
+      "event": "loadedmetadata",
+      "position": 0,
+      "readyState": 1,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 5485,
+      "event": "loadeddata",
+      "position": 0.000047,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 5485,
+      "event": "canplay",
+      "position": 0.000718,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 5486,
+      "event": "playing",
+      "position": 0.001122,
+      "readyState": 4,
+      "dimensions": [
+        1280,
+        720
+      ],
+      "error": null,
+      "tracks": 0,
+      "decoded": {}
+    },
+    {
+      "atMs": 15015,
+      "event": "native-15-second-check",
+      "position": 9.156866,
+      "readyState": 4,
+      "textTracks": [],
+      "audioTracks": "API unavailable",
+      "memory": {
+        "usedJSHeap": 2528212,
+        "totalJSHeap": 3968592
+      }
+    }
+  ],
+  "memory": {
+    "usedJSHeap": 2085810,
+    "totalJSHeap": 2910230
+  },
+  "humanJapaneseAudioVerified": false,
+  "humanEnglishSubtitlesVerified": false,
+  "tvVerified": false
+}

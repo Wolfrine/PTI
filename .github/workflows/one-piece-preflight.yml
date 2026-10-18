@@ -1,0 +1,30 @@
+name: One Piece read-only release preflight
+on:
+  push:
+    branches: [codex/one-piece-family]
+    paths:
+      - .github/workflows/one-piece-preflight.yml
+      - apps/one-piece/scripts/inspect-live-rules.mjs
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
+      - name: Inspect deployed rules using the existing PTI identity
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/one-piece-preflight-identity.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS"' EXIT
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          chmod 600 "$GOOGLE_APPLICATION_CREDENTIALS"
+          node apps/one-piece/scripts/inspect-live-rules.mjs

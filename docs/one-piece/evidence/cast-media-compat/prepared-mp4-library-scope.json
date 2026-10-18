@@ -1,0 +1,75 @@
+{
+  "inspectedAt": "2026-10-18T11:02:20.317Z",
+  "mode": "read-only-no-scan-no-media-fetch",
+  "libraries": [
+    {
+      "name": "PTI local cached pilot",
+      "roots": [
+        {
+          "path": "H:\\PTI-OnePiece\\pilot\\jellyfin\\cache\\cached-case",
+          "exists": true
+        }
+      ],
+      "files": 255,
+      "bytes": 609669703,
+      "remoteOrStrm": 0,
+      "links": 0,
+      "extensions": {
+        ".ass": 1,
+        ".mkv": 1,
+        ".ts": 253
+      }
+    },
+    {
+      "name": "PTI local cached pilot 1001",
+      "roots": [
+        {
+          "path": "H:\\PTI-OnePiece\\pilot\\jellyfin\\cache\\cached-case-1001",
+          "exists": true
+        }
+      ],
+      "files": 9,
+      "bytes": 858545651,
+      "remoteOrStrm": 0,
+      "links": 0,
+      "extensions": {
+        ".ass": 1,
+        ".mkv": 1,
+        ".ts": 7
+      }
+    },
+    {
+      "name": "PTI One Piece Cache",
+      "roots": [
+        {
+          "path": "H:\\PTI-OnePiece\\production-media\\cache\\originals",
+          "exists": true
+        }
+      ],
+      "files": 3,
+      "bytes": 1944809436,
+      "remoteOrStrm": 0,
+      "links": 0,
+      "extensions": {
+        ".mkv": 3
+      }
+    },
+    {
+      "name": "PTI two episode pilot",
+      "roots": [
+        {
+          "path": "H:\\PTI-OnePiece\\pilot\\jellyfin\\library",
+          "exists": true
+        }
+      ],
+      "files": 2,
+      "bytes": 370,
+      "remoteOrStrm": 2,
+      "links": 0,
+      "extensions": {
+        ".strm": 2
+      }
+    }
+  ],
+  "allFiniteRegularLocalAndNoStrm": false
+}

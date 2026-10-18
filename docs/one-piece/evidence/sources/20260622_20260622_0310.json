@@ -1,0 +1,3304 @@
+{
+  "schemaVersion": 1,
+  "itemId": "20260622_20260622_0310",
+  "fetchedAt": "2026-10-18T07:17:58.709Z",
+  "metadataUrl": "https://archive.org/metadata/20260622_20260622_0310",
+  "rawResponseSha256": "cfaf595cbe34793327574d9fbacc1e924a319d7401c934c0933210e630d3e3df",
+  "metadataFileCount": 508,
+  "title": "One Piece 1001-1085 Wano Dual Audio",
+  "licenseUrl": null,
+  "access": {
+    "isDark": false,
+    "isRestricted": false
+  },
+  "files": [
+    {
+      "name": "[Anime Time] One Piece - 1001 - A Risky Invitation A Plot To Eliminate Queen.mkv",
+      "episodeNumber": 1001,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Risky Invitation A Plot To Eliminate Queen",
+      "source": "original",
+      "original": null,
+      "size": 844716819,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "9f55b5edbf99ad3c6bdc874c725be0085acedf0f",
+        "md5": "2610511c93fae62d4791e8284b6b96eb",
+        "crc32": "e8b788ea"
+      },
+      "durationSeconds": 1432.42,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1001 - A Risky Invitation A Plot To Eliminate Queen.mp4",
+      "episodeNumber": 1001,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Risky Invitation A Plot To Eliminate Queen",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1001 - A Risky Invitation A Plot To Eliminate Queen.mkv",
+      "size": 139351546,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "47529af060c40fb6a210af7c3a2752d1fcafd6d1",
+        "md5": "10a6794daefb1457b80c451b88138aa9",
+        "crc32": "1fcb2258"
+      },
+      "durationSeconds": 1432.42,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1002 - A New Rivalry Nami And Ulti.mkv",
+      "episodeNumber": 1002,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A New Rivalry Nami And Ulti",
+      "source": "original",
+      "original": null,
+      "size": 838559861,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "c48ad883246a4f73a39046dc73c1ddda441aa14b",
+        "md5": "51330907ddde926dbbd7492fc01790a0",
+        "crc32": "11b57f7e"
+      },
+      "durationSeconds": 1432.47,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1002 - A New Rivalry Nami And Ulti.mp4",
+      "episodeNumber": 1002,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A New Rivalry Nami And Ulti",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1002 - A New Rivalry Nami And Ulti.mkv",
+      "size": 139348251,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "0ca129eebbc42ac3a8af7531bcf33ab3f9414912",
+        "md5": "3c28ca56c39e0831eae10c68bc7b271e",
+        "crc32": "a53cf0d9"
+      },
+      "durationSeconds": 1432.47,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1003 - A Heroic Blade Akazaya Vs Kaido Again Once More.mkv",
+      "episodeNumber": 1003,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Heroic Blade Akazaya Vs Kaido Again Once More",
+      "source": "original",
+      "original": null,
+      "size": 878004798,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "be125c0f3a7ee6d29a35b5a2ef3ecc24ddcac603",
+        "md5": "b83536b04a21bd1c0e5b4b233bdfc12e",
+        "crc32": "2e64bfbf"
+      },
+      "durationSeconds": 1432.44,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1003 - A Heroic Blade Akazaya Vs Kaido Again Once More.mp4",
+      "episodeNumber": 1003,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Heroic Blade Akazaya Vs Kaido Again Once More",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1003 - A Heroic Blade Akazaya Vs Kaido Again Once More.mkv",
+      "size": 139555377,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "4ed298c1cd646e8789a7e31675bc108ab4226f7c",
+        "md5": "63814647310b54a2daea4ca265a83dbd",
+        "crc32": "29885f2a"
+      },
+      "durationSeconds": 1432.44,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1004 - An Inherited Technique Unleashing Oden's Secret Swordplay.mkv",
+      "episodeNumber": 1004,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "An Inherited Technique Unleashing Oden's Secret Swordplay",
+      "source": "original",
+      "original": null,
+      "size": 907195198,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a05fb4f01dbbce15bf4b8cb35f67d38fa8fb111c",
+        "md5": "29941e37b81622b26a3b814a21aa30e6",
+        "crc32": "a6a45558"
+      },
+      "durationSeconds": 1429.75,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1004 - An Inherited Technique Unleashing Oden's Secret Swordplay.mp4",
+      "episodeNumber": 1004,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "An Inherited Technique Unleashing Oden's Secret Swordplay",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1004 - An Inherited Technique Unleashing Oden's Secret Swordplay.mkv",
+      "size": 138673322,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "a17f84cb9e994b33a3cc3a4ffb017bd47fbfc78d",
+        "md5": "c25f294444878eb51e4bbeaa3749eed9",
+        "crc32": "edee93e8"
+      },
+      "durationSeconds": 1429.75,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1005 - The Power Of Ice Oni A New Version Of The Plague Rounds.mkv",
+      "episodeNumber": 1005,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Power Of Ice Oni A New Version Of The Plague Rounds",
+      "source": "original",
+      "original": null,
+      "size": 707015870,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "44026e2bf672509237483aff0f0d4257e1b9d1bc",
+        "md5": "807d11b51a29441e45cd6bde3b3a6e37",
+        "crc32": "d888621a"
+      },
+      "durationSeconds": 1432.56,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1005 - The Power Of Ice Oni A New Version Of The Plague Rounds.mp4",
+      "episodeNumber": 1005,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Power Of Ice Oni A New Version Of The Plague Rounds",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1005 - The Power Of Ice Oni A New Version Of The Plague Rounds.mkv",
+      "size": 139454485,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "1dec5a9b2f594d140b49541fafc3758c447acc3d",
+        "md5": "272658af9bf9e9393dc71818a7bef823",
+        "crc32": "220ec413"
+      },
+      "durationSeconds": 1432.56,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1006 - I Won't Forgive Him Chopper's Determination.mkv",
+      "episodeNumber": 1006,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "I Won't Forgive Him Chopper's Determination",
+      "source": "original",
+      "original": null,
+      "size": 791351835,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a2e8ac3fabb2279abc623bdcb46093b72f25626a",
+        "md5": "1b999904617547a7f1dfce112750c9ea",
+        "crc32": "dd6c7d25"
+      },
+      "durationSeconds": 1432.51,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1006 - I Won't Forgive Him Chopper's Determination.mp4",
+      "episodeNumber": 1006,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "I Won't Forgive Him Chopper's Determination",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1006 - I Won't Forgive Him Chopper's Determination.mkv",
+      "size": 139932144,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "a3a22a13d8a1a8949c6073d99fc54b682cf9650b",
+        "md5": "0828a995774ab5fa8dc463374adf01a4",
+        "crc32": "0f7e1048"
+      },
+      "durationSeconds": 1432.51,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1007 - Zoro's Pursuit Ice Oni Tag.mkv",
+      "episodeNumber": 1007,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Zoro's Pursuit Ice Oni Tag",
+      "source": "original",
+      "original": null,
+      "size": 849763810,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "d0bcca008d47f49d0e01e2ca726ea441b1f9e1b6",
+        "md5": "229c1376c52a96be99fec029fae92461",
+        "crc32": "72a5b2a7"
+      },
+      "durationSeconds": 1432.47,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1007 - Zoro's Pursuit Ice Oni Tag.mp4",
+      "episodeNumber": 1007,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Zoro's Pursuit Ice Oni Tag",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1007 - Zoro's Pursuit Ice Oni Tag.mkv",
+      "size": 138478767,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "28ef9a87fe6eb1863bc0b68dad6b9772907b326b",
+        "md5": "7f2fe766342a790f2f0bd21400b2855b",
+        "crc32": "bd7898f9"
+      },
+      "durationSeconds": 1432.47,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1008 - Nami Surrenders Ulti's Fierce Headbutt.mkv",
+      "episodeNumber": 1008,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Nami Surrenders Ulti's Fierce Headbutt",
+      "source": "original",
+      "original": null,
+      "size": 826796849,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "57f32b654daa6a13b2e8fc77c053de542452b190",
+        "md5": "048294f23e2dc924d217e82d6075f52a",
+        "crc32": "aace1e6a"
+      },
+      "durationSeconds": 1432.51,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1008 - Nami Surrenders Ulti's Fierce Headbutt.mp4",
+      "episodeNumber": 1008,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Nami Surrenders Ulti's Fierce Headbutt",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1008 - Nami Surrenders Ulti's Fierce Headbutt.mkv",
+      "size": 139248655,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2d1e94aab6d48d8b4fedb5a533e3e37facf6dad6",
+        "md5": "e49d8b947aab13027d1c71d3f8bd243f",
+        "crc32": "4af8db4e"
+      },
+      "durationSeconds": 1432.51,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1009 - Sasaki's Onslaught Armored Division Vs Yamato.mkv",
+      "episodeNumber": 1009,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Sasaki's Onslaught Armored Division Vs Yamato",
+      "source": "original",
+      "original": null,
+      "size": 779664248,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "bce26f74b2275e3d7eeb83aaedb94f5bc017788e",
+        "md5": "2eabd0d08b797fdb13d9c6a9407aff10",
+        "crc32": "94405a7a"
+      },
+      "durationSeconds": 1432.47,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1009 - Sasaki's Onslaught Armored Division Vs Yamato.mp4",
+      "episodeNumber": 1009,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Sasaki's Onslaught Armored Division Vs Yamato",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1009 - Sasaki's Onslaught Armored Division Vs Yamato.mkv",
+      "size": 139708513,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "7ae279e826df267da0ac801ffbceafe2409d7095",
+        "md5": "41efac64c52da294090bcc9ae59b564a",
+        "crc32": "77e90a6a"
+      },
+      "durationSeconds": 1432.47,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1010 - Eliminate The Ice Oni Chopper's Fire Trick.mkv",
+      "episodeNumber": 1010,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Eliminate The Ice Oni Chopper's Fire Trick",
+      "source": "original",
+      "original": null,
+      "size": 742397396,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "27e3c7e10b7d07b7269483e50910fb9ccd65ce2e",
+        "md5": "a5c5223be3c906e8f150e79b175ecd78",
+        "crc32": "6f1fb0af"
+      },
+      "durationSeconds": 1432.51,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1010 - Eliminate The Ice Oni Chopper's Fire Trick.mp4",
+      "episodeNumber": 1010,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Eliminate The Ice Oni Chopper's Fire Trick",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1010 - Eliminate The Ice Oni Chopper's Fire Trick.mkv",
+      "size": 138217633,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "fc0e62246e17cfcfd04bd12d7287f4b85c8b3ab5",
+        "md5": "82a0958e05aea2c46c6abf5967d317f0",
+        "crc32": "08a6a3f7"
+      },
+      "durationSeconds": 1432.51,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1011 - It's Not Okay The Spider Lures Sanji.mkv",
+      "episodeNumber": 1011,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "It's Not Okay The Spider Lures Sanji",
+      "source": "original",
+      "original": null,
+      "size": 767232302,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "76da494203e9d01aa524dcd3964df1fffd5fa57b",
+        "md5": "7f1c71e039392b1e7682aa578c1e8a7b",
+        "crc32": "48c48718"
+      },
+      "durationSeconds": 1432.44,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1011 - It's Not Okay The Spider Lures Sanji.mp4",
+      "episodeNumber": 1011,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "It's Not Okay The Spider Lures Sanji",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1011 - It's Not Okay The Spider Lures Sanji.mkv",
+      "size": 139447105,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "c7254d70f6048685bd71175b01dd5706c64a445b",
+        "md5": "4d17f4c288272d0ab987aba046f32f60",
+        "crc32": "693fa426"
+      },
+      "durationSeconds": 1432.44,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1012 - A Turnaround Move The Flames Of Marco The Phoenix.mkv",
+      "episodeNumber": 1012,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Turnaround Move The Flames Of Marco The Phoenix",
+      "source": "original",
+      "original": null,
+      "size": 804880650,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "6708de2e9eee6fb14a4982a49eb41ce2ff702967",
+        "md5": "30f445aebd087f4f39603901fb20c93c",
+        "crc32": "699fafcd"
+      },
+      "durationSeconds": 1432.47,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1012 - A Turnaround Move The Flames Of Marco The Phoenix.mp4",
+      "episodeNumber": 1012,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Turnaround Move The Flames Of Marco The Phoenix",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1012 - A Turnaround Move The Flames Of Marco The Phoenix.mkv",
+      "size": 139017316,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "398832e4aadea07df03125583967dc5a5cb41cdd",
+        "md5": "6f655357911e0cfb422f89976310f891",
+        "crc32": "416c9cc2"
+      },
+      "durationSeconds": 1432.47,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1013 - Yamato's Past The Man Who Came For An Emperor Of The Sea.mkv",
+      "episodeNumber": 1013,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Yamato's Past The Man Who Came For An Emperor Of The Sea",
+      "source": "original",
+      "original": null,
+      "size": 811017075,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "543ccb25535e3d4cfb6a9927ef428c47a797f66f",
+        "md5": "7194714c38de91db9756015d52d41304",
+        "crc32": "17177327"
+      },
+      "durationSeconds": 1431.63,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1013 - Yamato's Past The Man Who Came For An Emperor Of The Sea.mp4",
+      "episodeNumber": 1013,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Yamato's Past The Man Who Came For An Emperor Of The Sea",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1013 - Yamato's Past The Man Who Came For An Emperor Of The Sea.mkv",
+      "size": 138907740,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "19799a33f2408bbcae4a0e52d2af3325547fab4d",
+        "md5": "50247e41c20a4cc04d11762070f68c1d",
+        "crc32": "d5515984"
+      },
+      "durationSeconds": 1431.63,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1014 - Marco's Tears The Bond Of The Whitebeard Pirates.mkv",
+      "episodeNumber": 1014,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Marco's Tears The Bond Of The Whitebeard Pirates",
+      "source": "original",
+      "original": null,
+      "size": 788110370,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "266051c9b116f29b4f542d32fed3187d19dcab53",
+        "md5": "77a139182c2f3f22ddb417028f8cbfab",
+        "crc32": "7bcd0474"
+      },
+      "durationSeconds": 1431.63,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1014 - Marco's Tears The Bond Of The Whitebeard Pirates.mp4",
+      "episodeNumber": 1014,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Marco's Tears The Bond Of The Whitebeard Pirates",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1014 - Marco's Tears The Bond Of The Whitebeard Pirates.mkv",
+      "size": 137659790,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "3a2c41d18b113c15bc7b74e55c93d1d687afa7cd",
+        "md5": "9a7140acf58c9a5fd5746726f9c851e9",
+        "crc32": "3001dd98"
+      },
+      "durationSeconds": 1431.63,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1015 - Straw Hat Luffy The Man Who Will Become The King Of The Pirates.mkv",
+      "episodeNumber": 1015,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Straw Hat Luffy The Man Who Will Become The King Of The Pirates",
+      "source": "original",
+      "original": null,
+      "size": 606601890,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "75e9b4421e6a1936c8d8080c383306c432ad7e2d",
+        "md5": "5c150e24d06e0de3d9a29e907f29a9c3",
+        "crc32": "557dd347"
+      },
+      "durationSeconds": 1431.63,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1015 - Straw Hat Luffy The Man Who Will Become The King Of The Pirates.mp4",
+      "episodeNumber": 1015,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Straw Hat Luffy The Man Who Will Become The King Of The Pirates",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1015 - Straw Hat Luffy The Man Who Will Become The King Of The Pirates.mkv",
+      "size": 138936521,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "fec15a37afb76ad1f98d0e9cdfc79100cab6a65c",
+        "md5": "1dbfcddd6bce112dddf02a13256066a8",
+        "crc32": "7461e291"
+      },
+      "durationSeconds": 1431.63,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1016 - The Battle Of The Monsters The Three Stubborn Captains.mkv",
+      "episodeNumber": 1016,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Battle Of The Monsters The Three Stubborn Captains",
+      "source": "original",
+      "original": null,
+      "size": 756121167,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "6d46df1fa78a6e333cdd31c33a4b7db666222eae",
+        "md5": "36bc55f2edebbdaee07ef73a2d94ed7b",
+        "crc32": "a6d3f2b4"
+      },
+      "durationSeconds": 1431.63,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1016 - The Battle Of The Monsters The Three Stubborn Captains.mp4",
+      "episodeNumber": 1016,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Battle Of The Monsters The Three Stubborn Captains",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1016 - The Battle Of The Monsters The Three Stubborn Captains.mkv",
+      "size": 138150641,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "c08525d636f9033f9adc94af28630117ef093ce1",
+        "md5": "1cef94a37e1eca21285955945bd84a17",
+        "crc32": "6420e34d"
+      },
+      "durationSeconds": 1431.63,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1017 - A Barrage Of Powerful Techniques The Fierce Attacks Of The Worst Generation.mkv",
+      "episodeNumber": 1017,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Barrage Of Powerful Techniques The Fierce Attacks Of The Worst Generation",
+      "source": "original",
+      "original": null,
+      "size": 809726755,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "0f77b0f1b3495edfb2255b6fb7ec60dc6c045ae9",
+        "md5": "71707479ad3bc0555144073a49013ba6",
+        "crc32": "dc9bae3f"
+      },
+      "durationSeconds": 1431.74,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1017 - A Barrage Of Powerful Techniques The Fierce Attacks Of The Worst Generation.mp4",
+      "episodeNumber": 1017,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Barrage Of Powerful Techniques The Fierce Attacks Of The Worst Generation",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1017 - A Barrage Of Powerful Techniques The Fierce Attacks Of The Worst Generation.mkv",
+      "size": 138525654,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "d6b07e296e0dd07fcd3c2f385e01a2978045365b",
+        "md5": "fa66372f92cd542ad0470d50564bab40",
+        "crc32": "26d6afe5"
+      },
+      "durationSeconds": 1431.74,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1018 - Kaido Laughs The Emperors Of The Sea Vs New Generation.mkv",
+      "episodeNumber": 1018,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Kaido Laughs The Emperors Of The Sea Vs New Generation",
+      "source": "original",
+      "original": null,
+      "size": 873675168,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "0b370fdc60771368e8963d4ed83640b060b7efc4",
+        "md5": "cf8bac12f5da18721b0f34f9cafcb8dd",
+        "crc32": "25715b75"
+      },
+      "durationSeconds": 1431.63,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1018 - Kaido Laughs The Emperors Of The Sea Vs New Generation.mp4",
+      "episodeNumber": 1018,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Kaido Laughs The Emperors Of The Sea Vs New Generation",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1018 - Kaido Laughs The Emperors Of The Sea Vs New Generation.mkv",
+      "size": 139938539,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "8453b29f68d17fce263368c63ee468f4df4b6063",
+        "md5": "9cb397fefd5caa4ef2d9d29c05d4662b",
+        "crc32": "703b2b80"
+      },
+      "durationSeconds": 1431.63,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1019 - Otama's Secret Plan Operation Kibi Dango.mkv",
+      "episodeNumber": 1019,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Otama's Secret Plan Operation Kibi Dango",
+      "source": "original",
+      "original": null,
+      "size": 715696012,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "b466fbdb4a7a255880f707195c865bea5c2d505f",
+        "md5": "d2b637745cf16248e209c130bf338903",
+        "crc32": "f49f9dc1"
+      },
+      "durationSeconds": 1431.67,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1019 - Otama's Secret Plan Operation Kibi Dango.mp4",
+      "episodeNumber": 1019,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Otama's Secret Plan Operation Kibi Dango",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1019 - Otama's Secret Plan Operation Kibi Dango.mkv",
+      "size": 138277209,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "215b8181d1e2b0eaf316288f2795d97c1b6f50ca",
+        "md5": "e8d1c1633412a9a2d090ab410ff1d7c5",
+        "crc32": "016c8778"
+      },
+      "durationSeconds": 1431.67,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1020 - Sanji's Scream An Sos Echoes Over The Island.mkv",
+      "episodeNumber": 1020,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Sanji's Scream An Sos Echoes Over The Island",
+      "source": "original",
+      "original": null,
+      "size": 734173110,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "06ce7ccc034098162fae4bdae757c2b987ec5be4",
+        "md5": "1518e7962fec37e5333c6ecab6beabc0",
+        "crc32": "bfaa342b"
+      },
+      "durationSeconds": 1431.67,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1020 - Sanji's Scream An Sos Echoes Over The Island.mp4",
+      "episodeNumber": 1020,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Sanji's Scream An Sos Echoes Over The Island",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1020 - Sanji's Scream An Sos Echoes Over The Island.mkv",
+      "size": 138593061,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "fab07e0bf877265694a236a084855e12ad926a2e",
+        "md5": "e53e6f552afb97b7796d32e7abec0fdc",
+        "crc32": "09587dfb"
+      },
+      "durationSeconds": 1431.67,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1021 - Spank Strikes Sanji's Woman-Trouble.mkv",
+      "episodeNumber": 1021,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Spank Strikes Sanji's Woman-Trouble",
+      "source": "original",
+      "original": null,
+      "size": 718863322,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "537c81795974f4c8b9f3171c2a67bb33707c6343",
+        "md5": "f77e066641a079a065b6208b02fa892b",
+        "crc32": "2679c985"
+      },
+      "durationSeconds": 1431.79,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1021 - Spank Strikes Sanji's Woman-Trouble.mp4",
+      "episodeNumber": 1021,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Spank Strikes Sanji's Woman-Trouble",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1021 - Spank Strikes Sanji's Woman-Trouble.mkv",
+      "size": 139147195,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2be3b9d056d628f5417c803f828b834d187a3de7",
+        "md5": "83d616517191b4efb92282dbfb48a0ae",
+        "crc32": "58602a0e"
+      },
+      "durationSeconds": 1431.79,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1022 - No Regrets Luffy And Boss A Master-Disciple Bond.mkv",
+      "episodeNumber": 1022,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "No Regrets Luffy And Boss A Master-Disciple Bond",
+      "source": "original",
+      "original": null,
+      "size": 815448724,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "b7470ea1853b81d0353205cc252444f7ac3dc9e5",
+        "md5": "68a0c0d6ceaf2d6d6feca932b56f47d5",
+        "crc32": "7745c362"
+      },
+      "durationSeconds": 1431.67,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1022 - No Regrets Luffy And Boss A Master-Disciple Bond.mp4",
+      "episodeNumber": 1022,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "No Regrets Luffy And Boss A Master-Disciple Bond",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1022 - No Regrets Luffy And Boss A Master-Disciple Bond.mkv",
+      "size": 139391422,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "7154d0ae2b03268e35b30b58b59de824d7c2c33f",
+        "md5": "5dd8242bf807c8ce86b312e8485fe48f",
+        "crc32": "87ef29f2"
+      },
+      "durationSeconds": 1431.67,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1023 - All Set Chopperphage Nebulizer.mkv",
+      "episodeNumber": 1023,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "All Set Chopperphage Nebulizer",
+      "source": "original",
+      "original": null,
+      "size": 746071524,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "e6cc1c61f06a7baa1f923a8729fef3c62a8428e0",
+        "md5": "6d60875fc3d0637ba7af2bde9263716b",
+        "crc32": "dd9bf074"
+      },
+      "durationSeconds": 1431.63,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1023 - All Set Chopperphage Nebulizer.mp4",
+      "episodeNumber": 1023,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "All Set Chopperphage Nebulizer",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1023 - All Set Chopperphage Nebulizer.mkv",
+      "size": 138512527,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "ce7b52fa001a12bfc5bd9778cdf939510a80f926",
+        "md5": "478402dd28d94af5fba9b823fcad75b3",
+        "crc32": "31a0b8be"
+      },
+      "durationSeconds": 1431.63,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1024 - Oden Appears The Confused Hearts Of The Akazaya Members.mkv",
+      "episodeNumber": 1024,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Oden Appears The Confused Hearts Of The Akazaya Members",
+      "source": "original",
+      "original": null,
+      "size": 681558755,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "d2b2e6f0ac14b9e6982b66746893a65e9ff0987d",
+        "md5": "a2908797f93b19108666227423427c7e",
+        "crc32": "35472c73"
+      },
+      "durationSeconds": 1431.05,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1024 - Oden Appears The Confused Hearts Of The Akazaya Members.mp4",
+      "episodeNumber": 1024,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Oden Appears The Confused Hearts Of The Akazaya Members",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1024 - Oden Appears The Confused Hearts Of The Akazaya Members.mkv",
+      "size": 139139254,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "0f043e6d16b147d15890cfed8e7ba9b1850fe7fc",
+        "md5": "157f9473addeeff59e624ab0cfe5a1a8",
+        "crc32": "210dbb91"
+      },
+      "durationSeconds": 1431.05,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1025 - The Worst Generation Gets Wiped Out! The Emperors' Deadly Attack!.mkv",
+      "episodeNumber": 1025,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Worst Generation Gets Wiped Out! The Emperors' Deadly Attack!",
+      "source": "original",
+      "original": null,
+      "size": 940138320,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "803df90226d3ab7cfca78f3433c158b5a346c877",
+        "md5": "b1a338f6d08022a4e3c4e0fa90fa5a16",
+        "crc32": "7fb53b0b"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1025 - The Worst Generation Gets Wiped Out! The Emperors' Deadly Attack!.mp4",
+      "episodeNumber": 1025,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Worst Generation Gets Wiped Out! The Emperors' Deadly Attack!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1025 - The Worst Generation Gets Wiped Out! The Emperors' Deadly Attack!.mkv",
+      "size": 139633766,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "1f887583199bf7393e55c05981cef906e95b72e3",
+        "md5": "f72a5faa244006b3753d3cd2a238e356",
+        "crc32": "241cba55"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1026 - The Supernovas Strike Back! The Mission to Tear Apart the Emperors!.mkv",
+      "episodeNumber": 1026,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Supernovas Strike Back! The Mission to Tear Apart the Emperors!",
+      "source": "original",
+      "original": null,
+      "size": 795282978,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "903edf63e9017c3a06048ab633c1099ab068e175",
+        "md5": "788d652dba380b559eeec1f7deaec599",
+        "crc32": "071edf6e"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1026 - The Supernovas Strike Back! The Mission to Tear Apart the Emperors!.mp4",
+      "episodeNumber": 1026,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Supernovas Strike Back! The Mission to Tear Apart the Emperors!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1026 - The Supernovas Strike Back! The Mission to Tear Apart the Emperors!.mkv",
+      "size": 139906425,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "f507545d36f0fa3aa03c559454c63454f1ffc7e7",
+        "md5": "d1bdfe48b15769a4c895b642e736d0f8",
+        "crc32": "f74ae7be"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1027 - Defend Luffy! Zoro and Law's Sword Technique!.mkv",
+      "episodeNumber": 1027,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Defend Luffy! Zoro and Law's Sword Technique!",
+      "source": "original",
+      "original": null,
+      "size": 802725529,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a2e4b4185094dadff2de1176210cd261611a4a6a",
+        "md5": "133ba92bdfe376f0929bc2029915dbdb",
+        "crc32": "e8b25e08"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1027 - Defend Luffy! Zoro and Law's Sword Technique!.mp4",
+      "episodeNumber": 1027,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Defend Luffy! Zoro and Law's Sword Technique!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1027 - Defend Luffy! Zoro and Law's Sword Technique!.mkv",
+      "size": 140415583,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "ca6002bccacc1cc75b60383eb525065ebc50faeb",
+        "md5": "b8f40b50a523be4b5ea742c2423d9833",
+        "crc32": "5a4634eb"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1028 - Surpass the Emperor Of The Sea! Luffy Strikes Back With An Iron Fist!.mkv",
+      "episodeNumber": 1028,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Surpass the Emperor Of The Sea! Luffy Strikes Back With An Iron Fist!",
+      "source": "original",
+      "original": null,
+      "size": 823992097,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "b9855310440c3962a0a0bcb34f55898c176ba4da",
+        "md5": "90e89608a34e5494d8237e19d0ea75df",
+        "crc32": "45ab3c48"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1028 - Surpass the Emperor Of The Sea! Luffy Strikes Back With An Iron Fist!.mp4",
+      "episodeNumber": 1028,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Surpass the Emperor Of The Sea! Luffy Strikes Back With An Iron Fist!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1028 - Surpass the Emperor Of The Sea! Luffy Strikes Back With An Iron Fist!.mkv",
+      "size": 139263817,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "eb96b57f9ead75d6be86db3cc552385984a91059",
+        "md5": "00cb84f2246a123349cc56146a9cd26e",
+        "crc32": "c6f3fcbc"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1029 - A Faint Memory! Luffy and Red-Haired's Daughter Uta!.mkv",
+      "episodeNumber": 1029,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Faint Memory! Luffy and Red-Haired's Daughter Uta!",
+      "source": "original",
+      "original": null,
+      "size": 613713431,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "8c6677d46e0931792beb4a071b605f659d8a6834",
+        "md5": "258ebb982652d8bd428f82a26f39b0f2",
+        "crc32": "73605a0c"
+      },
+      "durationSeconds": 1418.15,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1029 - A Faint Memory! Luffy and Red-Haired's Daughter Uta!.mp4",
+      "episodeNumber": 1029,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Faint Memory! Luffy and Red-Haired's Daughter Uta!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1029 - A Faint Memory! Luffy and Red-Haired's Daughter Uta!.mkv",
+      "size": 139076194,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "92151a31849cff51e0b28fec6a9f4988eacaab06",
+        "md5": "546894434c8650dc02ecebd048131b1b",
+        "crc32": "b4b50cce"
+      },
+      "durationSeconds": 1418.15,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1030 - A Pledge for the Next Genesis! Luffy and Uta!.mkv",
+      "episodeNumber": 1030,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Pledge for the Next Genesis! Luffy and Uta!",
+      "source": "original",
+      "original": null,
+      "size": 580231517,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "4f6f33033bc8a4e36efb76035d983b30164b515e",
+        "md5": "fe28b8188d4dfd030a68337662173e84",
+        "crc32": "b3154e93"
+      },
+      "durationSeconds": 1418.15,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1030 - A Pledge for the Next Genesis! Luffy and Uta!.mp4",
+      "episodeNumber": 1030,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Pledge for the Next Genesis! Luffy and Uta!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1030 - A Pledge for the Next Genesis! Luffy and Uta!.mkv",
+      "size": 139738491,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "e0b1427b4f2006baceb4c19e5ff3930db5a3ad59",
+        "md5": "09b031c00bd6bd3849d74793271f2677",
+        "crc32": "fe033607"
+      },
+      "durationSeconds": 1418.15,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1031 - Nami Screams - A Deadly Death Race!.mkv",
+      "episodeNumber": 1031,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Nami Screams - A Deadly Death Race!",
+      "source": "original",
+      "original": null,
+      "size": 800639933,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "7c695ae19fd97d1374edfb96067a8b56a24e1df8",
+        "md5": "05b1de36c371227a570c4d6f9be479e0",
+        "crc32": "98318a8b"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1031 - Nami Screams - A Deadly Death Race!.mp4",
+      "episodeNumber": 1031,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Nami Screams - A Deadly Death Race!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1031 - Nami Screams - A Deadly Death Race!.mkv",
+      "size": 139109625,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "133b9442d03f98a4467082c6cac2a3dbd4dcea7e",
+        "md5": "5f432e636249e8349978cfb59f4ca219",
+        "crc32": "5949c263"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1032 - The Dawn of the Land of Wano - The All-Out Battle Heats Up!.mkv",
+      "episodeNumber": 1032,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Dawn of the Land of Wano - The All-Out Battle Heats Up!",
+      "source": "original",
+      "original": null,
+      "size": 802079617,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "92d14a2019e31c84c1c73aad301e9dd5e3d1bb59",
+        "md5": "e27e3bd21fb0c31d036c00c8f365cbaf",
+        "crc32": "c3225f14"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1032 - The Dawn of the Land of Wano - The All-Out Battle Heats Up!.mp4",
+      "episodeNumber": 1032,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Dawn of the Land of Wano - The All-Out Battle Heats Up!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1032 - The Dawn of the Land of Wano - The All-Out Battle Heats Up!.mkv",
+      "size": 139368935,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "e47685ad431e2f8d3befcaf25b43dd8edadbf48a",
+        "md5": "2f53478e4177f8dc07f1db247857b3a1",
+        "crc32": "b3ca61d3"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1033 - The Conclusion! Luffy, Accelerating Fist of the Conqueror.mkv",
+      "episodeNumber": 1033,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Conclusion! Luffy, Accelerating Fist of the Conqueror",
+      "source": "original",
+      "original": null,
+      "size": 865553533,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "3dba219fd37d52b4b0713711e6b941d072572b00",
+        "md5": "e33650ce4caedb4867f0a20d40692549",
+        "crc32": "fb9a32c4"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1033 - The Conclusion! Luffy, Accelerating Fist of the Conqueror.mp4",
+      "episodeNumber": 1033,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Conclusion! Luffy, Accelerating Fist of the Conqueror",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1033 - The Conclusion! Luffy, Accelerating Fist of the Conqueror.mkv",
+      "size": 139643980,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "a40d497e5680473ee97f1bd462463f46a364c78c",
+        "md5": "f3707ed66c3e4fae77ec67de0219a1c2",
+        "crc32": "e309d30f"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1034 - Luffy Defeated! The Straw Hats in Jeopardy!.mkv",
+      "episodeNumber": 1034,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Luffy Defeated! The Straw Hats in Jeopardy!",
+      "source": "original",
+      "original": null,
+      "size": 898859301,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "63a9322dd99886fa795425b3f3ff455ed1f7a554",
+        "md5": "2edd4aa3253092f23433db1275fbc69e",
+        "crc32": "efe7c8ab"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1034 - Luffy Defeated! The Straw Hats in Jeopardy!.mp4",
+      "episodeNumber": 1034,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Luffy Defeated! The Straw Hats in Jeopardy!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1034 - Luffy Defeated! The Straw Hats in Jeopardy!.mkv",
+      "size": 140211445,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "37857513af525de04c207b0fc84842ae5d760858",
+        "md5": "aebe168ab7111775d45b3c303dcc4f96",
+        "crc32": "8fa9c81a"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1035 - The Animal Kingdom Pirates Trample Down! The End of the Kozuki Clan!.mkv",
+      "episodeNumber": 1035,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Animal Kingdom Pirates Trample Down! The End of the Kozuki Clan!",
+      "source": "original",
+      "original": null,
+      "size": 790447421,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "071ef2caf4d442ac94fd37ff66b066dd323435db",
+        "md5": "bc65b0ebd153c56a74c922a672299c72",
+        "crc32": "b877293c"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1035 - The Animal Kingdom Pirates Trample Down! The End of the Kozuki Clan!.mp4",
+      "episodeNumber": 1035,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Animal Kingdom Pirates Trample Down! The End of the Kozuki Clan!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1035 - The Animal Kingdom Pirates Trample Down! The End of the Kozuki Clan!.mkv",
+      "size": 140713712,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "4c30d1616e67a67344b384c92fadb296d19e940b",
+        "md5": "d805f8f1545fc21fd70e4d220bb1ed15",
+        "crc32": "2f78aa6f"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1036 - Fight Against the Dark Night The Commander-in-Chief of the Land of Wano Sounds Off.mkv",
+      "episodeNumber": 1036,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Fight Against the Dark Night The Commander-in-Chief of the Land of Wano Sounds Off",
+      "source": "original",
+      "original": null,
+      "size": 761575682,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "019dd202cc6bc95326a2f76df749ad9ed4f1516e",
+        "md5": "24f79f27e6224edc51dcf0fa378f6884",
+        "crc32": "28d26242"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1036 - Fight Against the Dark Night The Commander-in-Chief of the Land of Wano Sounds Off.mp4",
+      "episodeNumber": 1036,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Fight Against the Dark Night The Commander-in-Chief of the Land of Wano Sounds Off",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1036 - Fight Against the Dark Night The Commander-in-Chief of the Land of Wano Sounds Off.mkv",
+      "size": 140717719,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "f1e30abb3d89d364efcd0e941505f14600b1515d",
+        "md5": "4da4381c4cee596e098c79a5af6bb0aa",
+        "crc32": "5fd4adc5"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1037 - Believe in Luffy! The Alliance's Counterattack Begins!.mkv",
+      "episodeNumber": 1037,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Believe in Luffy! The Alliance's Counterattack Begins!",
+      "source": "original",
+      "original": null,
+      "size": 787352094,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "b667f4e6e791f2d7c4e4388f99067d3b63c16813",
+        "md5": "53ba96ff22a789c8ea539d7622a3899e",
+        "crc32": "0fb552bb"
+      },
+      "durationSeconds": 1430.84,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1037 - Believe in Luffy! The Alliance's Counterattack Begins!.mp4",
+      "episodeNumber": 1037,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Believe in Luffy! The Alliance's Counterattack Begins!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1037 - Believe in Luffy! The Alliance's Counterattack Begins!.mkv",
+      "size": 138912199,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "a3a03cf942e2a0d95a9d956724df37fe52e6f114",
+        "md5": "4766bc7f9a7c025a58fca13cd7acc38e",
+        "crc32": "b87fdb41"
+      },
+      "durationSeconds": 1430.78,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1038 - Nami's Lethal Attack! Otama's Desperate Challenge!.mkv",
+      "episodeNumber": 1038,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Nami's Lethal Attack! Otama's Desperate Challenge!",
+      "source": "original",
+      "original": null,
+      "size": 852056898,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "9423f6b5d388896903a8834101084d5eaaf47f01",
+        "md5": "0ce3eab3607d141bd3d10b4f78e4c2df",
+        "crc32": "ecbfdb69"
+      },
+      "durationSeconds": 1430.84,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1038 - Nami's Lethal Attack! Otama's Desperate Challenge!.mp4",
+      "episodeNumber": 1038,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Nami's Lethal Attack! Otama's Desperate Challenge!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1038 - Nami's Lethal Attack! Otama's Desperate Challenge!.mkv",
+      "size": 139553639,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "8720ace648004ed8f2c1bba084a194a2c7f5326e",
+        "md5": "1f5f3d0b1151c5abe791125023ef495b",
+        "crc32": "12a1bdd6"
+      },
+      "durationSeconds": 1430.78,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1039 - A Dramatic Increase Of Allies! Straw Hats Fight Back!.mkv",
+      "episodeNumber": 1039,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Dramatic Increase Of Allies! Straw Hats Fight Back!",
+      "source": "original",
+      "original": null,
+      "size": 777552471,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "e11550268cba2e756084df06d05248eb167d7c40",
+        "md5": "2d4d8cad2f1a2db5e7e9013175a6d319",
+        "crc32": "acf0215f"
+      },
+      "durationSeconds": 1430.84,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1039 - A Dramatic Increase Of Allies! Straw Hats Fight Back!.mp4",
+      "episodeNumber": 1039,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Dramatic Increase Of Allies! Straw Hats Fight Back!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1039 - A Dramatic Increase Of Allies! Straw Hats Fight Back!.mkv",
+      "size": 139551455,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "fb52436a9217da465bad6a5cbd995732b5345d4e",
+        "md5": "4ff1d2156fcd4bf44e7b3952b6a6709c",
+        "crc32": "cc963ad1"
+      },
+      "durationSeconds": 1430.78,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1040 - The Pride Of A Helmsman - The Enraged Jimbei!.mkv",
+      "episodeNumber": 1040,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Pride Of A Helmsman - The Enraged Jimbei!",
+      "source": "original",
+      "original": null,
+      "size": 696361417,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "eebddd50c54ccf4056e8ffbe3a44ee33b2dcd911",
+        "md5": "0306848c3edee97eb189615b36778736",
+        "crc32": "d9b83939"
+      },
+      "durationSeconds": 1430.79,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1040 - The Pride Of A Helmsman - The Enraged Jimbei!.mp4",
+      "episodeNumber": 1040,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Pride Of A Helmsman - The Enraged Jimbei!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1040 - The Pride Of A Helmsman - The Enraged Jimbei!.mkv",
+      "size": 138882752,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "404791e52c9cf1f51d3ff24f113a3391303e8877",
+        "md5": "35152050c0692940783aed9f8d555332",
+        "crc32": "8d20f14d"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1041 - Showdown Battles Of The Monsters! Yamato And Franky.mkv",
+      "episodeNumber": 1041,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Showdown Battles Of The Monsters! Yamato And Franky",
+      "source": "original",
+      "original": null,
+      "size": 678473373,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "c4abd50a5a402f99a79c573eeac4f9301de48850",
+        "md5": "fa32cbce93f26a3e75ca399b43413f5b",
+        "crc32": "f47fb5f4"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1041 - Showdown Battles Of The Monsters! Yamato And Franky.mp4",
+      "episodeNumber": 1041,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Showdown Battles Of The Monsters! Yamato And Franky",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1041 - Showdown Battles Of The Monsters! Yamato And Franky.mkv",
+      "size": 138964715,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "285edea9d98fc29815f79712342bb8de75915ea9",
+        "md5": "f59cdbc1951ef613a04c717871f24289",
+        "crc32": "23acd6fc"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1042 - The Predator's Trap - Black Maria's Temptation.mkv",
+      "episodeNumber": 1042,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Predator's Trap - Black Maria's Temptation",
+      "source": "original",
+      "original": null,
+      "size": 742106423,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "9f6951da0fc0473cb0942adb59832816231c7e70",
+        "md5": "0742de5b361192c2fb41515b38585d06",
+        "crc32": "8edb5963"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1042 - The Predator's Trap - Black Maria's Temptation.mp4",
+      "episodeNumber": 1042,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Predator's Trap - Black Maria's Temptation",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1042 - The Predator's Trap - Black Maria's Temptation.mkv",
+      "size": 140647320,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "eade211828ad9afd68fcfc04aaff10bdb826b601",
+        "md5": "61010fea3227d14b998b420537bd4e8c",
+        "crc32": "801cc588"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1043 - Slash the Nightmare - Brook Draws His Freezing Sword!.mkv",
+      "episodeNumber": 1043,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Slash the Nightmare - Brook Draws His Freezing Sword!",
+      "source": "original",
+      "original": null,
+      "size": 797192323,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "8a8650b54aa69dbcac751e1ab7518a497a5b310d",
+        "md5": "7798d68e2b0b8c83770c8e15cb8fcfc4",
+        "crc32": "99eb9e0e"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1043 - Slash the Nightmare - Brook Draws His Freezing Sword!.mp4",
+      "episodeNumber": 1043,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Slash the Nightmare - Brook Draws His Freezing Sword!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1043 - Slash the Nightmare - Brook Draws His Freezing Sword!.mkv",
+      "size": 140390670,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "9de4883d68ae38cb14587108beb57be8aca6b5ea",
+        "md5": "6e8a9b6ca5ac8531eee4a0b9dcbc31c5",
+        "crc32": "d8712723"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1044 - Clutch! A Demon Incarnate, Robin!.mkv",
+      "episodeNumber": 1044,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Clutch! A Demon Incarnate, Robin!",
+      "source": "original",
+      "original": null,
+      "size": 695857598,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "8872fd25ff008f583f9ce5c97fea4f25384f7bc8",
+        "md5": "f5fa143c1e701298d732be87405c222e",
+        "crc32": "4bc5247f"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1044 - Clutch! A Demon Incarnate, Robin!.mp4",
+      "episodeNumber": 1044,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Clutch! A Demon Incarnate, Robin!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1044 - Clutch! A Demon Incarnate, Robin!.mkv",
+      "size": 139631568,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "5bd2ff3c88ccd8f040c653bf5a91d1d9a60b273f",
+        "md5": "62eec593a214cf9ad5370e2d998e44b2",
+        "crc32": "dcd99b6b"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1045 - A Spell! Kid And Zoro Facing Threats!.mkv",
+      "episodeNumber": 1045,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Spell! Kid And Zoro Facing Threats!",
+      "source": "original",
+      "original": null,
+      "size": 704031765,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a33211c5c8555ec083ffe01aa0954c3737a96ac5",
+        "md5": "f0fbfe125780eeaf710b673fa4d6d7e2",
+        "crc32": "face90f6"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1045 - A Spell! Kid And Zoro Facing Threats!.mp4",
+      "episodeNumber": 1045,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Spell! Kid And Zoro Facing Threats!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1045 - A Spell! Kid And Zoro Facing Threats!.mkv",
+      "size": 138662030,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "32b022427b951b20fbc43660e1cf0e607350fc0f",
+        "md5": "d523bbd67e39cdea32996f618dc77284",
+        "crc32": "bb4645ea"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1046 - Taking A Chance! The Two Arms Go Into Battle!.mkv",
+      "episodeNumber": 1046,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Taking A Chance! The Two Arms Go Into Battle!",
+      "source": "original",
+      "original": null,
+      "size": 693525075,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "84176729318e351944494034999fd6c674065e9f",
+        "md5": "5e4f4d427719ac3367c08a8a5b6aa262",
+        "crc32": "ac2f1870"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1046 - Taking A Chance! The Two Arms Go Into Battle!.mp4",
+      "episodeNumber": 1046,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Taking A Chance! The Two Arms Go Into Battle!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1046 - Taking A Chance! The Two Arms Go Into Battle!.mkv",
+      "size": 139242991,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "4f169e28dc3378d5325bab5596fd913a94dd3910",
+        "md5": "23ad7a145aa4b771aad06aea921fe48c",
+        "crc32": "465307cf"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1047 - Ascend To The Dawn! A Pink Dragon Gets Agitated.mkv",
+      "episodeNumber": 1047,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Ascend To The Dawn! A Pink Dragon Gets Agitated",
+      "source": "original",
+      "original": null,
+      "size": 695338994,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "6ab0b748217c86def8cf8b8d70af525b5d9d8c15",
+        "md5": "d13f291c7fb69a3fe51ed2305011030a",
+        "crc32": "406bb738"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1047 - Ascend To The Dawn! A Pink Dragon Gets Agitated.mp4",
+      "episodeNumber": 1047,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Ascend To The Dawn! A Pink Dragon Gets Agitated",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1047 - Ascend To The Dawn! A Pink Dragon Gets Agitated.mkv",
+      "size": 139892497,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "c9a15428712ab883e89312cec22a0d42f2bfd867",
+        "md5": "292793cc0d698088f69876703a80785b",
+        "crc32": "5ae724c5"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1048 - For the Future! Yamato and the Great Swordsmen's Pledge.mkv",
+      "episodeNumber": 1048,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "For the Future! Yamato and the Great Swordsmen's Pledge",
+      "source": "original",
+      "original": null,
+      "size": 705705231,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "06b7124f939294717e2d6a49ec8e5f246fe10392",
+        "md5": "d4ad0bde69e0f5b67f909c95a8615084",
+        "crc32": "60a2b2ab"
+      },
+      "durationSeconds": 1430.84,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1048 - For the Future! Yamato and the Great Swordsmen's Pledge.mp4",
+      "episodeNumber": 1048,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "For the Future! Yamato and the Great Swordsmen's Pledge",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1048 - For the Future! Yamato and the Great Swordsmen's Pledge.mkv",
+      "size": 140014733,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "e9fdcf1a7fbb747da9cd23725398dabc905d2b9d",
+        "md5": "b852fb722797f1fe3fa7783946a610e5",
+        "crc32": "ccf9e60a"
+      },
+      "durationSeconds": 1430.78,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1049 - Luffy Soars! Revenge Against The King Of The Beasts.mkv",
+      "episodeNumber": 1049,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Luffy Soars! Revenge Against The King Of The Beasts",
+      "source": "original",
+      "original": null,
+      "size": 880720744,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "29695ee4b80b6504bd70107449bed15aa5a715bb",
+        "md5": "9687712e5cffa2254c9d577499f97a1d",
+        "crc32": "f86f38c9"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1049 - Luffy Soars! Revenge Against The King Of The Beasts.mp4",
+      "episodeNumber": 1049,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Luffy Soars! Revenge Against The King Of The Beasts",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1049 - Luffy Soars! Revenge Against The King Of The Beasts.mkv",
+      "size": 139734112,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "796598d617115004acee2f71948500d9201048ea",
+        "md5": "2d5aa22720411cc3bd389663e008251a",
+        "crc32": "40930ec9"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1050 - Two Dragons Face Off! Momonosuke's Determination!.mkv",
+      "episodeNumber": 1050,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Two Dragons Face Off! Momonosuke's Determination!",
+      "source": "original",
+      "original": null,
+      "size": 769019936,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "f575a4e3ee708b6586397cce4f7761d2207c2b0e",
+        "md5": "fa4321ed0aed75d70ef61a67f66d20e7",
+        "crc32": "46a0d3ac"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1050 - Two Dragons Face Off! Momonosuke's Determination!.mp4",
+      "episodeNumber": 1050,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Two Dragons Face Off! Momonosuke's Determination!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1050 - Two Dragons Face Off! Momonosuke's Determination!.mkv",
+      "size": 139721821,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2c656bb8eb684b64f2eaacd3f8649ac492f60714",
+        "md5": "2611f897102bc4562263dd27fe9be7b8",
+        "crc32": "fdc03c31"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1051 - A Legend All Over Again! Luffy's Fist Roars In The Sky!.mkv",
+      "episodeNumber": 1051,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Legend All Over Again! Luffy's Fist Roars In The Sky!",
+      "source": "original",
+      "original": null,
+      "size": 771730242,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "e575a92aba702f1b839c1f7d7d4956d67b65754a",
+        "md5": "1e877aa91ade6a3b2fa4b90eac6d5988",
+        "crc32": "66bb15a9"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1051 - A Legend All Over Again! Luffy's Fist Roars In The Sky!.mp4",
+      "episodeNumber": 1051,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Legend All Over Again! Luffy's Fist Roars In The Sky!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1051 - A Legend All Over Again! Luffy's Fist Roars In The Sky!.mkv",
+      "size": 139577520,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "c3db0c9d5b7c18f85bc4bcec3cbc171ee06fb0f0",
+        "md5": "778a0011bd39612c02712720523879aa",
+        "crc32": "0a345c49"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1052 - The Situation Has Grown Tense! The End Of Onigashima!.mkv",
+      "episodeNumber": 1052,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Situation Has Grown Tense! The End Of Onigashima!",
+      "source": "original",
+      "original": null,
+      "size": 655236123,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "d24aeb56bbfe98bed07dfc1c53a20f3373f188fe",
+        "md5": "abb8d69ff33e820ba4969464251e2b87",
+        "crc32": "dfbd1b34"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1052 - The Situation Has Grown Tense! The End Of Onigashima!.mp4",
+      "episodeNumber": 1052,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Situation Has Grown Tense! The End Of Onigashima!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1052 - The Situation Has Grown Tense! The End Of Onigashima!.mkv",
+      "size": 139441592,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "589ed82d86d4ebb1ed6b48d2306d382de390fd20",
+        "md5": "743e81bfd9d6f19724fa2b665b9eec3a",
+        "crc32": "a6f2e93b"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1053 - Sanji's Mutation The Two Arms In Crisis!.mkv",
+      "episodeNumber": 1053,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Sanji's Mutation The Two Arms In Crisis!",
+      "source": "original",
+      "original": null,
+      "size": 669584702,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "6f4b726310b3c3eebffc5d851162e07b0e98700d",
+        "md5": "715504ee9ef3aae3b5a9ae5adb18447f",
+        "crc32": "335ee7d2"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1053 - Sanji's Mutation The Two Arms In Crisis!.mp4",
+      "episodeNumber": 1053,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Sanji's Mutation The Two Arms In Crisis!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1053 - Sanji's Mutation The Two Arms In Crisis!.mkv",
+      "size": 140656781,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "4e2e42e24ee82fb8eafd8c9c6a1383699ca7f446",
+        "md5": "8ea04e79d9ce94d169c05f48a1f9982b",
+        "crc32": "5e71c5aa"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1054 - Death To Your Partner! Killer's Deadly Gamble!.mkv",
+      "episodeNumber": 1054,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Death To Your Partner! Killer's Deadly Gamble!",
+      "source": "original",
+      "original": null,
+      "size": 839134374,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "36274e76f27772e9d20932e48f952627ac572b40",
+        "md5": "9150868ce9c3e842b593b89794f4e64a",
+        "crc32": "ba2616c5"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1054 - Death To Your Partner! Killer's Deadly Gamble!.mp4",
+      "episodeNumber": 1054,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Death To Your Partner! Killer's Deadly Gamble!",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1054 - Death To Your Partner! Killer's Deadly Gamble!.mkv",
+      "size": 140220259,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "a022ef558c8e141fec2a2a7e64a72ae09529d735",
+        "md5": "ae94fac2e635897436c0053d5fe1e758",
+        "crc32": "0befdd46"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1055 - A Shadowy Figure Pulls The Strings! Onigashima In Flames.mkv",
+      "episodeNumber": 1055,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Shadowy Figure Pulls The Strings! Onigashima In Flames",
+      "source": "original",
+      "original": null,
+      "size": 673820500,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "06cec3a9cfe1be0fc7a834ec8ec68cdef2c9c0b1",
+        "md5": "1d3f6a9ec45f0b5fb50c01f8e8240157",
+        "crc32": "13f209cf"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1055 - A Shadowy Figure Pulls The Strings! Onigashima In Flames.mp4",
+      "episodeNumber": 1055,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Shadowy Figure Pulls The Strings! Onigashima In Flames",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1055 - A Shadowy Figure Pulls The Strings! Onigashima In Flames.mkv",
+      "size": 139706832,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "8c1e067adb7a65de201d32a1d57b6903fdae4442",
+        "md5": "97d41b161b188bfb0146533f4e211d11",
+        "crc32": "7f05cada"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1056 - A Countercharge Law And Kid's Return-Attack Combination.mkv",
+      "episodeNumber": 1056,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Countercharge Law And Kid's Return-Attack Combination",
+      "source": "original",
+      "original": null,
+      "size": 709753914,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "4b4953734fdd20a854776227f628faa5777aabe8",
+        "md5": "72838a37afe1224fe1e5e06c75da17dd",
+        "crc32": "971a3582"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1056 - A Countercharge Law And Kid's Return-Attack Combination.mp4",
+      "episodeNumber": 1056,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Countercharge Law And Kid's Return-Attack Combination",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1056 - A Countercharge Law And Kid's Return-Attack Combination.mkv",
+      "size": 139122173,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "09cc74fe92fd5142947ac426af6f6d3d9e9b034f",
+        "md5": "e1bdeab87ef10e6da83455411ce18593",
+        "crc32": "53d898ad"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1057 - For Luffy - Sanji And Zoro's Oath.mkv",
+      "episodeNumber": 1057,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "For Luffy - Sanji And Zoro's Oath",
+      "source": "original",
+      "original": null,
+      "size": 782749373,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "06485d2f98b951b429cfc2ebbbf9984ccd3f6c42",
+        "md5": "59919446a126fd0b3b423127c8dd163a",
+        "crc32": "56c436b5"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1057 - For Luffy - Sanji And Zoro's Oath.mp4",
+      "episodeNumber": 1057,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "For Luffy - Sanji And Zoro's Oath",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1057 - For Luffy - Sanji And Zoro's Oath.mkv",
+      "size": 139494851,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "aef3c33ebe81f3bf988cb27ea794da6f066484d6",
+        "md5": "3501acefd7824c1c9526a9405fa0c8de",
+        "crc32": "79251703"
+      },
+      "durationSeconds": 1430.73,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1058 - The Onslaught Of Kazenbo - Orochi's Evil Clutches Close In.mkv",
+      "episodeNumber": 1058,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Onslaught Of Kazenbo - Orochi's Evil Clutches Close In",
+      "source": "original",
+      "original": null,
+      "size": 846485416,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "47d09899757f241e78cfae9a8c87febf6bba4db3",
+        "md5": "358fec55bfec3dc58eeddc6695503fac",
+        "crc32": "cabb87f4"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1058 - The Onslaught Of Kazenbo - Orochi's Evil Clutches Close In.mp4",
+      "episodeNumber": 1058,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Onslaught Of Kazenbo - Orochi's Evil Clutches Close In",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1058 - The Onslaught Of Kazenbo - Orochi's Evil Clutches Close In.mkv",
+      "size": 139587311,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "1e4fedabe7b92df66bc854a559325ce900ca0441",
+        "md5": "090d5ae1f69e15a120923f52c570d2db",
+        "crc32": "360188eb"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1059 - Zoro Faces Adversity - A Monster! King The Wildfire.mkv",
+      "episodeNumber": 1059,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Zoro Faces Adversity - A Monster! King The Wildfire",
+      "source": "original",
+      "original": null,
+      "size": 792194544,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "3e375371279d41e7682e43e5f5dd2c713e528d98",
+        "md5": "48dad9f854237d08efc68cad05fb74b0",
+        "crc32": "60a2adf3"
+      },
+      "durationSeconds": 1430.84,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1059 - Zoro Faces Adversity - A Monster! King The Wildfire.mp4",
+      "episodeNumber": 1059,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Zoro Faces Adversity - A Monster! King The Wildfire",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1059 - Zoro Faces Adversity - A Monster! King The Wildfire.mkv",
+      "size": 139898824,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2f0a8a63ff2336ef9f1abf23f59d58cae63b69c7",
+        "md5": "1873e8022e37793d97493992e0bc371d",
+        "crc32": "6fa25a9e"
+      },
+      "durationSeconds": 1430.78,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1060 - The Secret Of Enma! The Cursed Sword Entrusted To Zoro.mkv",
+      "episodeNumber": 1060,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Secret Of Enma! The Cursed Sword Entrusted To Zoro",
+      "source": "original",
+      "original": null,
+      "size": 791153854,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "516693e7340edfbf9354820ca30e29463584660d",
+        "md5": "ea6eda00902fe307311ae430f7ffb4f8",
+        "crc32": "37ca35b6"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1060 - The Secret Of Enma! The Cursed Sword Entrusted To Zoro.mp4",
+      "episodeNumber": 1060,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Secret Of Enma! The Cursed Sword Entrusted To Zoro",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1060 - The Secret Of Enma! The Cursed Sword Entrusted To Zoro.mkv",
+      "size": 140201717,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "e419708b84d3bf43356ce2937dc47d7dd1a71084",
+        "md5": "6418b1d09194c993a8f5557f6878138c",
+        "crc32": "8736fb4d"
+      },
+      "durationSeconds": 1430.69,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1061 - The Strike Of An Ifrit! Sanji Vs. Queen.mkv",
+      "episodeNumber": 1061,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Strike Of An Ifrit! Sanji Vs. Queen",
+      "source": "original",
+      "original": null,
+      "size": 812841417,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "2a276121b3ed7c36ea2e2fea6f827730ee58a65e",
+        "md5": "a4f068f9ccf0bd63816f39a86766fb22",
+        "crc32": "8e7c9c97"
+      },
+      "durationSeconds": 1430.93,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1061 - The Strike Of An Ifrit! Sanji Vs. Queen.mp4",
+      "episodeNumber": 1061,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Strike Of An Ifrit! Sanji Vs. Queen",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1061 - The Strike Of An Ifrit! Sanji Vs. Queen.mkv",
+      "size": 139070687,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "3841929ea096ace805336ba6d4136257155aa611",
+        "md5": "c51435addf2f431550e8c7ce962ac4d6",
+        "crc32": "95626650"
+      },
+      "durationSeconds": 1430.86,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1062 - The Three-Sword Style Of The Conqueror Zoro Vs King.mkv",
+      "episodeNumber": 1062,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Three-Sword Style Of The Conqueror Zoro Vs King",
+      "source": "original",
+      "original": null,
+      "size": 810511708,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "196dab446d9eabf302836337d06f7b7b956429bb",
+        "md5": "28fc38191ac5669e01dfa057856cb853",
+        "crc32": "f9bf3ecd"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1062 - The Three-Sword Style Of The Conqueror Zoro Vs King.mp4",
+      "episodeNumber": 1062,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Three-Sword Style Of The Conqueror Zoro Vs King",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1062 - The Three-Sword Style Of The Conqueror Zoro Vs King.mkv",
+      "size": 139294488,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "6535856f07c8fb851c92522f221c1ec9f38fbdbe",
+        "md5": "fbdcda4199ac2aea7439034cd236b5f1",
+        "crc32": "5aa20eea"
+      },
+      "durationSeconds": 1430.76,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1063 - Luffy Is On The Move A Turning Point To A New Era.mkv",
+      "episodeNumber": 1063,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Luffy Is On The Move A Turning Point To A New Era",
+      "source": "original",
+      "original": null,
+      "size": 737951176,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "07a7eb4026119d0d4dfe5f6a94ed1746aae31dbc",
+        "md5": "d8637878fee2590fe7b214a9a26b5e62",
+        "crc32": "e338e1a9"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1063 - Luffy Is On The Move A Turning Point To A New Era.mp4",
+      "episodeNumber": 1063,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Luffy Is On The Move A Turning Point To A New Era",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1063 - Luffy Is On The Move A Turning Point To A New Era.mkv",
+      "size": 139375393,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "9ca04d9cfdd878ebacdab1ed0f8b6126b34d47d1",
+        "md5": "f8bd99ce32370102e72b5f3ccf87a1b7",
+        "crc32": "9b22b415"
+      },
+      "durationSeconds": 1430.76,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1064 - Drunken Dragon Bagua The Lawless Dragon Closing In On Luffy.mkv",
+      "episodeNumber": 1064,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Drunken Dragon Bagua The Lawless Dragon Closing In On Luffy",
+      "source": "original",
+      "original": null,
+      "size": 652029787,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "0e1ad44f484e49347f97b8f9a172df53bbeb4be4",
+        "md5": "ccd36ec810fb1676865fbdf057380c86",
+        "crc32": "aee87ab9"
+      },
+      "durationSeconds": 1430.84,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1064 - Drunken Dragon Bagua The Lawless Dragon Closing In On Luffy.mp4",
+      "episodeNumber": 1064,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Drunken Dragon Bagua The Lawless Dragon Closing In On Luffy",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1064 - Drunken Dragon Bagua The Lawless Dragon Closing In On Luffy.mkv",
+      "size": 140003654,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2d19dd4f3f4f051c7e51eb0a37057208c0a46d31",
+        "md5": "72452f7af181961a8fd2acc73322114b",
+        "crc32": "9a404c8f"
+      },
+      "durationSeconds": 1430.83,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1065 - The Destruction Of The Alliance Fire Up The Will Of The New Generation.mkv",
+      "episodeNumber": 1065,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Destruction Of The Alliance Fire Up The Will Of The New Generation",
+      "source": "original",
+      "original": null,
+      "size": 624656492,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "9e3580d66c2183559a0f02d1c9d64e8937060f2c",
+        "md5": "9153f18bba00769ba3198a44146ced5b",
+        "crc32": "a51239e1"
+      },
+      "durationSeconds": 1430.77,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1065 - The Destruction Of The Alliance Fire Up The Will Of The New Generation.mp4",
+      "episodeNumber": 1065,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Destruction Of The Alliance Fire Up The Will Of The New Generation",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1065 - The Destruction Of The Alliance Fire Up The Will Of The New Generation.mkv",
+      "size": 139085408,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "1a2032438079f36e2ae96a931e5692d9c7606442",
+        "md5": "d16fe306d821310d94381597eec352e6",
+        "crc32": "94adc8e6"
+      },
+      "durationSeconds": 1430.76,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1066 - Here Comes Main Act Powerful Techniques Of Shockwave And Magnetism.mkv",
+      "episodeNumber": 1066,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Here Comes Main Act Powerful Techniques Of Shockwave And Magnetism",
+      "source": "original",
+      "original": null,
+      "size": 722831932,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "f0acb49217d2f4c810b7e936051d2bfa3ecdced9",
+        "md5": "c2f81efe227ecb3a4f43ad482dc948c3",
+        "crc32": "57f2810c"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1066 - Here Comes Main Act Powerful Techniques Of Shockwave And Magnetism.mp4",
+      "episodeNumber": 1066,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Here Comes Main Act Powerful Techniques Of Shockwave And Magnetism",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1066 - Here Comes Main Act Powerful Techniques Of Shockwave And Magnetism.mkv",
+      "size": 139651153,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "ba63408e0cee8687bed0b8a0818cc1c7de0e5f97",
+        "md5": "6b8cdb1ced02a739b6c51c940b059cf0",
+        "crc32": "c6a83cc7"
+      },
+      "durationSeconds": 1430.81,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1067 - To The New Era Settled The Determination Of The Brats.mkv",
+      "episodeNumber": 1067,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "To The New Era Settled The Determination Of The Brats",
+      "source": "original",
+      "original": null,
+      "size": 754400767,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "ad95450b9a5237eaf7b7e0df6e26a4605ed63051",
+        "md5": "0e00843af3b3ab90780e656d0326784e",
+        "crc32": "6252d5a8"
+      },
+      "durationSeconds": 1430.88,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1067 - To The New Era Settled The Determination Of The Brats.mp4",
+      "episodeNumber": 1067,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "To The New Era Settled The Determination Of The Brats",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1067 - To The New Era Settled The Determination Of The Brats.mkv",
+      "size": 139577605,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "77c716433f1b785a2a12474b6d379a75bc385722",
+        "md5": "24e35dd54bcac78a8633c61d0801e1f2",
+        "crc32": "cac25002"
+      },
+      "durationSeconds": 1430.87,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1068 - Moon Princess Echoes The Final Phase Of The Land Of Wano.mkv",
+      "episodeNumber": 1068,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Moon Princess Echoes The Final Phase Of The Land Of Wano",
+      "source": "original",
+      "original": null,
+      "size": 537217925,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "e0f241588c5f2a8a2167982a4720c7da130be7cf",
+        "md5": "53a0e253cf122fb8c9417cdd7b93b361",
+        "crc32": "c4b084e6"
+      },
+      "durationSeconds": 1430.84,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1068 - Moon Princess Echoes The Final Phase Of The Land Of Wano.mp4",
+      "episodeNumber": 1068,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Moon Princess Echoes The Final Phase Of The Land Of Wano",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1068 - Moon Princess Echoes The Final Phase Of The Land Of Wano.mkv",
+      "size": 140395614,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "223e63e83bf64c90344d7993d8a62492b54ece9b",
+        "md5": "f09ffa3098abaea06e927a4618da5bfa",
+        "crc32": "f57c316e"
+      },
+      "durationSeconds": 1430.83,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1068 - Moon Princess Echoes The Final Phase Of The Land Of Wano.srt",
+      "episodeNumber": 1068,
+      "releaseGroup": "Anime Time",
+      "extension": "srt",
+      "titleFromFilename": "Moon Princess Echoes The Final Phase Of The Land Of Wano",
+      "source": "original",
+      "original": null,
+      "size": 17781,
+      "format": "SubRip",
+      "checksums": {
+        "sha1": "f6917beb8f2b838264977d89f68b9112f51827cd",
+        "md5": "a300323a9a303e89fed806c43f28c9bf",
+        "crc32": "eb41ff71"
+      },
+      "durationSeconds": null,
+      "width": null,
+      "height": null
+    },
+    {
+      "name": "[Anime Time] One Piece - 1069 - There Is Only One Winner - Luffy Vs Kaido.mkv",
+      "episodeNumber": 1069,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "There Is Only One Winner - Luffy Vs Kaido",
+      "source": "original",
+      "original": null,
+      "size": 730934586,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "ff243625050f6d3c35bd866db5dd053f1eeadd67",
+        "md5": "3ed7034f0ced89c4357904b25a4b1383",
+        "crc32": "9e213f96"
+      },
+      "durationSeconds": 1430.72,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1069 - There Is Only One Winner - Luffy Vs Kaido.mp4",
+      "episodeNumber": 1069,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "There Is Only One Winner - Luffy Vs Kaido",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1069 - There Is Only One Winner - Luffy Vs Kaido.mkv",
+      "size": 138846317,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "b66d01c5f946e467e6eb5baa2fa96fe6b31ddb92",
+        "md5": "ea06656a2dd3bddcd7b20dd13f4286a6",
+        "crc32": "f9280c86"
+      },
+      "durationSeconds": 1430.7,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1070 - Luffy Is Defeated The Determination Of Those Left Behind.mkv",
+      "episodeNumber": 1070,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Luffy Is Defeated The Determination Of Those Left Behind",
+      "source": "original",
+      "original": null,
+      "size": 571485511,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a7f477989a75114ab0a6f69bf6ad0c8ac77e3a85",
+        "md5": "87ea57b3eb5adf3b278c35ebe85d46e0",
+        "crc32": "73cd8438"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1070 - Luffy Is Defeated The Determination Of Those Left Behind.mp4",
+      "episodeNumber": 1070,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Luffy Is Defeated The Determination Of Those Left Behind",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1070 - Luffy Is Defeated The Determination Of Those Left Behind.mkv",
+      "size": 140882567,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2b17aa8cc5ccab999b730960d31e67f5ba37e010",
+        "md5": "081cc1c5152a0fb9eeb296be947bb8a3",
+        "crc32": "cdb01220"
+      },
+      "durationSeconds": 1430.81,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1071 - Luffy's Peak - Attaine Fifth Gear.mkv",
+      "episodeNumber": 1071,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Luffy's Peak - Attaine Fifth Gear",
+      "source": "original",
+      "original": null,
+      "size": 769579342,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a511ca005c5c749809d6a06508203468f5e4c3a0",
+        "md5": "0837bd49f943904cc562ba9e35c6e48d",
+        "crc32": "5b5880aa"
+      },
+      "durationSeconds": 1430.88,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1071 - Luffy's Peak - Attaine Fifth Gear.mp4",
+      "episodeNumber": 1071,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Luffy's Peak - Attaine Fifth Gear",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1071 - Luffy's Peak - Attaine Fifth Gear.mkv",
+      "size": 140671318,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "5028edbe914a5b48450fe684a663e01563033fa6",
+        "md5": "b2d46ce9b5a34aae6eaa8fa5108e6969",
+        "crc32": "8e56424e"
+      },
+      "durationSeconds": 1430.87,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1071 - Luffy's Peak - Attaine Fifth Gear.srt",
+      "episodeNumber": 1071,
+      "releaseGroup": "Anime Time",
+      "extension": "srt",
+      "titleFromFilename": "Luffy's Peak - Attaine Fifth Gear",
+      "source": "original",
+      "original": null,
+      "size": 16568,
+      "format": "SubRip",
+      "checksums": {
+        "sha1": "9ae9b3e236b3eb82bba828ad0bb17e81de623e04",
+        "md5": "10c24dc9969b9b92bc98e88e33c2d7bf",
+        "crc32": "3eb5dbf4"
+      },
+      "durationSeconds": null,
+      "width": null,
+      "height": null
+    },
+    {
+      "name": "[Anime Time] One Piece - 1072 - The Ridiculous Power Fifth Gear In Full Play.mkv",
+      "episodeNumber": 1072,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Ridiculous Power Fifth Gear In Full Play",
+      "source": "original",
+      "original": null,
+      "size": 642983440,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "aa8a116110d2f54e4fb0a3511faed7362375d42d",
+        "md5": "67a4b58dd9bf9937d37a44541c0007ee",
+        "crc32": "d1505930"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1072 - The Ridiculous Power Fifth Gear In Full Play.mp4",
+      "episodeNumber": 1072,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Ridiculous Power Fifth Gear In Full Play",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1072 - The Ridiculous Power Fifth Gear In Full Play.mkv",
+      "size": 139895894,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "15ee2b4bbea402c3285adeee241b962616ee172a",
+        "md5": "b044b19b8877a526c83e88f6e6e714ff",
+        "crc32": "7ea15ece"
+      },
+      "durationSeconds": 1430.81,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1073 - No Way Out A Hellish Scene On Onigashima.mkv",
+      "episodeNumber": 1073,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "No Way Out A Hellish Scene On Onigashima",
+      "source": "original",
+      "original": null,
+      "size": 704097665,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a28896a8c68f7015161f9454254fef4a99b5767d",
+        "md5": "2767e7c729bec2245757022fa23cd1e0",
+        "crc32": "8fa9d954"
+      },
+      "durationSeconds": 1430.81,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1073 - No Way Out A Hellish Scene On Onigashima.mp4",
+      "episodeNumber": 1073,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "No Way Out A Hellish Scene On Onigashima",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1073 - No Way Out A Hellish Scene On Onigashima.mkv",
+      "size": 140446722,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "f30e311a029fab63fb4791f6f64e9166fc64f78d",
+        "md5": "0e8adaccaad12365b9242024ad31444a",
+        "crc32": "b434ef1b"
+      },
+      "durationSeconds": 1430.81,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1074 - I Trust Momo - Luffy's Final Powerful Technique.mkv",
+      "episodeNumber": 1074,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "I Trust Momo - Luffy's Final Powerful Technique",
+      "source": "original",
+      "original": null,
+      "size": 641800008,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "cafe1df7a0d6aecd1d23c3da0100a3ef0b4cb015",
+        "md5": "2348d566b0d4eb5b9385de8b55675836",
+        "crc32": "37ea765d"
+      },
+      "durationSeconds": 1431.83,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1074 - I Trust Momo - Luffy's Final Powerful Technique.mp4",
+      "episodeNumber": 1074,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "I Trust Momo - Luffy's Final Powerful Technique",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1074 - I Trust Momo - Luffy's Final Powerful Technique.mkv",
+      "size": 141567618,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "8214d9c63436c3bf473b543f0f6bc3bb2eeae85d",
+        "md5": "872e4196cea168ebf5cc48e1a641db14",
+        "crc32": "90fc3a06"
+      },
+      "durationSeconds": 1431.86,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1074 - I Trust Momo - Luffy's Final Powerful Technique.srt",
+      "episodeNumber": 1074,
+      "releaseGroup": "Anime Time",
+      "extension": "srt",
+      "titleFromFilename": "I Trust Momo - Luffy's Final Powerful Technique",
+      "source": "original",
+      "original": null,
+      "size": 18776,
+      "format": "SubRip",
+      "checksums": {
+        "sha1": "6283fa307af8cf49c2ea22c7de9f0ca538217c0a",
+        "md5": "98d03ab39f8f5c0a489ef3ebd626e0e1",
+        "crc32": "87aa7b7f"
+      },
+      "durationSeconds": null,
+      "width": null,
+      "height": null
+    },
+    {
+      "name": "[Anime Time] One Piece - 1075 - 20 Years Worth Of Prayers Take Back The Land Of Wano.mkv",
+      "episodeNumber": 1075,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "20 Years Worth Of Prayers Take Back The Land Of Wano",
+      "source": "original",
+      "original": null,
+      "size": 727324059,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "cc216d9674982cfe3dee84b5225c22a6b94d465c",
+        "md5": "afba5cb7519bf72aba58f98491049d9b",
+        "crc32": "94485962"
+      },
+      "durationSeconds": 1431.79,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1075 - 20 Years Worth Of Prayers Take Back The Land Of Wano.mp4",
+      "episodeNumber": 1075,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "20 Years Worth Of Prayers Take Back The Land Of Wano",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1075 - 20 Years Worth Of Prayers Take Back The Land Of Wano.mkv",
+      "size": 140076494,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "f4d2e78dd767c42b8d74c66f8b64c214d411f307",
+        "md5": "429805a005abd11a7fd2429f9edd03dd",
+        "crc32": "59666169"
+      },
+      "durationSeconds": 1431.81,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1076 - The World That Luffy Wants.mkv",
+      "episodeNumber": 1076,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The World That Luffy Wants",
+      "source": "original",
+      "original": null,
+      "size": 635817635,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "6d7b87432a03d2439f62922542a36763dddfd742",
+        "md5": "9b2c80c328bbb2e242991690d5ed5d09",
+        "crc32": "b7de8309"
+      },
+      "durationSeconds": 1431.83,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1076 - The World That Luffy Wants.mp4",
+      "episodeNumber": 1076,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The World That Luffy Wants",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1076 - The World That Luffy Wants.mkv",
+      "size": 140778464,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "46839db67ac1bdb1b84e127c534f803ce1848b07",
+        "md5": "41033a3f88da3c8fcc0564cef63b902c",
+        "crc32": "277a0894"
+      },
+      "durationSeconds": 1431.86,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1077 - The Curtain Falls The Winner Straw Hat Luffy.mkv",
+      "episodeNumber": 1077,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Curtain Falls The Winner Straw Hat Luffy",
+      "source": "original",
+      "original": null,
+      "size": 663148392,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "2e895c5425610b68db8deef404adc501fd7d8271",
+        "md5": "0aecf961c3fd46da4ac6f68cdedf7176",
+        "crc32": "73a464bd"
+      },
+      "durationSeconds": 1431.9,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1077 - The Curtain Falls The Winner Straw Hat Luffy.mp4",
+      "episodeNumber": 1077,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Curtain Falls The Winner Straw Hat Luffy",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1077 - The Curtain Falls The Winner Straw Hat Luffy.mkv",
+      "size": 141484274,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2535fa30b77c4175ebc2bf5356094e70f4ead80a",
+        "md5": "0f90c24569ccea81288a9bff4881c790",
+        "crc32": "aa68bfb9"
+      },
+      "durationSeconds": 1431.93,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1078 - He Returns The Shogun Of The Land Of Wano Kozuki Momonosuke.mkv",
+      "episodeNumber": 1078,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "He Returns The Shogun Of The Land Of Wano Kozuki Momonosuke",
+      "source": "original",
+      "original": null,
+      "size": 607079694,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "a6ac0a0dc3c563b9a444473b85feac0683dd9a15",
+        "md5": "c78b8aae19bf28cc4388678d7db11fbe",
+        "crc32": "e64712ce"
+      },
+      "durationSeconds": 1431.9,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1078 - He Returns The Shogun Of The Land Of Wano Kozuki Momonosuke.mp4",
+      "episodeNumber": 1078,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "He Returns The Shogun Of The Land Of Wano Kozuki Momonosuke",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1078 - He Returns The Shogun Of The Land Of Wano Kozuki Momonosuke.mkv",
+      "size": 141779191,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "607ad2eca6edb90a56e21e69e3d25993cc7b1be8",
+        "md5": "f2c556662559c45eec01a660f2bebd8f",
+        "crc32": "830031c7"
+      },
+      "durationSeconds": 1431.93,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1079 - The Morning Comes Luffy And The Others Rest.mkv",
+      "episodeNumber": 1079,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Morning Comes Luffy And The Others Rest",
+      "source": "original",
+      "original": null,
+      "size": 697749238,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "24814c7dc6082a7d31461f211f39caaaf8f7992a",
+        "md5": "2343ad0efeb313af509cee402c5d6112",
+        "crc32": "9fa7858f"
+      },
+      "durationSeconds": 1431.83,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1079 - The Morning Comes Luffy And The Others Rest.mp4",
+      "episodeNumber": 1079,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Morning Comes Luffy And The Others Rest",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1079 - The Morning Comes Luffy And The Others Rest.mkv",
+      "size": 141180608,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "29578d8b9e15f8143b2ffae77dcd5851a11776af",
+        "md5": "ca3fdd771f8496350e019d9b4436db4d",
+        "crc32": "92384c38"
+      },
+      "durationSeconds": 1431.86,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1080 - A Celebration Banquet The New Emperors Of The Sea.mkv",
+      "episodeNumber": 1080,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "A Celebration Banquet The New Emperors Of The Sea",
+      "source": "original",
+      "original": null,
+      "size": 679499850,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "830f636941e000708ae5324e12e1afadc7edd71c",
+        "md5": "a6d787583c2db5c7c03a922de21f5e82",
+        "crc32": "8c724376"
+      },
+      "durationSeconds": 1431.88,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1080 - A Celebration Banquet The New Emperors Of The Sea.mp4",
+      "episodeNumber": 1080,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "A Celebration Banquet The New Emperors Of The Sea",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1080 - A Celebration Banquet The New Emperors Of The Sea.mkv",
+      "size": 140701149,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "e7bf9bd61ddd249e4079af7c5cdb9e954348d513",
+        "md5": "e4f22fa8c12eac9d347947ddadbdb1f5",
+        "crc32": "08d0df12"
+      },
+      "durationSeconds": 1431.9,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1081 - The World Will Burn The Onslaught Of A Navy Admiral.mkv",
+      "episodeNumber": 1081,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The World Will Burn The Onslaught Of A Navy Admiral",
+      "source": "original",
+      "original": null,
+      "size": 683446810,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "315234724fd243d9f8cecfe31a348e2bf1250f5e",
+        "md5": "c912fb7146d4641ee235e08ffb1e5a16",
+        "crc32": "154e3747"
+      },
+      "durationSeconds": 1431.88,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1081 - The World Will Burn The Onslaught Of A Navy Admiral.mp4",
+      "episodeNumber": 1081,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The World Will Burn The Onslaught Of A Navy Admiral",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1081 - The World Will Burn The Onslaught Of A Navy Admiral.mkv",
+      "size": 141336232,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "39438d2ef6b40ddc85a5f6013a674b548f86c112",
+        "md5": "6b5944a1f163b96c432363c638f2eecb",
+        "crc32": "ab56e85c"
+      },
+      "durationSeconds": 1431.9,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1082 - The Coming Of The New Era The Red-Haired's Imperial Rage.mkv",
+      "episodeNumber": 1082,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Coming Of The New Era The Red-Haired's Imperial Rage",
+      "source": "original",
+      "original": null,
+      "size": 731489135,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "441e9484aaab85510d11ed037970aba3a54c172d",
+        "md5": "bf8343c939039e438ca6fe05704aa41b",
+        "crc32": "26855cf4"
+      },
+      "durationSeconds": 1431.88,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1082 - The Coming Of The New Era The Red-Haired's Imperial Rage.mp4",
+      "episodeNumber": 1082,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Coming Of The New Era The Red-Haired's Imperial Rage",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1082 - The Coming Of The New Era The Red-Haired's Imperial Rage.mkv",
+      "size": 141373862,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "55b3af28875ce3efc5b8a552c0811f74c5d713bf",
+        "md5": "5fe1dcca06a0c1999e9053ebb296a168",
+        "crc32": "ddbeee60"
+      },
+      "durationSeconds": 1431.9,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1083 - The World That Moves On A New Organization Cross Guild.mkv",
+      "episodeNumber": 1083,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The World That Moves On A New Organization Cross Guild",
+      "source": "original",
+      "original": null,
+      "size": 589728947,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "bb2f54966494f2b1062b431b1012c1ac2e57d546",
+        "md5": "1499f0e64542fc756c60619a4a28f4f5",
+        "crc32": "9bcd5363"
+      },
+      "durationSeconds": 1431.88,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1083 - The World That Moves On A New Organization Cross Guild.mp4",
+      "episodeNumber": 1083,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The World That Moves On A New Organization Cross Guild",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1083 - The World That Moves On A New Organization Cross Guild.mkv",
+      "size": 141429821,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "521530edc71fa2e80d0445e5184f655dbfe0a551",
+        "md5": "4f2a43b6326dd6e2d52174fe9a336ca6",
+        "crc32": "a9c074e8"
+      },
+      "durationSeconds": 1431.9,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1084 - Time To Depart - The Land Of Wano And The Straw Hats.mkv",
+      "episodeNumber": 1084,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "Time To Depart - The Land Of Wano And The Straw Hats",
+      "source": "original",
+      "original": null,
+      "size": 662045219,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "8aff925c1efb21265dec8020ee8a55683d9c8f7e",
+        "md5": "e511c26801c0ee9569113fd9f55a4daf",
+        "crc32": "eb284d35"
+      },
+      "durationSeconds": 1431.83,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1084 - Time To Depart - The Land Of Wano And The Straw Hats.mp4",
+      "episodeNumber": 1084,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "Time To Depart - The Land Of Wano And The Straw Hats",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1084 - Time To Depart - The Land Of Wano And The Straw Hats.mkv",
+      "size": 142089629,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "2a7baf9f2836054d5645f8125eb43413e202be13",
+        "md5": "9f172a41f6db87aa4ff103df136b79d7",
+        "crc32": "5de9ff2c"
+      },
+      "durationSeconds": 1431.86,
+      "width": 854,
+      "height": 480
+    },
+    {
+      "name": "[Anime Time] One Piece - 1085 - The Last Curtain Luffy And Momonosuke's Vow_Land_Of_Wano_ACT_III_End.mkv",
+      "episodeNumber": 1085,
+      "releaseGroup": "Anime Time",
+      "extension": "mkv",
+      "titleFromFilename": "The Last Curtain Luffy And Momonosuke's Vow_Land_Of_Wano_ACT_III_End",
+      "source": "original",
+      "original": null,
+      "size": 659097962,
+      "format": "Matroska",
+      "checksums": {
+        "sha1": "c62e0535b46126a16b140c1f51677f67128570d3",
+        "md5": "267c4edd7c7b8dee4f1de38e4ad2c1c4",
+        "crc32": "512bc8e4"
+      },
+      "durationSeconds": 1431.88,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "[Anime Time] One Piece - 1085 - The Last Curtain Luffy And Momonosuke's Vow_Land_Of_Wano_ACT_III_End.mp4",
+      "episodeNumber": 1085,
+      "releaseGroup": "Anime Time",
+      "extension": "mp4",
+      "titleFromFilename": "The Last Curtain Luffy And Momonosuke's Vow_Land_Of_Wano_ACT_III_End",
+      "source": "derivative",
+      "original": "[Anime Time] One Piece - 1085 - The Last Curtain Luffy And Momonosuke's Vow_Land_Of_Wano_ACT_III_End.mkv",
+      "size": 139534005,
+      "format": "h.264",
+      "checksums": {
+        "sha1": "40b88a60f08f43a06325b8e54e4dbba486d1ea5f",
+        "md5": "33d4fb90209632c6cb3f4f6f6f812ed4",
+        "crc32": "6e626e88"
+      },
+      "durationSeconds": 1431.9,
+      "width": 854,
+      "height": 480
+    }
+  ],
+  "unparsedMedia": []
+}

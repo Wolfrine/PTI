@@ -1,0 +1,59 @@
+- generic: DEVELOPMENT FIXTURE · Cycle 4 · settings and continuity · Synthetic account, progress and device states.
+- link "Skip to content":
+  - /url: "#main-content"
+- banner:
+  - button "One Piece library":
+    - generic: OP
+    - text: One Piece
+    - generic: FAMILY VIEWING
+  - navigation "Main navigation":
+    - button "Library"
+    - button "Watch"
+  - button "Cast to TV":
+  - button "Account and preferences for Family viewer":
+    - generic: F
+    - generic: Family
+- status
+- main:
+  - button "Episodes":
+    - text: Episodes
+  - button "This device":
+    - text: This device
+  - generic "Episode 1085"
+  - generic: "1085"
+  - paragraph: Development fixture · player layout, no media loaded
+  - status
+  - paragraph: Now watching
+  - heading "Episode 1085" [level=1]
+  - paragraph: Japanese audio · English dialogue subtitles
+  - button "End of collection":
+    - text: End of collection
+  - button "Audio & subtitles":
+    - text: Audio & subtitles
+  - button "Restart":
+    - text: Restart
+  - button "Fullscreen / HDMI":
+    - text: Fullscreen / HDMI
+  - checkbox "Play next automatically"
+  - text: Play next automatically
+  - button "Previous · 1084":
+    - text: Previous · 1084
+  - button "Mark watched":
+    - text: Mark watched
+  - generic: Your place is saved
+- contentinfo:
+  - generic: One Piece, at your pace.
+  - button "Home PC connected":
+    - generic: Home PC connected
+  - button "Install app":
+    - text: Install app
+  - link "Back to PTI":
+    - /url: /home
+    - text: Back to PTI
+- dialog "Through episode 1085.":
+  - button "Close" [active]:
+  - paragraph: You reached the end
+  - heading "Through episode 1085." [level=2]
+  - paragraph: These collections end here. Your progress is saved. You can return to any available episode in the library.
+  - button "Back to library":
+    - text: Back to library

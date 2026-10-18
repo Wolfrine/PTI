@@ -1,0 +1,39 @@
+{
+  "kind": "owner-observation-relayed-by-parent-agent",
+  "capturedAt": "2026-10-18T10:05:02Z",
+  "automatedListeningOrVisualAnalysis": false,
+  "observations": [
+    {
+      "episodeNumber": 1000,
+      "actualPlayingAt": "2026-10-18T09:44:52.105Z",
+      "artifact": "cast-production-adapter-attempt4-playing-controls-failure.json",
+      "questionBasis": "Parent asked about audible Japanese dialogue and visible English dialogue captions after actual full-episode HLS PLAYING began.",
+      "ownerReply": "Yes it worked",
+      "exactReplyTimestampAvailable": false,
+      "replyOccurredAfterEarlyOwnershipLoss": true,
+      "presentationConfirmedByOwner": true,
+      "fortySecondStabilityConfirmedByThisReply": false
+    },
+    {
+      "episodeNumber": 1001,
+      "actualPlayingAt": "2026-10-18T10:03:36.094Z",
+      "artifact": "cast-production-adapter-attempt10-source2-human-replay.json",
+      "questionBasis": "Parent asked the owner an explicit Japanese-audio and English-caption question during this sixty-second untouched full-episode HLS replay.",
+      "ownerReply": "Yes its playing properly",
+      "ownerReplyApproximateUtcMinute": "2026-10-18T10:04Z",
+      "exactReplyTimestampAvailable": false,
+      "replyDuringObservationWindow": true,
+      "presentationConfirmedByOwner": true,
+      "priorMissedSource2ObservationWasNotPositiveConfirmation": true
+    }
+  ],
+  "notEstablished": [
+    "quantified subtitle synchronization after arbitrary seeks",
+    "complete episode viewing",
+    "natural 1000 to 1001 transition",
+    "five-second seek performance target",
+    "phone sleep and reconnection",
+    "three simultaneous physical family clients",
+    "production Firebase or PWA authentication"
+  ]
+}

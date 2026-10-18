@@ -1,0 +1,106 @@
+{
+  "timestamp": "2026-10-18T07:22:42.472354+00:00",
+  "experiment": "Ephemeral local hostname discovery and health transport only",
+  "hostname": "onepiece-pilot.local.",
+  "address": "192.168.68.105",
+  "port": 8794,
+  "python_version": "3.12.2",
+  "zeroconf_version": "0.151.5",
+  "production_transport_accepted": false,
+  "limits": [
+    "No auth, tokens, media or engine administration",
+    "No permanent OS/router/DNS/firewall changes",
+    "No TLS certificate issuance or trust installation",
+    "Same-PC resolution is not Android/receiver compatibility evidence"
+  ],
+  "requests": [
+    {
+      "timestamp": "2026-10-18T07:22:46.515315+00:00",
+      "path": "/health.json",
+      "origin": null,
+      "user_agent": "Python-urllib/3.12",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-18T07:22:47.549496+00:00",
+      "path": "/health.json",
+      "origin": null,
+      "user_agent": "Python-urllib/3.12",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-18T07:23:35.912154+00:00",
+      "path": "/health.json",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-18T07:23:35.956439+00:00",
+      "path": "other",
+      "origin": null,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+      "status": 404
+    },
+    {
+      "timestamp": "2026-10-18T07:24:22.455704+00:00",
+      "path": "/health.json",
+      "origin": "https://pti-app-2ab59.web.app",
+      "user_agent": "Python-urllib/3.12",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-18T07:24:22.456704+00:00",
+      "path": "/health.json",
+      "origin": "https://example.invalid",
+      "user_agent": "Python-urllib/3.12",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-10-18T07:24:22.457705+00:00",
+      "path": "other",
+      "origin": null,
+      "user_agent": "Python-urllib/3.12",
+      "status": 404
+    }
+  ],
+  "advertisement_registered": true,
+  "mdns_packet": {
+    "method": "UDP multicast query 224.0.0.251:5353, ephemeral return port",
+    "query": "onepiece-pilot.local.",
+    "answers": [
+      {
+        "type": "A",
+        "address": "192.168.68.105",
+        "ttl_seconds": 120
+      }
+    ],
+    "response_id_matches": true,
+    "response_bytes": 71,
+    "response_flag": true,
+    "elapsed_seconds": 0.0,
+    "passed": true
+  },
+  "os_resolution": {
+    "passed": false,
+    "error": "gaierror"
+  },
+  "ip_health": {
+    "status": 200,
+    "body": {
+      "status": "pilot-only",
+      "service": "one-piece-local-dns",
+      "media": false,
+      "tls": false
+    }
+  },
+  "hostname_health": {
+    "status": 200,
+    "body": {
+      "status": "pilot-only",
+      "service": "one-piece-local-dns",
+      "media": false,
+      "tls": false
+    }
+  }
+}

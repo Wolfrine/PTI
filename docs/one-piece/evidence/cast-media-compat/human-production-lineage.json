@@ -1,0 +1,223 @@
+{
+  "kind": "read-only-human-helper-to-production-payload-lineage",
+  "createdAt": "2026-10-18T13:12:48.178Z",
+  "currentCacheBinding": "cache.json under prepared-production-handoff.json cacheRoot",
+  "currentManifestSnapshot": {
+    "bytes": 10359,
+    "mtimeUtc": "2026-10-18T13:12:47.057Z",
+    "sha256": "d939f49200147723ecac43e8cc3402a1255121938eed9fb05ab619b26f4e242f",
+    "version": 2,
+    "renditionCount": 3
+  },
+  "inputs": [
+    {
+      "path": "prepared-mp4-handoff.json",
+      "bytes": 6248,
+      "sha256": "b44ec2e3dc86617608b5add1010ae4fc80d9aa6493ff548eaa34da863b9f5bec"
+    },
+    {
+      "path": "cast-prepared-mp4-observations.json",
+      "bytes": 162803,
+      "sha256": "7c92730190be2116ec486a450f4990ea3a42ea56d0d318e2fc2b054851d9b1e4"
+    },
+    {
+      "path": "cast-prepared-mp4-human-confirmations.json",
+      "bytes": 2221,
+      "sha256": "31cb90e6253b6066d0c4511dc84cea53ac4d474931a2f8a868d8f9f6351fc24a"
+    },
+    {
+      "path": "prepared-production-handoff.json",
+      "bytes": 3618,
+      "sha256": "b1f55e04cd5e0f66d744a22876c81032e08243f8217f6e06ed2e256c6dff030b"
+    },
+    {
+      "path": "prepared-production-2026-10-18T12-10-13-858Z-ee58d2.json",
+      "bytes": 12020,
+      "sha256": "a4cdb4d4fa43f256436cff1946fdea785d9ad5fc151b43f3863553adf71e8d71"
+    }
+  ],
+  "episodes": [
+    {
+      "episode": 1000,
+      "original": {
+        "md5": "ebeeadb99c7c1f27ba1f90aade7ccce1",
+        "bytes": 742925306,
+        "selected": {
+          "audioIndex": 1,
+          "subtitleIndex": 2,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        }
+      },
+      "effectiveDurationSeconds": 1430.79,
+      "video": {
+        "sha256": "0b96bcf9a820609b2e98619c4100cef9f78195366109a9baed30131b159cff36",
+        "bytes": 737980951
+      },
+      "fullEnglishVtt": {
+        "sha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+        "bytes": 14478,
+        "cueIdentity": {
+          "version": "vtt-dialogue-and-millisecond-timing-v1",
+          "sha256": "c85ed95104c98c266dbcc1fd46fbfff004d253e6d982d809e6f940a266e1aa4d",
+          "cues": 233
+        },
+        "priorHelperCueTextAndTimingEquality": true,
+        "cueIdentityInferredEqualByIdenticalVttSha": true,
+        "freshCueHashRecomputedThisAudit": false
+      },
+      "productionRenditionId": "1b9f5c38e9ab1ab4dfd2efedbc6eb125540eae75393c36612f1d7ec5430b9c7d",
+      "comparisons": {
+        "originalMd5": true,
+        "originalBytes": true,
+        "originalAudioIndex": true,
+        "originalFullEnglishIndex": true,
+        "selectedLanguages": true,
+        "effectiveDuration": true,
+        "videoBytes": true,
+        "videoSha256": true,
+        "captionBytes": true,
+        "captionSha256": true,
+        "cueCount": true,
+        "productionGateVideoSha256": true,
+        "productionGateServedCaptionSha256": true
+      },
+      "allStoredPayloadHashesAndSelectionsMatch": true,
+      "humanObservation": {
+        "startedAt": "2026-10-18T11:33:10.402Z",
+        "endedAt": "2026-10-18T11:35:10.425Z",
+        "ownerReply": "Japanese audio and English subtitles both work",
+        "acceptedForObservedJapaneseAndEnglishPresentation": true,
+        "exactReplyTimestamp": null,
+        "humanReplyTimingScope": "Parent confirmed the human reply arrived during this exact1000 window, before the explicit1001 switch",
+        "videoSizeRecheckedDuringObservation": true,
+        "fullVideoShaRecomputedDuringObservation": false,
+        "videoShaInheritedFromPriorValidatedHandoff": true
+      },
+      "priorActualProductionHeadlessTransport": {
+        "videoRangeChecks": [
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          },
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          },
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          },
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          }
+        ],
+        "servedCaptionSha256": "8b827ac217634f8cb6663a6a95f084e33d83b40f228c9ae68eb78d35994590f7",
+        "servedCues": 233,
+        "actualTv": false
+      }
+    },
+    {
+      "episode": 1001,
+      "original": {
+        "md5": "2610511c93fae62d4791e8284b6b96eb",
+        "bytes": 844716819,
+        "selected": {
+          "audioIndex": 2,
+          "subtitleIndex": 4,
+          "audioLanguage": "jpn",
+          "subtitleLanguage": "eng"
+        }
+      },
+      "effectiveDurationSeconds": 1419.04,
+      "video": {
+        "sha256": "5e39a25fce57721bcf1806d94532e3d05baeda608a1f80c29863035cdb00df14",
+        "bytes": 1323099843
+      },
+      "fullEnglishVtt": {
+        "sha256": "07b6573849c913e8f44c46db919d840da5bf5a2f510a3e48f2da35e3fe9499d6",
+        "bytes": 20618,
+        "cueIdentity": {
+          "version": "vtt-dialogue-and-millisecond-timing-v1",
+          "sha256": "979568e2c0141aab4b69256cdd71dd20119c00e9c9a11fc1fad18af696104a4e",
+          "cues": 328
+        },
+        "priorHelperCueTextAndTimingEquality": true,
+        "cueIdentityInferredEqualByIdenticalVttSha": true,
+        "freshCueHashRecomputedThisAudit": false
+      },
+      "productionRenditionId": "ba1d436b4863b7117318aaaee0fdd5693043943bebc89a26a5ab259f0b8ae303",
+      "comparisons": {
+        "originalMd5": true,
+        "originalBytes": true,
+        "originalAudioIndex": true,
+        "originalFullEnglishIndex": true,
+        "selectedLanguages": true,
+        "effectiveDuration": true,
+        "videoBytes": true,
+        "videoSha256": true,
+        "captionBytes": true,
+        "captionSha256": true,
+        "cueCount": true,
+        "productionGateVideoSha256": true,
+        "productionGateServedCaptionSha256": true
+      },
+      "allStoredPayloadHashesAndSelectionsMatch": true,
+      "humanObservation": {
+        "startedAt": "2026-10-18T11:35:25.303Z",
+        "endedAt": "2026-10-18T11:37:25.319Z",
+        "ownerReply": "Japanese audio and English subtitles both work",
+        "acceptedForObservedJapaneseAndEnglishPresentation": true,
+        "exactReplyTimestamp": null,
+        "humanReplyTimingScope": "Parent confirmed a separate human reply to the explicit1001 question; this is not source1's reply",
+        "videoSizeRecheckedDuringObservation": true,
+        "fullVideoShaRecomputedDuringObservation": false,
+        "videoShaInheritedFromPriorValidatedHandoff": true
+      },
+      "priorActualProductionHeadlessTransport": {
+        "videoRangeChecks": [
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          },
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          },
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          },
+          {
+            "status": 206,
+            "bytes": 65536,
+            "byteExact": true
+          }
+        ],
+        "servedCaptionSha256": "07b6573849c913e8f44c46db919d840da5bf5a2f510a3e48f2da35e3fe9499d6",
+        "servedCues": 328,
+        "actualTv": false
+      }
+    }
+  ],
+  "conclusion": "Recorded exact video and caption payload hashes and sizes match for both episodes, stronger than recipe equivalence",
+  "notOnlySameRecipe": true,
+  "engineOrGpuUsed": false,
+  "mediaBytesReadOrRehashedThisAudit": 0,
+  "sourceOrCacheMutated": false,
+  "actualProductionTvTransportTestRequired": true,
+  "limits": [
+    "Comparison uses prior validated video hashes, actual replay size/caption checks and current production manifest hashes; no full media hash was recomputed during the human observation or this audit",
+    "Existing replies establish observed Japanese dialogue and English dialogue subtitles in the two recorded120-second windows; they do not quantify subtitle synchronization or whole-episode viewing",
+    "Final current production transport, latest Cast bridge, controls, ticket behavior, seeking and transition still need actual TV verification",
+    "If a final rendition or served caption payload changes, this reuse conclusion must be reevaluated; physical Android,HDMI,PWA and family authentication are not established"
+  ]
+}

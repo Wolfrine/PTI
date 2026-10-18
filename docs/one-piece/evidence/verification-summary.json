@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-10-18T07:54:25.726088+00:00",
+  "kind": "persisted evidence JSON syntax only",
+  "passed": true,
+  "filesParsed": 90,
+  "failures": [],
+  "sourceTests": {
+    "passed": 10,
+    "failed": 0,
+    "file": "sources/tests-final.tap",
+    "data": "saved real Archive inventory + mocked adversarial responses"
+  },
+  "browserRangeTests": {
+    "passed": 7,
+    "failed": 0,
+    "file": "browser-native/tests-final.tap",
+    "data": "mocked bounded-reader responses"
+  },
+  "angularTestsBuildRun": false,
+  "angularReason": "No Angular/product changes or commit/release; stage1 experiments only.",
+  "actualTV": "Owner confirmed Japanese dialogue and visible English subtitles on real Sony for separate short clips from both collections; see network/cast-owner-observations.json",
+  "independentReview": "independent-review.json",
+  "cleanup": "parent-cleanup.json"
+}

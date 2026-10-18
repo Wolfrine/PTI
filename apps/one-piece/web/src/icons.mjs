@@ -1,0 +1,20 @@
+export const icons = {
+  play:'<path d="m8 5 11 7-11 7z"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
+  cast:'<path d="M3 3h18v14h-8M3 10a11 11 0 0 1 11 11M3 15a6 6 0 0 1 6 6M3 20h1"/>',
+  search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+  arrow:'<path d="m9 5 7 7-7 7"/>',
+  back:'<path d="m15 5-7 7 7 7"/>',
+  check:'<path d="m5 12 4 4L19 6"/>',
+  close:'<path d="m6 6 12 12M18 6 6 18"/>',
+  settings:'<path d="M4 7h16M4 17h16M8 4v6M16 14v6"/>',
+  fullscreen:'<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
+  volume:'<path d="M3 9h4l5-5v16l-5-5H3zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/>',
+  cc:'<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 10a3 3 0 1 0 0 4M19 10a3 3 0 1 0 0 4"/>',
+  skip:'<path d="m5 5 10 7-10 7zM19 5v14"/>',
+  download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',
+  wifi:'<path d="M3 8a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0M9 16a5 5 0 0 1 6 0M12 20h.01"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/>',
+  reload:'<path d="M21 5v6h-6M3 19v-6h6M5 7a8 8 0 0 1 13-2l3 6M3 13l3 6a8 8 0 0 0 13-2"/>',
+};
+export const icon = (name,cls='') => `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]??icons.play}</svg>`;

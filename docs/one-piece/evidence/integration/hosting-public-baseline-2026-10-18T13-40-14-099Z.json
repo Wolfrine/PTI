@@ -1,0 +1,314 @@
+{
+  "kind": "public-hosting-before-release-baseline",
+  "startedAt": "2026-10-18T13:40:14.100Z",
+  "origin": "https://pti-app-2ab59.web.app",
+  "release": null,
+  "limits": {
+    "requests": 128,
+    "decodedBytes": 67108864,
+    "perResponseBytes": 8388608,
+    "perRequestMs": 10000,
+    "wallMs": 180000,
+    "concurrency": 3,
+    "localFiles": 96
+  },
+  "noPrivateFirebaseData": true,
+  "noEpisodeMediaRequests": true,
+  "noDeployment": true,
+  "localArtifact": {
+    "root": "F:\\Workspace\\Worktrees\\PTI\\one-piece-family\\pti-app\\dist\\pti-app\\browser",
+    "sha256": "75ae274292d2c9c7dfedaba1c48a3803f7755e5c14fb0c979a11d41073a068fa",
+    "files": 27,
+    "bytes": 4616567,
+    "assertions": {
+      "completeSharedArtifact": true,
+      "childManifestScope": true,
+      "publicCatalog1084Missing590": true,
+      "rootWorkerExcludesChild": true,
+      "legacyFoodCopyMatches": true
+    }
+  },
+  "counters": {
+    "requests": 15,
+    "decodedBytes": 104965
+  },
+  "resources": [
+    {
+      "origin": "https://pti-app-2ab59.web.app",
+      "resource": "/index.html",
+      "status": 200,
+      "bytes": 23906,
+      "sha256": "f25f5c16ec4b61aef9ccde218e3283f40957c18a3890c0514f22fd96de34a347",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "2833",
+        "cache-control": "max-age=3600"
+      },
+      "elapsedMs": 169
+    },
+    {
+      "origin": "https://pti-app-2ab59.web.app",
+      "resource": "/food/index.html",
+      "status": 200,
+      "bytes": 382,
+      "sha256": "11b411dd84454c0f0d59461eaa1ad2d22d0b0a15384033aedae836a3b88eef9a",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "183",
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 235
+    },
+    {
+      "origin": "https://pti-app-2ab59.web.app",
+      "resource": "/food/sw.js",
+      "status": 200,
+      "bytes": 623,
+      "sha256": "1799ebee2199d73a0e674edf0c58e6ec020cf6a43eba8017209e5878581171f9",
+      "headers": {
+        "content-type": "text/javascript; charset=utf-8",
+        "content-length": "321",
+        "cache-control": "no-cache",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 226
+    },
+    {
+      "origin": "https://pti-app-2ab59.web.app",
+      "resource": "/one-piece/index.html",
+      "status": 200,
+      "bytes": 23906,
+      "sha256": "f25f5c16ec4b61aef9ccde218e3283f40957c18a3890c0514f22fd96de34a347",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "2833",
+        "cache-control": "max-age=3600"
+      },
+      "elapsedMs": 340
+    },
+    {
+      "origin": "https://pti-app-2ab59.web.app",
+      "resource": "/one-piece/manifest.webmanifest",
+      "status": 200,
+      "bytes": 23906,
+      "sha256": "f25f5c16ec4b61aef9ccde218e3283f40957c18a3890c0514f22fd96de34a347",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "2833",
+        "cache-control": "max-age=3600"
+      },
+      "elapsedMs": 342
+    }
+  ],
+  "routes": [
+    {
+      "origin": "https://pti-app-2ab59.web.app",
+      "resource": "/food",
+      "status": 302,
+      "bytes": 52,
+      "sha256": "14f65c76e5dc0be36ad4c513697f04fddc2fcdb5dc4ac6cba4bd94fdc8c32c18",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "52",
+        "location": "https://pti-app-2ab59-morsel.web.app/"
+      },
+      "elapsedMs": 122,
+      "passed": true
+    },
+    {
+      "origin": "https://pti-app-2ab59.web.app",
+      "resource": "/food/",
+      "status": 302,
+      "bytes": 52,
+      "sha256": "14f65c76e5dc0be36ad4c513697f04fddc2fcdb5dc4ac6cba4bd94fdc8c32c18",
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "52",
+        "location": "https://pti-app-2ab59-morsel.web.app/"
+      },
+      "elapsedMs": 467,
+      "passed": true
+    }
+  ],
+  "siblings": [
+    {
+      "origin": "https://pti-app-2ab59-tracker.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 701,
+      "sha256": "f04e5b3c98bec84f364b4ad479a2ee7e715b8896a6848191a861e4dce9812816",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "258",
+        "cache-control": "max-age=3600",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 63,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    },
+    {
+      "origin": "https://pti-app-2ab59-morsel.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 6207,
+      "sha256": "807ca2705d933bb71b8c304ae6a06a43316502f31eb34f4247f11d0e37d33c1b",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "1794",
+        "cache-control": "max-age=3600",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 271,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    },
+    {
+      "origin": "https://pti-app-2ab59-venture.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 1044,
+      "sha256": "310ed869b93e09a47b0d0006e5721c72b8efa2e7db0e7e653477ae0fffb8940b",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "373",
+        "cache-control": "no-cache, must-revalidate",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 275,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    },
+    {
+      "origin": "https://pti-app-2ab59-personal.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 846,
+      "sha256": "ab73aa65e3eae9c766c8a3988787fff106072c0fb077c59c2bf7b5b4def27fc3",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "321",
+        "cache-control": "max-age=3600",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 286,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    },
+    {
+      "origin": "https://pti-app-2ab59-luminary.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 922,
+      "sha256": "18d4e75763c3caf2b8d87140f6a211a73e60a91e43c36515e4eeeb0cef01aab6",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "347",
+        "cache-control": "max-age=3600",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 222,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    },
+    {
+      "origin": "https://pti-app-2ab59-sefpo.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 9245,
+      "sha256": "67f845bbb5053ca95ff9cef4787fbde4262c510b0cbcce273a115b4698a3892c",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "2223",
+        "cache-control": "max-age=3600",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 234,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    },
+    {
+      "origin": "https://pti-app-2ab59-velum.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 7120,
+      "sha256": "dcd9b184b927752f8282737ca54a6d1f0b6205f3633887a33a83c8c3db5f842e",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "1684",
+        "cache-control": "max-age=3600",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 250,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    },
+    {
+      "origin": "https://mahima-mayank.web.app",
+      "resource": "/",
+      "status": 200,
+      "bytes": 6053,
+      "sha256": "588681be72ad81198f91062a41580779c538b3ae323314e757da6c27b9aef9bf",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "1500",
+        "cache-control": "no-cache, must-revalidate",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "referrer-policy": "no-referrer"
+      },
+      "elapsedMs": 212,
+      "checks": {
+        "publicHtml200": true
+      },
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "limitations": [
+    "Byte/header checks do not execute JavaScript, establish actual login, install a PWA, exercise an installed worker upgrade, or verify video/Cast.",
+    "The supplied complete local artifact must be the deployed build. A separately rebuilt ngsw.json timestamp or other build variation is an explicit exact-hash mismatch.",
+    "Sibling root preservation covers only public HTTP root delivery; no account, Firestore, private page or external dependency is accessed."
+  ],
+  "onePieceBeforeRelease": {
+    "responseStatus": 200,
+    "childManifestPresent": false,
+    "currentExpectedManifestHashPresent": false,
+    "status": "One-Piece-PWA-manifest-absent; Hosting-fallback-may-still-return200"
+  },
+  "completedAt": "2026-10-18T13:40:16.715Z",
+  "passed": true
+}

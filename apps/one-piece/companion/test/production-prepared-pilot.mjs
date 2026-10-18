@@ -7,8 +7,20 @@ import {createMediaCoordinator} from '../src/media/index.mjs';
 import {ownDurationEngine,validateDurationHandoff,authorizeOwnedEngineIntent} from './duration-owned-engine.mjs';
 
 const HANDOFF=fileURLToPath(new URL('../../../../docs/one-piece/evidence/cast-media-compat/prepared-production-handoff.json',import.meta.url));
+const HUMAN_LINEAGE=fileURLToPath(new URL('../../../../docs/one-piece/evidence/cast-media-compat/human-production-lineage.json',import.meta.url));
 const BIN='H:/PTI-OnePiece/pilot/jellyfin/runtime/jellyfin';
 const codeError=code=>Object.assign(new Error(code),{code});
+
+export function validateHumanLineageRecords(audit,records){
+ assert.equal(audit.kind,'read-only-human-helper-to-production-payload-lineage');assert.deepEqual(audit.episodes.map(row=>row.episode),[1000,1001]);
+ for(const row of audit.episodes){const record=records.get(row.productionRenditionId);assert.ok(record&&row.allStoredPayloadHashesAndSelectionsMatch&&row.humanObservation.acceptedForObservedJapaneseAndEnglishPresentation);
+  assert.equal(record.video.sha256,row.video.sha256);assert.equal(record.video.bytes,row.video.bytes);
+  assert.equal(record.captions.sha256,row.fullEnglishVtt.sha256);assert.equal(record.captions.bytes,row.fullEnglishVtt.bytes);assert.equal(record.captions.cueIdentity.cues,row.fullEnglishVtt.cueIdentity.cues);
+  assert.equal(record.recipe.original.md5,row.original.md5);assert.equal(record.recipe.audio.index,row.original.selected.audioIndex);assert.equal(record.recipe.subtitle.index,row.original.selected.subtitleIndex);
+ }
+ return{artifact:'docs/one-piece/evidence/cast-media-compat/human-production-lineage.json',sameStoredVideoCaptionHashesAndSelection:true,
+  scope:'Prior timed human presentation observations only; no new human reply, fresh full-file rehash, quantified subtitle sync or current TV transport pass is inferred',limits:audit.limits};
+}
 
 export async function createProductionPreparedPilot({catalog,privateRoot,handoffPath=HANDOFF}={}){
  assert.ok(catalog?.episodes?.length&&typeof privateRoot==='string');
@@ -36,7 +48,8 @@ export async function createProductionPreparedPilot({catalog,privateRoot,handoff
   owner=await ownDurationEngine(handoffPath,{intent:'cast'});evidence.engine=owner.evidence;
   await owner.ready(media.engine);const result=await initialize(options);
   const usage=await media.cache.usage();assert.ok(usage.projectedBytes<=20*1024**3,'Global retained media exceeds the approved quota');
-  evidence.initialStorage=usage;evidence.coordinatorClass=media.constructor.name;return result;
+  evidence.initialStorage=usage;evidence.coordinatorClass=media.constructor.name;
+  evidence.priorHumanPresentationLineage=validateHumanLineageRecords(JSON.parse(await readFile(HUMAN_LINEAGE,'utf8')),media.cache.renditions);return result;
  };
  media.shutdown=async()=>{
   if(stopping)return stopping;closed=true;

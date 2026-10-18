@@ -1,6 +1,18 @@
 # One Piece implementation status
 
-## Current snapshot — 18 October 2026, 12:54 UTC
+## Current release checkpoint — 18 October 2026, 13:40 UTC
+
+**Not deployed or fully accepted.** Implementation is in [draft PR43](https://github.com/Wolfrine/PTI/pull/43), merged with PTI main `203f81a` without replacing its new accepted home; login alias correction is `a470a33` and the reviewed runtime package is `6e5e18e`. The genuine hour remains running until at least **13:51:13.808 UTC (19:21:13 IST)**, followed by cleanup. At 45 minutes, all three real production A/V decoders advanced with zero errors/source downloads/HTTP 500; two actual queued 1000→1001 transitions recovered in 760/834 ms. These technical profiles do not establish physical family clients or production Google authentication.
+
+Read-only [PR CI](https://github.com/Wolfrine/PTI/actions/runs/39130106838) passed: frontend 47/47, Linux companion 187 pass/7 Windows-specific skips, shared Firestore emulator 37/37, complete Angular/legacy-food/One-Piece build and exact frozen child fingerprint. The final current Windows companion run passed **195/195 with zero skips**, including the new changed-payload lineage rejection fixture; [transcript](evidence/companion-final-pre-release.tap). The unrelated Personal CI failure is preexisting artifact-storage quota; its tests/build/Playwright passed. See [triage](evidence/integration/ci-triage-personal-artifact-quota.md).
+
+Final route review found that One Piece generates `/login`, while PTI declared only the root login route. A narrow alias now maps `/login` to the same existing LoginComponent. Actual complete-artifact desktop/mobile rendering and bookmarked return query passed; auth-return 4/4 and frontend/integration 48/48. One Piece's frozen asset fingerprint remains `2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a`. Local-preview Google FedCM returned a token-retrieval NetworkError; this rendering check does **not** establish actual sign-in. See [route evidence](evidence/integration/login-alias.json).
+
+Two versioned H packages have independently verified identical 132-file payloads. Neither is activated. Reviewed guarded whole-cache migration has not run; only a 31-byte H-volume rename/mtime canary passed. Final Sony testing through current production transport/latest strict ownership proof, managed cache/config activation, operational rollback, controlled Hosting release/live-worker/sibling verification and real owner pairing remain pending. Android trust/install/playback, desktop installation, HDMI picture/sound, sender sleep and PC reboot/logon must remain explicitly unverified unless actually observed. Earlier user-confirmed prepared MP4/VTT language observations match the current production artifacts by [recorded lineage](evidence/cast-media-compat/human-production-lineage.md); that does not replace the final transport/controls test.
+
+Current Hosting rollback predecessor is `f9215f5f228de12a`, from the [13:02 UTC preflight](evidence/release-preflight-after-home.json); refresh before publishing. Hosting rollback must preserve private One Piece Firestore rules. See [family guide](FAMILY_GUIDE.md) and [post-gate operator sequence](evidence/runtime/PREPARED_CACHE_HANDOFF.md). Later timestamped continuation and actual final gate reports supersede this checkpoint.
+
+## Earlier snapshot — 18 October 2026, 12:54 UTC
 
 **Not deployed or fully accepted.** The owner approved full implementation, automatic preparation, local DNS, five-second warm playback/seeking, and HTTPS controls plus scoped LAN HTTP Cast media. No further architecture approval is pending.
 

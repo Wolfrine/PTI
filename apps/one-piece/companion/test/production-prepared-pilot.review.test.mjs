@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {authorizeOwnedEngineIntent} from './duration-owned-engine.mjs';
-import {createProductionPreparedPilot} from './production-prepared-pilot.mjs';
+import {createProductionPreparedPilot,validateHumanLineageRecords} from './production-prepared-pilot.mjs';
 import {MediaCoordinator} from '../src/media/coordinator.mjs';
 import {classifyCastResource,validateProductionRawProofs} from './cast-real.mjs';
 
@@ -21,6 +21,12 @@ test('production hardware evidence rejects stale, callback-only or unowned raw r
  const proofs=Array.from({length:10},(_,index)=>({episodeId:index%2?'one-piece-1001':'one-piece-1000',command:'seek',state:'PLAYING',exactOwnedFreshProof:true,rawVersion:index+1,listenerRawVersion:index+1,platformVersion:1,rawAgeMs:2,platformAgeMs:4}));
  assert.equal(validateProductionRawProofs(proofs).strictRawAndPlatformProofs,true);
  for(const mutation of [row=>{row.platformAgeMs=1001;},row=>{row.listenerRawVersion=0;},row=>{row.exactOwnedFreshProof=false;}]){const copy=structuredClone(proofs);mutation(copy[0]);assert.throws(()=>validateProductionRawProofs(copy));}
+});
+test('human presentation reuse requires the exact stored video/caption payload and original selections',()=>{
+ const rows=[1000,1001].map((episode,index)=>({episode,productionRenditionId:String(index),allStoredPayloadHashesAndSelectionsMatch:true,humanObservation:{acceptedForObservedJapaneseAndEnglishPresentation:true},video:{sha256:'a'.repeat(64),bytes:123},fullEnglishVtt:{sha256:'b'.repeat(64),bytes:456,cueIdentity:{cues:200}},original:{md5:'c'.repeat(32),selected:{audioIndex:1,subtitleIndex:2}}}));
+ const audit={kind:'read-only-human-helper-to-production-payload-lineage',episodes:rows,limits:['synthetic offline fixture']},records=new Map(rows.map(row=>[row.productionRenditionId,{video:row.video,captions:row.fullEnglishVtt,recipe:{original:{md5:row.original.md5},audio:{index:1},subtitle:{index:2}}}]));
+ assert.equal(validateHumanLineageRecords(audit,records).sameStoredVideoCaptionHashesAndSelection,true);
+ const changed=structuredClone(records);changed.get('1').video.sha256='d'.repeat(64);assert.throws(()=>validateHumanLineageRecords(audit,changed));
 });
 test('production hardware binding returns the real coordinator, rejects all original downloads, and stays inert without opt-in',{skip:process.platform!=='win32'},async()=>{
  const catalog={episodes:[{episodeNumber:1000},{episodeNumber:1001}]};

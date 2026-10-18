@@ -1,0 +1,98 @@
+{
+  "checkedAt": "2026-10-18T13:09:17.552Z",
+  "runId": 39130106838,
+  "url": "https://github.com/Wolfrine/PTI/actions/runs/39130106838",
+  "headSha": "6e5e18ec431038a8922e251469180942a8a917a8",
+  "conclusion": "success",
+  "event": "pull_request",
+  "jobs": [
+    {
+      "id": 117683349897,
+      "name": "verify",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install scoped test dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check frontend and companion fixtures",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check the complete shared Firestore rules without live data",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build complete PTI artifact and One Piece sibling",
+          "conclusion": "success"
+        },
+        {
+          "name": "Require the rendered candidate's exact release bytes",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "summaryLines": [
+        "# tests 47",
+        "# pass 47",
+        "# fail 0",
+        "# skipped 0",
+        "# duration_ms 475.862626",
+        "# tests 194",
+        "# pass 187",
+        "# fail 0",
+        "# skipped 7",
+        "# duration_ms 9394.432924",
+        "# tests 37",
+        "# pass 37",
+        "# fail 0",
+        "# skipped 0",
+        "# duration_ms 13824.795627",
+        "Application bundle generation complete. [13.849 seconds]",
+        "\u001b[36;1mnode --input-type=module -e \"import fs from 'node:fs'; import assert from 'node:assert/strict'; const actual=JSON.parse(fs.readFileSync('/tmp/one-piece-fingerprint.json')); const accepted=JSON.parse(fs.readFileSync('docs/one-piece/design/acceptance.json')); assert.equal(actual.candidate,accepted.candidate); console.log('Rendered candidate matches complete artifact:',actual.candidate);\"\u001b[0m",
+        "Rendered candidate matches complete artifact: 2b9695d3d712208858675d6bb8847b40f790544a49317f4065e24b33c347282a"
+      ]
+    }
+  ],
+  "scope": "Read-only Linux fixtures, local shared emulator, complete-site build and accepted child bytes; no application deployment, real media, family identity or hardware inference"
+}

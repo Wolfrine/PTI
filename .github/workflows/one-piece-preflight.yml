@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
+      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
       - name: Inspect deployed rules using the existing PTI identity
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/one-piece-preflight-identity.json

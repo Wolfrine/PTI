@@ -1,67 +1,105 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "b564dc145005127d105eaa73b8cc0be4cf03679ad59156efa737e05fde09ebc2",
-  "checkedAt": "2026-10-18T19:49:01.421Z",
-  "acceptance_scope": "Narrow trusted-PC-HTTPS endpoint migration and simplified home-connection instructions. Existing light/dark visual design is unchanged. This record does not imply physical Android or TV acceptance.",
+  "candidate": "908cf3531bc892648b748406d92b0763e4e824966c486fe959cc981008e1c583",
+  "checkedAt": "2026-10-18T20:30:40.703Z",
+  "acceptance_scope": "Mechanical mobile connection repair only: versioned bootstrap escapes old installed-worker assets; one connection screen separates PC reachability from retained account readiness. Existing light/dark direction retained.",
   "owner_verdict": {
     "status": "not-reviewed"
   },
   "roles": {
-    "runtime": "/root/public_tls_runtime",
-    "renewal": "/root/certificate_renewal",
-    "security_review": "/root/public_https_review",
+    "implementation": "/root + connection_cache_fix + viewer_readiness_fix",
+    "independent_review": "/root/connection_repair_review",
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "../PUBLIC_HTTPS.md",
+  "review": "../MOBILE_CONNECTION_REPAIR.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Personally inspected the connection dialog at1440x1000 and390x844; instructions fit, no observed horizontal overflow, the connection-test link uses the new exact HTTPS hostname, and device CA installation steps are removed."
+    "reason": "Viewed desktop/mobile ready screen, mobile unpaired/unavailable/offline/account screens. No observed horizontal overflow; one primary action and explicit account state. No renewed full-theme acceptance claimed."
   },
   "evidence": [
     {
-      "path": "evidence/public-https/one-piece-simple-connection-desktop.jpg",
-      "sha256": "6bb4ec781dcf3e73348505597f0ee16d74eb24b2f9f58d9a16c6d44bfba3e1b3",
+      "path": "evidence/mobile-connection/one-piece-connection-ready-desktop.jpg",
+      "sha256": "7496ac33cbe3e57faedbdcdeb403767f0f06a16f9d28cc02dafa6cef5724d6b4",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Actual rendered connection dialog in loopback development fixture; synthetic family identity and progress",
+      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/public-https/one-piece-simple-connection-mobile.jpg",
-      "sha256": "22484b4ef2c3445c682fdd1f44dc2ff7275a7aba88b2ff332ed8b0b5ff3c1220",
+      "path": "evidence/mobile-connection/one-piece-connection-ready-mobile.jpg",
+      "sha256": "8b05d3aa5e9c089970d130ac8886d0edc98e1507f283b81557d3928c73ea0eec",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Actual rendered connection dialog in loopback development fixture; synthetic family identity and progress",
+      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
+      "parentPersonallyInspected": true
+    },
+    {
+      "path": "evidence/mobile-connection/one-piece-connection-unpaired-mobile.jpg",
+      "sha256": "c7eee233e642684ce111607c8b660b937a39f327469ec8dd575ca0e2a834a812",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
+      "parentPersonallyInspected": true
+    },
+    {
+      "path": "evidence/mobile-connection/one-piece-connection-unavailable-mobile.jpg",
+      "sha256": "777c2e867d20e640c000ba3e098f726e14121f889c1c7c431fd0429b2b5816f7",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
+      "parentPersonallyInspected": true
+    },
+    {
+      "path": "evidence/mobile-connection/one-piece-connection-offline-mobile.jpg",
+      "sha256": "d10caf96a288376c4b5026289e6a915f7369de5b50df8a9e2369aa6d30c8b97d",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
+      "parentPersonallyInspected": true
+    },
+    {
+      "path": "evidence/mobile-connection/one-piece-account-simple-mobile.jpg",
+      "sha256": "e7c5b8297cdc4d9973c10eeaaf73b63300f307ab5bbd99a04baf940c0a90fda0",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 56,
-    "frontendChecksPassed": 56,
-    "companionChecks": 210,
-    "companionChecksPassed": 210,
-    "completePtiAndChildBuild": "passed with pre-existing Angular CSS warnings",
-    "independentReview": "No blocking migration findings; runtime/source review only",
-    "publicCertificate": "Actual issued Let’s Encrypt certificate accepted by normal Node public trust; temporary loopback endpoint, not yet a physical phone test",
+    "frontendChecks": 61,
+    "frontendChecksPassed": 61,
+    "companionChecks": 217,
+    "companionChecksPassed": 217,
+    "completePtiAndChildBuild": "passed with existing Angular CSS warnings",
+    "independentReview": "Focused 66 checks passed; no release blocker. Two minor status/setup issues subsequently corrected.",
     "syntheticAccountAndProgress": true,
     "mediaEngineUnchanged": true,
     "castTransportUnchanged": true
   },
   "limitations": [
-    "Physical Android DNS, trust, browser local-network permission and playback remain to be checked on the actual phone.",
-    "Future CA renewal cannot be claimed from a fresh-certificate no-op; scheduled execution is checked separately during activation.",
-    "Actual TV playback was not started for this connection update; existing TV-end issue remains outside this migration."
+    "Exact physical-phone failure cause cannot be established from screenshot alone. Stale worker is a tested possible failure path.",
+    "Google confirmation remains popup-based for genuinely missing/revoked credentials; Android OAuth has not been accepted from this repair.",
+    "Actual phone playback requires owner verification; no TV session started. Existing TV end-of-episode issue remains."
   ],
   "historical_record": {
-    "commit": "488da43dd09fc8015b2dfe8a7f635cf2a0df7178",
+    "commit": "90d675b86c3e567af0875dcaec2af000bd3b2b41",
     "path": "docs/one-piece/design/acceptance.json",
-    "candidate": "609fc13e8f635963c500986ecfb19aa341b62040822f23c7b7bfb56b158",
-    "policy": "Prior light/dark screenshots, scores and hardware/media claims retain their original candidate and scope."
+    "candidate": "b564dc145005127d105eaa73b8cc0be4cf03679ad59156efa737e05fde09ebc2",
+    "policy": "Prior HTTPS and theme acceptance records retain original scope."
   }
 }

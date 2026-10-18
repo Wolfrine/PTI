@@ -69,6 +69,23 @@ export class CompanionApi {
    const [owner,viewer]=JSON.parse(key);if(owner===this.binding.ownerUid&&viewer===uid)entries.delete(key);
   }
  }
+ async playbackAccess(actor){
+  // Setup metadata admits pending accounts, but must never probe their retained
+  // credentials. The status is account-scoped, so another device reuses a valid
+  // PC connection without another Google confirmation.
+  if(actor.needsWorkspace===true||actor.needsClaim===true||!['owner','member'].includes(actor.role))return{state:'unavailable',code:'account-setup-required'};
+  try{await this.credentials().getAuthorized(actor.uid);return{state:'ready'};}
+  catch(error){
+   // A fresh credential check can detect a membership change after actor(). Do
+   // not turn that denial into a successful account-status response.
+   if(error?.status===403)throw error;
+   if(error?.status===401&&['viewer-not-paired','viewer-reauthentication-required'].includes(error.code))return{state:'confirmation-required',code:error.code};
+   // Storage/provider outages are not evidence that Google reconnection helps.
+   // Only public error codes leave the server, never retained identity fields.
+   const code=error?.code==='viewer-identity-unavailable'?'viewer-identity-unavailable':'viewer-credential-unavailable';
+   return{state:'unavailable',code};
+  }
+ }
  async lease(uid,id){const snapshot=await this.progress.snapshot(uid);const lease=snapshot.lease;if(!lease||lease.sessionId!==id||lease.expiresAt<=Date.now())throw new AccessError('session-replaced-or-expired',409);return lease;}
  safeState(id){
   const raw=this.media.snapshot(id);if(!raw)return this.states.get(id)?.error?{sessionId:id,state:'error',error:this.states.get(id).error}:null;
@@ -214,7 +231,7 @@ export class CompanionApi {
     const result=await this.binding.pair(actor,input);await this.onPair(result.ownerUid);json(res,201,result);return;
    }
    if(req.method==='GET'&&url.pathname==='/api/me'){
-    const actor=await this.actor(req,{setup:true});json(res,200,{uid:actor.uid,email:actor.email,role:actor.role,ownerUid:this.binding.ownerUid,needsWorkspace:actor.needsWorkspace===true,needsClaim:actor.needsClaim===true});return;
+    const actor=await this.actor(req,{setup:true}),playbackAccess=await this.playbackAccess(actor);json(res,200,{uid:actor.uid,email:actor.email,role:actor.role,ownerUid:this.binding.ownerUid,needsWorkspace:actor.needsWorkspace===true,needsClaim:actor.needsClaim===true,playbackAccess});return;
    }
    if(req.method==='DELETE'&&url.pathname==='/api/pair-viewer'){
     const actor=await this.identity.verify(bearerToken(req.headers));

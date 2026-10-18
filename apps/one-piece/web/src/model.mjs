@@ -33,6 +33,8 @@ export function errorCopy(code) {
   'active-session':['Already watching on another device','Taking over will stop the other session for your account.'],
   'viewer-reauthentication-required':['Reconnect your account','Sign in again to allow your home PC to keep playback working while your phone sleeps.'],
   'viewer-not-paired':['Connect your account to the home PC','A one-time Google confirmation lets the home PC prepare and play your episodes.'],
+  'viewer-credential-unavailable':['The account connection could not be checked','The PC could not read its saved account access. Retry shortly; repeated Google confirmation will not fix a temporary PC error.'],
+  'viewer-identity-unavailable':['The account service is temporarily unavailable','Your PC could not contact the account service. Retry shortly. Your saved place is kept.'],
   'companion-setup-required':['Set up the home PC','The PC needs to be paired with the family owner before anyone can watch.'],
   'not-invited':['This account has not been invited','Ask the family owner to invite the Google account shown here.'],
   'member-inactive':['Access is paused','Ask the family owner to check this account’s invitation.'],

@@ -39,6 +39,85 @@ test('control API rejects untrusted transport/origin and non-family identity; se
  assert.equal((await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0590',deviceId:'device-one'}})).status,404);
 });
 
+test('account status reuses only the authenticated viewer connection and never returns retained credentials',async t=>{
+ const {api,request,credentials}=await fixture(t),lookups=[];
+ api.binding.ownerUid='viewer';
+ api.family=()=>({requireMember:async actor=>({...actor,role:actor.uid==='viewer'?'owner':'member'})});
+ credentials.getAuthorized=async uid=>{lookups.push(uid);return{uid,token:'secret-retained-firebase-token',refreshToken:'secret-refresh-token',providerCredential:'secret-google-credential',expiresAt:Date.now()+3600000};};
+ for(const uid of ['viewer','sister','viewer']){
+  const response=await request('/api/me',{uid});assert.equal(response.status,200);
+  const text=await response.text(),me=JSON.parse(text);
+  assert.equal(me.uid,uid);assert.equal(me.role,uid==='viewer'?'owner':'member');
+  assert.deepEqual(me.playbackAccess,{state:'ready'});
+  assert.deepEqual(Object.keys(me).sort(),['uid','email','role','ownerUid','needsWorkspace','needsClaim','playbackAccess'].sort());
+  assert.ok(!text.includes('secret-'));assert.ok(!text.includes('refreshToken'));assert.ok(!text.includes('providerCredential'));assert.ok(!text.includes('expiresAt'));
+ }
+ assert.deepEqual(lookups,['viewer','sister','viewer']);
+});
+
+test('account status requests Google confirmation only for explicit missing or revoked credential errors',async t=>{
+ const {api,request,credentials}=await fixture(t);
+ api.family=()=>({requireMember:async actor=>({...actor,role:'member'})});
+ for(const code of ['viewer-not-paired','viewer-reauthentication-required']){
+  credentials.getAuthorized=async()=>{throw new AccessError(code,401);};
+  const response=await request('/api/me');assert.equal(response.status,200);
+  assert.deepEqual((await response.json()).playbackAccess,{state:'confirmation-required',code});
+ }
+});
+
+test('temporary and unexpected credential failures do not prompt reconnection or reveal private error details',async t=>{
+ const {api,request,credentials}=await fixture(t);
+ api.family=()=>({requireMember:async actor=>({...actor,role:'member'})});
+ const errors=[
+  new AccessError('viewer-identity-unavailable',503),
+  new AccessError('viewer-credential-unavailable',503),
+  new AccessError('membership-unavailable',503),
+  new AccessError('viewer-not-paired',503),
+  new AccessError('viewer-identity-mismatch',401),
+  new AccessError('secret-internal-error',503),
+  Object.assign(new Error('secret token and private storage path'),{code:'EACCES'}),
+  null,
+ ];
+ for(const error of errors){
+  credentials.getAuthorized=async()=>{throw error;};
+  const response=await request('/api/me');assert.equal(response.status,200);
+  const text=await response.text();
+  assert.deepEqual(JSON.parse(text).playbackAccess,{state:'unavailable',code:error?.code==='viewer-identity-unavailable'?'viewer-identity-unavailable':'viewer-credential-unavailable'});
+  assert.ok(!text.includes('secret'));assert.ok(!text.includes('EACCES'));
+ }
+});
+
+test('pending workspace and invitation account metadata never reads retained playback credentials',async t=>{
+ const {api,request,credentials}=await fixture(t);let lookups=0;
+ credentials.getAuthorized=async()=>{lookups++;throw new Error('must not read pending account credentials');};
+ for(const extra of [{role:'owner',needsWorkspace:true},{role:'invited',needsClaim:true},{role:'member',needsClaim:true},{role:'invited'}]){
+  api.family=()=>({requireMember:async actor=>({...actor,...extra})});
+  const response=await request('/api/me');assert.equal(response.status,200);
+  const me=await response.json();
+  assert.deepEqual(me.playbackAccess,{state:'unavailable',code:'account-setup-required'});
+  assert.equal(me.needsWorkspace,extra.needsWorkspace===true);assert.equal(me.needsClaim,extra.needsClaim===true);
+ }
+ assert.equal(lookups,0);
+});
+
+test('account status authenticates and checks membership before accessing any retained credential',async t=>{
+ const {api,request,credentials}=await fixture(t);let lookups=0;
+ credentials.getAuthorized=async()=>{lookups++;return{token:'must-never-read'};};
+ for(const [uid,status]of [['invalid',401],['outsider',403]]){
+  const response=await request('/api/me',{uid});assert.equal(response.status,status);
+ }
+ assert.equal(lookups,0);
+ api.family=()=>({requireMember:async()=>{throw new AccessError('membership-unavailable',503);}});
+ assert.equal((await request('/api/me')).status,503);assert.equal(lookups,0);
+ api.family=()=>({requireMember:async actor=>({...actor,role:'member'})});
+ for(const code of ['not-invited','family-unavailable','viewer-identity-mismatch']){
+  credentials.getAuthorized=async()=>{lookups++;throw new AccessError(code,403);};
+  const response=await request('/api/me');assert.equal(response.status,403);
+  assert.deepEqual(await response.json(),{error:code});
+ }
+ assert.equal(lookups,3);
+});
+
 test('one real HTTP flow keeps profiles private, rewrites only scoped media, and revokes on takeover',async t=>{
  const {request,origin}=await fixture(t);
  const response=await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}});assert.equal(response.status,202);

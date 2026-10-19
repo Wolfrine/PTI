@@ -14,7 +14,7 @@ test('public catalogue derives exact real availability and excludes source paths
   assert.equal(catalog.endBoundary.episodeNumber, 1086);
   assert.doesNotMatch(JSON.stringify(catalog), /archive\.org|fileName|checksums|candidates|H:[/\\]/);
 });
-test('Hosting extends the existing default artifact; worker excludes root and nested sibling paths', async () => {
+test('Hosting preserves the default artifact and gives One Piece its own origin with shared login', async () => {
   const firebase = JSON.parse(await readFile(new URL('firebase.json', repo)));
   const hosting = firebase.hosting.find(h => h.target === 'default');
   assert.equal(hosting.public, 'pti-app/dist/pti-app/browser');
@@ -23,7 +23,35 @@ test('Hosting extends the existing default artifact; worker excludes root and ne
   const worker = JSON.parse(await readFile(new URL('pti-app/ngsw-config.json', repo)));
   assert.ok(worker.navigationUrls.includes('!/one-piece'));
   assert.ok(worker.navigationUrls.includes('!/one-piece/**'));
-  assert.deepEqual(firebase.hosting.map(site => site.target), ['default', 'velum', 'luminary', 'sefpo', 'venture']);
+  assert.deepEqual(firebase.hosting.map(site => site.target), ['default', 'velum', 'luminary', 'sefpo', 'venture', 'one-piece']);
+  const dedicated=firebase.hosting.find(site=>site.target==='one-piece');
+  assert.equal(dedicated.public,'pti-app/dist/one-piece-app');
+  assert.deepEqual(dedicated.redirects,[{source:'/',destination:'/one-piece/',type:302}]);
+  assert.deepEqual(dedicated.rewrites,[{source:'/one-piece{,/**}',destination:'/one-piece/index.html'},{source:'**',destination:'/index.html'}]);
+  const workerHeaders=dedicated.headers.find(rule=>rule.source==='/one-piece/sw.js').headers;
+  assert.equal(workerHeaders.find(header=>header.key==='Service-Worker-Allowed').value,'/one-piece/');
+  for(const route of ['/','/login'])assert.match(dedicated.headers.find(rule=>rule.source===route).headers.find(header=>header.key==='Cache-Control').value,/no-cache, no-store/);
+  const targets=JSON.parse(await readFile(new URL('.firebaserc',repo))).targets['pti-app-2ab59'].hosting;
+  assert.deepEqual(targets['one-piece'],['pti-app-2ab59-one-piece']);
+  assert.deepEqual(targets.default,['pti-app-2ab59']);
+});
+test('One Piece release creates its sibling site, requires Auth authorization and verifies live assets',async()=>{
+  const workflow=await readFile(new URL('.github/workflows/firebase-deploy.yml',repo),'utf8');
+  assert.match(workflow,/ONE_PIECE_SITE_ID=pti-app-2ab59-one-piece/);
+  assert.match(workflow,/hosting:sites:create "\$ONE_PIECE_SITE_ID"/);
+  assert.match(workflow,/hosting:default,hosting:one-piece --non-interactive/);
+  assert.match(workflow,/pti-app-2ab59-one-piece\.web\.app','pti-app-2ab59-one-piece\.firebaseapp\.com/);
+  assert.match(workflow,/authorizedDomains:\[\.\.\.new Set\(\[\.\.\.existing,\.\.\.required\]\)\]/);
+  const verification=workflow.split('- name: Verify dedicated One Piece routes, identity and exact release assets')[1]?.split('- name: Deploy optional')[0];
+  assert.ok(verification);
+  assert.match(verification,/verifyAsset\(asset\)/);
+  assert.match(verification,/response\('\/login'\)/);
+  assert.match(verification,/assert\.equal\(manifest\.scope,'\/'\)/);
+  const checks=await readFile(new URL('.github/workflows/one-piece-checks.yml',repo),'utf8');
+  assert.match(checks,/['"]\.firebaserc['"]/);
+  assert.match(checks,/['"]\.github\/workflows\/firebase-deploy\.yml['"]/);
+  assert.match(checks,/fingerprint\.mjs pti-app\/dist\/one-piece-app\/one-piece/);
+  assert.match(checks,/assert\.equal\(independent\.candidate,accepted\.independent_candidate\)/);
 });
 test('production build retains PTI and removes guarded development auth paths', async () => {
   const scratch = await mkdtemp(path.join(os.tmpdir(), 'one-piece-build-'));

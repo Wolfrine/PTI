@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/one-piece-checks.yml'
+      - '.github/workflows/firebase-deploy.yml'
+      - '.firebaserc'
       - 'apps/one-piece/**'
       - 'docs/one-piece/design/acceptance.json'
       - 'docs/one-piece/design/fingerprint.mjs'
@@ -58,4 +60,5 @@ jobs:
       - name: Require the rendered candidate's exact release bytes
         run: |
           node docs/one-piece/design/fingerprint.mjs pti-app/dist/pti-app/browser/one-piece > /tmp/one-piece-fingerprint.json
-          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; const actual=JSON.parse(fs.readFileSync('/tmp/one-piece-fingerprint.json')); const accepted=JSON.parse(fs.readFileSync('docs/one-piece/design/acceptance.json')); assert.equal(actual.candidate,accepted.candidate); console.log('Rendered candidate matches complete artifact:',actual.candidate);"
+          node docs/one-piece/design/fingerprint.mjs pti-app/dist/one-piece-app/one-piece > /tmp/one-piece-independent-fingerprint.json
+          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; const actual=JSON.parse(fs.readFileSync('/tmp/one-piece-fingerprint.json')); const independent=JSON.parse(fs.readFileSync('/tmp/one-piece-independent-fingerprint.json')); const accepted=JSON.parse(fs.readFileSync('docs/one-piece/design/acceptance.json')); assert.equal(actual.candidate,accepted.candidate); assert.equal(independent.candidate,accepted.independent_candidate); console.log('Rendered legacy candidate matches complete artifact:',actual.candidate); console.log('Rendered independent candidate matches dedicated artifact:',independent.candidate);"

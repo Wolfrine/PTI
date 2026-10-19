@@ -2,13 +2,45 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { visibleEpisodes, nextBoundary, rangeFor, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
 import { createClient, CONTROL_ORIGIN } from './client.mjs';
-import { dialogContent } from './views.mjs';
+import { dialogContent, page } from './views.mjs';
+import { appIdentity, dedicatedAppUrl, canMoveToDedicatedApp, installStatus, ONE_PIECE_ORIGIN, PTI_ORIGIN } from './install.mjs';
 import { handleWatchKeyboard } from './keyboard.mjs';
 import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identity.mjs';
 import { LocalPlayer, sanitizedPlaybackDiagnostic } from './player.mjs';
 import { disconnectBeforeSignOut } from './signout.mjs';
 import { observeReviewFrames } from './review-frames.mjs';
 import { needsGoogleConfirmation, confirmationError, connectionStatus } from './connection.mjs';
+
+test('dedicated app identity preserves episode links without copying origin storage or credentials',()=>{
+ const link=new URL('/one-piece/watch?episode=1001&from=continue#player',PTI_ORIGIN);
+ assert.equal(dedicatedAppUrl(link),`${ONE_PIECE_ORIGIN}/one-piece/watch?episode=1001&from=continue#player`);
+ assert.deepEqual(appIdentity(link),{dedicated:false,legacy:true});
+ assert.deepEqual(appIdentity(new URL(dedicatedAppUrl(link))),{dedicated:true,legacy:false});
+ assert.deepEqual(appIdentity(new URL('https://pti-app-2ab59-one-piece.firebaseapp.com/one-piece/')),{dedicated:true,legacy:false});
+ assert.equal(dedicatedAppUrl(new URL('/login',PTI_ORIGIN)),`${ONE_PIECE_ORIGIN}/one-piece/`);
+ assert.equal(canMoveToDedicatedApp(),true);
+ assert.equal(canMoveToDedicatedApp({pendingEvents:1}),false);
+ assert.equal(canMoveToDedicatedApp({resumeConflict:{positionSeconds:20}}),false);
+});
+
+test('installation always has a visible useful state, including no browser prompt and standalone use',()=>{
+ assert.equal(installStatus().label,'Open One Piece app');
+ assert.equal(installStatus({dedicated:true}).kind,'help');
+ assert.equal(installStatus({dedicated:true,promptAvailable:true}).kind,'prompt');
+ assert.equal(installStatus({dedicated:true,standalone:true}).kind,'installed');
+ const state={booting:true,network:'online',appIdentity:{dedicated:true},profile:{},user:{uid:'fixture',displayName:'Family viewer'}};
+ const html=page(state);assert.match(html,/id="install-button"[^>]*>.*Install One Piece/);assert.doesNotMatch(html,/id="install-button"[^>]*hidden/);
+ const legacy=page({...state,appIdentity:{legacy:true}});assert.match(legacy,/One Piece now has its own app/);assert.match(legacy,/data-action="open-dedicated"/);
+ assert.match(html,new RegExp(`${PTI_ORIGIN.replaceAll('.','\\.')}/home`));
+ const help=dialogContent({...state,dialog:'install'});assert.match(help,/Add to home screen/);assert.match(help,/browser menu/);
+ assert.match(dialogContent({...state,appIdentity:{legacy:true},dialog:'install'}),/Sign in there once with the same Google account/);
+ assert.match(dialogContent({...state,dialog:'migration-pending'}),/Sync before switching apps/);
+});
+
+test('switching Google accounts keeps installation identity but replaces account state',()=>{
+ const appIdentity={dedicated:true,standalone:true},app={accountGeneration:0,s:{user:{uid:'a'},appIdentity,catalog:null,requestedEpisode:1001}};
+ resetAccountContext(app,{uid:'b'},{});assert.equal(app.s.appIdentity,appIdentity);assert.deepEqual(app.s.progress,{});
+});
 
 test('numbered search retains the unavailable 590 and source boundary without duplicates',()=>{
  const episodes=[589,590,591,1000,1001].map(n=>({episodeNumber:n,availability:n===590?'missing':'listed'}));

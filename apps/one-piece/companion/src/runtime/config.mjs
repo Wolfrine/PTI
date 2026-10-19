@@ -5,6 +5,7 @@ import { WindowsProtection } from '../dpapi.mjs';
 import { atomicJson } from '../progress.mjs';
 
 const MANAGED='H:\\PTI-OnePiece';
+export const INDEPENDENT_APP_ORIGINS=Object.freeze(['https://pti-app-2ab59-one-piece.web.app','https://pti-app-2ab59-one-piece.firebaseapp.com']);
 export const HOUSEHOLD_CA_SHA256='307F6A88C652E429513F47B386F761249F52A30D6FE93B91ECE7501C3C640489';
 export const CADDY_SHA256='4B709838F21C4A641DF02D4561E2243C100B862011444EBABB1517AC88C11243';
 const fail=code=>{const error=new Error(code);error.code=code;throw error;};
@@ -64,7 +65,7 @@ export function validateRuntimeConfig(input){
   validateTls(value);
   origin(value.controlsOrigin,usesPublicTls(value)?`https://${value.tls.hostname}:8443`:'https://onepiece.local:8443');origin(value.mediaOrigin,value.controlsOrigin);
   origin(value.fallbackControlsOrigin,'https://192.168.68.105:8443');origin(value.castMediaOrigin,'http://onepiece.local:18099');
-  if(!Array.isArray(value.allowedOrigins)||value.allowedOrigins.some(x=>!['https://pti-app-2ab59.web.app',value.controlsOrigin,value.fallbackControlsOrigin,...(usesPublicTls(value)?['https://onepiece.local:8443']:[])].includes(x))||!value.allowedOrigins.includes('https://pti-app-2ab59.web.app'))fail('runtime-origin');
+  if(!Array.isArray(value.allowedOrigins)||value.allowedOrigins.some(x=>!['https://pti-app-2ab59.web.app',...INDEPENDENT_APP_ORIGINS,value.controlsOrigin,value.fallbackControlsOrigin,...(usesPublicTls(value)?['https://onepiece.local:8443']:[])].includes(x))||!value.allowedOrigins.includes('https://pti-app-2ab59.web.app'))fail('runtime-origin');
   if(value.allowHttpMedia!==true||value.consent?.hybridMediaAccepted!==true||value.consent?.householdCaAccepted!==true||!Number.isFinite(Date.parse(value.consent.recordedAt)))fail('runtime-consent');
   if(value.mdns?.hostname!=='onepiece.local'||value.mdns.address!=='192.168.68.105'||value.mdns.subnet!=='192.168.68.0/24')fail('runtime-mdns');
   value.mdns.toolsPath=managedPath(value.mdns.toolsPath);
@@ -78,6 +79,10 @@ export function validateRuntimeConfig(input){
   if(!path.win32.isAbsolute(value.nodeExecutable??'')||!path.win32.isAbsolute(value.pythonExecutable??''))fail('runtime-executable');
   value.nodeExecutable=path.win32.normalize(value.nodeExecutable);value.pythonExecutable=path.win32.normalize(value.pythonExecutable);
   return value;
+}
+export function enableIndependentAppOrigins(input){
+  const value=validateRuntimeConfig(input);
+  return validateRuntimeConfig({...value,allowedOrigins:[...new Set([...value.allowedOrigins,...INDEPENDENT_APP_ORIGINS])]});
 }
 export async function loadRuntimeConfig(configPath){
   configPath=managedPath(configPath);const stat=await lstat(configPath);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>65536)fail('runtime-config');

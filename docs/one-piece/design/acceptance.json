@@ -1,105 +1,88 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "908cf3531bc892648b748406d92b0763e4e824966c486fe959cc981008e1c583",
-  "checkedAt": "2026-10-18T20:30:40.703Z",
-  "acceptance_scope": "Mechanical mobile connection repair only: versioned bootstrap escapes old installed-worker assets; one connection screen separates PC reachability from retained account readiness. Existing light/dark direction retained.",
+  "candidate": "e2d547d7718daf6de0c4abe18dad4e102ff4fab7e7ecfd23eec906f82ba0b539",
+  "independent_candidate": "30e76dddcaed237be1c93b1a5d169c0106034d9a3c01f0f956b72a805e69fb3b",
+  "checkedAt": "2026-10-19T02:35:15.745Z",
+  "acceptance_scope": "Mechanical app identity and origin repair. Dedicated PTI Firebase Hosting site, own PWA identity including login, guarded old-origin migration and install controls. Existing light/dark art direction, media and casting behavior retained.",
   "owner_verdict": {
     "status": "not-reviewed"
   },
   "roles": {
-    "implementation": "/root + connection_cache_fix + viewer_readiness_fix",
-    "independent_review": "/root/connection_repair_review",
+    "hosting": "/root/onepiece_hosting",
+    "frontend": "/root/onepiece_install_identity",
+    "review": "/root/separate_pwa_review",
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "../MOBILE_CONNECTION_REPAIR.md",
+  "review": "../INDEPENDENT_PWA.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Viewed desktop/mobile ready screen, mobile unpaired/unavailable/offline/account screens. No observed horizontal overflow; one primary action and explicit account state. No renewed full-theme acceptance claimed."
+    "reason": "Personally inspected old-origin migration banner and dedicated installation help on desktop/mobile. No observed horizontal overflow or clipped controls; standalone manifest identity and both built variants are tested. Physical Android install is separate."
   },
   "evidence": [
     {
-      "path": "evidence/mobile-connection/one-piece-connection-ready-desktop.jpg",
-      "sha256": "7496ac33cbe3e57faedbdcdeb403767f0f06a16f9d28cc02dafa6cef5724d6b4",
+      "path": "evidence/independent-pwa/one-piece-own-app-legacy-desktop.jpg",
+      "sha256": "d531593514a69990a8fc87cf97a5c8d6a626c6d5e89fe3246a7a3f15e07d37b6",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
+      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/mobile-connection/one-piece-connection-ready-mobile.jpg",
-      "sha256": "8b05d3aa5e9c089970d130ac8886d0edc98e1507f283b81557d3928c73ea0eec",
+      "path": "evidence/independent-pwa/one-piece-own-app-legacy-mobile.jpg",
+      "sha256": "38358ab1badcaf42ecb82d3e8a9600db823e05d4ad29b94f77794557ef332135",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
+      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/mobile-connection/one-piece-connection-unpaired-mobile.jpg",
-      "sha256": "c7eee233e642684ce111607c8b660b937a39f327469ec8dd575ca0e2a834a812",
+      "path": "evidence/independent-pwa/one-piece-own-app-install-desktop.jpg",
+      "sha256": "454eeec6ce3079b9ccbc727b5a5c59a199da1c526670c2ab9b97db53ad62615a",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
+      "parentPersonallyInspected": true
+    },
+    {
+      "path": "evidence/independent-pwa/one-piece-own-app-install-mobile.jpg",
+      "sha256": "c5fbbf0b3a05b12265154ce981a5fd5fd5c0ed726af462ee33b4ff12af452573",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/mobile-connection/one-piece-connection-unavailable-mobile.jpg",
-      "sha256": "777c2e867d20e640c000ba3e098f726e14121f889c1c7c431fd0429b2b5816f7",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/mobile-connection/one-piece-connection-offline-mobile.jpg",
-      "sha256": "d10caf96a288376c4b5026289e6a915f7369de5b50df8a9e2369aa6d30c8b97d",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/mobile-connection/one-piece-account-simple-mobile.jpg",
-      "sha256": "e7c5b8297cdc4d9973c10eeaaf73b63300f307ab5bbd99a04baf940c0a90fda0",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "kind": "Actual browser render; loopback development fixture, synthetic identity/progress and account readiness; real catalogue/artwork",
+      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 61,
-    "frontendChecksPassed": 61,
-    "companionChecks": 217,
-    "companionChecksPassed": 217,
-    "completePtiAndChildBuild": "passed with existing Angular CSS warnings",
-    "independentReview": "Focused 66 checks passed; no release blocker. Two minor status/setup issues subsequently corrected.",
-    "syntheticAccountAndProgress": true,
+    "frontendChecks": 67,
+    "frontendChecksPassed": 67,
+    "companionChecks": 219,
+    "companionChecksPassed": 219,
+    "completePtiAndDedicatedBuild": "passed with existing Angular stylesheet warnings",
+    "independentReview": "See INDEPENDENT_PWA.md for final verdict",
+    "syntheticIdentityAndOriginFlags": true,
     "mediaEngineUnchanged": true,
     "castTransportUnchanged": true
   },
   "limitations": [
-    "Exact physical-phone failure cause cannot be established from screenshot alone. Stale worker is a tested possible failure path.",
-    "Google confirmation remains popup-based for genuinely missing/revoked credentials; Android OAuth has not been accepted from this repair.",
-    "Actual phone playback requires owner verification; no TV session started. Existing TV end-of-episode issue remains."
+    "New-origin actual sign-in, companion CORS and playback are verified after release; pre-release renders use fixtures.",
+    "Browser-origin sign-in/device storage is separate, so a fresh Google sign-in and possible same-profile takeover are expected; no token transfer.",
+    "Actual Android WebAPK installation and launch are hardware/user actions, not proved by metadata or desktop screenshots.",
+    "No TV session started for this origin repair; prior end-of-episode issue remains."
   ],
   "historical_record": {
-    "commit": "90d675b86c3e567af0875dcaec2af000bd3b2b41",
+    "commit": "f646b3a4cc8e04f39b8b62525f82cda4e16641ab",
     "path": "docs/one-piece/design/acceptance.json",
-    "candidate": "b564dc145005127d105eaa73b8cc0be4cf03679ad59156efa737e05fde09ebc2",
-    "policy": "Prior HTTPS and theme acceptance records retain original scope."
+    "candidate": "908cf3531bc892648b748406d92b0763e4e824966c486fe959cc981008e1c583",
+    "policy": "Prior connection/theme/media evidence retains original candidate and scope."
   }
 }

@@ -1,0 +1,115 @@
+{
+  "startedAt": "2026-10-19T09:27:22.413Z",
+  "runtime": "5bec604b2419543daab6234f24d58faff63a8176",
+  "mode": "Real existing owner identity and cached episode1 through managed production API; no mock account or new source fetch requested",
+  "samples": [
+    {
+      "elapsedMs": 30029,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1077.680023,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 119,
+      "observationAgeMs": 1017,
+      "discoveryMs": 209
+    }
+  ],
+  "passed": true,
+  "savedPosition": 1077.680023,
+  "selectedTracks": {
+    "audioIndex": 1,
+    "subtitleIndex": 2,
+    "audioLanguage": "jpn",
+    "subtitleLanguage": "eng"
+  },
+  "load": {
+    "ms": 5465,
+    "position": 1077.680023,
+    "subtitleEnabled": true
+  },
+  "pause": {
+    "ms": 299,
+    "position": 1077.680023
+  },
+  "pauseDurationMs": 30239,
+  "resume": {
+    "ms": 353,
+    "state": "PLAYING",
+    "position": 1077.972511,
+    "subtitleEnabled": true,
+    "owned": true
+  },
+  "volume": {
+    "ms": 227,
+    "owned": true,
+    "state": "PLAYING",
+    "value": 0.05999999865889549
+  },
+  "rewind": {
+    "ms": 197,
+    "owned": true,
+    "state": "PLAYING",
+    "position": 1067.972511,
+    "subtitleEnabled": true
+  },
+  "afterControls": [
+    {
+      "elapsedMs": 15022,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1080.616505,
+      "subtitleEnabled": true
+    },
+    {
+      "elapsedMs": 30053,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1094.679073,
+      "subtitleEnabled": true
+    },
+    {
+      "elapsedMs": 45075,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1110.83511,
+      "subtitleEnabled": true
+    },
+    {
+      "elapsedMs": 60190,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1124.779465,
+      "subtitleEnabled": true
+    },
+    {
+      "elapsedMs": 75202,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1140.847244,
+      "subtitleEnabled": true
+    },
+    {
+      "elapsedMs": 90237,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1154.881881,
+      "subtitleEnabled": true
+    },
+    {
+      "elapsedMs": 105266,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1170.929041,
+      "subtitleEnabled": true
+    },
+    {
+      "elapsedMs": 120411,
+      "state": "PLAYING",
+      "owned": true,
+      "position": 1186.956962,
+      "subtitleEnabled": true
+    }
+  ],
+  "leftPlaying": true,
+  "completedAt": "2026-10-19T09:30:00.227Z"
+}

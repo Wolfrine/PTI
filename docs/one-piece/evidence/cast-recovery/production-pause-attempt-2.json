@@ -1,0 +1,84 @@
+{
+  "startedAt": "2026-10-19T09:17:55.074Z",
+  "runtime": "5bec604b2419543daab6234f24d58faff63a8176",
+  "mode": "Real existing owner identity and cached episode1 through managed production API; no mock account or new source fetch requested",
+  "samples": [
+    {
+      "elapsedMs": 30026,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 118,
+      "observationAgeMs": 1983,
+      "discoveryMs": 132
+    },
+    {
+      "elapsedMs": 60268,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 120,
+      "observationAgeMs": 93,
+      "discoveryMs": 139
+    },
+    {
+      "elapsedMs": 90432,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 120,
+      "observationAgeMs": 132,
+      "discoveryMs": 137
+    },
+    {
+      "elapsedMs": 120613,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 120,
+      "observationAgeMs": 174,
+      "discoveryMs": 223
+    },
+    {
+      "elapsedMs": 150038,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 119,
+      "observationAgeMs": 1426,
+      "discoveryMs": 305
+    }
+  ],
+  "passed": true,
+  "savedPosition": 1083.051083,
+  "selectedTracks": {
+    "audioIndex": 1,
+    "subtitleIndex": 2,
+    "audioLanguage": "jpn",
+    "subtitleLanguage": "eng"
+  },
+  "load": {
+    "ms": 5495,
+    "position": 1083.051083,
+    "subtitleEnabled": true
+  },
+  "pause": {
+    "ms": 451,
+    "position": 1083.051083
+  },
+  "pauseDurationMs": 150344,
+  "resume": {
+    "ms": 341,
+    "state": "PLAYING",
+    "position": 1083.360144,
+    "subtitleEnabled": true,
+    "owned": true
+  },
+  "leftPlaying": true,
+  "completedAt": "2026-10-19T09:20:32.711Z"
+}

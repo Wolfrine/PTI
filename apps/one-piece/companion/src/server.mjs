@@ -12,6 +12,7 @@ import {CastBridge} from './cast.mjs';
 import {CompanionApi} from './api.mjs';
 import {createMediaCoordinator,dedicatedEngineDescriptor} from './media/index.mjs';
 import {loadRuntimeConfig,loadRuntimeSecrets} from './runtime/config.mjs';
+import {PlaybackDiagnostics,emitDiagnostic} from './diagnostics.mjs';
 
 const listen=(server,port,host)=>new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,host,()=>{server.off('error',reject);resolve();});});
 const stop=server=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);});
@@ -21,10 +22,12 @@ export async function startCompanion(config,{stopEngineChildren,initializeMedia=
  const secrets=await loadRuntimeSecrets(config),catalog=JSON.parse(await readFile(config.catalogPath,'utf8'));
  const identity=new FirebaseIdentity({projectId:config.firebaseProjectId});
  const binding=new OwnerBinding({root:config.privateRoot});await binding.initialize();
- const tickets=new TicketStore();let cast,api,family,credentials,cloud;
+ const tickets=new TicketStore(),diagnostics=new PlaybackDiagnostics({file:path.join(config.privateRoot,'playback-diagnostics.json')});let cast,api,family,credentials,cloud;
+ const onDiagnostic=event=>emitDiagnostic(value=>diagnostics.record(value),event);
  const progress=new ProgressStore({root:config.progressRoot,catalog,onRevoke:async id=>{
+  onDiagnostic({type:'session-close',sessionId:id});
   tickets.revokeSession(id);api?.revokeSession(id);await cast?.revokeSession(id);await media.closeSession(id);
- },onAuthorityChange:async id=>{tickets.revokeSession(id);api?.revokeSession(id);await cast?.revokeSession(id);}});
+ },onAuthorityChange:async id=>{onDiagnostic({type:'authority-change',sessionId:id});tickets.revokeSession(id);api?.revokeSession(id);await cast?.revokeSession(id);}});
  await progress.restorePendingProfiles();
  const descriptor=dedicatedEngineDescriptor({runtimeRoot:config.jellyfin.runtimeRoot,binaryDir:config.jellyfin.binaryDir,port:18097});
  const prepared=config.playback?.mode==='prepared-mp4';
@@ -47,12 +50,12 @@ export async function startCompanion(config,{stopEngineChildren,initializeMedia=
  };
  await configureFamily();
  cast=new CastBridge({progressStore:progress,tickets,mediaOrigins:[config.castMediaOrigin],allowHttpMedia:config.allowHttpMedia,
-  pythonExecutable:config.pythonExecutable,toolsPath:config.mdns.toolsPath,
+  pythonExecutable:config.pythonExecutable,toolsPath:config.mdns.toolsPath,onDiagnostic,
   onState:async(context,state)=>{await api?.receiverState(context,state);},
   onEpisodeChanged:async(context,episodeId)=>{await api?.receiverEpisode(context,episodeId);},
   onDisplaced:async context=>{await progress.close(context.uid,context.sessionId).catch(()=>{});}});
  api=new CompanionApi({identity,binding,family:()=>family,credentials:()=>credentials,cloud:()=>cloud,media,progress,tickets,cast,
-  config:{...config,proxySecret:secrets.proxySecret},onPair:configureFamily});
+  config:{...config,proxySecret:secrets.proxySecret},onPair:configureFamily,onDiagnostic});
  const backend=http.createServer((req,res)=>req.url.startsWith('/m/')?api.mediaRequest(req,res):api.control(req,res));
  const mediaServer=http.createServer((req,res)=>{
   const remote=req.socket.remoteAddress?.replace('::ffff:','');
@@ -66,7 +69,7 @@ export async function startCompanion(config,{stopEngineChildren,initializeMedia=
   tickets.prune();for(const uid of progress.users.keys())void cloud?.sync(uid);
  },15000);timer.unref();
  let stopping=false;
- return{api,media,progress,binding,backend,mediaServer,async close(){if(stopping)return;stopping=true;api.shutdown();clearInterval(timer);await cast.close();await Promise.allSettled([stop(backend),stop(mediaServer)]);await media.shutdown();}};
+ return{api,media,progress,binding,backend,mediaServer,async close(){if(stopping)return;stopping=true;api.shutdown();clearInterval(timer);await cast.close();await Promise.allSettled([stop(backend),stop(mediaServer)]);await media.shutdown();await diagnostics.flush().catch(()=>{});}};
 }
 
 async function main(){

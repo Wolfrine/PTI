@@ -5,11 +5,13 @@ import { AccessError, bearerToken } from './auth.mjs';
 import { decodeResource, mediaUrl } from './tickets.mjs';
 import { rewriteManifest } from './media/index.mjs';
 import { canonicalEpisodeId } from './sources/archive.mjs';
+import { emitDiagnostic } from './diagnostics.mjs';
 
 const json=(res,status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(value));};
 const safeSecret=(a,b)=>typeof a==='string'&&typeof b==='string'&&Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
 const loopback=value=>['127.0.0.1','::1','::ffff:127.0.0.1'].includes(value);
 const mediaTypes=new Set(['application/vnd.apple.mpegurl','application/x-mpegurl','video/mp4']);
+const mediaResourceKind=resource=>/\.(?:vtt|srt)(?:\?|$)/i.test(resource)?'subtitle':/\.m3u8(?:\?|$)/i.test(resource)?'manifest':/\.(?:mp4|ts|m4s)(?:\?|$)/i.test(resource)?'video':'other';
 const publicLease=lease=>lease&&Object.fromEntries(['sessionId','deviceId','destination','generation','authorityEpoch','revision','expiresAt','updatedAt'].map(k=>[k,lease[k]]));
 async function body(req,limit=32768){
  if(req.headers['content-type']?.split(';')[0]!=='application/json')throw new AccessError('json-required',415);
@@ -25,9 +27,9 @@ const routeError=(res,error)=>{
 
 /** HTTP transport is an adapter; all identity, episode and authority decisions stay on the PC. */
 export class CompanionApi {
- constructor({identity,binding,family,credentials,cloud,media,progress,tickets,cast,config,onPair=async()=>{},clock=()=>Date.now(),streamCheckMs=1000}={}){
+ constructor({identity,binding,family,credentials,cloud,media,progress,tickets,cast,config,onPair=async()=>{},onDiagnostic=()=>{},clock=()=>Date.now(),streamCheckMs=1000}={}){
   if(!Number.isInteger(streamCheckMs)||streamCheckMs<5||streamCheckMs>1000)throw new Error('Invalid stream authorization interval');
-  Object.assign(this,{identity,binding,family,credentials,cloud,media,progress,tickets,cast,config,onPair,clock});this.memberCache=new Map();this.memberChecks=new Map();
+  Object.assign(this,{identity,binding,family,credentials,cloud,media,progress,tickets,cast,config,onPair,onDiagnostic,clock});this.memberCache=new Map();this.memberChecks=new Map();
   this.states=new Map();this.locks=new Map();this.mediaChecks=new Map();this.castStates=new Map();this.queueRecords=new Map();this.deliveries=new Map();this.autoplay=new Map();this.closed=false;
   this.activeStreams=new Set();this.streamCheckMs=streamCheckMs;
  }
@@ -146,7 +148,7 @@ export class CompanionApi {
    if(lease.generation!==entry.generation||lease.authorityEpoch!==entry.authorityEpoch||lease.destination!==entry.destination)throw new AccessError('media-not-found',404);
   };
   const cleanup=()=>{if(finished)return;finished=true;clearInterval(timer);clearTimeout(expiryTimer);res.off('close',onClose);this.activeStreams.delete(record);};
-  const abort=error=>{if(controller.signal.aborted)return;controller.abort(error);cleanup();if(res.headersSent)res.destroy();};
+  const abort=error=>{if(controller.signal.aborted)return;if(!res.writableEnded)emitDiagnostic(this.onDiagnostic,{type:'stream-abort',sessionId:entry.sessionId,code:error?.code,method:req.method,hasRange:req.headers.range!==undefined,resourceKind:mediaResourceKind(resource)});controller.abort(error);cleanup();if(res.headersSent)res.destroy();};
   const onClose=()=>abort(new AccessError('media-client-closed',499));
   const check=()=>{
    try{assert();}catch(error){abort(error);return Promise.reject(error);}
@@ -156,7 +158,7 @@ export class CompanionApi {
     assert();await validateLease();assert();
     // Reuse ViewerCredentials' sole <=60s membership window. The stream layer
     // introduces no positive authorization cache; output waits for an active read.
-    try{await this.credentials().getAuthorized(entry.uid);}catch(error){this.revokeProfile(entry.uid);throw error;}
+    try{await this.credentials().getAuthorized(entry.uid);}catch(error){emitDiagnostic(this.onDiagnostic,{type:'credentials-error',sessionId:entry.sessionId,code:error?.code,method:req.method,hasRange:req.headers.range!==undefined,resourceKind:mediaResourceKind(resource)});this.revokeProfile(entry.uid);throw error;}
     assert();await validateLease();assert();nextCheck=Date.now()+this.streamCheckMs;
    })();
    pending=task;
@@ -281,6 +283,7 @@ export class CompanionApi {
    const[,id,action]=match;const lease=await this.lease(actor.uid,id);
    if(req.method==='GET'&&!action){json(res,200,{lease:publicLease(lease),...this.safeState(id),cast:this.castStates.get(id)??null,sync:this.cloud()?.status(actor.uid)});return;}
    if(req.method==='DELETE'&&!action){
+    emitDiagnostic(this.onDiagnostic,{type:'cast-command',sessionId:id,action:'close'});
     // Flush while the active lease can still authorize the mirror. A failed cloud
     // request never discards the durable PC outbox or blocks an explicit close.
     await this.cloud()?.sync(actor.uid,{force:true});
@@ -316,6 +319,7 @@ export class CompanionApi {
     this.progress.episode(input.episodeId);
     if(input.positionSeconds!==undefined&&(!Number.isFinite(input.positionSeconds)||input.positionSeconds<0||input.positionSeconds>14400))throw new AccessError('invalid-position',400);
     if(input.automatic===true&&Number(input.episodeId.slice(-4))!==this.media.snapshot(id)?.episodeNumber+1)throw new AccessError('transition-order',409);
+    emitDiagnostic(this.onDiagnostic,{type:'cast-command',sessionId:id,action:'episode'});
     const result=await this.locked(actor.uid,async()=>{
      let currentLease=await this.lease(actor.uid,id);
      if(currentLease.destination!=='cast'){
@@ -367,7 +371,7 @@ export class CompanionApi {
   }catch(error){routeError(res,error);}
  }
  async mediaRequest(req,res,{httpMedia=false}={}){
-  let guard;
+  let guard;const diagnostic={method:req.method,hasRange:req.headers.range!==undefined,resourceKind:'other'};
   try{
    if(this.closed)throw new AccessError('companion-stopping',503);
    if(!['GET','HEAD','OPTIONS'].includes(req.method))throw new AccessError('method-not-allowed',405);
@@ -384,18 +388,21 @@ export class CompanionApi {
    const match=/^\/m\/([A-Za-z0-9_-]{32})\/(one-piece-\d{4})\/([A-Za-z0-9_-]{1,11000})$/.exec(req.url);
    if(!match)throw new AccessError('media-not-found',404);
    const[,token,episodeId,encoded]=match,resource=decodeResource(encoded),entry=this.tickets.authorize(token,episodeId,resource);
+   diagnostic.sessionId=entry.sessionId;diagnostic.resourceKind=mediaResourceKind(resource);
    if(httpMedia&&entry.destination!=='cast')throw new AccessError('media-not-found',404);
    const lease=await this.lease(entry.uid,entry.sessionId);
    if(lease.generation!==entry.generation||lease.authorityEpoch!==entry.authorityEpoch||lease.destination!==entry.destination)throw new AccessError('media-not-found',404);
    // Refresh/membership checks are bounded and cached for <=60s by ViewerCredentials.
-   try{await this.credentials().getAuthorized(entry.uid);}catch(error){this.revokeProfile(entry.uid);throw error;}
+   try{await this.credentials().getAuthorized(entry.uid);}catch(error){emitDiagnostic(this.onDiagnostic,{type:'credentials-error',...diagnostic,code:error?.code});this.revokeProfile(entry.uid);throw error;}
    guard=this.streamGuard(req,res,{token,episodeId,resource,entry});
+   emitDiagnostic(this.onDiagnostic,{type:'media-admission',...diagnostic});
    const range=req.method==='HEAD'?undefined:req.headers.range;
    if(range&&(range.length>100||!/^bytes=(?:\d+-\d*|-\d+)$/.test(range)))throw new AccessError('invalid-range',416);
    const output=await this.media.getPlaybackResource(entry.sessionId,resource,{range,signal:guard.controller.signal,method:req.method});
    await guard.check();
    this.tickets.extendResources(entry,output.resources??[]);
    const headers=Object.fromEntries(Object.entries(output.headers??{}).filter(([key])=>['content-type','content-length','content-range','accept-ranges'].includes(key.toLowerCase())));
+   emitDiagnostic(this.onDiagnostic,{type:'media-open',...diagnostic});
    if(output.manifestText){
     await output.body?.cancel();const origin=httpMedia?this.config.castMediaOrigin:this.config.mediaOrigin;
     const text=rewriteManifest(output.manifestText,path=>mediaUrl(origin,token,episodeId,path));headers['content-length']=String(Buffer.byteLength(text));
@@ -405,9 +412,9 @@ export class CompanionApi {
    if(output.longLived){
     guard.start();
     const stream=guard;
-    await pipeline(Readable.from((async function*(){for await(const chunk of Readable.fromWeb(output.body,{highWaterMark:0})){await stream.check();stream.assert();yield chunk;}})(),{objectMode:false,highWaterMark:0}),res);
+    await pipeline(Readable.from((async function*(){try{for await(const chunk of Readable.fromWeb(output.body,{highWaterMark:0})){await stream.check();stream.assert();yield chunk;}}catch(error){stream.abort(error);throw error;}})(),{objectMode:false,highWaterMark:0}),res);
    }else await pipeline(Readable.fromWeb(output.body),res);
-  }catch(error){guard?.abort(error);routeError(res,error);}
+  }catch(error){emitDiagnostic(this.onDiagnostic,{type:'media-error',...diagnostic,code:error?.code});guard?.abort(error);routeError(res,error);}
   finally{guard?.cleanup();}
  }
 }

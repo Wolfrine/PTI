@@ -139,11 +139,14 @@ test('one consecutive queued episode maps actual transition to the right progres
 });
 
 test('actual foreign ownership drops control and natural end maps receiver zero time to duration',async t=>{
-  const f=await fixture(t);await f.bridge.load({...f.input,episode:f.episode()});
+  const diagnostics=[];const f=await fixture(t,{onDiagnostic:value=>diagnostics.push(value)});const episode=f.episode();await f.bridge.load({...f.input,episode});
   f.transport.playerState='IDLE';f.transport.idleReason='FINISHED';f.transport.position=0;
   const ended=await f.bridge.status(f.input);assert.equal(ended.positionSeconds,1500);
   assert.equal((await f.progressStore.snapshot('viewer')).progress['one-piece-0001'].watched,true);
   f.transport.owned=false;await f.bridge.poll();assert.equal(f.bridge.bindings.size,0);
+  const negative=diagnostics.findIndex(e=>e.type==='cast-negative-status'),lost=diagnostics.findIndex(e=>e.type==='cast-error'&&e.code==='cast-ownership-lost');
+  assert.ok(negative>=0&&lost>negative);assert.equal(diagnostics[lost].sessionId,f.input.sessionId);
+  assert.equal(JSON.stringify(diagnostics).includes(episode.mediaUrl),false);assert.equal(JSON.stringify(diagnostics).includes('https:'),false);
   await assert.rejects(f.bridge.command(f.input,{action:'pause'}),{code:'cast-ownership-lost'});
 });
 

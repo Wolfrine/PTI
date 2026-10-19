@@ -5,8 +5,9 @@ import {once} from 'node:events';
 import {mkdtemp,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import {generateKeyPair,SignJWT} from 'jose';
 import {CompanionApi} from '../src/api.mjs';
-import {AccessError} from '../src/auth.mjs';
+import {AccessError,FamilyAccess,FirebaseIdentity} from '../src/auth.mjs';
 import {ProgressStore} from '../src/progress.mjs';
 import {TicketStore} from '../src/tickets.mjs';
 import {INDEPENDENT_APP_ORIGINS} from '../src/runtime/config.mjs';
@@ -67,7 +68,8 @@ test('account status reuses only the authenticated viewer connection and never r
   const text=await response.text(),me=JSON.parse(text);
   assert.equal(me.uid,uid);assert.equal(me.role,uid==='viewer'?'owner':'member');
   assert.deepEqual(me.playbackAccess,{state:'ready'});
-  assert.deepEqual(Object.keys(me).sort(),['uid','email','role','ownerUid','needsWorkspace','needsClaim','playbackAccess'].sort());
+  assert.equal(me.needsApproval,false);
+  assert.deepEqual(Object.keys(me).sort(),['uid','email','role','ownerUid','needsWorkspace','needsClaim','needsApproval','playbackAccess'].sort());
   assert.ok(!text.includes('secret-'));assert.ok(!text.includes('refreshToken'));assert.ok(!text.includes('providerCredential'));assert.ok(!text.includes('expiresAt'));
  }
  assert.deepEqual(lookups,['viewer','sister','viewer']);
@@ -108,14 +110,71 @@ test('temporary and unexpected credential failures do not prompt reconnection or
 test('pending workspace and invitation account metadata never reads retained playback credentials',async t=>{
  const {api,request,credentials}=await fixture(t);let lookups=0;
  credentials.getAuthorized=async()=>{lookups++;throw new Error('must not read pending account credentials');};
- for(const extra of [{role:'owner',needsWorkspace:true},{role:'invited',needsClaim:true},{role:'member',needsClaim:true},{role:'invited'}]){
+ for(const extra of [{role:'owner',needsWorkspace:true},{role:'invited',needsClaim:true},{role:'member',needsClaim:true},{role:'invited'},{role:'pending',needsApproval:true}]){
   api.family=()=>({requireMember:async actor=>({...actor,...extra})});
   const response=await request('/api/me');assert.equal(response.status,200);
   const me=await response.json();
   assert.deepEqual(me.playbackAccess,{state:'unavailable',code:'account-setup-required'});
   assert.equal(me.needsWorkspace,extra.needsWorkspace===true);assert.equal(me.needsClaim,extra.needsClaim===true);
+  assert.equal(me.needsApproval,extra.needsApproval===true);
  }
  assert.equal(lookups,0);
+});
+
+test('only account setup admits an access request; pending viewers cannot read progress, pair, create tickets or control playback',async t=>{
+ const {api,request,tickets}=await fixture(t),requests=[];
+ api.family=()=>new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner',fetchImpl:async(url,init)=>{
+  requests.push({url,method:init.method});return new Response('',{status:403});
+ }});
+ // Even obtaining these private subsystems would be a regression for pending access.
+ api.credentials=()=>{throw new Error('pending viewer probed retained credentials');};
+ api.cloud=()=>{throw new Error('pending viewer read cloud state');};
+ api.progress.snapshot=async()=>{throw new Error('pending viewer read progress');};
+ api.cast.discover=async()=>{throw new Error('pending viewer discovered receivers');};
+ const meResponse=await request('/api/me',{uid:'outsider'});assert.equal(meResponse.status,200);
+ assert.deepEqual(await meResponse.json(),{uid:'outsider',email:'outsider@example.com',role:'pending',ownerUid:'owner',
+  needsWorkspace:false,needsClaim:false,needsApproval:true,playbackAccess:{state:'unavailable',code:'account-setup-required'}});
+ assert.equal(api.memberCache.size,0);assert.equal(api.memberChecks.size,0);
+ for(const [method,route]of [['GET','/api/progress'],['GET','/api/cast/devices'],['POST','/api/pair-viewer'],['POST','/api/sessions'],
+  ['GET','/api/sessions/synthetic-session'],['DELETE','/api/sessions/synthetic-session'],
+  ...['renew','events','episode','delivery','cast','cast-command','disconnect'].map(action=>['POST',`/api/sessions/synthetic-session/${action}`])]){
+  const response=await request(route,{uid:'outsider',method,input:method==='POST'?{}:undefined});
+  assert.equal(response.status,403,`${method} ${route}`);assert.deepEqual(await response.json(),{error:'not-invited'});
+ }
+ assert.equal((await request('/api/me?ownerUid=other-owner',{uid:'outsider'})).status,400);
+ assert.equal(api.memberCache.size,0);assert.equal(api.memberChecks.size,0);assert.equal(tickets.entries.size,0);
+ assert.ok(requests.every(request=>request.url.endsWith('/users/owner/onePieceData/workspace/members/outsider%40example.com')&&request.method===undefined));
+});
+
+test('pending setup status invalidates a previous positive cache grant, and paused membership stays denied',async t=>{
+ const {api,request,credentials}=await fixture(t);let paused=false,credentialReads=0;
+ api.family=()=>new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner',fetchImpl:async url=>new Response(JSON.stringify({fields:
+  Object.fromEntries(Object.entries(url.endsWith('/workspace')?{ownerUid:'owner',active:true}:{role:'member',active:!paused,email:'viewer@example.com',uid:'viewer'})
+   .map(([key,value])=>[key,typeof value==='boolean'?{booleanValue:value}:{stringValue:value}]))}))});
+ credentials.getAuthorized=async()=>{credentialReads++;throw new Error('pending viewer must not probe credentials');};
+ assert.equal((await request('/api/progress')).status,200);assert.equal(api.memberCache.size,1);
+ paused=true;
+ const response=await request('/api/me');assert.equal(response.status,200);assert.equal((await response.json()).needsApproval,true);
+ assert.equal(api.memberCache.size,0);assert.equal(credentialReads,0);
+ assert.equal((await request('/api/progress')).status,403);assert.equal(api.memberCache.size,0);
+});
+
+test('access-request status still requires a correctly signed, unexpired, verified Google identity',async t=>{
+ const {api,request}=await fixture(t),{publicKey,privateKey}=await generateKeyPair('RS256'),now=Math.floor(Date.now()/1000);
+ api.identity=new FirebaseIdentity({projectId:'pti-app-2ab59',keyResolver:()=>publicKey});let membershipReads=0;
+ api.family=()=>new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner',fetchImpl:async()=>{membershipReads++;return new Response('',{status:404});}});
+ const signed=async(patch={})=>new SignJWT({sub:'outsider',email:'outsider@example.com',email_verified:true,iat:now-5,auth_time:now-10,exp:now+3595,
+  aud:'pti-app-2ab59',iss:'https://securetoken.google.com/pti-app-2ab59',firebase:{sign_in_provider:'google.com'},ownerUid:'attacker-selected-owner',...patch})
+  .setProtectedHeader({alg:'RS256',kid:'synthetic-key'}).sign(privateKey);
+ const valid=await signed(),pending=await request('/api/me',{uid:valid});assert.equal(pending.status,200);
+ assert.equal((await pending.json()).ownerUid,'owner');assert.equal(membershipReads,1);
+ for(const patch of [{email_verified:false},{firebase:{sign_in_provider:'password'}},{exp:now-1},{aud:'another-project'},
+  {iss:'https://attacker.invalid'},{email:'x'.repeat(255)+'@example.com'},{sub:'x'.repeat(129)}]){
+  assert.equal((await request('/api/me',{uid:await signed(patch)})).status,401);
+ }
+ const tampered=valid.split('.');tampered[1]=Buffer.from('{"sub":"attacker"}').toString('base64url');
+ assert.equal((await request('/api/me',{uid:tampered.join('.')})).status,401);
+ assert.equal(membershipReads,1);assert.equal(api.memberCache.size,0);
 });
 
 test('account status authenticates and checks membership before accessing any retained credential',async t=>{

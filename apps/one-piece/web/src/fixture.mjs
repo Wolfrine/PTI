@@ -18,6 +18,8 @@ export async function renderFixture(){
  initial.me.playbackAccess={state:'ready'};
  if(['dedicated','install-help','installed'].includes(kind))initial.appIdentity={dedicated:true,legacy:false,standalone:kind==='installed'};
  if(kind==='sign-in'){initial.user=null;initial.me=null;initial.appIdentity={dedicated:true,legacy:false,standalone:false};}
+ if(['access-pending','access-declined','access-paused','access-error'].includes(kind)){initial.user={uid:'fixture-requester',displayName:'Alexandria A very long family account name for review',email:'alexandria.family.member.with.a.long.address@example.invalid'};initial.me={uid:'fixture-requester',ownerUid:'fixture-viewer',role:'pending',needsApproval:true};initial.accessRequest={uid:'fixture-requester',email:initial.user.email,name:initial.user.displayName,status:kind==='access-declined'?'declined':kind==='access-paused'?'approved':'pending',revision:1};if(kind==='access-error')initial.accessError='Your request could not be sent. Check again to retry.';initial.session=null;initial.lease=null;initial.route='library';initial.appIdentity={dedicated:true};}
+ if(kind==='owner-requests'){initial.dialog='family';initial.familyLoaded=true;initial.familyRequests=[{uid:'fixture-requester',name:'Alexandria A very long family account name for approval',email:'alexandria.family.member.with.a.long.address@example.invalid',status:'pending',revision:1},{uid:'fixture-requester-2',name:'Family viewer',email:'viewer.two@example.invalid',status:'pending',revision:1},{uid:'fixture-declined',name:'Reviewed account',email:'reviewed@example.invalid',status:'declined',revision:2}];initial.familyMembers=[{uid:'fixture-member',name:'Existing family member',email:'member@example.invalid',active:true,role:'member'},{uid:'fixture-paused',name:'Paused family member',email:'paused@example.invalid',active:false,role:'member'}];}
  if(kind==='legacy-app')initial.appIdentity={dedicated:false,legacy:true,standalone:false};
  if(['install-help','installed'].includes(kind))initial.dialog='install';
  if(kind==='settings')initial.dialog='account';
@@ -34,7 +36,9 @@ export async function renderFixture(){
   command(app,action,value){const c=app.s.session.cast;if(action==='play')c.state='PLAYING';if(action==='pause')c.state='PAUSED';if(action==='seek')c.positionSeconds=value;if(action==='volume')c.volume=value;if(action==='subtitles')c.subtitleEnabled=value;if(action==='next'){app.s.session.episodeNumber++;app.s.session.episodeId=episodeId(app.s.session.episodeNumber);c.episodeId=app.s.session.episodeId;c.positionSeconds=0;app.render();}app.patch();},
   record(app,reason,position){const id=app.s.session.episodeId;app.s.progress[id]={episodeId:id,positionSeconds:position,durationSeconds:1440,watched:reason==='mark-watched'||reason==='ended',updatedAt:Date.now()};app.s.lastEpisodeId=id;},
   disconnect(app){app.s.lease={...app.s.lease,destination:'local'};app.s.session.cast=null;app.s.session.lease=app.s.lease;app.render();},
-  cancel(app){app.s.route='library';app.s.session=null;app.s.lease=null;app.s.notice='Preparation cancelled.';app.render();}};
+  cancel(app){app.s.route='library';app.s.session=null;app.s.lease=null;app.s.notice='Preparation cancelled.';app.render();},
+  reviewAccess(app,uid,approve){const row=app.s.familyRequests.find(value=>value.uid===uid);if(!row)return;row.status=approve?'approved':'declined';if(approve)app.s.familyMembers.push({uid:row.uid,name:row.name,email:row.email,active:true,role:'member'});app.patchFamily();},
+  toggleMember(app,email){const member=app.s.familyMembers.find(value=>value.email===email);if(member){member.active=!member.active;app.patchFamily();}}};
  startApp({fixture});
 }
 

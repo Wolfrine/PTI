@@ -1,10 +1,10 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "791fee89c3ec4c0e9e8616d9fd5f88a4275030f19ab27860f72571aa4a78b66f",
-  "independent_candidate": "cf91ed8483f75773c43c51d48994e08edb219387f40b368d0aa7477d00426e2c",
-  "checkedAt": "2026-10-19T04:39:35.509Z",
-  "acceptance_scope": "Mechanical library navigation refinement: named Japanese season groups replace50-episode ranges; global search and per-account browse restore. Existing light/dark direction, auth, media and casting retained.",
+  "candidate": "53cce7f5b8777fc3fda2ad1174fe655195800db27baafb9a06905f2e3bee9cf0",
+  "independent_candidate": "2fd69505c79b29d5296d2f6458c3191a4675899910644c0e4984de95c1dc6d4a",
+  "checkedAt": "2026-10-19T05:21:24.899Z",
+  "acceptance_scope": "Bounded family admission correction: automatic verified-Google requests and owner Approve/Decline; existing themes, season browsing, player and Cast transport retained.",
   "owner_verdict": {
     "status": "not-reviewed"
   },
@@ -14,80 +14,78 @@
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "../SEASONS.md",
+  "review": "../ACCESS_REQUESTS.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Personally inspected light/dark1440x1000 and390x844 catalogue states. Long season7 name fits; Season16 missing590 and Wano incomplete coverage explicit; global1001search and clearing restore worked; no horizontal overflow."
+    "reason": "Personally inspected owner light and pending dark1440x1000/390x844; long identity wraps, request actions accessible, synthetic approval changes count and membership. Declined desktop and paused mobile inspected. Final independent review recorded in ACCESS_REQUESTS.md."
   },
   "evidence": [
     {
-      "path": "evidence/seasons/one-piece-seasons-light-desktop.jpg",
-      "sha256": "ec36e01ff1169ee2c654ffdcec2791d5bb6977473244382bb75820c9416b232f",
+      "path": "evidence/access-requests/one-piece-access-owner-light-desktop.jpg",
+      "sha256": "9ad7911905aa8f74615601da6dad927aec781e40d4d44cae07a98eda28f706b6",
       "theme": "light",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
+      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/seasons/one-piece-seasons-light-mobile.jpg",
-      "sha256": "0b3f4f939851e5bf920550b101e907a5d7280c1742d818f472d17dfdce246ea5",
+      "path": "evidence/access-requests/one-piece-access-owner-light-mobile.jpg",
+      "sha256": "c200f290b15842c639b4454dc05f45c8a2bfee04604dfe0be63df5c9585d83d6",
       "theme": "light",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
+      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/seasons/one-piece-seasons-dark-desktop.jpg",
-      "sha256": "3493b575c8cdcb1e800256c95e0c815d2241cdac79aeca8745bff6482d9e2d1a",
+      "path": "evidence/access-requests/one-piece-access-pending-dark-desktop.jpg",
+      "sha256": "51911e73cb4e87085e83d19f2d77c2095e30ac7fb6a10695eae0c91ba7fe8003",
       "theme": "dark",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
+      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/seasons/one-piece-seasons-dark-mobile.jpg",
-      "sha256": "6a4c197f4e2f2dc7d22967840fe023aade6aa6a9f4e508aa542c68567e6ad8e7",
+      "path": "evidence/access-requests/one-piece-access-pending-dark-mobile.jpg",
+      "sha256": "5b5886f6bd0e561961f63bf60eb3348f12daab87e482f2b57dbfcef3ac585e6f",
       "theme": "dark",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
+      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 78,
-    "frontendChecksPassed": 78,
-    "metadata": "Real catalogue1084listed episodes partitioned once; missing590slot retained",
-    "source": "Current Japanese home-media convention; official Avex page bounds retained with edition differences",
-    "desktopMobile": "Light/dark inspected; real catalogue, synthetic account/progress",
-    "globalSearch": "1001 from Season7 finds Season20E110; clear restores7",
+    "frontendChecks": 82,
+    "frontendChecksPassed": 82,
+    "companionChecks": 225,
+    "sharedEmulatorChecks": 46,
+    "desktopMobile": "Parent and independent reviewer; labelled synthetic identities; no live family approval",
     "completePtiAndDedicatedBuild": "passed with existing Angular warnings",
     "mediaEngineUnchanged": true,
     "castTransportUnchanged": true,
-    "authenticationUnchanged": true
+    "authentication": "Existing Google authentication; new identity-bound request and owner-only atomic approval"
   },
   "limitations": [
-    "Agent-reviewed browsing refinement; no new physical-device, fresh-authentication or media/TV acceptance.",
-    "Japanese home-media season groups may differ from Netflix/TVDB labels; numbered TV extras remain in chronological order.",
-    "Episode590 remains missing; Wano is available only through1085 of1088.",
-    "Existing Sony end-of-episode issue remains unchanged."
+    "No physical-family sign-in/approval acceptance claimed; local fixtures and emulator identities are synthetic.",
+    "Existing desktop Chrome local-network connection issue is outside this change.",
+    "Known Sony end-of-episode issue remains unchanged; no TV or media test performed."
   ],
   "historical_record": {
-    "commit": "e1c492c11e789600bade155962c49b284323cb6b",
-    "candidate": "6e712ecc0403be7790c7d52a54421ac55f3b5de46fc4620b6cde3c1a53362279",
-    "independent_candidate": "e996c6e1086fd2fa8e514693ac330805c1879f2e43ea9f4bd1c9c65cc42afe26",
+    "commit": "b00df300e4de29c5cbdeec1198ed1072538752b8",
+    "candidate": "791fee89c3ec4c0e9e8616d9fd5f88a4275030f19ab27860f72571aa4a78b66f",
+    "independent_candidate": "cf91ed8483f75773c43c51d48994e08edb219387f40b368d0aa7477d00426e2c",
     "path": "docs/one-piece/design/acceptance.json",
-    "policy": "Prior authentication/design/playback evidence retains its original scope."
+    "policy": "Prior season/authentication/design/playback evidence retains its original scope."
   }
 }

@@ -36,6 +36,38 @@ service cloud.firestore {
    allow update: if admin() && validWorkspace(request.resource.data) && request.resource.data.revision == resource.data.revision + 1
     && request.resource.data.createdAt == resource.data.createdAt;
    allow delete: if false;
+   match /accessRequests/{requestUid} {
+    function valid(d) { return d.keys().hasAll(['uid','email','name','status','createdAt','updatedAt','revision'])
+     && d.keys().hasOnly(['uid','email','name','status','createdAt','updatedAt','revision'])
+     && d.uid == requestUid && text(d,'uid',128) && d.uid.matches('[A-Za-z0-9_-]{1,128}')
+     && text(d,'email',254) && d.email == d.email.lower() && d.email.matches('[^/@ ]+@[^/@ ]+[.][^/@ ]+')
+     && label(d,'name',80) && d.status in ['pending','approved','declined']
+     && instant(d,'createdAt') && instant(d,'updatedAt') && d.updatedAt >= d.createdAt && counter(d,'revision'); }
+    function approvedMember(d) {
+     let memberPath = /databases/$(database)/documents/users/$(familyUid)/onePieceData/workspace/members/$(d.email);
+     let after = getAfter(memberPath).data;
+     return after.uid == requestUid && after.email == d.email && after.role == 'member' && after.active == true
+      && after.name == d.name && after.invitedBy == familyUid && after.updatedAt == d.updatedAt
+      // Require a member write in this same atomic operation, including when
+      // an active legacy invitation already exists for this identity.
+      && ((!exists(memberPath) && after.revision == 1)
+       || (exists(memberPath) && get(memberPath).data.active == true && get(memberPath).data.role == 'member'
+        && get(memberPath).data.uid in ['',requestUid] && after.revision == get(memberPath).data.revision + 1));
+    }
+    allow get: if admin() || (google() && request.auth.uid == requestUid);
+    allow list: if admin();
+    allow create: if google() && request.auth.uid == requestUid && workspace().active == true && workspace().ownerUid == familyUid
+     && valid(request.resource.data) && request.resource.data.email == request.auth.token.email.lower()
+     && request.resource.data.status == 'pending' && request.resource.data.revision == 1
+     && request.resource.data.createdAt == request.resource.data.updatedAt;
+    allow update: if admin() && workspace().active == true && workspace().ownerUid == familyUid
+     && valid(request.resource.data) && resource.data.status == 'pending'
+     && request.resource.data.status in ['approved','declined'] && request.resource.data.revision == resource.data.revision + 1
+     && request.resource.data.updatedAt >= resource.data.updatedAt
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt','revision'])
+     && (request.resource.data.status == 'declined' || approvedMember(request.resource.data));
+    allow delete: if false;
+   }
    match /members/{email} {
     function valid(d) { return d.keys().hasAll(['email','uid','role','active','name','invitedBy','invitedAt','updatedAt','revision'])
      && d.keys().hasOnly(['email','uid','role','active','name','invitedBy','invitedAt','updatedAt','revision'])

@@ -1,7 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { before, beforeEach, after, test } from 'node:test';
+import assert from 'node:assert/strict';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
+import { accessRequestFor, accessReview } from '../web/src/access-records.mjs';
 
 // All identities and records here are synthetic emulator fixtures, never live family data.
 const root = 'users/owner/onePieceData/workspace';
@@ -13,6 +15,17 @@ const member = (uid, extra = {}) => ({ email: `${uid}@example.test`, uid, role: 
 const profile = (uid, extra = {}) => ({ uid, displayName: `Synthetic ${uid}`, audioLanguage: 'ja', subtitleLanguage: 'en', autoplay: true, showTitles: false, revision: 1, updatedAt: Date.now(), ...extra });
 const lease = (extra = {}) => ({ sessionId: 'synthetic-session-0001', deviceId: 'synthetic-device', destination: 'local', generation: 1, authorityEpoch: 1, revision: 0, expiresAt: Date.now() + 120000, updatedAt: Date.now(), ...extra });
 const progress = (extra = {}) => ({ episodeId: 'one-piece-0001', sessionId: 'synthetic-session-0001', generation: 1, authorityEpoch: 1, revision: 1, positionSeconds: 1000, durationSeconds: 1400, watched: false, reason: 'heartbeat', updatedAt: Date.now(), ...extra });
+const accessRequest=(uid='visitor',extra={})=>({...accessRequestFor({uid,email:`${uid}@example.test`,displayName:`Synthetic ${uid}`,emailVerified:true}),...extra});
+async function reviewRequest(d,requestUid,approve){
+ return runTransaction(d,async transaction=>{
+  const ref=doc(d,`${root}/accessRequests/${requestUid}`),snapshot=await transaction.get(ref),request=snapshot.data();
+  const memberRef=request?doc(d,`${root}/members/${request.email}`):null;
+  const current=request?.status==='pending'&&approve?await transaction.get(memberRef):null;
+  const decision=accessReview(request,current?.exists()?current.data():null,{ownerUid:'owner',approve});
+  if(decision.changed){if(decision.member)transaction.set(memberRef,decision.member);transaction.update(ref,{status:decision.request.status,revision:decision.request.revision,updatedAt:decision.request.updatedAt});}
+  return decision.request;
+ });
+}
 async function writeProgress(d, value, leasePatch = {}) {
   const batch = writeBatch(d);
   batch.update(doc(d, `${root}/leases/alice`), { revision: value.revision, ...leasePatch });
@@ -50,6 +63,127 @@ test('only a verified Google owner can bootstrap; workspace fields and revisions
   await assertFails(updateDoc(doc(owner, root), { revision: 2, ownerUid: 'stranger' }));
   await assertSucceeds(updateDoc(doc(owner, root), { revision: 2, label: 'Updated synthetic label' }));
   await assertFails(deleteDoc(doc(owner, root)));
+});
+
+test('a verified Google visitor submits one own request without receiving any family grants',async()=>{
+ const visitor=client('visitor'),ref=doc(visitor,`${root}/accessRequests/visitor`),value=accessRequest();
+ await assertSucceeds(setDoc(ref,value));assert.deepEqual((await assertSucceeds(getDoc(ref))).data(),value);
+ await assertFails(getDocs(collection(visitor,`${root}/accessRequests`)));
+ await assertFails(getDoc(doc(client('stranger'),`${root}/accessRequests/visitor`)));
+ await assertFails(getDoc(doc(visitor,root)));
+ await assertFails(getDocs(collection(visitor,`${root}/members`)));
+ await assertFails(setDoc(doc(visitor,`${root}/members/visitor@example.test`),member('visitor')));
+ await assertFails(getDoc(doc(visitor,`${root}/profiles/alice`)));
+ await assertFails(setDoc(doc(visitor,`${root}/profiles/visitor`),profile('visitor')));
+ await assertFails(setDoc(doc(visitor,`${root}/leases/visitor`),lease()));
+ await assertFails(setDoc(doc(visitor,`${root}/profiles/visitor/progress/one-piece-0001`),progress()));
+ for(const change of [{status:'approved',revision:2},{status:'declined',revision:2},{name:'Replacement',revision:2},{revision:2}])await assertFails(updateDoc(ref,change));
+ await assertFails(deleteDoc(ref));await assertFails(setDoc(ref,value));
+});
+
+test('request submission rejects forged identities, extra fields, unsafe names and invalid revisions',async()=>{
+ const visitor=client('visitor'),ref=doc(visitor,`${root}/accessRequests/visitor`),value=accessRequest();
+ for(const patch of [{uid:'different'},{email:'other@example.test'},{email:'VISITOR@example.test'},{status:'approved'},{status:'declined'},
+  {revision:2},{revision:0},{createdAt:-1},{createdAt:Date.now()+600000},{updatedAt:value.updatedAt+1},{name:'<script>'},{name:'x'.repeat(81)},{active:true}])await assertFails(setDoc(ref,{...value,...patch}));
+ await assertFails(setDoc(doc(visitor,`${root}/accessRequests/different`),{...value,uid:'different'}));
+ await assertSucceeds(setDoc(doc(client('mixed','VISITOR@example.test'),`${root}/accessRequests/mixed`),accessRequest('mixed',{email:'visitor@example.test'})));
+ const sanitized=accessRequestFor({uid:'sanitized',email:'sanitized@example.test',displayName:'  <Synthetic> Visitor  ',emailVerified:true});
+ assert.equal(sanitized.name,'Synthetic Visitor');await assertSucceeds(setDoc(doc(client('sanitized'),`${root}/accessRequests/sanitized`),sanitized));
+});
+
+test('anonymous, unverified and non-Google identities cannot submit or review requests',async()=>{
+ for(const d of [env.unauthenticatedContext().firestore(),client('visitor',undefined,false),client('visitor',undefined,true,'password')]){
+  await assertFails(setDoc(doc(d,`${root}/accessRequests/visitor`),accessRequest()));
+  await assertFails(getDoc(doc(d,`${root}/accessRequests/visitor`)));
+ }
+ await assertSucceeds(setDoc(doc(client('visitor'),`${root}/accessRequests/visitor`),accessRequest()));
+ for(const d of [client('owner',undefined,false),client('owner',undefined,true,'password'),client('other-family-owner')]){
+  await assertFails(getDocs(collection(d,`${root}/accessRequests`)));
+  await assertFails(updateDoc(doc(d,`${root}/accessRequests/visitor`),{status:'declined',revision:2}));
+ }
+ await assertFails(setDoc(doc(client('visitor'),'users/other/onePieceData/workspace/accessRequests/visitor'),accessRequest()));
+ await assertFails(getDocs(collection(client('owner'),'users/other/onePieceData/workspace/accessRequests')));
+});
+
+test('disabled or missing workspaces cannot accept access requests',async()=>{
+ await assertSucceeds(updateDoc(doc(client('owner'),root),{active:false,revision:2}));
+ await assertFails(setDoc(doc(client('visitor'),`${root}/accessRequests/visitor`),accessRequest()));
+ await assertFails(setDoc(doc(client('visitor'),'users/missing/onePieceData/workspace/accessRequests/visitor'),accessRequest()));
+});
+
+test('owner approval atomically binds canonical UID membership and duplicate decisions are harmless',async()=>{
+ const visitor=client('visitor'),owner=client('owner');
+ await assertSucceeds(setDoc(doc(visitor,`${root}/accessRequests/visitor`),accessRequest()));
+ await assertSucceeds(getDocs(collection(owner,`${root}/accessRequests`)));
+ await assertFails(updateDoc(doc(owner,`${root}/accessRequests/visitor`),{status:'approved',revision:2,updatedAt:Date.now()}));
+ const approved=await assertSucceeds(reviewRequest(owner,'visitor',true));assert.equal(approved.status,'approved');
+ const membership=(await getDoc(doc(owner,`${root}/members/visitor@example.test`))).data();
+ assert.equal(membership.uid,'visitor');assert.equal(membership.email,'visitor@example.test');assert.equal(membership.active,true);assert.equal(membership.role,'member');
+ await assertSucceeds(getDoc(doc(visitor,root)));await assertSucceeds(setDoc(doc(visitor,`${root}/profiles/visitor`),profile('visitor')));
+ await assertSucceeds(setDoc(doc(visitor,`${root}/leases/visitor`),lease()));
+ assert.deepEqual(await reviewRequest(owner,'visitor',true),approved);
+ assert.deepEqual((await getDoc(doc(owner,`${root}/members/visitor@example.test`))).data(),membership);
+ await assert.rejects(reviewRequest(owner,'visitor',false),/already-reviewed/);
+ await assertFails(updateDoc(doc(owner,`${root}/accessRequests/visitor`),{status:'declined',revision:3}));
+ await assertSucceeds(updateDoc(doc(owner,`${root}/members/visitor@example.test`),{active:false,revision:2,updatedAt:Date.now()}));
+ await assertFails(getDoc(doc(visitor,root)));assert.deepEqual(await reviewRequest(owner,'visitor',true),approved);
+ assert.equal((await getDoc(doc(owner,`${root}/members/visitor@example.test`))).data().active,false);
+ await assertFails(getDoc(doc(visitor,`${root}/leases/visitor`)));await assertFails(getDoc(doc(visitor,`${root}/profiles/visitor`)));
+ await assertSucceeds(getDoc(doc(visitor,`${root}/accessRequests/visitor`)));
+});
+
+test('owner decline grants nothing, remains visible to requester and cannot be requeued',async()=>{
+ const visitor=client('visitor'),owner=client('owner'),ref=doc(visitor,`${root}/accessRequests/visitor`);
+ await assertSucceeds(setDoc(ref,accessRequest()));const declined=await assertSucceeds(reviewRequest(owner,'visitor',false));
+ assert.equal(declined.status,'declined');assert.equal((await getDoc(ref)).data().status,'declined');
+ assert.equal((await getDoc(doc(owner,`${root}/members/visitor@example.test`))).exists(),false);
+ await assertFails(getDoc(doc(visitor,root)));await assertFails(setDoc(ref,accessRequest()));
+ await assertFails(updateDoc(ref,{status:'pending',revision:3}));
+ assert.deepEqual(await reviewRequest(owner,'visitor',false),declined);await assert.rejects(reviewRequest(owner,'visitor',true),/already-reviewed/);
+ await assertFails(deleteDoc(doc(owner,`${root}/accessRequests/visitor`)));
+});
+
+test('approval cannot forge, rebind or silently reactivate an existing member',async()=>{
+ const visitor=client('visitor'),owner=client('owner'),request=accessRequest();
+ await assertSucceeds(setDoc(doc(visitor,`${root}/accessRequests/visitor`),request));
+ const invalidBatch=writeBatch(owner),now=Date.now();
+ invalidBatch.update(doc(owner,`${root}/accessRequests/visitor`),{status:'approved',revision:2,updatedAt:now});
+ invalidBatch.set(doc(owner,`${root}/members/visitor@example.test`),member('visitor',{uid:'different',updatedAt:now}));
+ await assertFails(invalidBatch.commit());
+ await assertSucceeds(setDoc(doc(owner,`${root}/members/visitor@example.test`),member('visitor',{uid:'different'})));
+ await assert.rejects(reviewRequest(owner,'visitor',true),/identity-conflict/);
+ await assertFails(updateDoc(doc(owner,`${root}/accessRequests/visitor`),{status:'approved',revision:2}));
+ const blockedRequest=accessRequest('blocked');await assertSucceeds(setDoc(doc(client('blocked'),`${root}/accessRequests/blocked`),blockedRequest));
+ await assert.rejects(reviewRequest(owner,'blocked',true),/identity-conflict|paused/);
+ const pausedBatch=writeBatch(owner),pausedNow=Date.now();
+ pausedBatch.update(doc(owner,`${root}/accessRequests/blocked`),{status:'approved',revision:2,updatedAt:pausedNow});
+ pausedBatch.update(doc(owner,`${root}/members/blocked@example.test`),{role:'member',active:true,name:blockedRequest.name,revision:2,updatedAt:pausedNow});
+ await assertFails(pausedBatch.commit());
+ const paused=accessRequest('paused');
+ await assertSucceeds(setDoc(doc(owner,`${root}/members/paused@example.test`),member('paused',{active:false})));
+ await assertSucceeds(setDoc(doc(client('paused'),`${root}/accessRequests/paused`),paused));
+ await assert.rejects(reviewRequest(owner,'paused',true),/member-paused/);
+ const reactivate=writeBatch(owner),reactivateNow=Date.now();
+ reactivate.update(doc(owner,`${root}/accessRequests/paused`),{status:'approved',revision:2,updatedAt:reactivateNow});
+ reactivate.update(doc(owner,`${root}/members/paused@example.test`),{active:true,name:paused.name,revision:2,updatedAt:reactivateNow});
+ await assertFails(reactivate.commit());
+});
+
+test('approval can bind an active unclaimed invitation only with a matching member write',async()=>{
+ const claimant=client('claimant','invite@example.test'),owner=client('owner'),request=accessRequest('claimant',{email:'invite@example.test'});
+ await assertSucceeds(setDoc(doc(claimant,`${root}/accessRequests/claimant`),request));
+ await assertSucceeds(reviewRequest(owner,'claimant',true));await assertSucceeds(getDoc(doc(claimant,root)));
+ assert.equal((await getDoc(doc(owner,`${root}/members/invite@example.test`))).data().uid,'claimant');
+ const existing=accessRequest('alice');await assertSucceeds(setDoc(doc(client('alice'),`${root}/accessRequests/alice`),existing));
+ await assertFails(updateDoc(doc(owner,`${root}/accessRequests/alice`),{status:'approved',revision:2,updatedAt:Date.now()}));
+ await assertSucceeds(reviewRequest(owner,'alice',true));assert.equal((await getDoc(doc(owner,`${root}/members/alice@example.test`))).data().revision,2);
+});
+
+test('review keeps immutable request identity and timestamps, validates revisions and respects workspace revocation',async()=>{
+ const owner=client('owner'),ref=doc(owner,`${root}/accessRequests/visitor`),value=accessRequest();
+ await assertSucceeds(setDoc(doc(client('visitor'),`${root}/accessRequests/visitor`),value));
+ for(const patch of [{uid:'other'},{email:'other@example.test'},{name:'Changed'},{createdAt:value.createdAt+1},{revision:3},{status:'pending'},{updatedAt:-1},{updatedAt:Date.now()+600000},{secret:true}])await assertFails(updateDoc(ref,{status:'declined',revision:2,updatedAt:Date.now(),...patch}));
+ await assertSucceeds(updateDoc(doc(owner,root),{active:false,revision:2}));await assertFails(reviewRequest(owner,'visitor',false));
 });
 test('anonymous, strangers, unverified, non-Google and blocked identities cannot use the family', async () => {
   for (const d of [env.unauthenticatedContext().firestore(), client('stranger'), client('alice', undefined, false), client('alice', undefined, true, 'password'), client('blocked'), client('owner', undefined, false)]) {

@@ -124,8 +124,9 @@ jobs:
           npm install -g firebase-tools
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
-          # Read-only preflight run 39113060280 verified this exact LF Git-blob predecessor.
-          git show 24b4805cf7294ac9850f2a8f0281e189779b5c42:personal-harness/firestore.rules > /tmp/pre-one-piece.rules
+          # The access-request PR requires a read-only live predecessor check.
+          # Only the exact previously deployed LF Git blob is accepted here.
+          git show b00df300e4de29c5cbdeec1198ed1072538752b8:personal-harness/firestore.rules > /tmp/pre-one-piece.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-one-piece.rules node personal-functions/provision.mjs
 
           ONE_PIECE_SITE_ID=pti-app-2ab59-one-piece

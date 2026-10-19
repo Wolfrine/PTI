@@ -128,7 +128,7 @@ export class FamilyAccess {
     this.projectId = projectId; this.ownerUid = ownerUid; this.fetch = fetchImpl;
     this.root = `${FIRESTORE}${projectId}/databases/(default)/documents/users/${encodeURIComponent(ownerUid)}/onePieceData/workspace`;
   }
-  async requireMember(identity, { allowPending = false, allowOwnerSetup = false } = {}) {
+  async requireMember(identity, { allowPending = false, allowOwnerSetup = false, allowAccessRequest = false } = {}) {
     if (!identity?.token || !identity.uid || !identity.email) throw new AccessError('authentication-required');
     // Even the owner needs a configured active workspace; a Firebase identity alone is insufficient.
     const path = identity.uid === this.ownerUid ? this.root : `${this.root}/members/${encodeURIComponent(identity.email)}`;
@@ -140,6 +140,9 @@ export class FamilyAccess {
       // Rules may deny GET of a not-yet-created workspace with 403. This is only
       // setup metadata: creating an existing/disabled workspace still fails rules.
       if ([403,404].includes(response.status) && allowOwnerSetup && identity.uid === this.ownerUid) return {...identity,role:'owner',needsWorkspace:true};
+      // A verified viewer may learn which fixed household to request access to.
+      // This is setup metadata only: no workspace, profile, or credentials are read.
+      if (allowAccessRequest && identity.uid !== this.ownerUid) return {...identity,role:'pending',needsApproval:true};
       throw new AccessError('not-invited', 403);
     }
     if (!response.ok) { await response.body?.cancel().catch(() => {}); throw new AccessError('membership-unavailable', 503); }
@@ -149,7 +152,10 @@ export class FamilyAccess {
       return { ...identity, role: 'owner' };
     }
     if (allowPending && record.role === 'member' && record.active === true && record.uid === '' && record.email === identity.email) return {...identity,role:'invited',needsClaim:true};
-    if (record.role !== 'member' || record.active !== true || record.uid !== identity.uid || record.email !== identity.email) throw new AccessError('not-invited', 403);
+    if (record.role !== 'member' || record.active !== true || record.uid !== identity.uid || record.email !== identity.email) {
+      if (allowAccessRequest) return {...identity,role:'pending',needsApproval:true};
+      throw new AccessError('not-invited', 403);
+    }
     // A viewer can read their own invitation even while the household is disabled.
     // Invitation metadata alone must therefore never authorize media playback.
     let workspaceResponse;

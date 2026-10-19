@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { visibleEpisodes, nextBoundary, initialSeason, selectLibrarySeason, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
 import { SEASONS, getSeason } from './seasons.mjs';
 import { createClient, CONTROL_ORIGIN } from './client.mjs';
-import { dialogContent, page, rows } from './views.mjs';
+import { dialogContent, page, rows, familyAccessContent } from './views.mjs';
+import { accessGate, pendingAccessCount, stopAccessObservers, applyAccessRequestUpdate } from './access.mjs';
 import { appIdentity, dedicatedAppUrl, canMoveToDedicatedApp, installStatus, ONE_PIECE_ORIGIN, PTI_ORIGIN } from './install.mjs';
 import { handleWatchKeyboard } from './keyboard.mjs';
 import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identity.mjs';
@@ -25,6 +26,40 @@ test('One Piece signs in on its own screen with bounded popup errors and no PTI 
  assert.match(signInFailure('auth/network-request-failed'),/connection/);
  assert.match(signInFailure('auth/unauthorized-domain'),/not authorized/);
  assert.doesNotMatch(signInFailure('secret-provider-payload'),/secret-provider-payload/);
+});
+test('pending and reviewed accounts have an identity screen without usable library or TV controls',()=>{
+ const base={booting:false,user:{uid:'requester',displayName:'Family viewer',email:'viewer@example.invalid'},me:{role:'pending',ownerUid:'owner',needsApproval:true},network:'online',profile:{},progress:{},query:'',season:1,appIdentity:{dedicated:true}};
+ for(const [status,title] of [['pending','Waiting for approval'],['declined','Request declined'],['approved','Access is paused']]){
+  const state={...base,accessRequest:{uid:'requester',status,revision:1}},html=page(state);
+  assert.match(html,new RegExp(title));assert.match(html,/viewer@example\.invalid/);assert.match(html,/data-action="check-access"/);assert.match(html,/data-action="logout"/);
+  assert.doesNotMatch(html,/episode-row|id="episode-video"|id="episode-season"/);assert.match(html,/class="header-cast" hidden/);
+ }
+ assert.equal(accessGate({...base,me:null,network:'offline'}),null,'unknown offline viewers retain public catalogue browsing');
+ assert.equal(accessGate({...base,network:'offline',accessRequest:{status:'declined'}}),'declined','a known declined viewer stays gated offline');
+ assert.equal(accessGate({...base,me:null,network:'checking'}),'checking');
+ assert.equal(accessGate({...base,me:{role:'member',needsApproval:false}}),null);
+});
+test('approval snapshots request one fresh access check even when approval preceded the first snapshot',()=>{
+ const account={uid:'viewer',generation:1},app={accountGeneration:1,s:{user:{uid:'viewer'},me:{role:'pending',needsApproval:true},accessRequest:{uid:'viewer',status:'approved',revision:2}}};
+ const approved={uid:'viewer',status:'approved',revision:2};
+ assert.equal(applyAccessRequestUpdate(app,account,approved),true,'first approved snapshot must check actual membership');
+ assert.equal(applyAccessRequestUpdate(app,account,approved),false,'the same revision cannot reconnect repeatedly');
+ assert.equal(accessGate(app.s),'paused','still-pending membership after the check never auto-enables');
+ const before=app.s.accessRequest;assert.equal(applyAccessRequestUpdate(app,{uid:'another',generation:1},{status:'pending'}),false);assert.equal(app.s.accessRequest,before);
+ assert.equal(applyAccessRequestUpdate(app,{uid:'viewer',generation:0},{status:'declined'}),false);assert.equal(app.s.accessRequest,before);
+});
+test('access observers close on account replacement and private approval state is replaced',()=>{
+ const calls=[],app={accountGeneration:0,s:{user:{uid:'alice'},accessRequest:{status:'pending'},familyRequests:[{email:'private@example.invalid'}]},accessStop:()=>calls.push('own'),familyStop:()=>calls.push('family')};
+ resetAccountContext(app,{uid:'bob'},{});assert.deepEqual(calls,['own','family']);assert.equal(app.s.accessRequest,undefined);assert.equal(app.s.familyRequests,undefined);assert.equal(app.accessWatchKey,null);assert.equal(app.familyWatchKey,null);
+ stopAccessObservers(app);assert.equal(calls.length,2,'cleanup is idempotent');
+});
+test('owner family access lists identities and decisions without a manual address form',()=>{
+ const requests=[{uid:'one',name:'<script>not markup</script>',email:'a.very.long.family.address@example.invalid',status:'pending'},{uid:'two',name:'Reviewed',email:'reviewed@example.invalid',status:'declined'}],members=[{uid:'three',email:'member@example.invalid',name:'Family member',active:false,role:'member'},{uid:'blocked',email:'blocked@example.invalid',name:'Blocked member',active:false,role:'blocked'}];
+ const html=dialogContent({dialog:'family',me:{role:'owner'},familyRequests:requests,familyMembers:members,familyLoaded:true});
+ assert.match(html,/Family access/);assert.match(html,/a\.very\.long\.family\.address@example\.invalid/);assert.match(html,/&lt;script&gt;/);assert.doesNotMatch(html,/<script>|<form|type="email"/);
+ assert.equal((html.match(/data-action="approve-access"/g)||[]).length,1);assert.equal((html.match(/data-action="decline-access"/g)||[]).length,1);assert.match(html,/Enable/);assert.match(html,/Blocked · Owner attention/);assert.equal(pendingAccessCount(requests),1);
+ assert.doesNotMatch(dialogContent({dialog:'family',me:{role:'pending'},familyRequests:requests}),/reviewed@example|approve-access/);
+ const busy=familyAccessContent({familyRequests:requests,familyMembers:[],familyBusyUid:'one'});assert.match(busy,/data-uid="one" disabled/);
 });
 
 test('dedicated app identity preserves episode links without copying origin storage or credentials',()=>{
@@ -95,7 +130,7 @@ test('explicit season changes clear stale episode links without changing playbac
 });
 test('season controls, availability notes and global results make the current context explicit',()=>{
  const episodes=Array.from({length:1085},(_,i)=>({id:`one-piece-${String(i+1).padStart(4,'0')}`,episodeNumber:i+1,availability:i===589?'missing':'listed'}));
- const state={booting:false,user:{uid:'viewer'},network:'online',profile:{},catalog:{episodes},progress:{},query:'',season:16,appIdentity:{dedicated:true}};
+ const state={booting:false,user:{uid:'viewer'},me:{role:'member'},network:'online',profile:{},catalog:{episodes},progress:{},query:'',season:16,appIdentity:{dedicated:true}};
  const html=page(state);assert.match(html,/id="episode-season"/);assert.equal((html.match(/<option /g)||[]).length,20);assert.match(html,/Punk Hazard/);assert.match(html,/49 available/);assert.match(html,/data-action="missing" data-number="590"/);assert.doesNotMatch(html,/Previous 50|Next 50|id="episode-range"/);
  const wano=page({...state,season:20});assert.match(wano,/892–1088/);assert.match(wano,/Available here through episode 1085/);assert.match(wano,/data-action="next-season"[^>]*disabled/);
  const search=rows({...state,season:1,query:'1000'});assert.match(search,/Across all seasons/);assert.match(search,/Season 20 · Wano Country/);assert.match(search,/EP 1000/);assert.match(search,/S20 E109/);

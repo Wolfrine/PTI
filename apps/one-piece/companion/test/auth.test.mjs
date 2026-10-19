@@ -78,6 +78,53 @@ test('pending invitations and owner setup are opt-in metadata states, never play
  assert.equal((await access.requireMember({...actor,uid:'owner'},{allowOwnerSetup:true})).needsWorkspace,true);
  await assert.rejects(access.requireMember({...actor,uid:'owner'}),{code:'not-invited'});
 });
+test('access-request metadata is explicit, fixed to the configured household, and reads only the caller membership',async()=>{
+ const actor={uid:'viewer',email:'family@example.com',token:'synthetic-signed-identity'};
+ for(const status of [401,403,404]){
+  const requests=[];
+  const access=new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner',fetchImpl:async(url,init)=>{
+   requests.push({url,init});return new Response('',{status});
+  }});
+  await assert.rejects(access.requireMember(actor),{code:'not-invited',status:403});
+  assert.deepEqual(await access.requireMember(actor,{allowAccessRequest:true}),{...actor,role:'pending',needsApproval:true});
+  assert.equal(requests.length,2);
+  for(const request of requests){
+   assert.equal(request.url,access.root+'/members/family%40example.com');
+   assert.equal(request.init.method,undefined);assert.equal(request.init.headers.Authorization,'Bearer synthetic-signed-identity');
+  }
+  // Request metadata must not become an owner setup shortcut, even on a missing record.
+  await assert.rejects(access.requireMember({...actor,uid:'owner'},{allowAccessRequest:true}),{code:'not-invited'});
+ }
+});
+test('paused, revoked and mismatched memberships stay pending and cannot authorize ordinary access',async()=>{
+ const actor={uid:'viewer',email:'family@example.com',token:'synthetic-signed-identity'};
+ for(const record of [{role:'member',active:false,email:actor.email,uid:actor.uid},
+  {role:'member',active:true,email:actor.email,uid:'other-viewer'},
+  {role:'owner',active:true,email:actor.email,uid:actor.uid},
+  {role:'member',active:true,email:'other@example.com',uid:actor.uid}]){
+  let reads=0;
+  const access=new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner',fetchImpl:async url=>{
+   reads++;assert.ok(url.endsWith('/members/family%40example.com'));return doc(record);
+  }});
+  const result=await access.requireMember(actor,{allowAccessRequest:true});
+  assert.equal(result.role,'pending');assert.equal(result.needsApproval,true);
+  await assert.rejects(access.requireMember(actor),{code:'not-invited'});assert.equal(reads,2);
+ }
+ const access=new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner',fetchImpl:async()=>doc({role:'member',active:true,email:actor.email,uid:''})});
+ assert.equal((await access.requireMember(actor,{allowPending:true,allowAccessRequest:true})).needsClaim,true);
+});
+test('access-request metadata does not mask provider, transport or malformed-record failures',async()=>{
+ const actor={uid:'viewer',email:'family@example.com',token:'synthetic-signed-identity'};
+ const access=new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner'});
+ for(const status of [429,500,502,503]){
+  access.fetch=async()=>new Response('',{status});
+  await assert.rejects(access.requireMember(actor,{allowAccessRequest:true}),{code:'membership-unavailable',status:503});
+ }
+ access.fetch=async()=>{throw new Error('synthetic network failure');};
+ await assert.rejects(access.requireMember(actor,{allowAccessRequest:true}),{code:'membership-unavailable',status:503});
+ access.fetch=async()=>new Response(JSON.stringify({fields:{role:{stringValue:12}}}));
+ await assert.rejects(access.requireMember(actor,{allowAccessRequest:true}),{code:'invalid-membership-response',status:503});
+});
 test('malformed membership records fail safely and rejected response streams are cancelled',async()=>{
   const actor={uid:'viewer-uid',email:'family@example.com',token:'signed-user-token'};
   const access=new FamilyAccess({projectId:'pti-app-2ab59',ownerUid:'owner-uid'});

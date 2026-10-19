@@ -54,7 +54,7 @@ export class CompanionApi {
   if(this.memberChecks.size>=64&&!this.memberChecks.has(key))this.memberChecks.delete(this.memberChecks.keys().next().value);
   this.memberChecks.set(key,check);
   let actor;
-  try{actor=await this.family().requireMember(identity,setup?{allowPending:true,allowOwnerSetup:true}:{});}
+  try{actor=await this.family().requireMember(identity,setup?{allowPending:true,allowOwnerSetup:true,allowAccessRequest:true}:{});}
   catch(error){if(this.memberChecks.get(key)===check){this.memberChecks.delete(key);this.memberCache.delete(key);}throw error;}
   if(this.memberChecks.get(key)!==check)throw new AccessError('membership-unavailable',503);
   this.memberChecks.delete(key);
@@ -62,6 +62,9 @@ export class CompanionApi {
    if(this.memberCache.size>=32&&!this.memberCache.has(key))this.memberCache.delete(this.memberCache.keys().next().value);
    this.memberCache.set(key,{role:actor.role,checkedAt:now});
   }
+  // A setup read that observes revoked/paused/pending access supersedes a prior
+  // positive routine-control cache entry, just as a hard admission denial does.
+  if(actor.needsApproval===true||actor.needsWorkspace===true||actor.needsClaim===true||!['owner','member'].includes(actor.role))this.memberCache.delete(key);
   return actor;
  }
  invalidateMember(uid){
@@ -73,7 +76,7 @@ export class CompanionApi {
   // Setup metadata admits pending accounts, but must never probe their retained
   // credentials. The status is account-scoped, so another device reuses a valid
   // PC connection without another Google confirmation.
-  if(actor.needsWorkspace===true||actor.needsClaim===true||!['owner','member'].includes(actor.role))return{state:'unavailable',code:'account-setup-required'};
+  if(actor.needsWorkspace===true||actor.needsClaim===true||actor.needsApproval===true||!['owner','member'].includes(actor.role))return{state:'unavailable',code:'account-setup-required'};
   try{await this.credentials().getAuthorized(actor.uid);return{state:'ready'};}
   catch(error){
    // A fresh credential check can detect a membership change after actor(). Do
@@ -231,7 +234,7 @@ export class CompanionApi {
     const result=await this.binding.pair(actor,input);await this.onPair(result.ownerUid);json(res,201,result);return;
    }
    if(req.method==='GET'&&url.pathname==='/api/me'){
-    const actor=await this.actor(req,{setup:true}),playbackAccess=await this.playbackAccess(actor);json(res,200,{uid:actor.uid,email:actor.email,role:actor.role,ownerUid:this.binding.ownerUid,needsWorkspace:actor.needsWorkspace===true,needsClaim:actor.needsClaim===true,playbackAccess});return;
+    const actor=await this.actor(req,{setup:true}),playbackAccess=await this.playbackAccess(actor);json(res,200,{uid:actor.uid,email:actor.email,role:actor.role,ownerUid:this.binding.ownerUid,needsWorkspace:actor.needsWorkspace===true,needsClaim:actor.needsClaim===true,needsApproval:actor.needsApproval===true,playbackAccess});return;
    }
    if(req.method==='DELETE'&&url.pathname==='/api/pair-viewer'){
     const actor=await this.identity.verify(bearerToken(req.headers));

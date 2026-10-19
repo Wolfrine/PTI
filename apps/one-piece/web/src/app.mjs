@@ -1,4 +1,4 @@
-import { auth, observeAccount, defaults, signInToOnePiece, freshGoogleConfirmation, createWorkspace, claimInvitation, readProfile, saveProfile, listInvitations, inviteMember, logout } from './account.mjs';
+import { auth, observeAccount, defaults, signInToOnePiece, freshGoogleConfirmation, createWorkspace, claimInvitation, readProfile, saveProfile, ensureAccessRequest, observeAccessRequest, observeFamilyAccess, listFamilyAccess, reviewAccessRequest, inviteMember, logout } from './account.mjs';
 import { createClient, ClientError } from './client.mjs';
 import { icon } from './icons.mjs';
 import { episodeId, episodeNumber, escapeHtml as esc, time, bytes, initialSeason, selectLibrarySeason, nextBoundary, phaseLabel, errorCopy, safeLocalProgress, validPendingEvent, shouldAutoplayDelivery } from './model.mjs';
@@ -11,8 +11,9 @@ import { applyTheme, readTheme } from './theme.mjs';
 import { withArtwork } from './artwork.mjs';
 import { needsGoogleConfirmation, confirmationError } from './connection.mjs';
 import { appIdentity, dedicatedAppUrl, canMoveToDedicatedApp, installStatus } from './install.mjs';
-import { page, rows, dialogContent, button, iconButton, ready, connectionLabel } from './views.mjs';
+import { page, rows, dialogContent, familyAccessContent, button, iconButton, ready, connectionLabel } from './views.mjs';
 import { signInFailure } from './signin.mjs';
+import { accessGate, pendingAccessCount, stopAccessObservers, applyAccessRequestUpdate } from './access.mjs';
 const store={get:(key,fallback)=>{try{const raw=localStorage.getItem(key);return raw&&raw.length<1048576?JSON.parse(raw):fallback;}catch{return fallback;}},set:(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}}};
 const deviceId=store.get('one-piece-device',null)??crypto.randomUUID();store.set('one-piece-device',deviceId);
 
@@ -51,20 +52,54 @@ class ViewingApp {
  restore(){const saved=store.get(this.key('progress'),{}),pending=store.get(this.key('pending'),[]);this.s.progress=safeLocalProgress(saved?.progress);this.s.lastEpisodeId=this.s.progress[saved?.lastEpisodeId]?saved.lastEpisodeId:null;this.eventQueue=Array.isArray(pending)?pending.filter(validPendingEvent).slice(0,100):[];this.s.season=initialSeason({requestedEpisode:this.s.requestedEpisode,requestedSeason:this.s.requestedSeason,requestedRange:this.s.requestedRange,savedSeason:store.get(this.key('season'),null),legacyRange:store.get(this.key('range'),null)});store.set(this.key('season'),this.s.season);}
  persist(){store.set(this.key('progress'),{progress:this.s.progress,lastEpisodeId:this.s.lastEpisodeId});store.set(this.key('pending'),this.eventQueue);}
  selectSeason(number){const url=selectLibrarySeason(this.s,number,location.href);store.set(this.key('season'),this.s.season);history.replaceState(null,'',url);this.render();this.root.querySelector('#episode-season')?.focus();}
+ watchAccess(ownerUid,account){
+  const key=`${account.generation}:${ownerUid}:${account.uid}`;if(this.accessWatchKey===key)return;
+  this.accessStop?.();this.accessWatchKey=key;
+  this.accessStop=observeAccessRequest(ownerUid,value=>{if(!this.current(account)||this.accessWatchKey!==key)return;const approved=applyAccessRequestUpdate(this,account,value);if(approved)this.s.approvalChecking=true;this.render();if(approved){if(this.connecting)this.approvalReconnect=true;else void this.connect();}},()=>{if(!this.current(account)||this.accessWatchKey!==key)return;this.accessWatchKey=null;this.s.accessError='Approval updates could not connect. Use Check again to retry.';this.render();});
+ }
+ watchFamily(ownerUid,account){
+  const key=`${account.generation}:${ownerUid}`;if(this.familyWatchKey===key)return;
+  this.familyStop?.();this.familyWatchKey=key;
+  this.familyStop=observeFamilyAccess(ownerUid,requests=>{if(!this.current(account)||this.familyWatchKey!==key)return;this.s.familyRequests=requests;this.s.familyError=null;this.patchFamily();if(this.s.dialog==='family')void this.loadFamilyAccess();},()=>{if(!this.current(account)||this.familyWatchKey!==key)return;this.familyWatchKey=null;this.s.familyError='Live requests could not connect. Check again to refresh.';this.patchFamily();});
+ }
+ async loadFamilyAccess(){
+  if(this.fixture||this.s.me?.role!=='owner')return;if(this.familyLoading){this.familyReload=true;return;}
+  const account=this.account(),ownerUid=this.s.me.ownerUid;this.familyLoading=true;
+  try{const result=await listFamilyAccess(ownerUid);if(!this.current(account)||this.s.me?.role!=='owner')return;if(!this.familyWatchKey||!this.s.familyRequests)this.s.familyRequests=result.requests;this.s.familyMembers=result.members;this.s.familyError=null;this.s.familyLoaded=true;this.patchFamily();}
+  catch{if(this.current(account)){this.s.familyError='Family access could not refresh. Try again.';this.patchFamily();}}
+  finally{if(this.current(account)){this.familyLoading=false;if(this.familyReload){this.familyReload=false;void this.loadFamilyAccess();}}}
+ }
+ patchFamily(){
+  const count=pendingAccessCount(this.s.familyRequests);for(const badge of this.root.querySelectorAll('.family-request-count')){badge.textContent=String(count);badge.hidden=!count;}
+  const target=this.root.querySelector('#family-access-content');if(target){const html=familyAccessContent(this.s);if(this.familyTarget!==target||this.familyMarkup!==html){target.innerHTML=html;this.familyTarget=target;this.familyMarkup=html;}}
+ }
  async connect(){
-  if(!this.s.user||this.fixture)return;
+  if(!this.s.user||this.fixture||this.connecting)return;
+  this.connecting=true;
   const account=this.account();
   this.s.network='checking';this.patch();
   try{const health=await this.request('/api/health');if(!this.current(account))return;this.s.network='online';this.s.setupRequired=health.setupRequired;
    if(health.setupRequired){this.s.me=null;this.s.dialog='setup';this.render();return;}
    const me=await this.request('/api/me');if(!this.current(account))return;this.s.me=me;
+   this.s.error=null;this.s.accessPaused=false;this.s.approvalChecking=false;
+   if(me.needsClaim){await claimInvitation(me.ownerUid);if(!this.current(account))return;this.s.me=await this.request('/api/me');if(!this.current(account))return;}
+   if(this.s.me.needsApproval){
+    this.player?.destroy();this.player=null;this.delivery=null;this.s.session=null;this.s.lease=null;this.s.dialog=null;this.s.route='library';
+    const key=`${account.generation}:${me.ownerUid}:${account.uid}`;
+    try{if(this.accessEnsuredKey!==key){const value=await ensureAccessRequest(me.ownerUid);if(!this.current(account))return;this.accessEnsuredKey=key;if(applyAccessRequestUpdate(this,account,value)){this.s.approvalChecking=true;this.approvalReconnect=true;}}this.watchAccess(me.ownerUid,account);}
+    catch{if(!this.current(account))return;this.s.accessError='Your request could not be sent. Check again to retry.';}
+    this.render();return;
+   }
+   this.accessStop?.();this.accessStop=null;this.accessWatchKey=null;this.s.accessRequest=null;this.s.accessError=null;
    if(this.s.me.needsWorkspace||this.s.me.needsClaim){this.s.dialog='setup';this.render();return;}
+   if(this.s.me.role==='owner')this.watchFamily(me.ownerUid,account);
    try{const profile=await readProfile(me.ownerUid);if(!this.current(account))return;this.s.profile=profile;}catch{if(!this.current(account))return;this.s.notice='Preferences could not sync. Japanese audio and English subtitles are selected.';}
    const data=await this.request('/api/progress');if(!this.current(account))return;this.s.progress={...this.s.progress,...data.progress};this.s.lastEpisodeId=data.lastEpisodeId??this.s.lastEpisodeId;this.s.sync=data.sync;
    const pending=this.eventQueue.at(-1);if(pending&&(!data.lease||pending.generation!==data.lease.generation||pending.authorityEpoch!==data.lease.authorityEpoch)){this.s.resumeConflict={...pending,savedPosition:data.progress[pending.episodeId]?.positionSeconds??0};this.s.notice='This device has a saved place that has not synced. Review it before continuing.';}this.persist();
    if(data.lease&&(data.lease.deviceId===deviceId||data.lease.destination==='cast')){this.mergeLease(data.lease);await this.poll();if(!this.current(account))return;}
    this.s.error=null;if(['The home PC is not connected. You can still browse your library.','You are offline. Your place is saved on this device.'].includes(this.s.notice))this.s.notice='';this.render();void this.flush();if(this.s.requestedEpisode&&!this.deepLinkHandled){this.deepLinkHandled=true;await this.open(this.s.requestedEpisode);}
-  }catch(e){if(!this.current(account))return;if(['companion-offline','companion-timeout'].includes(e.code)){this.s.network='offline';this.s.notice='The home PC is not connected. You can still browse your library.';}else{this.s.error=errorCopy(e.code);}this.render();}
+  }catch(e){if(!this.current(account))return;if(e.code==='member-inactive'){this.player?.destroy();this.player=null;this.delivery=null;this.s.session=null;this.s.lease=null;this.s.accessPaused=true;this.s.error=null;}else if(['companion-offline','companion-timeout'].includes(e.code)){this.s.network='offline';this.s.notice='The home PC is not connected. You can still browse your library.';}else{this.s.error=errorCopy(e.code);}this.render();}
+  finally{if(this.current(account)){this.connecting=false;if(this.s.approvalChecking&&!this.approvalReconnect){this.s.approvalChecking=false;this.render();}else this.patch();if(this.approvalReconnect){this.approvalReconnect=false;void this.connect();}}}
  }
  mergeLease(value){if(!value)return;const old=this.s.lease;if(old&&old.sessionId===value.sessionId&&old.generation===value.generation&&old.authorityEpoch===value.authorityEpoch)value={...value,revision:Math.max(old.revision,value.revision)};this.s.lease=value;}
  targetMatches(value){return (!this.targetId||value.episodeId===this.targetId)&&(this.audioTarget===undefined||value.playback?.selected?.audioIndex===this.audioTarget);}
@@ -77,6 +112,7 @@ class ViewingApp {
   }catch(e){if(this.current(account))this.runtimeError(e);}finally{if(this.current(account))this.polling=false;}
  }
  async open(n,{takeover=false,automatic=false,audioIndex,resumePosition}={}){
+  if(accessGate(this.s)){this.render();return;}
   if(n===590){this.s.dialog='missing';this.dialog();return;}if(n>1085){this.s.dialog='ended';this.dialog();return;}
   if(!this.s.user){this.s.requestedEpisode=n;this.s.route='library';const url=new URL(location.href);url.searchParams.set('episode',n);history.replaceState(null,'',url.pathname+url.search);this.render();return;}
   if(this.s.network!=='online'){this.s.dialog='connection';this.dialog();return;}
@@ -114,7 +150,7 @@ class ViewingApp {
   this.s.progress[event.episodeId]={...event,durationSeconds:session.playback.durationSeconds,watched:reason==='mark-watched'||reason==='ended',updatedAt:Date.now()};this.s.lastEpisodeId=event.episodeId;
   const last=this.eventQueue.at(-1);if(reason==='heartbeat'&&last?.reason==='heartbeat'&&last.revision===undefined)this.eventQueue[this.eventQueue.length-1]=event;else if(this.eventQueue.length<100)this.eventQueue.push(event);this.persist();void this.flush();
  }
- async flush(){if(this.flushing)return this.flushing;if(!this.s.lease||this.fixture)return;const pending=this.flushQueue();this.flushing=pending;try{await pending;}finally{if(this.flushing===pending)this.flushing=null;}}
+ async flush(){if(this.flushing)return this.flushing;if(!this.s.lease||this.fixture||accessGate(this.s))return;const pending=this.flushQueue();this.flushing=pending;try{await pending;}finally{if(this.flushing===pending)this.flushing=null;}}
  async flushQueue(){const account=this.account();this.sending=true;
   try{while(this.current(account)&&this.eventQueue.length){const value=this.eventQueue[0],lease=this.s.lease;
    if(lease.destination==='cast'||value.generation!==lease.generation||value.authorityEpoch!==lease.authorityEpoch){this.s.resumeConflict={...this.eventQueue.at(-1),savedPosition:this.s.progress[value.episodeId]?.positionSeconds??0};this.s.notice='This device has an unsynced place. Review it before continuing.';break;}
@@ -138,6 +174,7 @@ class ViewingApp {
   if(video&&this.s.route==='watch'&&this.s.lease?.destination!=='cast'&&ready(this.s.session)){const target=this.root.querySelector('#episode-video');if(target)target.replaceWith(video);}this.renderRows();this.patch();if(this.s.dialog)this.dialog();}
  renderRows(){const target=this.root.querySelector('#episode-results');if(target)target.innerHTML=rows(this.s);const search=this.root.querySelector('#episode-search'),label=this.root.querySelector('.search .sr-only');if(search)search.placeholder=this.s.profile.showTitles?'Search all episodes or titles':'Search all episode numbers';if(label)label.textContent=`Search all episodes by number${this.s.profile.showTitles?' or verified title':''}`;for(const el of this.root.querySelectorAll('.season-select,.season-paging,.season-summary'))el.hidden=Boolean(this.s.query.trim());const clear=this.root.querySelector('#clear-search');if(clear)clear.hidden=!this.s.query;this.root.querySelector('.browse-tools')?.classList.toggle('searching',Boolean(this.s.query.trim()));}
  patch(){
+  this.patchFamily();for(const action of ['check-access'])for(const el of this.root.querySelectorAll(`[data-action="${action}"]`))el.disabled=Boolean(this.connecting);
   for(const el of this.root.querySelectorAll('[data-action="sign-in"]'))el.disabled=Boolean(this.signingIn);
   const signInButton=this.root.querySelector('#sign-in-button');if(signInButton)signInButton.innerHTML=`${icon('user')} ${this.signingIn?'Opening Google…':'Sign in with Google'}`;
   const signInError=this.root.querySelector('#sign-in-error');if(signInError){signInError.textContent=this.s.signInError??'';signInError.hidden=!this.s.signInError;}
@@ -160,6 +197,8 @@ class ViewingApp {
  closeDialog(){this.s.dialog=null;this.s.dialogError=null;this.root.querySelector('dialog')?.close();}
  async click(event){const t=event.target.closest('[data-action]');if(!t||t.disabled)return;const account=this.account(),a=t.dataset.action,n=Number(t.dataset.number),s=this.s;
   if(!this.current(account))return;
+  if(accessGate(s)&&!['check-access','logout','logout-local','toggle-theme','install','close-dialog','dismiss-notice','update','setup','create-workspace'].includes(a))return;
+  if(a==='check-access'){if(this.fixture)return;await this.connect();this.patch();return;}
   if(a==='sign-in'){
    if(this.signingIn)return;if(__DEV__&&this.fixture){s.signInError='Design preview only. Use the live One Piece app to sign in.';this.patch();return;}
    this.signingIn=true;s.signInError=null;this.patch();
@@ -199,9 +238,21 @@ class ViewingApp {
    finally{this.pairing=false;if(this.current(account)){t.disabled=false;t.removeAttribute('aria-busy');}}return;
   }
   if(a==='create-workspace'||a==='claim-invitation'){if(this.fixture)return;try{await(a==='create-workspace'?createWorkspace(s.me.ownerUid):claimInvitation(s.me.ownerUid));if(!this.current(account))return;this.closeDialog();await this.connect();if(!this.current(account))return;if(!s.setupRequired&&!s.me?.needsWorkspace&&!s.me?.needsClaim){s.dialog='connection';this.dialog();}}catch{if(this.current(account))this.dialogFailure('Setup could not be saved. Existing or disabled family settings were kept.');}return;}
-  if(a==='family'){if(!this.fixture)s.invitations=await listInvitations(s.me.ownerUid);if(!this.current(account))return;s.dialog='family';this.dialog();return;}
-  if(a==='toggle-invite'){if(this.fixture)return;await inviteMember(s.me.ownerUid,{email:t.dataset.email,active:t.dataset.active==='true'});if(!this.current(account))return;s.invitations=await listInvitations(s.me.ownerUid);if(this.current(account))this.dialog();return;}
-  if(a==='logout'){if(this.fixture)return;this.player?.pause();await this.flush();if(!this.current(account))return;await disconnectBeforeSignOut({request:this.request,isCurrent:()=>this.current(account),signOut:()=>this.signOutLocal(),onUnconfirmed:()=>{s.dialog='offline-signout';this.dialog();}});return;}
+  if(a==='family'||a==='family-refresh'){if(s.me?.role!=='owner')return;s.dialog='family';if(a==='family')this.dialog();if(!this.fixture){this.watchFamily(s.me.ownerUid,account);await this.loadFamilyAccess();}return;}
+  if(a==='approve-access'||a==='decline-access'){
+   if(s.me?.role!=='owner'||s.familyBusyUid)return;const uid=t.dataset.uid,row=s.familyRequests?.find(value=>value.uid===uid&&value.status==='pending');if(!row)return;
+   if(this.fixture){this.fixture.reviewAccess?.(this,uid,a==='approve-access');return;}
+   s.familyBusyUid=uid;this.patchFamily();
+   try{await reviewAccessRequest(s.me.ownerUid,uid,a==='approve-access');if(!this.current(account))return;await this.loadFamilyAccess();}
+   catch(error){if(this.current(account)){s.familyError=(error?.code??error?.message)==='member-paused'?'This member is paused. Enable the existing member, then review the request.':'The request could not be reviewed. Check again and retry.';this.patchFamily();}}
+   finally{if(this.current(account)){s.familyBusyUid=null;this.patchFamily();}}return;
+  }
+  if(a==='toggle-invite'){
+   if(s.me?.role!=='owner'||s.familyBusyUid)return;const member=s.familyMembers?.find(value=>value.email===t.dataset.email);if(!member)return;
+   if(this.fixture){this.fixture.toggleMember?.(this,member.email);return;}
+   s.familyBusyUid=member.email;this.patchFamily();try{await inviteMember(s.me.ownerUid,{email:member.email,active:member.active!==true});if(this.current(account))await this.loadFamilyAccess();}catch{if(this.current(account)){s.familyError='The member could not be updated. Check again and retry.';this.patchFamily();}}finally{if(this.current(account)){s.familyBusyUid=null;this.patchFamily();}}return;
+  }
+  if(a==='logout'){if(this.fixture)return;if(accessGate(s)){await this.signOutLocal();return;}this.player?.pause();await this.flush();if(!this.current(account))return;await disconnectBeforeSignOut({request:this.request,isCurrent:()=>this.current(account),signOut:()=>this.signOutLocal(),onUnconfirmed:()=>{s.dialog='offline-signout';this.dialog();}});return;}
   if(a==='logout-local'){if(__DEV__&&this.fixture)return;await this.signOutLocal();return;}
   if(a==='open-dedicated'){
    this.player?.pause();if(this.player)this.record('pause',this.player.position);await this.flush();if(!this.current(account))return;
@@ -217,8 +268,8 @@ class ViewingApp {
  }
  async submit(event){const form=event.target;if(!form.dataset.form)return;event.preventDefault();if(this.fixture){this.s.notice='Development fixture: no account or invitation was written.';this.patch();return;}const account=this.account(),ownerUid=this.s.me?.ownerUid,data=new FormData(form),submit=form.querySelector('[type=submit]');if(submit)submit.disabled=true;
   if(!this.current(account))return;
-  try{if(form.dataset.form==='pair-owner'){await freshGoogleConfirmation();if(!this.current(account))return;await this.request('/api/pair-owner',{code:String(data.get('code')).trim(),confirmOwner:true});if(!this.current(account))return;this.closeDialog();await this.connect();}if(form.dataset.form==='invite'){await inviteMember(ownerUid,{email:data.get('email'),name:data.get('name')});if(!this.current(account))return;const invitations=await listInvitations(ownerUid);if(!this.current(account))return;this.s.invitations=invitations;this.dialog();}}
-  catch{if(this.current(account))this.dialogFailure(form.dataset.form==='invite'?'Invitation could not be saved. Check the Google email and try again.':'Pairing could not finish. Check the fresh code on the PC and confirm the correct Google account.');}finally{if(this.current(account)&&submit?.isConnected)submit.disabled=false;}
+  try{if(form.dataset.form==='pair-owner'){await freshGoogleConfirmation();if(!this.current(account))return;await this.request('/api/pair-owner',{code:String(data.get('code')).trim(),confirmOwner:true});if(!this.current(account))return;this.closeDialog();await this.connect();}}
+  catch{if(this.current(account))this.dialogFailure('Pairing could not finish. Check the fresh code on the PC and confirm the correct Google account.');}finally{if(this.current(account)&&submit?.isConnected)submit.disabled=false;}
  }
  async change(event){const account=this.account(),el=event.target,id=el.id,s=this.s;
   if(!this.current(account))return;
@@ -236,7 +287,7 @@ class ViewingApp {
   if('autoplay'in value&&this.s.lease){try{const result=await this.request(`/api/sessions/${this.s.lease.sessionId}/renew`,{autoplay:value.autoplay});if(!this.current(account))return;this.mergeLease(result.lease);if(result.cast)this.s.session.cast=result.cast;}catch{if(!this.current(account))return;this.s.notice='Autoplay could not change. Reconnect and try again.';for(const el of this.root.querySelectorAll('#autoplay,#account-autoplay'))el.checked=this.s.profile.autoplay;this.patch();return;}}
   this.s.profile={...this.s.profile,...value};try{const profile=await saveProfile(this.s.me.ownerUid,value);if(this.current(account))this.s.profile=profile;}catch{if(this.current(account)){this.s.notice='This preference is applied here, but could not sync yet.';this.patch();}}
  }
- async signOutLocal(){this.player?.destroy();this.player=null;this.s.lease=null;this.eventQueue=[];this.closeDialog();await logout();}
+ async signOutLocal(){stopAccessObservers(this);this.player?.destroy();this.player=null;this.s.lease=null;this.eventQueue=[];this.closeDialog();await logout();}
  dialogFailure(message){const dialog=this.root.querySelector('dialog');if(!dialog){this.s.notice=message;this.patch();return;}let el=dialog.querySelector('.dialog-error');if(!el){el=document.createElement('p');el.className='dialog-error';el.setAttribute('role','alert');dialog.append(el);}el.textContent=message;}
  keyboard(e){if(!this.current(this.account()))return;return handleWatchKeyboard(e,{route:this.s.route,dialog:this.s.dialog,destination:this.s.lease?.destination,cast:this.s.session?.cast,player:this.player,command:(action,value)=>this.command(action,value)});}
  async worker(){if(!('serviceWorker'in navigator)||location.protocol!=='https:')return;

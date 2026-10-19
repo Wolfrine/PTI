@@ -22,6 +22,32 @@ permissions:
   contents: read
 
 jobs:
+  access_rules_preflight:
+    # This owner-authorized branch changes family admission. Read the exact live
+    # predecessor using the existing identity; never expose secrets to fork PRs.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'codex/one-piece-access-requests'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
+      - name: Read-only check of the approved family-access rules predecessor
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/one-piece-access-preflight.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          trap 'rm -f "$GOOGLE_APPLICATION_CREDENTIALS"' EXIT
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          git show b00df300e4de29c5cbdeec1198ed1072538752b8:personal-harness/firestore.rules > "$RUNNER_TEMP/pre-access-requests.rules"
+          APPROVED_PREVIOUS_RULES_FILE="$RUNNER_TEMP/pre-access-requests.rules" node apps/one-piece/scripts/inspect-live-rules.mjs
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20

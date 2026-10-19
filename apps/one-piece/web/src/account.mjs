@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, reauthenticateWithPopup, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, runTransaction, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, runTransaction, collection, getDocs, onSnapshot } from 'firebase/firestore';
+import { accessRequestFor, accessReview } from './access-records.mjs';
 
 // The public Firebase application identifier matches PTI's default app. No Admin credential is used.
 const firebaseConfig={apiKey:'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',authDomain:'pti-app-2ab59.firebaseapp.com',projectId:'pti-app-2ab59',
@@ -62,6 +63,50 @@ export async function listInvitations(ownerUid){
  const snapshot=await getDocs(collection(db,`${root(ownerUid)}/members`));
  return snapshot.docs.map(d=>d.data());
 }
+export async function ensureAccessRequest(ownerUid){
+ const user=auth.currentUser;if(!user)throw new Error('authentication-required');
+ const candidate=accessRequestFor(user),ref=doc(db,`${root(ownerUid)}/accessRequests/${user.uid}`);
+ return runTransaction(db,async transaction=>{
+  const snapshot=await transaction.get(ref);
+  if(auth.currentUser?.uid!==user.uid)throw new Error('identity-changed');
+  if(snapshot.exists())return snapshot.data(); // Declined/paused accounts are never requeued on login.
+  transaction.set(ref,candidate);return candidate;
+ });
+}
+export function observeAccessRequest(ownerUid,onValue,onError){
+ const uid=auth.currentUser?.uid;if(!uid)throw new Error('authentication-required');
+ return onSnapshot(doc(db,`${root(ownerUid)}/accessRequests/${uid}`),snapshot=>{
+  if(auth.currentUser?.uid===uid)onValue(snapshot.exists()?snapshot.data():null);
+ },error=>{if(auth.currentUser?.uid===uid)onError?.(error);});
+}
+export function observeFamilyAccess(ownerUid,onValue,onError){
+ if(auth.currentUser?.uid!==ownerUid)throw new Error('owner-required');
+ return onSnapshot(collection(db,`${root(ownerUid)}/accessRequests`),snapshot=>{
+  if(auth.currentUser?.uid===ownerUid)onValue(snapshot.docs.map(record=>record.data()));
+ },error=>{if(auth.currentUser?.uid===ownerUid)onError?.(error);});
+}
+export async function listFamilyAccess(ownerUid){
+ if(auth.currentUser?.uid!==ownerUid)throw new Error('owner-required');
+ const [requests,members]=await Promise.all([getDocs(collection(db,`${root(ownerUid)}/accessRequests`)),getDocs(collection(db,`${root(ownerUid)}/members`))]);
+ if(auth.currentUser?.uid!==ownerUid)throw new Error('identity-changed');
+ return {requests:requests.docs.map(record=>record.data()),members:members.docs.map(record=>record.data())};
+}
+export async function reviewAccessRequest(ownerUid,requestUid,approve){
+ if(auth.currentUser?.uid!==ownerUid)throw new Error('owner-required');
+ if(!/^[A-Za-z0-9_-]{1,128}$/.test(String(requestUid)))throw new Error('invalid-access-request');
+ const ref=doc(db,`${root(ownerUid)}/accessRequests/${requestUid}`);
+ return runTransaction(db,async transaction=>{
+  const snapshot=await transaction.get(ref);if(!snapshot.exists())throw new Error('access-request-not-found');
+  const request=snapshot.data(),memberRef=doc(db,`${root(ownerUid)}/members/${request.email}`);
+  const member=request.status==='pending'&&approve===true?await transaction.get(memberRef):null;
+  if(auth.currentUser?.uid!==ownerUid)throw new Error('identity-changed');
+  const decision=accessReview(request,member?.exists()?member.data():null,{ownerUid,approve});
+  if(!decision.changed)return decision.request;
+  if(decision.member)transaction.set(memberRef,decision.member);
+  transaction.update(ref,{status:decision.request.status,updatedAt:decision.request.updatedAt,revision:decision.request.revision});
+  return decision.request;
+ });
+}
 export async function inviteMember(ownerUid,{email,name,active=true}){
  const user=auth.currentUser;if(user?.uid!==ownerUid)throw new Error('owner-required');
  email=String(email??'').trim().toLowerCase();
@@ -69,8 +114,9 @@ export async function inviteMember(ownerUid,{email,name,active=true}){
  const ref=doc(db,`${root(ownerUid)}/members/${email}`);
  await runTransaction(db,async transaction=>{
   const snapshot=await transaction.get(ref),value=snapshot.exists()?snapshot.data():null,now=Date.now();
-  const next=value?{...value,name:safeName(name??value.name),active:active===true,revision:value.revision+1,updatedAt:now}
-   :{email,uid:'',role:'member',active:active===true,name:safeName(name),invitedBy:ownerUid,invitedAt:now,updatedAt:now,revision:1};
+  if(!value)throw new Error('member-not-found'); // New access comes only from a Google-account request.
+  if(auth.currentUser?.uid!==user.uid)throw new Error('identity-changed');
+  const next={...value,name:safeName(name??value.name),active:active===true,revision:value.revision+1,updatedAt:now};
   transaction.set(ref,next);
  });
 }

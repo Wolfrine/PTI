@@ -1,5 +1,6 @@
 {
   "index": "/index.html",
+  "navigationRequestStrategy": "freshness",
   "navigationUrls": [
     "/**",
     "!/**/*.*",

@@ -161,3 +161,24 @@
     justify-content: space-between;
   }
 }
+
+.one-piece-login {
+  width: 100%;
+  max-width: 100%;
+  background: #f7f4ee;
+  color: #252a26;
+  align-items: center;
+  justify-items: center;
+  padding: clamp(24px, 6vw, 72px);
+  min-height: 100svh;
+  .login-panel { margin: 0; padding: 40px 0; color: #252a26; }
+  .brand-mark { background: #da4941; color: white; font: 800 18px Georgia, serif; }
+  .brand-text { color: #565c54; letter-spacing: .06em; }
+  .access-label { color: #b63b34; margin-top: 44px; letter-spacing: .12em; }
+  h1 { font-family: Georgia, serif; font-weight: 500; line-height: 1.07; font-size: clamp(36px, 6vw, 62px); }
+  .login-copy { color: #565c54; }
+  .signin-btn { background: #da4941; color: white; box-shadow: none; border-color: #da4941; }
+  .signin-btn:hover { background: #c43b35; }
+  .button-mark { background: transparent; color: white; }
+  .security-note { color: #676b63; line-height: 1.65; max-width: 440px; }
+}

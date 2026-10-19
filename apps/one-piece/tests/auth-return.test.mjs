@@ -8,7 +8,17 @@ import assert from 'node:assert/strict';
 import { transform } from 'esbuild';
 const source = await readFile(new URL('../../../pti-app/src/app/services/login-return.ts', import.meta.url), 'utf8');
 const { code } = await transform(source, { loader: 'ts', format: 'esm' });
-const { safeLoginReturn, navigateAfterLogin, onePieceEntry } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const { safeLoginReturn, navigateAfterLogin, onePieceEntry, loginPresentation } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+
+test('One Piece sign-in keeps its identity and episode return while PTI retains its own login', () => {
+  const bookmark='/one-piece/watch?episode=1001#player';
+  for(const origin of ['https://pti-app-2ab59-one-piece.web.app','https://pti-app-2ab59-one-piece.firebaseapp.com']) {
+    assert.deepEqual(loginPresentation(origin,bookmark),{onePiece:true,returnPath:bookmark});
+    for(const raw of [null,'/home','https://evil.invalid/','//evil.invalid/'])assert.deepEqual(loginPresentation(origin,raw),{onePiece:true,returnPath:'/one-piece/'});
+  }
+  assert.deepEqual(loginPresentation('https://pti-app-2ab59.web.app','/home'),{onePiece:false,returnPath:'/home'});
+  assert.deepEqual(loginPresentation('https://pti-app-2ab59.web.app',bookmark),{onePiece:true,returnPath:bookmark});
+});
 
 test('the actual PWA sign-in link resolves to PTI login and preserves the bookmarked episode', async () => {
   const routesSource = await readFile(new URL('../../../pti-app/src/app/app.routes.ts', import.meta.url), 'utf8');

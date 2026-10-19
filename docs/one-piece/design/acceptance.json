@@ -1,69 +1,93 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "6e712ecc0403be7790c7d52a54421ac55f3b5de46fc4620b6cde3c1a53362279",
-  "independent_candidate": "e996c6e1086fd2fa8e514693ac330805c1879f2e43ea9f4bd1c9c65cc42afe26",
-  "checkedAt": "2026-10-19T04:12:55.468Z",
-  "acceptance_scope": "Mechanical single-app correction: native Google popup sign-in, redirect-only legacy app and login bookmarks, removal of cloned PTI Angular artifact. Existing themes and media behavior retained.",
+  "candidate": "791fee89c3ec4c0e9e8616d9fd5f88a4275030f19ab27860f72571aa4a78b66f",
+  "independent_candidate": "cf91ed8483f75773c43c51d48994e08edb219387f40b368d0aa7477d00426e2c",
+  "checkedAt": "2026-10-19T04:39:35.509Z",
+  "acceptance_scope": "Mechanical library navigation refinement: named Japanese season groups replace50-episode ranges; global search and per-account browse restore. Existing light/dark direction, auth, media and casting retained.",
   "owner_verdict": {
-    "status": "not-reviewed",
-    "physicalAndroidInstallation": "Owner confirmed app drawer entry and separate launch before this correction; identity is retained."
+    "status": "not-reviewed"
   },
   "roles": {
-    "implementation": "/root",
+    "designer": "/root/onepiece_hosting",
     "review": "/root/separate_pwa_review",
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "../SINGLE_APP.md",
+  "review": "../SEASONS.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Personally inspected actual production native sign-in at1440x1000 and390x844; no horizontal overflow. Google chooser opens; cancellation safely restores the screen. Dedicated artifact excludes Angular login and PTI hub."
+    "reason": "Personally inspected light/dark1440x1000 and390x844 catalogue states. Long season7 name fits; Season16 missing590 and Wano incomplete coverage explicit; global1001search and clearing restore worked; no horizontal overflow."
   },
   "evidence": [
     {
-      "path": "evidence/single-app/one-piece-native-signin-desktop.jpg",
-      "sha256": "4f17264e400d34112329511175716176cad759a2acf91b11e850a43864096467",
+      "path": "evidence/seasons/one-piece-seasons-light-desktop.jpg",
+      "sha256": "ec36e01ff1169ee2c654ffdcec2791d5bb6977473244382bb75820c9416b232f",
+      "theme": "light",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Actual production bundle served locally; signed out; real Firebase configuration; no mock account",
+      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/single-app/one-piece-native-signin-mobile.jpg",
-      "sha256": "788d4170e3e7f9cc5b888c1dfbcaa736060914cbad8a28a3c9c5c247e39f4eda",
+      "path": "evidence/seasons/one-piece-seasons-light-mobile.jpg",
+      "sha256": "0b3f4f939851e5bf920550b101e907a5d7280c1742d818f472d17dfdce246ea5",
+      "theme": "light",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Actual production bundle served locally; signed out; real Firebase configuration; no mock account",
+      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
+      "parentPersonallyInspected": true
+    },
+    {
+      "path": "evidence/seasons/one-piece-seasons-dark-desktop.jpg",
+      "sha256": "3493b575c8cdcb1e800256c95e0c815d2241cdac79aeca8745bff6482d9e2d1a",
+      "theme": "dark",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
+      "parentPersonallyInspected": true
+    },
+    {
+      "path": "evidence/seasons/one-piece-seasons-dark-mobile.jpg",
+      "sha256": "6a4c197f4e2f2dc7d22967840fe023aade6aa6a9f4e508aa542c68567e6ad8e7",
+      "theme": "dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "Labelled local development fixture; synthetic family account/progress; real catalogue/artwork and production season metadata",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 72,
-    "frontendChecksPassed": 72,
-    "independentFocusedChecks": 55,
-    "independentFocusedChecksPassed": 55,
-    "completePtiAndDedicatedBuild": "passed with existing warnings",
-    "realGoogleChooser": "opened; safe cancellation verified",
-    "successfulFreshGoogleAuthentication": "not verified",
-    "mockAccount": false,
+    "frontendChecks": 78,
+    "frontendChecksPassed": 78,
+    "metadata": "Real catalogue1084listed episodes partitioned once; missing590slot retained",
+    "source": "Current Japanese home-media convention; official Avex page bounds retained with edition differences",
+    "desktopMobile": "Light/dark inspected; real catalogue, synthetic account/progress",
+    "globalSearch": "1001 from Season7 finds Season20E110; clear restores7",
+    "completePtiAndDedicatedBuild": "passed with existing Angular warnings",
     "mediaEngineUnchanged": true,
-    "castTransportUnchanged": true
+    "castTransportUnchanged": true,
+    "authenticationUnchanged": true
   },
   "limitations": [
-    "Successful fresh Google authentication was not completed through browser automation; chooser opening is not successful authentication proof.",
-    "The previously unconfirmed browser-to-PC connection is separate from this sign-in/app-identity correction.",
-    "No TV test or companion restart performed. Existing Sony end-of-episode issue remains."
+    "Agent-reviewed browsing refinement; no new physical-device, fresh-authentication or media/TV acceptance.",
+    "Japanese home-media season groups may differ from Netflix/TVDB labels; numbered TV extras remain in chronological order.",
+    "Episode590 remains missing; Wano is available only through1085 of1088.",
+    "Existing Sony end-of-episode issue remains unchanged."
   ],
   "historical_record": {
-    "commit": "9d941e23dea65f6f8c92c187f66455eb96da1684",
-    "candidate": "1491a1a26402c904eb054eb5a57d050d11a1330fa795d25aa4a98075888e5d62",
-    "independent_candidate": "502ecc8734cee30e299da01c2b3a8ba5e467cb6f403fabd3e782afe3aa705ef6",
+    "commit": "e1c492c11e789600bade155962c49b284323cb6b",
+    "candidate": "6e712ecc0403be7790c7d52a54421ac55f3b5de46fc4620b6cde3c1a53362279",
+    "independent_candidate": "e996c6e1086fd2fa8e514693ac330805c1879f2e43ea9f4bd1c9c65cc42afe26",
     "path": "docs/one-piece/design/acceptance.json",
-    "policy": "Prior design/playback evidence retains its original scope."
+    "policy": "Prior authentication/design/playback evidence retains its original scope."
   }
 }

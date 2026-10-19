@@ -1,9 +1,10 @@
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import { visibleEpisodes, nextBoundary, rangeFor, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
+import { visibleEpisodes, nextBoundary, initialSeason, selectLibrarySeason, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
+import { SEASONS, getSeason } from './seasons.mjs';
 import { createClient, CONTROL_ORIGIN } from './client.mjs';
-import { dialogContent, page } from './views.mjs';
+import { dialogContent, page, rows } from './views.mjs';
 import { appIdentity, dedicatedAppUrl, canMoveToDedicatedApp, installStatus, ONE_PIECE_ORIGIN, PTI_ORIGIN } from './install.mjs';
 import { handleWatchKeyboard } from './keyboard.mjs';
 import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identity.mjs';
@@ -61,10 +62,44 @@ test('switching Google accounts keeps installation identity but replaces account
 test('numbered search retains the unavailable 590 and source boundary without duplicates',()=>{
  const episodes=[589,590,591,1000,1001].map(n=>({episodeNumber:n,availability:n===590?'missing':'listed'}));
  assert.equal(visibleEpisodes(episodes,{query:'0590'})[0].availability,'missing');
- assert.deepEqual(visibleEpisodes(episodes,{range:951}).map(e=>e.episodeNumber),[1000]);
- assert.deepEqual(visibleEpisodes(episodes,{range:1001}).map(e=>e.episodeNumber),[1001]);
+ assert.deepEqual(visibleEpisodes(episodes,{season:20}).map(e=>e.episodeNumber),[1000,1001]);
+ assert.deepEqual(visibleEpisodes(episodes,{season:16}).map(e=>e.episodeNumber),[589,590,591]);
  assert.equal(nextBoundary(589),'missing');assert.equal(nextBoundary(1000),'next');assert.equal(nextBoundary(1085),'ended');
- assert.equal(rangeFor(1085),1051);
+ assert.equal(initialSeason({legacyRange:1051}),20);
+});
+test('season browsing partitions the real library without renumbering or hiding missing 590',async()=>{
+ const catalog=JSON.parse(await readFile(new URL('../../../../docs/one-piece/evidence/sources/catalog.json',import.meta.url),'utf8'));
+ const all=[];
+ for(const season of SEASONS){const shown=visibleEpisodes(catalog.episodes,{season:season.number});assert.equal(shown.filter(row=>row.availability==='listed').length,season.availableCount);assert.ok(shown.filter(row=>row.availability==='listed').length<=194);all.push(...shown.map(row=>row.episodeNumber));}
+ assert.deepEqual(all,Array.from({length:1085},(_,i)=>i+1));
+ assert.equal(visibleEpisodes(catalog.episodes,{season:16}).find(row=>row.episodeNumber===590).availability,'missing');
+ assert.deepEqual(visibleEpisodes(catalog.episodes,{query:'1001',season:1}).map(row=>row.id),['one-piece-1001']);
+});
+test('season restoration migrates legacy ranges and gives valid episode links first priority',()=>{
+ assert.equal(initialSeason({requestedEpisode:1001,savedSeason:1,legacyRange:551}),20);
+ assert.equal(initialSeason({requestedRange:'551',savedSeason:20}),15);
+ assert.equal(initialSeason({savedSeason:16,legacyRange:951}),16);
+ assert.equal(initialSeason({legacyRange:601}),16);
+ assert.equal(initialSeason({requestedSeason:'4',savedSeason:20}),4);
+ for(const invalid of [null,0,-1,21,'bad',true,Infinity])assert.equal(initialSeason({savedSeason:invalid}),1);
+});
+test('explicit season changes clear stale episode links without changing playback or account progress',()=>{
+ const session={episodeNumber:1001},lease={destination:'cast'},progress={'one-piece-1001':{positionSeconds:600}},state={user:{uid:'alice'},session,lease,progress,season:20,query:'1001',requestedEpisode:1001,requestedSeason:'20',requestedRange:'951'};
+ const href=selectLibrarySeason(state,16,'https://pti-app-2ab59-one-piece.web.app/one-piece/?episode=1001&range=951&season=20#player');
+ assert.equal(href,'/one-piece/');assert.equal(state.season,16);assert.equal(state.query,'');assert.equal(state.requestedEpisode,null);assert.equal(state.requestedRange,null);assert.equal(state.requestedSeason,null);
+ assert.equal(state.session,session);assert.equal(state.lease,lease);assert.equal(state.progress,progress);assert.equal(state.user.uid,'alice');
+ assert.equal(initialSeason({savedSeason:state.season}),16,'reload uses the saved selection after stale URL intent is removed');
+ const app={accountGeneration:0,s:state};resetAccountContext(app,{uid:'bob'},{});assert.equal(app.s.season,1,'a replacement account does not inherit Alice’s choice');
+ app.s.season=initialSeason({savedSeason:4});assert.equal(app.s.season,4);
+ app.s.query='1000';assert.equal(visibleEpisodes([{episodeNumber:1000}],app.s).length,1);app.s.query='';assert.equal(app.s.season,4,'clearing global search restores the prior season');
+});
+test('season controls, availability notes and global results make the current context explicit',()=>{
+ const episodes=Array.from({length:1085},(_,i)=>({id:`one-piece-${String(i+1).padStart(4,'0')}`,episodeNumber:i+1,availability:i===589?'missing':'listed'}));
+ const state={booting:false,user:{uid:'viewer'},network:'online',profile:{},catalog:{episodes},progress:{},query:'',season:16,appIdentity:{dedicated:true}};
+ const html=page(state);assert.match(html,/id="episode-season"/);assert.equal((html.match(/<option /g)||[]).length,20);assert.match(html,/Punk Hazard/);assert.match(html,/49 available/);assert.match(html,/data-action="missing" data-number="590"/);assert.doesNotMatch(html,/Previous 50|Next 50|id="episode-range"/);
+ const wano=page({...state,season:20});assert.match(wano,/892–1088/);assert.match(wano,/Available here through episode 1085/);assert.match(wano,/data-action="next-season"[^>]*disabled/);
+ const search=rows({...state,season:1,query:'1000'});assert.match(search,/Across all seasons/);assert.match(search,/Season 20 · Wano Country/);assert.match(search,/EP 1000/);assert.match(search,/S20 E109/);
+ const eastBlue=page({...state,season:1});assert.match(eastBlue,/data-action="previous-season"[^>]*disabled/);assert.equal(getSeason(20).availableCount,194);
 });
 test('title search needs both an explicit spoiler preference and verified provenance',()=>{
  const data=[{episodeNumber:1,title:'Unverified title'},{episodeNumber:2,title:'Verified title',titleProvenance:'source'}];
@@ -205,7 +240,7 @@ test('UID changes destroy playback and replace private state while retaining cat
  const catalog={episodes:[]},defaults={audioLanguage:'ja',subtitleLanguage:'en',autoplay:false,showTitles:false};let destroyed=0;
  const app={accountGeneration:3,s:{user:{uid:'alice'},catalog,requestedEpisode:1001,profile:{audioLanguage:'en'},progress:{private:true},me:{uid:'alice'},lease:{private:true},session:{private:true},position:600,dialog:'tracks',error:['old']},player:{destroy(){destroyed++;}},delivery:{secret:true},loadedKey:'old',eventQueue:[{old:true}],flushing:Promise.resolve(),polling:true,sending:true,loading:true,pendingPosition:600,pendingAutoplay:true,targetId:'old',audioTarget:3,preferenceAttempt:'old',deepLinkHandled:true};
  const before=accountSnapshot(app);assert.equal(resetAccountContext(app,{uid:'bob'},defaults),true);
- assert.equal(destroyed,1);assert.equal(isCurrentAccount(app,before),false);assert.equal(app.s.catalog,catalog);assert.equal(app.s.requestedEpisode,1001);assert.equal(app.s.range,1001);
+ assert.equal(destroyed,1);assert.equal(isCurrentAccount(app,before),false);assert.equal(app.s.catalog,catalog);assert.equal(app.s.requestedEpisode,1001);assert.equal(app.s.season,20);
  assert.equal(app.s.user.uid,'bob');assert.deepEqual(app.s.profile,defaults);assert.notEqual(app.s.profile,defaults);
  for(const field of ['player','delivery','loadedKey','flushing','pendingPosition'])assert.equal(app[field],null);
  assert.deepEqual(app.eventQueue,[]);for(const field of ['polling','sending','loading','deepLinkHandled'])assert.equal(app[field],false);

@@ -1,0 +1,48 @@
+{
+  "recordedAt": "2026-10-19T13:19:14.0642831Z",
+  "measurementStartedAt": "2026-10-19T13:18:43.9621860Z",
+  "windowSeconds": 30.0027735,
+  "logicalProcessors": 12,
+  "release": "6ca1d4ab85b4f014bacd266cb47f5398ea54d87e",
+  "rows": [
+    {
+      "pid": 66684,
+      "role": "caddy",
+      "cpuPercent": 0.0043,
+      "memoryMiB": 35.5
+    },
+    {
+      "pid": 100672,
+      "role": "jellyfin",
+      "cpuPercent": 0.0174,
+      "memoryMiB": 215.9
+    },
+    {
+      "pid": 94904,
+      "role": "backend",
+      "cpuPercent": 0.0,
+      "memoryMiB": 59.8
+    },
+    {
+      "pid": 98324,
+      "role": "supervisor",
+      "cpuPercent": 0.0174,
+      "memoryMiB": 60.1
+    },
+    {
+      "pid": 94548,
+      "role": "python.exe",
+      "cpuPercent": 0.0,
+      "memoryMiB": 28.8
+    }
+  ],
+  "totalCompanionCpuPercent": 0.0391,
+  "totalCompanionMemoryMiB": 400.1,
+  "cacheManifestRewritten": false,
+  "cacheManifestBytes": 27834,
+  "profiles": 1,
+  "livePlaybackLeases": 0,
+  "oldPreviewStopped": true,
+  "noTvRequest": true,
+  "scope": "Real production process CPU deltas normalized across logical processors; memory is working set. No TV command, stream fetch, source preparation, device wake, or power-meter reading."
+}

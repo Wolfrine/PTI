@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-10-19T13:22:42.067Z",
+  "sourceRelease": "6ca1d4ab85b4f014bacd266cb47f5398ea54d87e",
+  "verifiedReleaseFiles": 136,
+  "companionTests": 245,
+  "frontendTests": 85,
+  "independentScopedTests": 40,
+  "completeBuildPassed": true,
+  "uiChanged": false,
+  "castChanged": false,
+  "measurements": {
+    "before": 3.0111,
+    "after": 0.0391,
+    "afterWake": 0,
+    "unit": "percent of all logical processors",
+    "oldPreview": 20.045,
+    "afterMemoryMiB": 400.1,
+    "afterWakeMemoryMiB": 432.5
+  },
+  "wakePassed": true,
+  "physicalPhoneOrTvTested": false,
+  "noPowerMeterReading": true
+}

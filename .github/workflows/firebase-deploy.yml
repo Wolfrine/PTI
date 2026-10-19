@@ -206,15 +206,22 @@ jobs:
           assert.equal(new URL(redirect.headers.get('location'),origin).pathname,'/one-piece/');
           const assets=await files('one-piece');
           for(const asset of assets)await verifyAsset(asset);
+          for(const asset of ['index.html','manifest.webmanifest','ngsw-worker.js'])await verifyAsset(asset);
           const login=await response('/login');
           assert.equal(await login.text(),await fs.readFile(path.join(root,'index.html'),'utf8'));
+          assert.doesNotMatch(await fs.readFile(path.join(root,'index.html'),'utf8'),/main-[\w-]+\.js|<app-root|rel="manifest"/);
           const manifest=JSON.parse(await (await response('/one-piece/manifest.webmanifest')).text());
           assert.equal(manifest.scope,'/');
           assert.equal(manifest.start_url,'/one-piece/');
           assert.equal(manifest.display,'standalone');
-          const legacy=await fetch(`https://pti-app-2ab59.web.app/one-piece/manifest.webmanifest?release=${process.env.GITHUB_SHA}`);
-          assert.equal((await legacy.json()).scope,'/one-piece/');
-          console.log(`Verified dedicated root redirect, login, independent manifest and ${assets.length} exact One Piece assets.`);
+          const legacy=await fetch(`https://pti-app-2ab59.web.app/one-piece/?release=${process.env.GITHUB_SHA}`);
+          const alias=await legacy.text();
+          assert.equal(alias,await fs.readFile('pti-app/dist/pti-app/browser/one-piece/index.html','utf8'));
+          assert.match(alias,/pti-app-2ab59-one-piece\.web\.app/);
+          assert.doesNotMatch(alias,/app\.js|rel="manifest"|<app-root/);
+          const topLevel=await fs.readdir(root);
+          assert.deepEqual(topLevel.sort(),['index.html','manifest.webmanifest','ngsw-worker.js','one-piece']);
+          console.log(`Verified one canonical app, redirect-only legacy entry, native-login return and ${assets.length} exact One Piece assets.`);
           NODE
 
       - name: Deploy optional Firebase Functions MCP

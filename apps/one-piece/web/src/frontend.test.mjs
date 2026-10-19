@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { visibleEpisodes, nextBoundary, rangeFor, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
 import { createClient, CONTROL_ORIGIN } from './client.mjs';
@@ -10,6 +11,20 @@ import { LocalPlayer, sanitizedPlaybackDiagnostic } from './player.mjs';
 import { disconnectBeforeSignOut } from './signout.mjs';
 import { observeReviewFrames } from './review-frames.mjs';
 import { needsGoogleConfirmation, confirmationError, connectionStatus } from './connection.mjs';
+import { signInFailure } from './signin.mjs';
+
+test('One Piece signs in on its own screen with bounded popup errors and no PTI login link',async()=>{
+ const html=page({booting:false,user:null,network:'checking',profile:{},appIdentity:{dedicated:true}});
+ assert.match(html,/data-action="sign-in"/);assert.match(html,/One Piece · Family viewing/);
+ assert.doesNotMatch(html,/href="[^\"]*\/login/);
+ const source=await readFile(new URL('./app.mjs',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/loginUrl\s*\(/,'episode actions must not retain the removed PTI login handoff');
+ assert.match(signInFailure('auth/popup-blocked'),/blocked the Google window/);
+ assert.match(signInFailure('auth/popup-closed-by-user'),/was closed/);
+ assert.match(signInFailure('auth/network-request-failed'),/connection/);
+ assert.match(signInFailure('auth/unauthorized-domain'),/not authorized/);
+ assert.doesNotMatch(signInFailure('secret-provider-payload'),/secret-provider-payload/);
+});
 
 test('dedicated app identity preserves episode links without copying origin storage or credentials',()=>{
  const link=new URL('/one-piece/watch?episode=1001&from=continue#player',PTI_ORIGIN);

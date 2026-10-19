@@ -25,19 +25,26 @@ export function navigateAfterLogin(raw: string | null | undefined, router: { nav
   else router.navigateByUrl(target.path);
 }
 
-export function loginPresentation(origin: string, raw: string | null | undefined): { onePiece: boolean; returnPath: string } {
+// Legacy PTI /login bookmarks go directly to the one native One Piece sign-in.
+// Carry viewing intent only; authentication remains on the destination origin.
+export function onePieceLoginAlias(raw: string | null | undefined): string | null {
   const target = safeLoginReturn(raw);
-  const dedicated = ['https://pti-app-2ab59-one-piece.web.app', 'https://pti-app-2ab59-one-piece.firebaseapp.com'].includes(origin);
-  return { onePiece: dedicated || target.fullPage, returnPath: dedicated && !target.fullPage ? '/one-piece/' : target.path };
+  if (!target.fullPage) return null;
+  const source = new URL(target.path, 'https://pti.invalid');
+  const destination = new URL('/one-piece/', 'https://pti-app-2ab59-one-piece.web.app');
+  const episode = source.searchParams.get('episode') ?? source.pathname.match(/\/watch\/(\d{1,4}|one-piece-\d{4})$/)?.[1];
+  if (/^(?:\d{1,4}|one-piece-\d{4})$/.test(episode ?? '')) {
+    const number = Number(episode!.replace('one-piece-', ''));
+    if (number >= 1 && number <= 1085) destination.searchParams.set('episode', episode!);
+  }
+  const from = source.searchParams.get('from'), range = source.searchParams.get('range');
+  if (/^(?:continue|library|watch|bookmark)$/.test(from ?? '')) destination.searchParams.set('from', from!);
+  if (/^\d{1,4}$/.test(range ?? '') && Number(range) >= 1 && Number(range) <= 1085) destination.searchParams.set('range', range!);
+  if (/^#(?:player|main-content|episodes|episode-\d{1,4})$/.test(source.hash)) destination.hash = source.hash;
+  return destination.href;
 }
 
-// Installed older Angular workers still treat a new sibling path as Angular navigation.
-// Its supported bypass boots the child worker once; that worker removes this marker.
+// Backward-compatible export for older AuthService return handlers.
 export function onePieceEntry(raw: string): string {
-  const target = safeLoginReturn(raw);
-  if (!target.fullPage) return '/home';
-  const url = new URL(target.path, 'https://pti.invalid');
-  if (url.pathname === '/one-piece') url.pathname += '/';
-  url.searchParams.set('ngsw-bypass', 'true');
-  return url.pathname + url.search + url.hash;
+  return onePieceLoginAlias(raw) ?? '/home';
 }

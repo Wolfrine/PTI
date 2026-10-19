@@ -12,9 +12,55 @@ export function publicCatalog(source) {
   return { schemaVersion: source.schemaVersion, summary: source.summary, episodes: source.episodes.map(clean), endBoundary: clean(source.endBoundary) };
 }
 
+// A redirect may carry viewing intent, never credentials or arbitrary URLs.
+export function safeAppReturnPath(raw) {
+  if(typeof raw!=='string'||raw.length>2048||!raw.startsWith('/')||raw.startsWith('//')||/[\\\u0000-\u0020\u007f]/.test(raw))return '/one-piece/';
+  let decoded;
+  try{decoded=decodeURIComponent(raw);}catch{return '/one-piece/';}
+  if(/%[0-9a-f]{2}|[\\\u0000-\u001f\u007f]/i.test(decoded))return '/one-piece/';
+  const pathname=raw.split(/[?#]/,1)[0];
+  if(!/^\/one-piece(?:\/(?:index\.html|watch(?:\/(?:\d{1,4}|one-piece-\d{4}))?)?)?$/.test(pathname))return '/one-piece/';
+  const input=new URL(raw,'https://one-piece.invalid'),target=new URL('/one-piece/','https://one-piece.invalid');
+  const episode=input.searchParams.get('episode')??pathname.match(/\/watch\/(\d{1,4}|one-piece-\d{4})$/)?.[1];
+  if(/^(?:\d{1,4}|one-piece-\d{4})$/.test(episode??'')){
+    const number=Number(episode.replace('one-piece-',''));
+    if(number>=1&&number<=1085)target.searchParams.set('episode',episode);
+  }
+  const from=input.searchParams.get('from'),range=input.searchParams.get('range');
+  if(/^(?:continue|library|watch|bookmark)$/.test(from??''))target.searchParams.set('from',from);
+  if(/^\d{1,4}$/.test(range??'')&&Number(range)>=1&&Number(range)<=1085)target.searchParams.set('range',range);
+  if(/^#(?:player|main-content|episodes|episode-\d{1,4})$/.test(input.hash))target.hash=input.hash;
+  return target.pathname+target.search+target.hash;
+}
+
+export function canonicalAppUrl(raw) {
+  let input;
+  try{input=new URL(raw);}catch{return 'https://pti-app-2ab59-one-piece.web.app/one-piece/';}
+  const requested=input.pathname==='/login'?input.searchParams.get('redirect'):input.pathname+input.search+input.hash;
+  return 'https://pti-app-2ab59-one-piece.web.app'+safeAppReturnPath(requested);
+}
+
+export function redirectDocument() {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex"><title>Opening One Piece</title></head><body><p>Opening One Piece…</p><p><a id="open-app" href="https://pti-app-2ab59-one-piece.web.app/one-piece/">Open One Piece</a></p><script>${safeAppReturnPath.toString()}\n${canonicalAppUrl.toString()}\nconst destination=canonicalAppUrl(location.href);document.getElementById('open-app').href=destination;location.replace(destination);</script></body></html>`;
+}
+
+export function legacyRedirectWorker() {
+  // Claim without navigating clients: an already-playing episode keeps running.
+  return `const REDIRECT=${JSON.stringify(redirectDocument())};
+self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('one-piece-shell-'))await caches.delete(key);await self.clients.claim();})()));
+self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method==='GET'&&event.request.mode==='navigate'&&url.origin===self.location.origin&&/^\\/one-piece(?:\\/|$)/.test(url.pathname))event.respondWith(Promise.resolve(new Response(REDIRECT,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})));});\n`;
+}
+
+export function angularRetirementWorker() {
+  // This file exists only on the dedicated origin. Never clear identity/progress
+  // storage or navigate clients, and leave the /one-piece/ registration alone.
+  return `self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('ngsw:'))await caches.delete(key);await self.clients.claim();await self.registration.unregister();})()));\n`;
+}
+
 export async function buildDedicatedArtifact(destination){
-  // This is a sibling of the complete PTI artifact, never a new independent
-  // application build. Authentication remains the same Angular /login route.
+  // One canonical app: this target contains no Angular login, PTI hub or sibling assets.
   const complete=path.resolve(destination),production=path.resolve(repoRoot,'pti-app/dist/pti-app/browser');
   // Angular nests its browser artifact one level below dist/pti-app. Firebase's
   // dedicated target is dist/one-piece-app. Scratch builds stay beside their
@@ -24,7 +70,8 @@ export async function buildDedicatedArtifact(destination){
   if(dedicated===complete||path.basename(dedicated)!=='one-piece-app'||path.dirname(dedicated)!==parent||dedicated.startsWith(complete+path.sep))throw new Error('Invalid dedicated Hosting artifact path');
   await stat(path.join(complete,'index.html'));
   await rm(dedicated,{recursive:true,force:true});
-  await cp(complete,dedicated,{recursive:true});
+  await mkdir(dedicated,{recursive:true});
+  await cp(path.join(complete,'one-piece'),path.join(dedicated,'one-piece'),{recursive:true});
   const manifestPath=path.join(dedicated,'one-piece/manifest.webmanifest');
   let manifest;
   try{manifest=JSON.parse(await readFile(manifestPath,'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
@@ -32,25 +79,16 @@ export async function buildDedicatedArtifact(destination){
     manifest.scope='/';
     const manifestBytes=JSON.stringify(manifest,null,2)+'\n';
     await writeFile(manifestPath,manifestBytes);
-    // A login navigation must not advertise/install the PTI identity on this
-    // dedicated origin. Retain Angular code and only change its document metadata.
     await writeFile(path.join(dedicated,'manifest.webmanifest'),manifestBytes);
-    const rootIndex=path.join(dedicated,'index.html');
-    let html=await readFile(rootIndex,'utf8');
-    html=html.replace(/<title>[^<]*<\/title>/i,'<title>One Piece · Sign in</title>')
-      .replace(/(<link\b[^>]*\brel=["']manifest["'][^>]*\bhref=["'])[^"']+(["'])/i,'$1/one-piece/manifest.webmanifest$2')
-      .replace(/(<link\b[^>]*\brel=["']icon["'][^>]*\bhref=["'])[^"']+(["'])/i,'$1/one-piece/icons/icon.svg$2')
-      .replace(/(<link\b[^>]*\brel=["']icon["'][^>]*\btype=["'])image\/x-icon(["'])/i,'$1image/svg+xml$2');
-    await writeFile(rootIndex,html);
-    const ngswPath=path.join(dedicated,'ngsw.json');
-    try{
-      const ngsw=JSON.parse(await readFile(ngswPath,'utf8'));
-      for(const [url,bytes] of [['/index.html',html],['/manifest.webmanifest',manifestBytes]]){
-        if(ngsw.hashTable?.[url])ngsw.hashTable[url]=createHash('sha1').update(bytes).digest('hex');
-      }
-      await writeFile(ngswPath,JSON.stringify(ngsw,null,2));
-    }catch(error){if(error.code!=='ENOENT')throw error;}
   }
+  await writeFile(path.join(dedicated,'index.html'),redirectDocument());
+  await writeFile(path.join(dedicated,'ngsw-worker.js'),angularRetirementWorker());
+  const ownIndex=path.join(dedicated,'one-piece/index.html');
+  try{
+    const html=await readFile(ownIndex,'utf8');
+    const retireRoot="<script>if('serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(list=>Promise.all(list.filter(r=>r.scope===location.origin+'/').map(r=>r.update().catch(()=>{})))).catch(()=>{});</script>";
+    await writeFile(ownIndex,html.replace('</head>',retireRoot+'</head>'));
+  }catch(error){if(error.code!=='ENOENT')throw error;}
   return dedicated;
 }
 
@@ -61,6 +99,8 @@ export async function buildOnePiece({ destination = path.join(repoRoot, 'pti-app
   const entry = path.join(webRoot, 'src/main.mjs');
   await stat(entry);
   const output = path.join(destination, 'one-piece');
+  if(path.dirname(path.resolve(output))!==path.resolve(destination)||path.basename(output)!=='one-piece')throw new Error('Invalid One Piece build path');
+  await rm(output,{recursive:true,force:true});
   await mkdir(output, { recursive: true });
   for (const item of await readdir(webRoot, { withFileTypes: true })) {
     if (['src', 'index.html', 'node_modules'].includes(item.name) || item.name.startsWith('.')) continue;
@@ -92,6 +132,11 @@ export async function buildOnePiece({ destination = path.join(repoRoot, 'pti-app
     await writeFile(workerPath,worker.replaceAll('__BUILD_ID__',buildId));
   } catch(error){if(error.code!=='ENOENT')throw error;}
   const dedicatedArtifact=await buildDedicatedArtifact(destination);
+  // Old links remain usable, but this origin no longer hosts a second app.
+  // Compatibility JS/CSS/assets stay available for already-open playback tabs.
+  await writeFile(path.join(output,'index.html'),redirectDocument());
+  await writeFile(path.join(output,'sw.js'),legacyRedirectWorker());
+  await writeFile(path.join(output,'manifest.webmanifest'),'{}\n');
   return { output, dedicatedArtifact, episodeCount: catalog.summary.listedEpisodes, production: true, completePtiArtifact: destination };
 }
 

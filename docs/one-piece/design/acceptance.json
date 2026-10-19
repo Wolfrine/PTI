@@ -1,12 +1,13 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "1491a1a26402c904eb054eb5a57d050d11a1330fa795d25aa4a98075888e5d62",
-  "independent_candidate": "502ecc8734cee30e299da01c2b3a8ba5e467cb6f403fabd3e782afe3aa705ef6",
-  "checkedAt": "2026-10-19T03:45:02.312Z",
-  "acceptance_scope": "Mechanical install, cached launcher and sign-in identity repair; existing themes and media behavior retained. This does not establish physical-phone install or new-origin playback acceptance.",
+  "candidate": "6e712ecc0403be7790c7d52a54421ac55f3b5de46fc4620b6cde3c1a53362279",
+  "independent_candidate": "e996c6e1086fd2fa8e514693ac330805c1879f2e43ea9f4bd1c9c65cc42afe26",
+  "checkedAt": "2026-10-19T04:12:55.468Z",
+  "acceptance_scope": "Mechanical single-app correction: native Google popup sign-in, redirect-only legacy app and login bookmarks, removal of cloned PTI Angular artifact. Existing themes and media behavior retained.",
   "owner_verdict": {
-    "status": "not-reviewed"
+    "status": "not-reviewed",
+    "physicalAndroidInstallation": "Owner confirmed app drawer entry and separate launch before this correction; identity is retained."
   },
   "roles": {
     "implementation": "/root",
@@ -14,74 +15,54 @@
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "../INSTALL_REPAIR.md",
+  "review": "../SINGLE_APP.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Personally inspected actual Angular login/update banner at1440x1000 and390x844; no horizontal overflow. Install banner and Android help readable in labelled fixtures."
+    "reason": "Personally inspected actual production native sign-in at1440x1000 and390x844; no horizontal overflow. Google chooser opens; cancellation safely restores the screen. Dedicated artifact excludes Angular login and PTI hub."
   },
   "evidence": [
     {
-      "path": "evidence/install-repair/one-piece-login-desktop.jpg",
-      "sha256": "3a79dbdeacd3a6e6bdccd2621f6a14674dc3584d1e9e11d41558fdd66a5a02a1",
+      "path": "evidence/single-app/one-piece-native-signin-desktop.jpg",
+      "sha256": "4f17264e400d34112329511175716176cad759a2acf91b11e850a43864096467",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Actual built Angular login and update banner; no mock account",
+      "kind": "Actual production bundle served locally; signed out; real Firebase configuration; no mock account",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/install-repair/one-piece-login-mobile.jpg",
-      "sha256": "e2d23478fff50c9de4febe02be07278c5012e9e65f911e441bb8dd4acd010d8b",
+      "path": "evidence/single-app/one-piece-native-signin-mobile.jpg",
+      "sha256": "788d4170e3e7f9cc5b888c1dfbcaa736060914cbad8a28a3c9c5c247e39f4eda",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Actual built Angular login and update banner; no mock account",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/install-repair/one-piece-install-banner-desktop.jpg",
-      "sha256": "8f6c274c58b228f29a37d45980fc7f414bb435451857ead7056150df4c351f34",
-      "viewport": {
-        "width": 1440,
-        "height": 1000
-      },
-      "kind": "Labelled synthetic account/progress fixture; real catalogue/artwork",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/install-repair/one-piece-install-help-mobile.jpg",
-      "sha256": "c88fa3b4f90d186da8481f441a58d2940d2721ef4aeed0d0d834a212f3d3e596",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "kind": "Labelled synthetic fixture installation help",
+      "kind": "Actual production bundle served locally; signed out; real Firebase configuration; no mock account",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 68,
-    "frontendChecksPassed": 68,
-    "angularUpdateChecks": 2,
-    "angularUpdateChecksPassed": 2,
+    "frontendChecks": 72,
+    "frontendChecksPassed": 72,
     "independentFocusedChecks": 55,
     "independentFocusedChecksPassed": 55,
     "completePtiAndDedicatedBuild": "passed with existing warnings",
-    "syntheticCatalogueAccountOnly": true,
+    "realGoogleChooser": "opened; safe cancellation verified",
+    "successfulFreshGoogleAuthentication": "not verified",
+    "mockAccount": false,
     "mediaEngineUnchanged": true,
     "castTransportUnchanged": true
   },
   "limitations": [
-    "Already-loaded stale PTI clients cannot receive an update banner retroactively; use the documented fresh /home?ngsw-bypass=true link once.",
-    "No physical Android app-drawer install or new-origin browser playback acceptance. Home PC connection remains a separately unconfirmed gate.",
+    "Successful fresh Google authentication was not completed through browser automation; chooser opening is not successful authentication proof.",
+    "The previously unconfirmed browser-to-PC connection is separate from this sign-in/app-identity correction.",
     "No TV test or companion restart performed. Existing Sony end-of-episode issue remains."
   ],
   "historical_record": {
-    "commit": "ba646cce80e78fd19477555a78888917bc3acb1c",
-    "candidate": "e2d547d7718daf6de0c4abe18dad4e102ff4fab7e7ecfd23eec906f82ba0b539",
-    "independent_candidate": "30e76dddcaed237be1c93b1a5d169c0106034d9a3c01f0f956b72a805e69fb3b",
+    "commit": "9d941e23dea65f6f8c92c187f66455eb96da1684",
+    "candidate": "1491a1a26402c904eb054eb5a57d050d11a1330fa795d25aa4a98075888e5d62",
+    "independent_candidate": "502ecc8734cee30e299da01c2b3a8ba5e467cb6f403fabd3e782afe3aa705ef6",
     "path": "docs/one-piece/design/acceptance.json",
     "policy": "Prior design/playback evidence retains its original scope."
   }

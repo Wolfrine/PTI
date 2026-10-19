@@ -248,6 +248,43 @@ test('failed receiver load restores local delivery without authorizing the old r
  assert.equal((await request(`/api/sessions/${id}/delivery`,{method:'POST',input:{}})).status,200);
 });
 
+test('true Cast ownership loss retires revoked delivery URLs and the next delegation is immediately usable',async t=>{
+ const {api,request,progress,tickets}=await fixture(t);
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),id=created.lease.sessionId;
+ const lease=await progress.setDestination('viewer',id,'cast'),context={uid:'viewer',sessionId:id,generation:lease.generation,authorityEpoch:lease.authorityEpoch,receiverId:'fixture-tv'};
+ const first=await api.delegation({uid:'viewer'},id,'cast');
+ assert.equal((await fetch(first.mediaUrl)).status,200);assert.equal((await fetch(first.subtitleUrl)).status,200);
+ api.queueRecords.set(id,{state:'queued'});
+ // This is the same ticket revocation performed by CastBridge.poll after its
+ // fresh lease check confirms actual receiver ownership loss.
+ tickets.revokeSession(id);
+ await api.receiverState(context,{receiverId:'fixture-tv',owned:false,state:'DISCONNECTED',error:'cast-ownership-lost'});
+ assert.equal((await fetch(first.mediaUrl)).status,404);assert.equal(api.queueRecords.has(id),false);assert.equal(api.deliveries.size,0);
+ const next=await api.delegation({uid:'viewer'},id,'cast');
+ assert.notEqual(next.mediaUrl,first.mediaUrl);assert.notEqual(next.subtitleUrl,first.subtitleUrl);
+ assert.equal((await fetch(next.mediaUrl)).status,200);assert.equal((await fetch(next.subtitleUrl)).status,200);
+ assert.deepEqual(await api.delegation({uid:'viewer'},id,'cast'),next);
+});
+
+test('stale or different-profile receiver notifications preserve current Cast and newer local delivery',async t=>{
+ const {api,request,progress}=await fixture(t);
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),id=created.lease.sessionId;
+ const lease=await progress.setDestination('viewer',id,'cast'),context={uid:'viewer',sessionId:id,generation:lease.generation,authorityEpoch:lease.authorityEpoch,receiverId:'fixture-tv'};
+ const lost={receiverId:'fixture-tv',owned:false,state:'DISCONNECTED',error:'cast-ownership-lost'},currentState={owned:true,state:'PLAYING'};
+ const castDelivery=await api.delegation({uid:'viewer'},id,'cast');api.castStates.set(id,currentState);
+ for(const patch of [{uid:'sister'},{sessionId:'different-session'},{generation:lease.generation+1},{authorityEpoch:lease.authorityEpoch+1}]){
+  await api.receiverState({...context,...patch},lost);
+  assert.equal((await fetch(castDelivery.mediaUrl)).status,200);assert.equal(api.castStates.get(id),currentState);
+ }
+ await progress.setDestination('viewer',id,'local');
+ const localDelivery=await api.delegation({uid:'viewer'},id,'local'),localState={owned:false,state:'LOCAL'};
+ api.castStates.set(id,localState);api.queueRecords.set(id,{state:'current-marker'});
+ await api.receiverState(context,lost);
+ assert.equal(api.castStates.get(id),localState);assert.equal(api.queueRecords.get(id).state,'current-marker');
+ assert.equal((await fetch(localDelivery.mediaUrl)).status,200);assert.equal((await fetch(localDelivery.subtitleUrl)).status,200);
+ assert.deepEqual(await api.delegation({uid:'viewer'},id,'local'),localDelivery);
+});
+
 test('routine controls reuse only bounded positive membership, verify each identity and force admission checks',async t=>{
  const {api,request}=await fixture(t);let now=100000,membershipReads=0,identityChecks=0,blocked=false;
  const verify=api.identity.verify;api.identity.verify=async token=>{identityChecks++;return verify(token);};api.clock=()=>now;

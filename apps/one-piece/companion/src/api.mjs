@@ -174,8 +174,15 @@ export class CompanionApi {
   return record;
  }
  async receiverState(context,state){
+  let lease;try{lease=await this.lease(context.uid,context.sessionId);}catch{return;}
+  // A delayed poll belongs only to its original Cast authority. It must neither
+  // overwrite state nor invalidate delivery minted after a handback/takeover.
+  if(lease.destination!=='cast'||lease.generation!==context.generation||lease.authorityEpoch!==context.authorityEpoch)return;
   this.castStates.set(context.sessionId,state);
-  if(!state.owned||!state.episodeId){this.queueRecords.delete(context.sessionId);return;}
+  // CastBridge has revoked the lost receiver's tickets. Retire the matching
+  // cached URLs too so the next LOAD obtains fresh capabilities immediately.
+  if(!state.owned){this.revokeSession(context.sessionId);return;}
+  if(!state.episodeId){this.queueRecords.delete(context.sessionId);return;}
   await this.media.reportProgress(context.sessionId,{episodeNumber:Number(state.episodeId.slice(-4)),positionSeconds:state.positionSeconds,isPaused:state.state==='PAUSED',playbackRate:1}).catch(()=>{});
   void this.cloud()?.sync(context.uid,{force:state.state==='IDLE'});
   if(this.autoplay.get(context.sessionId)&&state.owned&&state.state!=='IDLE')void this.ensureQueue(context).catch(()=>{});

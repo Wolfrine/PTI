@@ -83,14 +83,19 @@ class Worker:
                 result = original_platform_receive(message, data)
                 if worker.devices.get(receiver_id) is cast and isinstance(data, dict) and data.get("type") == "RECEIVER_STATUS":
                     raw = {"version": worker.platform_receipts[receiver_id]["version"] + 1,
-                           "receivedAt": time.monotonic(), "uncertain": True}
+                           "receivedAt": time.monotonic(), "uncertain": True,
+                           "requestId": data.get("requestId")}
                     status = data.get("status")
+                    raw["applicationsAbsent"] = isinstance(status, dict) and "applications" not in status
                     applications = status.get("applications") if isinstance(status, dict) else None
-                    if isinstance(applications, list) and len(applications) == 1 and isinstance(applications[0], dict):
+                    if isinstance(applications, list) and not applications:
+                        raw.update({"uncertain": False, "applicationsEmpty": True})
+                    elif isinstance(applications, list) and len(applications) == 1 and isinstance(applications[0], dict):
                         app = applications[0]
                         namespaces = app.get("namespaces")
                         raw.update({"appId": app.get("appId"), "receiverSession": app.get("sessionId"),
-                                    "transportId": app.get("transportId"), "uncertain": not isinstance(namespaces, list),
+                                    "transportId": app.get("transportId"), "uncertain": not isinstance(namespaces, list)
+                                    or any(not isinstance(app.get(key), str) or not app[key] for key in ("appId", "sessionId", "transportId")),
                                     "mediaNamespace": isinstance(namespaces, list) and any(isinstance(item, dict) and item.get("name") == "urn:x-cast:com.google.cast.media" for item in namespaces)})
                     worker.platform_receipts[receiver_id] = raw
                 return result
@@ -102,6 +107,7 @@ class Worker:
                 if worker.devices.get(receiver_id) is cast and isinstance(data, dict) and data.get("type") == "MEDIA_STATUS":
                     rows = data.get("status")
                     raw = {"version": worker.raw_media[receiver_id]["version"] + 1, "receivedAt": time.monotonic(),
+                           "receiptVersion": worker.media_receipts[receiver_id]["version"] + 1,
                            "appId": cast.status.app_id if cast.status else None,
                            "receiverSession": cast.status.session_id if cast.status else None, "uncertain": True}
                     if isinstance(rows, list) and len(rows) <= 1 and (not rows or isinstance(rows[0], dict)):
@@ -115,6 +121,7 @@ class Worker:
                                                or ("items" in item and not isinstance(item["items"], list))
                                                or ("queueData" in item and not isinstance(item["queueData"], dict)),
                                     "contentDigest": digest(content) if isinstance(content, str) and content else None,
+                                    "explicitEmpty": not rows,
                                     "mediaSessionId": item.get("mediaSessionId"), "playerState": item.get("playerState", "UNKNOWN"),
                                     "queueOrLoading": bool(extended or item.get("items") or item.get("queueData") or metadata
                                                            or any(item.get(key) is not None for key in ("currentItemId", "loadingItemId", "preloadedItemId")))})
@@ -177,12 +184,51 @@ class Worker:
                 and platform.get("transportId") is not None
                 and platform["transportId"] == getattr(status, "transport_id", None) == getattr(socket, "destination_id", None))
 
+    def recent_platform(self, cast) -> dict | None:
+        """Partial receiver updates and socket resets cannot establish app loss."""
+        receiver_id = next((key for key, value in self.devices.items() if value is cast), None)
+        raw = self.platform_receipts.get(receiver_id, {})
+        socket, status = cast.socket_client, cast.status
+        if (not getattr(socket, "is_connected", False) or getattr(socket, "is_stopped", True)
+                or not 0 <= time.monotonic() - raw.get("receivedAt", -10) <= 1 or raw.get("uncertain", True)):
+            return None
+        if raw.get("applicationsEmpty"):
+            return raw if status and status.app_id is None else None
+        if (not status or raw.get("appId") != status.app_id or raw.get("receiverSession") != status.session_id
+                or raw.get("transportId") != getattr(status, "transport_id", None)):
+            return None
+        return raw
+
+    def definite_loss(self, cast, binding: dict | None) -> bool:
+        """Only explicit fresh platform/media messages can retire bound playback."""
+        platform = self.recent_platform(cast)
+        if not platform:
+            return False
+        if platform.get("applicationsEmpty") or platform.get("appId") != self.receiver_app:
+            return True
+        if not binding or not binding.get("receiverSession"):
+            return False
+        if platform.get("receiverSession") != binding["receiverSession"]:
+            return True
+        receiver_id = next((key for key, value in self.devices.items() if value is cast), None)
+        raw, receipt = self.raw_media.get(receiver_id, {}), self.media_receipts.get(receiver_id, {})
+        if (not platform.get("mediaNamespace")
+                or not 0 <= time.monotonic() - raw.get("receivedAt", -10) <= 1 or raw.get("uncertain", True)
+                or raw.get("appId") != platform.get("appId") or raw.get("receiverSession") != platform.get("receiverSession")
+                or receipt.get("rawVersion") != raw.get("version") or receipt.get("version") != raw.get("receiptVersion")):
+            return False
+        # Empty raw MEDIA_STATUS is explicit; a local channel-disconnect callback
+        # has no new raw version. Missing content in a partial row proves nothing.
+        return raw.get("explicitEmpty") is True or bool(raw.get("contentDigest")
+                and raw["contentDigest"] not in binding["media"]
+                and raw.get("mediaSessionId") is not None and raw.get("playerState") in ("PLAYING", "PAUSED", "BUFFERING", "IDLE"))
+
     def empty_default(self, cast) -> bool:
         """Two new same-session raw status observations prove an idle Default Receiver."""
         if not cast.status:
             return False
         if cast.status.app_id in (None, self.backdrop):
-            return True
+            return self.recent_platform(cast) is not None
         if cast.status.app_id != self.receiver_app:
             return False
         observations = []
@@ -317,9 +363,24 @@ class Worker:
         cast.media_controller.send_message_nocheck({"type": "GET_STATUS"})
 
     def refresh(self, cast, media: bool = True, admission: dict | None = None) -> None:
+        receiver_id = next((key for key, value in self.devices.items() if value is cast), None)
+        platform_version = self.platform_receipts.get(receiver_id, {}).get("version", 0)
         response = self.wait_response(3, "receiver status")
         cast.socket_client.receiver_controller.update_status(callback_function=response.callback)
         response.wait_response()
+        raw = self.platform_receipts.get(receiver_id, {})
+        reply = getattr(response, "response", None)
+        # Sony's idle GET_STATUS response can omit applications altogether. Only
+        # the callback correlated to this request may establish that emptiness;
+        # an unsolicited volume-only notification has no such negative proof.
+        if (getattr(response, "msg_sent", False) is True and isinstance(reply, dict)
+                and reply.get("type") == "RECEIVER_STATUS" and isinstance(reply.get("status"), dict)
+                and "applications" not in reply["status"] and type(reply.get("requestId")) is int
+                and raw.get("requestId") == reply["requestId"] and raw.get("applicationsAbsent")
+                and raw.get("version", 0) > platform_version):
+            raw.update({"uncertain": False, "applicationsEmpty": True})
+        platform = self.recent_platform(cast)
+        require(platform is not None and platform.get("version", 0) > platform_version, "cast-status-not-fresh")
         # Capture only the receiver session launched by our admitted LOAD. Content
         # digest checks still gate every ownership decision and any later STOP.
         if admission is not None and cast.status and cast.status.app_id == self.receiver_app:
@@ -344,7 +405,7 @@ class Worker:
                 # sent. Retry this read-only query at most four times inside the
                 # same window, still requiring a newly received raw response.
                 if time.monotonic() >= next_query:
-                    require(bool(cast.status and cast.status.app_id == self.receiver_app), "cast-ownership-lost")
+                    require(bool(cast.status and cast.status.app_id == self.receiver_app), "cast-status-not-fresh")
                     self.query_media(cast)
                     next_query += 0.75
                 time.sleep(0.025)
@@ -372,6 +433,9 @@ class Worker:
         require(binding is not None and binding["context"] == self.context(data.get("context")), "cast-ownership-lost")
         if not self.recent_admitted(cast, binding):
             self.refresh(cast)
+        if not self.recent_admitted(cast, binding):
+            require(not self.definite_loss(cast, binding), "cast-ownership-lost")
+            raise CastError("cast-status-not-fresh")
         require(self.owned(cast, binding, permit_empty=permit_empty), "cast-ownership-lost")
         # MediaStatus merges partial updates into cached fields. A fresh callback
         # alone cannot authorize a command (particularly STOP) against that cache.
@@ -383,8 +447,9 @@ class Worker:
         until = time.monotonic() + timeout
         while time.monotonic() < until:
             self.refresh(cast)
-            if self.owned(cast, binding):
-                require(self.recent_admitted(cast, binding), "cast-status-not-fresh")
+            if not self.recent_admitted(cast, binding):
+                require(not self.definite_loss(cast, binding), "cast-ownership-lost")
+                raise CastError("cast-status-not-fresh")
             state = self.state(receiver_id, cast, binding)
             if predicate(state):
                 return state
@@ -457,9 +522,10 @@ class Worker:
             binding = self.bindings.get(receiver_id)
             require(not binding or binding["context"] == self.context(data.get("context")), "cast-ownership-lost")
             self.refresh(cast)
-            if self.owned(cast, binding):
-                require(self.recent_admitted(cast, binding), "cast-status-not-fresh")
-            return self.state(receiver_id, cast, binding)
+            if self.recent_admitted(cast, binding):
+                return self.state(receiver_id, cast, binding)
+            require(self.definite_loss(cast, binding), "cast-status-not-fresh")
+            return self.state(receiver_id, cast, None)
         receiver_id, cast, binding = self.admitted(data, permit_empty=command == "disconnect")
         controller = cast.media_controller
         if command == "queue":

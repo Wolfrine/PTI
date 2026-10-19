@@ -1,0 +1,64 @@
+{
+  "startedAt": "2026-10-19T09:09:35.499Z",
+  "runtime": "5bec604b2419543daab6234f24d58faff63a8176",
+  "mode": "Real existing owner identity and cached episode1 through managed production API; no mock account or new source fetch requested",
+  "samples": [
+    {
+      "elapsedMs": 30034,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 120,
+      "observationAgeMs": 193,
+      "discoveryMs": 146
+    },
+    {
+      "elapsedMs": 60214,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 120,
+      "observationAgeMs": 325,
+      "discoveryMs": 128
+    },
+    {
+      "elapsedMs": 90383,
+      "state": "PAUSED",
+      "owned": true,
+      "position": 1083.051083,
+      "subtitleEnabled": true,
+      "leaseRemainingSeconds": 120,
+      "observationAgeMs": 352,
+      "discoveryMs": 252
+    },
+    {
+      "elapsedMs": 120670,
+      "state": "DISCONNECTED",
+      "owned": false,
+      "subtitleEnabled": false,
+      "leaseRemainingSeconds": 99,
+      "observationAgeMs": 20606
+    }
+  ],
+  "passed": false,
+  "savedPosition": 1083.051083,
+  "selectedTracks": {
+    "audioIndex": 1,
+    "subtitleIndex": 2,
+    "audioLanguage": "jpn",
+    "subtitleLanguage": "eng"
+  },
+  "load": {
+    "ms": 5621,
+    "position": 1083.051083,
+    "subtitleEnabled": true
+  },
+  "pause": {
+    "ms": 264,
+    "position": 1083.051083
+  },
+  "error": "paused-cast-not-retained",
+  "completedAt": "2026-10-19T09:11:45.744Z"
+}

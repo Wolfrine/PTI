@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { isIP } from 'node:net';
 import { AccessError } from './auth.mjs';
 import { decodeResource } from './tickets.mjs';
+import { emitDiagnostic } from './diagnostics.mjs';
 
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 const EPISODE = /^one-piece-\d{4}$/;
@@ -30,8 +31,8 @@ export function parseCastMediaUrl(value, { mediaOrigins, allowHttpMedia = false,
 
 /** Private stdin/stdout IPC: never logs child output, payloads, or raw errors. */
 export class CastPythonTransport {
-  constructor({ pythonExecutable = 'python', toolsPath = 'H:/PTI-OnePiece/pilot/tools/python', mediaOrigins, allowHttpMedia = false, spawnImpl = spawn, timeoutMs = 35_000 } = {}) {
-    Object.assign(this,{pythonExecutable,toolsPath,mediaOrigins,allowHttpMedia,spawnImpl,timeoutMs});
+  constructor({ pythonExecutable = 'python', toolsPath = 'H:/PTI-OnePiece/pilot/tools/python', mediaOrigins, allowHttpMedia = false, spawnImpl = spawn, timeoutMs = 35_000,onDiagnostic=()=>{} } = {}) {
+    Object.assign(this,{pythonExecutable,toolsPath,mediaOrigins,allowHttpMedia,spawnImpl,timeoutMs,onDiagnostic});
     this.child = null; this.pending = new Map(); this.buffer = ''; this.stopping = false;
   }
   start() {
@@ -42,7 +43,7 @@ export class CastPythonTransport {
       windowsHide:true,stdio:['pipe','pipe','pipe'],env:{...inherited,PYTHONUTF8:'1',PYTHONDONTWRITEBYTECODE:'1',ONE_PIECE_CAST_CONFIG:JSON.stringify({mediaOrigins:this.mediaOrigins,allowHttpMedia:this.allowHttpMedia})}
     });
     this.child = child; this.buffer = '';
-    const lost = () => { if(this.child!==child)return;this.child=null;for(const {reject,timer}of this.pending.values()){clearTimeout(timer);reject(new AccessError('cast-unavailable',503));}this.pending.clear(); };
+    const lost = () => { if(this.child!==child)return;if(!this.stopping)emitDiagnostic(this.onDiagnostic,{type:'cast-worker-exit',code:'cast-unavailable'});this.child=null;for(const {reject,timer}of this.pending.values()){clearTimeout(timer);reject(new AccessError('cast-unavailable',503));}this.pending.clear(); };
     child.on('error',lost);child.on('exit',lost);child.stdin.on('error',lost);
     child.stderr.on('data',()=>{}); // Library diagnostics may contain URLs: discard.
     child.stdout.setEncoding('utf8');child.stdout.on('data',chunk=>{
@@ -63,7 +64,7 @@ export class CastPythonTransport {
   request(command,payload={}) {
     this.start();const child=this.child,id=randomUUID();
     return new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>{this.pending.delete(id);reject(new AccessError('cast-timeout',504));child.kill();},this.timeoutMs);timer.unref?.();
+      const timer=setTimeout(()=>{emitDiagnostic(this.onDiagnostic,{type:'cast-worker-timeout',sessionId:payload.context?.sessionId,code:'cast-timeout'});this.pending.delete(id);reject(new AccessError('cast-timeout',504));child.kill();},this.timeoutMs);timer.unref?.();
       this.pending.set(id,{resolve,reject,timer});
       const line=JSON.stringify({id,command,...payload})+'\n';
       if(Buffer.byteLength(line)>131072){clearTimeout(timer);this.pending.delete(id);reject(new AccessError('cast-message-limit',400));return;}
@@ -75,11 +76,11 @@ export class CastPythonTransport {
 
 /** Receiver state is authoritative. Call only behind authenticated HTTPS routes. */
 export class CastBridge {
-  constructor({progressStore,tickets,mediaOrigins,allowHttpMedia=false,transport,pythonExecutable,toolsPath,pollMs=2000,clock=()=>Date.now(),onState=()=>{},onEpisodeChanged=()=>{},onDisplaced=()=>{}}={}) {
+  constructor({progressStore,tickets,mediaOrigins,allowHttpMedia=false,transport,pythonExecutable,toolsPath,pollMs=2000,clock=()=>Date.now(),onState=()=>{},onEpisodeChanged=()=>{},onDisplaced=()=>{},onDiagnostic=()=>{}}={}) {
     if(!progressStore?.snapshot||!progressStore?.record||!tickets?.authorize||!Array.isArray(mediaOrigins)||!mediaOrigins.length)throw new Error('Cast requires progress, ticket authorization, and explicit media origins');
     this.origins=mediaOrigins.map(origin=>castMediaOrigin(origin,{allowHttpMedia}));this.allowHttpMedia=allowHttpMedia;
-    Object.assign(this,{progressStore,tickets,clock,onState,onEpisodeChanged,onDisplaced});
-    this.transport=transport??new CastPythonTransport({pythonExecutable,toolsPath,mediaOrigins:this.origins,allowHttpMedia});
+    Object.assign(this,{progressStore,tickets,clock,onState,onEpisodeChanged,onDisplaced,onDiagnostic});
+    this.transport=transport??new CastPythonTransport({pythonExecutable,toolsPath,mediaOrigins:this.origins,allowHttpMedia,onDiagnostic});
     this.bindings=new Map();this.locks=new Map();this.closed=false;this.polling=false;
     if(pollMs>0){this.timer=setInterval(()=>this.poll().catch(()=>{}),Math.max(250,pollMs));this.timer.unref?.();}
   }
@@ -118,7 +119,8 @@ export class CastBridge {
     const lease=await this.lease(binding.context);
     const eventReason=state.state==='IDLE'&&state.idleReason==='FINISHED'?'ended':previous&&previous.episodeId!==state.episodeId?'transition':reason;
     await this.progressStore.record(binding.context.uid,binding.context.sessionId,{episodeId:state.episodeId,positionSeconds:state.positionSeconds,generation:binding.context.generation,authorityEpoch:binding.context.authorityEpoch,revision:lease.revision+1,reason:eventReason},{durationSeconds:state.durationSeconds,authority:'receiver'});
-    binding.last=state;binding.lastObservedAt=this.clock();
+    if(!previous||previous.state!==state.state)emitDiagnostic(this.onDiagnostic,{type:'cast-state',sessionId:binding.context.sessionId,state:state.state,owned:true});
+    binding.last=state;binding.lastObservedAt=this.clock();binding.lastDiagnostic=null;
     await Promise.resolve().then(()=>this.onState({...binding.context,receiverId:binding.receiverId},structuredClone(state))).catch(()=>{});
     return state;
   }
@@ -135,12 +137,15 @@ export class CastBridge {
       const binding={context,receiverId,episodes:new Map([[episode.mediaUid,episode]]),last:null,queuedEpisodeId:null};
       let raw;
       try{
+        emitDiagnostic(this.onDiagnostic,{type:'cast-command',sessionId:context.sessionId,action:'load'});
         raw=await this.transport.request('load',{context,receiverId,episode,positionSeconds:position,takeover:input.takeover===true});
         await this.lease(context); // A delayed load cannot resurrect an old writer.
         if(old&&old.context.sessionId!==context.sessionId){this.tickets.revokeSession?.(old.context.sessionId);await this.onDisplaced({...old.context,receiverId});}
         this.bindings.set(receiverId,binding);
         return await this.observe(raw,binding,'heartbeat');
       }catch(error){
+        emitDiagnostic(this.onDiagnostic,{type:'cast-error',sessionId:context.sessionId,code:error.code});
+        emitDiagnostic(this.onDiagnostic,{type:'cast-command',sessionId:context.sessionId,action:'disconnect'});
         await this.transport.request('disconnect',{context,receiverId}).catch(()=>{});
         if(this.bindings.get(receiverId)===binding)this.bindings.delete(receiverId);
         throw error instanceof AccessError?error:new AccessError('cast-unavailable',503);
@@ -170,21 +175,23 @@ export class CastBridge {
       if(action==='volume'&&(!Number.isFinite(value)||value<0||value>1))fail('cast-volume',400);
       if(action==='subtitles'&&typeof value!=='boolean')fail('cast-subtitles',400);
       if(action==='next'&&!binding.queuedEpisodeId)fail('cast-next-not-ready');
+      emitDiagnostic(this.onDiagnostic,{type:'cast-command',sessionId:context.sessionId,action});
       const raw=await this.transport.request(action,{context,receiverId,...(value!==undefined?{value}:{})});
       return this.observe(raw,binding,action==='seek'?'seek':action==='pause'?'pause':'heartbeat');
     });
   }
-  async status(input){const context=this.context(input),receiverId=this.receiver(input.receiverId);return this.locked(receiverId,async()=>{await this.lease(context);const binding=this.binding(context,receiverId);return this.observe(await this.transport.request('status',{context,receiverId}),binding);});}
+  async status(input){const context=this.context(input),receiverId=this.receiver(input.receiverId);return this.locked(receiverId,async()=>{await this.lease(context);const binding=this.binding(context,receiverId);const raw=await this.transport.request('status',{context,receiverId});if(raw?.owned===false)emitDiagnostic(this.onDiagnostic,{type:'cast-negative-status',sessionId:context.sessionId,state:raw.state,owned:false});return this.observe(raw,binding);});}
   async disconnect(input){const context=this.context(input),receiverId=this.receiver(input.receiverId);return this.locked(receiverId,async()=>{
     await this.lease(context);const binding=this.binding(context,receiverId);
     const actual=await this.observe(await this.transport.request('status',{context,receiverId}),binding,'pause');
+    emitDiagnostic(this.onDiagnostic,{type:'cast-command',sessionId:context.sessionId,action:'disconnect'});
     await this.transport.request('disconnect',{context,receiverId});this.bindings.delete(receiverId);
     return {...actual,disconnected:true};
   });}
-  async revokeSession(sessionId){for(const binding of [...this.bindings.values()])if(binding.context.sessionId===sessionId){if(this.bindings.get(binding.receiverId)===binding)this.bindings.delete(binding.receiverId);await this.transport.request('disconnect',{context:binding.context,receiverId:binding.receiverId}).catch(()=>{});}}
+  async revokeSession(sessionId){for(const binding of [...this.bindings.values()])if(binding.context.sessionId===sessionId){emitDiagnostic(this.onDiagnostic,{type:'cast-revoke',sessionId});if(this.bindings.get(binding.receiverId)===binding)this.bindings.delete(binding.receiverId);await this.transport.request('disconnect',{context:binding.context,receiverId:binding.receiverId}).catch(()=>{});}}
   async poll(){if(this.closed||this.polling)return;this.polling=true;try{for(const binding of [...this.bindings.values()]){
     try{await this.status({...binding.context,receiverId:binding.receiverId});}
-    catch(error){if(['cast-ownership-lost','cast-stale-authority','session-replaced-or-expired'].includes(error.code)&&this.bindings.get(binding.receiverId)===binding){this.bindings.delete(binding.receiverId);if(error.code==='cast-ownership-lost'){try{await this.lease(binding.context);this.tickets.revokeSession?.(binding.context.sessionId);}catch{}}await this.onState({...binding.context,receiverId:binding.receiverId},{receiverId:binding.receiverId,owned:false,state:'DISCONNECTED',error:error.code});}}
+    catch(error){if(binding.lastDiagnostic!==error.code){emitDiagnostic(this.onDiagnostic,{type:'cast-error',sessionId:binding.context.sessionId,code:error.code});binding.lastDiagnostic=error.code;}if(['cast-ownership-lost','cast-stale-authority','session-replaced-or-expired'].includes(error.code)&&this.bindings.get(binding.receiverId)===binding){this.bindings.delete(binding.receiverId);if(error.code==='cast-ownership-lost'){try{await this.lease(binding.context);this.tickets.revokeSession?.(binding.context.sessionId);}catch{}}await this.onState({...binding.context,receiverId:binding.receiverId},{receiverId:binding.receiverId,owned:false,state:'DISCONNECTED',error:error.code});}}
   }}finally{this.polling=false;}}
   async close(){if(this.closed)return;this.closed=true;clearInterval(this.timer);for(const binding of [...this.bindings.values()])await this.revokeSession(binding.context.sessionId);this.transport.close();}
 }

@@ -285,6 +285,79 @@ test('stale or different-profile receiver notifications preserve current Cast an
  assert.deepEqual(await api.delegation({uid:'viewer'},id,'local'),localDelivery);
 });
 
+test('media diagnostics receive only bounded safe metadata and hook failures never interrupt delivery',async t=>{
+ const {api,request,media}=await fixture(t),events=[];
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),id=created.lease.sessionId;
+ const delivery=await(await request(`/api/sessions/${id}/delivery`,{method:'POST',input:{}})).json();
+ const original=media.getPlaybackResource,secret='https://private.invalid/secret-capability?token=never-log',maliciousCode='https://private.invalid/private-code';
+ api.onDiagnostic=event=>events.push(event);
+ media.getPlaybackResource=async()=>{throw Object.assign(new Error(secret),{code:maliciousCode,status:503});};
+ assert.equal((await fetch(delivery.mediaUrl,{headers:{Range:'bytes=0-3'}})).status,503);
+ assert.deepEqual(events.map(event=>event.type),['media-admission','media-error','stream-abort']);
+ assert.equal(events[1].code,'internal-error');assert.equal(events[2].code,'internal-error');
+ for(const event of events){
+  assert.equal(event.sessionId,id);assert.equal(event.method,'GET');assert.equal(event.hasRange,true);assert.equal(event.resourceKind,'manifest');
+  assert.ok(Object.keys(event).every(key=>['type','sessionId','code','method','hasRange','resourceKind'].includes(key)));
+ }
+ const encoded=JSON.stringify(events);for(const privateValue of [secret,maliciousCode,'fake-engine-secret','viewer@example.com','fixture-private-token',delivery.mediaUrl])assert.ok(!encoded.includes(privateValue));
+ media.getPlaybackResource=original;
+ for(const hook of [()=>{throw new Error(secret);},async()=>{throw new Error(secret); }]){
+  api.onDiagnostic=hook;const response=await fetch(delivery.mediaUrl);assert.equal(response.status,200);assert.match(await response.text(),/^#EXTM3U/);
+ }
+ await new Promise(resolve=>setImmediate(resolve));
+});
+
+test('credential diagnostics precede ticket revocation and stream abortion without changing fail-closed behavior',async t=>{
+ const {api,request,media,credentials}=await fixture(t),events=[];let deny=false;
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),id=created.lease.sessionId;
+ const delivery=await(await request(`/api/sessions/${id}/delivery`,{method:'POST',input:{}})).json();
+ api.streamCheckMs=10;api.onDiagnostic=event=>events.push(event);
+ credentials.getAuthorized=async()=>{if(deny)throw new AccessError('membership-unavailable',503);return{uid:'viewer'};};
+ const revoke=api.revokeProfile.bind(api);api.revokeProfile=uid=>{events.push({testMarker:'revoke'});return revoke(uid);};
+ media.getPlaybackResource=async()=>({status:200,headers:{'content-type':'video/mp4','content-length':'4096'},resources:[],longLived:true,
+  body:new ReadableStream({start(value){value.enqueue(new Uint8Array(1024));}},{highWaterMark:0})});
+ const response=await fetch(delivery.mediaUrl);assert.equal(response.status,200);const reader=response.body.getReader();await reader.read();
+ deny=true;
+ let timer;try{await assert.rejects(Promise.race([reader.read(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('diagnostic fixture deadline exceeded')),2000);})]),error=>error.message!=='diagnostic fixture deadline exceeded');}finally{clearTimeout(timer);reader.releaseLock();}
+ const cause=events.findIndex(event=>event.type==='credentials-error'),revoked=events.findIndex(event=>event.testMarker==='revoke'),aborted=events.findIndex(event=>event.type==='stream-abort');
+ assert.ok(cause>=0&&cause<revoked&&revoked<aborted);assert.equal(events[cause].code,'membership-unavailable');assert.equal(events[cause].sessionId,id);
+ assert.equal(api.activeStreams.size,0);
+ // A new range failing initial admission records its cause before revocation,
+ // even though no stream guard has been created for that request yet.
+ deny=false;const next=await api.delegation({uid:'viewer'},id,'local');deny=true;events.length=0;
+ assert.equal((await fetch(next.mediaUrl)).status,503);
+ assert.equal(events[0].type,'credentials-error');assert.equal(events[0].code,'membership-unavailable');assert.equal(events[1].testMarker,'revoke');
+});
+
+test('client cancellation and source failures expose safe abort codes, never exception details',async t=>{
+ const {api,request,media}=await fixture(t),events=[];
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),id=created.lease.sessionId;
+ const delivery=await(await request(`/api/sessions/${id}/delivery`,{method:'POST',input:{}})).json();
+ api.onDiagnostic=event=>events.push(event);let source;
+ media.getPlaybackResource=async()=>({status:200,headers:{'content-type':'video/mp4','content-length':'4096'},resources:[],longLived:true,
+  body:new ReadableStream({start(value){source=value;value.enqueue(new Uint8Array(1024));}},{highWaterMark:0})});
+ const first=await fetch(delivery.mediaUrl),firstReader=first.body.getReader();await firstReader.read();
+ source.error(Object.assign(new Error('secret https://private.invalid/token'),{code:'STATIC_READ_TIMEOUT'}));
+ await assert.rejects(firstReader.read());firstReader.releaseLock();
+ assert.ok(events.some(event=>event.type==='stream-abort'&&event.code==='STATIC_READ_TIMEOUT'));
+ events.length=0;const caller=new AbortController(),second=await fetch(delivery.mediaUrl,{signal:caller.signal}),secondReader=second.body.getReader();await secondReader.read();caller.abort();
+ await assert.rejects(secondReader.read());secondReader.releaseLock();
+ for(let attempt=0;attempt<100&&!events.some(event=>event.type==='stream-abort');attempt++)await new Promise(resolve=>setTimeout(resolve,5));
+ assert.ok(events.some(event=>event.type==='stream-abort'&&event.code==='media-client-closed'));
+ assert.ok(!JSON.stringify(events).includes('secret'));assert.ok(!JSON.stringify(events).includes('private.invalid'));
+});
+
+test('validated episode replacement and session close requests have safe causal markers',async t=>{
+ const {api,request}=await fixture(t),events=[];
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),id=created.lease.sessionId;
+ api.onDiagnostic=event=>events.push(event);
+ assert.equal((await request(`/api/sessions/${id}/episode`,{method:'POST',input:{episodeId:'one-piece-0590'}})).status,404);
+ assert.deepEqual(events,[]);
+ assert.equal((await request(`/api/sessions/${id}/episode`,{method:'POST',input:{episodeId:'one-piece-0001'}})).status,202);
+ assert.equal((await request(`/api/sessions/${id}`,{method:'DELETE'})).status,200);
+ assert.deepEqual(events,[{type:'cast-command',sessionId:id,action:'episode'},{type:'cast-command',sessionId:id,action:'close'}]);
+});
+
 test('routine controls reuse only bounded positive membership, verify each identity and force admission checks',async t=>{
  const {api,request}=await fixture(t);let now=100000,membershipReads=0,identityChecks=0,blocked=false;
  const verify=api.identity.verify;api.identity.verify=async token=>{identityChecks++;return verify(token);};api.clock=()=>now;

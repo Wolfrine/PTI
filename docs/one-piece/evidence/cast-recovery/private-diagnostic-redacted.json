@@ -1,0 +1,272 @@
+{
+  "version": 1,
+  "startedAt": "2026-10-19T09:51:35.719Z",
+  "updatedAt": "2026-10-19T10:01:57.406Z",
+  "events": [
+    {
+      "sequence": 1,
+      "recordedAt": "2026-10-19T09:53:07.408Z",
+      "type": "session-close",
+      "sessionId": "session-1"
+    },
+    {
+      "sequence": 2,
+      "recordedAt": "2026-10-19T09:53:08.466Z",
+      "type": "authority-change",
+      "sessionId": "session-2"
+    },
+    {
+      "sequence": 3,
+      "recordedAt": "2026-10-19T09:53:08.469Z",
+      "type": "cast-command",
+      "sessionId": "session-2",
+      "action": "load"
+    },
+    {
+      "sequence": 4,
+      "recordedAt": "2026-10-19T09:53:13.476Z",
+      "type": "media-admission",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 5,
+      "recordedAt": "2026-10-19T09:53:13.493Z",
+      "type": "media-open",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 6,
+      "recordedAt": "2026-10-19T09:53:14.223Z",
+      "type": "media-admission",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": false,
+      "resourceKind": "subtitle"
+    },
+    {
+      "sequence": 7,
+      "recordedAt": "2026-10-19T09:53:14.238Z",
+      "type": "media-open",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": false,
+      "resourceKind": "subtitle"
+    },
+    {
+      "sequence": 8,
+      "recordedAt": "2026-10-19T09:53:14.279Z",
+      "type": "media-admission",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 9,
+      "recordedAt": "2026-10-19T09:53:14.291Z",
+      "type": "stream-abort",
+      "sessionId": "session-2",
+      "code": "media-client-closed",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 10,
+      "recordedAt": "2026-10-19T09:53:14.297Z",
+      "type": "media-error",
+      "sessionId": "session-2",
+      "code": "ERR_STREAM_PREMATURE_CLOSE",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 11,
+      "recordedAt": "2026-10-19T09:53:14.322Z",
+      "type": "media-open",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 12,
+      "recordedAt": "2026-10-19T09:53:14.466Z",
+      "type": "cast-state",
+      "sessionId": "session-2",
+      "state": "PLAYING",
+      "owned": true
+    },
+    {
+      "sequence": 13,
+      "recordedAt": "2026-10-19T09:53:14.538Z",
+      "type": "cast-command",
+      "sessionId": "session-2",
+      "action": "pause"
+    },
+    {
+      "sequence": 14,
+      "recordedAt": "2026-10-19T09:53:14.784Z",
+      "type": "cast-state",
+      "sessionId": "session-2",
+      "state": "PAUSED",
+      "owned": true
+    },
+    {
+      "sequence": 15,
+      "recordedAt": "2026-10-19T09:53:14.843Z",
+      "type": "cast-command",
+      "sessionId": "session-2",
+      "action": "seek"
+    },
+    {
+      "sequence": 16,
+      "recordedAt": "2026-10-19T09:53:14.932Z",
+      "type": "media-admission",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 17,
+      "recordedAt": "2026-10-19T09:53:14.964Z",
+      "type": "media-open",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 18,
+      "recordedAt": "2026-10-19T09:53:14.968Z",
+      "type": "stream-abort",
+      "sessionId": "session-2",
+      "code": "media-client-closed",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 19,
+      "recordedAt": "2026-10-19T09:53:14.972Z",
+      "type": "media-error",
+      "sessionId": "session-2",
+      "code": "ERR_STREAM_PREMATURE_CLOSE",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 20,
+      "recordedAt": "2026-10-19T09:53:15.195Z",
+      "type": "stream-abort",
+      "sessionId": "session-2",
+      "code": "media-client-closed",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 21,
+      "recordedAt": "2026-10-19T09:53:15.202Z",
+      "type": "media-error",
+      "sessionId": "session-2",
+      "code": "ERR_STREAM_PREMATURE_CLOSE",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 22,
+      "recordedAt": "2026-10-19T09:53:15.740Z",
+      "type": "cast-state",
+      "sessionId": "session-2",
+      "state": "PLAYING",
+      "owned": true
+    },
+    {
+      "sequence": 23,
+      "recordedAt": "2026-10-19T09:53:31.035Z",
+      "type": "media-admission",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 24,
+      "recordedAt": "2026-10-19T09:53:31.053Z",
+      "type": "media-open",
+      "sessionId": "session-2",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 25,
+      "recordedAt": "2026-10-19T09:55:17.320Z",
+      "type": "cast-command",
+      "sessionId": "session-2",
+      "action": "pause"
+    },
+    {
+      "sequence": 26,
+      "recordedAt": "2026-10-19T09:55:17.455Z",
+      "type": "cast-state",
+      "sessionId": "session-2",
+      "state": "PAUSED",
+      "owned": true
+    },
+    {
+      "sequence": 27,
+      "recordedAt": "2026-10-19T10:01:53.028Z",
+      "type": "stream-abort",
+      "sessionId": "session-2",
+      "code": "media-client-closed",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 28,
+      "recordedAt": "2026-10-19T10:01:53.033Z",
+      "type": "media-error",
+      "sessionId": "session-2",
+      "code": "ERR_STREAM_PREMATURE_CLOSE",
+      "method": "GET",
+      "hasRange": true,
+      "resourceKind": "video"
+    },
+    {
+      "sequence": 29,
+      "recordedAt": "2026-10-19T10:01:53.375Z",
+      "type": "cast-error",
+      "sessionId": "session-2",
+      "code": "cast-unavailable"
+    },
+    {
+      "sequence": 30,
+      "recordedAt": "2026-10-19T10:01:57.378Z",
+      "type": "cast-negative-status",
+      "sessionId": "session-2",
+      "state": "UNOWNED",
+      "owned": false
+    },
+    {
+      "sequence": 31,
+      "recordedAt": "2026-10-19T10:01:57.379Z",
+      "type": "cast-error",
+      "sessionId": "session-2",
+      "code": "cast-ownership-lost"
+    }
+  ],
+  "redaction": "Opaque session identifiers replaced consistently by ordinal labels; no URLs, identities, headers or credential values recorded"
+}

@@ -58,6 +58,7 @@ export function errorCopy(code) {
   'session-replaced-or-expired':['Your viewing session has ended','It may have been replaced on another device. Open the episode again to continue.'],
   'cast-tv-busy':['The TV is already in use','Choose another screen or explicitly take over this TV.'],
   'cast-unavailable':['The TV is not responding','Check that the TV and home PC are on the same home network, then try again.'],
+  'cast-seek-not-confirmed':['The TV has not confirmed the new position','Wait a moment, then try again. Your saved place is kept.'],
   'SOURCE_RATE_LIMIT':['The source needs a pause','Wait a little, then retry. Your place is saved.'],
   'SOURCE_TIMEOUT':['The source is taking too long','Retry preparation when the connection recovers. Your place is saved.'],
   'CACHE_PRESSURE':['The home PC needs some space','Active episodes are protected. Retry after another viewing session ends.'],

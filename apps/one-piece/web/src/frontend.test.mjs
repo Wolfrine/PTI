@@ -1,7 +1,7 @@
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import { visibleEpisodes, nextBoundary, initialSeason, selectLibrarySeason, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
+import { visibleEpisodes, nextBoundary, initialSeason, selectLibrarySeason, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery, errorCopy } from './model.mjs';
 import { SEASONS, getSeason } from './seasons.mjs';
 import { createClient, CONTROL_ORIGIN } from './client.mjs';
 import { dialogContent, page, rows, familyAccessContent, ready } from './views.mjs';
@@ -14,6 +14,12 @@ import { disconnectBeforeSignOut } from './signout.mjs';
 import { observeReviewFrames } from './review-frames.mjs';
 import { needsGoogleConfirmation, confirmationError, connectionStatus } from './connection.mjs';
 import { signInFailure } from './signin.mjs';
+
+test('unconfirmed TV seeking keeps the diagnosis about receiver position confirmation',()=>{
+ const copy=errorCopy('cast-seek-not-confirmed');
+ assert.deepEqual(copy,['The TV has not confirmed the new position','Wait a moment, then try again. Your saved place is kept.']);
+ assert.doesNotMatch(copy.join('. '),/home network|home connection|Google|reconnect|account/i);
+});
 
 test('Cast search failures distinguish failed scans from an actual empty result and retain remembered TVs',()=>{
  const dialog={dialog:'cast',devices:[],dialogError:['The TV list could not be refreshed','Check the connection.']};

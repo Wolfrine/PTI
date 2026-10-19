@@ -378,3 +378,77 @@ print('Freshness, timeout and owned-cleanup fixtures passed')
  if(result.error?.code==='ENOENT'){t.skip('Python runtime unavailable for isolated worker fixture');return;}
  assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/fixtures passed/);
 });
+
+test('Python SEEK preserves pause/play intent, verifies readiness after a lost acknowledgement, and never stops on failure',t=>{
+ const script=String.raw`
+import importlib.util,sys
+from types import SimpleNamespace
+spec=importlib.util.spec_from_file_location('cast_worker',sys.argv[1]);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+clock=[100.0];module.time.monotonic=lambda:clock[0];module.time.sleep=lambda seconds:clock.__setitem__(0,clock[0]+seconds)
+class Timeout(Exception):pass
+class Failed(Exception):pass
+class Disconnected(Exception):pass
+class Wait:
+    def __init__(self,timeout,*_):self.timeout=timeout;self.callback=lambda *_:None
+    def wait_response(self):
+        if worker.ack_timeout:clock[0]+=self.timeout;raise Timeout()
+        if worker.ack_failed:raise Failed()
+url='https://onepiece.local/m/'+('A'*32)+'/one-piece-0001/L3ZpZGVv'
+entry={'episodeId':'one-piece-0001','mediaUid':'fixture-media','durationSeconds':1500}
+context={'uid':'viewer','sessionId':'session-fixture','generation':1,'authorityEpoch':1}
+def fixture(initial='PAUSED',mode='ready'):
+    global worker,cast,binding,messages
+    messages=[];worker=module.Worker.__new__(module.Worker);worker.receiver_app='CC1AD845';worker.backdrop='E8C28D3C';worker.wait_response=Wait;worker.request_timeout=Timeout;worker.status_failed=Failed;worker.connection_errors=(Disconnected,);worker.ack_timeout=False;worker.ack_failed=False
+    status=SimpleNamespace(content_id=url,current_time=600,player_state=initial,current_subtitle_tracks=[1],idle_reason=None,media_session_id=5)
+    def forbidden(*_,**__):raise AssertionError('SEEK must never use an auto-launching control, legacy forced-start seek, or STOP')
+    def send(data,**options):
+        assert data['type']=='SEEK' and data['mediaSessionId']==5 and data['sessionId']=='ours'
+        assert options['inc_session_id'] is False
+        messages.append(dict(data))
+    controller=SimpleNamespace(status=status,send_message_nocheck=send,send_message=forbidden,seek=forbidden,stop=forbidden)
+    cast=SimpleNamespace(status=SimpleNamespace(app_id='CC1AD845',session_id='ours',volume_level=.4,volume_muted=False),media_controller=controller)
+    binding={'receiverSession':'ours','context':context,'media':{module.digest(url):entry},'queued':None};worker.bindings={'fixture':binding}
+    # Raw platform/media admission is exercised separately above. These isolated
+    # command tests control what the next newly proven receiver observation says.
+    worker.admitted=lambda *_args,**_kwargs:('fixture',cast,binding)
+    worker.recent_admitted=lambda *_args:mode!='stale' and worker.owned(cast,binding)
+    worker.definite_loss=lambda *_args:mode=='foreign'
+    def refresh(_cast):
+        clock[0]+=5.5 if mode=='late-ready' else .05
+        if mode=='foreign':cast.status.session_id='foreign';return
+        if mode=='disconnected':raise Disconnected()
+        if mode=='partial':raise module.CastError('cast-status-not-fresh')
+        status.current_time=590 if mode!='wrong-position' else 600
+        status.player_state='BUFFERING' if mode=='buffering' else 'PLAYING' if mode=='wrong-state' else initial
+    worker.refresh=refresh
+    return status
+for initial,resume in [('PAUSED','PLAYBACK_PAUSE'),('PLAYING','PLAYBACK_START')]:
+    fixture(initial);result=worker.execute('seek',{'receiverId':'fixture','context':context,'value':590})
+    assert result['owned'] and result['state']==initial and result['positionSeconds']==590
+    assert len(messages)==1 and messages[0]['resumeState']==resume
+    assert worker.bindings['fixture'] is binding
+# A callback timeout is not proof of receiver loss. Confirm a NEW exact target
+# and intended state without issuing a duplicate SEEK or pretending it was fast.
+fixture();worker.ack_timeout=True;began=clock[0]
+result=worker.execute('seek',{'receiverId':'fixture','context':context,'value':590})
+assert result['state']=='PAUSED' and clock[0]-began>=5 and len(messages)==1
+for mode,code in [('buffering','cast-seek-not-confirmed'),('wrong-position','cast-seek-not-confirmed'),('wrong-state','cast-seek-not-confirmed'),('late-ready','cast-seek-not-confirmed'),
+                  ('foreign','cast-ownership-lost'),('stale','cast-status-not-fresh'),('partial','cast-status-not-fresh'),('disconnected','cast-status-not-fresh')]:
+    fixture(mode=mode)
+    try:worker.execute('seek',{'receiverId':'fixture','context':context,'value':590});raise AssertionError('Unconfirmed seek accepted: '+mode)
+    except module.CastError as error:assert str(error)==code,(mode,str(error))
+    assert len(messages)==(0 if mode=='stale' else 1) and worker.bindings['fixture'] is binding
+fixture();worker.ack_failed=True
+try:worker.execute('seek',{'receiverId':'fixture','context':context,'value':590});raise AssertionError('Rejected seek accepted')
+except module.CastError as error:assert str(error)=='cast-seek-not-confirmed'
+assert len(messages)==1 and worker.bindings['fixture'] is binding
+fixture(initial='BUFFERING')
+try:worker.execute('seek',{'receiverId':'fixture','context':context,'value':590});raise AssertionError('Uncertain pre-seek intent accepted')
+except module.CastError as error:assert str(error)=='cast-status-not-fresh'
+assert not messages
+print('Paused/playing seek, delayed acknowledgement and safe failure fixtures passed')
+`;
+ const result=spawnSync('python',['-c',script,fileURLToPath(new URL('../src/cast-bridge.py',import.meta.url))],{encoding:'utf8',windowsHide:true,timeout:10000});
+ if(result.error?.code==='ENOENT'){t.skip('Python runtime unavailable for isolated worker fixture');return;}
+ assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/fixtures passed/);
+});

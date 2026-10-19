@@ -1,10 +1,10 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "5bac2ed4acd80a3b2f1c5f34d6d34ff58d46c1401104fa15610c3013e9797e4c",
-  "independent_candidate": "ac31fbf533053e9436cb15b892bb7e90721676619a40446ab0f704066fcc0584",
-  "checkedAt": "2026-10-19T09:06:25.469Z",
-  "acceptance_scope": "Mechanical Cast discovery-error repair; retain known devices, correct false no-TV message, clear stale errors. Accepted theme and player layout retained.",
+  "candidate": "e2acccbe9a9030a388fab18e731d2dc279fe067def7752c64c9649b14a0d9a57",
+  "independent_candidate": "173a17669d7d54a2d26067b4a83e00234b1f37c7ee66aefc4bb21449950960a0",
+  "checkedAt": "2026-10-19T10:09:27.343Z",
+  "acceptance_scope": "Mechanical seek-timeout copy only. Preserve accepted player/library/theme layouts. Backend seek readiness is a separate software/hardware gate.",
   "owner_verdict": {
     "status": "not-reviewed"
   },
@@ -17,75 +17,53 @@
   "review": "../CAST_RECOVERY.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Personally inspected failed scan light and remembered unavailable TV dark at1440x1000/390x844; clear retry, no false no-TV claim on failure, disabled unavailable receiver, no horizontal overflow."
+    "reason": "Personally inspected exact timeout notice in desktop/mobile paused-Cast fixtures; controls retained, readable and no horizontal overflow. Independent reviewer inspected matching hashes."
   },
   "evidence": [
     {
-      "path": "evidence/cast-recovery/one-piece-cast-recovery-error-light-desktop.jpg",
-      "sha256": "dcd8b8a9de4412c3469d7d2fa9150230174516c2d6d04e3aa7649ffd3399eb2b",
-      "theme": "light",
-      "viewport": {
-        "width": 1440,
-        "height": 1000
-      },
-      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/cast-recovery/one-piece-cast-recovery-error-light-mobile.jpg",
-      "sha256": "9975bb6e8b0fee0cf31d233f76788bada3c41980a130a4ef27ff0bfe613d2451",
-      "theme": "light",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
-      "parentPersonallyInspected": true
-    },
-    {
-      "path": "evidence/cast-recovery/one-piece-cast-recovery-cached-dark-desktop.jpg",
-      "sha256": "067a0b1656b2e2f7ba48dbdbd0d41dcfe4b7b6320b261c4cfa06a2cdb2952c26",
+      "path": "evidence/cast-seek/one-piece-cast-seek-copy-desktop.jpg",
+      "sha256": "af89178492cb9fa8204b62f728e352c09df206a269eefb5322ea314074192c1c",
       "theme": "dark",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
+      "kind": "Labelled synthetic paused-Cast/error/account fixture; real catalogue/artwork; no media loaded",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/cast-recovery/one-piece-cast-recovery-cached-dark-mobile.jpg",
-      "sha256": "2808d16782fb423f7a68a6db926fa0bd171e275bf34fe9def459bcd1a87771f1",
+      "path": "evidence/cast-seek/one-piece-cast-seek-copy-mobile.jpg",
+      "sha256": "b59a369d0679cbf0dc9cb9c13cb0e384f445eaac2feba25fc402dd592e9a1f85",
       "theme": "dark",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
+      "kind": "Labelled synthetic paused-Cast/error/account fixture; real catalogue/artwork; no media loaded",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 84,
-    "companionChecks": 227,
-    "independentFrontendChecks": 59,
-    "independentCastChecks": 16,
+    "frontendChecks": 85,
+    "companionChecks": 237,
+    "independentFrontendChecks": 60,
+    "independentCastChecks": 19,
     "completeBuild": "passed with existing Angular warnings",
-    "readOnlyHardware": "Bedroom TV found3times through same candidate worker;6019/78/38ms; worker exited; no TV playback command",
     "mediaFilesAndTracksUnchanged": true,
     "takeoverAuthorizationUnchanged": true
   },
   "limitations": [
-    "UI recovery states use labelled synthetic identities/devices/errors.",
-    "Original pause-time exception was not retained; reproduced repeated-discovery defect is verified separately.",
-    "Ten-minute pause/no-phone lease test is synthetic; new prolonged physical pause acceptance is not claimed.",
-    "Known end-of-episode issue remains outside this repair."
+    "Synthetic UI evidence does not establish real receiver behavior.",
+    "Mobile image is scaled by browser provider;390px layout verified through DOM, native-phone acceptance pending.",
+    "TV cache/update maintenance underway; no TV commands during release.",
+    "Recurring receiver exit and five-second seek target remain unaccepted.",
+    "Known end-of-episode issue remains separate."
   ],
   "historical_record": {
-    "commit": "5debf52d6bcdd3f0ecabd39f69c739920fddd4f5",
-    "candidate": "53cce7f5b8777fc3fda2ad1174fe655195800db27baafb9a06905f2e3bee9cf0",
-    "independent_candidate": "2fd69505c79b29d5296d2f6458c3191a4675899910644c0e4984de95c1dc6d4a",
+    "commit": "8eed4509e4611709449d1cded1fc1fea90813eb7",
+    "candidate": "5bac2ed4acd80a3b2f1c5f34d6d34ff58d46c1401104fa15610c3013e9797e4c",
+    "independent_candidate": "ac31fbf533053e9436cb15b892bb7e90721676619a40446ab0f704066fcc0584",
     "path": "docs/one-piece/design/acceptance.json",
-    "policy": "Prior family/authentication/design/media acceptance retains original scope."
+    "policy": "Prior design/discovery/family acceptance retains original scope."
   }
 }

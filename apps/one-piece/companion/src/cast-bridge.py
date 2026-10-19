@@ -50,6 +50,8 @@ class Worker:
         import pychromecast
         from pychromecast.config import APP_BACKDROP, APP_MEDIA_RECEIVER
         from pychromecast.response_handler import WaitResponse
+        from pychromecast.discovery import CastBrowser, SimpleCastListener
+        from zeroconf import Zeroconf
         from pychromecast.error import RequestTimeout, RequestFailed, NotConnected, ChromecastConnectionClosed, ChromecastConnectionError
         self.pc = pychromecast
         self.backdrop, self.receiver_app = APP_BACKDROP, APP_MEDIA_RECEIVER
@@ -62,6 +64,9 @@ class Worker:
         self.devices, self.bindings = {}, {}
         self.media_receipts, self.media_listeners, self.raw_media = {}, {}, {}
         self.platform_receipts = {}
+        self.discovery_browser = None
+        self.discovery_started = 0
+        self.browser_factory = lambda: CastBrowser(SimpleCastListener(), Zeroconf())
 
     def observe_media(self, receiver_id: str, cast) -> None:
         """Correlate controller notifications with actual incoming raw media messages."""
@@ -231,41 +236,72 @@ class Worker:
     def discover(self, target: str | None = None) -> list:
         if target:
             require(str(UUID(target)) == target, "cast-receiver-id")
-            found, browser = self.pc.get_listed_chromecasts(uuids=[UUID(target)], discovery_timeout=5, tries=1, retry_wait=1, timeout=4)
-        else:
-            found, browser = self.pc.get_chromecasts(tries=1, retry_wait=1, timeout=4)
-        try:
-            for cast in found:
-                receiver_id = str(cast.uuid)
-                if receiver_id in self.devices and self.devices[receiver_id].socket_client.is_connected:
-                    cast.disconnect()
-                else:
-                    if receiver_id in self.devices:
-                        self.devices[receiver_id].disconnect()
-                    self.devices[receiver_id] = cast
-                    self.observe_media(receiver_id, cast)
-            result = []
-            for receiver_id, cast in self.devices.items():
-                try:
-                    cast.wait(timeout=4)
-                    self.refresh(cast, media=False)
-                    result.append({"receiverId": receiver_id, "name": str(cast.name or "Google Cast TV")[:100], "model": str(cast.cast_info.model_name or "")[:100], "owned": self.owned(cast, self.bindings.get(receiver_id)), "busy": not self.empty_default(cast)})
-                except Exception as error:
-                    result.append({"receiverId": receiver_id, "name": str(cast.name or "Google Cast TV")[:100], "model": str(cast.cast_info.model_name or "")[:100], "owned": False, "busy": True, "available": False, "diagnosticType": type(error).__name__})
-            return result
-        finally:
-            # Keep mDNS alive until service resolution/socket admission finishes.
-            self.pc.stop_discovery(browser)
+        # Keep one resolver/browser alive for the worker lifetime. Closing it at
+        # the end of a scan also removed the resolver needed by later reconnects.
+        if self.discovery_browser is None:
+            browser = self.browser_factory()
+            try:
+                browser.start_discovery()
+            except Exception:
+                browser.stop_discovery()
+                raise
+            self.discovery_browser = browser
+            self.discovery_started = time.monotonic()
+        browser = self.discovery_browser
+        until = time.monotonic() + 5
+        while time.monotonic() < until:
+            found = list(browser.devices.copy().values())
+            if target and any(str(info.uuid) == target for info in found):
+                break
+            if not target and found and time.monotonic() - self.discovery_started >= 5:
+                break
+            time.sleep(0.05)
+        found = list(browser.devices.copy().values())
+        for info in found:
+            receiver_id = str(info.uuid)
+            if target and receiver_id != target:
+                continue
+            previous = self.devices.get(receiver_id)
+            # A reconnecting live socket must retain its receiver binding. A
+            # stopped Python Thread cannot be started again: replace only that
+            # socket, then require the usual fresh session/content proof.
+            if previous is not None and not previous.socket_client.is_stopped:
+                continue
+            if previous is not None:
+                self.release_device(previous)
+            cast = self.pc.get_chromecast_from_cast_info(info, browser.zc, tries=3, retry_wait=1, timeout=4)
+            self.devices[receiver_id] = cast
+            self.observe_media(receiver_id, cast)
+        result = []
+        for receiver_id, cast in self.devices.items():
+            if target and receiver_id != target:
+                continue
+            try:
+                cast.wait(timeout=4)
+                self.refresh(cast, media=False)
+                result.append({"receiverId": receiver_id, "name": str(cast.name or "Google Cast TV")[:100], "model": str(cast.cast_info.model_name or "")[:100], "owned": self.owned(cast, self.bindings.get(receiver_id)), "busy": not self.empty_default(cast)})
+            except Exception:
+                result.append({"receiverId": receiver_id, "name": str(cast.name or "Google Cast TV")[:100], "model": str(cast.cast_info.model_name or "")[:100], "owned": False, "busy": True, "available": False})
+        return result
+
+    @staticmethod
+    def release_device(cast) -> None:
+        # disconnect() followed by an unconditional join raises RuntimeError for
+        # an unstarted discovery result. Never send receiver/media STOP here.
+        cast.socket_client.disconnect()
+        if cast.socket_client.is_alive():
+            cast.join(timeout=1)
 
     def device(self, receiver_id: str):
         try:
             require(str(UUID(receiver_id)) == receiver_id, "cast-receiver-id")
         except (ValueError, TypeError, AttributeError):
             raise CastError("cast-receiver-id") from None
-        if receiver_id not in self.devices or not self.devices[receiver_id].socket_client.is_connected:
+        if receiver_id not in self.devices or self.devices[receiver_id].socket_client.is_stopped:
             self.discover(receiver_id)
         require(receiver_id in self.devices, "cast-receiver-unavailable")
         cast = self.devices[receiver_id]
+        require(not cast.socket_client.is_stopped, "cast-receiver-unavailable")
         cast.wait(timeout=5)
         return cast
 
@@ -483,7 +519,13 @@ class Worker:
         # Pipe loss/process restart never sends STOP to a possibly changed TV.
         # The Node owner explicitly disconnects its admitted sessions first.
         for cast in self.devices.values():
-            cast.disconnect()
+            try:
+                self.release_device(cast)
+            except Exception:
+                pass
+        if self.discovery_browser is not None:
+            self.discovery_browser.stop_discovery()
+            self.discovery_browser = None
 
 
 def main() -> None:

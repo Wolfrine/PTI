@@ -1,10 +1,10 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "53cce7f5b8777fc3fda2ad1174fe655195800db27baafb9a06905f2e3bee9cf0",
-  "independent_candidate": "2fd69505c79b29d5296d2f6458c3191a4675899910644c0e4984de95c1dc6d4a",
-  "checkedAt": "2026-10-19T05:21:24.899Z",
-  "acceptance_scope": "Bounded family admission correction: automatic verified-Google requests and owner Approve/Decline; existing themes, season browsing, player and Cast transport retained.",
+  "candidate": "5bac2ed4acd80a3b2f1c5f34d6d34ff58d46c1401104fa15610c3013e9797e4c",
+  "independent_candidate": "ac31fbf533053e9436cb15b892bb7e90721676619a40446ab0f704066fcc0584",
+  "checkedAt": "2026-10-19T09:06:25.469Z",
+  "acceptance_scope": "Mechanical Cast discovery-error repair; retain known devices, correct false no-TV message, clear stale errors. Accepted theme and player layout retained.",
   "owner_verdict": {
     "status": "not-reviewed"
   },
@@ -14,78 +14,78 @@
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "../ACCESS_REQUESTS.md",
+  "review": "../CAST_RECOVERY.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Personally inspected owner light and pending dark1440x1000/390x844; long identity wraps, request actions accessible, synthetic approval changes count and membership. Declined desktop and paused mobile inspected. Final independent review recorded in ACCESS_REQUESTS.md."
+    "reason": "Personally inspected failed scan light and remembered unavailable TV dark at1440x1000/390x844; clear retry, no false no-TV claim on failure, disabled unavailable receiver, no horizontal overflow."
   },
   "evidence": [
     {
-      "path": "evidence/access-requests/one-piece-access-owner-light-desktop.jpg",
-      "sha256": "9ad7911905aa8f74615601da6dad927aec781e40d4d44cae07a98eda28f706b6",
+      "path": "evidence/cast-recovery/one-piece-cast-recovery-error-light-desktop.jpg",
+      "sha256": "dcd8b8a9de4412c3469d7d2fa9150230174516c2d6d04e3aa7649ffd3399eb2b",
       "theme": "light",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
+      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/access-requests/one-piece-access-owner-light-mobile.jpg",
-      "sha256": "c200f290b15842c639b4454dc05f45c8a2bfee04604dfe0be63df5c9585d83d6",
+      "path": "evidence/cast-recovery/one-piece-cast-recovery-error-light-mobile.jpg",
+      "sha256": "9975bb6e8b0fee0cf31d233f76788bada3c41980a130a4ef27ff0bfe613d2451",
       "theme": "light",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
+      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/access-requests/one-piece-access-pending-dark-desktop.jpg",
-      "sha256": "51911e73cb4e87085e83d19f2d77c2095e30ac7fb6a10695eae0c91ba7fe8003",
+      "path": "evidence/cast-recovery/one-piece-cast-recovery-cached-dark-desktop.jpg",
+      "sha256": "067a0b1656b2e2f7ba48dbdbd0d41dcfe4b7b6320b261c4cfa06a2cdb2952c26",
       "theme": "dark",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
+      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/access-requests/one-piece-access-pending-dark-mobile.jpg",
-      "sha256": "5b5886f6bd0e561961f63bf60eb3348f12daab87e482f2b57dbfcef3ac585e6f",
+      "path": "evidence/cast-recovery/one-piece-cast-recovery-cached-dark-mobile.jpg",
+      "sha256": "2808d16782fb423f7a68a6db926fa0bd171e275bf34fe9def459bcd1a87771f1",
       "theme": "dark",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Labelled local development fixture; synthetic family identities/requests/progress; real catalogue/artwork; no media loaded",
+      "kind": "Labelled development fixture; synthetic device/error/account states; real catalogue; no media loaded",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 82,
-    "frontendChecksPassed": 82,
-    "companionChecks": 225,
-    "sharedEmulatorChecks": 46,
-    "desktopMobile": "Parent and independent reviewer; labelled synthetic identities; no live family approval",
-    "completePtiAndDedicatedBuild": "passed with existing Angular warnings",
-    "mediaEngineUnchanged": true,
-    "castTransportUnchanged": true,
-    "authentication": "Existing Google authentication; new identity-bound request and owner-only atomic approval"
+    "frontendChecks": 84,
+    "companionChecks": 227,
+    "independentFrontendChecks": 59,
+    "independentCastChecks": 16,
+    "completeBuild": "passed with existing Angular warnings",
+    "readOnlyHardware": "Bedroom TV found3times through same candidate worker;6019/78/38ms; worker exited; no TV playback command",
+    "mediaFilesAndTracksUnchanged": true,
+    "takeoverAuthorizationUnchanged": true
   },
   "limitations": [
-    "No physical-family sign-in/approval acceptance claimed; local fixtures and emulator identities are synthetic.",
-    "Existing desktop Chrome local-network connection issue is outside this change.",
-    "Known Sony end-of-episode issue remains unchanged; no TV or media test performed."
+    "UI recovery states use labelled synthetic identities/devices/errors.",
+    "Original pause-time exception was not retained; reproduced repeated-discovery defect is verified separately.",
+    "Ten-minute pause/no-phone lease test is synthetic; new prolonged physical pause acceptance is not claimed.",
+    "Known end-of-episode issue remains outside this repair."
   ],
   "historical_record": {
-    "commit": "b00df300e4de29c5cbdeec1198ed1072538752b8",
-    "candidate": "791fee89c3ec4c0e9e8616d9fd5f88a4275030f19ab27860f72571aa4a78b66f",
-    "independent_candidate": "cf91ed8483f75773c43c51d48994e08edb219387f40b368d0aa7477d00426e2c",
+    "commit": "5debf52d6bcdd3f0ecabd39f69c739920fddd4f5",
+    "candidate": "53cce7f5b8777fc3fda2ad1174fe655195800db27baafb9a06905f2e3bee9cf0",
+    "independent_candidate": "2fd69505c79b29d5296d2f6458c3191a4675899910644c0e4984de95c1dc6d4a",
     "path": "docs/one-piece/design/acceptance.json",
-    "policy": "Prior season/authentication/design/playback evidence retains its original scope."
+    "policy": "Prior family/authentication/design/media acceptance retains original scope."
   }
 }

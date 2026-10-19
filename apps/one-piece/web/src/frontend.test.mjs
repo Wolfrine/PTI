@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { visibleEpisodes, nextBoundary, initialSeason, selectLibrarySeason, latestResume, escapeHtml, safeLocalProgress, validPendingEvent, bytes, shouldAutoplayDelivery } from './model.mjs';
 import { SEASONS, getSeason } from './seasons.mjs';
 import { createClient, CONTROL_ORIGIN } from './client.mjs';
-import { dialogContent, page, rows, familyAccessContent } from './views.mjs';
+import { dialogContent, page, rows, familyAccessContent, ready } from './views.mjs';
 import { accessGate, pendingAccessCount, stopAccessObservers, applyAccessRequestUpdate } from './access.mjs';
 import { appIdentity, dedicatedAppUrl, canMoveToDedicatedApp, installStatus, ONE_PIECE_ORIGIN, PTI_ORIGIN } from './install.mjs';
 import { handleWatchKeyboard } from './keyboard.mjs';
@@ -14,6 +14,26 @@ import { disconnectBeforeSignOut } from './signout.mjs';
 import { observeReviewFrames } from './review-frames.mjs';
 import { needsGoogleConfirmation, confirmationError, connectionStatus } from './connection.mjs';
 import { signInFailure } from './signin.mjs';
+
+test('Cast search failures distinguish failed scans from an actual empty result and retain remembered TVs',()=>{
+ const dialog={dialog:'cast',devices:[],dialogError:['The TV list could not be refreshed','Check the connection.']};
+ const failed=dialogContent(dialog);assert.match(failed,/TV search did not finish/);assert.doesNotMatch(failed,/No TV found/);assert.match(failed,/data-action="scan-tv"/);
+ const empty=dialogContent({...dialog,dialogError:null});assert.match(empty,/No TV found/);assert.doesNotMatch(empty,/TV search did not finish/);
+ const remembered=dialogContent({...dialog,devices:[{receiverId:'known-tv',name:'Bedroom TV',available:false,busy:true}]});
+ assert.match(remembered,/Previously found TVs/);assert.match(remembered,/Bedroom TV/);assert.match(remembered,/Unavailable/);assert.doesNotMatch(remembered,/Already in use|No TV found/);assert.match(remembered,/data-receiver="known-tv" disabled/);
+});
+test('actual Cast scan clears stale errors, retains prior devices on failure and accepts a successful retry',async()=>{
+ const source=await readFile(new URL('./app.mjs',import.meta.url),'utf8'),start=source.indexOf(' async devices(){'),end=source.indexOf('\n async castTo(',start);
+ assert.ok(start>=0&&end>start);const devices=new Function('ready',`return ({${source.slice(start,end)}}).devices;`)(ready);
+ const account={uid:'viewer',generation:1},known=[{receiverId:'known-tv',name:'Bedroom TV',available:true}],snapshots=[];
+ let reject;const first=new Promise((_,fail)=>{reject=fail;}),app={s:{lease:{},session:{state:'ready',playback:{}},devices:known,dialogError:['Stale error']},account:()=>account,current:()=>true,dialog(){snapshots.push({devices:this.s.devices,error:this.s.dialogError});},request:()=>first};
+ const scan=devices.call(app);assert.equal(app.s.devices,null);assert.equal(app.s.dialogError,null);
+ await devices.call(app);assert.equal(snapshots.length,1,'repeated clicks do not start overlapping scans');
+ reject(new Error('private transport payload'));await scan;assert.equal(app.s.devices,known);assert.match(app.s.dialogError[0],/could not be refreshed/);assert.doesNotMatch(app.s.dialogError.join(' '),/private transport payload/);
+ const fresh=[{receiverId:'new-tv',name:'Living Room TV',available:true}];app.request=async()=>({devices:fresh});await devices.call(app);
+ assert.equal(app.s.devices,fresh);assert.equal(app.s.dialogError,null);assert.equal(app.deviceScan,null);
+ let complete;app.request=()=>new Promise(resolve=>{complete=resolve;});const closing=devices.call(app);const before=snapshots.length;app.s.dialog=null;complete({devices:fresh});await closing;assert.equal(snapshots.length,before,'a completed scan does not reopen a dismissed dialog');
+});
 
 test('One Piece signs in on its own screen with bounded popup errors and no PTI login link',async()=>{
  const html=page({booting:false,user:null,network:'checking',profile:{},appIdentity:{dedicated:true}});

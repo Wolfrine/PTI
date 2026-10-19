@@ -1,0 +1,48 @@
+{
+  "recordedAt": "2026-10-19T08:59:34.945Z",
+  "mode": "read-only discovery; no receiver playback commands or media requests",
+  "attempts": [
+    {
+      "attempt": 1,
+      "ms": 6019,
+      "workerPid": 89892,
+      "devices": [
+        {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "name": "Bedroom TV",
+          "available": true,
+          "busy": true
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "ms": 78,
+      "workerPid": 89892,
+      "devices": [
+        {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "name": "Bedroom TV",
+          "available": true,
+          "busy": true
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "ms": 38,
+      "workerPid": 89892,
+      "devices": [
+        {
+          "receiverId": "b564e047-2597-f941-f038-738bdb86be08",
+          "name": "Bedroom TV",
+          "available": true,
+          "busy": true
+        }
+      ]
+    }
+  ],
+  "sameWorker": true,
+  "passed": true,
+  "ownedWorkerExited": true
+}

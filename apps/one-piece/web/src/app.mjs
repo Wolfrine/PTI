@@ -160,7 +160,15 @@ class ViewingApp {
   }}finally{if(this.current(account)){this.sending=false;this.patch();}}
  }
  async ended(){const account=this.account();this.record('ended',this.s.session?.playback?.durationSeconds??0);await this.flush();if(!this.current(account)||!this.s.session)return;const n=this.s.session.episodeNumber,b=nextBoundary(n);if(b!=='next'){this.s.dialog=b;this.dialog();}else if(this.s.profile.autoplay)await this.open(n+1,{automatic:true});else{this.s.playerStatus='ended';this.patch();}}
- async devices(){if(!this.s.lease||!ready(this.s.session)){this.s.notice='Open an episode first, then choose your TV.';this.patch();return;}const account=this.account();this.s.dialog='cast';this.s.devices=null;this.dialog();try{const result=await this.request('/api/cast/devices');if(!this.current(account))return;this.s.devices=result.devices;this.dialog();}catch(e){if(!this.current(account))return;this.s.devices=[];this.s.dialogError=errorCopy(e.code);this.dialog();}}
+ async devices(){
+  if(!this.s.lease||!ready(this.s.session)){this.s.notice='Open an episode first, then choose your TV.';this.patch();return;}
+  const account=this.account();if(this.deviceScan?.uid===account.uid&&this.deviceScan?.generation===account.generation)return;
+  this.deviceScan=account;const previous=Array.isArray(this.s.devices)?this.s.devices:[];
+  this.s.dialog='cast';this.s.dialogError=null;this.s.devices=null;this.dialog();
+  try{const result=await this.request('/api/cast/devices');if(!this.current(account)||this.deviceScan!==account)return;this.s.devices=result.devices;this.s.dialogError=null;if(this.s.dialog==='cast')this.dialog();}
+  catch{if(!this.current(account)||this.deviceScan!==account)return;this.s.devices=previous;this.s.dialogError=['The TV list could not be refreshed','Try again in a moment. Your saved place is kept.'];if(this.s.dialog==='cast')this.dialog();}
+  finally{if(this.deviceScan===account)this.deviceScan=null;}
+ }
  async castTo(receiverId,takeover=false){if(this.fixture){this.fixture.cast(this,receiverId,takeover);return;}const account=this.account();this.player?.pause();this.record('pause',this.player?.position??0);await this.flush();if(!this.current(account))return;if(this.eventQueue.length){this.dialogFailure('Your position has not synced yet. Reconnect before moving playback to the TV.');return;}
   try{const result=await this.request(`/api/sessions/${this.s.lease.sessionId}/cast`,{receiverId,takeover,positionSeconds:this.player?.position??this.s.position??0,autoplay:this.s.profile.autoplay,subtitleEnabled:this.s.profile.subtitleLanguage!=='off'});if(!this.current(account))return;this.mergeLease(result.lease);this.s.session={...this.s.session,lease:result.lease,cast:result.cast};this.s.receiverName=this.s.devices?.find(d=>d.receiverId===receiverId)?.name??'Your TV';this.player?.destroy();this.player=null;this.delivery=null;this.loadedKey=null;this.s.dialog=null;this.render();}
   catch(e){if(!this.current(account))return;if(e.code==='cast-tv-busy'){this.s.pendingReceiver=receiverId;this.s.dialog='tv-takeover';}else{this.s.dialogError=errorCopy(e.code);this.s.dialog='cast';}await this.poll();if(this.current(account))this.dialog();}

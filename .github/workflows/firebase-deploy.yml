@@ -83,7 +83,7 @@ jobs:
           cp food-app/legacy-index.html pti-app/dist/pti-app/browser/food/index.html
           cp food-app/legacy-sw.js pti-app/dist/pti-app/browser/food/sw.js
 
-      - name: Build One Piece into the complete default Hosting artifact
+      - name: Build One Piece into the complete default and dedicated Hosting artifacts
         run: |
           npm ci --prefix apps/one-piece --ignore-scripts --no-audit --no-fund
           npm run build --prefix apps/one-piece
@@ -117,8 +117,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "FIREBASE_SERVICE_ACCOUNT is not configured; skipping Firebase deploy."
-            exit 0
+            echo "FIREBASE_SERVICE_ACCOUNT is required; cannot deploy PTI or authorize One Piece login."
+            exit 1
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npm install -g firebase-tools
@@ -127,8 +127,95 @@ jobs:
           # Read-only preflight run 39113060280 verified this exact LF Git-blob predecessor.
           git show 24b4805cf7294ac9850f2a8f0281e189779b5c42:personal-harness/firestore.rules > /tmp/pre-one-piece.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-one-piece.rules node personal-functions/provision.mjs
-          firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:default --non-interactive
+
+          ONE_PIECE_SITE_ID=pti-app-2ab59-one-piece
+          if firebase hosting:sites:get "$ONE_PIECE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            echo "Hosting site $ONE_PIECE_SITE_ID already exists."
+          else
+            firebase hosting:sites:create "$ONE_PIECE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          fi
+
+          # Keep the existing domain list and add only this site's two Firebase aliases.
+          # Auth authorization is required, so failures must block this release.
+          npm install --no-save --package-lock=false google-auth-library
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {GoogleAuth} from 'google-auth-library';
+          const project=process.env.FIREBASE_PROJECT_ID;
+          assert.equal(project,'pti-app-2ab59');
+          const auth=new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});
+          const client=await auth.getClient();
+          const request=async options=>{
+            try{return await client.request(options);}
+            catch(error){throw new Error(`Firebase Auth configuration request failed (HTTP ${error.response?.status||error.code||'unknown'}).`);}
+          };
+          const base=`https://identitytoolkit.googleapis.com/admin/v2/projects/${project}/config`;
+          const current=await request({url:base});
+          const existing=current.data.authorizedDomains||[];
+          const required=['pti-app-2ab59-one-piece.web.app','pti-app-2ab59-one-piece.firebaseapp.com'];
+          if(required.some(domain=>!existing.includes(domain))){
+            await request({url:`${base}?updateMask=authorizedDomains`,method:'PATCH',data:{authorizedDomains:[...new Set([...existing,...required])]}});
+          }
+          const verified=await request({url:base});
+          assert.ok([...existing,...required].every(domain=>verified.data.authorizedDomains.includes(domain)));
+          console.log('One Piece Firebase Auth domains authorized; existing domains preserved.');
+          NODE
+
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:default,hosting:one-piece --non-interactive
           node food-app/scripts/verify-legacy.mjs
+
+      - name: Verify dedicated One Piece routes, identity and exact release assets
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          import path from 'node:path';
+          import assert from 'node:assert/strict';
+          const root='pti-app/dist/one-piece-app';
+          const origin='https://pti-app-2ab59-one-piece.web.app';
+          async function response(resource,options={}){
+            let last;
+            for(let attempt=1;attempt<=18;attempt++){
+              try{
+                const result=await fetch(`${origin}${resource}${resource.includes('?')?'&':'?'}release=${process.env.GITHUB_SHA}&attempt=${attempt}`,{...options,headers:{'Cache-Control':'no-cache'}});
+                if(result.ok||(options.redirect==='manual'&&result.status===302))return result;
+                last=new Error(`${resource}: HTTP ${result.status}`);
+              }catch(error){last=error;}
+              if(attempt<18)await new Promise(resolve=>setTimeout(resolve,5000));
+            }
+            throw last;
+          }
+          async function verifyAsset(relative){
+            const expected=await fs.readFile(path.join(root,relative));
+            for(let attempt=1;attempt<=18;attempt++){
+              const actual=await response(`/${relative}`);
+              if(Buffer.from(await actual.arrayBuffer()).equals(expected))return;
+              if(attempt<18)await new Promise(resolve=>setTimeout(resolve,5000));
+            }
+            throw new Error(`Deployed asset differs: ${relative}`);
+          }
+          async function files(directory){
+            const result=[];
+            for(const entry of await fs.readdir(path.join(root,directory),{withFileTypes:true})){
+              const relative=`${directory}/${entry.name}`;
+              result.push(...(entry.isDirectory()?await files(relative):[relative]));
+            }
+            return result;
+          }
+          const redirect=await response('/',{redirect:'manual'});
+          assert.equal(redirect.status,302);
+          assert.equal(new URL(redirect.headers.get('location'),origin).pathname,'/one-piece/');
+          const assets=await files('one-piece');
+          for(const asset of assets)await verifyAsset(asset);
+          const login=await response('/login');
+          assert.equal(await login.text(),await fs.readFile(path.join(root,'index.html'),'utf8'));
+          const manifest=JSON.parse(await (await response('/one-piece/manifest.webmanifest')).text());
+          assert.equal(manifest.scope,'/');
+          assert.equal(manifest.start_url,'/one-piece/');
+          assert.equal(manifest.display,'standalone');
+          const legacy=await fetch(`https://pti-app-2ab59.web.app/one-piece/manifest.webmanifest?release=${process.env.GITHUB_SHA}`);
+          assert.equal((await legacy.json()).scope,'/one-piece/');
+          console.log(`Verified dedicated root redirect, login, independent manifest and ${assets.length} exact One Piece assets.`);
+          NODE
 
       - name: Deploy optional Firebase Functions MCP
         continue-on-error: true

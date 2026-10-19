@@ -9,6 +9,7 @@ import { disconnectBeforeSignOut } from './signout.mjs';
 import { applyTheme, readTheme } from './theme.mjs';
 import { withArtwork } from './artwork.mjs';
 import { needsGoogleConfirmation, confirmationError } from './connection.mjs';
+import { appIdentity, dedicatedAppUrl, canMoveToDedicatedApp, installStatus } from './install.mjs';
 import { page, rows, dialogContent, button, iconButton, ready, connectionLabel, loginUrl } from './views.mjs';
 const store={get:(key,fallback)=>{try{const raw=localStorage.getItem(key);return raw&&raw.length<1048576?JSON.parse(raw):fallback;}catch{return fallback;}},set:(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}}};
 const deviceId=store.get('one-piece-device',null)??crypto.randomUUID();store.set('one-piece-device',deviceId);
@@ -18,7 +19,7 @@ class ViewingApp {
  constructor(){
   this.root=document.querySelector('#app');this.accountGeneration=0;this.player=null;this.loadedKey=null;this.delivery=null;this.eventQueue=[];this.sending=false;this.polling=false;this.loading=false;this.lastHeartbeat=0;this.pendingPosition=null;
   const p=new URLSearchParams(location.search),raw=p.get('episode'),n=/^\d{1,4}$/.test(raw??'')?Number(raw):episodeNumber(raw);
-  this.s={user:null,me:null,profile:{...defaults},catalog:null,progress:{},lastEpisodeId:null,session:null,lease:null,route:'library',range:rangeFor(n||store.get('one-piece-range',1)),query:'',booting:true,network:'checking',error:null,notice:'',dialog:null,sessionError:null,requestedEpisode:Number.isInteger(n)&&n>=1&&n<=1085?n:null};
+  this.s={user:null,me:null,profile:{...defaults},catalog:null,progress:{},lastEpisodeId:null,session:null,lease:null,route:'library',range:rangeFor(n||store.get('one-piece-range',1)),query:'',booting:true,network:'checking',error:null,notice:'',dialog:null,sessionError:null,appIdentity:{...appIdentity(),standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},requestedEpisode:Number.isInteger(n)&&n>=1&&n<=1085?n:null};
   this.request=createClient(()=>{if((auth.currentUser?.uid??null)!==(this.s.user?.uid??null))throw new ClientError('identity-changed');return this.s.user;},()=>this.accountGeneration);
   this.root.addEventListener('click',e=>{const account=this.account();void this.click(e).catch(()=>{if(this.current(account))this.failure();});});
   this.root.addEventListener('submit',e=>void this.submit(e));
@@ -31,6 +32,7 @@ class ViewingApp {
   window.addEventListener('pagehide',()=>{if(this.player)this.record('pause',this.player.position);});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){void this.poll();void this.flush();}else if(this.player)this.record('heartbeat',this.player.position);});
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();this.installPrompt=e;this.patch();});
+  window.addEventListener('appinstalled',()=>{this.installPrompt=null;this.s.appIdentity.standalone=true;this.patch();});
  }
  async start(){
   this.render();
@@ -134,7 +136,7 @@ class ViewingApp {
  patch(){
   const notice=this.root.querySelector('#notice');if(notice)notice.innerHTML=(this.s.updateAvailable?`<div class="notice-bar"><span>An app update is ready.</span>${button('update','Update app','quiet','reload')}</div>`:'')+(this.s.notice?`<div class="notice-bar"><span>${esc(this.s.notice)}</span>${this.s.resumeConflict?button('review-resume','Review saved place','text-button'):''}${iconButton('dismiss-notice','Dismiss message','close')}</div>`:'');
   for(const id of ['connection-label','footer-connection']){const el=this.root.querySelector(`#${id}`);if(el)el.textContent=connectionLabel(this.s);}
-  const install=this.root.querySelector('#install-button');if(install)install.hidden=!this.installPrompt;
+  const install=this.root.querySelector('#install-button');if(install){const status=installStatus({...this.s.appIdentity,promptAvailable:Boolean(this.installPrompt)});install.hidden=false;install.disabled=status.kind==='installed';install.innerHTML=`${icon(status.kind==='installed'?'check':'download')} ${status.label}`;}
   const sync=this.root.querySelector('#sync-label');if(sync)sync.textContent=this.eventQueue.length?'Saved here · sync pending':this.s.sync?.state==='pending'?'Saved on PC · cloud sync pending':this.s.progress[this.s.session?.episodeId]?'Your place is saved':'Progress saves as you watch';
   for(const id of ['language-line','remote-language']){const el=this.root.querySelector(`#${id}`);if(el)el.textContent=`${['eng','en'].includes(this.s.session?.playback?.selected?.audioLanguage)?'English':'Japanese'} audio · ${this.s.profile.subtitleLanguage==='off'?'Subtitles off':'English dialogue subtitles'}`;}
   const p=this.s.session?.progress,phase=this.root.querySelector('#preparation-phase');if(phase)phase.innerHTML=`${icon('download')} ${phaseLabel(this.s.session?.state)}`;
@@ -186,7 +188,16 @@ class ViewingApp {
   if(a==='toggle-invite'){if(this.fixture)return;await inviteMember(s.me.ownerUid,{email:t.dataset.email,active:t.dataset.active==='true'});if(!this.current(account))return;s.invitations=await listInvitations(s.me.ownerUid);if(this.current(account))this.dialog();return;}
   if(a==='logout'){if(this.fixture)return;this.player?.pause();await this.flush();if(!this.current(account))return;await disconnectBeforeSignOut({request:this.request,isCurrent:()=>this.current(account),signOut:()=>this.signOutLocal(),onUnconfirmed:()=>{s.dialog='offline-signout';this.dialog();}});return;}
   if(a==='logout-local'){if(__DEV__&&this.fixture)return;await this.signOutLocal();return;}
-  if(a==='install'&&this.installPrompt){await this.installPrompt.prompt();await this.installPrompt.userChoice;this.installPrompt=null;this.patch();return;}
+  if(a==='open-dedicated'){
+   this.player?.pause();if(this.player)this.record('pause',this.player.position);await this.flush();if(!this.current(account))return;
+   if(!canMoveToDedicatedApp({pendingEvents:this.eventQueue.length,resumeConflict:s.resumeConflict})){s.dialog='migration-pending';this.dialog();return;}
+   location.assign(dedicatedAppUrl());return;
+  }
+  if(a==='install'){
+   if(!s.appIdentity?.dedicated){s.dialog='install';this.dialog();return;}
+   if(this.installPrompt){await this.installPrompt.prompt();await this.installPrompt.userChoice;this.installPrompt=null;this.patch();return;}
+   s.dialog='install';this.dialog();return;
+  }
   if(a==='update'){this.player?.pause();await this.flush();if(!this.current(account))return;navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});this.registration?.waiting?.postMessage({type:'ACTIVATE_UPDATE'});}
  }
  async submit(event){const form=event.target;if(!form.dataset.form)return;event.preventDefault();if(this.fixture){this.s.notice='Development fixture: no account or invitation was written.';this.patch();return;}const account=this.account(),ownerUid=this.s.me?.ownerUid,data=new FormData(form),submit=form.querySelector('[type=submit]');if(submit)submit.disabled=true;

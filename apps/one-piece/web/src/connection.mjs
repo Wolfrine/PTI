@@ -3,7 +3,7 @@ export const needsGoogleConfirmation=code=>['viewer-not-paired','viewer-reauthen
 export function confirmationError(error){
  const code=error?.code??error?.message;
  if(['companion-offline','companion-timeout'].includes(code))return 'Google confirmation could not reach your home PC. Check the home connection and try again.';
- if(code==='auth/popup-blocked')return 'Your browser blocked the Google window. Open PTI in Chrome and allow pop-ups for this site, then try Connect account.';
+ if(code==='auth/popup-blocked')return 'Your browser blocked the Google window. Open One Piece in Chrome and allow pop-ups for this site, then try Connect account.';
  if(['auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(code))return 'The Google window closed before confirmation finished. Your existing account connection has not been disconnected.';
  if(['auth/user-mismatch','viewer-identity-mismatch'].includes(code))return 'Choose the same Google account shown here. A different account cannot connect this profile.';
  if(['viewer-identity-unavailable','viewer-credential-unavailable','auth/network-request-failed'].includes(code))return 'The account service is temporarily unavailable. Check the connection and try again shortly.';

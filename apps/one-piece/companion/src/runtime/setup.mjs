@@ -6,14 +6,14 @@ import { fileURLToPath } from 'node:url';
 import { WindowsProtection } from '../dpapi.mjs';
 import { atomicJson } from '../progress.mjs';
 import { dedicatedEngineDescriptor } from '../media/runtime.mjs';
-import { CADDY_SHA256,HOUSEHOLD_CA_SHA256,validateRuntimeConfig,loadRuntimeConfig,loadRuntimeSecret,saveRuntimeSecret,usesPublicTls } from './config.mjs';
+import { CADDY_SHA256,HOUSEHOLD_CA_SHA256,validateRuntimeConfig,loadRuntimeConfig,loadRuntimeSecret,saveRuntimeSecret,usesPublicTls,enableIndependentAppOrigins } from './config.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 export const SETUP_POWERSHELL='C:/Users/Sachit Tewary/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe';
 const exists=async file=>{try{await access(file);return true;}catch{return false;}};
 // Used only after setup has established that no protected configuration exists.
 // Existing installations retain their saved mode and require an explicit migration.
-export const createNewRuntimeConfig=input=>validateRuntimeConfig({...input,playback:{mode:'prepared-mp4'}});
+export const createNewRuntimeConfig=input=>enableIndependentAppOrigins({...input,playback:{mode:'prepared-mp4'}});
 export async function runPowerShellFile(file,args=[]){
   return new Promise((resolve,reject)=>{
     const child=spawn(SETUP_POWERSHELL,['-NoLogo','-NoProfile','-NonInteractive','-File',file,...args],{windowsHide:true,stdio:['ignore','pipe','pipe']});

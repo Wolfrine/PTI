@@ -9,6 +9,7 @@ import {CompanionApi} from '../src/api.mjs';
 import {AccessError} from '../src/auth.mjs';
 import {ProgressStore} from '../src/progress.mjs';
 import {TicketStore} from '../src/tickets.mjs';
+import {INDEPENDENT_APP_ORIGINS} from '../src/runtime/config.mjs';
 
 async function fixture(t){
  const root=await mkdtemp(path.join(os.tmpdir(),'op-api-'));
@@ -37,6 +38,23 @@ test('control API rejects untrusted transport/origin and non-family identity; se
  assert.equal((await request('/api/progress',{uid:'outsider'})).status,403);
  assert.equal((await request('/api/progress',{uid:'invalid'})).status,401);
  assert.equal((await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0590',deviceId:'device-one'}})).status,404);
+});
+
+test('independent app origins use authenticated API and scoped media/captions CORS while foreign origins are denied',async t=>{
+ const {api,request,media}=await fixture(t);api.config.allowedOrigins.push(...INDEPENDENT_APP_ORIGINS);
+ for(const Origin of INDEPENDENT_APP_ORIGINS){
+  const headers={Origin},preflight=await request('/api/me',{method:'OPTIONS',headers});
+  assert.equal(preflight.status,204);assert.equal(preflight.headers.get('access-control-allow-origin'),Origin);
+  assert.equal((await request('/api/me',{headers})).status,200);
+ }
+ const headers={Origin:INDEPENDENT_APP_ORIGINS[0]},created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'new-origin-device'},headers})).json();
+ const delivery=await(await request(`/api/sessions/${created.lease.sessionId}/delivery`,{method:'POST',input:{},headers})).json();
+ const captions=await fetch(delivery.subtitleUrl,{headers});assert.equal(captions.status,200);assert.equal(captions.headers.get('access-control-allow-origin'),headers.Origin);assert.match(await captions.text(),/^WEBVTT/);
+ const original=media.getPlaybackResource;let receivedRange;
+ media.getPlaybackResource=async(id,resource,options)=>{receivedRange=options.range;return{status:206,headers:{'content-type':'video/mp4','content-range':'bytes 0-3/10','content-length':'4','accept-ranges':'bytes'},body:new Blob(['test']).stream(),resources:[]};};
+ const video=await fetch(delivery.mediaUrl,{headers:{...headers,Range:'bytes=0-3'}});assert.equal(video.status,206);assert.equal(receivedRange,'bytes=0-3');assert.equal(video.headers.get('access-control-allow-origin'),headers.Origin);assert.equal(video.headers.get('content-range'),'bytes 0-3/10');assert.equal(await video.text(),'test');media.getPlaybackResource=original;
+ assert.equal((await request('/api/me',{headers:{Origin:'https://pti-app-2ab59-one-piece.web.app.attacker.invalid'}})).status,403);
+ assert.equal((await fetch(delivery.subtitleUrl,{headers:{Origin:'https://other.web.app'}})).status,403);
 });
 
 test('account status reuses only the authenticated viewer connection and never returns retained credentials',async t=>{

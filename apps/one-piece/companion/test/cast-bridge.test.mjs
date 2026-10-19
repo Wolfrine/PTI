@@ -84,6 +84,20 @@ test('receiver positions are authoritative and an acknowledged rewind replaces l
   assert.ok(!JSON.stringify(f.states).includes('/m/'));
 });
 
+test('a ten-minute pause stays leased by receiver observations without phone heartbeats',async t=>{
+  const f=await fixture(t);let now=Date.now();
+  f.progressStore.clock=()=>now;f.bridge.clock=()=>now;f.tickets.clock=()=>now;
+  await f.bridge.load({...f.input,episode:f.episode(),positionSeconds:545});
+  await f.bridge.command(f.input,{action:'pause'});
+  for(let tick=0;tick<20;tick++){now+=30000;await f.bridge.poll();}
+  const paused=await f.progressStore.snapshot('viewer');
+  assert.equal(paused.lease.destination,'cast');assert.ok(paused.lease.expiresAt>now);
+  assert.equal(paused.progress['one-piece-0001'].positionSeconds,545);
+  assert.equal(f.bridge.bindings.size,1);
+  const resumed=await f.bridge.command(f.input,{action:'play'});
+  assert.equal(resumed.state,'PLAYING');assert.equal(resumed.positionSeconds,545);assert.equal(resumed.subtitleEnabled,true);
+});
+
 test('a load completing after handoff cannot restore receiver authority or write progress',async t=>{
   const f=await fixture(t);f.transport.loadGate=defer();
   const pending=f.bridge.load({...f.input,episode:f.episode(),positionSeconds:600});

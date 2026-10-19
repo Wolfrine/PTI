@@ -64,14 +64,17 @@ state=worker.state('fixture',cast,binding);assert state['positionSeconds'] is No
 events=[]
 from uuid import UUID
 identifier=UUID('7bca3240-e383-4cb0-a18b-24eaa6aa1591')
-stale=SimpleNamespace(socket_client=SimpleNamespace(is_connected=False),disconnect=lambda:events.append('old disconnected'))
-fresh=SimpleNamespace(uuid=identifier,name='Fixture TV',socket_client=SimpleNamespace(is_connected=True,receiver_controller=SimpleNamespace()),status=SimpleNamespace(app_id=None),cast_info=SimpleNamespace(model_name='Fixture'),wait=lambda **_:events.append('wait'),disconnect=lambda:events.append('new disconnected'))
+stale=SimpleNamespace(socket_client=SimpleNamespace(is_stopped=True,is_alive=lambda:False,disconnect=lambda:events.append('old disconnected')))
+fresh=SimpleNamespace(uuid=identifier,name='Fixture TV',socket_client=SimpleNamespace(is_stopped=False,is_connected=True,receiver_controller=SimpleNamespace()),status=SimpleNamespace(app_id=None),cast_info=SimpleNamespace(model_name='Fixture'),wait=lambda **_:events.append('wait'))
 fresh.media_controller=SimpleNamespace(register_status_listener=lambda _:None)
 worker.devices={str(identifier):stale};worker.bindings={};worker.media_receipts={};worker.media_listeners={};worker.raw_media={}
-worker.pc=SimpleNamespace(get_chromecasts=lambda **_:([fresh],'browser'),stop_discovery=lambda _:events.append('discovery stopped'))
+clock=[100.0];module.time.monotonic=lambda:clock[0];module.time.sleep=lambda seconds:clock.__setitem__(0,clock[0]+seconds)
+browser=SimpleNamespace(devices={identifier:SimpleNamespace(uuid=identifier)},zc='resolver',start_discovery=lambda:events.append('discovery started'),stop_discovery=lambda:events.append('discovery stopped'))
+worker.discovery_browser=None;worker.discovery_started=0;worker.browser_factory=lambda:browser
+worker.pc=SimpleNamespace(get_chromecast_from_cast_info=lambda *_args,**_:fresh)
 worker.refresh=lambda *_args,**_kwargs:events.append('refreshed while discovery active')
 result=worker.discover();assert result[0]['busy'] is False and worker.devices[str(identifier)] is fresh
-assert events.index('refreshed while discovery active') < events.index('discovery stopped')
+assert 'discovery started' in events and 'discovery stopped' not in events
 print('Python ownership and foreign-app status fixtures passed')
 `;
   const result=spawnSync('python',['-c',script,fileURLToPath(new URL('../src/cast-bridge.py',import.meta.url))],{encoding:'utf8',windowsHide:true,timeout:10000});

@@ -547,10 +547,39 @@ class Worker:
             return self.wait_state(receiver_id, cast, binding, lambda state: state["owned"] and state["state"] == desired)
         if command == "seek":
             value = data.get("value")
-            duration = self.state(receiver_id, cast, binding)["durationSeconds"]
+            before = self.state(receiver_id, cast, binding)
+            duration, desired = before["durationSeconds"], before["state"]
             require(type(value) in (int, float) and math.isfinite(value) and 0 <= value < duration, "cast-seek")
-            controller.seek(value, timeout=5)
-            return self.wait_state(receiver_id, cast, binding, lambda state: state["owned"] and abs(state["positionSeconds"] - value) < 3)
+            require(desired in ("PLAYING", "PAUSED"), "cast-status-not-fresh")
+            # PyChromecast.seek always forces PLAYBACK_START. Preserve the proven
+            # pre-seek state and address only its admitted media session instead.
+            response = self.wait_response(5, "seek owned media")
+            media_session_id = controller.status.media_session_id
+            require(self.recent_admitted(cast, binding) and media_session_id is not None, "cast-status-not-fresh")
+            try:
+                controller.send_message_nocheck({"type": "SEEK", "mediaSessionId": media_session_id, "sessionId": binding["receiverSession"],
+                    "currentTime": value, "resumeState": "PLAYBACK_PAUSE" if desired == "PAUSED" else "PLAYBACK_START"},
+                    inc_session_id=False, callback_function=response.callback)
+                response.wait_response()
+            except self.request_timeout:
+                # A missing acknowledgement does not prove that SEEK failed.
+                # Never resend it: inspect fresh exact ownership/readiness below.
+                pass
+            except self.status_failed:
+                raise CastError("cast-seek-not-confirmed") from None
+            except self.connection_errors:
+                raise CastError("cast-status-not-fresh") from None
+            confirmation_until = time.monotonic() + 5
+            try:
+                return self.wait_state(receiver_id, cast, binding,
+                    lambda state: time.monotonic() <= confirmation_until and state["owned"]
+                    and state["state"] == desired and abs(state["positionSeconds"] - value) < 3, timeout=5)
+            except (self.request_timeout, self.status_failed, *self.connection_errors):
+                raise CastError("cast-status-not-fresh") from None
+            except CastError as error:
+                if str(error) == "cast-command-not-confirmed":
+                    raise CastError("cast-seek-not-confirmed") from None
+                raise
         if command == "volume":
             value = data.get("value")
             require(type(value) in (int, float) and math.isfinite(value) and 0 <= value <= 1, "cast-volume")

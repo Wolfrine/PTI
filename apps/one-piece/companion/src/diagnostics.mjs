@@ -4,7 +4,7 @@ const types=new Set(['media-admission','media-open','media-error','stream-abort'
 const codes=new Set(['internal-error','media-not-found','media-client-closed','media-request-limit','companion-stopping','session-replaced-or-expired','destination-changed',
  'viewer-not-paired','viewer-reauthentication-required','viewer-identity-unavailable','viewer-credential-unavailable','viewer-access-revoked','family-access-denied','identity-unavailable','invalid-token','token-expired',
  'membership-unavailable','not-invited','family-unavailable','viewer-identity-mismatch','invalid-membership-response','invalid-identity-response','invalid-viewer-credential-response','verified-google-account-required','unknown-signing-key',
- 'cast-ownership-lost','cast-stale-authority','cast-status-not-fresh','cast-timeout','cast-unavailable','cast-receiver-unavailable',
+ 'cast-ownership-lost','cast-stale-authority','cast-status-not-fresh','cast-seek-not-confirmed','cast-timeout','cast-unavailable','cast-receiver-unavailable',
  'STATIC_HEADER_TIMEOUT','STATIC_READ_TIMEOUT','STATIC_FETCH','STATIC_READ','STATIC_LIFETIME','STATIC_CANCELLED','STATIC_TRUNCATED','STATIC_HEADERS','STATIC_BYTES','STATIC_OVERRUN',
  'SESSION_GONE','SESSION_NOT_READY','MEDIA_RESOURCE','PLAYBACK_RESOURCE','ENGINE_RESPONSE_LIMIT','ENGINE_BUSY','ENGINE_HEADER_TIMEOUT','ENGINE_OFFLINE','ENGINE_UNAVAILABLE','STATIC_REQUEST','invalid-range','origin-denied','http-media-disabled','media-credentials-not-accepted','method-not-allowed','ECONNRESET','ECONNREFUSED','EPIPE','ETIMEDOUT','UND_ERR_SOCKET','ABORT_ERR','ERR_STREAM_PREMATURE_CLOSE']);
 const states=new Set(['PLAYING','PAUSED','BUFFERING','IDLE','UNOWNED','DISCONNECTED']);

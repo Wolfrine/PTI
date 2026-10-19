@@ -1,7 +1,8 @@
 import { auth, observeAccount, defaults, signInToOnePiece, freshGoogleConfirmation, createWorkspace, claimInvitation, readProfile, saveProfile, listInvitations, inviteMember, logout } from './account.mjs';
 import { createClient, ClientError } from './client.mjs';
 import { icon } from './icons.mjs';
-import { episodeId, episodeNumber, escapeHtml as esc, time, bytes, rangeFor, nextBoundary, phaseLabel, errorCopy, safeLocalProgress, validPendingEvent, shouldAutoplayDelivery } from './model.mjs';
+import { episodeId, episodeNumber, escapeHtml as esc, time, bytes, initialSeason, selectLibrarySeason, nextBoundary, phaseLabel, errorCopy, safeLocalProgress, validPendingEvent, shouldAutoplayDelivery } from './model.mjs';
+import { SEASONS } from './seasons.mjs';
 import { LocalPlayer } from './player.mjs';
 import { handleWatchKeyboard } from './keyboard.mjs';
 import { accountSnapshot, isCurrentAccount, resetAccountContext } from './identity.mjs';
@@ -20,7 +21,8 @@ class ViewingApp {
  constructor(){
   this.root=document.querySelector('#app');this.accountGeneration=0;this.player=null;this.loadedKey=null;this.delivery=null;this.eventQueue=[];this.sending=false;this.polling=false;this.loading=false;this.lastHeartbeat=0;this.pendingPosition=null;
   const p=new URLSearchParams(location.search),raw=p.get('episode'),n=/^\d{1,4}$/.test(raw??'')?Number(raw):episodeNumber(raw);
-  this.s={user:null,me:null,profile:{...defaults},catalog:null,progress:{},lastEpisodeId:null,session:null,lease:null,route:'library',range:rangeFor(n||store.get('one-piece-range',1)),query:'',booting:true,network:'checking',error:null,notice:'',dialog:null,sessionError:null,appIdentity:{...appIdentity(),standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},requestedEpisode:Number.isInteger(n)&&n>=1&&n<=1085?n:null};
+  const requestedEpisode=Number.isInteger(n)&&n>=1&&n<=1085?n:null,requestedSeason=p.get('season'),requestedRange=p.get('range');
+  this.s={user:null,me:null,profile:{...defaults},catalog:null,progress:{},lastEpisodeId:null,session:null,lease:null,route:'library',season:initialSeason({requestedEpisode,requestedSeason,requestedRange}),query:'',booting:true,network:'checking',error:null,notice:'',dialog:null,sessionError:null,appIdentity:{...appIdentity(),standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},requestedEpisode,requestedSeason,requestedRange};
   this.request=createClient(()=>{if((auth.currentUser?.uid??null)!==(this.s.user?.uid??null))throw new ClientError('identity-changed');return this.s.user;},()=>this.accountGeneration);
   this.root.addEventListener('click',e=>{const account=this.account();void this.click(e).catch(()=>{if(this.current(account))this.failure();});});
   this.root.addEventListener('submit',e=>void this.submit(e));
@@ -46,8 +48,9 @@ class ViewingApp {
  account(){return accountSnapshot(this);}
  current(account){return isCurrentAccount(this,account)&&((__DEV__&&this.fixture)||(auth.currentUser?.uid??null)===account.uid);}
  key(part){return `one-piece:${this.s.user?.uid??'none'}:${part}`;}
- restore(){const saved=store.get(this.key('progress'),{}),pending=store.get(this.key('pending'),[]);this.s.progress=safeLocalProgress(saved?.progress);this.s.lastEpisodeId=this.s.progress[saved?.lastEpisodeId]?saved.lastEpisodeId:null;this.eventQueue=Array.isArray(pending)?pending.filter(validPendingEvent).slice(0,100):[];if(!this.s.requestedEpisode)this.s.range=rangeFor(Number(store.get(this.key('range'),1))||1);}
+ restore(){const saved=store.get(this.key('progress'),{}),pending=store.get(this.key('pending'),[]);this.s.progress=safeLocalProgress(saved?.progress);this.s.lastEpisodeId=this.s.progress[saved?.lastEpisodeId]?saved.lastEpisodeId:null;this.eventQueue=Array.isArray(pending)?pending.filter(validPendingEvent).slice(0,100):[];this.s.season=initialSeason({requestedEpisode:this.s.requestedEpisode,requestedSeason:this.s.requestedSeason,requestedRange:this.s.requestedRange,savedSeason:store.get(this.key('season'),null),legacyRange:store.get(this.key('range'),null)});store.set(this.key('season'),this.s.season);}
  persist(){store.set(this.key('progress'),{progress:this.s.progress,lastEpisodeId:this.s.lastEpisodeId});store.set(this.key('pending'),this.eventQueue);}
+ selectSeason(number){const url=selectLibrarySeason(this.s,number,location.href);store.set(this.key('season'),this.s.season);history.replaceState(null,'',url);this.render();this.root.querySelector('#episode-season')?.focus();}
  async connect(){
   if(!this.s.user||this.fixture)return;
   const account=this.account();
@@ -133,7 +136,7 @@ class ViewingApp {
  failure(){this.s.notice='That action did not finish. Check your connection and try again.';this.patch();}
  render(){this.s.theme=applyTheme(readTheme());const video=this.player?.video;this.s.hasLocalPlayer=Boolean(this.player);document.body.removeAttribute('data-direction');this.root.innerHTML=`${__DEV__&&this.fixture?`<div class="dev-banner">DEVELOPMENT FIXTURE · ${esc(this.s.designRevision??'')} · ${this.fixture.realMedia?'Real cached video and English captions; synthetic account.':'Synthetic account, progress and device states.'}${this.fixture.realMedia?'<div class="dev-media-controls"><button data-action="dev-dialogue">Dialogue at 10:00</button><button data-action="dev-play-pause">Play / pause</button><button data-action="dev-source" data-number="1000">Source 1 · 1000</button><button data-action="dev-source" data-number="1001">Source 2 · 1001</button></div>':''}</div>`:''}${page(this.s)}`;
   if(video&&this.s.route==='watch'&&this.s.lease?.destination!=='cast'&&ready(this.s.session)){const target=this.root.querySelector('#episode-video');if(target)target.replaceWith(video);}this.renderRows();this.patch();if(this.s.dialog)this.dialog();}
- renderRows(){const target=this.root.querySelector('#episode-results');if(target)target.innerHTML=rows(this.s);const search=this.root.querySelector('#episode-search'),label=this.root.querySelector('.search .sr-only');if(search)search.placeholder=this.s.profile.showTitles?'Find episode or title':'Find episode number';if(label)label.textContent=`Find an episode number${this.s.profile.showTitles?' or verified title':''}`;for(const el of this.root.querySelectorAll('.range-select,.range-paging'))el.hidden=Boolean(this.s.query);const clear=this.root.querySelector('#clear-search');if(clear)clear.hidden=!this.s.query;this.root.querySelector('.browse-tools')?.classList.toggle('searching',Boolean(this.s.query));}
+ renderRows(){const target=this.root.querySelector('#episode-results');if(target)target.innerHTML=rows(this.s);const search=this.root.querySelector('#episode-search'),label=this.root.querySelector('.search .sr-only');if(search)search.placeholder=this.s.profile.showTitles?'Search all episodes or titles':'Search all episode numbers';if(label)label.textContent=`Search all episodes by number${this.s.profile.showTitles?' or verified title':''}`;for(const el of this.root.querySelectorAll('.season-select,.season-paging,.season-summary'))el.hidden=Boolean(this.s.query.trim());const clear=this.root.querySelector('#clear-search');if(clear)clear.hidden=!this.s.query;this.root.querySelector('.browse-tools')?.classList.toggle('searching',Boolean(this.s.query.trim()));}
  patch(){
   for(const el of this.root.querySelectorAll('[data-action="sign-in"]'))el.disabled=Boolean(this.signingIn);
   const signInButton=this.root.querySelector('#sign-in-button');if(signInButton)signInButton.innerHTML=`${icon('user')} ${this.signingIn?'Opening Google…':'Sign in with Google'}`;
@@ -171,7 +174,7 @@ class ViewingApp {
   if(a==='library'){this.player?.pause();this.closeDialog();s.route='library';this.render();window.scrollTo({top:store.get(this.key('library-scroll'),0)});return;}
   if(a==='watch'){this.closeDialog();s.route='watch';this.render();if(!this.fixture||(__DEV__&&this.fixture.realMedia))await this.loadDelivery();return;}
   if(a==='open'){store.set(this.key('library-scroll'),window.scrollY);await this.open(n);return;}
-  if(['range','previous-range','next-range'].includes(a)){s.range=a==='range'?rangeFor(n):Math.max(1,Math.min(1051,s.range+(a==='next-range'?50:-50)));s.query='';store.set(this.key('range'),s.range);this.render();this.root.querySelector('#episode-search')?.focus();return;}
+  if(['season','previous-season','next-season'].includes(a)){this.selectSeason(a==='season'?n:Math.max(1,Math.min(SEASONS.length,s.season+(a==='next-season'?1:-1))));return;}
   if(a==='clear-search'){s.query='';const input=this.root.querySelector('#episode-search');if(input){input.value='';input.focus();}this.renderRows();return;}
   if(['missing','ended','account','connection','tracks','setup'].includes(a)){if(a==='missing')store.set(this.key('library-scroll'),window.scrollY);s.dialog=a;this.dialog();return;}
   if(a==='review-resume'){s.dialog='resume-conflict';this.dialog();return;}
@@ -219,7 +222,7 @@ class ViewingApp {
  }
  async change(event){const account=this.account(),el=event.target,id=el.id,s=this.s;
   if(!this.current(account))return;
-  if(id==='episode-range'){s.range=Number(el.value);s.query='';store.set(this.key('range'),s.range);this.render();return;}
+  if(id==='episode-season'){this.selectSeason(Number(el.value));return;}
   if(id==='autoplay'||id==='account-autoplay'){await this.preference({autoplay:el.checked});return;}
   if(id==='show-titles'||id==='account-show-titles'){await this.preference({showTitles:el.checked});if(this.current(account))this.render();return;}
   if(id==='subtitle-choice'){if(s.lease?.destination==='cast'&&!await this.command('subtitles',el.value!=='off'))return;if(!this.current(account))return;await this.preference({subtitleLanguage:el.value});if(!this.current(account))return;this.player?.subtitles(el.value!=='off');this.patch();return;}

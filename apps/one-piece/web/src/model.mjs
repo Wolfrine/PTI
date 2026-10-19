@@ -1,3 +1,5 @@
+import { getSeason, seasonForEpisode } from './seasons.mjs';
+
 export const episodeId = number => `one-piece-${String(number).padStart(4,'0')}`;
 export const episodeNumber = id => Number(/^one-piece-(\d{4})$/.exec(id??'')?.[1]);
 export const escapeHtml = value => String(value??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -6,10 +8,25 @@ export function time(seconds) {
  return n>=3600?`${Math.floor(n/3600)}:${String(Math.floor(n%3600/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`:`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;
 }
 export const bytes = value => !Number.isFinite(value)?'':value>=1000000000?`${(value/1000000000).toFixed(1)} GB`:`${Math.round(value/1000000)} MB`;
-export function rangeFor(number) { return Math.floor((Math.max(1,Math.min(1085,number))-1)/50)*50+1; }
-export function visibleEpisodes(episodes,{query='',range=1,showTitles=false}={}) {
+export function initialSeason({requestedEpisode,requestedSeason,requestedRange,savedSeason,legacyRange}={}) {
+ const integer=value=>typeof value==='number'&&Number.isInteger(value)?value:typeof value==='string'&&/^[1-9]\d*$/.test(value)?Number(value):NaN;
+ for(const [kind,value] of [['episode',requestedEpisode],['season',requestedSeason],['episode',requestedRange],['season',savedSeason],['episode',legacyRange]]){
+  const number=integer(value);
+  if(kind==='season'){if(getSeason(number).number===number)return number;}
+  else if(number>=1&&number<=1085){const season=seasonForEpisode(number);if(season)return season.number;}
+ }
+ return 1;
+}
+export function selectLibrarySeason(state,number,href) {
+ state.season=getSeason(number).number;state.query='';state.requestedEpisode=null;state.requestedSeason=null;state.requestedRange=null;
+ const url=new URL(href);
+ for(const key of ['episode','range','season'])url.searchParams.delete(key);
+ if(url.hash==='#player')url.hash='';
+ return url.pathname+url.search+url.hash;
+}
+export function visibleEpisodes(episodes,{query='',season,range,showTitles=false}={}) {
  const term=query.trim().toLowerCase();
- if(!term)return episodes.filter(e=>e.episodeNumber>=range&&e.episodeNumber<range+50);
+ if(!term){const selected=getSeason(initialSeason({savedSeason:season,legacyRange:range}));return episodes.filter(e=>e.episodeNumber>=selected.start&&e.episodeNumber<=selected.availableEnd);}
  const number=/^(?:episode\s*)?0*(\d{1,4})$/.exec(term)?.[1];
  return episodes.filter(e=>number?e.episodeNumber===Number(number):showTitles&&e.title&&e.titleProvenance&&e.title.toLowerCase().includes(term));
 }

@@ -32,7 +32,7 @@ class ViewingApp {
   window.addEventListener('pagehide',()=>{if(this.player)this.record('pause',this.player.position);});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){void this.poll();void this.flush();}else if(this.player)this.record('heartbeat',this.player.position);});
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();this.installPrompt=e;this.patch();});
-  window.addEventListener('appinstalled',()=>{this.installPrompt=null;this.s.appIdentity.standalone=true;this.patch();});
+  window.addEventListener('appinstalled',()=>{this.installPrompt=null;this.s.appIdentity.installationRequested=true;this.patch();});
  }
  async start(){
   this.render();
@@ -134,6 +134,7 @@ class ViewingApp {
   if(video&&this.s.route==='watch'&&this.s.lease?.destination!=='cast'&&ready(this.s.session)){const target=this.root.querySelector('#episode-video');if(target)target.replaceWith(video);}this.renderRows();this.patch();if(this.s.dialog)this.dialog();}
  renderRows(){const target=this.root.querySelector('#episode-results');if(target)target.innerHTML=rows(this.s);const search=this.root.querySelector('#episode-search'),label=this.root.querySelector('.search .sr-only');if(search)search.placeholder=this.s.profile.showTitles?'Find episode or title':'Find episode number';if(label)label.textContent=`Find an episode number${this.s.profile.showTitles?' or verified title':''}`;for(const el of this.root.querySelectorAll('.range-select,.range-paging'))el.hidden=Boolean(this.s.query);const clear=this.root.querySelector('#clear-search');if(clear)clear.hidden=!this.s.query;this.root.querySelector('.browse-tools')?.classList.toggle('searching',Boolean(this.s.query));}
  patch(){
+  const installCopy=this.s.appIdentity?.dedicated?this.root.querySelector('.notice-bar>span'):null;if(installCopy&&this.s.appIdentity?.installationRequested)installCopy.textContent='Installation requested. Finish the confirmation on your device, then look for One Piece in your apps.';
   const notice=this.root.querySelector('#notice');if(notice)notice.innerHTML=(this.s.updateAvailable?`<div class="notice-bar"><span>An app update is ready.</span>${button('update','Update app','quiet','reload')}</div>`:'')+(this.s.notice?`<div class="notice-bar"><span>${esc(this.s.notice)}</span>${this.s.resumeConflict?button('review-resume','Review saved place','text-button'):''}${iconButton('dismiss-notice','Dismiss message','close')}</div>`:'');
   for(const id of ['connection-label','footer-connection']){const el=this.root.querySelector(`#${id}`);if(el)el.textContent=connectionLabel(this.s);}
   const install=this.root.querySelector('#install-button');if(install){const status=installStatus({...this.s.appIdentity,promptAvailable:Boolean(this.installPrompt)});install.hidden=false;install.disabled=status.kind==='installed';install.innerHTML=`${icon(status.kind==='installed'?'check':'download')} ${status.label}`;}
@@ -195,7 +196,7 @@ class ViewingApp {
   }
   if(a==='install'){
    if(!s.appIdentity?.dedicated){s.dialog='install';this.dialog();return;}
-   if(this.installPrompt){await this.installPrompt.prompt();await this.installPrompt.userChoice;this.installPrompt=null;this.patch();return;}
+   if(this.installPrompt){await this.installPrompt.prompt();const choice=await this.installPrompt.userChoice;this.installPrompt=null;if(choice.outcome==='accepted')s.appIdentity.installationRequested=true;this.patch();return;}
    s.dialog='install';this.dialog();return;
   }
   if(a==='update'){this.player?.pause();await this.flush();if(!this.current(account))return;navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});this.registration?.waiting?.postMessage({type:'ACTIVATE_UPDATE'});}

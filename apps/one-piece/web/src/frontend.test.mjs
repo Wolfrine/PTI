@@ -30,9 +30,10 @@ test('installation always has a visible useful state, including no browser promp
  assert.equal(installStatus({dedicated:true,standalone:true}).kind,'installed');
  const state={booting:true,network:'online',appIdentity:{dedicated:true},profile:{},user:{uid:'fixture',displayName:'Family viewer'}};
  const html=page(state);assert.match(html,/id="install-button"[^>]*>.*Install One Piece/);assert.doesNotMatch(html,/id="install-button"[^>]*hidden/);
- const legacy=page({...state,appIdentity:{legacy:true}});assert.match(legacy,/One Piece now has its own app/);assert.match(legacy,/data-action="open-dedicated"/);
+ assert.match(html,/Opening this page does not install it/);
+ const legacy=page({...state,appIdentity:{legacy:true}});assert.match(legacy,/viewing One Piece inside PTI/);assert.match(legacy,/data-action="open-dedicated"/);
  assert.match(html,new RegExp(`${PTI_ORIGIN.replaceAll('.','\\.')}/home`));
- const help=dialogContent({...state,dialog:'install'});assert.match(help,/Add to home screen/);assert.match(help,/browser menu/);
+ const help=dialogContent({...state,dialog:'install'});assert.match(help,/Add to home screen/);assert.match(help,/app drawer/);assert.match(help,/Create shortcut/);
  assert.match(dialogContent({...state,appIdentity:{legacy:true},dialog:'install'}),/Sign in there once with the same Google account/);
  assert.match(dialogContent({...state,dialog:'migration-pending'}),/Sync before switching apps/);
 });

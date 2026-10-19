@@ -25,6 +25,12 @@ export function navigateAfterLogin(raw: string | null | undefined, router: { nav
   else router.navigateByUrl(target.path);
 }
 
+export function loginPresentation(origin: string, raw: string | null | undefined): { onePiece: boolean; returnPath: string } {
+  const target = safeLoginReturn(raw);
+  const dedicated = ['https://pti-app-2ab59-one-piece.web.app', 'https://pti-app-2ab59-one-piece.firebaseapp.com'].includes(origin);
+  return { onePiece: dedicated || target.fullPage, returnPath: dedicated && !target.fullPage ? '/one-piece/' : target.path };
+}
+
 // Installed older Angular workers still treat a new sibling path as Angular navigation.
 // Its supported bypass boots the child worker once; that worker removes this marker.
 export function onePieceEntry(raw: string): string {

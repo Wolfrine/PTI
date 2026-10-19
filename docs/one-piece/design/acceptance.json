@@ -1,88 +1,88 @@
 {
   "schema_version": 3,
   "status": "agent-reviewed",
-  "candidate": "e2d547d7718daf6de0c4abe18dad4e102ff4fab7e7ecfd23eec906f82ba0b539",
-  "independent_candidate": "30e76dddcaed237be1c93b1a5d169c0106034d9a3c01f0f956b72a805e69fb3b",
-  "checkedAt": "2026-10-19T02:35:15.745Z",
-  "acceptance_scope": "Mechanical app identity and origin repair. Dedicated PTI Firebase Hosting site, own PWA identity including login, guarded old-origin migration and install controls. Existing light/dark art direction, media and casting behavior retained.",
+  "candidate": "1491a1a26402c904eb054eb5a57d050d11a1330fa795d25aa4a98075888e5d62",
+  "independent_candidate": "502ecc8734cee30e299da01c2b3a8ba5e467cb6f403fabd3e782afe3aa705ef6",
+  "checkedAt": "2026-10-19T03:45:02.312Z",
+  "acceptance_scope": "Mechanical install, cached launcher and sign-in identity repair; existing themes and media behavior retained. This does not establish physical-phone install or new-origin playback acceptance.",
   "owner_verdict": {
     "status": "not-reviewed"
   },
   "roles": {
-    "hosting": "/root/onepiece_hosting",
-    "frontend": "/root/onepiece_install_identity",
+    "implementation": "/root",
     "review": "/root/separate_pwa_review",
     "parent": "/root",
     "qa": "/root"
   },
-  "review": "../INDEPENDENT_PWA.md",
+  "review": "../INSTALL_REPAIR.md",
   "parent_verdict": {
     "status": "scoped-pass",
-    "reason": "Personally inspected old-origin migration banner and dedicated installation help on desktop/mobile. No observed horizontal overflow or clipped controls; standalone manifest identity and both built variants are tested. Physical Android install is separate."
+    "reason": "Personally inspected actual Angular login/update banner at1440x1000 and390x844; no horizontal overflow. Install banner and Android help readable in labelled fixtures."
   },
   "evidence": [
     {
-      "path": "evidence/independent-pwa/one-piece-own-app-legacy-desktop.jpg",
-      "sha256": "d531593514a69990a8fc87cf97a5c8d6a626c6d5e89fe3246a7a3f15e07d37b6",
+      "path": "evidence/install-repair/one-piece-login-desktop.jpg",
+      "sha256": "3a79dbdeacd3a6e6bdccd2621f6a14674dc3584d1e9e11d41558fdd66a5a02a1",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
+      "kind": "Actual built Angular login and update banner; no mock account",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/independent-pwa/one-piece-own-app-legacy-mobile.jpg",
-      "sha256": "38358ab1badcaf42ecb82d3e8a9600db823e05d4ad29b94f77794557ef332135",
+      "path": "evidence/install-repair/one-piece-login-mobile.jpg",
+      "sha256": "e2d23478fff50c9de4febe02be07278c5012e9e65f911e441bb8dd4acd010d8b",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
+      "kind": "Actual built Angular login and update banner; no mock account",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/independent-pwa/one-piece-own-app-install-desktop.jpg",
-      "sha256": "454eeec6ce3079b9ccbc727b5a5c59a199da1c526670c2ab9b97db53ad62615a",
+      "path": "evidence/install-repair/one-piece-install-banner-desktop.jpg",
+      "sha256": "8f6c274c58b228f29a37d45980fc7f414bb435451857ead7056150df4c351f34",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
+      "kind": "Labelled synthetic account/progress fixture; real catalogue/artwork",
       "parentPersonallyInspected": true
     },
     {
-      "path": "evidence/independent-pwa/one-piece-own-app-install-mobile.jpg",
-      "sha256": "c5fbbf0b3a05b12265154ce981a5fd5fd5c0ed726af462ee33b4ff12af452573",
+      "path": "evidence/install-repair/one-piece-install-help-mobile.jpg",
+      "sha256": "c88fa3b4f90d186da8481f441a58d2940d2721ef4aeed0d0d834a212f3d3e596",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "kind": "Actual loopback browser render; synthetic family, progress and app-origin flags; real catalogue/artwork",
+      "kind": "Labelled synthetic fixture installation help",
       "parentPersonallyInspected": true
     }
   ],
   "verification": {
-    "frontendChecks": 67,
-    "frontendChecksPassed": 67,
-    "companionChecks": 219,
-    "companionChecksPassed": 219,
-    "completePtiAndDedicatedBuild": "passed with existing Angular stylesheet warnings",
-    "independentReview": "See INDEPENDENT_PWA.md for final verdict",
-    "syntheticIdentityAndOriginFlags": true,
+    "frontendChecks": 68,
+    "frontendChecksPassed": 68,
+    "angularUpdateChecks": 2,
+    "angularUpdateChecksPassed": 2,
+    "independentFocusedChecks": 55,
+    "independentFocusedChecksPassed": 55,
+    "completePtiAndDedicatedBuild": "passed with existing warnings",
+    "syntheticCatalogueAccountOnly": true,
     "mediaEngineUnchanged": true,
     "castTransportUnchanged": true
   },
   "limitations": [
-    "New-origin actual sign-in, companion CORS and playback are verified after release; pre-release renders use fixtures.",
-    "Browser-origin sign-in/device storage is separate, so a fresh Google sign-in and possible same-profile takeover are expected; no token transfer.",
-    "Actual Android WebAPK installation and launch are hardware/user actions, not proved by metadata or desktop screenshots.",
-    "No TV session started for this origin repair; prior end-of-episode issue remains."
+    "Already-loaded stale PTI clients cannot receive an update banner retroactively; use the documented fresh /home?ngsw-bypass=true link once.",
+    "No physical Android app-drawer install or new-origin browser playback acceptance. Home PC connection remains a separately unconfirmed gate.",
+    "No TV test or companion restart performed. Existing Sony end-of-episode issue remains."
   ],
   "historical_record": {
-    "commit": "f646b3a4cc8e04f39b8b62525f82cda4e16641ab",
+    "commit": "ba646cce80e78fd19477555a78888917bc3acb1c",
+    "candidate": "e2d547d7718daf6de0c4abe18dad4e102ff4fab7e7ecfd23eec906f82ba0b539",
+    "independent_candidate": "30e76dddcaed237be1c93b1a5d169c0106034d9a3c01f0f956b72a805e69fb3b",
     "path": "docs/one-piece/design/acceptance.json",
-    "candidate": "908cf3531bc892648b748406d92b0763e4e824966c486fe959cc981008e1c583",
-    "policy": "Prior connection/theme/media evidence retains original candidate and scope."
+    "policy": "Prior design/playback evidence retains its original scope."
   }
 }

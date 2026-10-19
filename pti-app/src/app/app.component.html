@@ -1,1 +1,5 @@
+<aside *ngIf="updateAvailable" class="app-update" aria-label="App update" role="status">
+  <span>{{ updateFailed ? 'The update could not finish. Reconnect and try again.' : 'A ' + appName + ' update is ready.' }}</span>
+  <button type="button" (click)="updateApp()" [disabled]="updating">{{ updating ? 'Updating…' : 'Update ' + appName }}</button>
+</aside>
 <router-outlet></router-outlet>

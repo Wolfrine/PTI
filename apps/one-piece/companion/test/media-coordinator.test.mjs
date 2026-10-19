@@ -152,3 +152,80 @@ test('optional receiver queue storage denial leaves current playback intact', as
   assert.equal(media.preparedNext('small'), null); assert.equal(engine.allowed.size, 1);
   await media.getPlaybackResource('small', current.masterPath);
 });
+
+// Count automatic work using a deterministic clock. No engine, files or devices.
+function maintenanceFixture({ idleMs = 2 * 3600000 } = {}) {
+  let now = 0, sweeps = 0, reports = 0;
+  const cache = { jobs: new Map(), renditionJobs: new Map(), preparedReservations: new Map(), engineBudgets: new Map(),
+    initialize: async () => {}, maintain: async () => { sweeps++; }, usage: async () => ({ usedBytes: 0 }) };
+  const engine = { verifiedModes: new Set(['compatible-h264']), configure: async () => ({}), reportProgress: async () => { reports++; } };
+  const media = new MediaCoordinator({ catalog: { episodes: [] }, cache, engine, monitorMs: 0, idleMs, clock: () => now });
+  const session = id => ({ id, engineKey: id, mode: 'prepared-mp4', state: 'ready', episodeNumber: 1, lastAccess: now,
+    contexts: new Map([[id, { expiresAt: null }]]) });
+  return { media, cache, session, advance: milliseconds => { now += milliseconds; }, sweeps: () => sweeps, reports: () => reports };
+}
+
+test('sixty unused timer ticks do no full cache scans; an explicit check remains immediate', async t => {
+  const f = maintenanceFixture(); let timerTick;
+  t.mock.method(globalThis, 'setInterval', (callback, milliseconds) => {
+    assert.equal(milliseconds, 1000); timerTick = callback; return { unref() {} };
+  });
+  f.media.monitorMs = 1000; await f.media.initialize(); assert.equal(f.sweeps(), 1);
+  for (let tick = 0; tick < 60; tick++) { f.advance(1000); await timerTick(); }
+  assert.equal(f.sweeps(), 1);
+  await f.media.maintain(); assert.equal(f.sweeps(), 2);
+});
+
+test('prepared paused viewing keeps progress and current context while sweeping at most once a minute', async () => {
+  const f = maintenanceFixture({ idleMs: 5000 }); await f.media.initialize();
+  const paused = f.session('paused'); f.media.sessions.set(paused.id, paused);
+  for (let tick = 0; tick < 60; tick++) {
+    f.advance(1000); await f.media.reportProgress(paused.id, { episodeNumber: 1, positionSeconds: 600, isPaused: true });
+    await f.media.maintain({ automatic: true });
+  }
+  assert.equal(f.sweeps(), 2); assert.equal(f.reports(), 60);
+  assert.equal(f.media.sessions.get(paused.id), paused); assert.equal(paused.state, 'ready'); assert.equal(paused.contexts.size, 1);
+});
+
+test('each active writer or reservation restores automatic capacity checks without waiting for a quiet interval', async () => {
+  const f = maintenanceFixture(); await f.media.initialize();
+  for (const jobs of [f.cache.jobs, f.cache.renditionJobs, f.cache.preparedReservations, f.cache.engineBudgets, f.media.warmTasks]) {
+    const before = f.sweeps(); jobs.set('active-fixture', {});
+    for (let tick = 0; tick < 3; tick++) { f.advance(1000); await f.media.maintain({ automatic: true }); }
+    assert.equal(f.sweeps(), before + 3); jobs.clear();
+  }
+  const before = f.sweeps(); for (let tick = 0; tick < 60; tick++) { f.advance(1000); await f.media.maintain({ automatic: true }); }
+  assert.equal(f.sweeps(), before);
+});
+
+test('cheap session and transition expiry cleanup runs even when the automatic disk sweep is skipped', async () => {
+  const f = maintenanceFixture({ idleMs: 2000 }); await f.media.initialize();
+  const old = f.session('old'); f.media.sessions.set(old.id, old); f.advance(3000);
+  const current = f.session('current'); current.contexts.set('expired-transition', { expiresAt: 2000 }); f.media.sessions.set(current.id, current);
+  const closed = [], released = [];
+  f.media.closeSession = async id => { closed.push(id); f.media.sessions.delete(id); };
+  f.media.releaseContext = async (session, key) => { released.push(key); session.contexts.delete(key); };
+  await f.media.maintain({ automatic: true });
+  assert.deepEqual(closed, ['old']); assert.deepEqual(released, ['expired-transition']);
+  assert.equal(f.sweeps(), 1); assert.equal(current.contexts.size, 1);
+});
+
+test('a manual check arriving during cheap automatic cleanup still performs its own capacity check', async () => {
+  const f = maintenanceFixture(); await f.media.initialize();
+  const current = f.session('current'); current.contexts.set('expired', { expiresAt: 0 }); f.media.sessions.set(current.id, current);
+  let release, entered;
+  const held = new Promise(resolve => { release = resolve; }), started = new Promise(resolve => { entered = resolve; });
+  f.media.releaseContext = async (session, key) => { entered(); await held; session.contexts.delete(key); };
+  const automatic = f.media.maintain({ automatic: true }); await started;
+  const manual = f.media.maintain(); release(); await Promise.all([automatic, manual]);
+  assert.equal(f.sweeps(), 2);
+});
+
+test('automatic monitoring still stops active producers immediately under external disk pressure', async t => {
+  let emergency = 0;
+  const { root, media } = await setup(t, [1], { limitBytes: 150 * 1024 ** 2, onEmergencyStop: async () => { emergency++; } });
+  await media.openSession({ sessionId: 'active-pressure', profileId: 'profile', episodeNumber: 1 });
+  const file = await open(path.join(root, 'automatic-pressure.fixture'), 'w'); await file.truncate(100 * 1024 ** 2); await file.close();
+  await assert.rejects(media.maintain({ automatic: true }), { code: 'CACHE_PRESSURE' });
+  assert.equal(emergency, 1); assert.equal(media.snapshot('active-pressure').state, 'storage-paused');
+});

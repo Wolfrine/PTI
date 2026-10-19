@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, writeFile, access, symlink, rm } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, access, symlink, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { MediaCache, scanFiles } from '../src/media/cache.mjs';
 import { candidate, temporary, fixtureDownloader } from './media-helpers.mjs';
@@ -89,4 +89,30 @@ test('import cannot read an arbitrary external file; managed links are refused',
   await symlink(path.join(root, 'approved'), linked, process.platform === 'win32' ? 'junction' : 'dir');
   await assert.rejects(scanFiles(cache.root), { code: 'CACHE_LINK' });
   await rm(linked); // Remove only the verified test link before recursive fixture cleanup.
+});
+
+test('unchanged capacity checks do not rewrite the manifest and a new admission still checks current free space', async t => {
+  const root = await temporary(t), bytes = Buffer.alloc(2000, 1), downloader = fixtureDownloader(bytes); let free = 100000000000;
+  const cache = new MediaCache({ cacheRoot: root, downloader, diskFree: async () => free }); await cache.initialize();
+  const original = cache.persist.bind(cache); let writes = 0;
+  cache.persist = async () => { writes++; return original(); };
+  const before = await readFile(path.join(root, 'cache.json'), 'utf8');
+  for (let tick = 0; tick < 60; tick++) await cache.maintain();
+  assert.equal(writes, 0); assert.equal(await readFile(path.join(root, 'cache.json'), 'utf8'), before);
+  free = 0;
+  await assert.rejects(cache.prepare(candidate(1, bytes), { owner: 'first-after-idle' }), { code: 'CACHE_PRESSURE' });
+  assert.equal(downloader.state.calls, 0); assert.equal(writes, 0); await cache.shutdown();
+});
+
+test('partial eviction is persisted even when pinned media still prevents quota admission', async t => {
+  const root = await temporary(t), bytes = Buffer.alloc(5000, 1), downloader = fixtureDownloader(bytes);
+  const cache = new MediaCache({ cacheRoot: root, downloader, minimumFreeBytes: 0, diskFree: ampleDisk }); await cache.initialize();
+  const old = candidate(1, bytes), active = candidate(2, bytes);
+  await cache.prepare(old, { owner: 'old' }); cache.releaseOwner('old');
+  const pinned = await cache.prepare(active, { owner: 'current' }); cache.limitBytes = 1000;
+  await assert.rejects(cache.maintain(), { code: 'CACHE_PRESSURE' });
+  await assert.rejects(access(cache.entryPath(old))); await access(pinned.path);
+  const persisted = JSON.parse(await readFile(path.join(root, 'cache.json'), 'utf8'));
+  assert.deepEqual(persisted.entries.map(record => record.candidate.id), [active.id]);
+  await cache.shutdown();
 });

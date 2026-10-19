@@ -8,11 +8,13 @@ const SESSION_ID = /^[a-zA-Z0-9_-]{1,96}$/;
 
 export class MediaCoordinator {
   constructor({ catalog, cache, engine, maxSessions = 3, monitorMs = 1000, idleMs = 2 * 3600000,
-    onEmergencyStop = async () => {}, autoPrefetch = true, transitionGraceMs = 30000, defaultMode = 'compatible-h264' } = {}) {
+    onEmergencyStop = async () => {}, autoPrefetch = true, transitionGraceMs = 30000, defaultMode = 'compatible-h264', clock = () => Date.now() } = {}) {
     if (!catalog?.episodes || !cache || !engine || maxSessions < 1 || maxSessions > 3) throw new Error('Catalogue, cache, engine, and at most three sessions are required');
+    if (typeof clock !== 'function') throw new Error('A maintenance clock is required');
     if (!engine.verifiedModes?.has(defaultMode)) throw new Error('Default playback mode must be explicitly verified');
-    Object.assign(this, { catalog, cache, engine, maxSessions, monitorMs, idleMs, onEmergencyStop, autoPrefetch, transitionGraceMs, defaultMode });
+    Object.assign(this, { catalog, cache, engine, maxSessions, monitorMs, idleMs, onEmergencyStop, autoPrefetch, transitionGraceMs, defaultMode, clock });
     this.sessions = new Map(); this.timer = null; this.maintaining = null; this.generation = 0; this.warmTasks = new Map();
+    this.lastCacheSweep = null; this.maintenanceAutomatic = false;
   }
 
   async initialize(options = {}) {
@@ -20,7 +22,8 @@ export class MediaCoordinator {
     await this.cache.initialize();
     const engine = await this.engine.configure(options);
     await this.cache.maintain();
-    if (this.monitorMs > 0) { this.timer = setInterval(() => this.maintain().catch(() => {}), this.monitorMs); this.timer.unref?.(); }
+    this.lastCacheSweep = this.clock();
+    if (this.monitorMs > 0) { this.timer = setInterval(() => this.maintain({ automatic: true }).catch(() => {}), this.monitorMs); this.timer.unref?.(); }
     return { engine, cache: await this.cache.usage() };
   }
 
@@ -67,7 +70,7 @@ export class MediaCoordinator {
     const controller = new AbortController(), engineKey = `${sessionId}-g${++this.generation}`;
     return { id: sessionId, profileId, episodeNumber, mode, audioIndex, audioLanguage, row, candidate, controller, engineKey, contexts,
       signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
-      state: 'preparing', lastAccess: Date.now(), currentOwner: `${engineKey}:current`, nextOwner: `${engineKey}:next`, onProgress };
+      state: 'preparing', lastAccess: this.clock(), currentOwner: `${engineKey}:current`, nextOwner: `${engineKey}:next`, onProgress };
   }
 
   async switchEpisode(sessionId, episodeNumber, { explicitSelection = false, mode, audioIndex, audioLanguage, signal, onProgress } = {}) {
@@ -85,9 +88,9 @@ export class MediaCoordinator {
       const descriptor = await queued.promise;
       if (this.sessions.get(sessionId) !== previous || previous.queued !== queued) throw new MediaError('SESSION_GONE', 'Viewing session changed while the queue was being prepared', { status: 410 });
       previous.queued = null;
-      queued.onProgress = onProgress ?? previous.onProgress; queued.lastAccess = Date.now(); queued.next = null;
+      queued.onProgress = onProgress ?? previous.onProgress; queued.lastAccess = this.clock(); queued.next = null;
       this.sessions.set(sessionId, queued);
-      const old = queued.contexts.get(previous.engineKey); if (old) old.expiresAt = Date.now() + this.transitionGraceMs;
+      const old = queued.contexts.get(previous.engineKey); if (old) old.expiresAt = this.clock() + this.transitionGraceMs;
       previous.controller.abort(new MediaError('CANCELLED', 'Queued episode took over the viewing session'));
       this.cache.releaseOwner(previous.nextOwner);
       if (this.autoPrefetch) this.prefetchNext(queued);
@@ -99,7 +102,7 @@ export class MediaCoordinator {
     session.switchingTarget = episodeNumber; this.sessions.set(sessionId, session);
     session.promise = this.prepareCurrent(session).then(descriptor => {
       const old = session.contexts.get(previous.engineKey);
-      if (old) old.expiresAt = Date.now() + this.transitionGraceMs;
+      if (old) old.expiresAt = this.clock() + this.transitionGraceMs;
       previous.controller.abort(new MediaError('CANCELLED', 'Next episode took over the viewing session'));
       this.cache.releaseOwner(previous.nextOwner);
       delete session.switchingTarget;
@@ -292,9 +295,9 @@ export class MediaCoordinator {
   async getPlaybackResource(sessionId, relative, options) {
     const session = this.sessions.get(sessionId);
     if (!session || ['error', 'storage-paused'].includes(session.state)) throw new MediaError('SESSION_NOT_READY', 'Episode preparation is not complete', { status: 409 });
-    session.lastAccess = Date.now();
+    session.lastAccess = this.clock();
     for (const [key, context] of session.contexts) {
-      if (context.expiresAt !== null && context.expiresAt <= Date.now()) continue;
+      if (context.expiresAt !== null && context.expiresAt <= this.clock()) continue;
       if (this.engine.ownsResource(key, relative)) return this.engine.getPlaybackResource(key, relative, options);
     }
     throw new MediaError('MEDIA_RESOURCE', 'Resource is not authorized for this viewing session', { status: 403 });
@@ -302,7 +305,7 @@ export class MediaCoordinator {
 
   async reportProgress(sessionId, progress) {
     const session = this.sessions.get(sessionId); if (!session) throw new MediaError('SESSION_GONE', 'Playback session has ended', { status: 410 });
-    session.lastAccess = Date.now();
+    session.lastAccess = this.clock();
     if (progress.episodeNumber !== undefined && progress.episodeNumber !== session.episodeNumber) throw new MediaError('STALE_PROGRESS', 'Progress belongs to the previous episode', { status: 409 });
     return this.engine.reportProgress(session.engineKey, progress);
   }
@@ -316,13 +319,27 @@ export class MediaCoordinator {
     this.cache.releaseOwner(session.currentOwner); this.cache.releaseOwner(session.nextOwner); this.cache.releaseEngine(session.engineKey);
   }
 
-  async maintain() {
-    if (this.maintaining) return this.maintaining;
+  async maintain({ automatic = false } = {}) {
+    if (this.maintaining) {
+      // An explicit pressure check must not inherit a timer's skipped sweep.
+      if (!automatic && this.maintenanceAutomatic) { await this.maintaining; return this.maintain(); }
+      return this.maintaining;
+    }
+    this.maintenanceAutomatic = automatic;
     this.maintaining = (async () => {
-      for (const s of [...this.sessions.values()]) if (Date.now() - s.lastAccess > this.idleMs) await this.closeSession(s.id);
+      const now = this.clock();
+      for (const s of [...this.sessions.values()]) if (now - s.lastAccess > this.idleMs) await this.closeSession(s.id);
       for (const s of this.sessions.values()) for (const [key, context] of [...s.contexts]) {
-        if (context.expiresAt !== null && context.expiresAt <= Date.now()) await this.releaseContext(s, key);
+        if (context.expiresAt !== null && context.expiresAt <= now) await this.releaseContext(s, key);
       }
+      // Ready MP4s do not grow. Keep cheap expiry cleanup frequent, but scan the
+      // filesystem only while producers can write, or once a minute for viewers.
+      // Every foreground admission still performs its own full capacity check.
+      const producing = [this.cache.jobs, this.cache.renditionJobs, this.cache.preparedReservations, this.cache.engineBudgets, this.warmTasks]
+        .some(jobs => jobs?.size > 0);
+      if (automatic && !producing && (!this.sessions.size || this.lastCacheSweep !== null
+          && now >= this.lastCacheSweep && now - this.lastCacheSweep < 60000)) return;
+      this.lastCacheSweep = now;
       try { return await this.cache.maintain(); }
       catch (error) {
         if (error.code !== 'CACHE_PRESSURE') throw error;
@@ -338,7 +355,7 @@ export class MediaCoordinator {
         await this.cache.purgeIdleEngineMedia();
         throw error;
       }
-    })().finally(() => { this.maintaining = null; });
+    })().finally(() => { this.maintaining = null; this.maintenanceAutomatic = false; });
     return this.maintaining;
   }
 

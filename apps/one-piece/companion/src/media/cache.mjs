@@ -149,21 +149,21 @@ export class MediaCache {
   }
 
   async ensureCapacity(additionalBytes = 0) {
-    let usage = await this.usage();
+    let usage = await this.usage(), changed = false;
     const fits = () => usage.projectedBytes + additionalBytes <= this.limitBytes
       && usage.freeBytes - usage.reservedBytes - additionalBytes >= this.minimumFreeBytes;
     for (const record of [...this.renditions.values()].sort((a, b) => a.lastAccess - b.lastAccess)) {
       if (fits()) break;
       if (this.renditionPins.get(record.id)?.size || this.renditionJobs.has(record.id)) continue;
-      await this.removeRendition(record.id); usage = await this.usage();
+      await this.removeRendition(record.id); changed = true; usage = await this.usage();
     }
     for (const entry of [...this.entries.values()].sort((a, b) => a.lastAccess - b.lastAccess)) {
       if (fits()) break;
       if (this.pins.get(entry.candidate.id)?.size || this.jobs.has(entry.candidate.id)) continue;
-      await rm(entry.path, { force: true }); this.entries.delete(entry.candidate.id);
+      await rm(entry.path, { force: true }); this.entries.delete(entry.candidate.id); changed = true;
       usage = await this.usage();
     }
-    await this.persist();
+    if (changed) await this.persist();
     if (!fits()) throw new MediaError('CACHE_PRESSURE', 'The PC needs room before another episode can be prepared', { status: 507, retryable: true });
     return usage;
   }

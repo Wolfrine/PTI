@@ -16,6 +16,7 @@ export async function renderFixture(){
   notice:kind==='offline'?'The home PC is not connected. You can still browse your library.':'',sessionError:kind==='prep-error'?['Episode preparation was interrupted','Retry preparation, or return to the library while the connection recovers.']:['error','unknown-error'].includes(kind)?['Playback was interrupted','Retry from your saved position.']:null,query:kind==='empty'?'not-an-episode':''};
  initial.me.playbackAccess={state:'ready'};
  if(['dedicated','install-help','installed'].includes(kind))initial.appIdentity={dedicated:true,legacy:false,standalone:kind==='installed'};
+ if(kind==='sign-in'){initial.user=null;initial.me=null;initial.appIdentity={dedicated:true,legacy:false,standalone:false};}
  if(kind==='legacy-app')initial.appIdentity={dedicated:false,legacy:true,standalone:false};
  if(['install-help','installed'].includes(kind))initial.dialog='install';
  if(kind==='settings')initial.dialog='account';

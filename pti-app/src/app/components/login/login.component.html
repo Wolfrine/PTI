@@ -1,18 +1,18 @@
-<main class="login-shell" [class.one-piece-login]="onePiece">
-  <section class="login-panel" [attr.aria-label]="onePiece ? 'One Piece family sign in' : 'PTI private access'">
+<main class="login-shell">
+  <section class="login-panel" aria-label="PTI private access">
     <div class="login-brand">
-      <span class="brand-mark">{{ onePiece ? 'OP' : 'PTI' }}</span>
-      <span class="brand-text">{{ onePiece ? 'One Piece · Family viewing' : 'Private Terminal Intelligence' }}</span>
+      <span class="brand-mark">PTI</span>
+      <span class="brand-text">Private Terminal Intelligence</span>
     </div>
-    <p class="access-label">{{ onePiece ? 'Your family adventure' : 'Owner access only' }}</p>
-    <h1>{{ onePiece ? 'Your next episode awaits.' : 'Executive command room' }}</h1>
+    <p class="access-label">Owner access only</p>
+    <h1>Executive command room</h1>
     <p class="login-copy">
-      {{ onePiece ? 'One Piece in Japanese, with English subtitles. Sign in with your invited Google account to keep your own place.' : 'Secure entry to the PTI control plane, Codex command portfolio, and daily execution surfaces.' }}
+      Secure entry to the PTI control plane, Codex command portfolio, and daily execution surfaces.
     </p>
     <button class="signin-btn" type="button" (click)="login()">
       <span>Continue with Google</span>
       <span class="button-mark">arrow_forward</span>
     </button>
-    <p class="security-note">{{ onePiece ? 'You’ll return straight to One Piece. Your family library and saved progress stay with this account.' : 'Authentication is enforced before command surfaces open.' }}</p>
+    <p class="security-note">Authentication is enforced before command surfaces open.</p>
   </section>
 </main>

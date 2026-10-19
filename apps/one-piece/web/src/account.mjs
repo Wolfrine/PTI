@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, reauthenticateWithPopup, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, reauthenticateWithPopup, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, runTransaction, collection, getDocs } from 'firebase/firestore';
 
 // The public Firebase application identifier matches PTI's default app. No Admin credential is used.
@@ -11,6 +11,10 @@ export const observeAccount=callback=>onAuthStateChanged(auth,callback);
 export const defaults={audioLanguage:'ja',subtitleLanguage:'en',autoplay:false,showTitles:false};
 const safeName=name=>String(name??'').replace(/[<>]/g,'').trim().slice(0,80);
 const root=ownerUid=>`users/${ownerUid}/onePieceData/workspace`;
+export async function signInToOnePiece(){
+ const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
+ return (await signInWithPopup(auth,provider)).user;
+}
 export async function freshGoogleConfirmation(){
  if(!auth.currentUser)throw new Error('authentication-required');
  const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account',login_hint:auth.currentUser.email});
@@ -71,4 +75,3 @@ export async function inviteMember(ownerUid,{email,name,active=true}){
  });
 }
 export const logout=()=>signOut(auth);
-export function loginUrl(){return `/login?redirect=${encodeURIComponent(location.pathname+location.search+location.hash)}`;}

@@ -1,5 +1,7 @@
 # One Piece install and login repair — 19 October 2026
 
+Historical stage, superseded by [SINGLE_APP.md](SINGLE_APP.md). One Piece now owns sign-in directly; its deployment contains no Angular/PTI login or directory, and old app/login links are redirect aliases.
+
 The owner reported no One Piece entry in the Android app drawer, an old One Piece URL in PTI's new app directory, and PTI branding on login. An actual signed-in live PTI browser reproduced the old directory href `/one-piece/?ngsw-bypass=true` while current source and deployed server artifacts contain the dedicated origin. This establishes a stale installed Angular client. Android installation itself cannot be established from a webpage or desktop check.
 
 The root app now checks for updates and offers an explicit activation action with recoverable failure. Future root-worker navigation prefers the network. Already-loaded old code cannot acquire a new banner retroactively: reopen [PTI with a fresh navigation](https://pti-app-2ab59.web.app/home?ngsw-bypass=true) once. No browser storage, credentials or progress are cleared. The canonical launcher remains [One Piece](https://pti-app-2ab59-one-piece.web.app/one-piece/), opened externally.

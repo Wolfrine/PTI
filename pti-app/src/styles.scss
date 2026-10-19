@@ -49,11 +49,6 @@ body {
     font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-// The family sign-in fills its own app window, without PTI's page gutters.
-html:has(app-login .one-piece-login) { margin-bottom: 0; }
-body:has(app-login .one-piece-login) { padding: 0; height: auto; min-height: 100svh; }
-app-login:has(.one-piece-login) { margin: 0; }
-
 .footer {
     margin: 36px 0;
     padding: 12px;

@@ -14,7 +14,7 @@ test('public catalogue derives exact real availability and excludes source paths
   assert.equal(catalog.endBoundary.episodeNumber, 1086);
   assert.doesNotMatch(JSON.stringify(catalog), /archive\.org|fileName|checksums|candidates|H:[/\\]/);
 });
-test('Hosting preserves the default artifact and gives One Piece its own origin with shared login', async () => {
+test('Hosting preserves PTI while One Piece has one canonical origin and redirect-only legacy entry', async () => {
   const firebase = JSON.parse(await readFile(new URL('firebase.json', repo)));
   const hosting = firebase.hosting.find(h => h.target === 'default');
   assert.equal(hosting.public, 'pti-app/dist/pti-app/browser');
@@ -53,7 +53,7 @@ test('One Piece release creates its sibling site, requires Auth authorization an
   assert.match(checks,/fingerprint\.mjs pti-app\/dist\/one-piece-app\/one-piece/);
   assert.match(checks,/assert\.equal\(independent\.candidate,accepted\.independent_candidate\)/);
 });
-test('production build retains PTI and removes guarded development auth paths', async () => {
+test('production build retains PTI, emits one native app, and leaves only legacy navigation redirects', async () => {
   const scratch = await mkdtemp(path.join(os.tmpdir(), 'one-piece-build-'));
   try {
     const destination = path.join(scratch, 'browser'), webRoot = path.join(scratch, 'web');
@@ -63,22 +63,32 @@ test('production build retains PTI and removes guarded development auth paths', 
     await writeFile(path.join(webRoot, 'index.html'), '<!doctype html><head></head><script type="module" src="./src/main.mjs"></script>');
     await writeFile(path.join(webRoot, 'src/main.mjs'), 'if (__DEV__) globalThis.DEV_AUTH_BYPASS = true; console.log("production");');
     await writeFile(path.join(webRoot, 'sw.js'), "const VERSION='one-piece-shell-__BUILD_ID__';");
-    await buildOnePiece({ destination, webRoot });
+    const {dedicatedArtifact}=await buildOnePiece({ destination, webRoot });
     const initialWorker=await readFile(path.join(destination,'one-piece/sw.js'),'utf8');
     const initialIndex=await readFile(path.join(destination,'one-piece/index.html'),'utf8');
-    assert.doesNotMatch(initialWorker,/__BUILD_ID__/);
-    assert.match(initialIndex,/\/one-piece\/app\.js\?v=[a-f0-9]{20}/);
+    assert.doesNotMatch(initialWorker,/__BUILD_ID__|cache\.addAll/);
+    assert.match(initialIndex,/Opening One Piece/);
+    assert.doesNotMatch(initialIndex,/app\.js|rel="manifest"/);
+    assert.equal(await readFile(path.join(destination,'one-piece/manifest.webmanifest'),'utf8'),'{}\n');
+    const ownWorker=await readFile(path.join(dedicatedArtifact,'one-piece/sw.js'),'utf8');
+    const ownIndex=await readFile(path.join(dedicatedArtifact,'one-piece/index.html'),'utf8');
+    assert.match(ownIndex,/\/one-piece\/app\.js\?v=[a-f0-9]{20}/);
+    await assert.rejects(readFile(path.join(dedicatedArtifact,'sibling.txt')),/ENOENT/);
     assert.equal(await readFile(path.join(destination, 'sibling.txt'), 'utf8'), 'preserve');
     assert.match(await readFile(path.join(destination, 'index.html'), 'utf8'), /Existing PTI artifact/);
     assert.doesNotMatch(await readFile(path.join(destination, 'one-piece/app.js'), 'utf8'), /DEV_AUTH_BYPASS|__DEV__/);
-    assert.match(await readFile(path.join(destination, 'one-piece/index.html'), 'utf8'), /\/one-piece\/app.js/);
+    assert.doesNotMatch(await readFile(path.join(dedicatedArtifact,'one-piece/app.js'),'utf8'),/DEV_AUTH_BYPASS|__DEV__/);
     await buildOnePiece({destination,webRoot});
     assert.equal(await readFile(path.join(destination,'one-piece/sw.js'),'utf8'),initialWorker);
     assert.equal(await readFile(path.join(destination,'one-piece/index.html'),'utf8'),initialIndex);
+    assert.equal(await readFile(path.join(dedicatedArtifact,'one-piece/sw.js'),'utf8'),ownWorker);
+    assert.equal(await readFile(path.join(dedicatedArtifact,'one-piece/index.html'),'utf8'),ownIndex);
     await writeFile(path.join(webRoot,'src/main.mjs'),'console.log("changed public shell");');
     await buildOnePiece({destination,webRoot});
-    assert.notEqual(await readFile(path.join(destination,'one-piece/sw.js'),'utf8'),initialWorker);
-    assert.notEqual(await readFile(path.join(destination,'one-piece/index.html'),'utf8'),initialIndex);
+    assert.equal(await readFile(path.join(destination,'one-piece/sw.js'),'utf8'),initialWorker);
+    assert.equal(await readFile(path.join(destination,'one-piece/index.html'),'utf8'),initialIndex);
+    assert.notEqual(await readFile(path.join(dedicatedArtifact,'one-piece/sw.js'),'utf8'),ownWorker);
+    assert.notEqual(await readFile(path.join(dedicatedArtifact,'one-piece/index.html'),'utf8'),ownIndex);
     await assert.rejects(buildOnePiece({ destination: path.join(scratch, 'missing'), webRoot }), /ENOENT/);
   } finally { assert.equal(path.dirname(path.resolve(scratch)),path.resolve(os.tmpdir()));assert.ok(path.basename(scratch).startsWith('one-piece-build-'));await rm(scratch, { recursive: true, force: true }); }
 });
@@ -124,7 +134,7 @@ function workerHarness(source, assets) {
   };
   const self={location:{origin},clients:{async claim(){claimed=true;}},skipWaiting(){skipped=true;},addEventListener(type,callback){listeners.set(type,callback);}};
   class ShellRequest extends Request {constructor(input,options){super(key(input),options);}}
-  vm.runInNewContext(source,{self,caches,fetch:network,URL,Request:ShellRequest});
+  vm.runInNewContext(source,{self,caches,fetch:network,URL,Request:ShellRequest,Response});
   return {
     stores,caches,setOnline(value){online=value;},get skipped(){return skipped;},get claimed(){return claimed;},
     async lifecycle(type){let pending;listeners.get(type)?.({waitUntil(value){pending=value;}});await pending;},
@@ -148,29 +158,44 @@ async function shellFixture(run) {
     await writeFile(path.join(webRoot,'src/main.mjs'),'import "./shell.css"; console.log("https://pti-onepiece-home.duckdns.org:8443");');
     await writeFile(path.join(webRoot,'src/shell.css'),'body { color: #123; }');
     await writeFile(path.join(webRoot,'sw.js'),await readFile(new URL('../web/sw.js',import.meta.url)));
-    await buildOnePiece({destination,webRoot});
-    const output=path.join(destination,'one-piece'),assets=new Map();
+    const {dedicatedArtifact}=await buildOnePiece({destination,webRoot});
+    const output=path.join(dedicatedArtifact,'one-piece'),assets=new Map(),aliasAssets=new Map();
     for(const name of ['index.html','app.js','app.css','catalog.json'])assets.set(`/one-piece/${name}`,await readFile(path.join(output,name),'utf8'));
     assets.set('/one-piece/',assets.get('/one-piece/index.html'));
     for(const name of ['manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon.svg'])assets.set(`/one-piece/${name}`,'public fixture asset');
-    await run({assets,worker:await readFile(path.join(output,'sw.js'),'utf8')});
+    const alias=await readFile(path.join(destination,'one-piece/index.html'),'utf8');
+    for(const route of ['/one-piece/','/one-piece/index.html','/one-piece/watch/1001'])aliasAssets.set(route,alias);
+    await run({assets,aliasAssets,worker:await readFile(path.join(output,'sw.js'),'utf8'),redirectWorker:await readFile(path.join(destination,'one-piece/sw.js'),'utf8')});
   }finally{assert.equal(path.dirname(path.resolve(scratch)),path.resolve(os.tmpdir()));assert.ok(path.basename(scratch).startsWith('one-piece-shell-'));await rm(scratch,{recursive:true,force:true});}
 }
 
-test('new navigation bypasses a deployed legacy worker stale JS/CSS cache without activating it',async()=>{
-  await shellFixture(async({assets})=>{
-    const browser=workerHarness(legacyWorker,assets),cache=await browser.caches.open('one-piece-shell-old');
+test('a deployed legacy worker fetches the redirect-only document instead of booting another app',async()=>{
+  await shellFixture(async({aliasAssets})=>{
+    const browser=workerHarness(legacyWorker,aliasAssets),cache=await browser.caches.open('one-piece-shell-old');
     await cache.put('/one-piece/app.js',new Response('https://onepiece.local:8443'));
     await cache.put('/one-piece/app.css',new Response('old styling'));
     assert.equal(await (await browser.request('/one-piece/app.js')).response.text(),'https://onepiece.local:8443');
     const navigation=await browser.request('/one-piece/',{mode:'navigate'}),html=await navigation.response.text();
-    const script=html.match(/src="([^"]*app\.js[^"]*)"/)[1],css=html.match(/href="([^"]*app\.css[^"]*)"/)[1];
-    assert.match(script,/\?v=[a-f0-9]{20}$/);assert.equal(new URL(script,'https://example.com').search,new URL(css,'https://example.com').search);
-    const javascript=await browser.request(script),stylesheet=await browser.request(css);
-    assert.equal(javascript.handled,false);assert.equal(stylesheet.handled,false);
-    assert.match(await javascript.response.text(),/pti-onepiece-home\.duckdns\.org/);
-    assert.doesNotMatch(await stylesheet.response.text(),/old styling/);
+    assert.match(html,/pti-app-2ab59-one-piece\.web\.app/);
+    assert.doesNotMatch(html,/app\.js|rel="manifest"/);
     assert.equal(browser.skipped,false);
+  });
+});
+
+test('legacy retirement worker redirects future navigation without replacing active players or private requests',async()=>{
+  await shellFixture(async({aliasAssets,redirectWorker})=>{
+    const browser=workerHarness(redirectWorker,aliasAssets);
+    const previous=await browser.caches.open('one-piece-shell-old');
+    await previous.put('/one-piece/index.html',new Response('old usable app'));
+    await (await browser.caches.open('some-other-app')).put('/other',new Response('preserve'));
+    await browser.lifecycle('install');await browser.lifecycle('activate');
+    assert.equal(browser.skipped,true);assert.equal(browser.claimed,true);
+    assert.equal(browser.stores.has('one-piece-shell-old'),false);assert.equal(browser.stores.has('some-other-app'),true);
+    browser.setOnline(false);
+    const redirected=await browser.request('/one-piece/watch/1001',{mode:'navigate'});
+    assert.equal(redirected.handled,true);assert.match(await redirected.response.text(),/Opening One Piece/);
+    for(const route of ['/api/me','/one-piece/app.js','/one-piece/media/1.mp4','https://pti-onepiece-home.duckdns.org:8443/media/1'])assert.equal(browser.handles(route),false);
+    assert.doesNotMatch(redirectWorker,/clients\.matchAll|\.navigate\(|location\.reload|localStorage|indexedDB/);
   });
 });
 

@@ -1,4 +1,4 @@
-import { auth, observeAccount, defaults, freshGoogleConfirmation, createWorkspace, claimInvitation, readProfile, saveProfile, listInvitations, inviteMember, logout } from './account.mjs';
+import { auth, observeAccount, defaults, signInToOnePiece, freshGoogleConfirmation, createWorkspace, claimInvitation, readProfile, saveProfile, listInvitations, inviteMember, logout } from './account.mjs';
 import { createClient, ClientError } from './client.mjs';
 import { icon } from './icons.mjs';
 import { episodeId, episodeNumber, escapeHtml as esc, time, bytes, rangeFor, nextBoundary, phaseLabel, errorCopy, safeLocalProgress, validPendingEvent, shouldAutoplayDelivery } from './model.mjs';
@@ -10,7 +10,8 @@ import { applyTheme, readTheme } from './theme.mjs';
 import { withArtwork } from './artwork.mjs';
 import { needsGoogleConfirmation, confirmationError } from './connection.mjs';
 import { appIdentity, dedicatedAppUrl, canMoveToDedicatedApp, installStatus } from './install.mjs';
-import { page, rows, dialogContent, button, iconButton, ready, connectionLabel, loginUrl } from './views.mjs';
+import { page, rows, dialogContent, button, iconButton, ready, connectionLabel } from './views.mjs';
+import { signInFailure } from './signin.mjs';
 const store={get:(key,fallback)=>{try{const raw=localStorage.getItem(key);return raw&&raw.length<1048576?JSON.parse(raw):fallback;}catch{return fallback;}},set:(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}}};
 const deviceId=store.get('one-piece-device',null)??crypto.randomUUID();store.set('one-piece-device',deviceId);
 
@@ -74,7 +75,7 @@ class ViewingApp {
  }
  async open(n,{takeover=false,automatic=false,audioIndex,resumePosition}={}){
   if(n===590){this.s.dialog='missing';this.dialog();return;}if(n>1085){this.s.dialog='ended';this.dialog();return;}
-  if(!this.s.user){location.assign(loginUrl());return;}
+  if(!this.s.user){this.s.requestedEpisode=n;this.s.route='library';const url=new URL(location.href);url.searchParams.set('episode',n);history.replaceState(null,'',url.pathname+url.search);this.render();return;}
   if(this.s.network!=='online'){this.s.dialog='connection';this.dialog();return;}
   if(this.fixture){await this.fixture.open(this,n,{audioIndex,resumePosition});return;}
   const account=this.account();
@@ -134,6 +135,9 @@ class ViewingApp {
   if(video&&this.s.route==='watch'&&this.s.lease?.destination!=='cast'&&ready(this.s.session)){const target=this.root.querySelector('#episode-video');if(target)target.replaceWith(video);}this.renderRows();this.patch();if(this.s.dialog)this.dialog();}
  renderRows(){const target=this.root.querySelector('#episode-results');if(target)target.innerHTML=rows(this.s);const search=this.root.querySelector('#episode-search'),label=this.root.querySelector('.search .sr-only');if(search)search.placeholder=this.s.profile.showTitles?'Find episode or title':'Find episode number';if(label)label.textContent=`Find an episode number${this.s.profile.showTitles?' or verified title':''}`;for(const el of this.root.querySelectorAll('.range-select,.range-paging'))el.hidden=Boolean(this.s.query);const clear=this.root.querySelector('#clear-search');if(clear)clear.hidden=!this.s.query;this.root.querySelector('.browse-tools')?.classList.toggle('searching',Boolean(this.s.query));}
  patch(){
+  for(const el of this.root.querySelectorAll('[data-action="sign-in"]'))el.disabled=Boolean(this.signingIn);
+  const signInButton=this.root.querySelector('#sign-in-button');if(signInButton)signInButton.innerHTML=`${icon('user')} ${this.signingIn?'Opening Google…':'Sign in with Google'}`;
+  const signInError=this.root.querySelector('#sign-in-error');if(signInError){signInError.textContent=this.s.signInError??'';signInError.hidden=!this.s.signInError;}
   const installCopy=this.s.appIdentity?.dedicated?this.root.querySelector('.notice-bar>span'):null;if(installCopy&&this.s.appIdentity?.installationRequested)installCopy.textContent='Installation requested. Finish the confirmation on your device, then look for One Piece in your apps.';
   const notice=this.root.querySelector('#notice');if(notice)notice.innerHTML=(this.s.updateAvailable?`<div class="notice-bar"><span>An app update is ready.</span>${button('update','Update app','quiet','reload')}</div>`:'')+(this.s.notice?`<div class="notice-bar"><span>${esc(this.s.notice)}</span>${this.s.resumeConflict?button('review-resume','Review saved place','text-button'):''}${iconButton('dismiss-notice','Dismiss message','close')}</div>`:'');
   for(const id of ['connection-label','footer-connection']){const el=this.root.querySelector(`#${id}`);if(el)el.textContent=connectionLabel(this.s);}
@@ -153,6 +157,13 @@ class ViewingApp {
  closeDialog(){this.s.dialog=null;this.s.dialogError=null;this.root.querySelector('dialog')?.close();}
  async click(event){const t=event.target.closest('[data-action]');if(!t||t.disabled)return;const account=this.account(),a=t.dataset.action,n=Number(t.dataset.number),s=this.s;
   if(!this.current(account))return;
+  if(a==='sign-in'){
+   if(this.signingIn)return;if(__DEV__&&this.fixture){s.signInError='Design preview only. Use the live One Piece app to sign in.';this.patch();return;}
+   this.signingIn=true;s.signInError=null;this.patch();
+   try{await signInToOnePiece();}
+   catch(error){if(!auth.currentUser){this.s.signInError=signInFailure(error?.code);this.patch();}}
+   finally{this.signingIn=false;this.patch();}return;
+  }
   if(a==='toggle-theme'){s.theme=applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');return;}
   if(a==='browse-episodes'){this.root.querySelector('#catalogue-title')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});this.root.querySelector('#episode-search')?.focus({preventScroll:true});return;}
   if(a==='close-dialog'){this.closeDialog();return;}if(a==='dismiss-notice'){s.notice='';this.patch();return;}

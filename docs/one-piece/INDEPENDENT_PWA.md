@@ -1,5 +1,7 @@
 # Independent One Piece PWA — 19 October 2026
 
+Historical stage. The cloned Angular login described below has been removed; [SINGLE_APP.md](SINGLE_APP.md) is the current contract. The old PTI address is now a redirect alias only.
+
 The owner approved a dedicated One Piece address within PTI's existing Firebase project, matching other PTI sibling apps. The previous nested PWA manifest was distinct, but the installed root PTI app could capture its URLs and suppress independent installation.
 
 ## Deployment and identity

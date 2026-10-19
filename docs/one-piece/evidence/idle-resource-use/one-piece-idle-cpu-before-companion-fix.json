@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-10-19T13:07:59.8561013Z",
+  "measurementStartedAt": "2026-10-19T13:07:44.6043266Z",
+  "windowSeconds": 15.0054246,
+  "logicalProcessors": 12,
+  "release": "52c68afd035db8081702ecc1821f9056149ce22d",
+  "rows": [
+    {
+      "pid": 98976,
+      "role": "caddy",
+      "cpuPercent": 0.0,
+      "memoryMiB": 35.6
+    },
+    {
+      "pid": 98848,
+      "role": "jellyfin",
+      "cpuPercent": 0.0,
+      "memoryMiB": 247.2
+    },
+    {
+      "pid": 88184,
+      "role": "backend",
+      "cpuPercent": 3.0024,
+      "memoryMiB": 228.1
+    },
+    {
+      "pid": 95420,
+      "role": "supervisor",
+      "cpuPercent": 0.0087,
+      "memoryMiB": 70.6
+    },
+    {
+      "pid": 84416,
+      "role": "python.exe",
+      "cpuPercent": 0.0,
+      "memoryMiB": 29.7
+    },
+    {
+      "pid": 94880,
+      "role": "python.exe",
+      "cpuPercent": 0.0,
+      "memoryMiB": 45.7
+    }
+  ],
+  "totalCompanionCpuPercent": 3.0111,
+  "totalCompanionMemoryMiB": 656.9,
+  "cacheManifestRewritten": true,
+  "cacheManifestBytes": 27834,
+  "profiles": 1,
+  "livePlaybackLeases": 0,
+  "oldPreviewStopped": true,
+  "noTvRequest": true,
+  "scope": "Real production process CPU deltas normalized across logical processors; memory is working set. No TV command, stream fetch, source preparation, device wake, or power-meter reading."
+}

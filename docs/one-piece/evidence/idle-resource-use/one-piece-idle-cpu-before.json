@@ -1,0 +1,19 @@
+{
+  "RecordedAt": "2026-10-19T13:05:23.8127922Z",
+  "WindowSeconds": 5.027625,
+  "LogicalProcessors": 12,
+  "Rows": [
+    {
+      "Pid": 48408,
+      "Role": "old-monsoon-preview",
+      "CpuPercent": 20.045,
+      "MemoryMiB": 284.5
+    },
+    {
+      "Pid": 88184,
+      "Role": "one-piece-backend",
+      "CpuPercent": 3.496,
+      "MemoryMiB": 226.4
+    }
+  ]
+}

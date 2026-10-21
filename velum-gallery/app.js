@@ -693,13 +693,48 @@ window.addEventListener('popstate', () => {
 $('#focusUp').onclick = () => { if (focusId) { store.add({ type: 'up', imageIds: [focusId], mode: 'focus' }); showToast('Upvoted'); } };
 $('#focusDown').onclick = () => { if (focusId) { store.add({ type: 'down', imageIds: [focusId], mode: 'focus' }); showToast('Downvoted'); } };
 
+// Focus uses the same one-finger language as Drift: double-tap to zoom/fit,
+// pan only while zoomed, and swipe down to dismiss when the whole image is fitted.
+let lastFocusTap = 0;
+let lastFocusTapX = 0;
+let lastFocusTapY = 0;
+let focusPinched = false;
+
+function clampFocusPan() {
+  if (scale <= 1 || !focusImage.naturalWidth || !focusImage.naturalHeight) {
+    tx = ty = 0;
+    return;
+  }
+  const vw = focusCanvas.clientWidth;
+  const vh = focusCanvas.clientHeight;
+  const ratio = focusImage.naturalWidth / focusImage.naturalHeight;
+  const fittedWidth = Math.min(vw, vh * ratio);
+  const fittedHeight = Math.min(vh, vw / ratio);
+  const maxX = Math.max(0, (fittedWidth * scale - vw) / 2);
+  const maxY = Math.max(0, (fittedHeight * scale - vh) / 2);
+  tx = Math.max(-maxX, Math.min(maxX, tx));
+  ty = Math.max(-maxY, Math.min(maxY, ty));
+}
+function toggleFocusTapZoom(x, y) {
+  if (scale > 1.03) { resetFocus(); return; }
+  const bounds = focusCanvas.getBoundingClientRect();
+  scale = 2.3;
+  tx = -(x - bounds.left - bounds.width / 2) * (scale - 1);
+  ty = -(y - bounds.top - bounds.height / 2) * (scale - 1);
+  clampFocusPan();
+  applyTransform();
+}
 focusCanvas.addEventListener('pointerdown', e => {
   if (focusIsVideo() || e.target?.closest?.('video')) return;
-  focusCanvas.setPointerCapture(e.pointerId);
-  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, px: e.clientX, py: e.clientY });
+  try { focusCanvas.setPointerCapture(e.pointerId); } catch {}
+  pointers.set(e.pointerId, {
+    x: e.clientX, y: e.clientY, px: e.clientX, py: e.clientY,
+    sx: e.clientX, sy: e.clientY, at: performance.now()
+  });
   if (pointers.size === 2) {
-    const [a,b] = [...pointers.values()];
-    pinchStart = { dist: Math.hypot(a.x-b.x, a.y-b.y), scale };
+    const [a, b] = [...pointers.values()];
+    pinchStart = { dist: Math.max(1, Math.hypot(a.x-b.x, a.y-b.y)), scale };
+    focusPinched = true;
   }
 });
 focusCanvas.addEventListener('pointermove', e => {
@@ -707,30 +742,52 @@ focusCanvas.addEventListener('pointermove', e => {
   const p = pointers.get(e.pointerId);
   p.px = p.x; p.py = p.y; p.x = e.clientX; p.y = e.clientY;
   if (pointers.size === 1 && scale > 1) {
-    tx += p.x-p.px;
-    ty += p.y-p.py;
+    tx += p.x - p.px;
+    ty += p.y - p.py;
+    clampFocusPan();
     applyTransform();
-  } else if (pointers.size === 2) {
+  } else if (pointers.size === 2 && pinchStart) {
     const [a,b] = [...pointers.values()];
     const d = Math.hypot(a.x-b.x, a.y-b.y);
     scale = Math.max(1, Math.min(5, pinchStart.scale * (d / pinchStart.dist)));
+    clampFocusPan();
     applyTransform();
   }
 });
-['pointerup','pointercancel'].forEach(type => focusCanvas.addEventListener(type, e => {
+focusCanvas.addEventListener('pointerup', e => {
+  const p = pointers.get(e.pointerId);
+  if (!p) return;
+  const single = pointers.size === 1 && !focusPinched;
+  const dx = e.clientX - p.sx;
+  const dy = e.clientY - p.sy;
+  const t = performance.now();
   pointers.delete(e.pointerId);
   if (pointers.size < 2) pinchStart = null;
-}));
-let lastTap = 0;
-focusCanvas.addEventListener('click', e => {
-  if (focusIsVideo() || e.target?.closest?.('video')) return;
-  const t = Date.now();
-  if (t-lastTap < 300) {
-    scale = scale > 1 ? 1 : 2;
-    tx = ty = 0;
-    applyTransform();
+  if (!pointers.size) focusPinched = false;
+  if (!single) return;
+
+  if (scale <= 1.03 && dy > 95 && dy > Math.abs(dx) * 1.25) {
+    lastFocusTap = 0;
+    closeFocus();
+    return;
   }
-  lastTap = t;
+  const isTap = Math.hypot(dx, dy) < 16 && t - p.at < 520;
+  if (!isTap) { lastFocusTap = 0; return; }
+  const nearby = Math.hypot(e.clientX - lastFocusTapX, e.clientY - lastFocusTapY) < 45;
+  if (nearby && t - lastFocusTap < 320) {
+    toggleFocusTapZoom(e.clientX, e.clientY);
+    lastFocusTap = 0;
+  } else {
+    lastFocusTap = t;
+    lastFocusTapX = e.clientX;
+    lastFocusTapY = e.clientY;
+  }
+});
+focusCanvas.addEventListener('pointercancel', e => {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchStart = null;
+  if (!pointers.size) focusPinched = false;
+  lastFocusTap = 0;
 });
 
 $('#exitBtn').onclick = () => $('#neutralScreen').classList.add('open');

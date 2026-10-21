@@ -595,7 +595,11 @@ const focusCanvas = $('#focusCanvas');
 const focusBackdrop = $('#focusBackdrop');
 const focusStatus = $('#focusStatus');
 const focusResetBtn = $('#focusReset');
+const focusFitBtn = $('#focusFit');
+const focusDoneBtn = $('#focusDone');
 let focusId = null, scale = 1, tx = 0, ty = 0, pointers = new Map(), pinchStart = null;
+let focusLoadSerial = 0;
+let focusHistoryArmed = false;
 
 function focusIsVideo() {
   return focusCanvas.classList.contains('video-mode');
@@ -610,17 +614,26 @@ function resetFocus() {
   applyTransform();
 }
 async function openFocus(id) {
-  focusId = id;
+  const serial = ++focusLoadSerial;
   const item = imageById(id);
   if (!item) return;
-  const url = await ensureObjectUrl(id);
+  let url;
+  try { url = await ensureObjectUrl(id); }
+  catch { showToast('Could not load media'); return; }
+  if (serial !== focusLoadSerial) return;
+  focusId = id;
   resetFocus();
+  if (!overlay.classList.contains('open')) {
+    window.history.pushState({ velumFocus: true }, '', window.location.href);
+    focusHistoryArmed = true;
+  }
 
   if (isVideoMedia(item)) {
     focusCanvas.classList.add('video-mode');
     focusImage.hidden = true;
     focusVideo.hidden = false;
     focusResetBtn.hidden = true;
+    focusFitBtn.hidden = true;
     focusStatus.textContent = 'play · scrub · sound';
     focusBackdrop.style.backgroundImage = 'none';
     focusVideo.dataset.fullMediaId = id;
@@ -639,7 +652,8 @@ async function openFocus(id) {
     focusImage.hidden = false;
     focusCanvas.classList.remove('video-mode');
     focusResetBtn.hidden = false;
-    focusStatus.textContent = isGifMedia(item) ? 'GIF · pinch · drag' : 'pinch · drag';
+    focusFitBtn.hidden = false;
+    focusStatus.textContent = isGifMedia(item) ? 'GIF · pinch · drag · swipe down to close' : 'double tap · drag · swipe down to close';
     focusImage.dataset.fullMediaId = id;
     focusImage.src = url;
     focusBackdrop.style.backgroundImage = `url("${url}")`;
@@ -650,7 +664,10 @@ async function openFocus(id) {
   overlay.setAttribute('aria-hidden', 'false');
   store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'focus' });
 }
-function closeFocus() {
+function closeFocus({ fromHistory = false } = {}) {
+  ++focusLoadSerial;
+  const shouldGoBack = !fromHistory && focusHistoryArmed && window.history.state?.velumFocus === true;
+  focusHistoryArmed = false;
   focusVideo.pause();
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
@@ -664,9 +681,15 @@ function closeFocus() {
   pointers.clear();
   trimMediaCache();
   if ($('#browseView').classList.contains('active')) renderBrowse();
+  if (shouldGoBack) window.history.back();
 }
-$('#focusClose').onclick = closeFocus;
+$('#focusClose').onclick = () => closeFocus();
+focusDoneBtn.onclick = () => closeFocus();
 focusResetBtn.onclick = resetFocus;
+focusFitBtn.onclick = resetFocus;
+window.addEventListener('popstate', () => {
+  if (overlay.classList.contains('open')) closeFocus({ fromHistory: true });
+});
 $('#focusUp').onclick = () => { if (focusId) { store.add({ type: 'up', imageIds: [focusId], mode: 'focus' }); showToast('Upvoted'); } };
 $('#focusDown').onclick = () => { if (focusId) { store.add({ type: 'down', imageIds: [focusId], mode: 'focus' }); showToast('Downvoted'); } };
 

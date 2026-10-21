@@ -105,34 +105,11 @@
       </button>
     </nav>
 
-    <div id="focusOverlay" class="focus-overlay" aria-hidden="true">
-      <div class="focus-backdrop" id="focusBackdrop"></div>
-      <header class="focus-top">
-        <button class="icon-btn glass" id="focusClose" aria-label="Close focus">
-          <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
-        </button>
-        <span class="focus-label">Focus</span>
-        <button class="icon-btn glass" id="focusReset" aria-label="Reset zoom">
-          <svg viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6M6 18a8 8 0 0 0 12-3M18 6A8 8 0 0 0 6 9"/></svg>
-        </button>
-      </header>
+    <div id="focusOverlay" class="focus-overlay" role="dialog" aria-modal="true" aria-label="Media viewer. Double-tap to zoom or fit, pinch to zoom, swipe down to return." aria-hidden="true" tabindex="-1">
       <div class="focus-canvas" id="focusCanvas">
         <img id="focusImage" alt="Private gallery image" draggable="false" />
         <video id="focusVideo" class="focus-video" hidden controls playsinline preload="metadata" aria-label="Private gallery video"></video>
       </div>
-      <footer class="focus-bottom">
-        <button class="focus-vote down" id="focusDown" aria-label="Downvote">
-          <svg viewBox="0 0 24 24"><path d="M7 3h10v12h-4l-1 6-5-8z"/></svg>
-        </button>
-        <div class="focus-actions">
-          <button class="focus-action" id="focusFit" aria-label="Fit whole image" title="Fit whole image">Fit</button>
-          <button class="focus-action focus-action-close" id="focusDone" aria-label="Close focus" title="Close focus">Done</button>
-          <span class="focus-status" id="focusStatus" aria-live="polite">pinch · drag</span>
-        </div>
-        <button class="focus-vote up" id="focusUp" aria-label="Upvote">
-          <svg viewBox="0 0 24 24"><path d="M7 21h10V9h-4l-1-6-5 8z"/></svg>
-        </button>
-      </footer>
     </div>
 
     <div id="neutralScreen" class="neutral-screen" aria-hidden="true">
@@ -149,7 +126,6 @@
     <div id="toast" class="toast" role="status"></div>
   </div>
   <script src="interaction-upgrades.js"></script>
-  <script src="zoom-failsafe.js"></script>
   <script src="stats-upgrades.js"></script>
   <script type="module" src="bootstrap.js"></script>
 </body>

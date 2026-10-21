@@ -11,6 +11,7 @@ test('Drift and Focus both show the whole original image, without cropping', () 
   assert.match(interaction, /function setDefaultFit\(/);
   assert.match(interaction, /scale = 1;\s+panX = 0;/);
   assert.match(interaction, /setDefaultFit\(\);/);
+  assert.match(interaction, /maxScale = Math.max\(6, Math.min\(24, nativeZoom\)\)/);
   assert.match(css, /\.focus-canvas\{position:absolute;inset:0;/);
   assert.match(css, /\.focus-canvas img\{[^}]*object-fit:contain/);
   assert.doesNotMatch(css, /\.focus-top\{|\.focus-bottom\{/);
@@ -20,10 +21,11 @@ test('Focus has no chrome or reset/close/like/dislike buttons', () => {
   const html = source('index.html');
   const app = source('app.js');
   assert.match(html, /id="focusOverlay"/);
-  assert.doesNotMatch(html, /id="focus(Close|Reset|Fit|Done|Up|Down|Backdrop|Status)"/);
+  assert.doesNotMatch(html, /id="focus(Close|Reset|Fit|Done|Up|Down|Backdrop|Status|Btn)"/);
   assert.doesNotMatch(html, /zoom-failsafe\.js/);
   assert.doesNotMatch(app, /focusDoneBtn|focusResetBtn|focusFitBtn|focusBackdrop/);
   assert.match(app, /createFocusGestures\(/);
+  assert.doesNotMatch(html, /id="focusBtn"/);
 });
 
 test('gesture dismissal keeps native Back and keyboard Escape', () => {

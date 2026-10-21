@@ -480,7 +480,6 @@ driftStage.addEventListener('pointerup', e => {
 });
 $('#upBtn').onclick = () => vote('up');
 $('#downBtn').onclick = () => vote('down');
-$('#focusBtn').onclick = () => current.ids[0] && openFocus(current.ids[0]);
 
 function confidenceScore(s) {
   const up = s.directUp + s.pairUp * .35;
@@ -676,7 +675,7 @@ function closeFocus({ fromHistory = false } = {}) {
   focusId = null;
   trimMediaCache();
   if ($('#browseView').classList.contains('active')) renderBrowse();
-  const returnTo = focusReturnElement?.isConnected ? focusReturnElement : $('#focusBtn');
+  const returnTo = focusReturnElement?.isConnected ? focusReturnElement : document.querySelector('.nav-item[data-view="browse"]');
   returnTo?.focus?.({ preventScroll: true });
   focusReturnElement = null;
   if (shouldGoBack) window.history.back();

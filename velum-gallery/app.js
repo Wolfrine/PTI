@@ -1,3 +1,4 @@
+import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
@@ -51,6 +52,13 @@ let accessToken = sessionStorage.getItem('velum-drive-token') || '';
 let tokenIssuedAt = Number(sessionStorage.getItem('velum-drive-token-at') || 0);
 let images = [];
 let imageMap = new Map();
+const DISCOVERY_KEY = 'velum-feed-discovery-v1';
+let discovered = {};
+try { discovered = JSON.parse(localStorage.getItem(DISCOVERY_KEY) || '{}') || {}; } catch {}
+function rememberDiscovery(items) {
+  discovered = reconcileDiscovery(items, discovered);
+  try { localStorage.setItem(DISCOVERY_KEY, JSON.stringify(discovered)); } catch {}
+}
 let objectUrls = new Map();
 const MEDIA_CACHE_LIMIT = 40;
 const MEDIA_CACHE_MAX_BYTES = 256 * 1024 * 1024;
@@ -103,7 +111,9 @@ class EventStore {
     const directDown = ev.filter(e => e.type === 'down').length;
     const pairUp = ev.filter(e => e.type === 'pair-up').length;
     const pairDown = ev.filter(e => e.type === 'pair-down').length;
-    const views = ev.filter(e => e.type === 'view');
+    // Old Drift builds recorded BOTH an opening event and a closing event.
+    // Count only completed Drift views; Focus views remain one event each.
+    const views = ev.filter(e => e.type === 'view' && e.mode !== 'drift');
     const skips = ev.filter(e => e.type === 'skip').length;
     const lastView = views.length ? Math.max(...views.map(e => e.at)) : 0;
     const dwell = views.reduce((s, e) => s + (e.ms || 0), 0);
@@ -242,6 +252,7 @@ async function syncDrive({ initial = false } = {}) {
     if (!next.length) throw new Error('No supported images, GIFs, or videos were found in the configured Private folder, or this account cannot access it.');
     images = next;
     imageMap = new Map(images.map(i => [i.id, i]));
+    rememberDiscovery(images);
     authGate.classList.remove('open');
     if (!initializedGallery) initGallery();
     else {
@@ -314,31 +325,14 @@ function isVideoMedia(item) { return item?.kind === 'video'; }
 function isGifMedia(item) { return item?.kind === 'gif'; }
 function currentMediaItem() { return current.ids.length ? imageById(current.ids[0]) : null; }
 
-function weightedPick(exclude = []) {
-  const explore = Math.random() < .22;
-  const pool = images.filter(i => !exclude.includes(i.id));
-  if (!pool.length) return images[Math.floor(Math.random() * images.length)];
-  if (explore) return pool[Math.floor(Math.random() * pool.length)];
-  const now = Date.now();
-  const weights = pool.map(img => {
-    const s = store.stats(img.id);
-    const recency = s.lastView ? Math.min((now - s.lastView) / 3600000, 72) : 72;
-    const rarity = 2.4 / (1 + s.views * .65);
-    const preference = Math.max(.18, 1 + s.score * .17);
-    const freshness = 1 + Math.max(0, (img.addedAt - (now - 72 * 3600000)) / (72 * 3600000)) * .6;
-    return Math.max(.06, preference + rarity + Math.min(recency / 48, .8) + freshness);
-  });
-  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < pool.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return pool[i];
-  }
-  return pool.at(-1);
-}
-
 function chooseMoment() {
-  const recent = history.slice(-4).flatMap(h => h.ids);
-  const item = weightedPick(recent);
+  // Build an exposure-aware feed; recent picks are excluded where possible.
+  const recentIds = history.slice(-6).flatMap(h => h.ids);
+  const item = chooseFeedImage(images, {
+    getStats: id => store.stats(id),
+    discovered,
+    recentIds
+  });
   return { type: 'single', ids: [item.id] };
 }
 
@@ -405,7 +399,7 @@ async function renderMoment(moment, { record = true } = {}) {
   }
 
   trimMediaCache();
-  if (record) store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'drift' });
+  if (record) store.add({ type: 'impression', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();
   scheduleAdvance();
   requestWake();

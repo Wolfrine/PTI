@@ -6,6 +6,8 @@
   const style = document.createElement('style');
   style.textContent = `
     #velumResetView{width:44px;height:44px;border-radius:50%;display:none;place-items:center;color:#f7eff1;background:rgba(12,8,10,.5);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(18px);touch-action:manipulation}
+    #velumFillView{width:44px;height:44px;border-radius:50%;display:none;place-items:center;color:#f7eff1;background:rgba(12,8,10,.5);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(18px);touch-action:manipulation;font:600 10px/1 Inter,system-ui,sans-serif}
+    body.velum-controls-visible #velumFillView.velum-visible{display:grid}
     #velumResetView svg{width:19px;height:19px}
     #driftStage.velum-inspecting ~ * #velumResetView{display:grid}
     body.velum-controls-visible #driftStage.velum-inspecting #velumResetView{display:grid}
@@ -22,11 +24,28 @@
   reset.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v6h6M20 20v-6h-6M6 18a8 8 0 0 0 12-3M18 6A8 8 0 0 0 6 9"/></svg>';
   strip?.insertBefore(reset, strip.children[1] || null);
 
+  const fill = document.createElement('button');
+  fill.id = 'velumFillView';
+  fill.type = 'button';
+  fill.textContent = 'Fill';
+  fill.setAttribute('aria-label', 'Toggle fit or fill screen');
+  fill.title = 'Fill screen (the full image is shown by default)';
+  strip?.insertBefore(fill, reset);
+  fill.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.__velumInteraction?.toggleFill?.();
+    window.__velumInteraction?.showControls?.();
+  });
+
   const syncResetVisibility = () => {
     const inspecting = stage.classList.contains('velum-inspecting');
     reset.classList.toggle('velum-visible', inspecting);
+    fill.classList.toggle('velum-visible', !!stage.querySelector('.drift-image'));
   };
   new MutationObserver(syncResetVisibility).observe(stage, { attributes: true, attributeFilter: ['class'] });
+  const media = document.getElementById('driftMedia');
+  if (media) new MutationObserver(syncResetVisibility).observe(media, {childList: true,subtree: true});
   syncResetVisibility();
 
   reset.addEventListener('click', event => {

@@ -124,7 +124,11 @@
         <button class="focus-vote down" id="focusDown" aria-label="Downvote">
           <svg viewBox="0 0 24 24"><path d="M7 3h10v12h-4l-1 6-5-8z"/></svg>
         </button>
-        <div class="focus-status" id="focusStatus">pinch · drag</div>
+        <div class="focus-actions">
+          <button class="focus-action" id="focusFit" aria-label="Fit whole image" title="Fit whole image">Fit</button>
+          <button class="focus-action focus-action-close" id="focusDone" aria-label="Close focus" title="Close focus">Done</button>
+          <span class="focus-status" id="focusStatus" aria-live="polite">pinch · drag</span>
+        </div>
         <button class="focus-vote up" id="focusUp" aria-label="Upvote">
           <svg viewBox="0 0 24 24"><path d="M7 21h10V9h-4l-1-6-5 8z"/></svg>
         </button>

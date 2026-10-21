@@ -1,3 +1,4 @@
+import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
@@ -51,6 +52,13 @@ let accessToken = sessionStorage.getItem('velum-drive-token') || '';
 let tokenIssuedAt = Number(sessionStorage.getItem('velum-drive-token-at') || 0);
 let images = [];
 let imageMap = new Map();
+const DISCOVERY_KEY = 'velum-feed-discovery-v1';
+let discovered = {};
+try { discovered = JSON.parse(localStorage.getItem(DISCOVERY_KEY) || '{}') || {}; } catch {}
+function rememberDiscovery(items) {
+  discovered = reconcileDiscovery(items, discovered);
+  try { localStorage.setItem(DISCOVERY_KEY, JSON.stringify(discovered)); } catch {}
+}
 let objectUrls = new Map();
 const MEDIA_CACHE_LIMIT = 40;
 const MEDIA_CACHE_MAX_BYTES = 256 * 1024 * 1024;
@@ -103,7 +111,9 @@ class EventStore {
     const directDown = ev.filter(e => e.type === 'down').length;
     const pairUp = ev.filter(e => e.type === 'pair-up').length;
     const pairDown = ev.filter(e => e.type === 'pair-down').length;
-    const views = ev.filter(e => e.type === 'view');
+    // Old Drift builds recorded BOTH an opening event and a closing event.
+    // Count only completed Drift views; Focus views remain one event each.
+    const views = ev.filter(e => e.type === 'view' && e.mode !== 'drift');
     const skips = ev.filter(e => e.type === 'skip').length;
     const lastView = views.length ? Math.max(...views.map(e => e.at)) : 0;
     const dwell = views.reduce((s, e) => s + (e.ms || 0), 0);
@@ -242,6 +252,7 @@ async function syncDrive({ initial = false } = {}) {
     if (!next.length) throw new Error('No supported images, GIFs, or videos were found in the configured Private folder, or this account cannot access it.');
     images = next;
     imageMap = new Map(images.map(i => [i.id, i]));
+    rememberDiscovery(images);
     authGate.classList.remove('open');
     if (!initializedGallery) initGallery();
     else {
@@ -314,31 +325,14 @@ function isVideoMedia(item) { return item?.kind === 'video'; }
 function isGifMedia(item) { return item?.kind === 'gif'; }
 function currentMediaItem() { return current.ids.length ? imageById(current.ids[0]) : null; }
 
-function weightedPick(exclude = []) {
-  const explore = Math.random() < .22;
-  const pool = images.filter(i => !exclude.includes(i.id));
-  if (!pool.length) return images[Math.floor(Math.random() * images.length)];
-  if (explore) return pool[Math.floor(Math.random() * pool.length)];
-  const now = Date.now();
-  const weights = pool.map(img => {
-    const s = store.stats(img.id);
-    const recency = s.lastView ? Math.min((now - s.lastView) / 3600000, 72) : 72;
-    const rarity = 2.4 / (1 + s.views * .65);
-    const preference = Math.max(.18, 1 + s.score * .17);
-    const freshness = 1 + Math.max(0, (img.addedAt - (now - 72 * 3600000)) / (72 * 3600000)) * .6;
-    return Math.max(.06, preference + rarity + Math.min(recency / 48, .8) + freshness);
-  });
-  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < pool.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return pool[i];
-  }
-  return pool.at(-1);
-}
-
 function chooseMoment() {
-  const recent = history.slice(-4).flatMap(h => h.ids);
-  const item = weightedPick(recent);
+  // Build an exposure-aware feed; recent picks are excluded where possible.
+  const recentIds = history.slice(-6).flatMap(h => h.ids);
+  const item = chooseFeedImage(images, {
+    getStats: id => store.stats(id),
+    discovered,
+    recentIds
+  });
   return { type: 'single', ids: [item.id] };
 }
 
@@ -405,7 +399,7 @@ async function renderMoment(moment, { record = true } = {}) {
   }
 
   trimMediaCache();
-  if (record) store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'drift' });
+  if (record) store.add({ type: 'impression', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();
   scheduleAdvance();
   requestWake();
@@ -601,7 +595,11 @@ const focusCanvas = $('#focusCanvas');
 const focusBackdrop = $('#focusBackdrop');
 const focusStatus = $('#focusStatus');
 const focusResetBtn = $('#focusReset');
+const focusFitBtn = $('#focusFit');
+const focusDoneBtn = $('#focusDone');
 let focusId = null, scale = 1, tx = 0, ty = 0, pointers = new Map(), pinchStart = null;
+let focusLoadSerial = 0;
+let focusHistoryArmed = false;
 
 function focusIsVideo() {
   return focusCanvas.classList.contains('video-mode');
@@ -616,17 +614,26 @@ function resetFocus() {
   applyTransform();
 }
 async function openFocus(id) {
-  focusId = id;
+  const serial = ++focusLoadSerial;
   const item = imageById(id);
   if (!item) return;
-  const url = await ensureObjectUrl(id);
+  let url;
+  try { url = await ensureObjectUrl(id); }
+  catch { showToast('Could not load media'); return; }
+  if (serial !== focusLoadSerial) return;
+  focusId = id;
   resetFocus();
+  if (!overlay.classList.contains('open')) {
+    window.history.pushState({ velumFocus: true }, '', window.location.href);
+    focusHistoryArmed = true;
+  }
 
   if (isVideoMedia(item)) {
     focusCanvas.classList.add('video-mode');
     focusImage.hidden = true;
     focusVideo.hidden = false;
     focusResetBtn.hidden = true;
+    focusFitBtn.hidden = true;
     focusStatus.textContent = 'play · scrub · sound';
     focusBackdrop.style.backgroundImage = 'none';
     focusVideo.dataset.fullMediaId = id;
@@ -645,7 +652,8 @@ async function openFocus(id) {
     focusImage.hidden = false;
     focusCanvas.classList.remove('video-mode');
     focusResetBtn.hidden = false;
-    focusStatus.textContent = isGifMedia(item) ? 'GIF · pinch · drag' : 'pinch · drag';
+    focusFitBtn.hidden = false;
+    focusStatus.textContent = isGifMedia(item) ? 'GIF · pinch · drag · swipe down to close' : 'double tap · drag · swipe down to close';
     focusImage.dataset.fullMediaId = id;
     focusImage.src = url;
     focusBackdrop.style.backgroundImage = `url("${url}")`;
@@ -656,7 +664,10 @@ async function openFocus(id) {
   overlay.setAttribute('aria-hidden', 'false');
   store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'focus' });
 }
-function closeFocus() {
+function closeFocus({ fromHistory = false } = {}) {
+  ++focusLoadSerial;
+  const shouldGoBack = !fromHistory && focusHistoryArmed && window.history.state?.velumFocus === true;
+  focusHistoryArmed = false;
   focusVideo.pause();
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
@@ -670,19 +681,60 @@ function closeFocus() {
   pointers.clear();
   trimMediaCache();
   if ($('#browseView').classList.contains('active')) renderBrowse();
+  if (shouldGoBack) window.history.back();
 }
-$('#focusClose').onclick = closeFocus;
+$('#focusClose').onclick = () => closeFocus();
+focusDoneBtn.onclick = () => closeFocus();
 focusResetBtn.onclick = resetFocus;
+focusFitBtn.onclick = resetFocus;
+window.addEventListener('popstate', () => {
+  if (overlay.classList.contains('open')) closeFocus({ fromHistory: true });
+});
 $('#focusUp').onclick = () => { if (focusId) { store.add({ type: 'up', imageIds: [focusId], mode: 'focus' }); showToast('Upvoted'); } };
 $('#focusDown').onclick = () => { if (focusId) { store.add({ type: 'down', imageIds: [focusId], mode: 'focus' }); showToast('Downvoted'); } };
 
+// Focus uses the same one-finger language as Drift: double-tap to zoom/fit,
+// pan only while zoomed, and swipe down to dismiss when the whole image is fitted.
+let lastFocusTap = 0;
+let lastFocusTapX = 0;
+let lastFocusTapY = 0;
+let focusPinched = false;
+
+function clampFocusPan() {
+  if (scale <= 1 || !focusImage.naturalWidth || !focusImage.naturalHeight) {
+    tx = ty = 0;
+    return;
+  }
+  const vw = focusCanvas.clientWidth;
+  const vh = focusCanvas.clientHeight;
+  const ratio = focusImage.naturalWidth / focusImage.naturalHeight;
+  const fittedWidth = Math.min(vw, vh * ratio);
+  const fittedHeight = Math.min(vh, vw / ratio);
+  const maxX = Math.max(0, (fittedWidth * scale - vw) / 2);
+  const maxY = Math.max(0, (fittedHeight * scale - vh) / 2);
+  tx = Math.max(-maxX, Math.min(maxX, tx));
+  ty = Math.max(-maxY, Math.min(maxY, ty));
+}
+function toggleFocusTapZoom(x, y) {
+  if (scale > 1.03) { resetFocus(); return; }
+  const bounds = focusCanvas.getBoundingClientRect();
+  scale = 2.3;
+  tx = -(x - bounds.left - bounds.width / 2) * (scale - 1);
+  ty = -(y - bounds.top - bounds.height / 2) * (scale - 1);
+  clampFocusPan();
+  applyTransform();
+}
 focusCanvas.addEventListener('pointerdown', e => {
   if (focusIsVideo() || e.target?.closest?.('video')) return;
-  focusCanvas.setPointerCapture(e.pointerId);
-  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, px: e.clientX, py: e.clientY });
+  try { focusCanvas.setPointerCapture(e.pointerId); } catch {}
+  pointers.set(e.pointerId, {
+    x: e.clientX, y: e.clientY, px: e.clientX, py: e.clientY,
+    sx: e.clientX, sy: e.clientY, at: performance.now()
+  });
   if (pointers.size === 2) {
-    const [a,b] = [...pointers.values()];
-    pinchStart = { dist: Math.hypot(a.x-b.x, a.y-b.y), scale };
+    const [a, b] = [...pointers.values()];
+    pinchStart = { dist: Math.max(1, Math.hypot(a.x-b.x, a.y-b.y)), scale };
+    focusPinched = true;
   }
 });
 focusCanvas.addEventListener('pointermove', e => {
@@ -690,30 +742,52 @@ focusCanvas.addEventListener('pointermove', e => {
   const p = pointers.get(e.pointerId);
   p.px = p.x; p.py = p.y; p.x = e.clientX; p.y = e.clientY;
   if (pointers.size === 1 && scale > 1) {
-    tx += p.x-p.px;
-    ty += p.y-p.py;
+    tx += p.x - p.px;
+    ty += p.y - p.py;
+    clampFocusPan();
     applyTransform();
-  } else if (pointers.size === 2) {
+  } else if (pointers.size === 2 && pinchStart) {
     const [a,b] = [...pointers.values()];
     const d = Math.hypot(a.x-b.x, a.y-b.y);
     scale = Math.max(1, Math.min(5, pinchStart.scale * (d / pinchStart.dist)));
+    clampFocusPan();
     applyTransform();
   }
 });
-['pointerup','pointercancel'].forEach(type => focusCanvas.addEventListener(type, e => {
+focusCanvas.addEventListener('pointerup', e => {
+  const p = pointers.get(e.pointerId);
+  if (!p) return;
+  const single = pointers.size === 1 && !focusPinched;
+  const dx = e.clientX - p.sx;
+  const dy = e.clientY - p.sy;
+  const t = performance.now();
   pointers.delete(e.pointerId);
   if (pointers.size < 2) pinchStart = null;
-}));
-let lastTap = 0;
-focusCanvas.addEventListener('click', e => {
-  if (focusIsVideo() || e.target?.closest?.('video')) return;
-  const t = Date.now();
-  if (t-lastTap < 300) {
-    scale = scale > 1 ? 1 : 2;
-    tx = ty = 0;
-    applyTransform();
+  if (!pointers.size) focusPinched = false;
+  if (!single) return;
+
+  if (scale <= 1.03 && dy > 95 && dy > Math.abs(dx) * 1.25) {
+    lastFocusTap = 0;
+    closeFocus();
+    return;
   }
-  lastTap = t;
+  const isTap = Math.hypot(dx, dy) < 16 && t - p.at < 520;
+  if (!isTap) { lastFocusTap = 0; return; }
+  const nearby = Math.hypot(e.clientX - lastFocusTapX, e.clientY - lastFocusTapY) < 45;
+  if (nearby && t - lastFocusTap < 320) {
+    toggleFocusTapZoom(e.clientX, e.clientY);
+    lastFocusTap = 0;
+  } else {
+    lastFocusTap = t;
+    lastFocusTapX = e.clientX;
+    lastFocusTapY = e.clientY;
+  }
+});
+focusCanvas.addEventListener('pointercancel', e => {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchStart = null;
+  if (!pointers.size) focusPinched = false;
+  lastFocusTap = 0;
 });
 
 $('#exitBtn').onclick = () => $('#neutralScreen').classList.add('open');

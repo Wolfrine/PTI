@@ -257,6 +257,14 @@ jobs:
         with:
           node-version: 20
 
+      - name: Verify Velum mobile UX and feed
+        run: |
+          node --input-type=module --check < velum-gallery/app.js
+          node --check velum-gallery/interaction-upgrades.js
+          node --check velum-gallery/zoom-failsafe.js
+          node --check velum-gallery/sw.js
+          node --test velum-gallery/tests/*.test.mjs
+
       - name: Create and deploy Velum secondary Hosting site
         env:
           FIREBASE_PROJECT_ID: pti-app-2ab59

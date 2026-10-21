@@ -301,9 +301,9 @@
       return scheduleAuto(fn, args);
     }
     if (typeof fn === 'function' && ms === 220 && fn.name === 'goNext') {
+      // Never consume an advancement after voting.
       pauseAuto('vote');
-      if (!manualPause && isDefaultView()) resumeAuto({ delay: TOUCH_GRACE });
-      return nativeSetTimeout(() => {}, ms);
+      return nativeSetTimeout(fn, ms, ...args);
     }
     return nativeSetTimeout(fn, ms, ...args);
   };
@@ -398,7 +398,7 @@
   }
 
   function isDefaultView() {
-    return Boolean(activeDriftImage()) && Math.abs(scale - coverScale) <= SCALE_EPSILON && Math.abs(panX) < 2 && Math.abs(panY) < 2;
+    return Boolean(activeDriftImage()) && Math.abs(scale - 1) <= SCALE_EPSILON && Math.abs(panX) < 2 && Math.abs(panY) < 2;
   }
 
   function applyDriftTransform({ pause = true } = {}) {
@@ -412,10 +412,10 @@
     if (inspecting && pause) pauseAuto('inspect');
   }
 
-  function setDefaultCover({ resume = false } = {}) {
+  function setDefaultFit({ resume = false } = {}) {
     const img = activeDriftImage();
     if (!img || !computeGeometry(img)) return;
-    scale = coverScale;
+    scale = 1;
     panX = 0;
     panY = 0;
     pinch = null;
@@ -424,13 +424,28 @@
     if (resume && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }
 
-  function setFullFit() {
+  function setFullFit() { setDefaultFit({ resume: true }); }
+
+  function zoomAt(x, y) {
     const img = activeDriftImage();
     if (!img || !computeGeometry(img)) return;
-    scale = 1;
-    panX = 0;
-    panY = 0;
-    pinch = null;
+    const { width, height } = viewportSize();
+    scale = Math.min(maxScale, Math.max(2.2, Math.min(3, coverScale)));
+    panX = -(x - width / 2) * (scale - 1);
+    panY = -(y - height / 2) * (scale - 1);
+    zoomGesture = true;
+    applyDriftTransform();
+  }
+
+  function toggleFill() {
+    const img = activeDriftImage();
+    if (!img || !computeGeometry(img)) return;
+    if (Math.abs(scale - coverScale) < SCALE_EPSILON && Math.abs(panX) < 2 && Math.abs(panY) < 2) {
+      setDefaultFit({ resume: true });
+      return;
+    }
+    scale = coverScale;
+    panX = panY = 0;
     zoomGesture = true;
     applyDriftTransform();
   }
@@ -442,7 +457,7 @@
     const ready = () => {
       if (img !== activeDriftImage()) return;
       computeGeometry(img);
-      setDefaultCover();
+      setDefaultFit();
     };
     if (img.complete && img.naturalWidth) ready();
     else img.addEventListener('load', ready, { once: true });
@@ -547,8 +562,8 @@
     const doubleTap = isTap && closeToLast && (now - lastTapAt) < 320;
 
     if (doubleTap && activeDriftImage()) {
-      if (isDefaultView()) setFullFit();
-      else setDefaultCover({ resume: true });
+      if (isDefaultView()) zoomAt(event.clientX, event.clientY);
+      else setDefaultFit({ resume: true });
       lastTapAt = 0;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -556,8 +571,8 @@
     }
 
     if (zoomGesture || !isDefaultView()) {
-      if (Math.abs(scale - coverScale) <= 0.04 && Math.abs(panX) < 10 && Math.abs(panY) < 10) {
-        setDefaultCover({ resume: true });
+      if (Math.abs(scale - 1) <= 0.04 && Math.abs(panX) < 10 && Math.abs(panY) < 10) {
+        setDefaultFit({ resume: true });
       } else {
         applyDriftTransform();
         pauseAuto('inspect');
@@ -618,7 +633,7 @@
   const onViewportChange = () => {
     const wasDefault = isDefaultView();
     computeGeometry();
-    if (wasDefault) setDefaultCover();
+    if (wasDefault) setDefaultFit();
     else applyDriftTransform();
   };
   window.addEventListener('resize', onViewportChange);
@@ -634,8 +649,9 @@
   window.__velumInteraction = {
     pause: () => pauseAuto('manual', true),
     resume: () => resumeAuto({ force: true }),
-    resetZoom: () => setDefaultCover({ resume: true }),
+    resetZoom: () => setDefaultFit({ resume: true }),
     fitImage: setFullFit,
+    toggleFill,
     showControls
   };
 })();

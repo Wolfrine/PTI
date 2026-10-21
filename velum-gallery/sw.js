@@ -1,5 +1,5 @@
-const CACHE='velum-shell-v15';
-const SHELL=['./','./index.html','./styles.css','./media-upgrades.css','./interaction-upgrades.js','./zoom-failsafe.js','./stats-upgrades.js','./bootstrap.js','./app.js','./manifest.webmanifest','./assets/icons/icon.svg'];
+const CACHE='velum-shell-v16';
+const SHELL=['./','./index.html','./styles.css','./media-upgrades.css','./interaction-upgrades.js','./zoom-failsafe.js','./stats-upgrades.js','./bootstrap.js','./app.js','./feed.mjs','./manifest.webmanifest','./assets/icons/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -19,7 +19,7 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin || url.pathname.startsWith('/__/')) return;
 
-  const networkFirst = request.mode==='navigate' || /\.(?:html|js|css|webmanifest)$/.test(url.pathname);
+  const networkFirst = request.mode==='navigate' || /\.(?:html|m?js|css|webmanifest)$/.test(url.pathname);
 
   if(networkFirst){
     event.respondWith(

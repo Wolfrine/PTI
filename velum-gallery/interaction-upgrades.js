@@ -424,8 +424,6 @@
     if (resume && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }
 
-  function setFullFit() { setDefaultFit({ resume: true }); }
-
   function zoomAt(x, y) {
     const img = activeDriftImage();
     if (!img || !computeGeometry(img)) return;
@@ -433,19 +431,6 @@
     scale = Math.min(maxScale, Math.max(2.2, Math.min(3, coverScale)));
     panX = -(x - width / 2) * (scale - 1);
     panY = -(y - height / 2) * (scale - 1);
-    zoomGesture = true;
-    applyDriftTransform();
-  }
-
-  function toggleFill() {
-    const img = activeDriftImage();
-    if (!img || !computeGeometry(img)) return;
-    if (Math.abs(scale - coverScale) < SCALE_EPSILON && Math.abs(panX) < 2 && Math.abs(panY) < 2) {
-      setDefaultFit({ resume: true });
-      return;
-    }
-    scale = coverScale;
-    panX = panY = 0;
     zoomGesture = true;
     applyDriftTransform();
   }
@@ -649,9 +634,6 @@
   window.__velumInteraction = {
     pause: () => pauseAuto('manual', true),
     resume: () => resumeAuto({ force: true }),
-    resetZoom: () => setDefaultFit({ resume: true }),
-    fitImage: setFullFit,
-    toggleFill,
     showControls
   };
 })();

@@ -384,7 +384,9 @@
       containWidth = vh * imageAspect;
     }
     coverScale = Math.max(1, vw / containWidth, vh / containHeight);
-    maxScale = Math.max(4.5, coverScale * 3);
+    // Match Focus: deep pinch can reach native detail without an arbitrary 4.5x stop.
+    const nativeZoom = Math.max(img.naturalWidth / containWidth, img.naturalHeight / containHeight);
+    maxScale = Math.max(6, Math.min(24, nativeZoom));
     return true;
   }
 

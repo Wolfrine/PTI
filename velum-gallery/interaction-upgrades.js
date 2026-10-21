@@ -80,8 +80,7 @@
     body.velum-drift-immersive.velum-controls-visible #driftChrome{position:fixed!important;z-index:90!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;inset:auto auto calc(82px + env(safe-area-inset-bottom,0px)) 50%!important;width:auto!important;opacity:1!important;pointer-events:auto!important;transform:translateX(-50%)!important}
     body.velum-drift-immersive.velum-controls-visible #driftChrome .chrome-meta{display:none!important}
     body.velum-drift-immersive.velum-controls-visible #driftChrome .vote-strip{display:flex!important;align-items:center!important;gap:12px!important;padding:5px!important;border-radius:999px!important;background:rgba(10,7,8,.34)!important;border:1px solid rgba(255,255,255,.08)!important;backdrop-filter:blur(18px)!important}
-    body.velum-drift-immersive.velum-controls-visible #driftChrome .vote-btn,
-    body.velum-drift-immersive.velum-controls-visible #driftChrome .focus-btn{width:44px!important;height:44px!important}
+    body.velum-drift-immersive.velum-controls-visible #driftChrome .vote-btn{width:44px!important;height:44px!important}
 
     #velumHardRefresh{position:fixed;z-index:2100;right:12px;bottom:calc(15px + env(safe-area-inset-bottom,0px));height:34px;padding:0 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(13,10,11,.62);color:rgba(255,255,255,.72);backdrop-filter:blur(16px);font:500 9px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:5px;opacity:.78;touch-action:manipulation}
     #velumHardRefresh:active{opacity:1;transform:scale(.97)}
@@ -385,7 +384,9 @@
       containWidth = vh * imageAspect;
     }
     coverScale = Math.max(1, vw / containWidth, vh / containHeight);
-    maxScale = Math.max(4.5, coverScale * 3);
+    // Match Focus: deep pinch can reach native detail without an arbitrary 4.5x stop.
+    const nativeZoom = Math.max(img.naturalWidth / containWidth, img.naturalHeight / containHeight);
+    maxScale = Math.max(6, Math.min(24, nativeZoom));
     return true;
   }
 
@@ -424,8 +425,6 @@
     if (resume && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }
 
-  function setFullFit() { setDefaultFit({ resume: true }); }
-
   function zoomAt(x, y) {
     const img = activeDriftImage();
     if (!img || !computeGeometry(img)) return;
@@ -433,19 +432,6 @@
     scale = Math.min(maxScale, Math.max(2.2, Math.min(3, coverScale)));
     panX = -(x - width / 2) * (scale - 1);
     panY = -(y - height / 2) * (scale - 1);
-    zoomGesture = true;
-    applyDriftTransform();
-  }
-
-  function toggleFill() {
-    const img = activeDriftImage();
-    if (!img || !computeGeometry(img)) return;
-    if (Math.abs(scale - coverScale) < SCALE_EPSILON && Math.abs(panX) < 2 && Math.abs(panY) < 2) {
-      setDefaultFit({ resume: true });
-      return;
-    }
-    scale = coverScale;
-    panX = panY = 0;
     zoomGesture = true;
     applyDriftTransform();
   }
@@ -649,9 +635,6 @@
   window.__velumInteraction = {
     pause: () => pauseAuto('manual', true),
     resume: () => resumeAuto({ force: true }),
-    resetZoom: () => setDefaultFit({ resume: true }),
-    fitImage: setFullFit,
-    toggleFill,
     showControls
   };
 })();

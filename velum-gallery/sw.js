@@ -1,5 +1,5 @@
-const CACHE='velum-shell-v16';
-const SHELL=['./','./index.html','./styles.css','./media-upgrades.css','./interaction-upgrades.js','./zoom-failsafe.js','./stats-upgrades.js','./bootstrap.js','./app.js','./feed.mjs','./manifest.webmanifest','./assets/icons/icon.svg'];
+const CACHE='velum-shell-v17';
+const SHELL=['./','./index.html','./styles.css','./media-upgrades.css','./interaction-upgrades.js','./stats-upgrades.js','./bootstrap.js','./app.js','./feed.mjs','./focus-gestures.mjs','./manifest.webmanifest','./assets/icons/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));

@@ -62,9 +62,29 @@ test('stamping fails closed instead of publishing an invented version', () => {
   assert.throws(() => stampRelease({ ...opts, worker: worker.replaceAll(CACHE_MARKER, '') }), /worker cache/);
 });
 
-test('footer stamp is separated from navigation and the bottom-edge pause strip', () => {
+test('version sits below navigation buttons inside a dedicated footer row, not on the image', () => {
+  const html = source('index.html');
   const css = source('styles.css');
-  assert.match(css, /\.release-stamp\{[^}]*bottom:calc\(77px \+ var\(--safe-bottom\)\)/);
-  assert.match(css, /\.release-stamp\{[^}]*pointer-events:none/);
-  assert.match(css, /\.release-stamp\{[^}]*font-variant-numeric:tabular-nums/);
+  const interaction = source('interaction-upgrades.js');
+  const navStart = html.indexOf('<nav class="bottom-nav"');
+  const stamp = html.indexOf('id="velumRelease"');
+  const navEnd = html.indexOf('</nav>', navStart);
+  assert.ok(navStart >= 0 && stamp > navStart && stamp < navEnd);
+  assert.match(html, /<nav class="bottom-nav"[\s\S]*id="velumRelease"[\s\S]*<\/nav>/);
+
+  const rule = css.match(/\.release-stamp\{([^}]+)\}/)?.[1];
+  assert.ok(rule, 'release CSS must be present');
+  assert.match(rule, /left:50%;bottom:calc\(3px \+ var\(--safe-bottom\)\)/);
+  assert.match(rule, /pointer-events:none/);
+  assert.doesNotMatch(rule, /background:|border:|backdrop-filter:|z-index:|padding:/);
+
+  assert.match(css, /\.bottom-nav\{[^}]*height:calc\(76px \+ var\(--safe-bottom\)\);padding-bottom:calc\(17px \+ var\(--safe-bottom\)\)/);
+  assert.match(css, /\.main-content\{[^}]*inset:0 0 calc\(76px \+ var\(--safe-bottom\)\) 0/);
+  assert.doesNotMatch(css, /\.release-stamp\{[^}]*bottom:calc\(77px/);
+
+  // Immersive Drift used to force 58px/64px nav height, which would move the
+  // version outside its reserved row on mobile. Both states must agree.
+  assert.doesNotMatch(interaction, /height:calc\((?:58|64)px \+ env\(safe-area-inset-bottom/);
+  assert.match(interaction, /height:calc\(76px \+ env\(safe-area-inset-bottom,0px\)\)!important/);
+  assert.match(interaction, /padding-bottom:calc\(17px \+ env\(safe-area-inset-bottom,0px\)\)!important/);
 });

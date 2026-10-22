@@ -118,7 +118,6 @@
 
   const driftStage = document.getElementById('driftStage');
   const driftMedia = document.getElementById('driftMedia');
-  const focusOverlay = document.getElementById('focusOverlay');
   const neutralScreen = document.getElementById('neutralScreen');
   const driftView = document.getElementById('driftView');
   const authGate = document.getElementById('authGate');
@@ -127,7 +126,6 @@
     const pin = document.getElementById('velumPinGate');
     return Boolean(
       driftView?.classList.contains('active') &&
-      !focusOverlay?.classList.contains('open') &&
       !neutralScreen?.classList.contains('open') &&
       (!pin || pin.style.display === 'none') &&
       !authGate?.classList.contains('open')
@@ -294,27 +292,6 @@
     else run();
   }
 
-  window.setTimeout = function(fn, delay = 0, ...args) {
-    const ms = Number(delay) || 0;
-    if (typeof fn === 'function' && ms >= 6500 && ms <= 13000) {
-      return scheduleAuto(fn, args);
-    }
-    if (typeof fn === 'function' && ms === 220 && fn.name === 'goNext') {
-      // Never consume an advancement after voting.
-      pauseAuto('vote');
-      return nativeSetTimeout(fn, ms, ...args);
-    }
-    return nativeSetTimeout(fn, ms, ...args);
-  };
-
-  window.clearTimeout = function(id) {
-    if (id === auto.token) {
-      cancelAuto();
-      return;
-    }
-    nativeClearTimeout(id);
-  };
-
   timer.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
@@ -345,265 +322,26 @@
     location.replace(url.toString());
   });
 
-  const driftPointers = new Map();
-  let scale = 1;
-  let coverScale = 1;
-  let maxScale = 4.5;
-  let panX = 0;
-  let panY = 0;
-  let containWidth = 0;
-  let containHeight = 0;
-  let pinch = null;
-  let zoomGesture = false;
-  let lastTapAt = 0;
-  let lastTapX = 0;
-  let lastTapY = 0;
-  let preparedImage = null;
-
-  function activeDriftImage() {
-    return driftMedia?.querySelector('.drift-image') || null;
-  }
-
-  function viewportSize() {
-    return {
-      width: Math.max(1, window.visualViewport?.width || window.innerWidth || document.documentElement.clientWidth),
-      height: Math.max(1, window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight)
-    };
-  }
-
-  function computeGeometry(img = activeDriftImage()) {
-    if (!img?.naturalWidth || !img?.naturalHeight) return false;
-    const { width: vw, height: vh } = viewportSize();
-    const imageAspect = img.naturalWidth / img.naturalHeight;
-    const viewAspect = vw / vh;
-    if (imageAspect >= viewAspect) {
-      containWidth = vw;
-      containHeight = vw / imageAspect;
-    } else {
-      containHeight = vh;
-      containWidth = vh * imageAspect;
-    }
-    coverScale = Math.max(1, vw / containWidth, vh / containHeight);
-    // Match Focus: deep pinch can reach native detail without an arbitrary 4.5x stop.
-    const nativeZoom = Math.max(img.naturalWidth / containWidth, img.naturalHeight / containHeight);
-    maxScale = Math.max(6, Math.min(24, nativeZoom));
-    return true;
-  }
-
-  function clampPan() {
-    const { width: vw, height: vh } = viewportSize();
-    const maxX = Math.max(0, (containWidth * scale - vw) / 2);
-    const maxY = Math.max(0, (containHeight * scale - vh) / 2);
-    panX = Math.max(-maxX, Math.min(maxX, panX));
-    panY = Math.max(-maxY, Math.min(maxY, panY));
-  }
-
+  // The pointer system lives only in drift-gestures.mjs, not in this timer helper.
   function isDefaultView() {
-    return Boolean(activeDriftImage()) && Math.abs(scale - 1) <= SCALE_EPSILON && Math.abs(panX) < 2 && Math.abs(panY) < 2;
+    return !driftStage?.classList.contains('velum-inspecting');
   }
 
-  function applyDriftTransform({ pause = true } = {}) {
-    const img = activeDriftImage();
-    if (!img || !computeGeometry(img)) return;
-    scale = Math.max(1, Math.min(maxScale, scale));
-    clampPan();
-    img.style.transform = `translate3d(${panX}px,${panY}px,0) scale(${scale})`;
-    const inspecting = !isDefaultView();
-    driftStage?.classList.toggle('velum-inspecting', inspecting);
-    if (inspecting && pause) pauseAuto('inspect');
+  function gestureState({ zoomed, touching }) {
+    driftStage?.classList.toggle('velum-inspecting', zoomed);
+    if (zoomed) pauseAuto('inspect');
+    else if (touching) pauseAuto('touch');
+    else if (driftVisible() && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
+    paintTimer();
   }
-
-  function setDefaultFit({ resume = false } = {}) {
-    const img = activeDriftImage();
-    if (!img || !computeGeometry(img)) return;
-    scale = 1;
-    panX = 0;
-    panY = 0;
-    pinch = null;
-    zoomGesture = false;
-    applyDriftTransform({ pause: false });
-    if (resume && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
-  }
-
-  function zoomAt(x, y) {
-    const img = activeDriftImage();
-    if (!img || !computeGeometry(img)) return;
-    const { width, height } = viewportSize();
-    scale = Math.min(maxScale, Math.max(2.2, Math.min(3, coverScale)));
-    panX = -(x - width / 2) * (scale - 1);
-    panY = -(y - height / 2) * (scale - 1);
-    zoomGesture = true;
-    applyDriftTransform();
-  }
-
-  function prepareCurrentImage() {
-    const img = activeDriftImage();
-    if (!img || img === preparedImage) return;
-    preparedImage = img;
-    const ready = () => {
-      if (img !== activeDriftImage()) return;
-      computeGeometry(img);
-      setDefaultFit();
-    };
-    if (img.complete && img.naturalWidth) ready();
-    else img.addEventListener('load', ready, { once: true });
-  }
-
-  if (driftMedia) {
-    new MutationObserver(() => {
-      preparedImage = null;
-      driftPointers.clear();
-      nativeSetTimeout(prepareCurrentImage, 0);
-    }).observe(driftMedia, { childList: true, subtree: true });
-  }
-  nativeSetTimeout(prepareCurrentImage, 0);
-
-  driftStage?.addEventListener('pointerdown', event => {
-    const interactive = Boolean(event.target.closest?.('button,a,select,input'));
-    if (interactive) return;
-    pauseAuto('touch');
-    prepareCurrentImage();
-    const img = activeDriftImage();
-    if (!img) return;
-    driftPointers.set(event.pointerId, {
-      x: event.clientX,
-      y: event.clientY,
-      px: event.clientX,
-      py: event.clientY,
-      sx: event.clientX,
-      sy: event.clientY,
-      at: performance.now()
-    });
-
-    if (driftPointers.size === 2) {
-      const [a, b] = [...driftPointers.values()];
-      pinch = {
-        distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
-        scale,
-        panX,
-        panY,
-        midX: (a.x + b.x) / 2,
-        midY: (a.y + b.y) / 2
-      };
-      zoomGesture = true;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
-
-    if (!isDefaultView()) {
-      zoomGesture = true;
-      try { driftStage.setPointerCapture(event.pointerId); } catch {}
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }
-  }, true);
-
-  driftStage?.addEventListener('pointermove', event => {
-    const point = driftPointers.get(event.pointerId);
-    if (!point) return;
-    point.px = point.x;
-    point.py = point.y;
-    point.x = event.clientX;
-    point.y = event.clientY;
-
-    if (driftPointers.size >= 2) {
-      const [a, b] = [...driftPointers.values()];
-      if (!pinch) return;
-      const distance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
-      const midX = (a.x + b.x) / 2;
-      const midY = (a.y + b.y) / 2;
-      scale = Math.max(1, Math.min(maxScale, pinch.scale * (distance / pinch.distance)));
-      panX = pinch.panX + (midX - pinch.midX);
-      panY = pinch.panY + (midY - pinch.midY);
-      zoomGesture = true;
-      applyDriftTransform();
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
-
-    if (!isDefaultView()) {
-      panX += point.x - point.px;
-      panY += point.y - point.py;
-      zoomGesture = true;
-      applyDriftTransform();
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }
-  }, true);
-
-  function finishDriftPointer(event) {
-    const point = driftPointers.get(event.pointerId);
-    if (!point) return;
-    const dx = event.clientX - point.sx;
-    const dy = event.clientY - point.sy;
-    const moved = Math.hypot(dx, dy);
-    const now = performance.now();
-    driftPointers.delete(event.pointerId);
-    if (driftPointers.size < 2) pinch = null;
-
-    const isTap = moved < 14 && (now - point.at) < 520;
-    const closeToLast = Math.hypot(event.clientX - lastTapX, event.clientY - lastTapY) < 44;
-    const doubleTap = isTap && closeToLast && (now - lastTapAt) < 320;
-
-    if (doubleTap && activeDriftImage()) {
-      if (isDefaultView()) zoomAt(event.clientX, event.clientY);
-      else setDefaultFit({ resume: true });
-      lastTapAt = 0;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
-
-    if (zoomGesture || !isDefaultView()) {
-      if (Math.abs(scale - 1) <= 0.04 && Math.abs(panX) < 10 && Math.abs(panY) < 10) {
-        setDefaultFit({ resume: true });
-      } else {
-        applyDriftTransform();
-        pauseAuto('inspect');
-      }
-      zoomGesture = !isDefaultView();
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
-
-    const horizontalAction = Math.abs(dx) > 52 && Math.abs(dx) >= Math.abs(dy);
-    const verticalAction = Math.abs(dy) > Math.abs(dx) * 1.15 && Math.abs(dy) > 52;
-    if (horizontalAction || verticalAction) {
-      return;
-    }
-
-    if (isTap) {
-      lastTapAt = now;
-      lastTapX = event.clientX;
-      lastTapY = event.clientY;
-      showControls();
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }
-    if (!manualPause) resumeAuto({ delay: TOUCH_GRACE });
-  }
-
-  driftStage?.addEventListener('pointerup', finishDriftPointer, true);
-  driftStage?.addEventListener('pointercancel', event => {
-    driftPointers.delete(event.pointerId);
-    if (!driftPointers.size) {
-      pinch = null;
-      if (isDefaultView() && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
-      else pauseAuto('inspect');
-    }
-  }, true);
 
   function contextChanged() {
     syncImmersiveClass();
-    const focusOpen = focusOverlay?.classList.contains('open');
     const neutralOpen = neutralScreen?.classList.contains('open');
     const authOpen = authGate?.classList.contains('open');
     const driftActive = driftView?.classList.contains('active');
-    if (focusOpen || neutralOpen || authOpen || !driftActive) {
-      pauseAuto(focusOpen ? 'focus' : neutralOpen ? 'locked' : authOpen ? 'auth' : 'browse');
+    if (neutralOpen || authOpen || !driftActive) {
+      pauseAuto(neutralOpen ? 'locked' : authOpen ? 'auth' : 'browse');
     } else if (isDefaultView() && !manualPause) {
       resumeAuto({ delay: TOUCH_GRACE });
     } else if (!isDefaultView()) {
@@ -612,18 +350,9 @@
     paintTimer();
   }
 
-  [focusOverlay, neutralScreen, driftView, authGate].filter(Boolean).forEach(el => {
+  [neutralScreen, driftView, authGate].filter(Boolean).forEach(el => {
     new MutationObserver(contextChanged).observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
   });
-
-  const onViewportChange = () => {
-    const wasDefault = isDefaultView();
-    computeGeometry();
-    if (wasDefault) setDefaultFit();
-    else applyDriftTransform();
-  };
-  window.addEventListener('resize', onViewportChange);
-  window.visualViewport?.addEventListener('resize', onViewportChange);
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pauseAuto('hidden');
@@ -635,6 +364,10 @@
   window.__velumInteraction = {
     pause: () => pauseAuto('manual', true),
     resume: () => resumeAuto({ force: true }),
-    showControls
+    scheduleAdvance: callback => scheduleAuto(callback, []),
+    clearAdvance: cancelAuto,
+    gestureState,
+    showControls,
+    getTimerState: () => ({ running: auto.running, remaining: auto.remaining, manualPause })
   };
 })();

@@ -23,6 +23,12 @@ Static phone-first gallery deployed as a secondary Firebase Hosting site in the 
 
 - **Ratings and analytics:** heart particles are purely visual. Each hold stores its original duration, with no 1–5 conversion or hard ceiling. Existing historical likes and previous level-based events remain readable. Hold duration contributes logarithmically to preference strength; repeated holds are discounted progressively, and the feed smoothly limits an individual favorite's recommendation share. Long legacy “skip” events are excluded from scoring. The Stats/Copy State view (VELUM_STATE_V2) includes counts and total time expressed. There is no Firestore or Notion syncing; updated Notion snapshots are pasted manually for UX reviews.
 
+## Release visibility
+- A small footer label is always visible above the Drift/Browse/Stats navigation, e.g. `v2026.10.22.160045`, with date and time in **IST**. Seconds differentiate multiple releases on the same day. Hovering exposes the associated short Git commit.
+- The label is embedded into the **actual deployed index.html** (no live version request), so an outdated offline/PWA page continues to show its **old** release version instead of falsely showing the newest server release.
+- The `deploy_velum` job runs `node .github/scripts/velum-release.mjs` after tests, before Firebase Hosting. That stamps the HTML label and a unique service-worker cache identity for each deployment run. The workflow compares the stamped files with the actual production files.
+- To confirm an update on a device, use Velum's Refresh control and compare the bottom version stamp. The stamp is display-only; it neither stores nor synchronizes usage data.
+
 ## Firebase
 Hosting target: `velum`
 Hosting site ID: `pti-app-2ab59-velum`

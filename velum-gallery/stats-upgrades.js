@@ -484,7 +484,6 @@
   window.addEventListener('pointercancel', event => pointerStarts.delete(event.pointerId), true);
 
   const interactionButtons = {
-    focusBtn: 'focus-open', focusClose: 'focus-close', focusReset: 'focus-reset',
     exitBtn: 'quick-exit', returnBtn: 'quick-return', velumHardRefresh: 'hard-refresh', velumAutoTimer: 'timer-toggle'
   };
   const bindKnownInteractions = () => Object.entries(interactionButtons).forEach(([id, action]) => {

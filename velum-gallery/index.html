@@ -39,9 +39,9 @@
     </header>
 
     <main class="main-content">
-      <section id="driftView" class="view drift-view active" aria-label="Drift">
+      <section id="driftView" class="view drift-view active" aria-label="Drift image viewer">
         <div class="drift-stage" id="driftStage">
-          <div class="ambient-bg" id="ambientBg"></div>
+          <div class="ambient-bg" id="ambientBg" aria-hidden="true"><div class="ambient-layer"></div><div class="ambient-layer"></div></div>
           <div class="vignette"></div>
           <div class="drift-media" id="driftMedia"></div>
           <div class="drift-hint" id="driftHint">
@@ -101,13 +101,6 @@
         <span>Browse</span>
       </button>
     </nav>
-
-    <div id="focusOverlay" class="focus-overlay" role="dialog" aria-modal="true" aria-label="Media viewer. Double-tap to zoom or fit, pinch to zoom, swipe down to return." aria-hidden="true" tabindex="-1">
-      <div class="focus-canvas" id="focusCanvas">
-        <img id="focusImage" alt="Private gallery image" draggable="false" />
-        <video id="focusVideo" class="focus-video" hidden controls playsinline preload="metadata" aria-label="Private gallery video"></video>
-      </div>
-    </div>
 
     <div id="neutralScreen" class="neutral-screen" aria-hidden="true">
       <div class="neutral-shell">

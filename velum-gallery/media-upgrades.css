@@ -48,23 +48,6 @@
 .tile-badge.gif{padding:0 8px;color:#e7d7dc}
 .tile-video::after{opacity:.2}
 
-/* Preserve pointerup for the Focus swipe-down exit without blocking play/scrub taps. */
-.focus-canvas.video-mode{
-  touch-action:none!important;
-  background:#000;
-}
-.focus-canvas.video-mode #focusImage{display:none!important}
-.focus-video{
-  width:100%;
-  height:100%;
-  max-width:100%;
-  max-height:100%;
-  object-fit:contain;
-  background:#000;
-  pointer-events:auto;
-  touch-action:none;
-}
-.focus-video[hidden]{display:none!important}
 @media (max-width:420px){
   .tile-badge{top:6px;right:6px}
 }

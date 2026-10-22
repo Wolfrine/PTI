@@ -134,13 +134,16 @@
   }
 
   const alias = id => `M-${shortHash(String(id)).slice(0, 6)}`;
-  const isViewStart = e => e.type === 'view' && (!e.ms || e.ms <= 0);
+  // Start records are "impression" in new builds; old builds used zero-ms views.
+  const isViewStart = e => e.type === 'impression' ||
+    (e.type === 'view' && (!e.ms || e.ms <= 0));
   const isDwell = e => e.type === 'view' && Number(e.ms) > 0;
 
   function mediaStats(events) {
     const map = new Map();
     const get = id => {
-      if (!map.has(id)) map.set(id, { id, views: 0, dwell: 0, up: 0, down: 0, pairUp: 0, pairDown: 0, skips: 0, lastView: 0 });
+      if (!map.has(id)) map.set(id, { id, views: 0, dwell: 0, up: 0, down: 0,
+        pairUp: 0, pairDown: 0, skips: 0, affectionHolds: 0, affectionStrength: 0, lastView: 0 });
       return map.get(id);
     };
     for (const e of events) {
@@ -152,7 +155,11 @@
         if (e.type === 'down') s.down++;
         if (e.type === 'pair-up') s.pairUp++;
         if (e.type === 'pair-down') s.pairDown++;
-        if (e.type === 'skip') s.skips++;
+        if (e.type === 'skip' && Number(e.ms) >= 0 && Number(e.ms) < 1600) s.skips++;
+        if (e.type === 'affection') {
+          s.affectionHolds++;
+          s.affectionStrength += Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1)));
+        }
       }
     }
     return map;
@@ -201,7 +208,8 @@
       const d = new Date();
       d.setHours(0, 0, 0, 0);
       d.setDate(d.getDate() - i);
-      days.push({ key: dayKey(d.getTime()), date: d.getTime(), ms: 0, views: 0, up: 0, down: 0 });
+      days.push({ key: dayKey(d.getTime()), date: d.getTime(), ms: 0,
+        views: 0, up: 0, down: 0, love: 0, loveStrength: 0 });
     }
     const byKey = new Map(days.map(d => [d.key, d]));
     dwell.forEach(item => { const row = byKey.get(dayKey(item.at)); if (row) row.ms += item.ms; });
@@ -211,6 +219,10 @@
       if (isViewStart(e)) row.views++;
       if (e.type === 'up' || e.type === 'pair-up') row.up++;
       if (e.type === 'down' || e.type === 'pair-down') row.down++;
+      if (e.type === 'affection') {
+        row.love++;
+        row.loveStrength += Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1)));
+      }
     });
     return days;
   }
@@ -252,11 +264,15 @@
     const views = filtered.filter(isViewStart).length;
     const up = filtered.filter(e => e.type === 'up' || e.type === 'pair-up').length;
     const down = filtered.filter(e => e.type === 'down' || e.type === 'pair-down').length;
+    const love = filtered.filter(e => e.type === 'affection');
+    const affectionHolds = love.length;
+    const affectionStrength = love.reduce((sum, e) =>
+      sum + Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1))), 0);
     const unique = seenRange.size;
     const averageDwell = views ? trackedMs / Math.max(1, filtered.filter(e => e.type === 'view' && e.mode === 'drift-end').length) : 0;
     return {
       key, from, filtered, allMedia, rangeMedia, ids, seenAll, seenRange, rangeSessions,
-      trackedMs, views, up, down, unique, averageDwell,
+      trackedMs, views, up, down, affectionHolds, affectionStrength, unique, averageDwell,
       coverage: ids.length ? Math.min(100, seenAll.size / ids.length * 100) : 0
     };
   }
@@ -296,24 +312,27 @@
   function mediaMetric(kind, s) {
     if (kind === 'revisited') return `${s.views} views`;
     if (kind === 'dwell' || kind === 'quiet') return formatDuration(s.dwell);
-    return `${s.up + s.pairUp} ↑`;
+    return `${s.affectionStrength} ♥ · ${s.up + s.pairUp} old ↑`;
   }
 
   function mediaSubline(s) {
-    return `${s.views} views · ${formatDuration(s.dwell)} · ${s.up + s.pairUp} ↑ · ${s.down + s.pairDown} ↓`;
+    return `${s.views} views · ${formatDuration(s.dwell)} · ${s.affectionHolds} holds / ${s.affectionStrength} ♥ · ${s.up + s.pairUp} old likes`;
   }
 
   function rankedMedia(snapshot, kind) {
-    let arr = [...snapshot.allMedia.values()].filter(s => s.views || s.up || s.down || s.pairUp || s.pairDown);
+    let arr = [...snapshot.allMedia.values()].filter(s =>
+      s.views || s.affectionHolds || s.up || s.down || s.pairUp || s.pairDown);
     if (kind === 'revisited') arr.sort((a, b) => b.views - a.views || b.dwell - a.dwell);
     else if (kind === 'dwell') arr.sort((a, b) => b.dwell - a.dwell || b.views - a.views);
-    else if (kind === 'quiet') arr = arr.filter(s => s.up + s.pairUp === 0 && s.views >= 2).sort((a, b) => b.dwell - a.dwell);
-    else arr.sort((a, b) => (b.up + b.pairUp * .35) - (a.up + a.pairUp * .35) || b.dwell - a.dwell);
+    else if (kind === 'quiet') arr = arr.filter(s =>
+      s.up + s.pairUp + s.affectionHolds === 0 && s.views >= 2).sort((a, b) => b.dwell - a.dwell);
+    else arr.sort((a, b) => (b.affectionStrength + b.up * 3 + b.pairUp) -
+      (a.affectionStrength + a.up * 3 + a.pairUp) || b.dwell - a.dwell);
     return arr.slice(0, 6);
   }
 
   function renderFavorites(snapshot) {
-    return `<section class="stats-section"><div class="stats-section-head"><h2>Favorites</h2><span>Tap a row to open it</span></div><div class="favorite-tabs"><button class="favorite-tab active" data-fav="liked">Liked</button><button class="favorite-tab" data-fav="revisited">Revisited</button><button class="favorite-tab" data-fav="dwell">Longest</button><button class="favorite-tab" data-fav="quiet">Quiet favorites</button></div><div class="media-list" id="statsMediaList"></div></section>`;
+    return `<section class="stats-section"><div class="stats-section-head"><h2>Favorites</h2><span>Tap a row to open it</span></div><div class="favorite-tabs"><button class="favorite-tab active" data-fav="liked">Most loved</button><button class="favorite-tab" data-fav="revisited">Revisited</button><button class="favorite-tab" data-fav="dwell">Longest</button><button class="favorite-tab" data-fav="quiet">Quiet favorites</button></div><div class="media-list" id="statsMediaList"></div></section>`;
   }
 
   function paintMediaList(snapshot, kind = 'liked') {
@@ -342,7 +361,7 @@
     const snapshot = buildSnapshot(all);
     const sessionDurations = snapshot.rangeSessions.map(s => s.duration);
     const avgSession = sessionDurations.length ? sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length : 0;
-    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(`${snapshot.up} ↑`, 'Upvotes', snapshot.down ? `${snapshot.down} downvotes` : 'No downvotes')}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(`${Math.round(snapshot.coverage)}%`, 'Collection explored', `${formatNumber(snapshot.seenAll.size)} seen all-time`)}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
+    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(`${snapshot.affectionHolds} ♥`, 'Love holds', `${snapshot.affectionStrength} strength · ${snapshot.up} legacy likes`)}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(`${Math.round(snapshot.coverage)}%`, 'Collection explored', `${formatNumber(snapshot.seenAll.size)} seen all-time`)}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
     paintMediaList(snapshot, 'liked');
     body.querySelectorAll('.favorite-tab').forEach(tab => tab.addEventListener('click', () => {
       body.querySelectorAll('.favorite-tab').forEach(t => t.classList.toggle('active', t === tab));
@@ -354,7 +373,8 @@
     const all = await allEvents();
     const snapshot = buildSnapshot(all, selectedRange);
     const allSnapshot = buildSnapshot(all, 'all');
-    const days = dailySeries(all, 30).map(d => ({ date: d.key, trackedMs: Math.round(d.ms), views: d.views, up: d.up, down: d.down }));
+    const days = dailySeries(all, 30).map(d => ({ date: d.key, trackedMs: Math.round(d.ms),
+      views: d.views, up: d.up, down: d.down, affectionHolds: d.love, affectionStrength: d.loveStrength }));
     const hourly = Array.from({ length: 24 }, (_, hour) => ({ hour, events: 0, views: 0, trackedMs: 0 }));
     all.forEach(e => {
       if (!e.at) return;
@@ -364,7 +384,10 @@
     });
     dedupedDwell(all).forEach(d => { hourly[new Date(d.at).getHours()].trackedMs += Math.round(d.ms); });
     const top = [...allSnapshot.allMedia.values()].sort((a, b) => b.dwell - a.dwell || b.views - a.views).slice(0, 20).map(s => ({
-      media: alias(s.id), views: s.views, trackedMs: Math.round(s.dwell), up: s.up, down: s.down, pairUp: s.pairUp, pairDown: s.pairDown, skips: s.skips, lastView: s.lastView ? new Date(s.lastView).toISOString() : null
+      media: alias(s.id), views: s.views, trackedMs: Math.round(s.dwell), up: s.up, down: s.down,
+      pairUp: s.pairUp, pairDown: s.pairDown, skips: s.skips,
+      affectionHolds: s.affectionHolds, affectionStrength: s.affectionStrength,
+      lastView: s.lastView ? new Date(s.lastView).toISOString() : null
     }));
     const recent = all.slice(-750).map(e => ({
       at: e.at ? new Date(e.at).toISOString() : null,
@@ -372,6 +395,7 @@
       action: e.action || undefined,
       media: (e.imageIds || []).map(alias),
       ms: Number(e.ms) || undefined,
+      level: e.type === 'affection' ? Number(e.level) : undefined,
       mode: e.mode || undefined
     }));
     const state = {
@@ -391,6 +415,8 @@
         uniqueMedia: snapshot.unique,
         upvotes: snapshot.up,
         downvotes: snapshot.down,
+        affectionHolds: snapshot.affectionHolds,
+        affectionStrength: snapshot.affectionStrength,
         avgDwellMs: Math.round(snapshot.averageDwell)
       },
       allTime: {
@@ -399,7 +425,9 @@
         views: allSnapshot.views,
         uniqueMedia: allSnapshot.unique,
         upvotes: allSnapshot.up,
-        downvotes: allSnapshot.down
+        downvotes: allSnapshot.down,
+        affectionHolds: allSnapshot.affectionHolds,
+        affectionStrength: allSnapshot.affectionStrength
       },
       eventTypeCounts: eventCounts(all),
       last30Days: days,
@@ -479,7 +507,7 @@
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     if (Math.abs(dx) > 52 && Math.abs(dx) >= Math.abs(dy)) addLocalEvent({ type: 'interaction', action: 'drift-swipe' });
-    else if (Math.abs(dy) > 52 && Math.abs(dy) > Math.abs(dx) * 1.15) addLocalEvent({ type: 'interaction', action: 'drift-vote-gesture' });
+    // No vertical voting gesture: deliberate holds now carry preference.
   }, true);
   window.addEventListener('pointercancel', event => pointerStarts.delete(event.pointerId), true);
 

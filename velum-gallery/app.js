@@ -1,4 +1,6 @@
 import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
+import { affectionScore, safeAffectionLevel, isQuickSkip } from './affection.mjs';
+import { createHeartEffects } from './heart-effects.mjs';
 import { createDriftGestures } from './drift-gestures.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
@@ -72,11 +74,8 @@ function setVideoAmbient(video, id, serial) {
   else video.addEventListener('loadeddata', paint, { once: true });
 }
 
-const driftChrome = $('#driftChrome');
-const driftHint = $('#driftHint');
 const driftStage = $('#driftStage');
-const counter = $('#driftCounter');
-const voteFlash = $('#voteFlash');
+const heartField = $('#heartField');
 const toast = $('#toast');
 const browseGrid = $('#browseGrid');
 const sortSelect = $('#sortSelect');
@@ -98,7 +97,6 @@ const MEDIA_CACHE_MAX_BYTES = 256 * 1024 * 1024;
 let current = { type: 'single', ids: [] };
 let history = [];
 let historyIndex = -1;
-let chromeTimer = null;
 let viewStarted = 0;
 let wakeLock = null;
 let browseObserver = null;
@@ -146,11 +144,19 @@ class EventStore {
     // Old Drift builds recorded BOTH an opening event and a closing event.
     // Count only completed Drift views; Focus views remain one event each.
     const views = ev.filter(e => e.type === 'view' && e.mode !== 'drift');
-    const skips = ev.filter(e => e.type === 'skip').length;
+    // Preserve historical votes, but do not punish the old falsely long "skip" events.
+    const skips = ev.filter(isQuickSkip).length;
+    const affectionEvents = ev.filter(e => e.type === 'affection');
+    const affectionHolds = affectionEvents.length;
+    const affectionStrength = affectionEvents.reduce((total, e) => total + safeAffectionLevel(e.level), 0);
+    const affectionWeight = affectionScore(affectionEvents);
     const lastView = views.length ? Math.max(...views.map(e => e.at)) : 0;
     const dwell = views.reduce((s, e) => s + (e.ms || 0), 0);
-    const score = (directUp * 3 - directDown * 2.8) + (pairUp * .7 - pairDown * .65) + Math.min(dwell / 15000, 2) - skips * .18;
-    return { directUp, directDown, pairUp, pairDown, views: views.length, lastView, dwell, skips, score };
+    const score = Math.min(15, directUp * 3) - directDown * 2.8 +
+      pairUp * .7 - pairDown * .65 + affectionWeight +
+      Math.min(dwell / 15000, 2) - skips * .18;
+    return { directUp, directDown, pairUp, pairDown, views: views.length,
+      lastView, dwell, skips, affectionHolds, affectionStrength, affectionWeight, score };
   }
 }
 const store = new EventStore();
@@ -409,8 +415,7 @@ async function renderMoment(moment, { record = true } = {}) {
     wrap.append(video);
     driftMedia.append(wrap);
     setVideoAmbient(video, id, serial);
-    video.play().catch(() => showChrome());
-    counter.textContent = 'video';
+    video.play().catch(() => window.__velumInteraction?.showControls?.());
   } else {
     showAmbient(firstUrl);
     const img = document.createElement('img');
@@ -427,10 +432,10 @@ async function renderMoment(moment, { record = true } = {}) {
     }
     wrap.append(img);
     driftMedia.append(wrap);
-    counter.textContent = isGifMedia(meta) ? 'gif' : 'image';
   }
 
   gestures.reset();
+  heartEffects.reset();
   trimMediaCache();
   if (record) store.add({ type: 'impression', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();
@@ -450,31 +455,13 @@ function finalizeView(quick) {
   if (!viewStarted || !current.ids.length) return;
   const ms = Date.now() - viewStarted;
   current.ids.forEach(id => store.add({ type: 'view', imageIds: [id], ms, mode: 'drift-end' }));
-  if (quick || ms < 1600) current.ids.forEach(id => store.add({ type: 'skip', imageIds: [id], ms }));
+  if (ms < 1600) current.ids.forEach(id => store.add({ type: 'skip', imageIds: [id], ms }));
   viewStarted = 0;
-}
-function vote(dir) {
-  if (!current.ids.length) return;
-  store.add({ type: dir, imageIds: [current.ids[0]] });
-  flashVote(dir);
-  showToast(dir === 'up' ? 'Upvoted · saved locally' : 'Downvoted · saved locally');
-  setTimeout(goNext, 220);
-}
-function flashVote(dir) {
-  voteFlash.textContent = dir === 'up' ? '↑' : '↓';
-  voteFlash.className = 'vote-flash show';
-  setTimeout(() => voteFlash.className = 'vote-flash', 680);
 }
 function scheduleAdvance() {
   window.__velumInteraction?.clearAdvance?.();
   if (isVideoMedia(currentMediaItem())) return;
   window.__velumInteraction?.scheduleAdvance?.(() => goNext());
-}
-function showChrome() {
-  driftChrome.classList.toggle('visible');
-  driftHint.classList.add('hide');
-  clearTimeout(chromeTimer);
-  if (driftChrome.classList.contains('visible')) chromeTimer = setTimeout(() => driftChrome.classList.remove('visible'), 3500);
 }
 function showToast(msg) {
   toast.textContent = msg;
@@ -487,6 +474,29 @@ async function requestWake() {
 }
 
 // A single gesture owner handles both fitted navigation and zoomed inspection.
+driftStage.addEventListener('contextmenu', event => {
+  if (!event.target?.closest?.('button,a,select,input,textarea')) event.preventDefault();
+});
+const heartEffects = createHeartEffects({
+  stage: driftStage,
+  field: heartField,
+  reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false
+});
+let heldMediaId = null;
+let holdPausedVideo = null;
+function resumeHeldVideo() {
+  const video = holdPausedVideo;
+  holdPausedVideo = null;
+  if (video?.isConnected && current.ids[0] === video.dataset.fullMediaId &&
+      $('#driftView').classList.contains('active') && !document.hidden)
+    video.play().catch(() => {});
+}
+function cancelHeart() {
+  heldMediaId = null;
+  heartEffects.cancel();
+  resumeHeldVideo();
+}
+
 const gestures = createDriftGestures({
   stage: driftStage,
   getImage: () => driftMedia.querySelector('.drift-image'),
@@ -496,7 +506,30 @@ const gestures = createDriftGestures({
     !$('#neutralScreen').classList.contains('open'),
   onNext: () => goNext(),
   onPrev: () => goPrev(),
-  onVote: direction => vote(direction),
+  onHoldStart: ({ x, y }) => {
+    // Tie the reaction to the actually displayed image, not a pending Drive fetch.
+    heldMediaId = driftMedia.querySelector('[data-full-media-id]')?.dataset.fullMediaId || null;
+    if (!heldMediaId) return;
+    const video = driftMedia.querySelector('.drift-video');
+    holdPausedVideo = video && !video.paused ? video : null;
+    holdPausedVideo?.pause();
+    heartEffects.start({ x, y });
+  },
+  onHoldProgress: detail => {
+    if (heldMediaId) heartEffects.progress(detail);
+  },
+  onHoldEnd: detail => {
+    const id = heldMediaId;
+    heldMediaId = null;
+    if (id && current.ids[0] === id) {
+      store.add({ type: 'affection', imageIds: [id],
+        level: detail.level, ms: detail.durationMs, mode: 'drift' });
+      heartEffects.finish(detail);
+      showToast(`♥ ${detail.level}/5 · saved locally`);
+    } else heartEffects.cancel();
+    resumeHeldVideo();
+  },
+  onHoldCancel: cancelHeart,
   onTap: () => {
     const video = driftMedia.querySelector('.drift-video');
     if (video) {
@@ -513,9 +546,6 @@ const gestures = createDriftGestures({
   },
   onState: state => window.__velumInteraction?.gestureState?.(state)
 });
-$('#upBtn').onclick = () => vote('up');
-$('#downBtn').onclick = () => vote('down');
-
 function confidenceScore(s) {
   const up = s.directUp + s.pairUp * .35;
   const down = s.directDown + s.pairDown * .35;
@@ -524,7 +554,7 @@ function confidenceScore(s) {
   const p = up / n;
   const z = 1.2816;
   const lower = (p + z*z/(2*n) - z*Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1 + z*z/n);
-  return lower * Math.log2(n + 2) + s.score * .03;
+  return lower * Math.log2(n + 2) + s.score * .35;
 }
 function renderBrowse() {
   if (!initializedGallery) return;
@@ -534,8 +564,9 @@ function renderBrowse() {
   if (key === 'newest') arr.sort((a,b) => b.addedAt-a.addedAt);
   if (key === 'oldest') arr.sort((a,b) => a.addedAt-b.addedAt);
   if (key === 'score') arr.sort((a,b) => confidenceScore(stat(b))-confidenceScore(stat(a)));
-  if (key === 'upvotes') arr.sort((a,b) => stat(b).directUp-stat(a).directUp);
-  if (key === 'downvotes') arr.sort((a,b) => stat(b).directDown-stat(a).directDown);
+  if (key === 'love') arr.sort((a,b) =>
+    (stat(b).affectionStrength + 3 * stat(b).directUp) -
+    (stat(a).affectionStrength + 3 * stat(a).directUp));
   if (key === 'views') arr.sort((a,b) => stat(b).views-stat(a).views);
   if (key === 'leastViews' || key === 'rare') arr.sort((a,b) => stat(a).views-stat(b).views);
   if (key === 'recent') arr.sort((a,b) => stat(b).lastView-stat(a).lastView);
@@ -595,7 +626,7 @@ function renderBrowse() {
       : isGifMedia(item)
         ? '<span class="tile-badge gif">GIF</span>'
         : '';
-    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span>↑ ${s.directUp}</span><span>${s.views} views</span></div>`;
+    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span title="Love points, including prior likes">♥ ${s.affectionStrength + 3 * s.directUp}</span><span>${s.views} views</span></div>`;
     tile.onclick = () => openInDrift(item.id);
     browseGrid.append(tile);
     const previewEl = tile.querySelector('[data-id]');

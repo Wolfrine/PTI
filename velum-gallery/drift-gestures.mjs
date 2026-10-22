@@ -1,3 +1,5 @@
+import { affectionLevel, HOLD_THRESHOLD_MS } from './affection.mjs';
+
 // One-finger media interaction for Velum Drift.
 // This is the sole pointer gesture owner. No Focus overlay or pinch is required.
 export function createDriftGestures({
@@ -6,8 +8,11 @@ export function createDriftGestures({
   isActive = () => true,
   onNext = () => {},
   onPrev = () => {},
-  onVote = () => {},
   onTap = () => {},
+  onHoldStart = () => {},
+  onHoldProgress = () => {},
+  onHoldEnd = () => {},
+  onHoldCancel = () => {},
   onState = () => {},
   now = () => performance.now(),
   setDelay = (fn, ms) => setTimeout(fn, ms),
@@ -17,6 +22,8 @@ export function createDriftGestures({
   const TAP_DISTANCE = 46;
   const SWIPE_DISTANCE = 52;
   const SLIDE_START = 9;
+  const HOLD_MOVE_TOLERANCE = 13;
+  const HEART_PULSE_MS = 180;
   const FIT_EPS = 0.025;
   let scale = 1;
   let panX = 0;
@@ -24,6 +31,8 @@ export function createDriftGestures({
   let pointer = null;
   let lastTap = null;
   let tapTimer = null;
+  let holdTimer = null;
+  let holdPulseTimer = null;
   let secondaryTouch = false;
   let previousState = '';
   let preparedImage = null;
@@ -80,6 +89,47 @@ export function createDriftGestures({
     tapTimer = null;
   }
 
+  function clearHoldTimers() {
+    if (holdTimer !== null) cancelDelay(holdTimer);
+    if (holdPulseTimer !== null) cancelDelay(holdPulseTimer);
+    holdTimer = holdPulseTimer = null;
+  }
+
+  function cancelHold() {
+    const wasHolding = pointer?.mode === 'holding';
+    clearHoldTimers();
+    if (wasHolding) {
+      onHoldCancel();
+      pointer.mode = 'hold-cancelled';
+    }
+    if (pointer) pointer.holdDisabled = true;
+  }
+
+  function pulseHold(pointerId) {
+    if (!pointer || pointer.id !== pointerId || pointer.mode !== 'holding' || !isActive()) {
+      cancelHold();
+      return;
+    }
+    const durationMs = Math.max(HOLD_THRESHOLD_MS, now() - pointer.at);
+    onHoldProgress({
+      level: affectionLevel(durationMs),
+      durationMs,
+      x: pointer.x,
+      y: pointer.y
+    });
+    holdPulseTimer = setDelay(() => pulseHold(pointerId), HEART_PULSE_MS);
+  }
+
+  function beginHold(pointerId) {
+    holdTimer = null;
+    if (!pointer || pointer.id !== pointerId || secondaryTouch || !isActive() ||
+        pointer.doubleCandidate || pointer.holdDisabled || pointer.mode !== 'pending') return;
+    pointer.mode = 'holding';
+    lastTap = null;
+    onHoldStart({ x: pointer.x, y: pointer.y });
+    pulseHold(pointerId);
+  }
+
   function fit({ touching = false } = {}) {
     scale = 1;
     panX = 0;
@@ -112,6 +162,7 @@ export function createDriftGestures({
     if (event.target?.closest?.('button,a,select,input,textarea,[data-drift-gesture-ignore]')) return;
     if (pointer) {
       secondaryTouch = true;
+      cancelHold();
       cancelTap();
       lastTap = null;
       return;
@@ -121,7 +172,8 @@ export function createDriftGestures({
     const doubleCandidate = Boolean(lastTap &&
       at - lastTap.at < TAP_MS &&
       Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < TAP_DISTANCE);
-    if (doubleCandidate) cancelTap();
+    cancelTap();
+    if (!doubleCandidate) lastTap = null;
     pointer = {
       id: event.pointerId,
       sx: event.clientX,
@@ -131,8 +183,10 @@ export function createDriftGestures({
       at,
       startScale: scale,
       doubleCandidate,
+      holdDisabled: doubleCandidate,
       mode: 'pending'
     };
+    if (!doubleCandidate) holdTimer = setDelay(() => beginHold(event.pointerId), HOLD_THRESHOLD_MS);
     try { stage.setPointerCapture(event.pointerId); } catch {}
     notify(true);
   }
@@ -141,6 +195,27 @@ export function createDriftGestures({
     if (!pointer || pointer.id !== event.pointerId || secondaryTouch) return;
     const dx = event.clientX - pointer.sx;
     const dy = event.clientY - pointer.sy;
+    const moved = Math.hypot(dx, dy);
+
+    if (pointer.mode === 'holding') {
+      if (moved > HOLD_MOVE_TOLERANCE) cancelHold();
+      else {
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+        return;
+      }
+    } else if (pointer.mode === 'pending' && !pointer.holdDisabled &&
+               moved > HOLD_MOVE_TOLERANCE) {
+      clearHoldTimers();
+      pointer.holdDisabled = true;
+    }
+
+    if (pointer.mode === 'hold-cancelled') {
+      // A cancelled hold cannot become an accidental vote or navigation.
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      return;
+    }
     if (pointer.doubleCandidate && pointer.mode === 'pending' &&
         Math.abs(dy) >= SLIDE_START && Math.abs(dy) >= Math.abs(dx) * 0.75) {
       pointer.mode = 'slide-zoom';
@@ -167,8 +242,26 @@ export function createDriftGestures({
     if (!pointer || pointer.id !== event.pointerId) return;
     const p = pointer;
     pointer = null;
+    clearHoldTimers();
     if (secondaryTouch) {
       secondaryTouch = false;
+      lastTap = null;
+      notify(false);
+      return;
+    }
+    if (p.mode === 'holding') {
+      const durationMs = Math.max(HOLD_THRESHOLD_MS, now() - p.at);
+      onHoldEnd({
+        level: affectionLevel(durationMs),
+        durationMs,
+        x: event.clientX,
+        y: event.clientY
+      });
+      lastTap = null;
+      notify(false);
+      return;
+    }
+    if (p.mode === 'hold-cancelled') {
       lastTap = null;
       notify(false);
       return;
@@ -207,11 +300,6 @@ export function createDriftGestures({
     if (!tapped) {
       cancelTap();
       lastTap = null;
-      if (Math.abs(dy) > Math.abs(dx) * 1.15 && Math.abs(dy) > SWIPE_DISTANCE) {
-        notify(false);
-        onVote(dy < 0 ? 'up' : 'down');
-        return;
-      }
       if (Math.abs(dx) > SWIPE_DISTANCE && Math.abs(dx) >= Math.abs(dy)) {
         notify(false);
         if (dx < 0) onNext(); else onPrev();
@@ -236,6 +324,7 @@ export function createDriftGestures({
 
   function onPointerCancel(event) {
     if (pointer?.id !== event.pointerId) return;
+    cancelHold();
     pointer = null;
     secondaryTouch = false;
     cancelTap();
@@ -262,6 +351,7 @@ export function createDriftGestures({
   }
 
   function reset() {
+    cancelHold();
     pointer = null;
     secondaryTouch = false;
     lastTap = null;
@@ -288,6 +378,8 @@ export function createDriftGestures({
     fit: () => fit(),
     getState: () => ({ scale, panX, panY, zoomed: isZoomed(), maxScale: geometry().maxScale }),
     destroy() {
+      cancelHold();
+      pointer = null;
       cancelTap();
       stage.removeEventListener('pointerdown', onPointerDown);
       stage.removeEventListener('pointermove', onPointerMove);

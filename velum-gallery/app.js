@@ -1,5 +1,5 @@
 import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
-import { affectionScore, safeAffectionLevel, isQuickSkip } from './affection.mjs';
+import { affectionScore, totalAffectionMs, isQuickSkip } from './affection.mjs';
 import { createHeartEffects } from './heart-effects.mjs';
 import { createDriftGestures } from './drift-gestures.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
@@ -148,7 +148,7 @@ class EventStore {
     const skips = ev.filter(isQuickSkip).length;
     const affectionEvents = ev.filter(e => e.type === 'affection');
     const affectionHolds = affectionEvents.length;
-    const affectionStrength = affectionEvents.reduce((total, e) => total + safeAffectionLevel(e.level), 0);
+    const affectionDurationMs = totalAffectionMs(affectionEvents);
     const affectionWeight = affectionScore(affectionEvents);
     const lastView = views.length ? Math.max(...views.map(e => e.at)) : 0;
     const dwell = views.reduce((s, e) => s + (e.ms || 0), 0);
@@ -156,7 +156,7 @@ class EventStore {
       pairUp * .7 - pairDown * .65 + affectionWeight +
       Math.min(dwell / 15000, 2) - skips * .18;
     return { directUp, directDown, pairUp, pairDown, views: views.length,
-      lastView, dwell, skips, affectionHolds, affectionStrength, affectionWeight, score };
+      lastView, dwell, skips, affectionHolds, affectionDurationMs, affectionWeight, score };
   }
 }
 const store = new EventStore();
@@ -522,10 +522,10 @@ const gestures = createDriftGestures({
     const id = heldMediaId;
     heldMediaId = null;
     if (id && current.ids[0] === id) {
+      // One real duration per deliberate hold; older 1–5 events stay untouched.
       store.add({ type: 'affection', imageIds: [id],
-        level: detail.level, ms: detail.durationMs, mode: 'drift' });
+        ms: detail.durationMs, mode: 'drift' });
       heartEffects.finish(detail);
-      showToast(`♥ ${detail.level}/5 · saved locally`);
     } else heartEffects.cancel();
     resumeHeldVideo();
   },
@@ -565,8 +565,8 @@ function renderBrowse() {
   if (key === 'oldest') arr.sort((a,b) => a.addedAt-b.addedAt);
   if (key === 'score') arr.sort((a,b) => confidenceScore(stat(b))-confidenceScore(stat(a)));
   if (key === 'love') arr.sort((a,b) =>
-    (stat(b).affectionStrength + 3 * stat(b).directUp) -
-    (stat(a).affectionStrength + 3 * stat(a).directUp));
+    (stat(b).affectionWeight + 3 * stat(b).directUp) -
+    (stat(a).affectionWeight + 3 * stat(a).directUp));
   if (key === 'views') arr.sort((a,b) => stat(b).views-stat(a).views);
   if (key === 'leastViews' || key === 'rare') arr.sort((a,b) => stat(a).views-stat(b).views);
   if (key === 'recent') arr.sort((a,b) => stat(b).lastView-stat(a).lastView);
@@ -626,7 +626,7 @@ function renderBrowse() {
       : isGifMedia(item)
         ? '<span class="tile-badge gif">GIF</span>'
         : '';
-    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span title="Love points, including prior likes">♥ ${s.affectionStrength + 3 * s.directUp}</span><span>${s.views} views</span></div>`;
+    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${Math.round(s.affectionDurationMs / 1000)}s held · ${s.views} views</span></div>`;
     tile.onclick = () => openInDrift(item.id);
     browseGrid.append(tile);
     const previewEl = tile.querySelector('[data-id]');

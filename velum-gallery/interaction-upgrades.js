@@ -47,9 +47,10 @@
       pointer-events:auto!important;
       transform:none!important;
       z-index:120!important;
-      height:calc(58px + env(safe-area-inset-bottom,0px))!important;
+      height:calc(76px + env(safe-area-inset-bottom,0px))!important;
+      padding-bottom:calc(17px + env(safe-area-inset-bottom,0px))!important;
       gap:42px!important;
-      background:linear-gradient(to top,rgba(7,5,6,.62) 12%,rgba(7,5,6,.20) 48%,rgba(7,5,6,0) 100%)!important;
+      background:linear-gradient(to top,rgba(7,5,6,.95) 24%,rgba(7,5,6,.55) 65%,rgba(7,5,6,0) 100%)!important;
     }
     body.velum-drift-immersive:not(.velum-controls-visible) .bottom-nav{
       opacity:.72!important;
@@ -74,7 +75,7 @@
     body.velum-drift-immersive.velum-controls-visible .top-actions .private-dot{display:none!important}
     body.velum-drift-immersive.velum-controls-visible #exitBtn{width:32px!important;height:32px!important;background:rgba(255,255,255,.06)!important}
 
-    body.velum-drift-immersive.velum-controls-visible .bottom-nav{opacity:1!important;pointer-events:auto!important;transform:none!important;height:calc(64px + env(safe-area-inset-bottom,0px))!important;gap:46px!important;background:linear-gradient(to top,rgba(7,5,6,.82) 35%,rgba(7,5,6,0))!important}
+    body.velum-drift-immersive.velum-controls-visible .bottom-nav{opacity:1!important;pointer-events:auto!important;transform:none!important;height:calc(76px + env(safe-area-inset-bottom,0px))!important;padding-bottom:calc(17px + env(safe-area-inset-bottom,0px))!important;gap:46px!important;background:linear-gradient(to top,rgba(7,5,6,.82) 35%,rgba(7,5,6,0))!important}
     #velumHardRefresh{position:fixed;z-index:2100;right:12px;bottom:calc(15px + env(safe-area-inset-bottom,0px));height:34px;padding:0 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(13,10,11,.62);color:rgba(255,255,255,.72);backdrop-filter:blur(16px);font:500 9px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:5px;opacity:.78;touch-action:manipulation}
     #velumHardRefresh:active{opacity:1;transform:scale(.97)}
     #velumHardRefresh svg{width:13px;height:13px;stroke-width:1.9}

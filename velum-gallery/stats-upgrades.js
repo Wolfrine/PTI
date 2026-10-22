@@ -139,11 +139,24 @@
     (e.type === 'view' && (!e.ms || e.ms <= 0));
   const isDwell = e => e.type === 'view' && Number(e.ms) > 0;
 
+  // A small local reader for the same legacy-safe, duration-based model in
+  // affection.mjs. Stats is loaded as a classic script before the app module.
+  function affectionTimeMs(event) {
+    if (event?.type !== 'affection') return 0;
+    const ms = Number(event.ms);
+    if (Number.isFinite(ms) && ms >= 450) return ms;
+    const priorLevel = Number(event.level);
+    return Number.isFinite(priorLevel) && priorLevel >= 1
+      ? 450 + (Math.min(5, priorLevel) - 1) * 650 : 450;
+  }
+
+
   function mediaStats(events) {
     const map = new Map();
     const get = id => {
       if (!map.has(id)) map.set(id, { id, views: 0, dwell: 0, up: 0, down: 0,
-        pairUp: 0, pairDown: 0, skips: 0, affectionHolds: 0, affectionStrength: 0, lastView: 0 });
+        pairUp: 0, pairDown: 0, skips: 0, affectionHolds: 0,
+        affectionDurationMs: 0, affectionWeight: 0, lastView: 0 });
       return map.get(id);
     };
     for (const e of events) {
@@ -157,8 +170,11 @@
         if (e.type === 'pair-down') s.pairDown++;
         if (e.type === 'skip' && Number(e.ms) >= 0 && Number(e.ms) < 1600) s.skips++;
         if (e.type === 'affection') {
+          const holdMs = affectionTimeMs(e);
           s.affectionHolds++;
-          s.affectionStrength += Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1)));
+          s.affectionDurationMs += holdMs;
+          s.affectionWeight += 2.5 * Math.log1p(holdMs / 1000) /
+            Math.sqrt(s.affectionHolds);
         }
       }
     }
@@ -209,7 +225,7 @@
       d.setHours(0, 0, 0, 0);
       d.setDate(d.getDate() - i);
       days.push({ key: dayKey(d.getTime()), date: d.getTime(), ms: 0,
-        views: 0, up: 0, down: 0, love: 0, loveStrength: 0 });
+        views: 0, up: 0, down: 0, love: 0, loveMs: 0 });
     }
     const byKey = new Map(days.map(d => [d.key, d]));
     dwell.forEach(item => { const row = byKey.get(dayKey(item.at)); if (row) row.ms += item.ms; });
@@ -221,7 +237,7 @@
       if (e.type === 'down' || e.type === 'pair-down') row.down++;
       if (e.type === 'affection') {
         row.love++;
-        row.loveStrength += Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1)));
+        row.loveMs += affectionTimeMs(e);
       }
     });
     return days;
@@ -266,13 +282,12 @@
     const down = filtered.filter(e => e.type === 'down' || e.type === 'pair-down').length;
     const love = filtered.filter(e => e.type === 'affection');
     const affectionHolds = love.length;
-    const affectionStrength = love.reduce((sum, e) =>
-      sum + Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1))), 0);
+    const affectionDurationMs = love.reduce((sum, e) => sum + affectionTimeMs(e), 0);
     const unique = seenRange.size;
     const averageDwell = views ? trackedMs / Math.max(1, filtered.filter(e => e.type === 'view' && e.mode === 'drift-end').length) : 0;
     return {
       key, from, filtered, allMedia, rangeMedia, ids, seenAll, seenRange, rangeSessions,
-      trackedMs, views, up, down, affectionHolds, affectionStrength, unique, averageDwell,
+      trackedMs, views, up, down, affectionHolds, affectionDurationMs, unique, averageDwell,
       coverage: ids.length ? Math.min(100, seenAll.size / ids.length * 100) : 0
     };
   }
@@ -312,11 +327,13 @@
   function mediaMetric(kind, s) {
     if (kind === 'revisited') return `${s.views} views`;
     if (kind === 'dwell' || kind === 'quiet') return formatDuration(s.dwell);
-    return `${s.affectionStrength} ♥ · ${s.up + s.pairUp} old ↑`;
+    return s.affectionHolds
+      ? `${formatDuration(s.affectionDurationMs)} held`
+      : `${s.up + s.pairUp} old likes`;
   }
 
   function mediaSubline(s) {
-    return `${s.views} views · ${formatDuration(s.dwell)} · ${s.affectionHolds} holds / ${s.affectionStrength} ♥ · ${s.up + s.pairUp} old likes`;
+    return `${s.views} views · ${formatDuration(s.dwell)} viewing · ${s.affectionHolds} holds / ${formatDuration(s.affectionDurationMs)} · ${s.up + s.pairUp} old likes`;
   }
 
   function rankedMedia(snapshot, kind) {
@@ -326,8 +343,8 @@
     else if (kind === 'dwell') arr.sort((a, b) => b.dwell - a.dwell || b.views - a.views);
     else if (kind === 'quiet') arr = arr.filter(s =>
       s.up + s.pairUp + s.affectionHolds === 0 && s.views >= 2).sort((a, b) => b.dwell - a.dwell);
-    else arr.sort((a, b) => (b.affectionStrength + b.up * 3 + b.pairUp) -
-      (a.affectionStrength + a.up * 3 + a.pairUp) || b.dwell - a.dwell);
+    else arr.sort((a, b) => (b.affectionWeight + b.up * 3 + b.pairUp) -
+      (a.affectionWeight + a.up * 3 + a.pairUp) || b.dwell - a.dwell);
     return arr.slice(0, 6);
   }
 
@@ -361,7 +378,7 @@
     const snapshot = buildSnapshot(all);
     const sessionDurations = snapshot.rangeSessions.map(s => s.duration);
     const avgSession = sessionDurations.length ? sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length : 0;
-    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(`${snapshot.affectionHolds} ♥`, 'Love holds', `${snapshot.affectionStrength} strength · ${snapshot.up} legacy likes`)}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(`${Math.round(snapshot.coverage)}%`, 'Collection explored', `${formatNumber(snapshot.seenAll.size)} seen all-time`)}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
+    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(formatDuration(snapshot.affectionDurationMs), 'Time expressed', `${snapshot.affectionHolds} holds · ${snapshot.up} legacy likes`)}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(`${Math.round(snapshot.coverage)}%`, 'Collection explored', `${formatNumber(snapshot.seenAll.size)} seen all-time`)}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
     paintMediaList(snapshot, 'liked');
     body.querySelectorAll('.favorite-tab').forEach(tab => tab.addEventListener('click', () => {
       body.querySelectorAll('.favorite-tab').forEach(t => t.classList.toggle('active', t === tab));
@@ -374,7 +391,7 @@
     const snapshot = buildSnapshot(all, selectedRange);
     const allSnapshot = buildSnapshot(all, 'all');
     const days = dailySeries(all, 30).map(d => ({ date: d.key, trackedMs: Math.round(d.ms),
-      views: d.views, up: d.up, down: d.down, affectionHolds: d.love, affectionStrength: d.loveStrength }));
+      views: d.views, up: d.up, down: d.down, affectionHolds: d.love, affectionDurationMs: d.loveMs }));
     const hourly = Array.from({ length: 24 }, (_, hour) => ({ hour, events: 0, views: 0, trackedMs: 0 }));
     all.forEach(e => {
       if (!e.at) return;
@@ -386,7 +403,7 @@
     const top = [...allSnapshot.allMedia.values()].sort((a, b) => b.dwell - a.dwell || b.views - a.views).slice(0, 20).map(s => ({
       media: alias(s.id), views: s.views, trackedMs: Math.round(s.dwell), up: s.up, down: s.down,
       pairUp: s.pairUp, pairDown: s.pairDown, skips: s.skips,
-      affectionHolds: s.affectionHolds, affectionStrength: s.affectionStrength,
+      affectionHolds: s.affectionHolds, affectionDurationMs: s.affectionDurationMs,
       lastView: s.lastView ? new Date(s.lastView).toISOString() : null
     }));
     const recent = all.slice(-750).map(e => ({
@@ -395,11 +412,11 @@
       action: e.action || undefined,
       media: (e.imageIds || []).map(alias),
       ms: Number(e.ms) || undefined,
-      level: e.type === 'affection' ? Number(e.level) : undefined,
+      affectionDurationMs: e.type === 'affection' ? affectionTimeMs(e) : undefined,
       mode: e.mode || undefined
     }));
     const state = {
-      schema: 'VELUM_STATE_V1',
+      schema: 'VELUM_STATE_V2',
       generatedAt: new Date().toISOString(),
       selectedRange,
       collection: {
@@ -416,7 +433,7 @@
         upvotes: snapshot.up,
         downvotes: snapshot.down,
         affectionHolds: snapshot.affectionHolds,
-        affectionStrength: snapshot.affectionStrength,
+        affectionDurationMs: snapshot.affectionDurationMs,
         avgDwellMs: Math.round(snapshot.averageDwell)
       },
       allTime: {
@@ -427,7 +444,7 @@
         upvotes: allSnapshot.up,
         downvotes: allSnapshot.down,
         affectionHolds: allSnapshot.affectionHolds,
-        affectionStrength: allSnapshot.affectionStrength
+        affectionDurationMs: allSnapshot.affectionDurationMs
       },
       eventTypeCounts: eventCounts(all),
       last30Days: days,
@@ -437,7 +454,7 @@
       cache: window.__velumCacheSnapshot?.() || null,
       privacy: 'Drive filenames and raw Drive IDs excluded; media aliases are stable hashes for correlation between copied states.'
     };
-    return `VELUM_STATE_V1\n${JSON.stringify(state)}`;
+    return `VELUM_STATE_V2\n${JSON.stringify(state)}`;
   }
 
   async function copyText(text) {

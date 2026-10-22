@@ -40,6 +40,38 @@ const syncBtn = $('#syncBtn');
 const syncLabel = $('#syncLabel');
 const driftMedia = $('#driftMedia');
 const ambientBg = $('#ambientBg');
+const ambientLayers = [...ambientBg.querySelectorAll('.ambient-layer')];
+let ambientActive = -1;
+function showAmbient(url) {
+  if (!url || ambientLayers.length !== 2) return;
+  const next = ambientActive === 0 ? 1 : 0;
+  ambientLayers[next].style.backgroundImage = `url("${url}")`;
+  ambientLayers[next].classList.add('active');
+  if (ambientActive >= 0) ambientLayers[ambientActive].classList.remove('active');
+  ambientActive = next;
+}
+// Capture a tiny first-frame poster locally; no second private Drive download.
+function setVideoAmbient(video, id, serial) {
+  const paint = () => {
+    if (serial !== renderSerial || current.ids[0] !== id || !video.isConnected) return;
+    if (!video.videoWidth || !video.videoHeight) return;
+    try {
+      const thumbnail = document.createElement('canvas');
+      const ratio = video.videoWidth / video.videoHeight;
+      thumbnail.width = ratio >= 1 ? 192 : Math.max(64, Math.round(192 * ratio));
+      thumbnail.height = ratio >= 1 ? Math.max(64, Math.round(192 / ratio)) : 192;
+      const ctx = thumbnail.getContext('2d', { willReadFrequently: false });
+      ctx.drawImage(video, 0, 0, thumbnail.width, thumbnail.height);
+      showAmbient(thumbnail.toDataURL('image/jpeg', .7));
+      thumbnail.width = thumbnail.height = 0;
+    } catch (error) {
+      console.warn('Video poster preview not available', error);
+    }
+  };
+  if (video.readyState >= 2) paint();
+  else video.addEventListener('loadeddata', paint, { once: true });
+}
+
 const driftChrome = $('#driftChrome');
 const driftHint = $('#driftHint');
 const driftStage = $('#driftStage');
@@ -350,12 +382,10 @@ async function renderMoment(moment, { record = true } = {}) {
   if (serial !== renderSerial) return;
 
   driftMedia.innerHTML = '';
-  gestures.reset();
   const wrap = document.createElement('div');
   wrap.className = 'single-wrap';
 
   if (isVideoMedia(meta)) {
-    ambientBg.style.backgroundImage = 'none';
     const video = document.createElement('video');
     video.className = 'drift-video';
     video.dataset.fullMediaId = id;
@@ -378,10 +408,11 @@ async function renderMoment(moment, { record = true } = {}) {
     }, { once: true });
     wrap.append(video);
     driftMedia.append(wrap);
+    setVideoAmbient(video, id, serial);
     video.play().catch(() => showChrome());
     counter.textContent = 'video';
   } else {
-    ambientBg.style.backgroundImage = `url("${firstUrl}")`;
+    showAmbient(firstUrl);
     const img = document.createElement('img');
     img.className = 'drift-image';
     img.dataset.fullMediaId = id;
@@ -399,6 +430,7 @@ async function renderMoment(moment, { record = true } = {}) {
     counter.textContent = isGifMedia(meta) ? 'gif' : 'image';
   }
 
+  gestures.reset();
   trimMediaCache();
   if (record) store.add({ type: 'impression', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();

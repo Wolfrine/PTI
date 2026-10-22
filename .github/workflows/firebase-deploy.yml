@@ -261,7 +261,7 @@ jobs:
         run: |
           set -euo pipefail
           node --input-type=module --check < velum-gallery/app.js
-          node --check velum-gallery/focus-gestures.mjs
+          node --check velum-gallery/drift-gestures.mjs
           node --check velum-gallery/feed.mjs
           node --check velum-gallery/interaction-upgrades.js
           node --check velum-gallery/sw.js
@@ -299,7 +299,7 @@ jobs:
           base="https://pti-app-2ab59-velum.web.app"
           for attempt in 1 2 3 4 5 6; do
             matched=1
-            for asset in index.html sw.js app.js focus-gestures.mjs; do
+            for asset in index.html sw.js app.js drift-gestures.mjs interaction-upgrades.js styles.css; do
               output="$RUNNER_TEMP/velum-$(basename "$asset")"
               if ! curl --fail --silent --show-error --location --max-time 20 \
                 "$base/$asset?deployment-check=$GITHUB_SHA" -o "$output" \

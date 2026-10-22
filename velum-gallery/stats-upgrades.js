@@ -254,6 +254,7 @@
 
   function formatDuration(ms) {
     ms = Math.max(0, Number(ms) || 0);
+    if (ms > 0 && ms < 10_000) return `${(ms / 1000).toFixed(1).replace(/\\.0$/, '')}s`;
     if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
     const mins = Math.round(ms / 60_000);
     if (mins < 60) return `${mins}m`;

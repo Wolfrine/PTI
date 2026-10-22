@@ -20,7 +20,7 @@
         <h1 id="authTitle">Private collection</h1>
         <p id="authCopy">Connect the Google account that owns the private media folder.</p>
         <button id="connectBtn" class="connect-btn">Connect Google Drive</button>
-        <small id="authStatus">Media stays in Google Drive; votes stay on this device.</small>
+        <small id="authStatus">Media stays in Google Drive; reactions stay on this device.</small>
       </div>
     </section>
     <header class="topbar">
@@ -31,7 +31,7 @@
       <div class="top-actions">
         <button class="sync-btn" id="syncBtn" aria-label="Sync Google Drive"><span id="syncLabel">Sync</span></button>
         <button class="sync-btn" id="signOutBtn" aria-label="Disconnect Google Drive">Off</button>
-        <span class="private-dot" title="Local votes · Drive images"></span>
+        <span class="private-dot" title="Local reactions · Drive images"></span>
         <button class="icon-btn" id="exitBtn" aria-label="Quick exit">
           <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
@@ -44,24 +44,7 @@
           <div class="ambient-bg" id="ambientBg" aria-hidden="true"><div class="ambient-layer"></div><div class="ambient-layer"></div></div>
           <div class="vignette"></div>
           <div class="drift-media" id="driftMedia"></div>
-          <div class="drift-hint" id="driftHint">
-            <span>↑ like</span><i></i><span>↓ less</span><i></i><span>↔ move</span>
-          </div>
-          <div class="drift-chrome" id="driftChrome">
-            <div class="chrome-meta">
-              <span class="eyebrow" id="driftEyebrow">Drift</span>
-              <span class="counter" id="driftCounter"></span>
-            </div>
-            <div class="vote-strip">
-              <button class="vote-btn down" id="downBtn" aria-label="Downvote">
-                <svg viewBox="0 0 24 24"><path d="M7 3h10v12h-4l-1 6-5-8z"/></svg>
-              </button>
-              <button class="vote-btn up" id="upBtn" aria-label="Upvote">
-                <svg viewBox="0 0 24 24"><path d="M7 21h10V9h-4l-1-6-5 8z"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="vote-flash" id="voteFlash"></div>
+          <div id="heartField" class="heart-field" aria-hidden="true"></div>
         </div>
       </section>
 
@@ -77,8 +60,7 @@
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
               <option value="score">Highest rated</option>
-              <option value="upvotes">Most upvoted</option>
-              <option value="downvotes">Most downvoted</option>
+              <option value="love">Most loved</option>
               <option value="views">Most viewed</option>
               <option value="leastViews">Least viewed</option>
               <option value="recent">Recently viewed</option>

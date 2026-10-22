@@ -373,7 +373,8 @@
     const all = await allEvents();
     const snapshot = buildSnapshot(all, selectedRange);
     const allSnapshot = buildSnapshot(all, 'all');
-    const days = dailySeries(all, 30).map(d => ({ date: d.key, trackedMs: Math.round(d.ms), views: d.views, up: d.up, down: d.down }));
+    const days = dailySeries(all, 30).map(d => ({ date: d.key, trackedMs: Math.round(d.ms),
+      views: d.views, up: d.up, down: d.down, affectionHolds: d.love, affectionStrength: d.loveStrength }));
     const hourly = Array.from({ length: 24 }, (_, hour) => ({ hour, events: 0, views: 0, trackedMs: 0 }));
     all.forEach(e => {
       if (!e.at) return;
@@ -383,7 +384,10 @@
     });
     dedupedDwell(all).forEach(d => { hourly[new Date(d.at).getHours()].trackedMs += Math.round(d.ms); });
     const top = [...allSnapshot.allMedia.values()].sort((a, b) => b.dwell - a.dwell || b.views - a.views).slice(0, 20).map(s => ({
-      media: alias(s.id), views: s.views, trackedMs: Math.round(s.dwell), up: s.up, down: s.down, pairUp: s.pairUp, pairDown: s.pairDown, skips: s.skips, lastView: s.lastView ? new Date(s.lastView).toISOString() : null
+      media: alias(s.id), views: s.views, trackedMs: Math.round(s.dwell), up: s.up, down: s.down,
+      pairUp: s.pairUp, pairDown: s.pairDown, skips: s.skips,
+      affectionHolds: s.affectionHolds, affectionStrength: s.affectionStrength,
+      lastView: s.lastView ? new Date(s.lastView).toISOString() : null
     }));
     const recent = all.slice(-750).map(e => ({
       at: e.at ? new Date(e.at).toISOString() : null,
@@ -391,6 +395,7 @@
       action: e.action || undefined,
       media: (e.imageIds || []).map(alias),
       ms: Number(e.ms) || undefined,
+      level: e.type === 'affection' ? Number(e.level) : undefined,
       mode: e.mode || undefined
     }));
     const state = {
@@ -410,6 +415,8 @@
         uniqueMedia: snapshot.unique,
         upvotes: snapshot.up,
         downvotes: snapshot.down,
+        affectionHolds: snapshot.affectionHolds,
+        affectionStrength: snapshot.affectionStrength,
         avgDwellMs: Math.round(snapshot.averageDwell)
       },
       allTime: {
@@ -418,7 +425,9 @@
         views: allSnapshot.views,
         uniqueMedia: allSnapshot.unique,
         upvotes: allSnapshot.up,
-        downvotes: allSnapshot.down
+        downvotes: allSnapshot.down,
+        affectionHolds: allSnapshot.affectionHolds,
+        affectionStrength: allSnapshot.affectionStrength
       },
       eventTypeCounts: eventCounts(all),
       last30Days: days,
@@ -498,7 +507,7 @@
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     if (Math.abs(dx) > 52 && Math.abs(dx) >= Math.abs(dy)) addLocalEvent({ type: 'interaction', action: 'drift-swipe' });
-    else if (Math.abs(dy) > 52 && Math.abs(dy) > Math.abs(dx) * 1.15) addLocalEvent({ type: 'interaction', action: 'drift-vote-gesture' });
+    // No vertical voting gesture: deliberate holds now carry preference.
   }, true);
   window.addEventListener('pointercancel', event => pointerStarts.delete(event.pointerId), true);
 

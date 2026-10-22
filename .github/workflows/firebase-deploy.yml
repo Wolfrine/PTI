@@ -261,6 +261,7 @@ jobs:
         run: |
           set -euo pipefail
           node --input-type=module --check < velum-gallery/app.js
+          node --check .github/scripts/velum-release.mjs
           node --check velum-gallery/drift-gestures.mjs
           node --check velum-gallery/affection.mjs
           node --check velum-gallery/heart-effects.mjs
@@ -269,6 +270,16 @@ jobs:
           node --check velum-gallery/interaction-upgrades.js
           node --check velum-gallery/sw.js
           node --test velum-gallery/tests/*.test.mjs
+
+      - name: Stamp Velum release version into HTML and PWA cache
+        run: |
+          set -euo pipefail
+          node .github/scripts/velum-release.mjs
+          node --check velum-gallery/sw.js
+          if grep -q '__VELUM_' velum-gallery/index.html velum-gallery/sw.js; then
+            echo "::error::Unresolved Velum release placeholder."
+            exit 1
+          fi
 
       - name: Create and deploy Velum secondary Hosting site
         env:
@@ -313,7 +324,7 @@ jobs:
               fi
             done
             if [ "$matched" -eq 1 ]; then
-              echo "Verified: Velum Hosting serves exactly the committed UI, service worker and gesture logic."
+              echo "Verified: Velum Hosting serves the exact stamped release HTML, service worker and gesture logic."
               exit 0
             fi
             sleep 5

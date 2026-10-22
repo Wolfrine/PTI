@@ -82,7 +82,9 @@ export function chooseFeedImage(images, {
   return drawWeighted(old, entry => {
     const hrs = entry.lastView ? Math.min(Math.max(0, now - entry.lastView) / HOUR, 72) : 72;
     const rarity = 2.4 / (1 + entry.views * 0.65);
-    const preference = Math.max(0.18, 1 + entry.score * 0.17);
+    // The underlying affection score has no hard cap, but its *feed share*
+    // approaches a ceiling smoothly so one favorite cannot crowd out others.
+    const preference = Math.max(0.35, 1 + 4 * Math.tanh(entry.score / 14));
     return preference + rarity + Math.min(hrs / 48, 0.8) + 1;
   }, random).image;
 }

@@ -182,7 +182,7 @@ test('reset after media change preserves full fit and no pending taps',()=>{
 });
 
 
-test('stationary first hold starts at 450 ms, intensity grows to level 5, releases exactly one affection',()=>{
+test('stationary first hold starts at 450 ms, reports real duration and releases one affection',()=>{
   const f=fixture();
   f.fire('pointerdown',186,417);
   f.tick(449);
@@ -193,8 +193,8 @@ test('stationary first hold starts at 450 ms, intensity grows to level 5, releas
   f.fire('pointerup',186,417);
   const reactions=f.events.filter(x=>x?.type==='hold-end');
   assert.equal(reactions.length,1);
-  assert.equal(reactions[0].level,5);
-  assert.ok(reactions[0].durationMs>=3000);
+  assert.equal('level' in reactions[0],false);
+  assert.equal(reactions[0].durationMs,3150);
   assert.deepEqual(f.events.filter(x=>['next','prev','tap'].includes(x)),[]);
   f.destroy();
 });
@@ -284,5 +284,22 @@ test('pointer cancellation and media reset never record a reaction',()=>{
   f.tick(1400);
   assert.equal(f.events.filter(x=>x?.type==='hold-end').length,0);
   assert.equal(f.events.filter(x=>x?.type==='hold-cancel').length,2);
+  f.destroy();
+});
+
+test('a long 24-second hold keeps reporting increasing duration, never a capped level',()=>{
+  const f=fixture();
+  f.fire('pointerdown',180,420);
+  f.tick(450);
+  for (let i = 0; i < 120; i++) f.tick(200);
+  const updates=f.events.filter(e=>e?.type==='hold-progress');
+  assert.ok(updates.length>=10);
+  assert.ok(updates.at(-1).durationMs>23000);
+  assert.equal(updates.some(e=>'level' in e),false);
+  f.fire('pointerup',180,420);
+  const finished=f.events.filter(e=>e?.type==='hold-end');
+  assert.equal(finished.length,1);
+  assert.equal(finished[0].durationMs,24450);
+  assert.equal(f.events.filter(e=>e==='next'||e==='prev').length,0);
   f.destroy();
 });

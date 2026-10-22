@@ -1,4 +1,4 @@
-import { affectionLevel, HOLD_THRESHOLD_MS } from './affection.mjs';
+import { HOLD_THRESHOLD_MS } from './affection.mjs';
 
 // One-finger media interaction for Velum Drift.
 // This is the sole pointer gesture owner. No Focus overlay or pinch is required.
@@ -112,7 +112,6 @@ export function createDriftGestures({
     }
     const durationMs = Math.max(HOLD_THRESHOLD_MS, now() - pointer.at);
     onHoldProgress({
-      level: affectionLevel(durationMs),
       durationMs,
       x: pointer.x,
       y: pointer.y
@@ -252,7 +251,6 @@ export function createDriftGestures({
     if (p.mode === 'holding') {
       const durationMs = Math.max(HOLD_THRESHOLD_MS, now() - p.at);
       onHoldEnd({
-        level: affectionLevel(durationMs),
         durationMs,
         x: event.clientX,
         y: event.clientY

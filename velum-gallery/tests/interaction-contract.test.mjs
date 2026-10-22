@@ -50,13 +50,16 @@ test('existing vote history preserved, historical long skip penalties corrected'
   assert.match(app,/directUp\s*\*\s*3/);
   assert.match(app,/affectionScore\(affectionEvents\)/);
   assert.match(app,/ev\.filter\(isQuickSkip\)/);
-  assert.match(app,/affectionHolds, affectionStrength, affectionWeight/);
+  assert.match(app,/affectionHolds, affectionDurationMs, affectionWeight/);
+  assert.match(app,/totalAffectionMs\(affectionEvents\)/);
 });
 test('statistics and exported intensity remain entirely in browser storage',()=>{
   const stats=source('stats-upgrades.js');
   const app=source('app.js');
   assert.match(stats,/affectionHolds: snapshot\.affectionHolds/);
-  assert.match(stats,/affectionStrength: allSnapshot\.affectionStrength/);
+  assert.match(stats,/affectionDurationMs: allSnapshot\.affectionDurationMs/);
+  assert.match(stats,/VELUM_STATE_V2/);
+  assert.doesNotMatch(stats,/affectionStrength/);
   assert.match(stats,/e\.type === 'impression'/);
   assert.match(app,/indexedDB\.open\('velum-local'/);
   assert.doesNotMatch(app,/firestore|createDocument|updateDocument|notion\.so/i);
@@ -67,9 +70,26 @@ test('auto-advance pauses during touch and zoom and resumes after grace',()=>{
   assert.match(interaction,/else if \(touching\) pauseAuto\('touch'\)/);
   assert.match(interaction,/resumeAuto\(\{ delay: TOUCH_GRACE \}\)/);
 });
-test('new script modules are in the PWA shell v19',()=>{
+test('continuous affection modules are in PWA shell v20',()=>{
   const shell=source('sw.js');
   for(const asset of ['affection.mjs','heart-effects.mjs','drift-gestures.mjs'])
     assert.ok(shell.includes(asset),asset);
-  assert.match(shell,/velum-shell-v19/);
+  assert.match(shell,/velum-shell-v20/);
+});
+
+test('hearts grow visually without numeric rating labels or a timed stop',()=>{
+  const heart=source('heart-effects.mjs');
+  const css=source('styles.css');
+  const gestures=source('drift-gestures.mjs');
+  const app=source('app.js');
+  const model=source('affection.mjs');
+  assert.match(model,/Math\.log1p\(affectionDurationMs\(event\) \/ 1000\)/);
+  assert.match(heart,/heartParticleSizePx\(durationMs, random\(\)\)/);
+  assert.match(heart,/MAX_LIVE_PARTICLES = 28/);
+  assert.match(css,/var\(--heart-core-size,32px\)/);
+  assert.doesNotMatch(heart,/heart-level|\/5|lastLevel/);
+  assert.doesNotMatch(gestures,/affectionLevel|MAX_AFFECTION_LEVEL/);
+  assert.doesNotMatch(app,/\/5 · saved locally|detail\.level/);
+  assert.match(app,/ms: detail\.durationMs, mode: 'drift'/);
+  assert.match(source('stats-upgrades.js'),/affectionDurationMs/);
 });

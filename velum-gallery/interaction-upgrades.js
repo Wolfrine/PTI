@@ -34,11 +34,9 @@
     #driftView .pair-wrap{position:absolute!important;inset:0!important;width:100vw!important;height:100dvh!important;padding:0!important;gap:2px!important}
     #driftView .pair-pane{height:100%!important;border-radius:0!important}
     #driftView .pair-pane img{width:100%!important;height:100%!important;object-fit:cover!important}
-    #driftView .drift-hint{display:none!important}
 
-    .topbar,.bottom-nav,#driftChrome,#velumHardRefresh{transition:opacity .32s ease,transform .32s ease!important}
+    .topbar,.bottom-nav,#velumHardRefresh{transition:opacity .32s ease,transform .32s ease!important}
     body.velum-drift-immersive:not(.velum-controls-visible) .topbar,
-    body.velum-drift-immersive:not(.velum-controls-visible) #driftChrome,
     body.velum-drift-immersive:not(.velum-controls-visible) #velumHardRefresh{opacity:0!important;pointer-events:none!important}
     body.velum-drift-immersive:not(.velum-controls-visible) .topbar{transform:translateY(-10px)!important}
 
@@ -77,11 +75,6 @@
     body.velum-drift-immersive.velum-controls-visible #exitBtn{width:32px!important;height:32px!important;background:rgba(255,255,255,.06)!important}
 
     body.velum-drift-immersive.velum-controls-visible .bottom-nav{opacity:1!important;pointer-events:auto!important;transform:none!important;height:calc(64px + env(safe-area-inset-bottom,0px))!important;gap:46px!important;background:linear-gradient(to top,rgba(7,5,6,.82) 35%,rgba(7,5,6,0))!important}
-    body.velum-drift-immersive.velum-controls-visible #driftChrome{position:fixed!important;z-index:90!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;inset:auto auto calc(82px + env(safe-area-inset-bottom,0px)) 50%!important;width:auto!important;opacity:1!important;pointer-events:auto!important;transform:translateX(-50%)!important}
-    body.velum-drift-immersive.velum-controls-visible #driftChrome .chrome-meta{display:none!important}
-    body.velum-drift-immersive.velum-controls-visible #driftChrome .vote-strip{display:flex!important;align-items:center!important;gap:12px!important;padding:5px!important;border-radius:999px!important;background:rgba(10,7,8,.34)!important;border:1px solid rgba(255,255,255,.08)!important;backdrop-filter:blur(18px)!important}
-    body.velum-drift-immersive.velum-controls-visible #driftChrome .vote-btn{width:44px!important;height:44px!important}
-
     #velumHardRefresh{position:fixed;z-index:2100;right:12px;bottom:calc(15px + env(safe-area-inset-bottom,0px));height:34px;padding:0 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(13,10,11,.62);color:rgba(255,255,255,.72);backdrop-filter:blur(16px);font:500 9px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:5px;opacity:.78;touch-action:manipulation}
     #velumHardRefresh:active{opacity:1;transform:scale(.97)}
     #velumHardRefresh svg{width:13px;height:13px;stroke-width:1.9}

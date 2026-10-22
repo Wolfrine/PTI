@@ -291,7 +291,7 @@ test('a long 24-second hold keeps reporting increasing duration, never a capped 
   const f=fixture();
   f.fire('pointerdown',180,420);
   f.tick(450);
-  f.tick(24000);
+  for (let i = 0; i < 120; i++) f.tick(200);
   const updates=f.events.filter(e=>e?.type==='hold-progress');
   assert.ok(updates.length>=10);
   assert.ok(updates.at(-1).durationMs>23000);

@@ -626,7 +626,7 @@ function renderBrowse() {
       : isGifMedia(item)
         ? '<span class="tile-badge gif">GIF</span>'
         : '';
-    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${(s.affectionDurationMs / 1000).toFixed(s.affectionDurationMs < 10000 ? 1 : 0).replace(/\\.0$/, '')}s held · ${s.views} views</span></div>`;
+    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${(s.affectionDurationMs / 1000).toFixed(s.affectionDurationMs < 10000 ? 1 : 0).replace(/\.0$/, '')}s held · ${s.views} views</span></div>`;
     tile.onclick = () => openInDrift(item.id);
     browseGrid.append(tile);
     const previewEl = tile.querySelector('[data-id]');

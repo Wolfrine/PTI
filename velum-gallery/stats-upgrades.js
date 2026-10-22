@@ -312,24 +312,27 @@
   function mediaMetric(kind, s) {
     if (kind === 'revisited') return `${s.views} views`;
     if (kind === 'dwell' || kind === 'quiet') return formatDuration(s.dwell);
-    return `${s.up + s.pairUp} ↑`;
+    return `${s.affectionStrength} ♥ · ${s.up + s.pairUp} old ↑`;
   }
 
   function mediaSubline(s) {
-    return `${s.views} views · ${formatDuration(s.dwell)} · ${s.up + s.pairUp} ↑ · ${s.down + s.pairDown} ↓`;
+    return `${s.views} views · ${formatDuration(s.dwell)} · ${s.affectionHolds} holds / ${s.affectionStrength} ♥ · ${s.up + s.pairUp} old likes`;
   }
 
   function rankedMedia(snapshot, kind) {
-    let arr = [...snapshot.allMedia.values()].filter(s => s.views || s.up || s.down || s.pairUp || s.pairDown);
+    let arr = [...snapshot.allMedia.values()].filter(s =>
+      s.views || s.affectionHolds || s.up || s.down || s.pairUp || s.pairDown);
     if (kind === 'revisited') arr.sort((a, b) => b.views - a.views || b.dwell - a.dwell);
     else if (kind === 'dwell') arr.sort((a, b) => b.dwell - a.dwell || b.views - a.views);
-    else if (kind === 'quiet') arr = arr.filter(s => s.up + s.pairUp === 0 && s.views >= 2).sort((a, b) => b.dwell - a.dwell);
-    else arr.sort((a, b) => (b.up + b.pairUp * .35) - (a.up + a.pairUp * .35) || b.dwell - a.dwell);
+    else if (kind === 'quiet') arr = arr.filter(s =>
+      s.up + s.pairUp + s.affectionHolds === 0 && s.views >= 2).sort((a, b) => b.dwell - a.dwell);
+    else arr.sort((a, b) => (b.affectionStrength + b.up * 3 + b.pairUp) -
+      (a.affectionStrength + a.up * 3 + a.pairUp) || b.dwell - a.dwell);
     return arr.slice(0, 6);
   }
 
   function renderFavorites(snapshot) {
-    return `<section class="stats-section"><div class="stats-section-head"><h2>Favorites</h2><span>Tap a row to open it</span></div><div class="favorite-tabs"><button class="favorite-tab active" data-fav="liked">Liked</button><button class="favorite-tab" data-fav="revisited">Revisited</button><button class="favorite-tab" data-fav="dwell">Longest</button><button class="favorite-tab" data-fav="quiet">Quiet favorites</button></div><div class="media-list" id="statsMediaList"></div></section>`;
+    return `<section class="stats-section"><div class="stats-section-head"><h2>Favorites</h2><span>Tap a row to open it</span></div><div class="favorite-tabs"><button class="favorite-tab active" data-fav="liked">Most loved</button><button class="favorite-tab" data-fav="revisited">Revisited</button><button class="favorite-tab" data-fav="dwell">Longest</button><button class="favorite-tab" data-fav="quiet">Quiet favorites</button></div><div class="media-list" id="statsMediaList"></div></section>`;
   }
 
   function paintMediaList(snapshot, kind = 'liked') {
@@ -358,7 +361,7 @@
     const snapshot = buildSnapshot(all);
     const sessionDurations = snapshot.rangeSessions.map(s => s.duration);
     const avgSession = sessionDurations.length ? sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length : 0;
-    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(`${snapshot.up} ↑`, 'Upvotes', snapshot.down ? `${snapshot.down} downvotes` : 'No downvotes')}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(`${Math.round(snapshot.coverage)}%`, 'Collection explored', `${formatNumber(snapshot.seenAll.size)} seen all-time`)}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
+    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(`${snapshot.affectionHolds} ♥`, 'Love holds', `${snapshot.affectionStrength} strength · ${snapshot.up} legacy likes`)}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(`${Math.round(snapshot.coverage)}%`, 'Collection explored', `${formatNumber(snapshot.seenAll.size)} seen all-time`)}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
     paintMediaList(snapshot, 'liked');
     body.querySelectorAll('.favorite-tab').forEach(tab => tab.addEventListener('click', () => {
       body.querySelectorAll('.favorite-tab').forEach(t => t.classList.toggle('active', t === tab));

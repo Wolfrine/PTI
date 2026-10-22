@@ -91,6 +91,5 @@ test('hearts grow visually without numeric rating labels or a timed stop',()=>{
   assert.doesNotMatch(gestures,/affectionLevel|MAX_AFFECTION_LEVEL/);
   assert.doesNotMatch(app,/\/5 · saved locally|detail\.level/);
   assert.match(app,/ms: detail\.durationMs, mode: 'drift'/);
-  assert.match(statsSource(),'affectionDurationMs');
-  function statsSource(){return source('stats-upgrades.js');}
+  assert.match(source('stats-upgrades.js'),/affectionDurationMs/);
 });

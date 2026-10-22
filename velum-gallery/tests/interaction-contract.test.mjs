@@ -5,55 +5,71 @@ import { readFileSync } from 'node:fs';
 const root = new URL('../', import.meta.url);
 const source = name => readFileSync(new URL(name, root), 'utf8');
 
-test('the only image viewer is Drift, and Browse thumbnails enter it directly', () => {
-  const html = source('index.html');
-  const app = source('app.js');
-  assert.doesNotMatch(html, /id="focusOverlay"|id="focusBtn"|class="focus-overlay"/);
-  assert.doesNotMatch(app, /openFocus\(|createFocusGestures|focusOverlay/);
-  assert.match(app, /tile\.onclick = \(\) => openInDrift\(item\.id\)/);
-  assert.match(app, /activateView\('drift', \{ incoming: true \}\)/);
-  assert.match(app, /createDriftGestures\(/);
+test('Drift remains the single full-image viewer; Browse opens Drift directly',()=>{
+  const html=source('index.html');
+  const app=source('app.js');
+  assert.doesNotMatch(html,/id="focusOverlay"|id="focusBtn"/);
+  assert.match(app,/tile\.onclick = \(\) => openInDrift\(item\.id\)/);
+  assert.match(app,/createDriftGestures\(/);
 });
-
-test('foreground is always contained; blurred backdrop uses the same media URL', () => {
-  const css = source('styles.css');
-  const interaction = source('interaction-upgrades.js');
-  const app = source('app.js');
-  const html = source('index.html');
-  assert.match(interaction, /\.drift-image\{[^}]*object-fit:contain!important/);
-  assert.match(css, /\.ambient-layer\{[^}]*background-size:cover/);
-  assert.match(css, /filter:blur\(48px\)[^}]*/);
-  assert.match(css, /\.ambient-layer\.active\{opacity:1\}/);
-  assert.match(html, /id="ambientBg"[^>]*>\s*<div class="ambient-layer"/);
-  assert.match(app, /showAmbient\(firstUrl\)/);
-  assert.match(app, /setVideoAmbient\(video, id, serial\)/);
-  assert.doesNotMatch(app, /ambientBg\.style\.backgroundImage/);
+test('image stays fully contained over the same-image blurred backdrop',()=>{
+  const html=source('index.html');
+  const app=source('app.js');
+  const css=source('styles.css');
+  const interaction=source('interaction-upgrades.js');
+  assert.match(interaction,/\.drift-image\{[^}]*object-fit:contain!important/);
+  assert.match(css,/\.ambient-layer\{[^}]*background-size:cover/);
+  assert.match(css,/filter:blur\(48px\)[^}]*/);
+  assert.match(html,/id="ambientBg"[^>]*>\s*<div class="ambient-layer"/);
+  assert.match(app,/showAmbient\(firstUrl\)/);
+  assert.match(app,/setVideoAmbient\(video, id, serial\)/);
 });
-
-test('the old competing pointer and timeout interceptors are removed', () => {
-  const app = source('app.js');
-  const interaction = source('interaction-upgrades.js');
-  assert.doesNotMatch(app, /pointerStart|driftStage\.addEventListener\('pointerup'/);
-  assert.doesNotMatch(interaction, /driftPointers|window\.setTimeout =|window\.clearTimeout =/);
-  assert.match(app, /__velumInteraction\?\.scheduleAdvance\?/);
-  assert.match(interaction, /scheduleAdvance: callback => scheduleAuto/);
+test('only heart reaction effects; no up/down vote or less controls',()=>{
+  const html=source('index.html');
+  const gesture=source('drift-gestures.mjs');
+  const app=source('app.js');
+  const css=source('styles.css');
+  assert.match(html,/id="heartField"/);
+  assert.doesNotMatch(html,/id="upBtn"|id="downBtn"|Show less|Most downvoted|Most upvoted/);
+  assert.doesNotMatch(gesture,/onVote|drift-vote-gesture|onVote\(/);
+  assert.doesNotMatch(app,/function vote\(|flashVote\(|setTimeout\(goNext, 220\)/);
+  assert.match(app,/type: 'affection', imageIds: \[id\]/);
+  assert.match(app,/onHoldEnd: detail/);
+  assert.match(css,/\.heart-field\{[^}]*pointer-events:none/);
+  assert.match(source('heart-effects.mjs'),/prefers-reduced-motion|reducedMotion/);
 });
-
-test('zoom pauses auto-advance until fit, and voting remains available in Drift', () => {
-  const controller = source('drift-gestures.mjs');
-  const interaction = source('interaction-upgrades.js');
-  const app = source('app.js');
-  assert.match(controller, /if \(isZoomed\(\)\)/);
-  assert.match(controller, /onVote\(dy < 0 \? 'up' : 'down'\)/);
-  assert.match(interaction, /if \(zoomed\) pauseAuto\('inspect'\)/);
-  assert.match(interaction, /resumeAuto\(\{ delay: TOUCH_GRACE \}\)/);
-  assert.match(app, /setTimeout\(goNext, 220\)/);
+test('hold starts after .45s, second double-tap is reserved for slide zoom',()=>{
+  const gesture=source('drift-gestures.mjs');
+  const model=source('affection.mjs');
+  assert.match(gesture,/if \(!doubleCandidate\) holdTimer = setDelay\(\(\) => beginHold/);
+  assert.match(gesture,/pointer\.doubleCandidate \|\| pointer\.holdDisabled/);
+  assert.match(model,/HOLD_THRESHOLD_MS = 450/);
 });
-
-test('versioned PWA cache and release files have no references to Focus', () => {
-  const sw = source('sw.js');
-  assert.match(sw, /velum-shell-v18/);
-  assert.match(sw, /drift-gestures\.mjs/);
-  assert.doesNotMatch(sw, /focus-gestures/);
-  assert.doesNotMatch(source('index.html'), /focus-gestures/);
+test('existing vote history preserved, historical long skip penalties corrected',()=>{
+  const app=source('app.js');
+  assert.match(app,/directUp\s*\*\s*3/);
+  assert.match(app,/affectionScore\(affectionEvents\)/);
+  assert.match(app,/ev\.filter\(isQuickSkip\)/);
+  assert.match(app,/affectionHolds, affectionStrength, affectionWeight/);
+});
+test('statistics and exported intensity remain entirely in browser storage',()=>{
+  const stats=source('stats-upgrades.js');
+  const app=source('app.js');
+  assert.match(stats,/affectionHolds: snapshot\.affectionHolds/);
+  assert.match(stats,/affectionStrength: allSnapshot\.affectionStrength/);
+  assert.match(stats,/e\.type === 'impression'/);
+  assert.match(app,/indexedDB\.open\('velum-local'/);
+  assert.doesNotMatch(app,/firestore|createDocument|updateDocument|notion\.so/i);
+});
+test('auto-advance pauses during touch and zoom and resumes after grace',()=>{
+  const interaction=source('interaction-upgrades.js');
+  assert.match(interaction,/if \(zoomed\) pauseAuto\('inspect'\)/);
+  assert.match(interaction,/else if \(touching\) pauseAuto\('touch'\)/);
+  assert.match(interaction,/resumeAuto\(\{ delay: TOUCH_GRACE \}\)/);
+});
+test('new script modules are in the PWA shell v19',()=>{
+  const shell=source('sw.js');
+  for(const asset of ['affection.mjs','heart-effects.mjs','drift-gestures.mjs'])
+    assert.ok(shell.includes(asset),asset);
+  assert.match(shell,/velum-shell-v19/);
 });

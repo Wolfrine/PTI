@@ -259,9 +259,11 @@ jobs:
 
       - name: Verify Velum mobile UX and feed
         run: |
+          set -euo pipefail
           node --input-type=module --check < velum-gallery/app.js
+          node --check velum-gallery/focus-gestures.mjs
+          node --check velum-gallery/feed.mjs
           node --check velum-gallery/interaction-upgrades.js
-          node --check velum-gallery/zoom-failsafe.js
           node --check velum-gallery/sw.js
           node --test velum-gallery/tests/*.test.mjs
 
@@ -290,6 +292,31 @@ jobs:
 
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:velum --non-interactive
           echo "Velum URL: https://${VELUM_SITE_ID}.web.app"
+
+      - name: Verify Velum production assets match this commit
+        run: |
+          set -euo pipefail
+          base="https://pti-app-2ab59-velum.web.app"
+          for attempt in 1 2 3 4 5 6; do
+            matched=1
+            for asset in index.html sw.js app.js focus-gestures.mjs; do
+              output="$RUNNER_TEMP/velum-$(basename "$asset")"
+              if ! curl --fail --silent --show-error --location --max-time 20 \
+                "$base/$asset?deployment-check=$GITHUB_SHA" -o "$output" \
+                || ! cmp -s "$output" "velum-gallery/$asset"; then
+                echo "Velum asset not updated yet: $asset (attempt $attempt)"
+                matched=0
+                break
+              fi
+            done
+            if [ "$matched" -eq 1 ]; then
+              echo "Verified: Velum Hosting serves exactly the committed UI, service worker and gesture logic."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Velum Hosting did not serve the expected release assets."
+          exit 1
 
       - name: Authorize Velum Firebase Auth domains
         continue-on-error: true

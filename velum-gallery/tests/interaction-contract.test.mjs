@@ -70,11 +70,11 @@ test('auto-advance pauses during touch and zoom and resumes after grace',()=>{
   assert.match(interaction,/else if \(touching\) pauseAuto\('touch'\)/);
   assert.match(interaction,/resumeAuto\(\{ delay: TOUCH_GRACE \}\)/);
 });
-test('continuous affection modules are in PWA shell v20',()=>{
+test('continuous affection modules remain in the stamped PWA shell',()=>{
   const shell=source('sw.js');
   for(const asset of ['affection.mjs','heart-effects.mjs','drift-gestures.mjs'])
     assert.ok(shell.includes(asset),asset);
-  assert.match(shell,/velum-shell-v20/);
+  assert.match(shell,/velum-shell-__VELUM_CACHE__/);
 });
 
 test('hearts grow visually without numeric rating labels or a timed stop',()=>{

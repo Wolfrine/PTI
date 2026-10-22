@@ -1,5 +1,5 @@
 import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
-import { createFocusGestures } from './focus-gestures.mjs';
+import { createDriftGestures } from './drift-gestures.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
@@ -66,7 +66,6 @@ const MEDIA_CACHE_MAX_BYTES = 256 * 1024 * 1024;
 let current = { type: 'single', ids: [] };
 let history = [];
 let historyIndex = -1;
-let advanceTimer = null;
 let chromeTimer = null;
 let viewStarted = 0;
 let wakeLock = null;
@@ -345,12 +344,13 @@ async function renderMoment(moment, { record = true } = {}) {
   current = { type: 'single', ids: [id] };
   const serial = ++renderSerial;
 
-  clearTimeout(advanceTimer);
+  window.__velumInteraction?.clearAdvance?.();
   driftMedia.querySelectorAll('video').forEach(video => video.pause());
   const firstUrl = await ensureObjectUrl(id);
   if (serial !== renderSerial) return;
 
   driftMedia.innerHTML = '';
+  gestures.reset();
   const wrap = document.createElement('div');
   wrap.className = 'single-wrap';
 
@@ -434,11 +434,9 @@ function flashVote(dir) {
   setTimeout(() => voteFlash.className = 'vote-flash', 680);
 }
 function scheduleAdvance() {
-  clearTimeout(advanceTimer);
-  advanceTimer = null;
+  window.__velumInteraction?.clearAdvance?.();
   if (isVideoMedia(currentMediaItem())) return;
-  const delay = 7000 + Math.random() * 5000;
-  advanceTimer = setTimeout(() => { finalizeView(false); goNext(); }, delay);
+  window.__velumInteraction?.scheduleAdvance?.(() => goNext());
 }
 function showChrome() {
   driftChrome.classList.toggle('visible');
@@ -456,27 +454,32 @@ async function requestWake() {
   try { if ('wakeLock' in navigator && !wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch {}
 }
 
-let pointerStart = null;
-driftStage.addEventListener('pointerdown', e => { if (!initializedGallery) return; pointerStart = { x: e.clientX, y: e.clientY, t: Date.now() }; });
-driftStage.addEventListener('pointerup', e => {
-  if (!pointerStart) return;
-  const dx = e.clientX - pointerStart.x;
-  const dy = e.clientY - pointerStart.y;
-  const dt = Date.now() - pointerStart.t;
-  pointerStart = null;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) {
+// A single gesture owner handles both fitted navigation and zoomed inspection.
+const gestures = createDriftGestures({
+  stage: driftStage,
+  getImage: () => driftMedia.querySelector('.drift-image'),
+  isActive: () => initializedGallery &&
+    $('#driftView').classList.contains('active') &&
+    !authGate.classList.contains('open') &&
+    !$('#neutralScreen').classList.contains('open'),
+  onNext: () => goNext(),
+  onPrev: () => goPrev(),
+  onVote: direction => vote(direction),
+  onTap: () => {
     const video = driftMedia.querySelector('.drift-video');
     if (video) {
+      // Native transport/sound controls remain accessible without a Focus screen.
+      video.controls = true;
       if (video.paused) video.play().catch(() => {});
       else video.pause();
+      clearTimeout(video._velumHideControls);
+      video._velumHideControls = setTimeout(() => {
+        if (!video.paused && video.isConnected) video.controls = false;
+      }, 6000);
     }
     window.__velumInteraction?.showControls?.();
-    showChrome();
-    scheduleAdvance();
-    return;
-  }
-  if (Math.abs(dy) > Math.abs(dx) * 1.15 && Math.abs(dy) > 52) { vote(dy < 0 ? 'up' : 'down'); return; }
-  if (Math.abs(dx) > 52) { finalizeView(dt < 500); dx < 0 ? goNext() : goPrev(); }
+  },
+  onState: state => window.__velumInteraction?.gestureState?.(state)
 });
 $('#upBtn').onclick = () => vote('up');
 $('#downBtn').onclick = () => vote('down');
@@ -561,7 +564,7 @@ function renderBrowse() {
         ? '<span class="tile-badge gif">GIF</span>'
         : '';
     tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span>↑ ${s.directUp}</span><span>${s.views} views</span></div>`;
-    tile.onclick = () => openFocus(item.id);
+    tile.onclick = () => openInDrift(item.id);
     browseGrid.append(tile);
     const previewEl = tile.querySelector('[data-id]');
     if (previewEl) browseObserver.observe(previewEl);
@@ -569,127 +572,38 @@ function renderBrowse() {
 }
 sortSelect.onchange = renderBrowse;
 
-document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => {
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const v = btn.dataset.view;
-  $('#driftView').classList.toggle('active', v === 'drift');
-  $('#browseView').classList.toggle('active', v === 'browse');
-  if (v === 'browse') {
+function activateView(view, { incoming = false } = {}) {
+  const browse = view === 'browse';
+  document.querySelectorAll('.nav-item').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.view === view));
+  $('#driftView').classList.toggle('active', !browse);
+  $('#browseView').classList.toggle('active', browse);
+  if (browse) {
     finalizeView(false);
-    clearTimeout(advanceTimer);
+    window.__velumInteraction?.clearAdvance?.();
     driftMedia.querySelector('.drift-video')?.pause();
+    gestures.fit();
     renderBrowse();
-  } else {
+  } else if (!incoming) {
+    gestures.fit();
     viewStarted = Date.now();
     const video = driftMedia.querySelector('.drift-video');
     if (video) video.play().catch(() => {});
     else scheduleAdvance();
   }
-}));
-
-const overlay = $('#focusOverlay');
-const focusImage = $('#focusImage');
-const focusVideo = $('#focusVideo');
-const focusCanvas = $('#focusCanvas');
-let focusId = null;
-let focusLoadSerial = 0;
-let focusHistoryArmed = false;
-let focusReturnElement = null;
-
-function focusIsVideo() {
-  return focusCanvas.classList.contains('video-mode');
 }
+document.querySelectorAll('.nav-item').forEach(btn =>
+  btn.addEventListener('click', () => activateView(btn.dataset.view)));
 
-const focusGestures = createFocusGestures({
-  canvas: focusCanvas,
-  image: focusImage,
-  isVideo: focusIsVideo,
-  onClose: () => closeFocus()
-});
-
-async function openFocus(id) {
-  const serial = ++focusLoadSerial;
-  const item = imageById(id);
-  if (!item) return;
-  let url;
-  try { url = await ensureObjectUrl(id); }
-  catch { showToast('Could not load media'); return; }
-  if (serial !== focusLoadSerial) return;
-
-  if (!overlay.classList.contains('open')) {
-    focusReturnElement = document.activeElement;
-    window.history.pushState({ velumFocus: true }, '', window.location.href);
-    focusHistoryArmed = true;
-  }
-  focusId = id;
-  focusGestures.fit();
-
-  if (isVideoMedia(item)) {
-    focusCanvas.classList.add('video-mode');
-    focusImage.hidden = true;
-    focusImage.removeAttribute('src');
-    focusImage.removeAttribute('data-full-media-id');
-    focusVideo.hidden = false;
-    focusVideo.dataset.fullMediaId = id;
-    focusVideo.src = url;
-    focusVideo.muted = false;
-    focusVideo.currentTime = 0;
-    focusVideo.addEventListener('play', () => {
-      store.add({ type: 'interaction', action: 'focus-video-play', imageIds: [id] });
-    }, { once: true });
-    focusVideo.play().catch(() => {});
-  } else {
-    focusVideo.pause();
-    focusVideo.removeAttribute('src');
-    focusVideo.removeAttribute('data-full-media-id');
-    focusVideo.load();
-    focusVideo.hidden = true;
-    focusCanvas.classList.remove('video-mode');
-    focusImage.hidden = false;
-    focusImage.dataset.fullMediaId = id;
-    focusImage.src = url;
-    focusGestures.fit();
-  }
-
-  overlay.classList.add('open');
-  overlay.setAttribute('aria-hidden', 'false');
-  overlay.focus({ preventScroll: true });
-  store.add({ type: 'view', imageIds: [id], ms: 0, mode: 'focus' });
+function openInDrift(id) {
+  if (!imageById(id)) return;
+  const moment = { type: 'single', ids: [id] };
+  history = history.slice(0, historyIndex + 1);
+  history.push(moment);
+  historyIndex = history.length - 1;
+  activateView('drift', { incoming: true });
+  renderMoment(moment);
 }
-
-function closeFocus({ fromHistory = false } = {}) {
-  ++focusLoadSerial;
-  if (!overlay.classList.contains('open')) return;
-  const shouldGoBack = !fromHistory && focusHistoryArmed && window.history.state?.velumFocus === true;
-  focusHistoryArmed = false;
-  focusVideo.pause();
-  overlay.classList.remove('open');
-  overlay.setAttribute('aria-hidden', 'true');
-  focusVideo.removeAttribute('src');
-  focusVideo.removeAttribute('data-full-media-id');
-  focusVideo.load();
-  focusImage.removeAttribute('src');
-  focusImage.removeAttribute('data-full-media-id');
-  focusGestures.fit();
-  focusId = null;
-  trimMediaCache();
-  if ($('#browseView').classList.contains('active')) renderBrowse();
-  const returnTo = focusReturnElement?.isConnected ? focusReturnElement : document.querySelector('.nav-item[data-view="browse"]');
-  returnTo?.focus?.({ preventScroll: true });
-  focusReturnElement = null;
-  if (shouldGoBack) window.history.back();
-}
-
-window.addEventListener('popstate', () => {
-  if (overlay.classList.contains('open')) closeFocus({ fromHistory: true });
-});
-window.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && overlay.classList.contains('open')) {
-    event.preventDefault();
-    closeFocus();
-  }
-});
 
 $('#exitBtn').onclick = () => $('#neutralScreen').classList.add('open');
 $('#returnBtn').onclick = () => $('#neutralScreen').classList.remove('open');
@@ -698,7 +612,7 @@ $('#brandBtn').onclick = () => $('#neutralScreen').classList.add('open');
 document.addEventListener('visibilitychange', () => {
   const video = driftMedia.querySelector('.drift-video');
   if (document.hidden) {
-    clearTimeout(advanceTimer);
+    window.__velumInteraction?.clearAdvance?.();
     video?.pause();
     finalizeView(false);
   } else if ($('#driftView').classList.contains('active') && initializedGallery) {

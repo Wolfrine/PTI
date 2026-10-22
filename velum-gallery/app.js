@@ -1,5 +1,6 @@
 import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
 import { affectionScore, safeAffectionLevel, isQuickSkip } from './affection.mjs';
+import { createHeartEffects } from './heart-effects.mjs';
 import { createDriftGestures } from './drift-gestures.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
@@ -434,6 +435,7 @@ async function renderMoment(moment, { record = true } = {}) {
   }
 
   gestures.reset();
+  heartEffects.reset();
   trimMediaCache();
   if (record) store.add({ type: 'impression', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();
@@ -472,6 +474,29 @@ async function requestWake() {
 }
 
 // A single gesture owner handles both fitted navigation and zoomed inspection.
+driftStage.addEventListener('contextmenu', event => {
+  if (!event.target?.closest?.('button,a,select,input,textarea')) event.preventDefault();
+});
+const heartEffects = createHeartEffects({
+  stage: driftStage,
+  field: heartField,
+  reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false
+});
+let heldMediaId = null;
+let holdPausedVideo = null;
+function resumeHeldVideo() {
+  const video = holdPausedVideo;
+  holdPausedVideo = null;
+  if (video?.isConnected && current.ids[0] === video.dataset.fullMediaId &&
+      $('#driftView').classList.contains('active') && !document.hidden)
+    video.play().catch(() => {});
+}
+function cancelHeart() {
+  heldMediaId = null;
+  heartEffects.cancel();
+  resumeHeldVideo();
+}
+
 const gestures = createDriftGestures({
   stage: driftStage,
   getImage: () => driftMedia.querySelector('.drift-image'),
@@ -481,6 +506,30 @@ const gestures = createDriftGestures({
     !$('#neutralScreen').classList.contains('open'),
   onNext: () => goNext(),
   onPrev: () => goPrev(),
+  onHoldStart: ({ x, y }) => {
+    // Tie the reaction to the actually displayed image, not a pending Drive fetch.
+    heldMediaId = driftMedia.querySelector('[data-full-media-id]')?.dataset.fullMediaId || null;
+    if (!heldMediaId) return;
+    const video = driftMedia.querySelector('.drift-video');
+    holdPausedVideo = video && !video.paused ? video : null;
+    holdPausedVideo?.pause();
+    heartEffects.start({ x, y });
+  },
+  onHoldProgress: detail => {
+    if (heldMediaId) heartEffects.progress(detail);
+  },
+  onHoldEnd: detail => {
+    const id = heldMediaId;
+    heldMediaId = null;
+    if (id && current.ids[0] === id) {
+      store.add({ type: 'affection', imageIds: [id],
+        level: detail.level, ms: detail.durationMs, mode: 'drift' });
+      heartEffects.finish(detail);
+      showToast(`♥ ${detail.level}/5 · saved locally`);
+    } else heartEffects.cancel();
+    resumeHeldVideo();
+  },
+  onHoldCancel: cancelHeart,
   onTap: () => {
     const video = driftMedia.querySelector('.drift-video');
     if (video) {

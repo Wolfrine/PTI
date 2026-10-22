@@ -134,13 +134,16 @@
   }
 
   const alias = id => `M-${shortHash(String(id)).slice(0, 6)}`;
-  const isViewStart = e => e.type === 'view' && (!e.ms || e.ms <= 0);
+  // Start records are "impression" in new builds; old builds used zero-ms views.
+  const isViewStart = e => e.type === 'impression' ||
+    (e.type === 'view' && (!e.ms || e.ms <= 0));
   const isDwell = e => e.type === 'view' && Number(e.ms) > 0;
 
   function mediaStats(events) {
     const map = new Map();
     const get = id => {
-      if (!map.has(id)) map.set(id, { id, views: 0, dwell: 0, up: 0, down: 0, pairUp: 0, pairDown: 0, skips: 0, lastView: 0 });
+      if (!map.has(id)) map.set(id, { id, views: 0, dwell: 0, up: 0, down: 0,
+        pairUp: 0, pairDown: 0, skips: 0, affectionHolds: 0, affectionStrength: 0, lastView: 0 });
       return map.get(id);
     };
     for (const e of events) {
@@ -152,7 +155,11 @@
         if (e.type === 'down') s.down++;
         if (e.type === 'pair-up') s.pairUp++;
         if (e.type === 'pair-down') s.pairDown++;
-        if (e.type === 'skip') s.skips++;
+        if (e.type === 'skip' && Number(e.ms) >= 0 && Number(e.ms) < 1600) s.skips++;
+        if (e.type === 'affection') {
+          s.affectionHolds++;
+          s.affectionStrength += Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1)));
+        }
       }
     }
     return map;
@@ -201,7 +208,8 @@
       const d = new Date();
       d.setHours(0, 0, 0, 0);
       d.setDate(d.getDate() - i);
-      days.push({ key: dayKey(d.getTime()), date: d.getTime(), ms: 0, views: 0, up: 0, down: 0 });
+      days.push({ key: dayKey(d.getTime()), date: d.getTime(), ms: 0,
+        views: 0, up: 0, down: 0, love: 0, loveStrength: 0 });
     }
     const byKey = new Map(days.map(d => [d.key, d]));
     dwell.forEach(item => { const row = byKey.get(dayKey(item.at)); if (row) row.ms += item.ms; });
@@ -211,6 +219,10 @@
       if (isViewStart(e)) row.views++;
       if (e.type === 'up' || e.type === 'pair-up') row.up++;
       if (e.type === 'down' || e.type === 'pair-down') row.down++;
+      if (e.type === 'affection') {
+        row.love++;
+        row.loveStrength += Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1)));
+      }
     });
     return days;
   }
@@ -252,11 +264,15 @@
     const views = filtered.filter(isViewStart).length;
     const up = filtered.filter(e => e.type === 'up' || e.type === 'pair-up').length;
     const down = filtered.filter(e => e.type === 'down' || e.type === 'pair-down').length;
+    const love = filtered.filter(e => e.type === 'affection');
+    const affectionHolds = love.length;
+    const affectionStrength = love.reduce((sum, e) =>
+      sum + Math.max(1, Math.min(5, Math.floor(Number(e.level) || 1))), 0);
     const unique = seenRange.size;
     const averageDwell = views ? trackedMs / Math.max(1, filtered.filter(e => e.type === 'view' && e.mode === 'drift-end').length) : 0;
     return {
       key, from, filtered, allMedia, rangeMedia, ids, seenAll, seenRange, rangeSessions,
-      trackedMs, views, up, down, unique, averageDwell,
+      trackedMs, views, up, down, affectionHolds, affectionStrength, unique, averageDwell,
       coverage: ids.length ? Math.min(100, seenAll.size / ids.length * 100) : 0
     };
   }

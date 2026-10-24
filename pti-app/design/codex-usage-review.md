@@ -1,6 +1,6 @@
 # PTI Home Codex usage review
 
-Current candidate: **unverified**, bounded extension of the owner-selected warm-light Home. Production acceptance requires the independent rendered review and separate QA below; no owner acceptance is inferred.
+Local candidate: **agent-reviewed**, bounded extension of the owner-selected warm-light Home. Independent rendered critique and parent QA passed on labelled synthetic fixtures; no owner acceptance is inferred. Live authenticated readings remain a separate, pending verification.
 
 ## Brief and source
 
@@ -36,4 +36,5 @@ Required states: fresh, multiple windows, unsupported daily, stale, unavailable,
 - Parent contract review removed an arbitrary allowance-bucket display cap; source values above100% remain visible while the visual bar and numeric ARIA range clamp to100, with exact source percentage in `aria-valuetext`. Dev fixture `?state=over` covers this edge. No change to normal fresh-state composition.
 - Designer personally inspected the retained final desktop/mobile fresh images; source date, reset timing, meaningful bar, warm-light fit and mobile stacking match the intended direction. Independent critic and parent remain the acceptance authorities.
 - Render fixtures are synthetic test content, not actual account readings. Live private Firestore values, credentials and production login must be verified separately by the release lead.
-- Parent checkpoints after cycles3/5 and final candidate, remaining rendered states, independent scores and separate QA remain open. No fabricated cycles or acceptance.
+- Parent personally inspected corrected cycle3 stale desktop/reset-due mobile and final cycle5 fresh desktop/mobile. Parent scores: clarity8.5,fit8.7,responsive readability8.4. Separate QA passed at1440×1000/390×844: no overflow/retired links, working Noveliaa search, pin/unpin restoration and keyboard Tab from search to Explore all apps. Parent screenshots are retained under `codex-usage-evidence/parent-final-fresh-*.jpg`. Critic separately checked the final120% source overage at1440/390; the reported value remains intact while the bar and remaining percentage are bounded.
+- The deployed JavaScript `main-J624F4GK.js` matches the local tested build byte-for-byte (SHA256 `e37bea0d5298ef4f379ffb4ceb1638bd32cef776246d7bc641e445d7e5f4490f`). Live signed-out routing resolves retired project URLs to Home's login return. The authenticated live panel, real saved readings and local schedule remain pending Google sign-in; fixture review is not a substitute for those checks.

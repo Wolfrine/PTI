@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { runOnce } from '../src/monitor.mjs';
 import { fingerprint, MonitorError } from '../src/core.mjs';
 import { atomicJson, readJson, acquireLease } from '../src/store.mjs';
@@ -23,9 +26,17 @@ test('actual run contract publishes once and a fresh process recovers pending af
   await assert.rejects(runOnce({ ...f, write: async () => { throw new MonitorError('firebase-unavailable'); } }));
   assert((await readJson(path.join(f.root, 'runtime.json'))).pending);
   assert.equal(await readJson(path.join(f.root, 'run.lock')), null);
-  assert.equal((await runOnce(f)).outcome, 'published'); assert.equal(f.writes.length, 1);
+  const { stdout } = await promisify(execFile)(process.execPath, [fileURLToPath(new URL('./fixtures/recover-run.mjs', import.meta.url)), f.root], { timeout: 15000, windowsHide: true });
+  assert.equal(JSON.parse(stdout).outcome, 'published');
+  assert.equal((await readJson(path.join(f.root, 'synthetic-cloud-write.json'))).source, 'codex-app-server');
   const state = await readJson(path.join(f.root, 'runtime.json')); assert.equal(state.pending, null);
   assert(!JSON.stringify(state).includes('synthetic-refresh-token')); assert(!JSON.stringify(state).includes('synthetic-id-token')); assert(!JSON.stringify(state).includes('synthetic@example.test'));
+});
+test('overall deadline prevents a late source completion from publishing after lease release', async t => {
+  const f = await fixture(t);
+  await assert.rejects(runOnce({ ...f, deadlineMs: 10, read: async () => { await new Promise(resolve => setTimeout(resolve, 80)); return results; } }), /run-timeout/);
+  await new Promise(resolve => setTimeout(resolve, 120));
+  assert.equal(f.writes.length, 0); assert.equal(await readJson(path.join(f.root, 'run.lock')), null);
 });
 test('live lease blocks a duplicate and dead process lease is recovered', async t => {
   const f = await fixture(t), lease = await acquireLease(f.root); assert(lease);

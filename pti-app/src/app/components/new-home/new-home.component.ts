@@ -3,8 +3,8 @@ import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewC
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
-type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Creative';
-type AppTone = 'coral' | 'mint' | 'amber' | 'blue' | 'violet' | 'sun' | 'rose' | 'slate' | 'teal' | 'plum';
+type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Entertainment';
+type AppTone = 'coral' | 'mint' | 'amber' | 'blue' | 'violet' | 'sun' | 'rose' | 'teal' | 'plum';
 
 interface HubApp {
   id: string;
@@ -34,6 +34,7 @@ export class NewHomeComponent implements OnInit {
   @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
   @ViewChild('appDirectory') appDirectory?: ElementRef<HTMLElement>;
 
+  // Curated launcher entries only. Private tools are intentionally excluded from all surfaces.
   readonly apps: readonly HubApp[] = [
     { id: 'pti-dashboard', name: 'PTI Dashboard', shortName: 'Dashboard', description: 'Time investment, domains and progress', icon: 'dashboard', category: 'Productivity', tone: 'coral', href: '/new-dashboard' },
     { id: 'tracker', name: 'Self-Tracking', shortName: 'Tracker', description: 'Track outcomes and the progress behind them', icon: 'task_alt', category: 'Productivity', tone: 'mint', href: 'https://pti-app-2ab59-tracker.web.app/', external: true },
@@ -42,12 +43,11 @@ export class NewHomeComponent implements OnInit {
     { id: 'personal', name: 'Personal', shortName: 'Personal', description: 'Your daily intelligence and discoveries', icon: 'auto_stories', category: 'Personal', tone: 'violet', href: 'https://pti-app-2ab59-personal.web.app/', external: true },
     { id: 'luminary', name: 'Luminary', shortName: 'Luminary', description: 'Observe, reflect and understand patterns', icon: 'wb_sunny', category: 'Knowledge', tone: 'sun', href: 'https://pti-app-2ab59-luminary.web.app/', external: true },
     { id: 'sefpo', name: 'SEFPO Lab', shortName: 'SEFPO Lab', description: 'Connected ideas and structured knowledge', icon: 'hub', category: 'Knowledge', tone: 'plum', href: 'https://pti-app-2ab59-sefpo.web.app/', external: true },
-    { id: 'velum', name: 'Velum', shortName: 'Velum', description: 'Explore and evaluate visual collections', icon: 'collections', category: 'Creative', tone: 'slate', href: 'https://pti-app-2ab59-velum.web.app/', external: true },
     { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
-    { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Personal', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/one-piece/', external: true },
+    { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/one-piece/', external: true },
     { id: 'ceo-command', name: 'CEO Command', shortName: 'CEO Command', description: 'Portfolio, projects and executive reviews', icon: 'space_dashboard', category: 'Productivity', tone: 'teal', href: '/codex-command' },
   ];
-  readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Creative'];
+  readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Entertainment'];
   readonly projects = [
     { name: 'Visual Experiments', description: 'Research and interactive prototypes', icon: 'science', href: 'https://github.com/Wolfrine/PTI/tree/main/visual-experiments' },
   ];
@@ -64,6 +64,9 @@ export class NewHomeComponent implements OnInit {
     if (!isPlatformBrowser(this.platformId)) return;
     this.pinnedIds = this.readIds(PIN_STORAGE_KEY, PINNED_DEFAULTS);
     this.recentIds = this.readIds(RECENT_STORAGE_KEY, []);
+    // Purge stale launch history/pins for entries removed from this curated directory.
+    this.writeIds(PIN_STORAGE_KEY, this.pinnedIds);
+    this.writeIds(RECENT_STORAGE_KEY, this.recentIds);
   }
 
   get pinnedApps(): HubApp[] {

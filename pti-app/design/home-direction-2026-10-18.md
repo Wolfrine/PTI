@@ -7,7 +7,7 @@ Scope: replace the authenticated `/home` three-choice layout; leave authenticati
 ## Product contract
 - Central landing for existing PTI apps with verified links, internal dashboard and CEO-command routes, pinned launches, recent launches, category filtering and search.
 - Native links: PTI Dashboard (`/new-dashboard`), CEO Command (`/codex-command`).
-- Dedicated PTI Hosting: Self-Tracking, Morsel, Venture, Personal, Luminary, SEFPO Lab, Velum.
+- Dedicated PTI Hosting surfaced in the launcher: Self-Tracking, Morsel, Venture, Personal, Luminary, SEFPO Lab, and One Piece. Velum is deliberately excluded as a private app; its separate site is unchanged.
 - Separately hosted Wedding Planner: `https://mahima-mayank.web.app/`.
 - Research/prototypes are separately presented as source projects, not falsely advertised as deployed applications.
 - Persist only browser-local app IDs for pins and recency; do not invent completed tasks or synchronized cross-app activity.
@@ -23,3 +23,12 @@ Scope: replace the authenticated `/home` three-choice layout; leave authenticati
 - Angular build/deployment and actual authenticated-browser interactions require CI and live verification.
 - Independent visual critic and 5–10 substantive design iteration gate not completed; do not claim agent-reviewed acceptance.
 - Reference owner approved a visual prototype; implementation itself remains subject to live feedback.
+
+## 2026-10-24 curation and sign-in alignment
+
+- Curated launcher: ten public-facing entries across internal PTI pages, dedicated PTI apps, One Piece and separately hosted Wedding Planner; no speculative launches. `Creative` (now empty) was replaced with `Entertainment` for One Piece. No new live PTI deployment was independently established beyond the existing registry.
+- Privacy choice: Velum does not appear in the app list, categories, search, pins or recent-launch suggestions. Saved IDs no longer belonging to the curated catalog are filtered and purged when the home opens. This is **showcase discretion**, not access control: private app authentication and media protection remain the private app's responsibility.
+- Login direction: extend the owner-selected warm-light, editorial PTI identity to unauthenticated `/` and `/login` via a split layout and the existing approved lifestyle art. Retire the unrelated dark executive control room and incorrect expansion of PTI. Keep the Google button action and TypeScript authentication/redirect logic unchanged.
+- Design roles: independent designer prepared markup/styles; independent critic found short-phone CTA visibility, microtext contrast and improvised Google icon risks; these were revised before source was saved.
+- Critical states to verify: 1440×900 desktop; 1024×768 tablet; 390×844 mobile; 320×568 short phone; keyboard navigation, focus, 200% text zoom; Google popup/One Tap and `?redirect=/one-piece/...`; no horizontal overflow.
+- Current verdict: **unverified candidate**. This is a code-level iteration; no post-change desktop/mobile render, Angular test/build run or 5–10 substantive visual cycles were completed in this environment. Do not treat the PR or future CI deployment as aesthetic acceptance.

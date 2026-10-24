@@ -4,6 +4,10 @@ This repository contains an Angular application "PTI App" for tracking time inve
 
 For changes in `visual-experiments/**`, follow [visual-experiments/AGENTS.md](visual-experiments/AGENTS.md) instead of the PTI Angular UI guidelines and Central design procedure below. Repo-wide security, data and deployment restrictions still apply.
 
+## Owner's PTI release preference
+- For owner-authorized implementation changes, run relevant checks, commit directly to `main`, and verify the existing deployment workflow. Do not create or require pull requests unless the owner explicitly requests them.
+- If verification is blocked or fails, report the precise limitation and resolve it before claiming completion. Do not describe an unverified visual state or an in-progress deployment as accepted.
+
 ## UI development guidelines
 - Existing pages are basic; redesigned pages live alongside them using Angular Material.
 - When creating redesigned pages, prefix component and route names with `new-`.

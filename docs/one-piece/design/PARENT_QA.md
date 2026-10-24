@@ -6,7 +6,7 @@ These are direct rendered-browser inspections by `/root`, separate from the desi
 
 18 October 2026, Chrome 155, actual local development build, explicit `Cycle 3` banner. Inspected interrupted playback on desktop and 390×844, then unknown saved position at 390×844. The desktop error retains Episode 1000 / This device / last saved 10:00, with a single strong Retry action and quieter Library return. Mobile wraps the heading without clipping, retains context and saved position, and keeps both actions accessible. The unknown-progress variant says `Not yet confirmed` and does not invent a resume value. Viewport override reset after inspection.
 
-Direct evidence: `parent-cycle-3-error-mobile.png`, `parent-cycle-3-unknown-mobile.png`; designer and critic captured desktop/error/preparation variants separately.
+Direct evidence: [parent-cycle-3-error-mobile.png](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/design/parent-cycle-3-error-mobile.png), [parent-cycle-3-unknown-mobile.png](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/design/parent-cycle-3-unknown-mobile.png); designer and critic captured desktop/error/preparation variants separately.
 
 | Declared dimension | Parent score in inspected states |
 |---|---:|

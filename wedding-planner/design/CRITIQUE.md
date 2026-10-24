@@ -4,7 +4,7 @@ Critic: `wedding_critic`. Central 0.1.0, base `ba1235fe7b220842778414f3f70fca38e
 
 ## Direction gate — 15 October 2026
 
-Independently read repository AGENTS, Wedding Record, both audience documents, evaluation guide, design brief, Central visual-design-director and critic guide, and ui-visual-verifier. Independently viewed all four actual reference images in `references/`: heirloom, editorial, schedule, working-product. Viewed `directions-desktop.png` and all six `direction-{1,2,3}-{desktop,mobile}.png` files, actual Chromium renders of `exploration.html`.
+Independently read repository AGENTS, Wedding Record, both audience documents, evaluation guide, design brief, Central visual-design-director and critic guide, and ui-visual-verifier. Independently viewed all four actual reference images in `references/`: heirloom, editorial, schedule, working-product. Viewed [directions-desktop.png](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/wedding-planner/design/directions-desktop.png) and all six `direction-{1,2,3}-{desktop,mobile}.png` files, actual Chromium renders of [exploration.html](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/wedding-planner/design/exploration.html).
 
 The desktop evidence is a 1440px comparison board with approximately 447px concept columns. Mobile evidence is a 390px browser with approximately 362px concept content. This establishes comparable direction studies, not a full-width desktop application. The source is a labelled visual prototype with nonfunctional control representations. No application existed as a baseline before these studies.
 
@@ -130,7 +130,7 @@ Retain type, colour, spacing, composition, navigation, menu presentation and dia
 
 ### Cycle 5 supplemental — actual access removal
 
-Independently viewed `cycle5-denied-1440.png` and `cycle5-denied-390.png`, provided by parent after an actual synthetic-account Auth/Firestore emulator membership removal. The visible state says family access has been removed and presents an account-switch action. The private working interior is absent; the invitation remains accessible. Both viewports preserve readable notice and recovery hierarchy without clipping. This closes the missing visual state. It does not by itself prove authorization security.
+Independently viewed [cycle5-denied-1440.png](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/wedding-planner/design/cycle5-denied-1440.png) and [cycle5-denied-390.png](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/wedding-planner/design/cycle5-denied-390.png), provided by parent after an actual synthetic-account Auth/Firestore emulator membership removal. The visible state says family access has been removed and presents an account-switch action. The private working interior is absent; the invitation remains accessible. Both viewports preserve readable notice and recovery hierarchy without clipping. This closes the missing visual state. It does not by itself prove authorization security.
 
 Final critic scores remain **8.1 identity / 8.1 hierarchy and readability / 8.0 desktop-mobile craft / 8.1 overall**. **Critic visual review: PASS.** There is no major visual issue in the final reviewed states. Parent reports independent emulator/browser integration passing active-editor revocation, concurrent stale-save rejection, archive/history export and sign-out; that is a separate functional verdict, not a reason for these visual scores.
 

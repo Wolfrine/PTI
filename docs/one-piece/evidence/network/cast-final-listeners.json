@@ -1,9 +1,0 @@
-{
-  "CheckedAtUtc": "2026-10-18T07:53:02.2100723Z",
-  "Ports": [
-    8794,
-    8795
-  ],
-  "Listeners": [],
-  "Method": "Windows Get-NetTCPConnection State Listen"
-}

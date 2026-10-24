@@ -1,9 +1,0 @@
-[
-  {
-    "episode": 1001,
-    "mode": "cold",
-    "seconds": 90.07799999997951,
-    "error": "TimeoutError",
-    "timeoutSeconds": 90
-  }
-]

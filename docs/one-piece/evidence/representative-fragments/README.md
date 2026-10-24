@@ -1,6 +1,6 @@
 # Bounded representative original inspection
 
-[Actual run evidence](representative-2026-10-18T12-28-35-464Z-34c9845a.json),18 October2026,12:28–12:31UTC. This extends the existing bounded start/middle/tail transport checks for500/944/1044/1085. It deliberately does not repeat the separately verified1/1000/1001 work.
+[Actual run evidence](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/evidence/representative-fragments/representative-2026-10-18T12-28-35-464Z-34c9845a.json),18 October2026,12:28–12:31UTC. This extends the existing bounded start/middle/tail transport checks for500/944/1044/1085. It deliberately does not repeat the separately verified1/1000/1001 work.
 
 All four originals supplied exactly8MiB of contiguous head bytes, fetched as eight1MiB ranges each: **32 HTTP206 responses and33,554,432 received media bytes total**. Every range matched its requested interval, listed full-object total and exact length; HTTPS redirects remained within the allowlisted Archive collection. No retry occurred in this run. The shared transport retains maximum2 concurrent sources and honors Retry-After rather than retrying early. No full original was downloaded and no source was rehosted.
 

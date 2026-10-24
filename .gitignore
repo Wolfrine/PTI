@@ -41,3 +41,6 @@ tools/codex-usage-monitor/.state/
 codex-usage-activation-report.json
 .codex-usage-qa/
 **/.codex-dev-server.log
+
+# Generated Firebase Hosting cache is local build state.
+.firebase/

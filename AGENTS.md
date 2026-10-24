@@ -2,9 +2,7 @@
 
 **PTI's current dashboard is `/home`: the authenticated personal app launcher shown after Google sign-in.** It contains pinned/recent apps, categories, search and private Codex usage readings. Start with [README.md](README.md). The nine current launcher apps and delivery/data contracts are documented there.
 
-Do not interpret "PTI dashboard" as CEO Command or the former time-investment dashboards. `/dashboard`, `/new-dashboard`, `/codex-command` and project-detail URLs are retired redirects to `/home`; their UI and exclusive code are removed. Their intent is retained only in [the retirement archive](docs/archive/retired-dashboards.md), with the historical source revision. Dated `.pm` records and older design notes are historical evidence, not authority to revive those screens. Standalone domain/activity tools and all saved Firestore data remain intact.
-
-For changes in `visual-experiments/**`, follow [visual-experiments/AGENTS.md](visual-experiments/AGENTS.md) instead of the PTI Angular UI guidelines and Central design procedure below. Repo-wide security, data and deployment restrictions still apply.
+Do not interpret "PTI dashboard" as CEO Command or the former time-investment dashboards. `/dashboard`, `/new-dashboard`, `/codex-command` and project-detail URLs are retired redirects to `/home`; their UI and exclusive code are removed. Their intent is retained only in [the retirement archive](docs/archive/retired-dashboards.md), with the historical source revision. Historical records and older design notes are evidence, not authority to revive those screens. Standalone domain/activity tools and all saved Firestore data remain intact.
 
 ## Owner's PTI release preference
 - For owner-authorized implementation changes, run relevant checks, commit directly to `main`, and verify the existing deployment workflow. Do not create or require pull requests unless the owner explicitly requests them.

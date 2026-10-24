@@ -1,7 +1,7 @@
 name: Wedding · verify and release
 on:
   push:
-    branches: [main, codex/wedding-home]
+    branches: [main]
     paths: ['wedding-planner/**', 'personal-harness/firestore.rules', 'firebase.wedding*.json', '.firebaserc', '.github/workflows/wedding.yml']
   pull_request:
     paths: ['wedding-planner/**', 'personal-harness/firestore.rules', 'firebase.wedding*.json', '.firebaserc', '.github/workflows/wedding.yml']

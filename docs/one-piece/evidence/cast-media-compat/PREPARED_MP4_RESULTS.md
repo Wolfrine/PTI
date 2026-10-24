@@ -34,7 +34,7 @@ A second no-preparation registration run reproduced all static checks and headle
 4. **Native-normalizing `PathInfos` with `path.resolve()` fixed library membership.** The same empty Movie metadata/image provider arrays were read back, and the correctly configured initial import completed in **1.251 seconds**, with no remote movie-provider error recorded in the inspected log. Production `JellyfinClient` already normalizes its managed original root; no production provider-field change was made from this harness defect. The log check is not an independent network-egress capture.
 5. After that initialized library contained 1000, adding 1001 via the mature exact-file `Media/Updated` API succeeded in **61.810 seconds**, consistent with its configured 60-second delay. No second global scan was used. This delay is preparation/import time, separate from warm playback. It remains an operational policy decision; this pilot did not change the global delay.
 
-The clean engine's first setup was measured separately at 18.179 seconds. A one-time finite scan of its audited two-file library was authorized. No scan of the existing pilot's historical STRM library occurred. Its read-only scope audit remains in `prepared-mp4-library-scope.json`.
+The clean engine's first setup was measured separately at 18.179 seconds. A one-time finite scan of its audited two-file library was authorized. No scan of the existing pilot's historical STRM library occurred. Its read-only scope audit remains in [prepared-mp4-library-scope.json](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/evidence/cast-media-compat/prepared-mp4-library-scope.json).
 
 ## Resource graph and limits
 

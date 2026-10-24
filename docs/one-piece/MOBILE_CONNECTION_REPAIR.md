@@ -11,7 +11,7 @@ The owner's phone was signed into PTI but showed an ambiguous account dialog and
 
 ## Evidence and scope
 
-Frontend 61/61, companion 217/217 passed. Independent reviewer ran 66 focused integration/frontend/API tests and found no release blocker. Complete PTI production build passed with existing Angular stylesheet warnings. Parent inspected actual desktop 1440×1000 and mobile 390×844 browser renders. Ready, account, missing credential, unavailable credential and offline captures use clearly labelled synthetic fixture identity/progress; real catalogue/artwork. Exact production candidate and six image hashes are in `design/evidence/mobile-connection/fingerprint.json` and `design/acceptance.json`.
+Frontend 61/61, companion 217/217 passed. Independent reviewer ran 66 focused integration/frontend/API tests and found no release blocker. Complete PTI production build passed with existing Angular stylesheet warnings. Parent inspected actual desktop 1440×1000 and mobile 390×844 browser renders. Ready, account, missing credential, unavailable credential and offline captures use clearly labelled synthetic fixture identity/progress; real catalogue/artwork. Exact production candidate and six image hashes are in [design/evidence/mobile-connection/fingerprint.json](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/design/evidence/mobile-connection/fingerprint.json) and `design/acceptance.json`.
 
 Independent review's two minor findings (generic unavailable label and setup dialog replacement) were corrected. This is a mechanical repair within the existing light/dark direction, not a renewed full visual-design acceptance.
 

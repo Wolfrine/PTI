@@ -1,9 +1,0 @@
-{
-  "episode": 1001,
-  "purpose": "Isolate local-original seek from pre-existing generated HLS segments",
-  "localOnlyPrefix": "9c811bd814deb84e3388098d8e9159dc",
-  "movedGeneratedFiles": 4,
-  "movedGeneratedBytes": 8305088,
-  "sourceOriginalRetained": true,
-  "remotePilotFilesUntouched": true
-}

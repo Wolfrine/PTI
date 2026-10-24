@@ -19,3 +19,7 @@ Use the existing `pti-app-2ab59` Firebase project, default Firestore database an
 Frontend: `cd pti-app`, `npm ci`, `npm test -- --watch=false --browsers=ChromeHeadless`, `npm run build`. Collector: `cd tools/codex-usage-monitor`, `npm ci`, `npm test`, `npm run probe`. The probe reads real account usage without publishing.
 
 For authorized changes, test and commit directly to `main`. `.github/workflows/firebase-deploy.yml` retains the existing checks and Firebase deployment identity, deploys guarded shared rules, verifies real client privacy, and publishes Hosting. A passing build is separate from an authenticated live Home inspection and a verified local scheduled reading.
+
+## Repository housekeeping
+
+Keep app source, active deployment/MCP paths, tests, original artwork and current acceptance records in the working tree. Generated hosting caches, retired PM/preview adapters and unstarted visual-experiment scaffolding were removed. Superseded screenshots and repeated test logs remain available in [the pre-cleanup revision](https://github.com/Wolfrine/PTI/tree/78553b47adfd7105da410e1a9f6cf66fb36c29b9); historical document links point there. Current evidence referenced by code, tests or acceptance metadata remains tracked. Luminary's selectable experience versions are unchanged.

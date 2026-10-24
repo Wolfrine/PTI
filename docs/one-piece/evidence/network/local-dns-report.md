@@ -22,7 +22,7 @@ The script makes no permanent DNS, hosts-file, router, firewall, trust-store, or
 | Three subsequent Windows `getaddrinfo` calls | Success, `gaierror`, success | **Intermittent resolution is an unresolved reliability failure** |
 | Android browser and Sony receiver | Not measured by this script | Same-PC results do not establish cross-device reachability, resolution, TLS, or playback |
 
-Raw results are in `local-dns-results.json` and `local-dns-recheck.json`. The main result file also records health requests for correlation with the parent's Chrome test. Its `production_transport_accepted` flag remains false. Browser testing must retain its own origin, browser version, permission outcome, and observed response.
+Raw results are in [local-dns-results.json](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/evidence/network/local-dns-results.json) and [local-dns-recheck.json](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/evidence/network/local-dns-recheck.json). The main result file also records health requests for correlation with the parent's Chrome test. Its `production_transport_accepted` flag remains false. Browser testing must retain its own origin, browser version, permission outcome, and observed response.
 
 ## Local naming choices
 

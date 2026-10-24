@@ -4,9 +4,9 @@ Prepared offline. **No acceptance pass is claimed.** Latest frozen candidate is 
 
 ## Preserve capture provenance
 
-The 22 personally reviewed nonmedia/title pictures in `evidence/final-state-captures.json` and `evidence/critic-final-review.json` were captured for **4de711…**. Keep their original paths, candidate labels, timestamps, checks and image hashes. They remain actual prior-candidate evidence. Do not rename or relabel them as current.
+The 22 personally reviewed nonmedia/title pictures in `evidence/final-state-captures.json` and [evidence/critic-final-review.json](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/design/evidence/critic-final-review.json) were captured for **4de711…**. Keep their original paths, candidate labels, timestamps, checks and image hashes. They remain actual prior-candidate evidence. Do not rename or relabel them as current.
 
-The intermediate **967e…** changed only the development frame observer. `evidence/frame-observer-refinement.json` and its two candidate bindings prove all ten production assets and the fixture source were byte-identical to 4de711. Inspection shows the observer is invoked only in `renderMediaFixture`; its import defines a function without changing a nonmedia render. That supports an unaffected-state argument, not a new capture claim. The later 2b9695… correction changes production player JavaScript and its content-versioned worker, so the earlier all-assets-identical proof must not be extended to this candidate.
+The intermediate **967e…** changed only the development frame observer. [evidence/frame-observer-refinement.json](https://github.com/Wolfrine/PTI/blob/78553b47adfd7105da410e1a9f6cf66fb36c29b9/docs/one-piece/design/evidence/frame-observer-refinement.json) and its two candidate bindings prove all ten production assets and the fixture source were byte-identical to 4de711. Inspection shows the observer is invoked only in `renderMediaFixture`; its import defines a function without changing a nonmedia render. That supports an unaffected-state argument, not a new capture claim. The later 2b9695… correction changes production player JavaScript and its content-versioned worker, so the earlier all-assets-identical proof must not be extended to this candidate.
 
 ## Central v2 limitation
 

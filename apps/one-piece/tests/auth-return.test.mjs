@@ -21,7 +21,8 @@ test('old PTI login links go directly to the native app without carrying credent
  navigateAfterLogin('/domains?from=home',{navigateByUrl:url=>calls.push(['router',url])},{assign:url=>calls.push(['document',url])});
  navigateAfterLogin(raw,{navigateByUrl:url=>calls.push(['router',url])},{assign:url=>calls.push(['document',url])});
  assert.deepEqual(calls,[['router','/domains?from=home'],['document',`${canonical}/one-piece/?episode=one-piece-1001&from=continue&range=1001#player`]]);
- for(const route of ['/home','/dashboard','/new-dashboard','/domains','/activities','/codex-command/projects/project-1?tab=notes#recent'])assert.deepEqual(safeLoginReturn(route),{path:route,fullPage:false});
+ for(const route of ['/home','/domains','/activities'])assert.deepEqual(safeLoginReturn(route),{path:route,fullPage:false});
+ for(const route of ['/dashboard','/new-dashboard','/codex-command','/codex-command/projects/project-1?tab=notes#recent'])assert.deepEqual(safeLoginReturn(route),{path:'/home',fullPage:false});
 });
 
 test('current PTI login stays available and legacy family handoff happens before Auth',async()=>{

@@ -13,6 +13,8 @@ Date: 2026-10-24, Asia/Kolkata. Current dashboard: `/home`; source predecessor `
 
 ## Delivery and access gates
 
-Pending: final commit/workflow identifiers, real deployed privacy result, credential pairing, scheduled-task/restart proof and authenticated live desktop/mobile readings. Do not infer those gates from the local tests above.
+Implementation committed directly to main as `bc11093`. First Hosting workflow [40074937020](https://github.com/Wolfrine/PTI/actions/runs/40074937020) was blocked by a cross-app login-return test still expecting the retired `/dashboard` destination. The assertion was corrected to require `/home`; no family-login behavior changed. The independently triggered Personal workflow passed its code/browser checks but failed artifact upload; its deployment was skipped. That failure is separate from the PTI Hosting lane.
+
+Pending: successful release/workflow identifiers, real deployed privacy result, credential pairing, scheduled-task/restart proof and authenticated live desktop/mobile readings. Do not infer those gates from the local tests above.
 
 No real Windows reboot has been performed. Fresh-process and scheduler recovery are distinct from an observed reboot.

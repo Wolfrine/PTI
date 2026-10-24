@@ -24,7 +24,7 @@ test('old PTI login links go directly to the native app without carrying credent
  for(const route of ['/home','/dashboard','/new-dashboard','/domains','/activities','/codex-command/projects/project-1?tab=notes#recent'])assert.deepEqual(safeLoginReturn(route),{path:route,fullPage:false});
 });
 
-test('ordinary PTI login markup is restored and legacy family handoff happens before Auth',async()=>{
+test('current PTI login stays available and legacy family handoff happens before Auth',async()=>{
  const base=new URL('../../../pti-app/src/app/',import.meta.url);
  const source=await readFile(new URL('components/login/login.component.ts',base),'utf8');
  const compiled=await transform(source.replace(/^import .*;\r?\n/gm,''),{loader:'ts',format:'cjs',target:'es2022'});
@@ -38,7 +38,7 @@ test('ordinary PTI login markup is restored and legacy family handoff happens be
  }
  const html=await readFile(new URL('components/login/login.component.html',base),'utf8');
  const styles=await readFile(new URL('components/login/login.component.scss',base),'utf8');
- assert.match(html,/Executive command room/);assert.doesNotMatch(html,/one-piece-login|onePiece|family sign in/i);assert.doesNotMatch(styles,/one-piece-login/);
+ assert.match(html,/All your worlds\./);assert.match(html,/Continue with Google/);assert.match(html,/\(click\)="login\(\)"/);assert.doesNotMatch(html,/one-piece-login|onePiece|family sign in/i);assert.doesNotMatch(styles,/one-piece-login/);
 });
 
 test('PTI root keeps its update banner and suppresses only the old family-login Auth timer',async()=>{

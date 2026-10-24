@@ -59,7 +59,7 @@ export class ProtectionError extends Error {
 
 /** DPAPI belongs to the Windows identity that actually runs the companion. No fallback. */
 export class WindowsProtection {
-  constructor({ timeoutMs = 10_000 } = {}) {
+  constructor({ timeoutMs = 30_000 } = {}) {
     if (process.platform !== 'win32') throw new ProtectionError('windows-dpapi-required');
     if (!Number.isInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30_000) throw new Error('Invalid protection deadline');
     this.timeoutMs = timeoutMs;

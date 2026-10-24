@@ -2,7 +2,7 @@ import http from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { CredentialStore, refreshSession, verifyPrivateAccess } from './credentials.mjs';
 import { FIREBASE_CONFIG, PROJECT, OWNER_UID } from './config.mjs';
-import { MonitorError } from './core.mjs';
+import { MonitorError, safeCode } from './core.mjs';
 
 export async function setup(root, codexIdentity, { onReady = console.log, timeoutMs = 600_000 } = {}) {
   const credentials = new CredentialStore(root); await credentials.initialize();
@@ -37,6 +37,7 @@ button.onclick=async()=>{button.disabled=true;status.textContent='Opening Google
       response.once('finish', () => finish.resolve({ connected: true, privacyVerifiedAt }));
       send(200, { connected: true });
     } catch (error) {
+      console.error(JSON.stringify({ outcome: 'pairing-failed', code: safeCode(error) }));
       pairing = false; send(400, { error: error.code === 'private-rules-not-verified' ? 'Private rules are not verified yet. Deploy the reviewed rules first.' : error.code === 'firebase-account-mismatch' ? 'Use the PTI owner account.' : 'Connection failed. Check your sign-in and try again.' });
     }
   });

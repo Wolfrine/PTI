@@ -29,4 +29,4 @@ try {
   } else throw new Error('Use probe, setup, run or status.');
 } catch (error) { console.error(JSON.stringify({ outcome: 'failed', code: safeCode(error) })); process.exitCode = 1; }
 // End short-lived SDK/network handles as well as work after the overall deadline.
-if (command === 'run') process.exit(process.exitCode || 0);
+if (command === 'run' || command === 'setup') process.exit(process.exitCode || 0);

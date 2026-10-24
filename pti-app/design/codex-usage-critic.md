@@ -149,3 +149,19 @@ The following source fingerprints supersede affected round 5 source rows for the
 | `src/dev-usage-preview.ts` | `cb95a25094aab6837a51963eba4dd500b72583f40c3b7efbd45e36aac5bca487` |
 
 Parent reported separate checkpoint 3 inspection of corrected stale desktop/expired mobile and checkpoint 5 fresh desktop/mobile. Parent's own visual scores are clarity 8.5, fit 8.7, responsive 8.4. Parent reported fixture QA for search (`Noveliaa` produced one result), restored pin/unpin, keyboard focus progression, absence of retired links and no overflow at desktop/mobile. Those are parent evidence, not critic-run QA. Live authenticated acceptance remains open pending credential setup and CI/deployment verification.
+
+## Live follow-up — mobile artifact pass, desktop evidence blocked
+
+Parent reports owner sign-in, real saved snapshot, installed task and an observed natural five-minute tick. These operational checks are parent evidence. Critic received a fresh live-review task for `https://pti-app-2ab59.web.app/home`, but CUA returned `apps: []` and `browsers: []`; this reviewer could not independently access the live DOM, authenticate, resize a browser or inspect DOM viewport dimensions.
+
+Critic independently viewed parent-captured private screenshot evidence outside the repository at `C:/Users/Sachit Tewary/Documents/Codex/2026-10-24/share-plan-build-a-lightweight-local/live-evidence/`:
+
+| Private evidence file | Observed raster dimensions | SHA-256 |
+| --- | --- | --- |
+| `home-real-mobile.png` | 375×812 | `cdd55c61f06c433418561fdb8b46d1436275771e1941e1a2984ea0e9ba44cdb3` |
+
+An initially supplied file labeled desktop was byte-identical to this mobile file. The critic flagged that evidence defect, and parent is removing the duplicate/inaccurate filename. It does not establish a live desktop check. Raster dimensions above were read from actual image metadata. Parent reports the actual mobile DOM viewport as **390×844**; this critic did not independently inspect that DOM. Parent also observed a default live tab at 750×892 before applying responsive settings, but full desktop capture remained blocked: the documented viewport setter returned for a 1440×1000 request while the DOM stayed 390×844. Requested dimensions are not treated as observed dimensions. Earlier actual local desktop fixtures passed; that is distinct from live desktop acceptance.
+
+Visible mobile result: real-account allowance, remaining percentage, reset line, long daily count, source date and successful observation time fit without collision; pinned apps remain discoverable. No synthetic-fixture banner is present. Parent identifies the data as real; this is distinct from all earlier synthetic local fixture reviews. To preserve privacy, actual account values and screenshots are not copied into this repository record.
+
+Mobile artifact visual scores: comprehension **8.5**, warm-light fit **8.6**, responsive composition **8.4**, overall **8.5**. **Mobile artifact pass; live desktop and independent live DOM check remain unverified.** No account data was modified and no sign-out was performed by the critic.

@@ -11,6 +11,8 @@ const home = await read('pti-app/src/app/components/new-home/new-home.component.
 assert(!/id:\s*'(pti-dashboard|ceo-command)'/.test(home), 'Retired apps must not reappear in the curated directory');
 const routes = await read('pti-app/src/app/app.routes.ts');
 assert(!/import.*(?:DashboardComponent|NewCodexCommandComponent|CodexProjectDetailComponent)/.test(routes), 'Retired UI must not be imported');
+const catalog = await read('tools/pti-mcp/src/apps.ts');
+assert(catalog.includes('PTI Home / app launcher') && catalog.includes('codexProjects/codex-usage') && !catalog.includes('PTI / CEO workspace'), 'Connected PTI catalog must point agents to Home and distinguish the reserved usage document');
 const design = await read('pti-app/design/home-direction-2026-10-18.md');
 assert(design.slice(0, 1000).includes('Historical design record, superseded'), 'Historical design directions need a visible current-contract pointer');
 await access(new URL('docs/archive/retired-dashboards.md', root));

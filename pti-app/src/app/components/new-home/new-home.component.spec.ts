@@ -28,7 +28,7 @@ describe('NewHomeComponent public launcher', () => {
     const home = createHome();
     const noveliaa = home.apps.find(app => app.id === 'noveliaa');
     expect(noveliaa?.status).toBe('planning');
-    expect(noveliaa?.href).toBeUndefined();
+    expect(noveliaa?.href).toBe('');
     home.setCategory('Creative');
     expect(home.filteredApps.map(app => app.id)).toContain('noveliaa');
     home.pinnedIds = ['noveliaa'];

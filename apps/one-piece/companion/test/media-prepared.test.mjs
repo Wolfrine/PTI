@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFile, readFile, open, access, rm, symlink, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { MediaCache } from '../src/media/cache.mjs';
 import { JellyfinClient } from '../src/media/jellyfin.mjs';
@@ -147,14 +148,18 @@ test('prepared directories cannot redirect admission or eviction through a junct
   finally { await rm(paths.directory); }
 });
 
-test('prepared client binds derived indices internally, validates original cue lineage and admits only two exact roles', async t => {
+test('prepared client serves verified UTF-8 captions without engine charset detection and admits only two exact roles', async t => {
   const root = await temporary(t), original = candidate(1001), view = presentation(original), id = renditionId(view.recipe), calls = [];
   const derivedId = '33333333333333333333333333333333', derivedSource = '44444444444444444444444444444444';
   const videoBytes = Buffer.from('explicit fixture prepared stream');
+  const verifiedCaptions = Buffer.from(captions.toString().replace('English dialogue', 'English dialogue: naïve café — 日本'));
+  const captionFile = path.join(root, 'renditions', id, 'video.en.vtt');
+  await mkdir(path.dirname(captionFile), { recursive: true }); await writeFile(captionFile, verifiedCaptions);
+  const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
   const engine = new JellyfinClient({ originalRoot: path.join(root, 'originals'), preparedRoot: path.join(root, 'renditions'), transcodeRoot: path.join(root, 'transcodes'),
     tokenProvider: () => 'explicit-fixture-secret', preparedEnabled: true, ffmpegPath: path.join(root, 'ffmpeg.exe'), ffprobePath: path.join(root, 'ffprobe.exe'),
     timingInspector: async () => view.timing, verifiedModes: ['compatible-h264', 'prepared-mp4'], fetchImpl: async (url, options) => {
-      calls.push(url); if (url.includes('/Subtitles/')) return new Response(captions.toString().replace('\n1\n', '\nreindexed\n'), { headers: { 'content-type': 'text/vtt' } });
+      calls.push(url); assert.ok(!url.includes('/Subtitles/'), 'prepared UTF-8 must not be reinterpreted by the engine');
       const range = /^bytes=(\d+)-(\d+)$/.exec(options.headers.Range), start = Number(range[1]), end = Number(range[2]);
       return new Response(videoBytes.subarray(start, end + 1), { status: 206, headers: { 'content-type': 'video/mp4', 'accept-ranges': 'bytes',
         'content-length': String(end - start + 1), 'content-range': `bytes ${start}-${end}/${videoBytes.length}` } });
@@ -162,18 +167,47 @@ test('prepared client binds derived indices internally, validates original cue l
   engine.request = async () => null;
   engine.ensurePreparedFile = async () => ({ Id: derivedId, MediaSources: [{ Id: derivedSource, MediaStreams: [
     { Type: 'Audio', Index: 9, Codec: 'aac', Channels: 2, Language: 'jpn' }, { Type: 'Subtitle', Index: 0, Codec: 'vtt', Language: 'eng' }] }] });
-  const record = { id, recipe: view.recipe, video: { bytes: videoBytes.length }, captions: { sha256: '0'.repeat(64), cueIdentity: canonicalCaptionHash(captions) } };
+  const record = { id, recipe: view.recipe, paths: { captions: captionFile }, video: { bytes: videoBytes.length },
+    captions: { sha256: sha256(verifiedCaptions), cueIdentity: canonicalCaptionHash(verifiedCaptions) } };
   const descriptor = await engine.openPreparedPlayback({ sessionId: 'prepared-test', entry: { candidate: original }, rendition: record, presentation: view });
   assert.equal(descriptor.selected.audioIndex, 1); assert.equal(descriptor.selected.subtitleIndex, 3); assert.equal(descriptor.contentType, 'video/mp4');
   assert.equal(engine.sessions.get('prepared-test').selected.audioIndex, 9); assert.equal(engine.sessions.get('prepared-test').selected.subtitleIndex, 0);
+  const subtitle = await engine.getPlaybackResource('prepared-test', descriptor.subtitlePath);
+  assert.equal(subtitle.headers['content-type'], 'text/vtt; charset=utf-8');
+  assert.equal(subtitle.headers['content-length'], String(verifiedCaptions.length));
+  assert.deepEqual(Buffer.from(await new Response(subtitle.body).arrayBuffer()), verifiedCaptions);
+  const head = await engine.getPlaybackResource('prepared-test', descriptor.subtitlePath, { method: 'HEAD' });
+  assert.equal(head.body, null); assert.equal(head.headers['content-length'], String(verifiedCaptions.length));
+  const ranged = await engine.getPlaybackResource('prepared-test', descriptor.subtitlePath, { range: 'bytes=0-7' });
+  assert.equal(ranged.status, 200); assert.equal(await new Response(ranged.body).text(), verifiedCaptions.toString());
+  await assert.rejects(engine.getPlaybackResource('prepared-test', descriptor.subtitlePath, { method: 'POST' }), { code: 'MEDIA_METHOD' });
+  await assert.rejects(engine.getPlaybackResource('prepared-test', descriptor.subtitlePath, { signal: AbortSignal.abort() }), { name: 'AbortError' });
   const response = await engine.getPlaybackResource('prepared-test', descriptor.masterPath, { range: 'bytes=0-7' });
   assert.equal(response.longLived, true); assert.equal((await new Response(response.body).arrayBuffer()).byteLength, 8);
   await assert.rejects(engine.getPlaybackResource('prepared-test', descriptor.masterPath.replace('Static=true', 'Static=false')), { code: 'MEDIA_RESOURCE' });
   await assert.rejects(engine.getPlaybackResource('prepared-test', descriptor.subtitlePath.replace('/Subtitles/0/', '/Subtitles/3/')), { code: 'MEDIA_RESOURCE' });
   await assert.rejects(engine.getPlaybackResource('prepared-test', descriptor.masterPath.replace(derivedId, view.item.Id)), { code: 'MEDIA_RESOURCE' });
-  const before = calls.length; engine.fetchImpl = async () => new Response(captions.toString().replace('dialogue', 'wrong source dialogue'), { headers: { 'content-type': 'text/vtt' } });
-  await assert.rejects(engine.openPreparedPlayback({ sessionId: 'wrong-caption', entry: {}, rendition: record, presentation: view }), { code: 'CAPTION_LINEAGE' });
-  assert.equal(engine.sessions.has('wrong-caption'), false); assert.ok(before >= 2); await engine.stopSession('prepared-test');
+  for (const [label, bytes] of [
+    ['charset', Buffer.from(verifiedCaptions.toString().replace('ï', '├»'))],
+    ['dialogue', Buffer.from(verifiedCaptions.toString().replace('dialogue', 'wrong source dialogue'))],
+    ['timing', Buffer.from(verifiedCaptions.toString().replace('01.000', '02.000'))]
+  ]) {
+    await writeFile(captionFile, bytes);
+    await assert.rejects(engine.openPreparedPlayback({ sessionId: label, entry: {}, rendition: record, presentation: view }), { code: 'CAPTION_LINEAGE' });
+    // Even a newly supplied byte hash cannot override the original cue lineage.
+    await assert.rejects(engine.openPreparedPlayback({ sessionId: label, entry: {}, rendition: { ...record, captions: { ...record.captions, sha256: sha256(bytes) } }, presentation: view }), { code: 'CAPTION_LINEAGE' });
+    assert.equal(engine.sessions.has(label), false);
+  }
+  const retained = await engine.getPlaybackResource('prepared-test', descriptor.subtitlePath);
+  assert.equal(await new Response(retained.body).text(), verifiedCaptions.toString(), 'active sessions retain verified bytes after a file changes');
+  await assert.rejects(engine.openPreparedPlayback({ sessionId: 'path', rendition: { ...record, paths: { captions: path.join(root, 'outside.vtt') } }, presentation: view }), { code: 'ENGINE_PATH' });
+  const oversized = await open(captionFile, 'w'); await oversized.truncate(16 * 1024 ** 2 + 1); await oversized.close();
+  await assert.rejects(engine.openPreparedPlayback({ sessionId: 'oversized', rendition: record, presentation: view }), { code: 'ENGINE_RESPONSE_LIMIT' });
+  await rm(captionFile); const outside = path.join(root, 'outside.vtt'); await writeFile(outside, verifiedCaptions); await symlink(outside, captionFile);
+  await assert.rejects(engine.openPreparedPlayback({ sessionId: 'linked', rendition: record, presentation: view }), { code: 'PREPARED_INVALID' });
+  assert.deepEqual([...engine.sessions.keys()], ['prepared-test']);
+  assert.equal(calls.length, 1); await engine.stopSession('prepared-test');
+  await assert.rejects(engine.getPlaybackResource('prepared-test', descriptor.subtitlePath), { code: 'SESSION_GONE' });
 });
 
 class FixturePreparedEngine {

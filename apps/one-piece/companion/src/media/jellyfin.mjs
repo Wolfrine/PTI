@@ -1,4 +1,6 @@
 import path from 'node:path';
+import { createReadStream } from 'node:fs';
+import { Readable } from 'node:stream';
 import { setTimeout as delay } from 'node:timers/promises';
 import { MediaError } from './errors.mjs';
 import { createTimingInspector } from './timing.mjs';
@@ -316,11 +318,20 @@ export class JellyfinClient {
       durationSeconds: rendition.recipe.durationSeconds, renditionId: rendition.id };
     this.sessions.set(sessionId, session);
     try {
-      const captionResponse = await this.getPlaybackResource(sessionId, subtitlePath, { signal }), captionBytes = Buffer.from(await new Response(captionResponse.body).arrayBuffer());
-      if (createHash('sha256').update(captionBytes).digest('hex') !== rendition.captions.sha256) {
-        const cues = canonicalCaptionHash(captionBytes);
-        if (cues.version !== rendition.captions.cueIdentity?.version || cues.sha256 !== rendition.captions.cueIdentity.sha256) throw new MediaError('CAPTION_LINEAGE', 'Imported captions did not match the inspected original full-English track', { status: 503 });
+      // The prepared VTT is already UTF-8. Reimporting it through the engine's
+      // charset detector can turn accented dialogue into mojibake (episode 12).
+      // Bind the exact managed sidecar to this session and retain verified bytes.
+      const captionFile = path.join(this.preparedRoot, rendition.id, 'video.en.vtt');
+      if (path.resolve(rendition.paths.captions) !== captionFile) throw new MediaError('ENGINE_PATH', 'Prepared captions escaped their managed recipe');
+      const stats = await managedRegularFile(captionFile, this.preparedRoot);
+      if (stats.size > 16 * 1024 ** 2) throw new MediaError('ENGINE_RESPONSE_LIMIT', 'Prepared captions exceeded their byte limit', { status: 502 });
+      const captionBytes = await boundedBytes(new Response(Readable.toWeb(createReadStream(captionFile, { signal }))), 16 * 1024 ** 2);
+      const cues = canonicalCaptionHash(captionBytes);
+      if (createHash('sha256').update(captionBytes).digest('hex') !== rendition.captions.sha256
+        || cues.version !== rendition.captions.cueIdentity?.version || cues.sha256 !== rendition.captions.cueIdentity.sha256) {
+        throw new MediaError('CAPTION_LINEAGE', 'Prepared captions did not match the inspected original full-English track', { status: 503 });
       }
+      session.captionBytes = captionBytes;
     } catch (error) { this.sessions.delete(sessionId); throw error; }
     return { sessionId, itemId: presentation.item.Id, mediaSourceId: presentation.source.Id, durationSeconds: rendition.recipe.durationSeconds,
       containerDurationSeconds: presentation.timing.containerDurationSeconds, timing: presentation.timing, mode: 'prepared-mp4', contentType: 'video/mp4',
@@ -364,6 +375,14 @@ export class JellyfinClient {
     if (!session) throw new MediaError('SESSION_GONE', 'Playback session has ended', { status: 410 });
     const canonical = this.canonicalResource(relative, session);
     if (!session.allowed.has(canonical)) throw new MediaError('MEDIA_RESOURCE', 'Resource is not authorized for this playback session', { status: 403 });
+    if (session.mode === 'prepared-mp4' && canonical === session.subtitlePath) {
+      callerSignal?.throwIfAborted();
+      if (!['GET', 'HEAD'].includes(method)) throw new MediaError('MEDIA_METHOD', 'Only GET and HEAD are supported', { status: 405 });
+      // Text tracks are bounded whole documents; ignore Range with HTTP 200.
+      // Video ranges still use the static engine path below.
+      return { status: 200, headers: { 'content-type': 'text/vtt; charset=utf-8', 'cache-control': 'private, no-store',
+        'content-length': String(session.captionBytes.length) }, body: method === 'HEAD' ? null : new Blob([session.captionBytes]).stream(), resources: [] };
+    }
     if (session.mode === 'prepared-mp4' && canonical === session.videoPath) return fetchStaticResource({ fetchImpl: (url, options) => this.fetchHeaders(url, options), origin: this.baseUrl,
       relative: canonical, authorization: await this.auth(session.deviceId), byteLength: session.byteLength, method, range, signal: callerSignal });
     if (range && (!/^bytes=\d*-\d*$/.test(range) || range === 'bytes=-')) throw new MediaError('MEDIA_RANGE', 'Only one bounded media range is supported', { status: 416 });

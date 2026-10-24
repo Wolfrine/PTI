@@ -1,6 +1,6 @@
 # AGENTS
 
-**PTI's current dashboard is `/home`: the authenticated personal app launcher shown after Google sign-in.** It contains pinned/recent apps, categories, search and private Codex usage readings. Start with [README.md](README.md). The nine current launcher apps and delivery/data contracts are documented there.
+**PTI's current dashboard is `/home`: the authenticated personal app launcher shown after Google sign-in.** It contains pinned/recent apps, categories, search and private Codex usage readings. Start with [README.md](README.md). The current launcher apps and delivery/data contracts are documented there.
 
 Do not interpret "PTI dashboard" as CEO Command or the former time-investment dashboards. `/dashboard`, `/new-dashboard`, `/codex-command` and project-detail URLs are retired redirects to `/home`; their UI and exclusive code are removed. Their intent is retained only in [the retirement archive](docs/archive/retired-dashboards.md), with the historical source revision. Historical records and older design notes are evidence, not authority to revive those screens. Standalone domain/activity tools and all saved Firestore data remain intact.
 

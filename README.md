@@ -6,7 +6,7 @@ Start with [AGENTS.md](AGENTS.md) before implementation. The current Home design
 
 ## Current surfaces
 
-- `/home`: the dashboard and app launcher. Its nine active apps are Self-Tracking, Morsel, Venture, Personal, Luminary, SEFPO Lab, Wedding Planner, One Piece and Noveliaa. Velum remains deliberately absent from the curated directory.
+- `/home`: the dashboard and app launcher. Its curated apps include Self-Tracking, Morsel, Venture, Personal, Luminary, SEFPO Lab, Wedding Planner, One Piece, Noveliaa, GTOP, Growth Tutorials Hub, Growth Tutorials and Luminar Robotics. StoryForge and other source-only or not-yet-verified work appear on the workbench instead. Velum remains deliberately absent from the curated directory.
 - `/` and `/login`: the existing Google sign-in flow; normal authenticated return is `/home`.
 - `/domains`, `/domains/:domainId`, `/activities`: retained standalone legacy tools. Their saved data remains intact, but they are not the dashboard or launcher entries.
 

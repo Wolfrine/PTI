@@ -47,10 +47,18 @@ export class NewHomeComponent implements OnInit {
     { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
     { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/one-piece/', external: true },
     { id: 'noveliaa', name: 'Noveliaa', shortName: 'Noveliaa', description: 'An author-led space for writing, collaboration and reading', icon: 'edit_note', category: 'Creative', tone: 'violet', href: 'https://noveliaa.web.app/', external: true },
+    { id: 'gtop', name: 'GTOP', shortName: 'GTOP', description: 'Practice and assessments for Growth Tutorials', icon: 'school', category: 'Knowledge', tone: 'mint', href: 'https://gtop-app.web.app/', external: true },
+    { id: 'gt-hub', name: 'Growth Tutorials Hub', shortName: 'GT Hub', description: 'Coordinate classes, learners and coaching', icon: 'groups', category: 'Productivity', tone: 'blue', href: 'https://hub-growthtutorials.web.app/', external: true },
+    { id: 'gt-website', name: 'Growth Tutorials', shortName: 'GT Website', description: 'Explore the Growth Tutorials learning community', icon: 'menu_book', category: 'Knowledge', tone: 'sun', href: 'https://growth-tutorials.web.app/', external: true },
+    { id: 'robotics', name: 'Luminar Robotics', shortName: 'Robotics', description: 'Explore prototypes, mechanisms and future builds', icon: 'precision_manufacturing', category: 'Ideas', tone: 'teal', href: 'https://lumi-robo.web.app/#prototypes', external: true },
   ];
   readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Creative', 'Entertainment'];
   readonly projects = [
-    { name: 'Visual Experiments', description: 'Research and interactive prototypes', icon: 'science', href: 'https://github.com/Wolfrine/PTI/tree/main/visual-experiments' },
+    { name: 'PTI Design', description: 'Dashboard concepts and design reviews', icon: 'palette', href: 'https://github.com/Wolfrine/PTI/tree/main/pti-app/design' },
+    { name: 'StoryForge', description: 'Storyworld PWA · visual review pending', icon: 'auto_stories', href: 'https://github.com/Wolfrine/StoryForge' },
+    { name: 'Orynth', description: 'Student study-tracker project', icon: 'school', href: 'https://github.com/Wolfrine/Orynth' },
+    { name: 'Novel Encyclopedia', description: 'Reference and knowledge for fictional worlds', icon: 'library_books', href: 'https://github.com/Wolfrine/Novel-Encyclopedia' },
+    { name: 'Harness Designer', description: 'Reusable foundation for AI project harnesses', icon: 'schema', href: 'https://github.com/Wolfrine/Harness_Designer' },
   ];
 
   searchQuery = '';

@@ -38,6 +38,22 @@ describe('NewHomeComponent public launcher', () => {
     expect(home.recentApps.map(app => app.id)).toEqual(['noveliaa']);
   });
 
+  it('includes verified ecosystem destinations without exposing private or unverified apps', () => {
+    const home = createHome();
+    const deployed: Record<string, string> = {
+      'gtop': 'https://gtop-app.web.app/',
+      'gt-hub': 'https://hub-growthtutorials.web.app/',
+      'gt-website': 'https://growth-tutorials.web.app/',
+      'robotics': 'https://lumi-robo.web.app/#prototypes',
+    };
+    for (const [id, href] of Object.entries(deployed)) {
+      const app = home.apps.find(candidate => candidate.id === id);
+      expect(app?.href).toBe(href);
+      expect(app?.external).toBeTrue();
+    }
+    expect(home.apps.some(app => ['velum', 'ops-forge', 'storyforge'].includes(app.id))).toBeFalse();
+    expect(home.projects.some(project => project.name === 'StoryForge' && project.href.includes('github.com/Wolfrine/StoryForge'))).toBeTrue();
+  });
   it('keeps One Piece available under Entertainment', () => {
     const home = createHome();
     home.setCategory('Entertainment');

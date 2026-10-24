@@ -108,6 +108,10 @@
 .pti-home .favorite-button{position:absolute;right:7px;top:7px;border:0;background:transparent;color:#c9c0b7;display:grid;place-items:center;width:27px;height:27px}
 .pti-home .favorite-button mat-icon{font-size:17px;width:17px;height:17px}
 .pti-home .favorite-button.is-pinned{color:#e4a545}
+.pti-home .directory-card.is-coming-soon{background:#fcfaf8;border-style:dashed}
+.pti-home .directory-card.is-coming-soon:hover{transform:none;box-shadow:none}
+.pti-home .directory-card.is-coming-soon .directory-link{cursor:default}
+.pti-home .directory-card.is-coming-soon .card-open{padding:4px 8px;border-radius:999px;background:#f0ebf4;color:#6b5979}
 .pti-home .no-results{text-align:center;color:#8b8076;background:#fff;border:1px dashed #e7ded6;border-radius:12px;padding:25px}
 .pti-home .no-results mat-icon{font-size:27px}
 .pti-home .no-results h3{font:700 18px Georgia,serif;margin:5px}

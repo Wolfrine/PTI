@@ -3,7 +3,7 @@ import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewC
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
-type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Entertainment';
+type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Creative' | 'Entertainment';
 type AppTone = 'coral' | 'mint' | 'amber' | 'blue' | 'violet' | 'sun' | 'rose' | 'teal' | 'plum';
 
 interface HubApp {
@@ -14,7 +14,8 @@ interface HubApp {
   icon: string;
   category: AppCategory;
   tone: AppTone;
-  href: string;
+  href?: string;
+  status?: 'planning';
   external?: boolean;
   documentNavigation?: boolean;
 }
@@ -45,9 +46,10 @@ export class NewHomeComponent implements OnInit {
     { id: 'sefpo', name: 'SEFPO Lab', shortName: 'SEFPO Lab', description: 'Connected ideas and structured knowledge', icon: 'hub', category: 'Knowledge', tone: 'plum', href: 'https://pti-app-2ab59-sefpo.web.app/', external: true },
     { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
     { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/one-piece/', external: true },
+    { id: 'noveliaa', name: 'Noveliaa', shortName: 'Noveliaa', description: 'An author-led space for writing, collaboration and reading', icon: 'edit_note', category: 'Creative', tone: 'violet', status: 'planning' },
     { id: 'ceo-command', name: 'CEO Command', shortName: 'CEO Command', description: 'Portfolio, projects and executive reviews', icon: 'space_dashboard', category: 'Productivity', tone: 'teal', href: '/codex-command' },
   ];
-  readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Entertainment'];
+  readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Creative', 'Entertainment'];
   readonly projects = [
     { name: 'Visual Experiments', description: 'Research and interactive prototypes', icon: 'science', href: 'https://github.com/Wolfrine/PTI/tree/main/visual-experiments' },
   ];
@@ -70,11 +72,11 @@ export class NewHomeComponent implements OnInit {
   }
 
   get pinnedApps(): HubApp[] {
-    return this.pinnedIds.map(id => this.apps.find(app => app.id === id)).filter((app): app is HubApp => !!app);
+    return this.pinnedIds.map(id => this.apps.find(app => app.id === id)).filter((app): app is HubApp => !!app?.href);
   }
 
   get recentApps(): HubApp[] {
-    return this.recentIds.map(id => this.apps.find(app => app.id === id)).filter((app): app is HubApp => !!app).slice(0, 3);
+    return this.recentIds.map(id => this.apps.find(app => app.id === id)).filter((app): app is HubApp => !!app?.href).slice(0, 3);
   }
 
   get suggestions(): HubApp[] {
@@ -85,7 +87,7 @@ export class NewHomeComponent implements OnInit {
     const query = this.searchQuery.trim().toLocaleLowerCase();
     return this.apps.filter(app =>
       (this.selectedCategory === 'All' || app.category === this.selectedCategory) &&
-      (!query || `${app.name} ${app.description} ${app.category}`.toLocaleLowerCase().includes(query))
+      (!query || `${app.name} ${app.description} ${app.category} ${app.status ?? ''}`.toLocaleLowerCase().includes(query))
     );
   }
 
@@ -114,6 +116,7 @@ export class NewHomeComponent implements OnInit {
   }
 
   launch(event: MouseEvent, app: HubApp): void {
+    if (!app.href) { event.preventDefault(); return; }
     this.recentIds = [app.id, ...this.recentIds.filter(id => id !== app.id)].slice(0, 8);
     this.writeIds(RECENT_STORAGE_KEY, this.recentIds);
     if (!app.external && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) {
@@ -125,6 +128,7 @@ export class NewHomeComponent implements OnInit {
 
   togglePin(event: MouseEvent, app: HubApp): void {
     event.stopPropagation();
+    if (!app.href) return;
     this.pinnedIds = this.isPinned(app)
       ? this.pinnedIds.filter(id => id !== app.id)
       : [...this.pinnedIds, app.id];
@@ -137,7 +141,7 @@ export class NewHomeComponent implements OnInit {
       if (stored === null) return [...fallback];
       const parsed: unknown = JSON.parse(stored);
       if (!Array.isArray(parsed)) return [...fallback];
-      return [...new Set(parsed.filter((id): id is string => typeof id === 'string' && this.apps.some(app => app.id === id)))];
+      return [...new Set(parsed.filter((id): id is string => typeof id === 'string' && this.apps.some(app => app.id === id && !!app.href)))];
     } catch { return [...fallback]; }
   }
 

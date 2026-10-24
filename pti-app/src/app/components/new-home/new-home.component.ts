@@ -46,7 +46,7 @@ export class NewHomeComponent implements OnInit {
     { id: 'sefpo', name: 'SEFPO Lab', shortName: 'SEFPO Lab', description: 'Connected ideas and structured knowledge', icon: 'hub', category: 'Knowledge', tone: 'plum', href: 'https://pti-app-2ab59-sefpo.web.app/', external: true },
     { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
     { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/one-piece/', external: true },
-    { id: 'noveliaa', name: 'Noveliaa', shortName: 'Noveliaa', description: 'An author-led space for writing, collaboration and reading', icon: 'edit_note', category: 'Creative', tone: 'violet', href: '', status: 'planning' },
+    { id: 'noveliaa', name: 'Noveliaa', shortName: 'Noveliaa', description: 'An author-led space for writing, collaboration and reading', icon: 'edit_note', category: 'Creative', tone: 'violet', href: 'https://noveliaa.web.app/', external: true },
     { id: 'ceo-command', name: 'CEO Command', shortName: 'CEO Command', description: 'Portfolio, projects and executive reviews', icon: 'space_dashboard', category: 'Productivity', tone: 'teal', href: '/codex-command' },
   ];
   readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Creative', 'Entertainment'];

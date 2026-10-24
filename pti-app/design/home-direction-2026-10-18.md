@@ -26,15 +26,15 @@ Scope: replace the authenticated `/home` three-choice layout; leave authenticati
 
 ## 2026-10-24 curation and sign-in alignment
 
-- Curated launcher: ten launchable entries across internal PTI pages, dedicated PTI apps, One Piece and separately hosted Wedding Planner; plus one clearly marked planning-stage app. `Entertainment` identifies One Piece, while `Creative` identifies Noveliaa. No new live PTI deployment was independently established beyond the existing registry.
+- Curated launcher: eleven launchable entries across internal PTI pages, dedicated PTI apps, One Piece, separately hosted Wedding Planner and released Noveliaa. `Entertainment` identifies One Piece, while `Creative` identifies Noveliaa.
 - Privacy choice: Velum does not appear in the app list, categories, search, pins or recent-launch suggestions. Saved IDs no longer belonging to the curated catalog are filtered and purged when the home opens. This is **showcase discretion**, not access control: private app authentication and media protection remain the private app's responsibility.
 - Login direction: extend the owner-selected warm-light, editorial PTI identity to unauthenticated `/` and `/login` via a split layout and the existing approved lifestyle art. Retire the unrelated dark executive control room and incorrect expansion of PTI. Keep the Google button action and TypeScript authentication/redirect logic unchanged.
 - Design roles: independent designer prepared markup/styles; independent critic found short-phone CTA visibility, microtext contrast and improvised Google icon risks; these were revised before source was saved.
 - Critical states to verify: 1440×900 desktop; 1024×768 tablet; 390×844 mobile; 320×568 short phone; keyboard navigation, focus, 200% text zoom; Google popup/One Tap and `?redirect=/one-piece/...`; no horizontal overflow.
 - Current verdict: **unverified candidate**. This is a code-level iteration; no post-change desktop/mobile render, Angular test/build run or 5–10 substantive visual cycles were completed in this environment. Do not treat the PR or future CI deployment as aesthetic acceptance.
 
-### Noveliaa catalog correction
+### Noveliaa release corrected (2026-10-24)
 
-- Noveliaa belongs in the central catalog even before launch, under **Creative**. Its source-of-truth repository `Wolfrine/creative-workspace` currently calls it a planning-stage author-led writing workspace, with no approved deployment or confirmed app URL.
-- Display it in All Apps with a visible **In planning** status and no href, pin, or recent-launch affordance. Never substitute a private GitHub repository URL for a usable application URL. Once deployed and verified, supply the real app URL and enable launches.
-- The directory now has **11 discoverable entries: 10 launchable + 1 planning**. This corrects the prior omission without making a false availability claim.
+- Noveliaa is a **released**, privately authenticated app at `https://noveliaa.web.app/`. The [2026-10-23 Firebase release](https://github.com/Wolfrine/creative-workspace/actions/runs/40000821976) completed successfully from branch `codex/noveliaa-phase-1`; its hosted build was verified, and the public sign-in landing was inspected on 2026-10-24.
+- The repository default-branch README still says planning-stage. Treat the successful release and verified live site as more recent evidence of availability; publication of a private author workspace does not make its contents public.
+- List Noveliaa under **Creative** with the live external URL and normal search, launch, pin and recent-app behavior. The directory now has **11 launchable entries**. Velum remains excluded from the curated launcher.

@@ -24,17 +24,18 @@ describe('NewHomeComponent public launcher', () => {
     }
   });
 
-  it('shows Noveliaa as a planning-stage creative app without a dead link or pin', () => {
+  it('launches deployed Noveliaa from Creative and supports pins and recent apps', () => {
     const home = createHome();
     const noveliaa = home.apps.find(app => app.id === 'noveliaa');
-    expect(noveliaa?.status).toBe('planning');
-    expect(noveliaa?.href).toBe('');
+    expect(noveliaa?.status).toBeUndefined();
+    expect(noveliaa?.href).toBe('https://noveliaa.web.app/');
+    expect(noveliaa?.external).toBeTrue();
     home.setCategory('Creative');
     expect(home.filteredApps.map(app => app.id)).toContain('noveliaa');
     home.pinnedIds = ['noveliaa'];
     home.recentIds = ['noveliaa'];
-    expect(home.pinnedApps).toEqual([]);
-    expect(home.recentApps).toEqual([]);
+    expect(home.pinnedApps.map(app => app.id)).toEqual(['noveliaa']);
+    expect(home.recentApps.map(app => app.id)).toEqual(['noveliaa']);
   });
 
   it('keeps One Piece available under Entertainment', () => {

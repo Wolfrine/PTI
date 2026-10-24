@@ -61,11 +61,11 @@
         <div class="section-heading"><div><p class="section-kicker">THE COMPLETE COLLECTION</p><h2 id="directory-heading"><mat-icon>grid_view</mat-icon> All Apps <span class="app-count">{{ filteredApps.length }}</span></h2></div><span class="directory-hint">Everything you build, in one place</span></div>
         <div class="category-tabs" aria-label="Filter applications by category"><button type="button" *ngFor="let category of categories" [class.selected]="selectedCategory === category" [attr.aria-pressed]="selectedCategory === category" (click)="setCategory(category)">{{ category }}</button></div>
         <div class="directory-grid" *ngIf="filteredApps.length; else noResults">
-          <div class="directory-card" *ngFor="let app of filteredApps">
-            <a class="directory-link" [href]="app.href" [attr.target]="app.external ? '_blank' : null" [attr.rel]="app.external ? 'noopener noreferrer' : null" (click)="launch($event, app)" [attr.aria-label]="'Open ' + app.name">
-              <span class="app-icon" [attr.data-tone]="app.tone"><mat-icon>{{ app.icon }}</mat-icon></span><strong>{{ app.name }}</strong><small>{{ app.description }}</small><span class="card-open">Open app <mat-icon>north_east</mat-icon></span>
+          <div class="directory-card" [class.is-coming-soon]="!app.href" *ngFor="let app of filteredApps">
+            <a class="directory-link" [attr.href]="app.href || null" [attr.target]="app.href && app.external ? '_blank' : null" [attr.rel]="app.href && app.external ? 'noopener noreferrer' : null" [attr.aria-disabled]="app.href ? null : 'true'" (click)="launch($event, app)" [attr.aria-label]="app.href ? 'Open ' + app.name : app.name + ' — in planning'">
+              <span class="app-icon" [attr.data-tone]="app.tone"><mat-icon>{{ app.icon }}</mat-icon></span><strong>{{ app.name }}</strong><small>{{ app.description }}</small><span class="card-open">{{ app.href ? 'Open app' : 'In planning' }} <mat-icon *ngIf="app.href">north_east</mat-icon></span>
             </a>
-            <button type="button" class="favorite-button" [class.is-pinned]="isPinned(app)" [attr.aria-label]="(isPinned(app) ? 'Unpin ' : 'Pin ') + app.name" [attr.aria-pressed]="isPinned(app)" (click)="togglePin($event, app)"><mat-icon>{{ isPinned(app) ? 'star' : 'star_border' }}</mat-icon></button>
+            <button *ngIf="app.href" type="button" class="favorite-button" [class.is-pinned]="isPinned(app)" [attr.aria-label]="(isPinned(app) ? 'Unpin ' : 'Pin ') + app.name" [attr.aria-pressed]="isPinned(app)" (click)="togglePin($event, app)"><mat-icon>{{ isPinned(app) ? 'star' : 'star_border' }}</mat-icon></button>
           </div>
         </div>
         <ng-template #noResults><div class="no-results"><mat-icon>search_off</mat-icon><h3>No matching apps</h3><p>Try another search or choose All categories.</p><button type="button" (click)="searchQuery = ''; selectedCategory = 'All'">Clear filters</button></div></ng-template>

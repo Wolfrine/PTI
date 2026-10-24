@@ -1,7 +1,7 @@
 <div class="domain-title">
     <h2>
         <div>
-            <div (click)="router.navigate(['/dashboard'])">Dashboard</div> >
+            <a href="/home">Home</a> >
             {{ domainName }} ({{ domainProgress}}%)
         </div>
         <!-- ✅ Add Target Button -->
@@ -72,5 +72,5 @@
 </div>
 
 <div class="footer">
-    <button mat-stroked-button (click)="router.navigate(['/dashboard'])">Back</button>
+    <button mat-stroked-button (click)="router.navigate(['/home'])">Back to Home</button>
 </div>

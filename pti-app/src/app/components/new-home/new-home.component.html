@@ -4,7 +4,6 @@
     <nav class="side-nav" aria-label="Main navigation">
       <a class="side-item active" href="/home" aria-current="page"><mat-icon>home</mat-icon><span>Home</span></a>
       <button class="side-item" type="button" (click)="openDirectory()"><mat-icon>apps</mat-icon><span>All Apps</span></button>
-      <a class="side-item" href="/new-dashboard"><mat-icon>event_available</mat-icon><span>Today</span></a>
       <button class="side-item" type="button" (click)="focusSearch()"><mat-icon>search</mat-icon><span>Search</span></button>
     </nav>
     <div class="side-footer"><span class="footer-icon"><mat-icon>auto_awesome</mat-icon></span><span>All your worlds.<br>One calm place.</span></div>
@@ -27,11 +26,12 @@
           <p class="welcome-description">All your tools. One home. A more intentional you.</p>
           <div class="welcome-actions">
             <button type="button" class="primary-button" (click)="openDirectory()">Explore all apps <mat-icon>arrow_forward</mat-icon></button>
-            <a class="subtle-button" href="/codex-command"><mat-icon>space_dashboard</mat-icon> CEO Command</a>
           </div>
         </div>
         <div class="welcome-photo"><img src="/assets/images/pti-home-lifestyle.webp" alt="Sunlit, calming workspace looking toward distant hills" fetchpriority="high"></div>
       </section>
+
+      <app-new-codex-usage></app-new-codex-usage>
 
       <section class="hub-section" aria-labelledby="pinned-heading">
         <div class="section-heading"><div><p class="section-kicker">AT YOUR FINGERTIPS</p><h2 id="pinned-heading"><mat-icon>push_pin</mat-icon> Pinned Apps</h2></div><button class="text-button" type="button" (click)="editingPins = !editingPins" [attr.aria-pressed]="editingPins">{{ editingPins ? 'Done' : 'Customize' }} <mat-icon>{{ editingPins ? 'check' : 'tune' }}</mat-icon></button></div>

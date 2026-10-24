@@ -1,5 +1,7 @@
 # PTI Home — personal app launcher
 
+> **Historical design record, superseded 2026-10-24:** current dashboard = `/home`, with nine active app entries and the private Codex usage panel. CEO Command and both time-dashboard UIs are retired. Historical route/count statements below describe earlier candidates only. Use [codex-usage-review.md](codex-usage-review.md), root README and AGENTS for current work; prior intent is in [the retirement archive](../../docs/archive/retired-dashboards.md).
+
 Date: 2026-10-18
 Owner visual direction: selected warm-light PTI personal operating system mockup (desktop, mobile and tablet) in conversation.
 Scope: replace the authenticated `/home` three-choice layout; leave authentication, other routes, and all sub-apps unchanged.

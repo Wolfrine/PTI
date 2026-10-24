@@ -1,12 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
-import { NewDashboardComponent } from './components/new-dashboard/new-dashboard.component';
 import { ManageDomainsComponent } from './components/domains/manage-domains/manage-domains.component';
 import { ManageTargetsTasksComponent } from './components/domains/manage-targets-tasks/manage-targets-tasks.component';
 import { ActivityComponent } from './components/activity/activity.component';
-import { NewCodexCommandComponent } from './components/new-codex-command/new-codex-command.component';
-import { CodexProjectDetailComponent } from './components/codex-project-detail/codex-project-detail.component';
 import { NewHomeComponent } from './components/new-home/new-home.component';
 import { AuthGuard } from './guards/auth.guard';
 
@@ -18,16 +14,8 @@ export const routes: Routes = [
         component: NewHomeComponent,
         canActivate: [AuthGuard],
     },
-    {
-        path: 'dashboard',
-        component: DashboardComponent,
-        canActivate: [AuthGuard],
-    },
-    {
-        path: 'new-dashboard',
-        component: NewDashboardComponent,
-        canActivate: [AuthGuard],
-    },
+    { path: 'dashboard', redirectTo: 'home', pathMatch: 'full' },
+    { path: 'new-dashboard', redirectTo: 'home', pathMatch: 'full' },
     {
         path: 'domains',
         component: ManageDomainsComponent,
@@ -43,14 +31,6 @@ export const routes: Routes = [
         component: ActivityComponent,
         canActivate: [AuthGuard],
     },
-    {
-        path: 'codex-command',
-        component: NewCodexCommandComponent,
-        canActivate: [AuthGuard],
-    },
-    {
-        path: 'codex-command/projects/:projectId',
-        component: CodexProjectDetailComponent,
-        canActivate: [AuthGuard],
-    },
+    { path: 'codex-command', redirectTo: 'home', pathMatch: 'full' },
+    { path: 'codex-command/projects/:projectId', redirectTo: 'home', pathMatch: 'full' },
 ];

@@ -1,6 +1,8 @@
 # AGENTS
 
-This repository contains an Angular application "PTI App" for tracking time investment across domains using Firebase/Firestore and Google authentication. Components include login, dashboard, domain management, activities, and activity reports. Services manage domains, targets/tasks, activities, and local storage. The app uses Angular's standalone component architecture and Chart.js for visualisations.
+**PTI's current dashboard is `/home`: the authenticated personal app launcher shown after Google sign-in.** It contains pinned/recent apps, categories, search and private Codex usage readings. Start with [README.md](README.md). The nine current launcher apps and delivery/data contracts are documented there.
+
+Do not interpret "PTI dashboard" as CEO Command or the former time-investment dashboards. `/dashboard`, `/new-dashboard`, `/codex-command` and project-detail URLs are retired redirects to `/home`; their UI and exclusive code are removed. Their intent is retained only in [the retirement archive](docs/archive/retired-dashboards.md), with the historical source revision. Dated `.pm` records and older design notes are historical evidence, not authority to revive those screens. Standalone domain/activity tools and all saved Firestore data remain intact.
 
 For changes in `visual-experiments/**`, follow [visual-experiments/AGENTS.md](visual-experiments/AGENTS.md) instead of the PTI Angular UI guidelines and Central design procedure below. Repo-wide security, data and deployment restrictions still apply.
 
@@ -9,11 +11,11 @@ For changes in `visual-experiments/**`, follow [visual-experiments/AGENTS.md](vi
 - If verification is blocked or fails, report the precise limitation and resolve it before claiming completion. Do not describe an unverified visual state or an in-progress deployment as accepted.
 
 ## UI development guidelines
-- Existing pages are basic; redesigned pages live alongside them using Angular Material.
+- Extend the existing warm-light Home direction; read `pti-app/design/codex-usage-review.md` and its evidence before changing the dashboard.
 - When creating redesigned pages, prefix component and route names with `new-`.
-- Reuse the existing Firebase authentication flow. New executive/Codex workflow data belongs under `users/{uid}/codexProjects/{projectId}`.
+- Reuse the existing Firebase authentication flow. Codex usage lives only at `users/{uid}/codexProjects/codex-usage`; never publish credentials, raw account identifiers, conversation content or tool telemetry.
 - Run `npm test` and `npm run build` before committing.
-- The login flow stays unchanged; provide links to Material redesigns (e.g., `new-dashboard`) from authenticated pages like the existing dashboard.
+- Normal login returns to `/home`. Preserve safe sibling-app login returns and redirect retired dashboard bookmarks to Home. Never add a production authentication bypass.
 - Any UI/dashboard/page change is incomplete until it has been visually checked in browser on desktop and mobile-sized viewports.
 - If the task depends on visual judgment, route implementation through a rendered-browser/Codex loop rather than treating Chat-generated code as visually accepted. Correct known material defects and rerender before completion.
 
@@ -34,12 +36,13 @@ For any UI, UX, layout, styling, landing-page, dashboard, motion, or visual-qual
 
 For Luminary specifically, `luminary-observer/design/` is the current design-governance source. The Living Instrument v1 visual direction is a rejected exploration. Preserve valid product/data constraints, but do not extend its dark-glow/orbit/network styling by default.
 
-## CEO command operating model
-- PTI is the CEO COE: the hosted visual command surface, operating registry, and instruction home for mobile-accessible Codex planning and portfolio review.
+## Repository ownership and operating model
+- PTI is the personal app hub; `/home` is its dashboard. Retired CEO process/registry documents are archived in Git and summarized by the single retirement archive. Active sub-apps retain their own operating contracts.
 - `ops-forge` is archived legacy work. Do not use it as an active operating root, process source, MCP source, dashboard source, or automation source unless the user explicitly revives it.
-- The canonical ecosystem registry and refresh rules live under `docs/ceo-coe/`.
 - Start every implementation by identifying the owning repo, active branch, dirty worktree state, and deploy lane.
 - Use broad F-drive scanning for discovery only; implementation should happen inside the owning repo unless a cross-repo change is explicitly required.
 - Preserve unrelated dirty files. If a repo already has user or agent changes, inspect and work around them instead of reverting.
-- Keep project action items in Firestore so the PTI dashboard, Codex chats, and MCP tools share the same tracker.
-- The Firebase Functions MCP endpoint is the agent access layer for PTI Firestore. Keep it token-gated and verify `tools/list` plus a real `tools/call` before treating it as available.
+- Preserve historical project/action-item Firestore records; retiring their UI does not authorize data deletion.
+- The account-scoped hosted PTI MCP and repo-local `tools/pti-mcp/` are the current agent data paths. Verify authentication and a real read before treating a connection as available; the legacy default-site `/mcp` URL is not a verified unattended route.
+- The local usage monitor uses a private Firebase user session because no unattended MCP credential was available. Follow `tools/codex-usage-monitor/README.md`; it is an OS task with no inference. Keep its credential local under current-user DPAPI, use one reading document, and verify owner-only rules before publication.
+- Run `node tools/codex-usage-monitor/scripts/check-home-contract.mjs` to detect conflicting active dashboard guidance before delivery.

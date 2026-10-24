@@ -77,6 +77,13 @@ jobs:
           cd pti-app
           npm run build -- --configuration production
 
+      - name: Test Home, retired routes and local usage monitor
+        run: |
+          npm test --prefix pti-app -- --watch=false --browsers=ChromeHeadless
+          npm ci --prefix tools/codex-usage-monitor --ignore-scripts --no-audit --no-fund
+          npm test --prefix tools/codex-usage-monitor
+          node tools/codex-usage-monitor/scripts/check-home-contract.mjs
+
       - name: Keep old Morsel links working
         run: |
           mkdir -p pti-app/dist/pti-app/browser/food
@@ -128,6 +135,8 @@ jobs:
           # Only the exact previously deployed LF Git blob is accepted here.
           git show b00df300e4de29c5cbdeec1198ed1072538752b8:personal-harness/firestore.rules > /tmp/pre-one-piece.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-one-piece.rules node personal-functions/provision.mjs
+          # Fail before Hosting/publication unless real client rules isolate usage.
+          node tools/codex-usage-monitor/scripts/verify-live-rules.mjs
 
           ONE_PIECE_SITE_ID=pti-app-2ab59-one-piece
           if firebase hosting:sites:get "$ONE_PIECE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then

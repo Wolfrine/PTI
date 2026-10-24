@@ -2,6 +2,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { NewCodexUsageComponent } from '../new-codex-usage/new-codex-usage.component';
 
 type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Creative' | 'Entertainment';
 type AppTone = 'coral' | 'mint' | 'amber' | 'blue' | 'violet' | 'sun' | 'rose' | 'teal' | 'plum';
@@ -20,14 +21,14 @@ interface HubApp {
   documentNavigation?: boolean;
 }
 
-const PINNED_DEFAULTS = ['pti-dashboard', 'tracker', 'morsel', 'venture', 'personal', 'luminary'];
+const PINNED_DEFAULTS = ['tracker', 'morsel', 'venture', 'personal', 'luminary', 'sefpo'];
 const PIN_STORAGE_KEY = 'pti.home.pins.v1';
 const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
 
 @Component({
   selector: 'app-new-home',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, NewCodexUsageComponent],
   templateUrl: './new-home.component.html',
   styleUrl: './new-home.component.scss',
 })
@@ -37,7 +38,6 @@ export class NewHomeComponent implements OnInit {
 
   // Curated launcher entries only. Private tools are intentionally excluded from all surfaces.
   readonly apps: readonly HubApp[] = [
-    { id: 'pti-dashboard', name: 'PTI Dashboard', shortName: 'Dashboard', description: 'Time investment, domains and progress', icon: 'dashboard', category: 'Productivity', tone: 'coral', href: '/new-dashboard' },
     { id: 'tracker', name: 'Self-Tracking', shortName: 'Tracker', description: 'Track outcomes and the progress behind them', icon: 'task_alt', category: 'Productivity', tone: 'mint', href: 'https://pti-app-2ab59-tracker.web.app/', external: true },
     { id: 'morsel', name: 'Morsel', shortName: 'Morsel', description: 'Your food memories and next meal', icon: 'restaurant_menu', category: 'Personal', tone: 'amber', href: 'https://pti-app-2ab59-morsel.web.app/', external: true },
     { id: 'venture', name: 'Venture', shortName: 'Venture', description: 'Explore ideas, experiments and opportunities', icon: 'insights', category: 'Ideas', tone: 'blue', href: 'https://pti-app-2ab59-venture.web.app/', external: true },
@@ -47,7 +47,6 @@ export class NewHomeComponent implements OnInit {
     { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
     { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/one-piece/', external: true },
     { id: 'noveliaa', name: 'Noveliaa', shortName: 'Noveliaa', description: 'An author-led space for writing, collaboration and reading', icon: 'edit_note', category: 'Creative', tone: 'violet', href: 'https://noveliaa.web.app/', external: true },
-    { id: 'ceo-command', name: 'CEO Command', shortName: 'CEO Command', description: 'Portfolio, projects and executive reviews', icon: 'space_dashboard', category: 'Productivity', tone: 'teal', href: '/codex-command' },
   ];
   readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Creative', 'Entertainment'];
   readonly projects = [

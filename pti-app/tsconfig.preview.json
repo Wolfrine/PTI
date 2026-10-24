@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.app.json",
+  "files": ["src/dev-usage-preview.ts"]
+}

@@ -34,3 +34,10 @@ apps/one-piece/**/__pycache__/
 apps/one-piece/**/.pytest_cache/
 !apps/one-piece/companion/src/runtime/
 !apps/one-piece/companion/src/runtime/**
+
+# Local monitor packages are committed; installed runtimes and private state are not.
+tools/codex-usage-monitor/node_modules/
+tools/codex-usage-monitor/.state/
+codex-usage-activation-report.json
+.codex-usage-qa/
+**/.codex-dev-server.log

@@ -59,6 +59,14 @@
                             "optimization": false,
                             "extractLicenses": false,
                             "sourceMap": true
+                        },
+                        "usage-preview": {
+                            "browser": "src/dev-usage-preview.ts",
+                            "tsConfig": "tsconfig.preview.json",
+                            "serviceWorker": false,
+                            "optimization": false,
+                            "extractLicenses": false,
+                            "sourceMap": true
                         }
                     },
                     "defaultConfiguration": "production"
@@ -71,6 +79,9 @@
                         },
                         "development": {
                             "buildTarget": "pti-app:build:development"
+                        },
+                        "usage-preview": {
+                            "buildTarget": "pti-app:build:usage-preview"
                         }
                     },
                     "defaultConfiguration": "development"

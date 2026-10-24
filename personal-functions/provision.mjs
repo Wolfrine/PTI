@@ -27,6 +27,8 @@ approvedPrevious.add('23cc6d79329cafe835d1de837350b1ee5a539a471d1813f24b29b7c958
 approvedPrevious.add('3fcfe61820c4c44cfb59a1e68a14b144475c765438561d9e9b72ce900a77893c');
 // Reviewed pre-role wedding rules, PTI 075b1e3. Preserves all sibling namespaces.
 approvedPrevious.add('b1c3ca368a37a733b3505214611868866f0d19ccf5d1de66a722e5f642f21c4d');
+// Reviewed complete PTI predecessor ca874982; isolate only codexProjects/codex-usage.
+approvedPrevious.add('1c97e894a3dd7cedf3e9a313a7eebde0674ca91bada5eef1363301ce829d934a');
 if(process.env.APPROVED_PREVIOUS_RULES_FILE){
  const approvedSource=await readFile(process.env.APPROVED_PREVIOUS_RULES_FILE,'utf8');
  approvedPrevious.add(digest(approvedSource));

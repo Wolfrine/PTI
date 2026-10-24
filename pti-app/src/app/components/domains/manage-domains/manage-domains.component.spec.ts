@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ManageDomainsComponent } from './manage-domains.component';
+import { DomainService } from '../../../services/domain.service';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 describe('ManageDomainsComponent', () => {
   let component: ManageDomainsComponent;
@@ -8,7 +11,8 @@ describe('ManageDomainsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ManageDomainsComponent]
+      imports: [ManageDomainsComponent],
+      providers: [provideRouter([]), { provide: DomainService, useValue: { getDomains: () => of([]) } }]
     })
     .compileComponents();
 
@@ -17,7 +21,8 @@ describe('ManageDomainsComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('retains domain management and a Home breadcrumb', () => {
+    expect(fixture.nativeElement.querySelector('a[href="/home"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Manage Domains');
   });
 });

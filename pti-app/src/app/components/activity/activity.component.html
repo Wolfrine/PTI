@@ -1,6 +1,6 @@
 <div class="activity-input">
     <h3>
-        <div (click)="router.navigate(['/dashboard'])">Dashboard </div> &nbsp; > Add New Activity
+        <a href="/home">Home</a> &nbsp; > Add New Activity
     </h3>
     <form [formGroup]="activityForm" (ngSubmit)="addActivity()">
         <input formControlName="name" placeholder="Activity Name" required />
@@ -48,5 +48,5 @@
 </div>
 
 <div class="footer">
-    <button mat-stroked-button (click)="router.navigate(['/dashboard'])">Back</button>
+    <button mat-stroked-button (click)="router.navigate(['/home'])">Back to Home</button>
 </div>

@@ -43,4 +43,16 @@ describe('NewHomeComponent public launcher', () => {
     home.setCategory('Entertainment');
     expect(home.filteredApps.map(app => app.id)).toContain('one-piece');
   });
+
+  it('retires dashboard and CEO IDs from all launcher surfaces and purges saved IDs', () => {
+    localStorage.setItem('pti.home.pins.v1', JSON.stringify(['pti-dashboard', 'tracker', 'ceo-command']));
+    localStorage.setItem('pti.home.recent.v1', JSON.stringify(['ceo-command', 'noveliaa']));
+    const home = new NewHomeComponent({ navigateByUrl: () => Promise.resolve(true) } as unknown as Router, 'browser' as unknown as object);
+    home.ngOnInit();
+    expect(home.pinnedIds).toEqual(['tracker']);
+    expect(home.recentIds).toEqual(['noveliaa']);
+    expect(JSON.parse(localStorage.getItem('pti.home.pins.v1')!)).toEqual(['tracker']);
+    expect(home.apps.some(app => ['pti-dashboard', 'ceo-command'].includes(app.id))).toBeFalse();
+    localStorage.removeItem('pti.home.pins.v1'); localStorage.removeItem('pti.home.recent.v1');
+  });
 });

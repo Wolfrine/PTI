@@ -1,0 +1,39 @@
+# PTI Home Codex usage review
+
+Current candidate: **unverified**, bounded extension of the owner-selected warm-light Home. Production acceptance requires the independent rendered review and separate QA below; no owner acceptance is inferred.
+
+## Brief and source
+
+- Baseline: `ca8749824e0f88b49f2bab64e3008299ea58de5e`; screen `/home`, compact account readings between welcome and pinned apps. Home is the authenticated launcher; retired CEO/dashboard URLs redirect there. No new dashboard art direction.
+- Direction reference: `home-direction-2026-10-18.md` and current rendered Home: warm-neutral background, understated borders, coral emphasis, serif section heading. Keep app launches visually important.
+- Central bundled release `0.1.0`, base `ba1235fe7b220842778414f3f70fca38e7df4c53`; designer guide SHA256 `7ec7d397a040dfbcc29c2e1724dec5f2bcd8525f4f334c124e846a1d5ca074de`. Read with the bundled director skill and UI Visual Verifier.
+- Designer: `home_designer`; independent visual critic: `visual_critic`; QA and final judgment: parent. Designer does not award acceptance.
+- Visual idea: a quiet connection panel makes real Codex allowances and their age legible while the familiar Home remains the app launcher.
+- Eye-path hypotheses, not measured perception: 100ms—Home welcome and account panel; 1s—used/remaining allowance and connection state; 5s—reset timing, source date and pinned launch choices.
+
+## Critical dimensions declared before review
+
+1. **Usage truth and clarity:** used/remaining percentages are explicit; daily count has a source date; failed/stale sections keep visible qualifiers; unavailable is never zero.
+2. **Fit with Home:** quiet surfaces, warm palette, coral allowance bar and serif section heading; no competing hero or unrelated dashboard visual language.
+3. **Responsive readability:** at desktop and mobile widths, numbers, qualifiers, reset timing and reading date fit without clipping or overflow; pinned apps remain discoverable.
+
+Required states: fresh, multiple windows, unsupported daily, stale, unavailable, offline/cached, never connected, loading, post-reset, and long labels; 1440×1000,390×844 and320px narrow viewport. The local `usage-preview` Angular build uses labelled synthetic fixtures and no Firebase/auth. It is excluded from the production entry.
+
+## Iteration record
+
+| Cycle | Candidate / substantive state | Independent visual finding | Separate QA / change |
+| --- | --- | --- | --- |
+| 1 | Actual Angular `?state=fresh`,1440×1000 and390×844 | Critic: clarity8.3,fit8.6,readability8.0,overall8.2. Truthful separation of used/remaining,reset and source-dated tokens; mobile pinned heading remains in first viewport. Footer/date/reset utility text too small. | Production build passed. Refine source-date/reset copy11→12px; footer10→11px; strengthen text contrast. Screenshot review occurred; retained image evidence pending. |
+| 2 | Utility typography refinement; multiple1440×1000 and320×568, unsupported1440×1000 and390×844 | Critic: clarity8.5,fit8.6,readability8.3,overall8.4. Improved date/reset/footer legibility; two windows separate without nested outer cards; unsupported daily preserves usable allowance.320px stacks without clipping. No visual blocker. | Focused16/16 Karma tests passed. Parent separate QA pending; no further style change requested. |
+| 3 | Stale,offline and expired reset states at1440×1000 and390×844 | Critic initial: clarity7.7,fit8.5,readability7.4,overall7.7. Blocked: full-row stale note prevented auto-fit grid collapsing, shrinking one allowance bar; post-reset header still showed green Up to date. Corrected R3b: clarity8.6,fit8.6,readability8.4,overall8.5. Both blockers visibly resolved; offline wording clear. | Replaced nested auto-fit grid with wrapping flex rows so full-row status cannot create phantom columns. Added amber Awaiting allowance header for elapsed displayed reset windows; regression test added. Parent personally inspected full-width stale desktop and amber expired mobile: pass. |
+| 4 | Loading,never-connected,error and all-unavailable states at1440×1000 and390×844; neutral connection badges instead of green healthy treatment | Critic: clarity8.7,fit8.6,readability8.5,overall8.6. Unknown states correctly neutral, failures amber, missing-report/connection copy distinct, no invented numeric placeholders. Compact empty states leave launcher prominent. | Separate QA pending. |
+| 5 | Long labels1440/320,cached1440/390,partial1440/390 and expired320; corrected partial1440/390 and final fresh1440/390/320 | Critic initial: clarity7.9,fit8.6,readability8.4,overall8.2. Long/cached/narrow layouts fit. Isolated truth-label blocker: null daily value called a last good reading. Corrected R5b: clarity8.6,fit8.6,readability8.4,overall8.5; no remaining visual blocker. | Error qualifier now Update failed · no saved reading when no displayed value exists; retain last good reading wording only with displayed saved value. Regression test added. Actual CUA images retained in `codex-usage-evidence/r5b-*.jpg`. Final parent checkpoint pending. |
+
+## Verification and remaining gates
+
+- Final candidate production Angular build passed (1.18MB initial bundle); existing login SCSS budget warning and root-relative external stylesheet inlining warning retained. Production JavaScript contains no fixture banner/entry text.
+- Full `npm test -- --watch=false --browsers=ChromeHeadless`: **29/29 passed**, including malformed/null cloud values, real zero tokens, source dates, independent sections, stale/reset boundaries, saved-value error labels, source overage (`120%` used remains `120%`, remaining clamps to `0%`), all source buckets, actual component DOM, teardown, sign-out clearing, real-router legacy redirects, retained standalone navigation and pin cleanup. Four existing smoke tests initially lacked Firebase service providers; repaired them with safe service stubs and useful login/domain/activity/report assertions. No production data used.
+- Parent contract review removed an arbitrary allowance-bucket display cap; source values above100% remain visible while the visual bar and numeric ARIA range clamp to100, with exact source percentage in `aria-valuetext`. Dev fixture `?state=over` covers this edge. No change to normal fresh-state composition.
+- Designer personally inspected the retained final desktop/mobile fresh images; source date, reset timing, meaningful bar, warm-light fit and mobile stacking match the intended direction. Independent critic and parent remain the acceptance authorities.
+- Render fixtures are synthetic test content, not actual account readings. Live private Firestore values, credentials and production login must be verified separately by the release lead.
+- Parent checkpoints after cycles3/5 and final candidate, remaining rendered states, independent scores and separate QA remain open. No fabricated cycles or acceptance.

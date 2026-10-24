@@ -1,0 +1,36 @@
+<section class="usage-panel" aria-labelledby="codex-usage-title" [attr.aria-busy]="state.status === 'loading'">
+  <header class="usage-heading">
+    <div><p class="usage-kicker">YOUR LOCAL CONNECTION</p><h2 id="codex-usage-title">Codex usage</h2></div>
+    <span class="usage-status" [class.is-current]="status === 'Up to date'" [class.is-warning]="['Stale', 'Partial', 'Offline', 'Unavailable', 'Awaiting allowance'].includes(status)">{{ status }}</span>
+  </header>
+  <ng-container *ngIf="state.reading as reading; else empty">
+    <div class="usage-readings">
+      <div class="allowance-group">
+        <p class="section-notice" *ngIf="sectionStatus(reading.allowance, hasAllowanceWindows)">{{ sectionStatus(reading.allowance, hasAllowanceWindows) }}</p>
+        <ng-container *ngFor="let bucket of reading.allowance.buckets">
+          <article class="allowance-window" *ngFor="let window of bucket.windows">
+            <div class="window-heading"><h3>{{ windowLabel(window) }}</h3><span class="bucket-label">{{ bucket.label }}</span></div>
+            <div class="allowance-values" *ngIf="window.usedPercent !== null; else noPercent">
+              <strong>{{ window.usedPercent | number:'1.0-2' }}<span>% used</span></strong><span>{{ window.remainingPercent | number:'1.0-2' }}% remaining</span>
+            </div>
+            <ng-template #noPercent><p class="metric-unavailable">Usage percentage unavailable</p></ng-template>
+            <div *ngIf="window.usedPercent !== null" class="allowance-track" role="progressbar" [attr.aria-label]="bucket.label + ' ' + windowLabel(window) + ' used'" [attr.aria-valuenow]="progressPercent(window)" [attr.aria-valuetext]="window.usedPercent + '% used'" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="progressPercent(window)"></span></div>
+            <p class="reset-time">{{ reset(window) }}</p>
+          </article>
+        </ng-container>
+        <p class="metric-unavailable" *ngIf="!hasAllowanceWindows">Allowance windows unavailable</p>
+      </div>
+      <article class="daily-usage">
+        <h3>Daily tokens</h3>
+        <ng-container *ngIf="reading.daily.latest as latest; else noDaily">
+          <strong class="token-count">{{ latest.tokens | number:'1.0-0' }}</strong>
+          <p class="source-date">Reported for {{ latest.startDate }}</p>
+        </ng-container>
+        <ng-template #noDaily><p class="metric-unavailable">Unavailable</p><p class="source-date">No daily count reported</p></ng-template>
+        <p class="section-notice" *ngIf="sectionStatus(reading.daily, !!reading.daily.latest)">{{ sectionStatus(reading.daily, !!reading.daily.latest) }}</p>
+      </article>
+    </div>
+    <footer class="usage-footer"><span *ngIf="lastSuccess; else neverUpdated">Last successful update <time [attr.datetime]="lastSuccess">{{ lastSuccess | date:'MMM d, h:mm a' }}</time></span><ng-template #neverUpdated><span>No successful reading yet</span></ng-template><span>{{ offline ? 'Offline · saved reading' : state.fromCache ? 'Saved reading · waiting for server' : 'Syncs from your PC every 5 minutes' }}</span></footer>
+  </ng-container>
+  <ng-template #empty><p class="usage-empty" role="status">{{ emptyMessage }}</p><p class="usage-empty-note">Private to your PTI account · updated while your PC is signed in</p></ng-template>
+</section>

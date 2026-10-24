@@ -4,7 +4,7 @@ import { NewHomeComponent } from './new-home.component';
 describe('NewHomeComponent public launcher', () => {
   const createHome = () => new NewHomeComponent(
     { navigateByUrl: () => Promise.resolve(true) } as unknown as Router,
-    'server'
+    'server' as unknown as object
   );
 
   it('does not reveal private tools in the directory, pins or recent suggestions', () => {

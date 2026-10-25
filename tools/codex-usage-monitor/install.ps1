@@ -25,7 +25,7 @@ Copy-Item -LiteralPath (Join-Path $sourceRoot 'src') -Destination $releaseRoot -
 Push-Location $releaseRoot
 try { & $npmPath ci --omit=dev --ignore-scripts --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { throw 'Monitor dependencies could not be installed.' } }
 finally { Pop-Location }
-foreach ($file in @('run.ps1','setup.ps1','status.ps1','remove.ps1')) { Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination $installRoot -Force }
+foreach ($file in @('run.ps1','run-hidden.vbs','setup.ps1','status.ps1','remove.ps1')) { Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination $installRoot -Force }
 $active = @{ version=$version; revision=$revision; release=('releases\' + $releaseName); nodePath=$nodePath; installedAt=[DateTime]::UtcNow.ToString('o') } | ConvertTo-Json
 [IO.File]::WriteAllText((Join-Path $installRoot 'active.json.tmp'), $active)
 Move-Item -LiteralPath (Join-Path $installRoot 'active.json.tmp') -Destination (Join-Path $installRoot 'active.json') -Force
@@ -34,9 +34,10 @@ if ($NoSchedule) { Write-Output 'Runtime installed. Schedule not changed.'; exit
 if (-not (Test-Path -LiteralPath (Join-Path $installRoot 'data\credential.json'))) { throw 'Run setup.ps1, then install.ps1 again to register the schedule.' }
 $taskName = 'PTI Codex Usage Monitor'
 $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-$powershellPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-$runner = Join-Path $installRoot 'run.ps1'
-$action = New-ScheduledTaskAction -Execute $powershellPath -Argument ('-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $runner + '" -Command run') -WorkingDirectory $installRoot
+$scriptHost = Join-Path $env:SystemRoot 'System32\wscript.exe'
+if (-not (Test-Path -LiteralPath $scriptHost -PathType Leaf)) { throw 'Windows Script Host is required for the windowless scheduled launcher.' }
+$runner = Join-Path $installRoot 'run-hidden.vbs'
+$action = New-ScheduledTaskAction -Execute $scriptHost -Argument ('//B //NoLogo "' + $runner + '"') -WorkingDirectory $installRoot
 $triggers = @((New-ScheduledTaskTrigger -AtLogOn -User $currentUser),(New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Minutes 5)))
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 3) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited

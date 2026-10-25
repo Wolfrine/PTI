@@ -33,3 +33,11 @@ Follow-up workflow [40075897286](https://github.com/Wolfrine/PTI/actions/runs/40
 **Remaining browser verification limitation:** full-width authenticated live desktop acceptance is pending. The documented viewport setter returned successfully but the inspected DOM remained390×844; a duplicate mobile screenshot initially named desktop was discarded. The actual1440×1000 desktop composition passed local synthetic render review, but that does not establish live desktop acceptance. The critic's browser inventory was empty, so it could not independently resize or inspect the live DOM. See the separate design/critic records.
 
 No real Windows reboot has been performed. Fresh-process and scheduler recovery are distinct from an observed reboot.
+
+## Windowless scheduled launch repair — 2026-10-25
+
+The owner reported a brief purple console recurring periodically. A 10 ms Windows visibility probe reproduced a visible `ConsoleWindowClass` titled with the scheduled PowerShell executable when starting **PTI Codex Usage Monitor**. The task had passed `-WindowStyle Hidden`, but that option took effect after the console briefly appeared. The monitor's Node child launches already used `windowsHide`.
+
+The stable scheduled entry now uses `wscript.exe //B //NoLogo run-hidden.vbs`; its synchronous `WScript.Shell.Run(..., 0, True)` starts PowerShell hidden from creation and returns its exit code. The installer packages and registers this launcher for subsequent upgrades. The logon/five-minute triggers, Interactive/Limited identity, `IgnoreNew`, `PT3M`, no-wake setting and existing credential/runtime were preserved. A disposable local fixture verified that the launcher waits and propagates exit code 37; that fixture never published cloud data.
+
+The repaired manual invocation published both real sections successfully with no visible console detected. An unforced five-minute invocation then completed at **12:19:53 IST**, task result 0, with no visible console during the observation window. The authenticated PTI Apps MCP independently read the actual usage document, confirming publication at `2026-10-25T06:49:52.990Z` with allowance and daily statuses both `ok`. These are live scheduler/API checks; no new UI or reboot acceptance is claimed. Detailed local evidence is under `F:\Workspace\Support\codex-local-audit\2026-10-25` and is kept outside Git.

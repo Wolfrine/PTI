@@ -1,8 +1,8 @@
 param([switch]$Setup, [switch]$NoSchedule)
 $ErrorActionPreference = 'Stop'
 $sourceRoot = $PSScriptRoot
-$installRoot = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'PTI\codex-usage-monitor'))
-$expectedRoot = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'PTI\codex-usage-monitor'))
+$installRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\codex-usage-monitor')
+$expectedRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\codex-usage-monitor')
 if ($installRoot -ne $expectedRoot) { throw 'Unexpected install target.' }
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 $npmPath = (Get-Command npm.cmd -ErrorAction Stop).Source

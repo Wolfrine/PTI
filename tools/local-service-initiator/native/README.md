@@ -1,6 +1,6 @@
 # Windowless local service host
 
-This Windows .NET Framework WinExe launches only the two locally configured GTOP roles. It uses `ProcessStartInfo.UseShellExecute=false` and `CreateNoWindow=true`, with redirected standard input/output/error. There is no shell, PowerShell child, console, desktop switching, focus manipulation, elevation, credential operation or remote command selection.
+This Windows .NET Framework WinExe launches only the two locally configured GTOP roles and the optional fixed One Piece launcher. It uses `ProcessStartInfo.UseShellExecute=false` and `CreateNoWindow=true`, with redirected standard input/output/error. There is no shell, PowerShell child, console, desktop switching, focus manipulation, elevation, credential operation or remote command selection. The existing One Piece scheduled task serializes logon and explicit start requests through this host.
 
 The installed .NET SDK is absent on this PC. `build.ps1` uses the already installed Windows Framework 4.x C# compiler; it downloads nothing. Both source and all build/probe outputs are on F. The default output is `F:\Workspace\Support\PTI\native-launcher-build`.
 

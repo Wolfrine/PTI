@@ -53,9 +53,16 @@ try {
   const absent = await request(otherRoot, owner); pass('absent other-account usage denied by overlapping rules', absent.status === 403); await absent.body?.cancel();
   const legacy = await request(`users/${uids[0]}/codexProjects/usage-legacy-probe`, owner, 'PATCH', { fields: fields({ synthetic: 'legacy-preservation' }).mapValue.fields });
   pass('legacy project policy preserved', legacy.ok); await legacy.body?.cancel();
+  for (const [name, token] of [['authenticated', owner], ['other', other], ['anonymous', null]]) {
+    const response = await request('_ptiLocalServices/one-piece', token);
+    pass(`${name} cannot directly read service mailbox`, response.status === 403); await response.body?.cancel();
+    const write = await request(`_ptiLocalServices/privacy-probe-${suffix}`, token, 'PATCH', { fields: fields({ synthetic: 'service-privacy-probe' }).mapValue.fields });
+    pass(`${name} cannot directly write service mailbox`, write.status === 403); await write.body?.cancel();
+  }
   const report = { kind: 'codex-usage-live-privacy', syntheticOnly: true, checkedAt: new Date().toISOString(), passed: checks.length, checks, project: 'pti-app-2ab59', database: '(default)' };
   await writeFile('codex-usage-activation-report.json', JSON.stringify(report, null, 2));
 } finally {
+  await db.doc(`_ptiLocalServices/privacy-probe-${suffix}`).delete();
   for (const uid of uids) {
     await db.doc(`users/${uid}/codexProjects/codex-usage`).delete();
     await db.doc(`users/${uid}/codexProjects/usage-legacy-probe`).delete();

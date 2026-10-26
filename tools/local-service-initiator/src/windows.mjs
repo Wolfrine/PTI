@@ -6,7 +6,7 @@ const powershell = path.win32.join(process.env.SystemRoot || 'C:\\Windows','Syst
 export const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export async function readJson(file) { try { return JSON.parse((await readFile(file,'utf8')).replace(/^\uFEFF/,'')); } catch(error) { if(error.code==='ENOENT')return null; throw error; } }
 export async function atomicJson(file,value) { await writeFile(file+'.tmp',JSON.stringify(value,null,2),'utf8'); await rename(file+'.tmp',file); }
-function runPowerShell(script,input,timeoutMs=20000) {
+export function runPowerShell(script,input,timeoutMs=20000) {
   return new Promise((resolve,reject)=>{
     const child=spawn(powershell,['-NoLogo','-NoProfile','-NonInteractive','-Command',script],{windowsHide:true,shell:false,stdio:['pipe','pipe','pipe'],env:{...process.env,PSModulePath:path.win32.join(path.win32.dirname(powershell),'Modules')}});
     let output='';let settled=false;
@@ -25,8 +25,14 @@ export async function unprotect(secretProtected) {
 }
 export class WorkerHost {
   constructor(settings,settingsFile) { this.settings=settings;this.settingsFile=settingsFile; }
+  async startOnePieceTask() {
+    if(this.settings.onePieceEnabled!==true)throw Error('configuration_invalid');
+    const script=String.raw`$ErrorActionPreference='Stop'; $r=[Console]::In.ReadToEnd()|ConvertFrom-Json; $task=Get-ScheduledTask -TaskName 'PTI-OnePiece-Companion' -TaskPath '\'; $actions=@($task.Actions); $expected='"F:\Workspace\Support\PTI\local-service-initiator\settings.json" one-piece'; if($actions.Count -ne 1 -or [IO.Path]::GetFullPath($actions[0].Execute) -ine [IO.Path]::GetFullPath([string]$r.helper) -or $actions[0].Arguments -cne $expected -or [string]$task.Settings.MultipleInstances -ne 'IgnoreNew'){throw 'configuration'}; if(!$task.Settings.Enabled){Enable-ScheduledTask -TaskName 'PTI-OnePiece-Companion' -TaskPath '\'|Out-Null}; Start-ScheduledTask -TaskName 'PTI-OnePiece-Companion' -TaskPath '\'; [Console]::Out.Write('requested')`;
+    try{if((await runPowerShell(script,{helper:this.settings.helperExecutable})).trim()!=='requested')throw Error();}
+    catch{throw Error('configuration_invalid');}
+  }
   async startHelper(mode) {
-    if(!['ollama','worker'].includes(mode))throw Error('configuration_invalid');
+    if(!['ollama','worker','one-piece'].includes(mode) || mode==='one-piece' && this.settings.onePieceEnabled!==true)throw Error('configuration_invalid');
     await access(this.settings.helperExecutable);
     // A GUI-subsystem host creates each console child with CreateNoWindow=true.
     // Node's detached process with inherited file descriptors does not guarantee this.

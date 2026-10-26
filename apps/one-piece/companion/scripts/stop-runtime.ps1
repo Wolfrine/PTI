@@ -3,7 +3,7 @@ $ErrorActionPreference='Stop'
 
 # Dot sourcing defines this command for isolated tests without changing the runtime.
 function Stop-OnePieceRuntime {
- param($Config,$State,[scriptblock]$WriteStopRequest={param($File)[IO.File]::WriteAllText($File,'stop')})
+ param($Config,$State,[scriptblock]$WriteStopRequest={param($File)[IO.File]::WriteAllText($File,'stop')},[scriptblock]$ReadInitiatorSettings={Get-Content -LiteralPath 'F:\Workspace\Support\PTI\local-service-initiator\settings.json' -Raw|ConvertFrom-Json})
  $launcher=Join-Path $Config.runtimeRoot 'launch-current.mjs'
  $supervisor=Join-Path $Config.repositoryRoot 'apps\one-piece\companion\src\runtime\supervisor.mjs'
  if([IO.Path]::GetFullPath($Config.nodeExecutable) -ne 'H:\PTI-OnePiece\tools\node\node.exe' -or [IO.Path]::GetFullPath($launcher) -ne 'H:\PTI-OnePiece\runtime\launch-current.mjs'){throw 'runtime-identity'}
@@ -12,7 +12,17 @@ function Stop-OnePieceRuntime {
  $task=if($tasks.Count){$tasks[0]}else{$null}
  if($task){
   $actions=@($task.Actions)
-  if($actions.Count -ne 1 -or [IO.Path]::GetFullPath($actions[0].Execute) -ne [IO.Path]::GetFullPath($Config.nodeExecutable) -or $actions[0].Arguments -ne ('"'+$launcher+'"') -or [IO.Path]::GetFullPath($actions[0].WorkingDirectory) -ne [IO.Path]::GetFullPath($Config.runtimeRoot)){throw 'task-identity'}
+  if($actions.Count -ne 1){throw 'task-identity'}
+  $legacy=[IO.Path]::GetFullPath($actions[0].Execute) -eq [IO.Path]::GetFullPath($Config.nodeExecutable) -and $actions[0].Arguments -eq ('"'+$launcher+'"') -and [IO.Path]::GetFullPath($actions[0].WorkingDirectory) -eq [IO.Path]::GetFullPath($Config.runtimeRoot)
+  $native=$false
+  if(!$legacy){
+   try{
+    $initiator=& $ReadInitiatorSettings
+    $helper=[IO.Path]::GetFullPath([string]$initiator.helperExecutable)
+    $native=$initiator.onePieceEnabled -eq $true -and $helper -match '^F:\\Workspace\\Support\\PTI\\local-service-initiator\\releases\\[0-9]+\.[0-9]+\.[0-9]+-[a-f0-9]{7,40}\\native\\PTI\.LocalServiceHost\.exe$' -and [IO.Path]::GetFullPath($actions[0].Execute) -eq $helper -and $actions[0].Arguments -ceq '"F:\Workspace\Support\PTI\local-service-initiator\settings.json" one-piece' -and [IO.Path]::GetFullPath($actions[0].WorkingDirectory) -eq 'F:\Workspace\Support\PTI\local-service-initiator'
+   }catch{$native=$false}
+  }
+  if(!$legacy -and !$native){throw 'task-identity'}
  }
  $existing=if($State -and [int]$State.supervisorPid -gt 0){Get-CimInstance Win32_Process -Filter ('ProcessId='+[int]$State.supervisorPid)}else{$null}
  if($existing){

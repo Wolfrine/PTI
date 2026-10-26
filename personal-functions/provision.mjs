@@ -29,6 +29,8 @@ approvedPrevious.add('3fcfe61820c4c44cfb59a1e68a14b144475c765438561d9e9b72ce900a
 approvedPrevious.add('b1c3ca368a37a733b3505214611868866f0d19ccf5d1de66a722e5f642f21c4d');
 // Reviewed complete PTI predecessor ca874982; isolate only codexProjects/codex-usage.
 approvedPrevious.add('1c97e894a3dd7cedf3e9a313a7eebde0674ca91bada5eef1363301ce829d934a');
+// Reviewed PTI59099c4 predecessor; only exclude the new server-only service mailbox.
+approvedPrevious.add('c50f50a6fe37ac9c43b6a69e56c727194880d187a1f233bd33773795edccea4a');
 if(process.env.APPROVED_PREVIOUS_RULES_FILE){
  const approvedSource=await readFile(process.env.APPROVED_PREVIOUS_RULES_FILE,'utf8');
  approvedPrevious.add(digest(approvedSource));

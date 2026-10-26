@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NewCodexUsageComponent } from '../new-codex-usage/new-codex-usage.component';
 import { NewGtopHostComponent } from '../new-gtop-host/new-gtop-host.component';
+import { NewOnePieceHostComponent } from '../new-one-piece-host/new-one-piece-host.component';
 
 type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Creative' | 'Entertainment';
 type AppTone = 'coral' | 'mint' | 'amber' | 'blue' | 'violet' | 'sun' | 'rose' | 'teal' | 'plum';
@@ -29,7 +30,7 @@ const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
 @Component({
   selector: 'app-new-home',
   standalone: true,
-  imports: [CommonModule, MatIconModule, NewCodexUsageComponent, NewGtopHostComponent],
+  imports: [CommonModule, MatIconModule, NewCodexUsageComponent, NewGtopHostComponent, NewOnePieceHostComponent],
   templateUrl: './new-home.component.html',
   styleUrl: './new-home.component.scss',
 })
@@ -46,7 +47,7 @@ export class NewHomeComponent implements OnInit {
     { id: 'luminary', name: 'Luminary', shortName: 'Luminary', description: 'Observe, reflect and understand patterns', icon: 'wb_sunny', category: 'Knowledge', tone: 'sun', href: 'https://pti-app-2ab59-luminary.web.app/', external: true },
     { id: 'sefpo', name: 'SEFPO Lab', shortName: 'SEFPO Lab', description: 'Connected ideas and structured knowledge', icon: 'hub', category: 'Knowledge', tone: 'plum', href: 'https://pti-app-2ab59-sefpo.web.app/', external: true },
     { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
-    { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/one-piece/', external: true },
+    { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/', external: true },
     { id: 'noveliaa', name: 'Noveliaa', shortName: 'Noveliaa', description: 'An author-led space for writing, collaboration and reading', icon: 'edit_note', category: 'Creative', tone: 'violet', href: 'https://noveliaa.web.app/', external: true },
     { id: 'gtop', name: 'GTOP', shortName: 'GTOP', description: 'Practice and assessments for Growth Tutorials', icon: 'school', category: 'Knowledge', tone: 'mint', href: 'https://gtop-app.web.app/', external: true },
     { id: 'gt-hub', name: 'Growth Tutorials Hub', shortName: 'GT Hub', description: 'Coordinate classes, learners and coaching', icon: 'groups', category: 'Productivity', tone: 'blue', href: 'https://hub-growthtutorials.web.app/', external: true },

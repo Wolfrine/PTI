@@ -2,7 +2,8 @@ param(
     [string]$WorkerConfig = 'H:\GTOP-Local-AI\pilot-runtime\worker.json',
     [string]$ControllerRoot = 'H:\GTOP-Local-AI\gtop-documentation\tools\gtop-assistant',
     [string]$ModelDirectory = 'H:\GTOP-Local-AI\models\ollama',
-    [switch]$NoSchedule
+    [switch]$NoSchedule,
+    [switch]$EnableOnePiece
 )
 $ErrorActionPreference = 'Stop'
 $installRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\local-service-initiator')
@@ -38,11 +39,26 @@ $nativeDirectory = Join-Path $releaseRoot 'native'
 & (Join-Path $sourceRoot 'native\test.ps1') -BuildDirectory $nativeDirectory | Out-Null
 foreach ($file in @('run.ps1','run-hidden.vbs','status.ps1')) { Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination $installRoot -Force }
 $settings = @{workerId=$worker.workerId;gateway=$worker.gateway;workerConfig=[IO.Path]::GetFullPath($WorkerConfig);controllerRoot=[IO.Path]::GetFullPath($ControllerRoot);ollamaExecutable=$ollamaPath;modelDirectory=[IO.Path]::GetFullPath($ModelDirectory);stateDirectory=(Join-Path $installRoot 'data');helperExecutable=(Join-Path $nativeDirectory 'PTI.LocalServiceHost.exe');workerNodeExecutable=$nodePath}
-[IO.File]::WriteAllText((Join-Path $installRoot 'settings.json'), ($settings | ConvertTo-Json))
+if ($EnableOnePiece) {
+    if (!(Test-Path -LiteralPath 'H:\PTI-OnePiece\runtime\private\config.json' -PathType Leaf)) { throw 'Existing One Piece installation is required.' }
+    $settings.onePieceEnabled = $true
+    $companionTask = Get-ScheduledTask -TaskName 'PTI-OnePiece-Companion' -TaskPath '\' -ErrorAction Stop
+    if ([string]$companionTask.Settings.MultipleInstances -ne 'IgnoreNew') { throw 'One Piece task must serialize starts.' }
+    $previousAction = Join-Path $installRoot 'one-piece-task-previous.json'
+    if (!(Test-Path -LiteralPath $previousAction)) {
+        [IO.File]::WriteAllText($previousAction, (@{execute=$companionTask.Actions.Execute;arguments=$companionTask.Actions.Arguments;workingDirectory=$companionTask.Actions.WorkingDirectory} | ConvertTo-Json))
+    }
+    # Update the NEXT invocation only. Do not stop the companion or alter its
+    # triggers/principal/settings while a family member may be watching.
+    $companionAction = New-ScheduledTaskAction -Execute (Join-Path $nativeDirectory 'PTI.LocalServiceHost.exe') -Argument ('"' + (Join-Path $installRoot 'settings.json') + '" one-piece') -WorkingDirectory $installRoot
+}
+[IO.File]::WriteAllText((Join-Path $installRoot 'settings.json.tmp'), ($settings | ConvertTo-Json))
+Move-Item -LiteralPath (Join-Path $installRoot 'settings.json.tmp') -Destination (Join-Path $installRoot 'settings.json') -Force
 $active = @{version=$version;sourceRevision=$revision;release=$release;nodePath=$nodePath;installedAt=[DateTime]::UtcNow.ToString('o')}
 [IO.File]::WriteAllText((Join-Path $installRoot 'active.json.tmp'), ($active | ConvertTo-Json))
 Move-Item -LiteralPath (Join-Path $installRoot 'active.json.tmp') -Destination (Join-Path $installRoot 'active.json') -Force
 if ($NoSchedule) { Write-Output 'Initiator installed; scheduler unchanged.'; exit 0 }
+if ($EnableOnePiece) { Set-ScheduledTask -TaskName 'PTI-OnePiece-Companion' -TaskPath '\' -Action $companionAction | Out-Null }
 $taskName = 'PTI Local Service Initiator'
 # Task Scheduler can stop its script host while leaving a waiting Node child.
 # Upgrade only our exact installed initiator; native service hosts stay independent.
@@ -67,6 +83,6 @@ $action = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\
 $triggers = @((New-ScheduledTaskTrigger -AtLogOn -User $currentUser),(New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1)))
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 $principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $triggers -Settings $settings -Principal $principal -Description 'Receive authenticated fixed GTOP start requests; no inference, public port, password or PC wake.' -Force | Out-Null
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $triggers -Settings $settings -Principal $principal -Description 'Receive authenticated fixed GTOP and optional One Piece start requests; no inference, public port, password or PC wake.' -Force | Out-Null
 Start-ScheduledTask -TaskName $taskName
 Write-Output 'Windowless initiator scheduled. Only a remote authorized start request launches GTOP; idle model remains unloaded.'

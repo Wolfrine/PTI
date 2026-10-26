@@ -24,7 +24,7 @@ internal static class NativeLauncher
         {
             if (args.Length == 2 && args[0] == "--probe") return Probe(args[1]);
             if (args.Length == 2 && args[0] == "--probe-child") return ProbeChild(args[1]);
-            if (args.Length != 2 || (args[1] != "ollama" && args[1] != "worker")) return 2;
+            if (args.Length != 2 || (args[1] != "ollama" && args[1] != "worker" && args[1] != "one-piece")) return 2;
             if (!SamePath(args[0], Path.Combine(InstallRoot, "settings.json"))) return 2;
             return Run(ReadObject(args[0]), args[1]);
         }
@@ -64,6 +64,22 @@ internal static class NativeLauncher
                     info.EnvironmentVariables["OLLAMA_NO_CLOUD"] = "1";
                     info.EnvironmentVariables["OLLAMA_NUM_PARALLEL"] = "1";
                     info.EnvironmentVariables["OLLAMA_MAX_LOADED_MODELS"] = "1";
+                }
+                else if (mode == "one-piece")
+                {
+                    if (!settings.ContainsKey("onePieceEnabled") || !(settings["onePieceEnabled"] is bool) || !(bool)settings["onePieceEnabled"]) throw new InvalidDataException();
+                    configPath = @"H:\PTI-OnePiece\runtime\private\config.json";
+                    Dictionary<string, object> config = ReadObject(configPath);
+                    executable = Path.GetFullPath(Text(config, "nodeExecutable"));
+                    string runtime = ExistingDirectory(Text(config, "runtimeRoot"));
+                    if (!SamePath(executable, @"H:\PTI-OnePiece\tools\node\node.exe") || !SamePath(runtime, @"H:\PTI-OnePiece\runtime") || !File.Exists(executable)) throw new InvalidDataException();
+                    string launcher = Path.Combine(runtime, "launch-current.mjs");
+                    if (!File.Exists(launcher)) throw new FileNotFoundException();
+                    arguments = Quote(launcher);
+                    stdout = Path.Combine(state, "one-piece.stdout.log");
+                    stderr = Path.Combine(state, "one-piece.stderr.log");
+                    info = HiddenInfo(executable, arguments);
+                    info.WorkingDirectory = runtime;
                 }
                 else
                 {

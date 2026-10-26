@@ -58,6 +58,7 @@ describe('NewHomeComponent public launcher', () => {
     const home = createHome();
     home.setCategory('Entertainment');
     expect(home.filteredApps.map(app => app.id)).toContain('one-piece');
+    expect(home.apps.find(app => app.id === 'one-piece')?.href).toBe('https://pti-app-2ab59-one-piece.web.app/');
   });
 
   it('retires dashboard and CEO IDs from all launcher surfaces and purges saved IDs', () => {

@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:one-piece-host": "npm run build && node --test test/one-piece-host.test.cjs"
   },
   "dependencies": {
     "express": "^4.21.2",

@@ -6,13 +6,22 @@ try {
   if(-not(Test-Path -LiteralPath $launcher -PathType Leaf)){throw 'launcher-missing'}
   $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
   $action=New-ScheduledTaskAction -Execute $config.nodeExecutable -Argument ('"'+$launcher+'"') -WorkingDirectory $config.runtimeRoot
+  $initiatorSettings='F:\Workspace\Support\PTI\local-service-initiator\settings.json'
+  if(Test-Path -LiteralPath $initiatorSettings -PathType Leaf){
+   $initiator=Get-Content -LiteralPath $initiatorSettings -Raw|ConvertFrom-Json
+   if($initiator.onePieceEnabled -eq $true){
+    $helper=[IO.Path]::GetFullPath([string]$initiator.helperExecutable)
+    if($helper -notmatch '^F:\\Workspace\\Support\\PTI\\local-service-initiator\\releases\\[0-9]+\.[0-9]+\.[0-9]+-[a-f0-9]{7,40}\\native\\PTI\.LocalServiceHost\.exe$' -or !(Test-Path -LiteralPath $helper -PathType Leaf)){throw 'initiator-identity'}
+    $action=New-ScheduledTaskAction -Execute $helper -Argument ('"'+$initiatorSettings+'" one-piece') -WorkingDirectory 'F:\Workspace\Support\PTI\local-service-initiator'
+   }
+  }
   $trigger=New-ScheduledTaskTrigger -AtLogOn -User $identity.Name
   $principal=New-ScheduledTaskPrincipal -UserId $identity.User.Value -LogonType Interactive -RunLevel Limited
   $settings=New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
   $task=New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description 'PTI One Piece current-user logon companion. No stored Windows password; private CurrentUser DPAPI.'
   Register-ScheduledTask -TaskName 'PTI-OnePiece-Companion' -TaskPath '\' -InputObject $task -Force|Out-Null
   $actual=Get-ScheduledTask -TaskName 'PTI-OnePiece-Companion' -TaskPath '\'
-  if($actual.Actions.Execute -ne $config.nodeExecutable -or $actual.Actions.Arguments -ne ('"'+$launcher+'"') -or $actual.Settings.RestartCount -ne 999 -or $actual.Settings.RestartInterval -ne 'PT1M' -or [string]$actual.Principal.LogonType -notin @('Interactive','InteractiveToken') -or [string]$actual.Principal.RunLevel -ne 'Limited'){throw 'task-verification'}
+  if($actual.Actions.Execute -ne $action.Execute -or $actual.Actions.Arguments -ne $action.Arguments -or $actual.Settings.RestartCount -ne 999 -or $actual.Settings.RestartInterval -ne 'PT1M' -or [string]$actual.Principal.LogonType -notin @('Interactive','InteractiveToken') -or [string]$actual.Principal.RunLevel -ne 'Limited'){throw 'task-verification'}
   $runKey='HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
   $prior=Get-ItemPropertyValue -LiteralPath $runKey -Name 'PTIOnePieceCompanion' -ErrorAction SilentlyContinue
   if($prior -and $prior.Contains('PTI-OnePiece\runtime\launch-current.mjs')){Remove-ItemProperty -LiteralPath $runKey -Name 'PTIOnePieceCompanion'}

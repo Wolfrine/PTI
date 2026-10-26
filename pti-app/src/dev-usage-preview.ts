@@ -6,6 +6,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { NewHomeComponent } from './app/components/new-home/new-home.component';
 import { CodexUsageService, UsageState } from './app/services/codex-usage.service';
 import { GtopHostService, GtopHostReading, GtopHostStatus } from './app/services/gtop-host.service';
+import { OnePieceHostService, OnePieceHostReading, OnePieceHostStatus } from './app/services/one-piece-host.service';
 
 const query = new URLSearchParams(location.search);
 const fixture = query.get('state') ?? 'fresh';
@@ -46,13 +47,32 @@ const hostPreview = {
     return next;
   },
 };
+const onePieceFixture = query.get('onePiece') ?? 'hidden';
+const onePieceService: OnePieceHostStatus = {
+  workerId: 'sachit-windows',
+  state: onePieceFixture === 'ready' ? 'ready' : onePieceFixture === 'starting' ? 'starting' : onePieceFixture === 'failed' ? 'failed' : onePieceFixture === 'starter-offline' ? 'starter_offline' : 'offline',
+  starter: { state: onePieceFixture === 'starter-offline' ? 'offline' : 'online', lastSeenAt: success },
+  companion: { state: onePieceFixture === 'ready' ? 'ready' : 'offline', lastSeenAt: success },
+  request: null, canStart: ['offline', 'failed'].includes(onePieceFixture),
+};
+const onePieceReading = new BehaviorSubject<OnePieceHostReading>({ status: onePieceFixture === 'hidden' ? 'hidden' : onePieceFixture === 'loading' ? 'loading' : onePieceFixture === 'error' ? 'unavailable' : 'ready', service: ['hidden', 'loading', 'error'].includes(onePieceFixture) ? null : onePieceService, checkedAt: success });
+const onePiecePreview = {
+  watch: () => onePieceReading.asObservable(),
+  refresh: async () => onePieceReading.value,
+  start: async () => {
+    const next: OnePieceHostReading = { status: 'ready', service: { ...onePieceService, state: 'starting', canStart: false }, checkedAt: new Date().toISOString() };
+    onePieceReading.next(next);
+    setTimeout(() => onePieceReading.next({ ...next, service: { ...onePieceService, state: 'ready', canStart: false, companion: { ...onePieceService.companion, state: 'ready' } } }), 8000);
+    return next;
+  },
+};
 
 @Component({
   selector: 'app-root', standalone: true, imports: [NewHomeComponent],
-  template: `<aside style="font:12px Arial;padding:10px 16px;background:#ede2d2;color:#453a30;position:relative;z-index:99">LOCAL TEST FIXTURE · {{state}} · assistant {{host}} · synthetic readings · no authentication or database access</aside><app-new-home />`,
+  template: `<aside style="font:12px Arial;padding:10px 16px;background:#ede2d2;color:#453a30;position:relative;z-index:99">LOCAL TEST FIXTURE · {{state}} · assistant {{host}} · One Piece {{onePiece}} · synthetic readings · no authentication or database access</aside><app-new-home />`,
 })
-class UsagePreviewComponent { readonly state = fixture; readonly host = hostFixture; }
+class UsagePreviewComponent { readonly state = fixture; readonly host = hostFixture; readonly onePiece = onePieceFixture; }
 
 bootstrapApplication(UsagePreviewComponent, {
-  providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } }, { provide: GtopHostService, useValue: hostPreview }],
+  providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } }, { provide: GtopHostService, useValue: hostPreview }, { provide: OnePieceHostService, useValue: onePiecePreview }],
 }).catch(error => console.error(error));

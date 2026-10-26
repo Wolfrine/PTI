@@ -4,6 +4,8 @@ import express, { NextFunction, Request, Response } from 'express';
 
 admin.initializeApp();
 
+export { onePieceHost } from './one-piece-host';
+
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 

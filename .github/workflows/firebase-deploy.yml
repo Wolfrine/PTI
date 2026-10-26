@@ -102,6 +102,9 @@ jobs:
       - name: Build Functions
         run: npm run build --prefix functions
 
+      - name: Test One Piece starter gateway
+        run: npm run test:one-piece-host --prefix functions
+
       - name: Validate repo-local PTI MCP
         run: |
           npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
@@ -172,6 +175,15 @@ jobs:
           console.log('One Piece Firebase Auth domains authorized; existing domains preserved.');
           NODE
 
+          # One Piece start is a required product function, independent of MCP keys.
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:onePieceHost --non-interactive
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const response=await fetch('https://us-central1-pti-app-2ab59.cloudfunctions.net/onePieceHost/status',{headers:{Origin:'https://pti-app-2ab59.web.app'},signal:AbortSignal.timeout(30000)});
+          assert.equal(response.status,401,'One Piece gateway must exist and reject anonymous access');
+          assert.equal((await response.json()).error,'authentication_required');
+          console.log('One Piece starter gateway deployed with anonymous access denied.');
+          NODE
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:default,hosting:one-piece --non-interactive
           node food-app/scripts/verify-legacy.mjs
 
@@ -253,7 +265,7 @@ jobs:
             exit 0
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --non-interactive
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:mcp --non-interactive
 
   deploy_velum:
     runs-on: ubuntu-latest

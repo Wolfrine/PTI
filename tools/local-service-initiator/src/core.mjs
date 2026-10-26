@@ -1,7 +1,7 @@
 import path from 'node:path';
 
-export const VERSION = '1.0.1';
-export const FAILURES = new Set(['start_failed','model_unavailable','port_in_use','configuration_invalid','worker_start_timeout']);
+export const VERSION = '1.1.0';
+export const FAILURES = new Set(['start_failed','model_unavailable','port_in_use','configuration_invalid','worker_start_timeout','companion_start_timeout']);
 export function validateSettings(value) {
   if (value?.workerId !== 'sachit-windows') throw Error('configuration_invalid');
   const url = new URL(value.gateway);
@@ -12,6 +12,7 @@ export function validateSettings(value) {
   }
   if (path.win32.resolve(value.stateDirectory).toLowerCase() !== 'f:\\workspace\\support\\pti\\local-service-initiator\\data') throw Error('configuration_invalid');
   if (path.win32.resolve(value.workerNodeExecutable).toLowerCase() !== 'f:\\workspace\\support\\pti\\local-service-initiator\\runtime\\node.exe' || !path.win32.resolve(value.helperExecutable).toLowerCase().startsWith('f:\\workspace\\support\\pti\\local-service-initiator\\releases\\')) throw Error('configuration_invalid');
+  if (value.onePieceEnabled !== undefined && typeof value.onePieceEnabled !== 'boolean') throw Error('configuration_invalid');
   return value;
 }
 

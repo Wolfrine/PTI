@@ -1,4 +1,4 @@
-# Local GT Papers service initiator
+# Local PTI service initiator
 
 PTI Home and GT Papers can request **Start assistant** through one authenticated GTOP gateway mailbox. PTI's existing usage collector remains unchanged. This separate starter has no AI inference and no public PC endpoint. It polls outbound every 15 seconds (backs off to 60 seconds after failures). Worker readiness still comes from the worker's own fresh heartbeat; a live starter or an accepted launch never implies that the assistant is online.
 
@@ -21,6 +21,16 @@ Use installed `status.ps1` for sanitized task/publication state. A fresh starter
 To pause the starter, disable this exact task in Task Scheduler. To remove its schedule, stop/unregister only **PTI Local Service Initiator**. Keep private state and the existing GTOP installation until separately reviewed; this tool has no destructive uninstall command. Pausing/removing the starter does not stop a running GTOP worker.
 
 ## Verification
+
+### One Piece start control (1.1.0)
+
+Install with `./install.ps1 -EnableOnePiece` to enable the second fixed capability. PTI Home shows the owner **One Piece home PC** and **Start One Piece** when the companion is offline. Opening Home reads status; it never starts a service. The PC must be signed in, awake and online, with **PTI Local Service Initiator** enabled. Keep this small starter during heavy-process cleanup: it has no inference or media conversion. A completely stopped starter cannot receive a request; its existing minute recovery trigger restores it.
+
+The existing GTOP worker identity authenticates a separate fixed PTI gateway; signed project/worker claims are checked independently from PTI owner tokens. The server-only `_ptiLocalServices/one-piece` mailbox accepts one start action with a two-minute expiry and transactionally deduplicates requests. Commands and paths cannot be submitted. No new pairing secret, public LAN listener, identity or administrator credential is installed. Fresh four-service/HTTPS health determines readiness. The GTOP and One Piece timers are independent; heartbeats continue during startup.
+
+All managed One Piece starts use the existing **PTI-OnePiece-Companion** task with `IgnoreNew`. Installation changes only its next action to the F-drive windowless native host, preserving triggers, principal and settings. It does not stop a viewer. That host runs the existing `H:\PTI-OnePiece\runtime\launch-current.mjs` with the existing pinned H-drive Node executable. The H-drive companion, cache, protected credentials and media binaries remain operational dependencies, without relocation or upgrade. New code, runtime copy, native binaries, state and development evidence are on F.
+
+Existing H-drive admin scripts predate the native task action. For subsequent maintenance use this F repository's `apps/one-piece/companion/scripts/stop-runtime.ps1` and `install-startup-task.ps1`, which validate/preserve the native action and retain legacy compatibility. Previous task action metadata remains in the private F installation for rollback. Neither cloud API nor starter offers stop/restart. The 75-second elapsed start deadline never kills a running service. Profiles, subtitles, cache and Cast are unchanged. `status.ps1` includes separate One Piece publication state. Stopped-companion startup, synthetic console tests and current-viewer continuity are separate acceptance checks.
 
 `npm test` exercises fixed target validation, expired/unsupported requests, durable-before-launch recording, duplicate/replay prevention, interrupted-start recovery, safe failure codes and lost-ack recovery. These are synthetic unit cases. Backend tests in `Wolfrine/gtop-app/assistant-service` cover token/owner authorization, stale status, mailbox expiry, cooldown and server acknowledgements. UI fixtures are labelled and excluded from production entries.
 

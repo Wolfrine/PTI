@@ -33,6 +33,14 @@ $proof=Stop-OnePieceRuntime -Config $config -State $state -WriteStopRequest {thr
 if(-not $proof.stopped -or $script:stopCalls -ne 1 -or $proof.taskState -ne 'Ready'){throw 'backoff-not-stopped'}
 
 Reset-Fixture
+$helper='F:\Workspace\Support\PTI\local-service-initiator\releases\1.1.0-123abcd\native\PTI.LocalServiceHost.exe'
+$script:task.Actions[0]=[pscustomobject]@{Execute=$helper;Arguments='"F:\Workspace\Support\PTI\local-service-initiator\settings.json" one-piece';WorkingDirectory='F:\Workspace\Support\PTI\local-service-initiator'}
+$proof=Stop-OnePieceRuntime -Config $config -State $state -ReadInitiatorSettings {[pscustomobject]@{onePieceEnabled=$true;helperExecutable=$helper}}
+if(-not $proof.stopped -or $script:stopCalls -ne 1){throw 'native-task-not-stopped'}
+$script:task.State='Running';$script:task.Actions[0].Arguments='"F:\Workspace\Support\PTI\local-service-initiator\settings.json" worker'
+Expect-Refusal {Stop-OnePieceRuntime -Config $config -State $state -ReadInitiatorSettings {[pscustomobject]@{onePieceEnabled=$true;helperExecutable=$helper}}} 'task-identity'
+
+Reset-Fixture
 $script:task.Actions[0].Arguments='"F:\unrelated.mjs"'
 Expect-Refusal {Stop-OnePieceRuntime -Config $config -State $state} 'task-identity'
 if($script:stopCalls -ne 0){throw 'foreign-task-stopped'}
@@ -71,10 +79,10 @@ if($inspected.launcherCount -ne 0 -or $inspected.supervisorCount -ne 0 -or $insp
 $script:task.State='Running'
 $inspection=& {${inspectionScript}}
 if(($inspection|ConvertFrom-Json).taskState -ne 'Running'){throw 'activation-backoff-task-missed'}
-[Console]::Out.Write('{"synthetic":true,"scenarios":7,"activationInspectionMocked":true,"runtimeMutated":false}')
+[Console]::Out.Write('{"synthetic":true,"scenarios":9,"activationInspectionMocked":true,"runtimeMutated":false}')
 `;
  let result;
  try{result=await promisify(execFile)(path.win32.join(process.env.SystemRoot??'C:/Windows','System32/WindowsPowerShell/v1.0/powershell.exe'),['-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-EncodedCommand',Buffer.from(script,'utf16le').toString('base64')],{windowsHide:true,timeout:15000,maxBuffer:16384});}
  catch(error){throw new Error(`Windows stop fixture failed: ${String(error.stderr??'').slice(-2000)}`);}
- assert.deepEqual(JSON.parse(result.stdout),{synthetic:true,scenarios:7,activationInspectionMocked:true,runtimeMutated:false});
+ assert.deepEqual(JSON.parse(result.stdout),{synthetic:true,scenarios:9,activationInspectionMocked:true,runtimeMutated:false});
 });

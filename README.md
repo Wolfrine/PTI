@@ -18,6 +18,8 @@ Use the existing `pti-app-2ab59` Firebase project, default Firestore database an
 
 Frontend: `cd pti-app`, `npm ci`, `npm test -- --watch=false --browsers=ChromeHeadless`, `npm run build`. Collector: `cd tools/codex-usage-monitor`, `npm ci`, `npm test`, `npm run probe`. The probe reads real account usage without publishing.
 
+Owner-only service strips on Home can explicitly start GT Papers or the One Piece home PC companion through the existing [lightweight local starter](tools/local-service-initiator/README.md). Keep **PTI Local Service Initiator** enabled during heavy-process cleanup; it performs no model inference or media conversion. Its status distinguishes a stopped service from an unreachable starter. It cannot power on or wake a sleeping PC.
+
 For authorized changes, test and commit directly to `main`. `.github/workflows/firebase-deploy.yml` retains the existing checks and Firebase deployment identity, deploys guarded shared rules, verifies real client privacy, and publishes Hosting. A passing build is separate from an authenticated live Home inspection and a verified local scheduled reading.
 
 ## Repository housekeeping

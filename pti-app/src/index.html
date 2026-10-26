@@ -5,15 +5,26 @@
   <title>PTI · Your Personal Operating System</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbfaf8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PTI">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    html, body { background: #fbfaf8; }
+    .pti-boot { min-height: 100vh; min-height: 100svh; display: grid; place-content: center; gap: 12px; text-align: center; color: #2c2825; background: radial-gradient(circle at 50% 44%, #fff8f3 0, #fbfaf8 58%); }
+    .pti-boot img { display: block; width: 78px; height: 78px; margin: 0 auto 7px; }
+    .pti-boot strong { font: 600 38px/1 Georgia, 'Times New Roman', serif; letter-spacing: -.05em; }
+    .pti-boot span { font: 700 10px/1.6 Arial, sans-serif; letter-spacing: .24em; color: #8c665d; }
+  </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="/assets/styles/pti-home.css">
 </head>
 <body class="mat-typography">
-  <app-root></app-root>
+  <app-root><div class="pti-boot" role="status" aria-label="Opening PTI"><img src="/icons/pti-mark.svg" width="78" height="78" alt=""><strong>PTI</strong><span>YOUR PERSONAL OPERATING SYSTEM</span></div></app-root>
 </body>
 </html>

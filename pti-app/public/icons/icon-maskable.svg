@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="PTI adaptive icon">
+  <rect width="256" height="256" fill="#fff9f4"/>
+  <g transform="translate(128 128) scale(.86) rotate(-11)">
+    <path transform="translate(-6 -6)" d="M-63-65h25c29 0 46 17 46 47v8h-25c-30 0-46-16-46-47Z" fill="#df594d"/>
+    <path transform="translate(6 -6)" d="M65-63v25c0 29-17 46-47 46h-8v-25c0-30 16-46 47-46Z" fill="#c7493d"/>
+    <path transform="translate(6 6)" d="M63 65H38C9 65-8 48-8 18v-8h25c30 0 46 16 46 47Z" fill="#df594d"/>
+    <path transform="translate(-6 6)" d="M-65 63V38C-65 9-48-8-18-8h8v25c0 30-16 46-47 46Z" fill="#c7493d"/>
+  </g>
+</svg>

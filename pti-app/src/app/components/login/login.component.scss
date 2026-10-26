@@ -43,9 +43,8 @@
 
 .login-brand { display: inline-flex; align-items: center; gap: 12px; }
 .login-brand strong { font: 700 31px/.9 Georgia, 'Times New Roman', serif; letter-spacing: -.07em; }
-.brand-mark { display: grid; grid-template-columns: repeat(2, 10px); grid-template-rows: repeat(2, 10px); gap: 3px; transform: rotate(-10deg); }
-.brand-mark i { background: #e75a4c; border-radius: 6px 2px 6px 2px; }
-.brand-mark i:nth-child(2) { border-radius: 2px 7px 2px 7px; }
+.brand-mark { display: block; width: 25px; height: 25px; flex-shrink: 0; }
+.brand-mark img { display: block; width: 100%; height: 100%; }
 .brand-divider { height: 25px; width: 1px; background: #ded7ce; }
 .brand-description, .header-access {
   font-size: 12px !important;

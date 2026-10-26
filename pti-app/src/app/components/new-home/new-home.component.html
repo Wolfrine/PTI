@@ -1,6 +1,6 @@
 <main class="pti-home">
   <aside class="hub-sidebar" aria-label="PTI navigation">
-    <a class="brand" href="/home" aria-label="PTI home"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>PTI</span></a>
+    <a class="brand" href="/home" aria-label="PTI home"><span class="brand-mark" aria-hidden="true"><img src="/icons/pti-mark.svg" width="24" height="24" alt=""></span><span>PTI</span></a>
     <nav class="side-nav" aria-label="Main navigation">
       <a class="side-item active" href="/home" aria-current="page"><mat-icon>home</mat-icon><span>Home</span></a>
       <button class="side-item" type="button" (click)="openDirectory()"><mat-icon>apps</mat-icon><span>All Apps</span></button>
@@ -11,7 +11,7 @@
 
   <div class="hub-workspace">
     <header class="hub-topbar">
-      <span class="mobile-brand" aria-label="PTI"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><strong>PTI</strong></span>
+      <span class="mobile-brand" aria-label="PTI"><span class="brand-mark" aria-hidden="true"><img src="/icons/pti-mark.svg" width="24" height="24" alt=""></span><strong>PTI</strong></span>
       <span class="topbar-location">YOUR SPACE <span>/</span> HOME</span>
       <label class="global-search"><mat-icon aria-hidden="true">search</mat-icon><input #searchBox type="search" [value]="searchQuery" (input)="searchQuery = $any($event.target).value; selectedCategory = 'All'" placeholder="Search your apps, tools, projects..." aria-label="Search PTI applications" autocomplete="off"><kbd>⌘ K</kbd></label>
       <span class="topbar-avatar" aria-label="Personal workspace"><mat-icon>person_outline</mat-icon></span>

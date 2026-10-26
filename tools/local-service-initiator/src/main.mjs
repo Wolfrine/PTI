@@ -22,7 +22,7 @@ async function poll(body) {
   }
   return json(settings.gateway+'/worker/service/poll',body,{Authorization:'Bearer '+token});
 }
-const host=new WorkerHost(settings);
+const host=new WorkerHost(settings,process.argv[2]);
 const attemptFile=path.join(settings.stateDirectory,'attempt.json');
 const initiator=new Initiator({api:poll,read:()=>readJson(attemptFile),write:value=>atomicJson(attemptFile,value),start:()=>host.start(),workerRunning:exact=>host.workerRunning(exact)});
 let stopping=false,failures=0;

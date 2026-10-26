@@ -33,14 +33,35 @@ if (!(Test-Path -LiteralPath $nodePath) -or (Get-FileHash -LiteralPath $nodePath
 if ((Get-FileHash -LiteralPath $nodePath).Hash -ne (Get-FileHash -LiteralPath $nodeSource).Hash) { throw 'Node runtime copy did not verify.' }
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'src') -Destination $releaseRoot -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'package.json') -Destination $releaseRoot -Force
+$nativeDirectory = Join-Path $releaseRoot 'native'
+& (Join-Path $sourceRoot 'native\build.ps1') -OutputDirectory $nativeDirectory | Out-Null
+& (Join-Path $sourceRoot 'native\test.ps1') -BuildDirectory $nativeDirectory | Out-Null
 foreach ($file in @('run.ps1','run-hidden.vbs','status.ps1')) { Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination $installRoot -Force }
-$settings = @{workerId=$worker.workerId;gateway=$worker.gateway;workerConfig=[IO.Path]::GetFullPath($WorkerConfig);controllerRoot=[IO.Path]::GetFullPath($ControllerRoot);ollamaExecutable=$ollamaPath;modelDirectory=[IO.Path]::GetFullPath($ModelDirectory);stateDirectory=(Join-Path $installRoot 'data')}
+$settings = @{workerId=$worker.workerId;gateway=$worker.gateway;workerConfig=[IO.Path]::GetFullPath($WorkerConfig);controllerRoot=[IO.Path]::GetFullPath($ControllerRoot);ollamaExecutable=$ollamaPath;modelDirectory=[IO.Path]::GetFullPath($ModelDirectory);stateDirectory=(Join-Path $installRoot 'data');helperExecutable=(Join-Path $nativeDirectory 'PTI.LocalServiceHost.exe');workerNodeExecutable=$nodePath}
 [IO.File]::WriteAllText((Join-Path $installRoot 'settings.json'), ($settings | ConvertTo-Json))
 $active = @{version=$version;sourceRevision=$revision;release=$release;nodePath=$nodePath;installedAt=[DateTime]::UtcNow.ToString('o')}
 [IO.File]::WriteAllText((Join-Path $installRoot 'active.json.tmp'), ($active | ConvertTo-Json))
 Move-Item -LiteralPath (Join-Path $installRoot 'active.json.tmp') -Destination (Join-Path $installRoot 'active.json') -Force
 if ($NoSchedule) { Write-Output 'Initiator installed; scheduler unchanged.'; exit 0 }
 $taskName = 'PTI Local Service Initiator'
+# Task Scheduler can stop its script host while leaving a waiting Node child.
+# Upgrade only our exact installed initiator; native service hosts stay independent.
+if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+    Disable-ScheduledTask -TaskName $taskName | Out-Null
+    Stop-ScheduledTask -TaskName $taskName
+}
+$priorStatusFile = Join-Path $installRoot 'data\status.json'
+if (Test-Path -LiteralPath $priorStatusFile) {
+    $priorStatus = Get-Content -LiteralPath $priorStatusFile -Raw | ConvertFrom-Json
+    if ($priorStatus.pid) {
+        $priorProcess = Get-CimInstance Win32_Process -Filter ('ProcessId=' + [int]$priorStatus.pid)
+        $normalizedRoot = $installRoot.Replace('\','/')
+        if ($priorProcess -and $priorProcess.Name -eq 'node.exe' -and $priorProcess.ExecutablePath -eq $nodePath -and $priorProcess.CommandLine.Replace('\','/').Contains($normalizedRoot+'/releases/') -and $priorProcess.CommandLine.Replace('\','/').Contains($normalizedRoot+'/settings.json')) {
+            Stop-Process -Id $priorProcess.ProcessId -Force
+            Start-Sleep -Milliseconds 800
+        }
+    }
+}
 $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 $action = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\wscript.exe') -Argument ('//B //NoLogo "' + (Join-Path $installRoot 'run-hidden.vbs') + '"') -WorkingDirectory $installRoot
 $triggers = @((New-ScheduledTaskTrigger -AtLogOn -User $currentUser),(New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1)))

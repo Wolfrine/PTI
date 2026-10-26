@@ -1,16 +1,17 @@
 import path from 'node:path';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.0.1';
 export const FAILURES = new Set(['start_failed','model_unavailable','port_in_use','configuration_invalid','worker_start_timeout']);
 export function validateSettings(value) {
   if (value?.workerId !== 'sachit-windows') throw Error('configuration_invalid');
   const url = new URL(value.gateway);
   if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash ||
       !['https://gtop-question-papers.web.app/api','https://us-central1-gtop-app.cloudfunctions.net/gtopAssistantGateway'].includes(url.href.replace(/\/$/,''))) throw Error('configuration_invalid');
-  for (const name of ['workerConfig','controllerRoot','ollamaExecutable','modelDirectory','stateDirectory']) {
+  for (const name of ['workerConfig','controllerRoot','ollamaExecutable','modelDirectory','stateDirectory','helperExecutable','workerNodeExecutable']) {
     if (typeof value[name] !== 'string' || !path.win32.isAbsolute(value[name]) || /[\r\n\0]/.test(value[name])) throw Error('configuration_invalid');
   }
   if (path.win32.resolve(value.stateDirectory).toLowerCase() !== 'f:\\workspace\\support\\pti\\local-service-initiator\\data') throw Error('configuration_invalid');
+  if (path.win32.resolve(value.workerNodeExecutable).toLowerCase() !== 'f:\\workspace\\support\\pti\\local-service-initiator\\runtime\\node.exe' || !path.win32.resolve(value.helperExecutable).toLowerCase().startsWith('f:\\workspace\\support\\pti\\local-service-initiator\\releases\\')) throw Error('configuration_invalid');
   return value;
 }
 

@@ -1,5 +1,5 @@
 import {spawn} from 'node:child_process';
-import {readFile,writeFile,rename,mkdir,open,access} from 'node:fs/promises';
+import {readFile,writeFile,rename,access} from 'node:fs/promises';
 import path from 'node:path';
 
 const powershell = path.win32.join(process.env.SystemRoot || 'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe');
@@ -24,7 +24,24 @@ export async function unprotect(secretProtected) {
   return runPowerShell(script,{secret:secretProtected});
 }
 export class WorkerHost {
-  constructor(settings) { this.settings=settings; }
+  constructor(settings,settingsFile) { this.settings=settings;this.settingsFile=settingsFile; }
+  async startHelper(mode) {
+    if(!['ollama','worker'].includes(mode))throw Error('configuration_invalid');
+    await access(this.settings.helperExecutable);
+    // A GUI-subsystem host creates each console child with CreateNoWindow=true.
+    // Node's detached process with inherited file descriptors does not guarantee this.
+    const helper=spawn(this.settings.helperExecutable,[this.settingsFile,mode],{windowsHide:true,detached:true,shell:false,stdio:'ignore'});
+    await new Promise((resolve,reject)=>{helper.once('spawn',resolve);helper.once('error',()=>reject(Error('start_failed')));});helper.unref();
+    const recordFile=path.join(this.settings.stateDirectory,mode+'-host.json');
+    // First execution may wait for Windows loader/antivirus checks on the local binary.
+    for(let attempt=0;attempt<300;attempt++){
+      const record=await readJson(recordFile);
+      if(record?.helperPid===helper.pid && record.phase==='running')return;
+      if(helper.exitCode!==null)throw Error('start_failed');
+      await pause(100);
+    }
+    throw Error('worker_start_timeout');
+  }
   async workerRunning(exact=false) {
     const config=await readJson(this.settings.workerConfig);
     if(!config?.dataDirectory)return false;
@@ -53,23 +70,15 @@ export class WorkerHost {
     catch(error) {
       if(['model_unavailable','port_in_use'].includes(error.message))throw error;
       await access(s.ollamaExecutable);await access(s.modelDirectory);
-      await mkdir(s.stateDirectory,{recursive:true});
-      const out=await open(path.join(s.stateDirectory,'ollama.stdout.log'),'a');
-      const err=await open(path.join(s.stateDirectory,'ollama.stderr.log'),'a');
-      try {
-        const env=Object.fromEntries(Object.entries(process.env).filter(([name])=>/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|TEMP|TMP|USERPROFILE|LOCALAPPDATA|APPDATA|PROGRAMDATA|PROGRAMFILES|PROGRAMFILES\(X86\)|SYSTEMDRIVE|HOMEDRIVE|HOMEPATH)$/i.test(name)));
-        Object.assign(env,{OLLAMA_MODELS:s.modelDirectory,OLLAMA_HOST:'127.0.0.1:11434',OLLAMA_NUM_PARALLEL:'1',OLLAMA_MAX_LOADED_MODELS:'1',OLLAMA_NO_CLOUD:'1'});
-        const child=spawn(s.ollamaExecutable,['serve'],{windowsHide:true,detached:true,shell:false,stdio:['ignore',out.fd,err.fd],env});
-        await new Promise((resolve,reject)=>{child.once('spawn',resolve);child.once('error',()=>reject(Error('start_failed')));});child.unref();
-      } finally {await out.close();await err.close();}
+      await this.startHelper('ollama');
       let available=false;
       for(let attempt=0;attempt<15;attempt++){await pause(500);try{await this.modelAvailable();available=true;break;}catch(error){if(['model_unavailable','port_in_use'].includes(error.message))throw error;}}
       if(!available)throw Error('model_unavailable');
     }
     await this.assertLoopbackListener();
     if(await this.workerRunning(true))return;
-    const script=String.raw`$ErrorActionPreference='Stop'; $r=[Console]::In.ReadToEnd() | ConvertFrom-Json; & (Join-Path ([string]$r.root) 'start-worker.ps1') -Config ([string]$r.config); if(!$?){exit 1}`;
-    await runPowerShell(script,{root:s.controllerRoot,config:s.workerConfig},25000);
-    if(!await this.workerRunning(true))throw Error('worker_start_timeout');
+    await this.startHelper('worker');
+    for(let attempt=0;attempt<30;attempt++){if(await this.workerRunning())return;await pause(100);}
+    throw Error('worker_start_timeout');
   }
 }

@@ -176,10 +176,11 @@ jobs:
           NODE
 
           # One Piece start is a required product function, independent of MCP keys.
-          # Retain generated build images for a week; deployed functions keep
-          # their own runtime copy. Source rollback remains available in Git.
-          firebase functions:artifacts:setpolicy --project "$FIREBASE_PROJECT_ID" --location us-central1 --days 7 --force --non-interactive
-          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:onePieceHost --non-interactive
+          # Accept Firebase's build-image housekeeping prompt for this one
+          # explicit function. A missing registry-policy permission is reported
+          # by the CLI as a warning; deployment and gateway checks still fail
+          # the job on actual product errors. Do not widen the CI identity's IAM.
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:onePieceHost --force --non-interactive
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
           const response=await fetch('https://us-central1-pti-app-2ab59.cloudfunctions.net/onePieceHost/status',{headers:{Origin:'https://pti-app-2ab59.web.app'},signal:AbortSignal.timeout(30000)});

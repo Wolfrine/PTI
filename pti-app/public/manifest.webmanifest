@@ -1,8 +1,8 @@
 {
-  "name": "PTI App",
+  "name": "PTI · Your Personal Operating System",
   "short_name": "PTI",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff"
+  "background_color": "#fbfaf8",
+  "theme_color": "#fbfaf8"
 }

@@ -1,6 +1,6 @@
 # PTI landing and Home image/visual refinement — 26 Oct 2026
 
-Status: **unverified implementation candidate**, awaiting current desktop/mobile rendered review. This refines the owner-selected warm-light direction; it does not establish new owner acceptance.
+Status: **desktop-verified, mobile visual acceptance pending**. This refines the owner-selected warm-light direction; it does not establish new owner acceptance.
 
 ## Problem and scope
 
@@ -21,6 +21,8 @@ Both are AI-generated editorial photographs (built-in image generation, then Web
 
 Home puts pinned launch choices ahead of the usage and host widgets. Mobile gains a compact photo-backed greeting so the app launcher stays visible early. The separate original production auth flow and private data remain untouched.
 
+Browser identity receives the matching coral four-petal SVG/ICO favicon, a descriptive PTI tab title and warm PWA installation chrome rather than the previous magenta favicon and default blue theme.
+
 ## Critical visual checks
 
 1. **Image fidelity:** crisp photographic surfaces at 1440+ desktop and native DPR; no baked-in words, blocky upscale or prominent artifacts.
@@ -34,7 +36,10 @@ Independent critic's pre-change baseline from retained historical dashboard desk
 - Angular production build: **passed** locally on 26 Oct 2026; pre-existing style-budget and external stylesheet warnings remain.
 - PTI Home contract checker: **passed**.
 - `git diff --check`: **passed**.
-- Local Karma tests: **not executed successfully** — this environment has no ChromeHeadless binary; required CI browser tests must be checked before claiming release verified.
-- Fresh desktop/mobile screenshots of the changed build, independent critic rescoring, and direct deployment verification: **pending**. No 5–10 round agent-review acceptance claim is made.
+- Local Karma tests: **not executed successfully** — this environment has no ChromeHeadless binary; GitHub CI executed the Home/navigation/browser tests successfully instead.
+- The main push `9a9ba02979bdc5392b59464f2dcbeee96431ade4` triggered [workflow run #230](https://github.com/Wolfrine/PTI/actions/runs/40300468276); all jobs, including Home tests, Angular build, Firebase Hosting deployment and artifact verification, **passed**.
+- Fresh public login at desktop (~1350 × 920) was visually observed with a sharp new 1536 × 1024 photograph, readable Google CTA and correct warm-light styling. Independent critic scored this observed login desktop image fidelity **8.8**, composition/type **8.4**, desktop functional readability **8.5**.
+- Authenticated Home at desktop (1920px) was personally observed by release lead: the new 1774 × 887 journal is crisp, the six pinned apps are immediately below the hero and within the first viewport, the reading panel follows, Noveliaa search returns one matching app and no Velum text appears in the launcher. Private usage numbers were not saved in this public repository.
+- Mobile viewport override in connected Chrome returned 1920px even after asking for 390px. Independent critic could not access authenticated Home. **Do not treat mobile or independent Home visual acceptance as verified.** Separate login + Home mobile render, zoom/focus and independent Home critique remain follow-up QA; no five-cycle acceptance claim is made.
 
-Current owner verdict: **unverified candidate**. Review the actual deployed login and authenticated Home at desktop/mobile and address defects before any acceptance statement.
+Current owner verdict: **unverified candidate** (no explicit post-release owner approval). Address unobserved mobile states and independent Home review before claiming agent-reviewed acceptance.

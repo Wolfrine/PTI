@@ -82,6 +82,7 @@ jobs:
           npm test --prefix pti-app -- --watch=false --browsers=ChromeHeadless
           npm ci --prefix tools/codex-usage-monitor --ignore-scripts --no-audit --no-fund
           npm test --prefix tools/codex-usage-monitor
+          npm test --prefix tools/local-service-initiator
           node tools/codex-usage-monitor/scripts/check-home-contract.mjs
 
       - name: Keep old Morsel links working

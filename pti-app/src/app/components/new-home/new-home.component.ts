@@ -3,6 +3,7 @@ import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewC
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NewCodexUsageComponent } from '../new-codex-usage/new-codex-usage.component';
+import { NewGtopHostComponent } from '../new-gtop-host/new-gtop-host.component';
 
 type AppCategory = 'Productivity' | 'Personal' | 'Ideas' | 'Knowledge' | 'Creative' | 'Entertainment';
 type AppTone = 'coral' | 'mint' | 'amber' | 'blue' | 'violet' | 'sun' | 'rose' | 'teal' | 'plum';
@@ -28,7 +29,7 @@ const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
 @Component({
   selector: 'app-new-home',
   standalone: true,
-  imports: [CommonModule, MatIconModule, NewCodexUsageComponent],
+  imports: [CommonModule, MatIconModule, NewCodexUsageComponent, NewGtopHostComponent],
   templateUrl: './new-home.component.html',
   styleUrl: './new-home.component.scss',
 })

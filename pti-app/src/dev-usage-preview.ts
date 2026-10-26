@@ -2,9 +2,10 @@
 import { Component } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { NewHomeComponent } from './app/components/new-home/new-home.component';
 import { CodexUsageService, UsageState } from './app/services/codex-usage.service';
+import { GtopHostService, GtopHostReading, GtopHostStatus } from './app/services/gtop-host.service';
 
 const query = new URLSearchParams(location.search);
 const fixture = query.get('state') ?? 'fresh';
@@ -27,13 +28,31 @@ if (fixture === 'partial') reading.reading!.daily = { status: 'error', lastSucce
 if (fixture === 'unavailable') { reading.reading!.allowance = { status: 'unavailable', lastSuccessAt: null, buckets: [] }; reading.reading!.daily = { status: 'unavailable', lastSuccessAt: null, latest: null }; }
 if (['loading', 'unconnected', 'error'].includes(fixture)) { reading.status = fixture === 'error' ? 'unavailable' : fixture as 'loading' | 'unconnected'; reading.reading = null; }
 if (fixture === 'offline') Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+const hostFixture = query.get('host') ?? 'offline';
+const hostService: GtopHostStatus = {
+  workerId: 'sachit-windows', state: hostFixture === 'ready' || hostFixture === 'idle' ? 'ready' : hostFixture === 'starting' ? 'starting' : hostFixture === 'failed' ? 'failed' : hostFixture === 'starter-offline' ? 'starter_offline' : 'offline',
+  starter: { state: hostFixture === 'starter-offline' ? 'offline' : 'online', lastSeenAt: success },
+  worker: { state: ['ready', 'idle'].includes(hostFixture) ? 'ready' : 'offline', modelReady: hostFixture === 'ready', lastSeenAt: success },
+  request: null, canStart: ['offline', 'failed'].includes(hostFixture),
+};
+const hostReading = new BehaviorSubject<GtopHostReading>({ status: hostFixture === 'hidden' ? 'hidden' : hostFixture === 'loading' ? 'loading' : hostFixture === 'error' ? 'unavailable' : 'ready', service: ['hidden', 'loading', 'error'].includes(hostFixture) ? null : hostService, checkedAt: success });
+const hostPreview = {
+  watch: () => hostReading.asObservable(),
+  refresh: async () => hostReading.value,
+  start: async () => {
+    const next: GtopHostReading = { status: 'ready', service: { ...hostService, state: 'starting', canStart: false }, checkedAt: new Date().toISOString() };
+    hostReading.next(next);
+    setTimeout(() => hostReading.next({ ...next, service: { ...hostService, state: 'ready', canStart: false, worker: { ...hostService.worker, state: 'ready', modelReady: false } } }), 8000);
+    return next;
+  },
+};
 
 @Component({
   selector: 'app-root', standalone: true, imports: [NewHomeComponent],
-  template: `<aside style="font:12px Arial;padding:10px 16px;background:#ede2d2;color:#453a30;position:relative;z-index:99">LOCAL TEST FIXTURE · {{state}} · synthetic readings · no authentication or database access</aside><app-new-home />`,
+  template: `<aside style="font:12px Arial;padding:10px 16px;background:#ede2d2;color:#453a30;position:relative;z-index:99">LOCAL TEST FIXTURE · {{state}} · assistant {{host}} · synthetic readings · no authentication or database access</aside><app-new-home />`,
 })
-class UsagePreviewComponent { readonly state = fixture; }
+class UsagePreviewComponent { readonly state = fixture; readonly host = hostFixture; }
 
 bootstrapApplication(UsagePreviewComponent, {
-  providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } }],
+  providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } }, { provide: GtopHostService, useValue: hostPreview }],
 }).catch(error => console.error(error));

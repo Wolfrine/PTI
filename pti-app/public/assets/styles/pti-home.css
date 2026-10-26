@@ -20,19 +20,19 @@
 .pti-home .hub-workspace{min-width:0}
 .pti-home .hub-topbar{position:sticky;top:0;z-index:12;height:77px;border-bottom:1px solid #eee9e2;background:#fffdfa;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 clamp(22px,4vw,60px)}
 .pti-home .mobile-brand,.pti-home .mobile-greeting{display:none}
-.pti-home .topbar-location{color:#aba49a;letter-spacing:.2em;font-size:10px;font-weight:800;white-space:nowrap}
+.pti-home .topbar-location{color:#746a60;letter-spacing:.18em;font-size:11px;font-weight:800;white-space:nowrap}
 .pti-home .topbar-location span{color:#da6758;margin:0 7px}
 .pti-home .global-search{display:flex;align-items:center;gap:9px;padding:10px 14px;border:1px solid #eae5df;border-radius:30px;background:#f8f7f5;max-width:430px;flex:1}
 .pti-home .global-search mat-icon{font-size:20px;width:20px;height:20px;color:#6d665d}
 .pti-home .global-search input{min-width:0;width:100%;border:0;background:transparent;outline:none;font-size:12px;color:#272523}
-.pti-home .global-search input::placeholder{color:#a6a19b}
+.pti-home .global-search input::placeholder{color:#756b62}
 .pti-home .global-search kbd{font:10px Arial,sans-serif;white-space:nowrap;color:#aaa39a;border:1px solid #e4ded7;border-radius:5px;padding:3px 5px}
 .pti-home .topbar-avatar{height:33px;width:33px;background:#fff0e9;border:1px solid #eed6cb;border-radius:50%;display:grid;place-items:center;color:#bb7460}
 .pti-home .topbar-avatar mat-icon{font-size:20px}
 .pti-home .hub-content{max-width:1380px;margin:0 auto;padding:29px clamp(22px,4vw,60px) 20px}
 .pti-home .welcome-card{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(260px,.98fr);background:#fff;border:1px solid #e9e1d8;border-radius:17px;overflow:hidden;min-height:254px;box-shadow:0 18px 60px #6c4c3710}
 .pti-home .welcome-copy{padding:31px 24px 31px clamp(24px,4vw,46px);align-self:center;position:relative;z-index:1}
-.pti-home .eyebrow,.pti-home .section-kicker{font-size:9px!important;letter-spacing:.27em!important;font-weight:750;color:#c16e60;margin:0 0 12px!important}
+.pti-home .eyebrow,.pti-home .section-kicker{font-size:10px!important;letter-spacing:.23em!important;font-weight:750;color:#975447;margin:0 0 12px!important}
 .pti-home .welcome-copy h1{font:500 clamp(39px,3.7vw,60px)/1.01 Georgia,"Times New Roman",serif!important;letter-spacing:-.047em;margin:0!important;color:#22201e}
 .pti-home .welcome-copy h1 em{font-style:normal;color:#dd564a;display:block}
 .pti-home .welcome-description{font-size:14px;color:#6d665f;margin:16px 0 22px;line-height:1.55}
@@ -48,10 +48,10 @@
 .pti-home .hub-section{margin-top:29px}
 .pti-home .pinned-section{margin-top:22px}
 .pti-home .section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}
-.pti-home .section-heading .section-kicker{color:#aaa096;margin-bottom:7px!important}
+.pti-home .section-heading .section-kicker{color:#746a60;margin-bottom:7px!important}
 .pti-home .section-heading h2{display:flex;align-items:center;gap:8px;font:700 21px Georgia,serif!important;letter-spacing:-.035em;margin:0!important;color:#28231f}
 .pti-home .section-heading h2 mat-icon{font-size:17px;width:17px;height:17px;color:#e05d4f}
-.pti-home .text-button{border:0;background:none;color:#dc584a;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:6px;white-space:nowrap}
+.pti-home .text-button{border:0;background:none;color:#a9463b;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:6px;white-space:nowrap}
 .pti-home .text-button mat-icon{font-size:15px;width:15px;height:15px}
 .pti-home .pinned-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:11px}
 .pti-home .pinned-card{position:relative;background:#fff;border:1px solid #eee9e4;border-radius:11px;transition:transform .18s,box-shadow .18s;min-width:0}
@@ -68,8 +68,8 @@
 .pti-home .app-icon[data-tone=slate]{color:#5488b4;background:#e6f1fa}
 .pti-home .app-icon[data-tone=rose]{color:#df7a82;background:#ffeced}
 .pti-home .app-icon[data-tone=teal]{color:#40988e;background:#e2f3ee}
-.pti-home .pinned-link strong{font-size:12px;line-height:1.15;color:#38302a}
-.pti-home .pinned-link small{font-size:10px;color:#ada49a}
+.pti-home .pinned-link strong{font-size:13px;line-height:1.2;color:#38302a}
+.pti-home .pinned-link small{font-size:11px;color:#756b62}
 .pti-home .pin-remove{position:absolute;right:4px;top:4px;width:23px;height:23px;display:grid;place-items:center;border-radius:50%;border:0;background:#fff0eb;color:#bd5a4f}
 .pti-home .pin-remove mat-icon{width:15px;height:15px;font-size:15px}
 .pti-home .empty-hint{color:#8e857a;font-size:12px;padding:20px;border:1px dashed #e0d6cc;border-radius:10px}
@@ -87,24 +87,24 @@
 .pti-home .continue-art[data-tone=sun]{background:linear-gradient(110deg,#ddcd9b,#f6e9c5)}
 .pti-home .continue-art[data-tone=teal],.pti-home .continue-art[data-tone=slate]{background:linear-gradient(110deg,#a7cac6,#e0eff0)}
 .pti-home .continue-copy{padding:11px 33px 12px 14px;display:flex;flex-direction:column;gap:4px}
-.pti-home .continue-copy span{font-size:10px;color:#bb7567;font-weight:700}
+.pti-home .continue-copy span{font-size:11px;color:#935447;font-weight:700}
 .pti-home .continue-copy strong{font-size:12px;line-height:1.3;color:#332a25;font-weight:700}
-.pti-home .continue-copy small{font-size:10px;color:#9d958e}
+.pti-home .continue-copy small{font-size:11px;color:#756b62}
 .pti-home .continue-arrow{position:absolute;right:9px;bottom:22px;color:#b5aaa0;font-size:18px}
 .pti-home .directory-section{scroll-margin-top:20px}
-.pti-home .app-count{font:600 10px Arial,sans-serif;color:#b7aba1;padding:4px 8px;background:#f1ece7;border-radius:99px;margin-left:5px}
-.pti-home .directory-hint{font-size:11px;color:#a69c94}
+.pti-home .app-count{font:600 11px Arial,sans-serif;color:#746a60;padding:4px 8px;background:#f1ece7;border-radius:99px;margin-left:5px}
+.pti-home .directory-hint{font-size:11px;color:#756b62}
 .pti-home .category-tabs{display:flex;gap:5px;flex-wrap:wrap;margin:1px 0 14px}
-.pti-home .category-tabs button{font-size:10px;border-radius:20px;border:1px solid transparent;background:#f4f0ec;color:#7e776e;padding:7px 13px}
-.pti-home .category-tabs button.selected{background:#e55a4d;color:#fff}
+.pti-home .category-tabs button{font-size:11px;border-radius:20px;border:1px solid transparent;background:#f4f0ec;color:#6f675f;padding:7px 13px}
+.pti-home .category-tabs button.selected{background:#c4493e;color:#fff}
 .pti-home .directory-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
 .pti-home .directory-card{position:relative;background:#fff;border:1px solid #ede7e0;border-radius:10px;min-width:0;transition:transform .18s,box-shadow .18s}
 .pti-home .directory-link{display:flex;flex-direction:column;align-items:flex-start;min-height:149px;padding:16px 12px 13px}
 .pti-home .directory-link .app-icon{height:34px;width:34px;border-radius:9px;margin-bottom:9px}
 .pti-home .directory-link .app-icon mat-icon{font-size:21px;height:21px;width:21px}
-.pti-home .directory-link strong{font-size:12px;font-weight:750;color:#332c27;line-height:1.25}
-.pti-home .directory-link small{color:#9e948b;font-size:10px;line-height:1.35;margin-top:5px;flex:1}
-.pti-home .card-open{display:inline-flex;align-items:center;gap:3px;margin-top:8px;font-size:10px;color:#d85e50;font-weight:700}
+.pti-home .directory-link strong{font-size:13px;font-weight:750;color:#332c27;line-height:1.25}
+.pti-home .directory-link small{color:#70665e;font-size:11px;line-height:1.45;margin-top:5px;flex:1}
+.pti-home .card-open{display:inline-flex;align-items:center;gap:3px;margin-top:8px;font-size:11px;color:#a9463b;font-weight:700}
 .pti-home .card-open mat-icon{font-size:12px;height:12px;width:12px}
 .pti-home .favorite-button{position:absolute;right:7px;top:7px;border:0;background:transparent;color:#c9c0b7;display:grid;place-items:center;width:27px;height:27px}
 .pti-home .favorite-button mat-icon{font-size:17px;width:17px;height:17px}
@@ -123,13 +123,13 @@
 .pti-home .project-strip-intro>mat-icon{color:#bc806b}
 .pti-home .project-strip-intro div,.pti-home .project-strip a span{display:flex;flex-direction:column;gap:4px}
 .pti-home .project-strip strong{font-size:11px}
-.pti-home .project-strip small{font-size:10px;color:#9d9389}
+.pti-home .project-strip small{font-size:11px;color:#756b62}
 .pti-home .project-strip a{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #ede7e0;border-radius:9px;padding:9px 12px}
 .pti-home .project-strip a>mat-icon:first-child{color:#bc806b;font-size:19px}
 .pti-home .project-arrow{font-size:14px!important;width:14px;height:14px;color:#d25748}
 .pti-home .hub-bottom{padding:32px 0 7px;display:flex;align-items:center;gap:13px;color:#b8afa5}
 .pti-home .hub-bottom span{font:700 19px Georgia,serif;letter-spacing:-.05em}
-.pti-home .hub-bottom p{font-size:10px;margin:0}
+.pti-home .hub-bottom p{font-size:11px;margin:0;color:#746a60}
 .pti-home .mobile-nav{display:none}
 @media(max-width:1180px){.pti-home{grid-template-columns:70px minmax(0,1fr)}
 .pti-home .hub-sidebar{padding:29px 10px}
@@ -156,8 +156,8 @@
 .pti-home .welcome-photo{display:none}
 .pti-home .pinned-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .pti-home .pinned-link{min-height:105px;padding:12px 3px}
-.pti-home .pinned-link strong{font-size:11px}
-.pti-home .pinned-link small{font-size:9px}
+.pti-home .pinned-link strong{font-size:12px}
+.pti-home .pinned-link small{font-size:11px}
 .pti-home .app-icon{height:35px;width:35px}
 .pti-home .section-heading h2{font-size:19px!important}
 .pti-home .continue-grid{grid-template-columns:1fr}
@@ -187,11 +187,11 @@
   .pti-home .mobile-greeting{display:grid;grid-template-columns:minmax(0,1fr) 116px;gap:14px;align-items:center;min-height:88px;padding:2px 4px 10px}
   .pti-home .mobile-greeting-copy{min-width:0}
   .pti-home .mobile-greeting h2{font-size:clamp(23px,6.4vw,29px);line-height:1.08;letter-spacing:-.035em;color:#29231e}
-  .pti-home .mobile-greeting .eyebrow{font-size:9px!important;letter-spacing:.19em!important;color:#a75c50;margin-bottom:7px!important}
+  .pti-home .mobile-greeting .eyebrow{font-size:10px!important;letter-spacing:.1em!important;color:#955044;margin-bottom:7px!important}
   .pti-home .mobile-greeting-art{display:block;width:116px;height:80px;object-fit:cover;object-position:52% 58%;border-radius:12px;border:1px solid #e7dfd5;box-shadow:0 10px 24px #70583a15}
   .pti-home .pinned-section{margin-top:12px}
   .pti-home .pinned-link{min-height:100px;padding:10px 4px}
-  .pti-home .pinned-link small{font-size:10px}
+  .pti-home .pinned-link small{font-size:11px}
 }
 @media(max-width:340px){
   .pti-home .mobile-greeting{grid-template-columns:minmax(0,1fr) 94px;gap:9px;min-height:78px}

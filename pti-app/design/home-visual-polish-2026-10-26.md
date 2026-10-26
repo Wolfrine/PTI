@@ -1,6 +1,6 @@
 # PTI landing and Home image/visual refinement — 26 Oct 2026
 
-Status: **desktop-verified, mobile visual acceptance pending**. This refines the owner-selected warm-light direction; it does not establish new owner acceptance.
+Status: **landing and Home desktop-verified; Home tablet/mobile visually inspected; independent Home and mobile login acceptance pending**. This refines the owner-selected warm-light direction; it does not establish new owner acceptance.
 
 ## Problem and scope
 
@@ -38,8 +38,11 @@ Independent critic's pre-change baseline from retained historical dashboard desk
 - `git diff --check`: **passed**.
 - Local Karma tests: **not executed successfully** — this environment has no ChromeHeadless binary; GitHub CI executed the Home/navigation/browser tests successfully instead.
 - The main push `9a9ba02979bdc5392b59464f2dcbeee96431ade4` triggered [workflow run #230](https://github.com/Wolfrine/PTI/actions/runs/40300468276); all jobs, including Home tests, Angular build, Firebase Hosting deployment and artifact verification, **passed**.
+- Follow-up browser-branding push `5757b031e57687adab641a0dcf58b99402c22002` triggered [workflow run #231](https://github.com/Wolfrine/PTI/actions/runs/40301791709); all CI and Hosting jobs **passed**. The live page title was checked as `PTI · Your Personal Operating System`.
 - Fresh public login at desktop (~1350 × 920) was visually observed with a sharp new 1536 × 1024 photograph, readable Google CTA and correct warm-light styling. Independent critic scored this observed login desktop image fidelity **8.8**, composition/type **8.4**, desktop functional readability **8.5**.
 - Authenticated Home at desktop (1920px) was personally observed by release lead: the new 1774 × 887 journal is crisp, the six pinned apps are immediately below the hero and within the first viewport, the reading panel follows, Noveliaa search returns one matching app and no Velum text appears in the launcher. Private usage numbers were not saved in this public repository.
-- Mobile viewport override in connected Chrome returned 1920px even after asking for 390px. Independent critic could not access authenticated Home. **Do not treat mobile or independent Home visual acceptance as verified.** Separate login + Home mobile render, zoom/focus and independent Home critique remain follow-up QA; no five-cycle acceptance claim is made.
+- Initial mobile viewport override in the reused browser tab did not apply. A new browser tab resolved that issue: authenticated Home was visually inspected live at **1024 × 768**, **390 × 844**, and **320 × 568**, with the real responsive breakpoints active. At 1024px the icon rail, hero and six pinned apps fit without horizontal overflow. At 390px a compact photo-backed greeting and 3 × 2 pinned grid precede usage; at 320px pins switch to two columns with the bottom navigation present. The document scroll width was narrower than the window at all three sizes; there was no horizontal overflow. The full-sized journal was confirmed loaded at its native 1774px width.
+- A further CSS-only pass improved tiny utility text, pinned labels/categories, directory descriptions, filters and contrast across Home and login, while keeping the existing layout and authentication intact.
+- Independent critic could not access authenticated Home, and the separate mobile signed-out login view was not observed. **Do not treat independent Home or mobile login acceptance as verified**; no five-cycle acceptance claim is made.
 
-Current owner verdict: **unverified candidate** (no explicit post-release owner approval). Address unobserved mobile states and independent Home review before claiming agent-reviewed acceptance.
+Current owner verdict: **unverified candidate** (no explicit post-release owner approval). Address unobserved mobile login and independent Home review before claiming agent-reviewed acceptance.

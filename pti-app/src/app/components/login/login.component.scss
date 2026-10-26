@@ -48,10 +48,10 @@
 .brand-mark i:nth-child(2) { border-radius: 2px 7px 2px 7px; }
 .brand-divider { height: 25px; width: 1px; background: #ded7ce; }
 .brand-description, .header-access {
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 750;
-  letter-spacing: .18em;
-  color: #716b64;
+  letter-spacing: .14em;
+  color: #605951;
 }
 .header-access { margin-left: auto; display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
 .access-dot { height: 6px; width: 6px; border-radius: 50%; background: #d66b5b; }
@@ -132,8 +132,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #68615b;
-  font-size: 12px !important;
+  color: #605951;
+  font-size: 13px !important;
   line-height: 1.4;
   margin: 15px 0 0;
 }
@@ -161,7 +161,7 @@
   align-items: center;
   gap: 11px;
   color: #fff;
-  font-size: 12px !important;
+  font-size: 13px !important;
   letter-spacing: .035em;
   text-shadow: 0 1px 3px #0005;
 }
@@ -175,10 +175,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  color: #716a63;
-  font-size: 11px;
+  color: #605951;
+  font-size: 12px;
 }
-.login-footer span { font-size: 11px !important; }
+.login-footer span { font-size: 12px !important; }
 .footer-separator { padding: 0 7px; color: #ce776a; }
 
 @media (max-width: 900px) {
@@ -191,13 +191,13 @@
   .login-frame { padding: 0 22px; }
   .login-header { min-height: 73px; gap: 13px; }
   .login-brand strong { font-size: 27px; }
-  .brand-description { font-size: 11px !important; letter-spacing: .08em; }
+  .brand-description { font-size: 11px !important; letter-spacing: .07em; }
   .header-access { display: none; }
   .login-composition { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 26px; padding: 20px 0 32px; }
   .login-visual { flex: 0 0 clamp(150px, 25vh, 235px); min-height: 0; border-radius: 13px; box-shadow: 0 12px 30px #53463d14; }
   .login-visual img { object-position: 52% 54%; }
   .login-visual::after { inset: 50% 0 0; background: linear-gradient(180deg, transparent, rgba(31, 32, 28, .43)); }
-  .visual-signature { bottom: 17px; left: 18px; right: 14px; font-size: 11px !important; }
+  .visual-signature { bottom: 17px; left: 18px; right: 14px; font-size: 12px !important; }
   .signature-line { width: 17px; flex-basis: 17px; }
   .login-content { align-self: stretch; padding: 0; }
   .eyebrow { margin-bottom: 13px; font-size: 11px !important; }

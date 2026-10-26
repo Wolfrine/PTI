@@ -176,6 +176,9 @@ jobs:
           NODE
 
           # One Piece start is a required product function, independent of MCP keys.
+          # Retain generated build images for a week; deployed functions keep
+          # their own runtime copy. Source rollback remains available in Git.
+          firebase functions:artifacts:setpolicy --project "$FIREBASE_PROJECT_ID" --location us-central1 --days 7 --force --non-interactive
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:onePieceHost --non-interactive
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';

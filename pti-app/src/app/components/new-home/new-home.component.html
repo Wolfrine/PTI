@@ -18,7 +18,10 @@
     </header>
 
     <div class="hub-content">
-      <div class="mobile-greeting"><p class="eyebrow">YOUR PERSONAL ECOSYSTEM</p><h2>Ready to explore?</h2></div>
+      <div class="mobile-greeting">
+        <div class="mobile-greeting-copy"><p class="eyebrow">YOUR PERSONAL ECOSYSTEM</p><h2>Ready to explore?</h2></div>
+        <img class="mobile-greeting-art" src="/assets/images/pti-home-journal.webp" alt="" width="120" height="84" decoding="async">
+      </div>
       <section class="welcome-card" aria-labelledby="welcome-title">
         <div class="welcome-copy">
           <p class="eyebrow">WELCOME TO PTI</p>
@@ -28,13 +31,10 @@
             <button type="button" class="primary-button" (click)="openDirectory()">Explore all apps <mat-icon>arrow_forward</mat-icon></button>
           </div>
         </div>
-        <div class="welcome-photo"><img src="/assets/images/pti-home-lifestyle.webp" alt="Sunlit, calming workspace looking toward distant hills" fetchpriority="high"></div>
+        <div class="welcome-photo"><img src="/assets/images/pti-home-journal.webp" alt="Sunlit journal and writing desk overlooking distant hills" fetchpriority="high"></div>
       </section>
 
-      <app-new-codex-usage></app-new-codex-usage>
-      <app-new-gtop-host></app-new-gtop-host>
-
-      <section class="hub-section" aria-labelledby="pinned-heading">
+      <section class="hub-section pinned-section" aria-labelledby="pinned-heading">
         <div class="section-heading"><div><p class="section-kicker">AT YOUR FINGERTIPS</p><h2 id="pinned-heading"><mat-icon>push_pin</mat-icon> Pinned Apps</h2></div><button class="text-button" type="button" (click)="editingPins = !editingPins" [attr.aria-pressed]="editingPins">{{ editingPins ? 'Done' : 'Customize' }} <mat-icon>{{ editingPins ? 'check' : 'tune' }}</mat-icon></button></div>
         <div class="pinned-grid" *ngIf="pinnedApps.length; else noPinned">
           <div class="pinned-card" *ngFor="let app of pinnedApps">
@@ -47,6 +47,9 @@
         </div>
         <ng-template #noPinned><p class="empty-hint">No pinned apps yet. Use Customize or the stars in All Apps to add favorites.</p></ng-template>
       </section>
+
+      <app-new-codex-usage></app-new-codex-usage>
+      <app-new-gtop-host></app-new-gtop-host>
 
       <section class="hub-section" aria-labelledby="continue-heading">
         <div class="section-heading"><div><p class="section-kicker">PICK UP THE THREAD</p><h2 id="continue-heading"><mat-icon>history</mat-icon> {{ recentApps.length ? 'Continue where you left off' : 'Explore next' }}</h2></div><button class="text-button" type="button" (click)="openDirectory()">View all <mat-icon>arrow_forward</mat-icon></button></div>

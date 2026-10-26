@@ -61,8 +61,8 @@
   min-height: 0;
   padding: clamp(28px, 4vw, 58px) 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.03fr);
-  gap: clamp(35px, 5vw, 92px);
+  grid-template-columns: minmax(0, .96fr) minmax(0, 1.04fr);
+  gap: clamp(35px, 5vw, 82px);
 }
 
 .login-content { min-width: 0; align-self: center; padding: 20px 0; }
@@ -143,13 +143,14 @@
   min-width: 0;
   min-height: 510px;
   border-radius: 18px;
+  border: 1px solid #e8dfd6;
   background: #dddcd1;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 22px 58px rgba(83, 70, 61, .09);
+  box-shadow: 0 24px 58px rgba(83, 70, 61, .12);
 }
-.login-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 55% 50%; display: block; }
-.login-visual::after { content: ''; position: absolute; inset: 43% 0 0; background: linear-gradient(180deg, transparent, rgba(31, 32, 28, .45)); pointer-events: none; }
+.login-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 52% 53%; display: block; }
+.login-visual::after { content: ''; position: absolute; inset: 62% 0 0; background: linear-gradient(180deg, transparent, rgba(31, 32, 28, .5)); pointer-events: none; }
 .visual-signature {
   position: absolute;
   z-index: 1;
@@ -194,8 +195,8 @@
   .header-access { display: none; }
   .login-composition { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 26px; padding: 20px 0 32px; }
   .login-visual { flex: 0 0 clamp(150px, 25vh, 235px); min-height: 0; border-radius: 13px; box-shadow: 0 12px 30px #53463d14; }
-  .login-visual img { object-position: 55% 48%; }
-  .login-visual::after { inset: 50% 0 0; background: linear-gradient(180deg, transparent, rgba(31, 32, 28, .4)); }
+  .login-visual img { object-position: 52% 54%; }
+  .login-visual::after { inset: 50% 0 0; background: linear-gradient(180deg, transparent, rgba(31, 32, 28, .43)); }
   .visual-signature { bottom: 17px; left: 18px; right: 14px; font-size: 11px !important; }
   .signature-line { width: 17px; flex-basis: 17px; }
   .login-content { align-self: stretch; padding: 0; }

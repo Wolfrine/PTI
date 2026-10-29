@@ -47,7 +47,7 @@ jobs:
       - run: npm test --prefix apps/one-piece/companion
       - run: npm run test:emulator --prefix apps/one-piece
       - name: Verify Atlas owner isolation and atomic history
-        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/atlas.rules.test.mjs'
+        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/tests/atlas.rules.test.mjs'
 
   deploy:
     needs: [verify_venture, verify_one_piece]
@@ -140,7 +140,7 @@ jobs:
           # Atlas adds an isolated namespace over the reviewed current baseline.
           # Keep the exact-source and concurrent-release checks; never overwrite
           # an unreviewed live rules change.
-          git show cee67b732634a7ccb12906d4c4c27e5b93377de4:personal-harness/firestore.rules > /tmp/pre-atlas.rules
+          git show 1ce8f224bcb4b1331cb3883635779e1c5c478cbc:personal-harness/firestore.rules > /tmp/pre-atlas.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-atlas.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs

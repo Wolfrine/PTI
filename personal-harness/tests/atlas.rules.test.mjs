@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { before, beforeEach, after, test } from 'node:test';
 import assert from 'node:assert/strict';
 // Reuse existing locked emulator dependencies; do not introduce a second stack.
-const require = createRequire(new URL('../apps/one-piece/package.json', import.meta.url));
+const require = createRequire(new URL('../../apps/one-piece/package.json', import.meta.url));
 const { initializeTestEnvironment, assertSucceeds, assertFails } = require('@firebase/rules-unit-testing');
 const { doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch, runTransaction } = require('firebase/firestore');
 
@@ -34,7 +34,7 @@ async function change(d, kind, targetId, fields = {}, expectedRevision = 0, opti
 
 before(async () => {
   env = await initializeTestEnvironment({ projectId: 'demo-atlas-tests', firestore: { host: '127.0.0.1', port: 8085,
-    rules: await readFile(new URL('./firestore.rules', import.meta.url), 'utf8') } });
+    rules: await readFile(new URL('../firestore.rules', import.meta.url), 'utf8') } });
 });
 after(() => env?.cleanup());
 beforeEach(async () => {
@@ -122,6 +122,13 @@ test('bounded owner Tracker collection and exact Pages/Drive approvals succeed',
   await assertSucceeds(change(d, 'source', 'tracker', source({ sourceId: 'tracker', system: 'pti-tracker-firestore', recordLocatorPrefixes: ['users/owner/trackerData/workspace/evidence/'] })));
   await assertSucceeds(change(d, 'source', 'pages', source({ sourceId: 'pages', system: 'chatgpt-pages', recordLocatorPrefixes: [], recordLocators: ['https://chatgpt.com/space/page_synthetic'] })));
   await assertSucceeds(change(d, 'source', 'sheet', source({ sourceId: 'sheet', system: 'google-drive-spreadsheet', recordLocatorPrefixes: [], recordLocators: ['https://docs.google.com/spreadsheets/d/synthetic/edit?usp=drivesdk'] })));
+});
+test('the full advertised exact-source bound remains usable and validates every location', async () => {
+  const d = client('owner'), locations = Array.from({ length: 8 }, (_, i) => `https://chatgpt.com/space/page_synthetic${i}`);
+  await assertSucceeds(change(d, 'source', 'eight-pages', source({ sourceId: 'eight-pages', system: 'chatgpt-pages', recordLocatorPrefixes: [], recordLocators: locations })));
+  await assertFails(change(d, 'source', 'bad-last-page', source({ sourceId: 'bad-last-page', system: 'chatgpt-pages', recordLocatorPrefixes: [], recordLocators: [...locations.slice(0, 7), 'https://chatgpt.com/c/raw-chat'] })));
+  await assertFails(change(d, 'source', 'too-many-pages', source({ sourceId: 'too-many-pages', system: 'chatgpt-pages', recordLocatorPrefixes: [], recordLocators: [...locations, 'https://chatgpt.com/space/page_ninth'] })));
+  await assertSucceeds(change(d, 'source', 'full-bounds', source({ sourceId: 'full-bounds', recordLocatorPrefixes: Array.from({ length: 4 }, (_, i) => `https://github.com/example/repo${i}/`), recordLocators: Array.from({ length: 8 }, (_, i) => `https://github.com/example/atlas/blob/main/file${i}.md`) })));
 });
 test('orphan events and client-created conflicts cannot forge history', async () => {
   const d = client('owner');

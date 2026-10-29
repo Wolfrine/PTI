@@ -351,30 +351,31 @@ service cloud.firestore {
    function prefix(system,p) { return p is string && p.size() <= 2000
     && ((system == 'pti-tracker-firestore' && p.matches('users/' + uid + '/trackerData/workspace/(evidence|events|nodes|edges|assessments|dayIndex|sourceState|runs)/'))
      || (system == 'github' && p.matches('https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/([^?# ]*/)?') && !p.lower().matches('.*/chatgpt_harness/.*'))); }
-   function exact(system,p) { return p is string && p.size() <= 2000
-    && ((system == 'pti-tracker-firestore' && p.matches('users/' + uid + '/trackerData/workspace/(evidence|events|nodes|edges|assessments|dayIndex|sourceState|runs)/[A-Za-z0-9_-]{1,200}'))
-     || (system == 'github' && p.matches('https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[^?# ]*)?') && !p.lower().matches('.*/chatgpt_harness(/.*)?'))
-     || (system == 'chatgpt-pages' && p.matches('https://chatgpt[.]com/space/page_[a-z0-9]+'))
-     || (system == 'google-drive-spreadsheet' && p.matches('https://docs[.]google[.]com/spreadsheets/d/[A-Za-z0-9_-]+(/[^# ]*)?'))
-     || (system == 'google-drive-document' && p.matches('https://docs[.]google[.]com/document/d/[A-Za-z0-9_-]+(/[^# ]*)?'))
-     || (system == 'user-report' && p.matches('owner-report/[A-Za-z0-9_-]{1,128}'))
-     || (system == 'web-primary-source' && p.matches('https://[A-Za-z0-9.-]+(/[^# ]*)?')
-      && !p.matches('https://(chatgpt[.]com|chat[.]openai[.]com|docs[.]google[.]com|drive[.]google[.]com)(/.*)?'))); }
-   function exactAt(d,n) { return d.recordLocators.size() <= n || exact(d.system,d.recordLocators[n]); }
-   function source(d,sourceId) { return d.keys().hasAll(['schemaVersion','sourceId','system','locator','recordLocatorPrefixes','recordLocators','enabled','revision','updatedAt','lastEventId'])
+   // Select the provider pattern once per source policy. Rechecking every
+   // provider branch per URL wastes the finite rule expression budget.
+   function sourcePattern(system) { return system == 'pti-tracker-firestore' ? 'users/' + uid + '/trackerData/workspace/(evidence|events|nodes|edges|assessments|dayIndex|sourceState|runs)/[A-Za-z0-9_-]{1,200}'
+    : system == 'github' ? 'https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[^?# ]*)?'
+    : system == 'chatgpt-pages' ? 'https://chatgpt[.]com/space/page_[a-z0-9]+'
+    : system == 'google-drive-spreadsheet' ? 'https://docs[.]google[.]com/spreadsheets/d/[A-Za-z0-9_-]+(/[^?# ]*)?([?][^# ]*)?'
+    : system == 'google-drive-document' ? 'https://docs[.]google[.]com/document/d/[A-Za-z0-9_-]+(/[^?# ]*)?([?][^# ]*)?'
+    : system == 'user-report' ? 'owner-report/[A-Za-z0-9_-]{1,128}' : 'https://[A-Za-z0-9.-]+(/[^# ]*)?'; }
+   function exactAt(values,n,pattern,blocked) { return values.size() <= n || (values[n] is string && values[n].size() <= 2000
+    && values[n].matches(pattern) && (blocked == '' || !values[n].lower().matches(blocked))); }
+   function source(d,sourceId) {
+    let pattern = sourcePattern(d.system);
+    let blocked = d.system == 'github' ? '.*/chatgpt_harness(/.*)?' : d.system == 'web-primary-source' ? 'https://(chatgpt[.]com|chat[.]openai[.]com|docs[.]google[.]com|drive[.]google[.]com)(/.*)?' : '';
+    return d.keys().hasAll(['schemaVersion','sourceId','system','locator','recordLocatorPrefixes','recordLocators','enabled','revision','updatedAt','lastEventId'])
     && d.keys().hasOnly(['schemaVersion','sourceId','system','locator','recordLocatorPrefixes','recordLocators','enabled','revision','updatedAt','lastEventId'])
     && base(d) && id(sourceId) && d.sourceId == sourceId && d.system in ['github','chatgpt-pages','pti-tracker-firestore','google-drive-spreadsheet','google-drive-document','web-primary-source','user-report']
     && text(d,'locator',2000) && d.locator.size() > 0 && d.enabled is bool
-    && d.recordLocators is list && d.recordLocators.size() <= 20 && d.recordLocatorPrefixes is list && d.recordLocatorPrefixes.size() <= 4
+    && d.recordLocators is list && d.recordLocators.size() <= 8 && d.recordLocatorPrefixes is list && d.recordLocatorPrefixes.size() <= 4
     && d.recordLocators.size() + d.recordLocatorPrefixes.size() > 0
     && (d.recordLocatorPrefixes.size() < 1 || prefix(d.system,d.recordLocatorPrefixes[0]))
     && (d.recordLocatorPrefixes.size() < 2 || prefix(d.system,d.recordLocatorPrefixes[1]))
     && (d.recordLocatorPrefixes.size() < 3 || prefix(d.system,d.recordLocatorPrefixes[2]))
     && (d.recordLocatorPrefixes.size() < 4 || prefix(d.system,d.recordLocatorPrefixes[3]))
-    && exactAt(d,0) && exactAt(d,1) && exactAt(d,2) && exactAt(d,3) && exactAt(d,4)
-    && exactAt(d,5) && exactAt(d,6) && exactAt(d,7) && exactAt(d,8) && exactAt(d,9)
-    && exactAt(d,10) && exactAt(d,11) && exactAt(d,12) && exactAt(d,13) && exactAt(d,14)
-    && exactAt(d,15) && exactAt(d,16) && exactAt(d,17) && exactAt(d,18) && exactAt(d,19); }
+    && exactAt(d.recordLocators,0,pattern,blocked) && exactAt(d.recordLocators,1,pattern,blocked) && exactAt(d.recordLocators,2,pattern,blocked) && exactAt(d.recordLocators,3,pattern,blocked) && exactAt(d.recordLocators,4,pattern,blocked)
+    && exactAt(d.recordLocators,5,pattern,blocked) && exactAt(d.recordLocators,6,pattern,blocked) && exactAt(d.recordLocators,7,pattern,blocked); }
    function change(kind,targetId,before,after) {
     let path = /databases/$(database)/documents/users/$(uid)/atlasData/workspace/events/$(after.lastEventId);
     let e = getAfter(path).data;

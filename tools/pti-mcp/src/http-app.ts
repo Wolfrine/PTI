@@ -4,7 +4,8 @@ import { mcpAuthRouter, getOAuthProtectedResourceMetadataUrl } from '@modelconte
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { PtiOAuthProvider, MCP_SCOPE, type UserIdentity } from './oauth.js';
+import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE, type UserIdentity } from './oauth.js';
+import { CodexRelay, createCodexServer, workerPollSchema, workerReportSchema, OWNER } from './local-codex.js';
 
 function escape(value: string) { return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]!)); }
 export function createHttpApp(options: {
@@ -12,6 +13,7 @@ export function createHttpApp(options: {
   verifyIdentity: (idToken: string) => Promise<UserIdentity>;
   createServer: (context: { uid: string; email: string; actor: string; taskReference: string; transport: string }) => McpServer;
   firebaseConfig: Record<string, string>;
+  codex?: CodexRelay;
 }) {
   const { provider } = options;
   const app = express();
@@ -24,18 +26,22 @@ export function createHttpApp(options: {
   });
   app.get('/health', (_req,res) => res.json({ service:'pti-firestore-mcp', version:'0.2.0', status:'ok' }));
   app.use(mcpAuthRouter({ provider, issuerUrl:new URL(provider.origin), resourceServerUrl:new URL(provider.resource),
-    scopesSupported:[MCP_SCOPE], resourceName:'PTI Firestore', clientRegistrationOptions:{clientSecretExpirySeconds:0} }));
+    scopesSupported:[MCP_SCOPE,CODEX_SCOPE], resourceName:'PTI Firestore', clientRegistrationOptions:{clientSecretExpirySeconds:0} }));
   app.get('/consent', async (req,res) => {
     const id = String(req.query.request || '');
     const pending = await provider.pending(id);
+    const codex = pending.resource === `${provider.origin}/local-codex/mcp`;
+    const product = codex ? 'Local Codex' : 'PTI Firestore';
+    const access = codex ? 'request local Codex inspections and authorized edits, read job results, and continue or cancel your tasks' : 'read, create, update and delete your PTI app data on your behalf';
+    const boundary = codex ? 'Your PC must be online. Codex uses your existing ChatGPT sign-in. No OpenAI API key is requested. This connection exposes Codex jobs, not your other PTI app data.' : 'Tools access that account’s app data.';
     const nonce = randomBytes(18).toString('base64url');
     res.set('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}' https://www.gstatic.com https://apis.google.com; style-src 'nonce-${nonce}'; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com; frame-src https://*.firebaseapp.com https://accounts.google.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`);
     const config = JSON.stringify(options.firebaseConfig).replace(/</g,'\\u003c');
     const requestId = JSON.stringify(id).replace(/</g,'\\u003c');
-    res.type('html').send(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Connect PTI Firestore</title>
+    res.type('html').send(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Connect ${product}</title>
 <style nonce="${nonce}">body{font:18px system-ui;max-width:620px;margin:12vh auto;padding:24px;color:#182637}button{font:inherit;padding:14px;background:#174aa6;color:white;border:0;border-radius:8px;cursor:pointer}#status{white-space:pre-wrap}</style>
-<h1>Connect PTI Firestore</h1><p><strong>${escape(String(pending.clientName))}</strong> is requesting access to read, create, update and delete your PTI app data on your behalf.</p>
-<p>Only the approved PTI account can connect. Tools access that account’s app data. Access has no time limit and continues until revoked.</p>
+<h1>Connect ${product}</h1><p><strong>${escape(String(pending.clientName))}</strong> is requesting access to ${access}.</p>
+<p>Only the approved PTI account can connect. ${boundary} Access continues until revoked.</p>
 <button id="connect">Sign in with Google and allow access</button><p id="status" role="status"></p>
 <script type="module" nonce="${nonce}">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
@@ -50,6 +56,30 @@ button.onclick=async()=>{button.disabled=true;try{
 }catch(error){status.textContent=error.message;button.disabled=false;}};
 </script></html>`);
   });
+  if (options.codex) {
+    const relay=options.codex,resource=`${provider.origin}/local-codex/mcp`;
+    const metadataUrl=getOAuthProtectedResourceMetadataUrl(new URL(resource));
+    app.get('/.well-known/oauth-protected-resource/local-codex/mcp',(_req,res)=>res.json({resource,authorization_servers:[provider.origin],scopes_supported:[CODEX_SCOPE],bearer_methods_supported:['header'],resource_name:'Local Codex'}));
+    app.use('/local-codex/mcp', (req,res,next)=>{
+      const origin=req.get('origin');if(origin&&origin!==provider.origin&&!provider.redirectOrigins.includes(origin)){res.status(403).end();return;}next();
+    }, requireBearerAuth({verifier:provider,requiredScopes:[CODEX_SCOPE],resourceMetadataUrl:metadataUrl}));
+    app.post('/local-codex/mcp',express.json({limit:'256kb'}),async(req,res)=>{
+      const auth=req.auth!;
+      if(auth.resource?.href!==resource||auth.extra?.uid!==OWNER){res.status(403).json({error:'Local Codex owner authorization required.'});return;}
+      const server=createCodexServer(relay,OWNER),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
+      res.on('close',()=>{void transport.close();void server.close();});await server.connect(transport);await transport.handleRequest(req,res,req.body);
+    });
+    app.all('/local-codex/mcp',(_req,res)=>{res.set('Allow','POST');res.status(405).end();});
+    app.post('/local-codex/worker/:action',express.json({limit:'768kb'}),async(req,res)=>{
+      try{
+        const bearer=/^Bearer ([^\s]+)$/.exec(req.get('authorization')||'');if(!bearer)throw Error('authentication_required');
+        const identity=await options.verifyIdentity(bearer[1]);await provider.checkUser(identity.uid,identity.authenticatedAt);if(identity.uid!==OWNER)throw Error('authentication_required');
+        if(req.params.action==='poll')res.json(await relay.poll(identity.uid,workerPollSchema.parse(req.body)));
+        else if(req.params.action==='report')res.json(await relay.report(identity.uid,workerReportSchema.parse(req.body)));
+        else res.status(404).json({error:'Unknown worker action.'});
+      }catch(error){const message=(error as Error).message;res.status(message==='lease_lost'?409:400).json({error:message==='lease_lost'?'lease_lost':'Worker request rejected.'});}
+    });
+  }
   app.post('/consent', express.json({limit:'16kb'}), async (req,res) => {
     if (req.get('origin') !== provider.origin) { res.status(403).json({error:'Invalid request origin'}); return; }
     const csrf = /(?:^|;\s*)__Host-pti-consent=([^;]+)/.exec(req.get('cookie') || '')?.[1];

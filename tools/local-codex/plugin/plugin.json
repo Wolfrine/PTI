@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "author": {
+    "email": "schttewary@gmail.com",
+    "name": "Sachit Tewary"
+  },
+  "description": "Delegate local project inspection and authorized file edits to Codex on Sachit's Windows PC.",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "category": "Developer Tools",
+        "defaultPrompt": "Check which local projects Codex can work on.",
+        "developerName": "Sachit Tewary",
+        "displayName": "Local Codex",
+        "longDescription": "Use the Codex CLI on your PC from normal ChatGPT chats on web and mobile. Start work, check progress, answer questions and approvals, continue, cancel, and retrieve results through your private PTI job relay. Uses your existing ChatGPT subscription sign-in. The PC must be awake, online, and signed in. No OpenAI API key or tunnel is required.",
+        "shortDescription": "Use Codex on this PC"
+      },
+      "requires_local_executor": false
+    }
+  },
+  "name": "local-codex",
+  "version": "0.2.0"
+}

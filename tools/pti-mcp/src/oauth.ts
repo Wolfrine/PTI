@@ -7,6 +7,7 @@ import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { type AuthStore, type RecordValue, secret, digest, now } from './auth-store.js';
 
 export const MCP_SCOPE = 'pti:apps';
+export const CODEX_SCOPE = 'local-codex:jobs';
 const ACCESS_SECONDS = 3600;
 export type UserIdentity = { uid: string; email: string; authenticatedAt: number };
 export type CheckUser = (uid: string, authenticatedAt: number) => Promise<void>;
@@ -39,20 +40,23 @@ export class PtiOAuthProvider implements OAuthServerProvider {
     };
   }
   private target(resource?: URL) {
-    if (resource && resource.href !== this.resource) throw new InvalidTargetError('Resource must be the PTI MCP endpoint');
+    const target = resource?.href || this.resource;
+    if (![this.resource, `${this.origin}/local-codex/mcp`].includes(target)) throw new InvalidTargetError('Unknown MCP resource');
+    return target;
   }
-  private scopes(scopes?: string[]) {
-    const result = scopes?.length ? scopes : [MCP_SCOPE];
-    if (result.some(s => s !== MCP_SCOPE)) throw new InvalidScopeError('Unsupported scope');
-    return [MCP_SCOPE];
+  private scopes(scopes?: string[], resource = this.resource) {
+    const scope = resource === this.resource ? MCP_SCOPE : CODEX_SCOPE;
+    const result = scopes?.length ? scopes : [scope];
+    if (result.some(s => s !== scope)) throw new InvalidScopeError('Unsupported scope');
+    return [scope];
   }
   async authorize(client: OAuthClientInformationFull, params: AuthorizationParams, res: Response) {
-    this.target(params.resource);
+    const resource = this.target(params.resource);
     const requestId = secret(), csrf = secret();
     await this.store.put('pending', requestId, {
       clientId: client.client_id, clientName: client.client_name || 'MCP client',
       redirectUri: params.redirectUri, state: params.state || '',
-      challenge: params.codeChallenge, scopes: this.scopes(params.scopes),
+      challenge: params.codeChallenge, scopes: this.scopes(params.scopes, resource), resource,
       csrf: digest(csrf), expiresAt: now() + 600,
     });
     res.cookie('__Host-pti-consent', csrf, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 600000 });
@@ -80,8 +84,9 @@ export class PtiOAuthProvider implements OAuthServerProvider {
     return String(grant.challenge);
   }
   private async exchange(kind: string, key: string, client: OAuthClientInformationFull, redirectUri?: string, scopes?: string[], resource?: URL): Promise<OAuthTokens> {
-    this.target(resource);
     const grant = checked(await this.store.get(kind, key), kind === 'refresh');
+    const target = this.target(resource || new URL(String(grant.resource || this.resource)));
+    if (target !== (grant.resource || this.resource)) throw new InvalidTargetError('Resource does not match authorization');
     const validate = (v: RecordValue) => {
       checked(v, kind === 'refresh');
       if (v.clientId !== client.client_id) throw new InvalidGrantError('Client does not match');
@@ -95,8 +100,8 @@ export class PtiOAuthProvider implements OAuthServerProvider {
     if (!valid(session, true) || session.revoked) throw new InvalidGrantError('Session revoked or expired');
     const access = secret(), refresh = secret();
     const base = { clientId: grant.clientId, uid: grant.uid, email: grant.email,
-      authenticatedAt: grant.authenticatedAt, scopes: this.scopes(scopes || grant.scopes as string[]), sessionId,
-      resource: this.resource };
+      authenticatedAt: grant.authenticatedAt, scopes: this.scopes(scopes || grant.scopes as string[], target), sessionId,
+      resource: target };
     const writes: { kind: string; key: string; value: RecordValue }[] = [
       { kind: 'access', key: access, value: { ...base, expiresAt: now() + ACCESS_SECONDS } },
       { kind: 'refresh', key: refresh, value: { ...base, expiresAt: session.expiresAt } },
@@ -121,13 +126,13 @@ export class PtiOAuthProvider implements OAuthServerProvider {
   }
   async verifyAccessToken(token: string): Promise<AuthInfo> {
     const grant = await this.store.get('access', token);
-    if (!valid(grant) || grant.resource !== this.resource) throw new InvalidTokenError('Invalid access token');
+    if (!valid(grant) || ![this.resource, `${this.origin}/local-codex/mcp`].includes(String(grant.resource))) throw new InvalidTokenError('Invalid access token');
     const session = await this.store.get('sessions', String(grant.sessionId));
     if (!valid(session, true) || session.revoked) throw new InvalidTokenError('Session expired or revoked');
     try { await this.checkUser(String(grant.uid), Number(grant.authenticatedAt)); }
     catch { throw new InvalidTokenError('Administrator access has been revoked'); }
     return { token, clientId: String(grant.clientId), scopes: grant.scopes as string[],
-      expiresAt: Number(grant.expiresAt), resource: new URL(this.resource), extra: { uid: grant.uid, email: grant.email } };
+      expiresAt: Number(grant.expiresAt), resource: new URL(String(grant.resource)), extra: { uid: grant.uid, email: grant.email } };
   }
   async revokeToken(client: OAuthClientInformationFull, request: OAuthTokenRevocationRequest) {
     const grant = await this.store.get('access', request.token) || await this.store.get('refresh', request.token) || await this.store.get('spent', request.token);

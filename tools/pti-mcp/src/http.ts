@@ -4,6 +4,7 @@ import { createMcpServer } from './index.js';
 import { createHttpApp } from './http-app.js';
 import { FirestoreAuthStore } from './auth-store.js';
 import { PtiOAuthProvider } from './oauth.js';
+import { CodexRelay, FirestoreRelayStore } from './local-codex.js';
 const origin = process.env.PTI_MCP_PUBLIC_URL;
 if (!origin || new URL(origin).protocol !== 'https:' || new URL(origin).origin !== origin) throw new Error('PTI_MCP_PUBLIC_URL must be a canonical HTTPS origin.');
 const auth = getAuth(), db = getFirestore();
@@ -16,6 +17,7 @@ const checkUser = async (uid: string, authenticatedAt: number) => {
 };
 const provider = new PtiOAuthProvider(new FirestoreAuthStore(db), origin, checkUser);
 const app = createHttpApp({ provider, createServer: createMcpServer,
+  codex: new CodexRelay(new FirestoreRelayStore(db)),
   verifyIdentity: async token => {
     const identity = await auth.verifyIdToken(token, true);
     if (!identity.email_verified || !identity.email) throw new Error('Verified Google identity required.');

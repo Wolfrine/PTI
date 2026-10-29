@@ -1,0 +1,13 @@
+{
+  "codexPath": "C:/Users/Sachit Tewary/AppData/Local/OpenAI/Codex/bin/9614f1d9b40d9c4f/codex.exe",
+  "maxTaskMinutes": 30,
+  "projects": {
+    "scratch": { "name": "Local Codex scratch", "path": "F:/Workspace/Support/LocalCodexBridge/scratch" },
+    "pti": { "name": "PTI", "path": "F:/Workspace/Programs/Independent-Products/PTI" },
+    "noveliaa": { "name": "Noveliaa", "path": "F:/Workspace/Programs/Independent-Products/Noveliaa" },
+    "gtop": { "name": "GTOP", "path": "F:/Workspace/Programs/Growth-Tutorials/gtop-app" },
+    "growth-tutorials": { "name": "Growth Tutorials", "path": "F:/Workspace/Programs/Growth-Tutorials/growth-tutorials" },
+    "novasaga": { "name": "NovaSaga", "path": "F:/Workspace/NovaSaga" },
+    "worldline": { "name": "Worldline", "path": "F:/Workspace/Programs/Worldline" }
+  }
+}

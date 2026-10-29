@@ -3,7 +3,8 @@ import type { Server } from 'node:http';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Response } from 'express';
 import { createHttpApp } from './http-app.js';
-import { PtiOAuthProvider, MCP_SCOPE } from './oauth.js';
+import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE } from './oauth.js';
+import { CodexRelay, OWNER, type RelayStore } from './local-codex.js';
 import { type AuthStore, type RecordValue, digest, now } from './auth-store.js';
 import { assertCollectionPath, assertDocumentPath } from './access.js';
 
@@ -20,7 +21,7 @@ class MemoryStore implements AuthStore {
 }
 const servers: Server[]=[];
 afterEach(async()=>{vi.restoreAllMocks();await Promise.all(servers.splice(0).map(s=>new Promise<void>(resolve=>s.close(()=>resolve()))));});
-async function fixture() {
+async function fixture(codex=false) {
   let admin=true;
   const store=new MemoryStore();
   const provider=new PtiOAuthProvider(store,'https://pti.example',async()=>{if(!admin)throw new Error('No longer admin');});
@@ -29,19 +30,35 @@ async function fixture() {
   const challenge=Buffer.from(digest(verifier),'hex').toString('base64url');
   let cookie='',requestId='';
   const response={cookie:(_name:string,value:string)=>{cookie=value;},redirect:(url:string)=>{requestId=new URL(url).searchParams.get('request')!;}} as unknown as Response;
-  await provider.authorize(client,{redirectUri:client.redirect_uris[0],codeChallenge:challenge,state:'state1',scopes:[MCP_SCOPE],resource:new URL(provider.resource)},response);
-  const finish=async(csrf=cookie)=>provider.approve(requestId,csrf,{uid:'admin',email:'admin@example.com',authenticatedAt:now()});
+  const resource=codex?provider.origin+'/local-codex/mcp':provider.resource;
+  await provider.authorize(client,{redirectUri:client.redirect_uris[0],codeChallenge:challenge,state:'state1',scopes:[codex?CODEX_SCOPE:MCP_SCOPE],resource:new URL(resource)},response);
+  const finish=async(csrf=cookie)=>provider.approve(requestId,csrf,{uid:codex?OWNER:'admin',email:'admin@example.com',authenticatedAt:now()});
   const code=async()=>new URL(await finish()).searchParams.get('code')!;
   return {store,provider,client,verifier,requestId,finish,code,removeAdmin:()=>{admin=false;}};
 }
 async function serverFor(provider:PtiOAuthProvider) {
   const app=createHttpApp({provider,verifyIdentity:async()=>({uid:'admin',email:'admin@example.com',authenticatedAt:now()}),firebaseConfig:{},
+    codex:new CodexRelay({worker:async()=>undefined} as unknown as RelayStore),
     createServer:()=>{const server=new McpServer({name:'test',version:'1'});server.registerTool('test_read',{inputSchema:{}},()=>({content:[{type:'text',text:'ok'}]}));return server;}});
   const server=app.listen(0,'127.0.0.1');servers.push(server);
   await new Promise<void>(resolve=>server.on('listening',resolve));
   return `http://127.0.0.1:${(server.address() as {port:number}).port}`;
 }
 describe('Persistent OAuth authorization',()=>{
+  it('isolates Codex grants, refresh resources, consent wording and HTTP tool access',async()=>{
+    const f=await fixture(true),base=await serverFor(f.provider),resource=f.provider.origin+'/local-codex/mcp';
+    const consent=await fetch(`${base}/consent?request=${f.requestId}`);const html=await consent.text();expect(html).toContain('Connect Local Codex');expect(html).toContain('No OpenAI API key');expect(html).not.toContain('delete your PTI app data');
+    const code=await f.code();await expect(f.provider.exchangeAuthorizationCode(f.client,code,undefined,f.client.redirect_uris[0],new URL(f.provider.resource))).rejects.toThrow();
+    const tokens=await f.provider.exchangeAuthorizationCode(f.client,code,undefined,f.client.redirect_uris[0],new URL(resource));
+    await expect(f.provider.exchangeRefreshToken(f.client,tokens.refresh_token!,undefined,new URL(f.provider.resource))).rejects.toThrow();
+    const grant=await f.provider.verifyAccessToken(tokens.access_token);expect(grant.scopes).toEqual([CODEX_SCOPE]);expect(grant.resource?.href).toBe(resource);
+    const rpc=(endpoint:string,token:string)=>fetch(base+endpoint,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})});
+    expect((await rpc('/mcp',tokens.access_token)).status).toBe(403);
+    const listed=await rpc('/local-codex/mcp',tokens.access_token);expect(listed.status).toBe(200);const names=(await listed.json()).result.tools.map((t:{name:string})=>t.name);expect(names).toHaveLength(7);expect(names).toContain('bridge_status');expect(names).not.toContain('test_read');
+    const root=await fixture();const rootToken=await root.provider.exchangeAuthorizationCode(root.client,await root.code(),undefined,root.client.redirect_uris[0]);const rootBase=await serverFor(root.provider);
+    expect((await fetch(rootBase+'/local-codex/mcp',{method:'POST',headers:{Authorization:`Bearer ${rootToken.access_token}`}})).status).toBe(403);
+    expect(()=>assertDocumentPath('_ptiLocalServices/local-codex')).toThrow();
+  });
   it('restricts dynamic registration redirect origins',async()=>{
     const {provider}=await fixture();
     await expect(provider.clientsStore.registerClient!({redirect_uris:['https://attacker.example/callback']})).rejects.toThrow();

@@ -11,6 +11,10 @@ assert.equal(metadata.resource, `${origin}/mcp`);
 const unauth = await fetch(`${origin}/mcp`, { method: 'POST', signal: AbortSignal.timeout(30000) });
 assert.equal(unauth.status, 401);
 assert(unauth.headers.get('www-authenticate').includes('resource_metadata'));
+const codexMetadata=await get('/.well-known/oauth-protected-resource/local-codex/mcp');
+assert.equal(codexMetadata.resource,`${origin}/local-codex/mcp`);
+assert.deepEqual(codexMetadata.scopes_supported,['local-codex:jobs']);
+assert.equal((await fetch(`${origin}/local-codex/mcp`,{method:'POST'})).status,401);
 console.log('HTTPS discovery, PKCE metadata and unauthenticated access rejection passed. User OAuth connection still required.');
 // Deployment-identity acceptance check. The existing CI admin credential grants a
 // five-minute test session to the already approved owner; both records are deleted.
@@ -24,7 +28,9 @@ const {StreamableHTTPClientTransport}=await import('@modelcontextprotocol/sdk/cl
 const user=await getAuth().getUserByEmail('schttewary@gmail.com');assert(user.emailVerified&&!user.disabled);
 const db=getFirestore(),token=secret(),sessionId=secret();
 const accessRef=db.doc(`_ptiMcpAuth/access/items/${digest(token)}`),sessionRef=db.doc(`_ptiMcpAuth/sessions/items/${digest(sessionId)}`);
-let client;
+const codexToken=secret(),codexSessionId=secret();
+const codexAccess=db.doc(`_ptiMcpAuth/access/items/${digest(codexToken)}`),codexSession=db.doc(`_ptiMcpAuth/sessions/items/${digest(codexSessionId)}`);
+let client,codexClient;
 try{
  const batch=db.batch();batch.set(sessionRef,{expiresAt:now()+300,revoked:false});batch.set(accessRef,{uid:user.uid,email:user.email,authenticatedAt:now(),clientId:'morsel-deployment-check',scopes:['pti:apps'],sessionId,resource:origin+'/mcp',expiresAt:now()+300});await batch.commit();
  client=new Client({name:'morsel-live-acceptance',version:'1'});await client.connect(new StreamableHTTPClientTransport(new URL(origin+'/mcp'),{requestInit:{headers:{Authorization:'Bearer '+token}}}));
@@ -33,4 +39,11 @@ try{
  console.log('PASS: deployed authenticated tools/list and food_plan share real owner history and the coherent meal model.');
  const venture=await client.callTool({name:'venture_context',arguments:{}});assert(!venture.isError);const studio=JSON.parse(venture.content.find(c=>c.type==='text').text);assert.equal(studio.root,`users/${user.uid}/ventureData/workspace`);for(const name of ['threads','messages','branches','researchTasks','findings','decisions','experiments','opportunities'])assert(Array.isArray(studio[name]));assert(studio.messages.every(m=>!m.audioData));
  console.log('PASS: deployed Venture tools are listed and authenticated context reads the owner workspace without exposing audio payloads.');
-}finally{await client?.close().catch(()=>{});const batch=db.batch();batch.delete(accessRef);batch.delete(sessionRef);await batch.commit();}
+ const cb=db.batch();cb.set(codexSession,{expiresAt:now()+300,revoked:false});cb.set(codexAccess,{uid:user.uid,email:user.email,authenticatedAt:now(),clientId:'local-codex-deployment-check',scopes:['local-codex:jobs'],sessionId:codexSessionId,resource:origin+'/local-codex/mcp',expiresAt:now()+300});await cb.commit();
+ codexClient=new Client({name:'local-codex-live-acceptance',version:'1'});await codexClient.connect(new StreamableHTTPClientTransport(new URL(origin+'/local-codex/mcp'),{requestInit:{headers:{Authorization:'Bearer '+codexToken}}}));
+ const codexNames=(await codexClient.listTools()).tools.map(t=>t.name).sort();assert.deepEqual(codexNames,['bridge_status','cancel_task','continue_task','get_task','list_projects','respond_to_task','start_task']);
+ const health=await codexClient.callTool({name:'bridge_status',arguments:{}});assert(!health.isError);assert.equal(JSON.parse(health.content.find(c=>c.type==='text').text).openaiApiKeyRequired,false);
+ assert.equal((await fetch(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+codexToken}})).status,403);
+ assert.equal((await fetch(origin+'/local-codex/mcp',{method:'POST',headers:{Authorization:'Bearer '+token}})).status,403);
+ console.log('PASS: Local Codex has exactly seven authenticated job tools, and PTI/Codex tokens cannot cross resources. No local job was submitted.');
+}finally{await client?.close().catch(()=>{});await codexClient?.close().catch(()=>{});const batch=db.batch();for(const ref of [accessRef,sessionRef,codexAccess,codexSession])batch.delete(ref);await batch.commit();}

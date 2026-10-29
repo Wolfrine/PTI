@@ -1,0 +1,39 @@
+# Local Codex relay — 29 October 2026
+
+Implemented the private Local Codex plugin's remote transport so normal ChatGPT conversations can delegate to this PC's signed-in Codex CLI. The hosted relay is deployed through PTI's existing main pipeline; the outbound Windows worker is installed and scheduled. No OpenAI API key, model API billing integration, or Secure MCP Tunnel was added.
+
+## Delivered
+
+- Existing private plugin identity: [Local Codex](https://chatgpt.com/plugins/plugins_6ae2fecacc50819182147ace33f8cc3e), version **0.2.0**, release `pluginrel_6ae312415c9c8191a695caef4c967ea5`.
+- Plugin source read-back confirmed remote `/local-codex/mcp`, `requires_local_executor: false`, the preserved author/default prompt/skill, and removal of obsolete packaged local server/worker files. Audience remains private/personal.
+- Backend source: `tools/pti-mcp/src/local-codex.ts`, OAuth resource/scope isolation, authenticated owner worker routes, and protected queue storage under the existing server-only namespace. Existing Firestore rules were preserved.
+- Worker/package source: `tools/local-codex`; installed runtime, protected credential, task history and scratch evidence under `F:\Workspace\Support\LocalCodexBridge`. The existing project allowlist and task history were retained. Platform-managed Codex binaries/auth/session state retain their required Windows locations.
+- **PTI Local Codex Relay** uses `wscript.exe //B //NoLogo`, hidden PowerShell and hidden child processes. A real scheduler invocation started the installed release, published a cloud heartbeat and executed acceptance jobs. Stop/upgrade verifies the owned PID/executable/release path and terminates its process tree; the final task is running and idle.
+- Remote pairing reused the same Windows user's existing DPAPI-protected PTI owner sign-in, refreshed and stored under separate relay DPAPI entropy. The monitor's files were unchanged. This shares the existing Firebase login's revocation lifecycle; Google pairing remains available for an independent login. Codex credentials remain on the PC.
+
+Source commits: `a82bbe38a71a3af494587df02c9ec29ed46813a5` and `f88a1a2320091d63c6a6c02a3480c64ad6000e00` on main. The first deployed backend passed [CI and live owner access checks](https://github.com/Wolfrine/PTI/actions/runs/40849574863). The worker hardening passed the same verify job in [the following run](https://github.com/Wolfrine/PTI/actions/runs/40851354104).
+
+## Evidence
+
+Backend build and all 29 tests passed. Worker fixture checks passed for seven tools, F-drive path enforcement, default inspection, request deduplication, continuation, human questions/approvals, cancellation, edit concurrency and refusal of API-authenticated runtime execution. Additional tests passed for stripping API credentials/endpoint overrides and atomic state replacement under simulated Windows sharing locks. Existing Home contract, personal-harness and food regression checks passed.
+
+Live acceptance used standard OAuth/PKCE, a temporary grant revoked in `finally`, the deployed endpoint, the scheduled worker and actual subscription-authenticated Codex inference (`account.type=chatgpt`, model `gpt-6.1-sol`). No tokens were printed or written in plaintext. The work used disposable scratch files rather than production project changes.
+
+| Check | Observed result |
+| --- | --- |
+| Inspection and retry | Returned an exact random marker read from a scratch file; repeating the request key returned the same job. |
+| Continuation | Same local thread retained the marker without rereading; cloud generation advanced and immutable inspect mode was retained. |
+| Authorized edit | Created the exact requested scratch file; the acceptance runner independently read and compared its contents from disk. |
+| Active cancellation | Running real Codex turn became interrupted. |
+| Offline rejection | Disabled this relay's schedule and stopped its verified process tree; after heartbeat expiry, submission returned `Nothing was queued`. |
+| Scheduled recovery | Re-enabled and started the task; authenticated cloud status returned online again. |
+| Access boundary | Exactly seven Codex tools; PTI and Codex tokens could not cross resources. Foreign owners, stale generations and expired leases were rejected. |
+| Responsive UI | Pairing and deployed consent screens visually checked at desktop and 390 × 844 mobile dimensions. |
+
+Real model job IDs from the installed hardened worker: inspection/continuation `0de507686345f959d6122ff4437fea60`, edit `116d48486192df4e18ac256c3ebbf52c`, active cancellation `3f189a3a98ba393e1a3100f66c07553d`. Inspection and continuation used local thread `01a18704-0d8b-7880-b414-d908a35cb60b`. The later offline run completed at `2026-10-29T09:40:21.225Z`; its evidence is `scratch/relay-offline-acceptance.json`. Earlier complete real-model evidence is `scratch/relay-live-acceptance.json`; the later run's model tasks were independently checked in the preserved local task records after its test harness hit a PowerShell invocation-policy error before the offline step. That harness invocation was corrected, and the standalone offline check passed. Fixture protocol tests are synthetic; the model/file/offline checks above used the real deployed system.
+
+## Remaining ChatGPT acceptance
+
+The remote release is saved and verified, but a fresh normal ChatGPT conversation and a physical phone invocation have **not** been verified. The browser available for inspecting the plugin was signed out of ChatGPT. Open the plugin link on the signed-in phone/web account and connect the updated plugin, then ask: **“Use Local Codex to list my available projects.”** This is a ChatGPT connection step; the PC setup is already installed. The older desktop marketplace package remains enabled pending confirmation of the remote connection, to avoid removing the existing path prematurely.
+
+The PC must stay awake, online and signed into ChatGPT. Availability uses a 60-second heartbeat window; unclaimed requests expire after two minutes and lost leases require explicit continuation. All Codex use draws on the existing account's Codex allowance. Inspection is the default; edits require the user's request and pending human approvals are never invented by the bridge.

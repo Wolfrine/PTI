@@ -1,9 +1,25 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { getAuth } from 'firebase-admin/auth';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { createMcpServer } from '../dist/index.js';
+import { pathToFileURL } from 'node:url';
+import { appCatalog } from '../dist/apps.js';
+
+// Test the canonical registry, not a count that breaks whenever an app is added.
+// This assertion is safe to import without initializing Admin or reading data.
+export function assertCanonicalAppCatalog(catalog) {
+  assert(Array.isArray(catalog?.apps), 'App discovery must return an apps array.');
+  const ids = catalog.apps.map(app => app?.id);
+  assert(ids.every(id => typeof id === 'string' && id.length > 0), 'Discovered apps require valid IDs.');
+  assert.equal(new Set(ids).size, ids.length, 'Discovered app IDs must be unique.');
+  assert.deepEqual([...ids].sort(), appCatalog().map(app => app.id).sort(), 'Discovered apps must match the canonical registry.');
+}
+
+async function verifyData() {
+const [{ getAuth }, { Client }, { InMemoryTransport }, { createMcpServer }] = await Promise.all([
+  import('firebase-admin/auth'),
+  import('@modelcontextprotocol/sdk/client/index.js'),
+  import('@modelcontextprotocol/sdk/inMemory.js'),
+  import('../dist/index.js'),
+]);
 const user = await getAuth().getUserByEmail('schttewary@gmail.com');
 assert(!user.disabled && user.emailVerified, 'The approved PTI owner must be active and verified.');
 const server = createMcpServer({ uid: user.uid, actor: 'PTI MCP connection verification', taskReference: process.env.GITHUB_SHA });
@@ -20,7 +36,7 @@ const path = `users/${user.uid}/mcpConnectionChecks/${randomUUID()}`;
 let created = false;
 try {
   const catalog = await call('pti_apps_list', {});
-  assert.equal(catalog.apps.length, 8);
+  assertCanonicalAppCatalog(catalog);
   for (const collection of ['domains', 'luminaryData/observations/items', 'personalData/workspace/feedback', 'sefpoData/workspace/units', 'ventureData/workspace/discoveries', 'foodData/workspace/orders', 'trackerData/workspace/events']) {
     await call('firestore_query', { collectionPath: `users/${user.uid}/${collection}`, limit: 1 });
   }
@@ -43,7 +59,7 @@ try {
   const receipt = food.recentOrders[0];
   const dedupe = await call('food_ingest_email', {gmailMessageId:receipt.source.gmailMessageId,from:'noreply@zomato.com',subject:receipt.source.subject,receivedAt:receipt.receivedAt,text:`ORDER ID: ${receipt.orderId}\nDelivered\n${receipt.restaurantName}\n${receipt.items.map(i=>`${i.quantity} X ${i.name}`).join('\n')}\nTotal paid - ₹${receipt.total}`});
   assert.equal(dedupe.duplicate,true);
-  console.log('PASS: eight-app discovery, seven real app collection reads, shared meal model, food tool discovery and duplicate receipt rejection, owner-scoped create/update/read/delete and deletion verification. No private records printed.');
+  console.log('PASS: canonical app discovery, seven real app collection reads, shared meal model, food tool discovery and duplicate receipt rejection, owner-scoped create/update/read/delete and deletion verification. No private records printed.');
 } finally {
   if (created) {
     const remaining = await call('firestore_get_document', { path });
@@ -51,3 +67,7 @@ try {
   }
   await client.close(); await server.close();
 }
+}
+
+// Importing the pure assertion in an offline test must never execute live checks.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await verifyData();

@@ -7,7 +7,7 @@ description: Use when the user wants this PC's local Codex to inspect a project,
 
 Keep the conversation here. Delegate the concrete local task, then bring back its evidence and result.
 
-1. Call `bridge_status` and `list_projects`. Match the requested project to an available key. Ask only if several plausible targets remain. Never invent paths or claim the PC is connected from a plugin badge alone.
+1. Call `bridge_status` and `list_projects`. Match the requested project to an available key. Ask only if several plausible targets remain. Never invent paths or claim the PC is connected from a plugin badge alone. If the tools are absent from the session, report missing ChatGPT tool registration or sign-in; this does not establish whether the PC is offline. Only an actual status result establishes worker availability.
 2. Send a self-contained prompt containing the user's goal, relevant context and source references, constraints, requested deliverable, and verification criteria. Only forward information needed for this task. Do not forward credentials or unrelated chat history.
 3. Call `start_task` with a unique stable `request_key`. Reuse that same key and same arguments if a call times out or its outcome is uncertain. Use `inspect` for questions, review, diagnosis, planning, and discovery. Use `edit` only when the human requested implementation or file changes. Mode cannot change on continuation; start an edit task when separately authorized.
 4. Keep the returned task ID. Call `get_task` with `wait_seconds: 20` while queued or running. Give concise progress updates. A queued task is not a finished task.

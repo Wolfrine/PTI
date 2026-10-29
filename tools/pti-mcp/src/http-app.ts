@@ -50,7 +50,9 @@ const auth=getAuth(initializeApp(${config}));
 const button=document.getElementById('connect'), status=document.getElementById('status');
 button.onclick=async()=>{button.disabled=true;try{
  await setPersistence(auth,inMemoryPersistence);
- const result=await signInWithPopup(auth,new GoogleAuthProvider());
+ const google=new GoogleAuthProvider();
+ ${codex ? "google.setCustomParameters({login_hint:'schttewary@gmail.com'});" : ''}
+ const result=await signInWithPopup(auth,google);
  const response=await fetch('/consent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestId:${requestId},idToken:await result.user.getIdToken()})});
  const data=await response.json();if(!response.ok)throw new Error(data.error||'Connection failed');location.replace(data.redirect);
 }catch(error){status.textContent=error.message;button.disabled=false;}};

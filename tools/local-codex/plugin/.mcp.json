@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "local-codex": {
-      "type": "http",
-      "url": "https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/mcp"
-    }
-  }
-}

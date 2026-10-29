@@ -1,0 +1,13 @@
+{
+  "name": "Local Codex Connection",
+  "pluginId": "plugin_asdk_app_6ae338a56d108191ac90e0812c7e8f16",
+  "appId": "asdk_app_6ae338a56d108191ac90e0812c7e8f16",
+  "url": "https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/mcp",
+  "transport": "streamable-http",
+  "authentication": {
+    "type": "oauth",
+    "client": { "mode": "dcr" },
+    "resource": "https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/mcp",
+    "scopes": ["local-codex:jobs"]
+  }
+}

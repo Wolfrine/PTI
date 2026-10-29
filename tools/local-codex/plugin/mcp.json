@@ -1,9 +1,0 @@
-{
-  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
-  "mcpServers": {
-    "local-codex": {
-      "type": "http",
-      "url": "https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/mcp"
-    }
-  }
-}

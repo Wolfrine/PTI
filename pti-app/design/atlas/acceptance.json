@@ -1,0 +1,618 @@
+{
+  "schema_version": 2,
+  "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+  "status": "agent-reviewed",
+  "owner_verdict": {
+    "status": "not-reviewed"
+  },
+  "blockers": [],
+  "perception_packet": {
+    "product_object": "A light, navigable knowledge landscape with an owner-private evidence and self-reported progression overlay.",
+    "user_job": "Locate a sector, open a subject, inspect its sourced foundations and our actual work, then record or review an explicit personal position.",
+    "screen_state": "Seeded Layer 1 catalogue with separately loaded, pending Layer 2 evidence; normal, linked, outline, review, source-consent, capture-receipt and recovery states.",
+    "eye_path": "Atlas title and purpose → known landscape and selected sector → literal subject → sources and separate personal position. Drilled mobile states compact the title and provide subject jumps.",
+    "outcome_100ms": "Design hypothesis, not a measured eye-tracking result: this is a calm, expansive knowledge workspace rather than a task/KPI dashboard.",
+    "outcome_1s": "Design hypothesis: multiple named sectors and the focused branch are immediately distinguishable; emphasis denotes selection, not importance or mastery.",
+    "outcome_5s": "Design hypothesis: the reader can choose a sector/subject and understand that source evidence, self-report and unassessed knowledge are different."
+  },
+  "critical_dimensions": {
+    "clarity": "Literal sector/subject names and hierarchy are unambiguous; drill-down, breadcrumbs and return are visible without deciphering an unlabeled diagram.",
+    "expansive_composition": "Several distinct areas coexist in the first working desktop view, with purposeful hierarchy and one knowledge object; no decorative network, scene or repetitive KPI-card foundation.",
+    "evidence_truth": "Humanity's knowledge, source evidence and personal position are visibly separate; counts have scope, pending is not mastery, and unknown/outlines do not masquerade as verified coverage.",
+    "responsive_readability": "Desktop and 390/320px views preserve legible hierarchy and controls; long labels/locators, sparse, partial, loading and error states remain understandable."
+  },
+  "roles": {
+    "designer": "atlas_ui_designer",
+    "visual_critic": "atlas_visual_critic",
+    "parent": "root",
+    "qa": "root"
+  },
+  "baseline": {
+    "description": "New Atlas surface within PTI. Existing Home warm-neutral/coral identity and clear app return informed compatibility; its room photograph/card grid was not copied.",
+    "none_reason": "No previous Atlas implementation existed at the inspected baseline cee67b732634a7ccb12906d4c4c27e5b93377de4. Retained direction and cycle captures establish this new surface's progression."
+  },
+  "comparisons": [
+    {
+      "reference": "Open Knowledge Maps actual working UI, https://raw.githubusercontent.com/OpenKnowledgeMaps/Headstart/master/headstart.png",
+      "matched_task_state": "Broad topical overview alongside concrete detail.",
+      "observed_gap": "Useful overview/detail coexistence, but overlapping circles and tiny labels would obscure Atlas sectors; area may imply an undefined magnitude.",
+      "disposition": "Retain focus plus surrounding landscape; use literal sector names, real subjects and no size-as-knowledge claim.",
+      "evidence": {
+        "path": "evidence/references/okm-working-map.png",
+        "sha256": "dd36b7905332498ef9b127f956a3596bcf3a8db5fec04d08962e836d67935634"
+      }
+    },
+    {
+      "reference": "Open Knowledge Maps future discovery concept, https://openknowledgemaps.org/img/future-of-discovery/1-start-page.png",
+      "matched_task_state": "Light overview of multiple disciplines with a search entry.",
+      "observed_gap": "Open simultaneous breadth is useful; anonymous circles and schematic placeholders do not provide clear actions. This is a concept, not a shipped-product claim.",
+      "disposition": "Retain the open field and simultaneous breadth; replace decorative circles with named actionable regions and selection-driven depth.",
+      "evidence": {
+        "path": "evidence/references/okm-concept-overview.png",
+        "sha256": "280df037ca195653415781c1d7a6ebaf14c9877c1c32f3415ead7b97312161bd"
+      }
+    },
+    {
+      "reference": "Our World in Data sourced chart, https://ourworldindata.org/grapher/co-emissions-per-capita.png?tab=chart",
+      "matched_task_state": "Content-first title, direct labels and inspectable provenance.",
+      "observed_gap": "Clear semantic hierarchy and source qualification are useful; a quantitative chart is not an appropriate form for unmeasured understanding.",
+      "disposition": "Use title, labels, references and uncertainty; do not borrow a quantitative chart or invented percentages.",
+      "evidence": {
+        "path": "evidence/references/owid-sourced-chart.png",
+        "sha256": "c662e3f721e5fb1a8cceaf4fb336646af8c2679385c9094d892bcd6b2155b585"
+      }
+    }
+  ],
+  "direction_mode": "new-or-reset",
+  "direction_candidates": [
+    {
+      "id": "field",
+      "visual_difference": "Open typographic sector landscape with selection-driven subject focus.",
+      "evidence": {
+        "path": "evidence/directions/candidate-field-desktop.png",
+        "sha256": "38802b7c1c80c985e972b9a9dc633cae9e60b7b4099f6cbb8e615e0f6a49d11c"
+      }
+    },
+    {
+      "id": "index",
+      "visual_difference": "Compact two-column catalogue/ledger; strong scanning but limited landscape breadth.",
+      "evidence": {
+        "path": "evidence/directions/candidate-index-desktop.png",
+        "sha256": "647df1c5efc4db9b290493be8baa4eef4cc8a80d94ddaaf67a901c3e3bcbff14"
+      }
+    },
+    {
+      "id": "orbit",
+      "visual_difference": "Central lens and orbital positioning; rejected because it implied unexplained centrality and shrank labels.",
+      "evidence": {
+        "path": "evidence/directions/candidate-orbit-desktop.png",
+        "sha256": "5eb412e45552661cd7ae24190282146f567d41e02916e3f53c4001fc8d9245bb"
+      }
+    }
+  ],
+  "selected_direction": {
+    "id": "field",
+    "reason": "Most credible light, simultaneous view of multiple disciplines. Implemented refinement removed the initial repetitive oval cells and added a meaningful expanded branch rather than decorative geometry."
+  },
+  "required_states": [
+    {
+      "id": "overview-desktop",
+      "marker": "THE KNOWN LANDSCAPE",
+      "viewport": "desktop"
+    },
+    {
+      "id": "overview-mobile",
+      "marker": "THE KNOWN LANDSCAPE",
+      "viewport": "mobile"
+    },
+    {
+      "id": "subject-desktop",
+      "marker": "Your place",
+      "viewport": "desktop"
+    },
+    {
+      "id": "subject-mobile",
+      "marker": "Your place",
+      "viewport": "mobile"
+    },
+    {
+      "id": "linked-mobile",
+      "marker": "Linked",
+      "viewport": "mobile"
+    },
+    {
+      "id": "outline-desktop",
+      "marker": "No source references have been mapped",
+      "viewport": "desktop"
+    },
+    {
+      "id": "review-desktop",
+      "marker": "Make the connection.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "sources-desktop",
+      "marker": "Approve and enable source",
+      "viewport": "desktop"
+    },
+    {
+      "id": "source-success-mobile",
+      "marker": "Paused · enable",
+      "viewport": "mobile"
+    },
+    {
+      "id": "long-source-mobile",
+      "marker": "long-human-readable-source-context-",
+      "viewport": "mobile"
+    },
+    {
+      "id": "inspect-mobile",
+      "marker": "Make the connection.",
+      "viewport": "mobile"
+    },
+    {
+      "id": "history-mobile",
+      "marker": "Capture receipts",
+      "viewport": "mobile"
+    },
+    {
+      "id": "error-mobile",
+      "marker": "Evidence is not loaded",
+      "viewport": "mobile"
+    },
+    {
+      "id": "partial-mobile",
+      "marker": "Review not loaded",
+      "viewport": "mobile"
+    },
+    {
+      "id": "loading-mobile",
+      "marker": "Loading your private evidence",
+      "viewport": "mobile"
+    },
+    {
+      "id": "empty-desktop",
+      "marker": "Your progression starts with evidence.",
+      "viewport": "desktop"
+    },
+    {
+      "id": "empty-search-mobile",
+      "marker": "No subjects match this search.",
+      "viewport": "mobile"
+    }
+  ],
+  "evidence": [
+    {
+      "state": "overview-desktop",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "THE KNOWN LANDSCAPE",
+      "viewport": "desktop",
+      "width": 1440,
+      "path": "evidence/final/final-overview-desktop.png",
+      "sha256": "9e9cf3b86dda0c3a52c19bd58b3939c2ffb5743514abd80f297dab2082d1cf4c",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "overview-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "THE KNOWN LANDSCAPE",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-overview-mobile.png",
+      "sha256": "62f4835da3b70f9bea2248b125a490ce1e9f91f5fde18ad3112974340d00d41d",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "subject-desktop",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Your place",
+      "viewport": "desktop",
+      "width": 1440,
+      "path": "evidence/final/final-subject-desktop.png",
+      "sha256": "9243d7ecbac5bc8386dff0cc468cbcfb93d307fcc1136d0decc6e676632a67f1",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "subject-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Your place",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-subject-mobile.png",
+      "sha256": "1f3fd57b624c83663f0980ea9e374716a2191d06964d46b89d7f200a0cdf3618",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "linked-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Linked",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-linked-mobile.png",
+      "sha256": "4528bbe612acb0ab7f3082c3326599e7798260c39dc09833e0a494c1212699ab",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "outline-desktop",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "No source references have been mapped",
+      "viewport": "desktop",
+      "width": 1440,
+      "path": "evidence/final/final-outline-desktop.png",
+      "sha256": "9473202370fc33dd4320c6ccbe6000b3e8565630eb09b50f7b9e54c94b9b76d4",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "review-desktop",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Make the connection.",
+      "viewport": "desktop",
+      "width": 1440,
+      "path": "evidence/final/final-review-desktop.png",
+      "sha256": "366a0aae48269868b34d2889f503b27cb4a12646a0184fa922b7fdc1cb32e472",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "sources-desktop",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Approve and enable source",
+      "viewport": "desktop",
+      "width": 1440,
+      "path": "evidence/final/final-sources-desktop.png",
+      "sha256": "b733330ca846c159f4b32ea45602c4ec63a0f1ca9db94ef04630a659f1f01f7f",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "source-success-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Paused · enable",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-source-success-mobile.png",
+      "sha256": "edbd4e90f35541163afee7e4946f147beafe8eb5d295d4a3a0763e5c417fc4db",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "long-source-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "long-human-readable-source-context-",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-long-source-mobile.png",
+      "sha256": "38e307b2aeda61a5b0829392399ad1418793729f5818fa9b3e717f2b807f778c",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "inspect-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Make the connection.",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-inspect-mobile.png",
+      "sha256": "6b66ad827679645923653f4d8a8c3968aaec63357afa39e1827dd1d100cc1081",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "history-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Capture receipts",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-history-mobile.png",
+      "sha256": "356b29b360f165806045148c5cdc1fe621d6e4915a7d663e1da90dd12dfed3f7",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "error-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Evidence is not loaded",
+      "viewport": "mobile",
+      "width": 320,
+      "path": "evidence/final/final-error-mobile.png",
+      "sha256": "e766745f342b07fa03318ad985a8ecd4ada46eecc79d842af10c970356ba7cd1",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "partial-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Review not loaded",
+      "viewport": "mobile",
+      "width": 390,
+      "path": "evidence/final/final-partial-mobile.png",
+      "sha256": "45248f29fa624ac4909df71d1759a63a37dbd65206733443fab5f9fc7fb90691",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "loading-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Loading your private evidence",
+      "viewport": "mobile",
+      "width": 320,
+      "path": "evidence/final/final-loading-mobile.png",
+      "sha256": "e5658ba5ed81ffb9b92b257527a3e9d31206281611c54e60e8f831e2bb77c35f",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "empty-desktop",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "Your progression starts with evidence.",
+      "viewport": "desktop",
+      "width": 1440,
+      "path": "evidence/final/final-empty-desktop.png",
+      "sha256": "eeff51c150127be5caa14cd6395dcaa0a79ab54882d84da1b5ac02cc6348efc9",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    },
+    {
+      "state": "empty-search-mobile",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "observed_marker": "No subjects match this search.",
+      "viewport": "mobile",
+      "width": 320,
+      "path": "evidence/final/final-empty-search-mobile.png",
+      "sha256": "e0f6ce5711093cd2d9deabd1d8232b77cf4269083ecfb1670ded237cef03cae1",
+      "checks": {
+        "state_identity": true,
+        "overflow": false,
+        "broken_images": false,
+        "page_errors": false
+      }
+    }
+  ],
+  "cycles": [
+    {
+      "id": 1,
+      "visual_finding": "Literal subjects and pending/linked states became clear, but equal cells were too repetitive, mobile Sources clipped and evidence dates collided with actions. Critic overall7.3, not accepted.",
+      "qa_finding": "Synthetic Angular captures established the real implementation; screenshots do not prove owner persistence. Mobile/date defects became explicit correction targets.",
+      "evidence": {
+        "path": "evidence/cycles/cycle-1-overview-desktop.png",
+        "sha256": "b53d24f30757cefc13f35418ca415310b1da02b41796ab9517be9778e69ba2b3"
+      }
+    },
+    {
+      "id": 2,
+      "visual_finding": "Expanded sector focus and mobile drill hierarchy improved. Default jump controls, oversize context rail and a misleading outline reference-check date remained. Critic overall7.7, not accepted.",
+      "qa_finding": "A hot-development compiler-overlay capture was rejected, not scored. The build was frozen and the set recaptured before review; future capture checks gate page errors and overlays.",
+      "evidence": {
+        "path": "evidence/cycles/cycle-2-overview-desktop.png",
+        "sha256": "88cc8ebb7a3e10ddddc2954c935c77e64bd501a59c2e55bc78b4655638cd8c4b"
+      }
+    },
+    {
+      "id": 3,
+      "visual_finding": "Overview plus focus and semantic controls improved. Error states still presented unloaded position as Unassessed and unavailable evidence as zero; long search/source content dominated mobile. Critic7.7 and parent7.6, not accepted.",
+      "qa_finding": "Edge fixtures exposed unknown-vs-zero errors. Parent personally inspected overview and 320px error and required explicit unavailable states, compact search recovery and exact-source disclosure.",
+      "evidence": {
+        "path": "evidence/cycles/cycle-3-overview-desktop.png",
+        "sha256": "54cd418d77ea83702bd76586b5a1116c3ca05fc1388755a092521ad1b1f15bf7"
+      }
+    },
+    {
+      "id": 4,
+      "visual_finding": "Unknown position/evidence, partial review and exact-source disclosure were truthful; compact active-search mobile header remained necessary. Critic8.2 provisional, fifth cycle still required.",
+      "qa_finding": "Computed text contrast subsequently found repeated muted-label failures; passing appearance alone did not override this separate QA blocker.",
+      "evidence": {
+        "path": "evidence/cycles/cycle-4-error-mobile.png",
+        "sha256": "7d0ccf3f72b2f9b2dfe32bf49aa942835294333d9a385da84ab93a6924ad49c6"
+      }
+    },
+    {
+      "id": 5,
+      "visual_finding": "Semantic sector subtitles, upfront map key, stronger readable secondary text, compact active search and capture receipts completed the coherent editorial field. All17 final renders personally inspected by critic and parent; independent overall8.3/8.2.",
+      "qa_finding": "Frozen candidate passed83 Angular tests,58 MCP tests,9 hosted-helper regressions,10 browser interactions and22 responsive/contrast cases. No runtime/overflow/clipped-control or computed text-contrast failures in bounded checks. Live isolation separately passed23 checks; synthetic UI is not an owner-session inspection.",
+      "evidence": {
+        "path": "evidence/final/final-overview-desktop.png",
+        "sha256": "9e9cf3b86dda0c3a52c19bd58b3939c2ffb5743514abd80f297dab2082d1cf4c"
+      }
+    }
+  ],
+  "parent_checkpoints": [
+    {
+      "cycle": 3,
+      "judgment": "Personally inspected the desktop overview and 320px error render. Clarity8, composition8, evidence truth7, responsiveness7.5; holistic7.6. Required truthful unknown states, compact recovery and bounded exact-source disclosure before release.",
+      "evidence": {
+        "path": "evidence/cycles/cycle-3-overview-desktop.png",
+        "sha256": "54cd418d77ea83702bd76586b5a1116c3ca05fc1388755a092521ad1b1f15bf7"
+      }
+    },
+    {
+      "cycle": 5,
+      "judgment": "Personally inspected all17 frozen final renders, including original-resolution long review/source/inspect/history captures. Clear literal hierarchy, upfront scope legend and truthful missing-data states meet release threshold; long editorial forms and regular mobile rows remain restrained nonblocking tradeoffs. Holistic8.2, not owner acceptance.",
+      "evidence": {
+        "path": "evidence/final/final-overview-desktop.png",
+        "sha256": "9e9cf3b86dda0c3a52c19bd58b3939c2ffb5743514abd80f297dab2082d1cf4c"
+      }
+    }
+  ],
+  "designer_capability_record": "Primary designer atlas_ui_designer used inherited parent capability; no lower-cost model override is claimed. A separate read-only stronger pass was actually spawned at the earlier randomly selected round5 with fork_turns:none, model:gpt-6-astra, reasoning_effort:high. atlas_stronger_design_pass inspected four cycle4 renders and three reference images; its semantic-sector subtitles and upfront legend recommendations were implemented. It did not issue final acceptance or edit source files.",
+  "reviews": {
+    "visual_critic": {
+      "reviewer": "atlas_visual_critic",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "verdict": "pass",
+      "overall": 8.3,
+      "scores": {
+        "clarity": 8.5,
+        "expansive_composition": 8.1,
+        "evidence_truth": 8.4,
+        "responsive_readability": 8.3
+      },
+      "inspected_sha256": [
+        "9e9cf3b86dda0c3a52c19bd58b3939c2ffb5743514abd80f297dab2082d1cf4c",
+        "62f4835da3b70f9bea2248b125a490ce1e9f91f5fde18ad3112974340d00d41d",
+        "9243d7ecbac5bc8386dff0cc468cbcfb93d307fcc1136d0decc6e676632a67f1",
+        "1f3fd57b624c83663f0980ea9e374716a2191d06964d46b89d7f200a0cdf3618",
+        "4528bbe612acb0ab7f3082c3326599e7798260c39dc09833e0a494c1212699ab",
+        "9473202370fc33dd4320c6ccbe6000b3e8565630eb09b50f7b9e54c94b9b76d4",
+        "366a0aae48269868b34d2889f503b27cb4a12646a0184fa922b7fdc1cb32e472",
+        "b733330ca846c159f4b32ea45602c4ec63a0f1ca9db94ef04630a659f1f01f7f",
+        "edbd4e90f35541163afee7e4946f147beafe8eb5d295d4a3a0763e5c417fc4db",
+        "38e307b2aeda61a5b0829392399ad1418793729f5818fa9b3e717f2b807f778c",
+        "6b66ad827679645923653f4d8a8c3968aaec63357afa39e1827dd1d100cc1081",
+        "356b29b360f165806045148c5cdc1fe621d6e4915a7d663e1da90dd12dfed3f7",
+        "e766745f342b07fa03318ad985a8ecd4ada46eecc79d842af10c970356ba7cd1",
+        "45248f29fa624ac4909df71d1759a63a37dbd65206733443fab5f9fc7fb90691",
+        "e5658ba5ed81ffb9b92b257527a3e9d31206281611c54e60e8f831e2bb77c35f",
+        "eeff51c150127be5caa14cd6395dcaa0a79ab54882d84da1b5ac02cc6348efc9",
+        "e0f6ce5711093cd2d9deabd1d8232b77cf4269083ecfb1670ded237cef03cae1"
+      ],
+      "reason": "All17 final renders independently inspected, with image hashes recomputed. Literal sectors, semantic subtitles and focused subjects give clear scale; linked/pending/self-report/unknown states remain distinct; 320px recovery and expanded exact sources remain readable. This is a coherent editorial Atlas, not a9-level novelty or owner-approval claim.",
+      "generic_cues": [
+        "Repeated card-grid risk: regular index justified by scanning; boxed oval cells and repeated desktop numeric metadata removed, expanded branch and context rail have distinct jobs.",
+        "Decorative futuristic metaphor risk resolved: no scene, orbit, invented centrality or unlabeled network; compact mobile drill/search headers prioritize the working object.",
+        "KPI/mastery dashboard risk resolved: counts are loaded evidence only; explicit map key, missing-data states, sourced outlines and caller-declared receipts prevent false completeness."
+      ]
+    },
+    "parent": {
+      "reviewer": "root",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "verdict": "pass",
+      "overall": 8.2,
+      "scores": {
+        "clarity": 8.3,
+        "expansive_composition": 8.1,
+        "evidence_truth": 8.4,
+        "responsive_readability": 8.2
+      },
+      "inspected_sha256": [
+        "9e9cf3b86dda0c3a52c19bd58b3939c2ffb5743514abd80f297dab2082d1cf4c",
+        "62f4835da3b70f9bea2248b125a490ce1e9f91f5fde18ad3112974340d00d41d",
+        "9243d7ecbac5bc8386dff0cc468cbcfb93d307fcc1136d0decc6e676632a67f1",
+        "1f3fd57b624c83663f0980ea9e374716a2191d06964d46b89d7f200a0cdf3618",
+        "4528bbe612acb0ab7f3082c3326599e7798260c39dc09833e0a494c1212699ab",
+        "9473202370fc33dd4320c6ccbe6000b3e8565630eb09b50f7b9e54c94b9b76d4",
+        "366a0aae48269868b34d2889f503b27cb4a12646a0184fa922b7fdc1cb32e472",
+        "b733330ca846c159f4b32ea45602c4ec63a0f1ca9db94ef04630a659f1f01f7f",
+        "edbd4e90f35541163afee7e4946f147beafe8eb5d295d4a3a0763e5c417fc4db",
+        "38e307b2aeda61a5b0829392399ad1418793729f5818fa9b3e717f2b807f778c",
+        "6b66ad827679645923653f4d8a8c3968aaec63357afa39e1827dd1d100cc1081",
+        "356b29b360f165806045148c5cdc1fe621d6e4915a7d663e1da90dd12dfed3f7",
+        "e766745f342b07fa03318ad985a8ecd4ada46eecc79d842af10c970356ba7cd1",
+        "45248f29fa624ac4909df71d1759a63a37dbd65206733443fab5f9fc7fb90691",
+        "e5658ba5ed81ffb9b92b257527a3e9d31206281611c54e60e8f831e2bb77c35f",
+        "eeff51c150127be5caa14cd6395dcaa0a79ab54882d84da1b5ac02cc6348efc9",
+        "e0f6ce5711093cd2d9deabd1d8232b77cf4269083ecfb1670ded237cef03cae1"
+      ],
+      "reason": "Personally inspected all17 final images. Twelve named sectors remain simultaneous with a real focused branch on desktop; literal subject and separated knowledge/personal-position columns guide drill-down. Mobile subject jumps, compact search recovery, exact source disclosures and truthful unavailable states are readable. Regular mobile rows and long review forms are acceptable scanning/permission tradeoffs, not evidence of maximal visual novelty.",
+      "generic_cues": [
+        "Equal mobile sector rows remain directory-like, but the equal scanning affordance is meaningful and no fake spatial relationship is implied.",
+        "Review batches remain long editorial forms; consistent filters, source disclosure and subject jumps make them actionable rather than decorative dashboard cards.",
+        "Source approval forms remain utilitarian; exact bounded permission and clear enabled/paused status take precedence over decorative styling."
+      ]
+    },
+    "qa": {
+      "reviewer": "root",
+      "candidate": "94859f309309ee98048bafa242825b9203c7133378b004317badee51590b01ef",
+      "verdict": "pass",
+      "inspected_sha256": [
+        "9e9cf3b86dda0c3a52c19bd58b3939c2ffb5743514abd80f297dab2082d1cf4c",
+        "62f4835da3b70f9bea2248b125a490ce1e9f91f5fde18ad3112974340d00d41d",
+        "9243d7ecbac5bc8386dff0cc468cbcfb93d307fcc1136d0decc6e676632a67f1",
+        "1f3fd57b624c83663f0980ea9e374716a2191d06964d46b89d7f200a0cdf3618",
+        "4528bbe612acb0ab7f3082c3326599e7798260c39dc09833e0a494c1212699ab",
+        "9473202370fc33dd4320c6ccbe6000b3e8565630eb09b50f7b9e54c94b9b76d4",
+        "366a0aae48269868b34d2889f503b27cb4a12646a0184fa922b7fdc1cb32e472",
+        "b733330ca846c159f4b32ea45602c4ec63a0f1ca9db94ef04630a659f1f01f7f",
+        "edbd4e90f35541163afee7e4946f147beafe8eb5d295d4a3a0763e5c417fc4db",
+        "38e307b2aeda61a5b0829392399ad1418793729f5818fa9b3e717f2b807f778c",
+        "6b66ad827679645923653f4d8a8c3968aaec63357afa39e1827dd1d100cc1081",
+        "356b29b360f165806045148c5cdc1fe621d6e4915a7d663e1da90dd12dfed3f7",
+        "e766745f342b07fa03318ad985a8ecd4ada46eecc79d842af10c970356ba7cd1",
+        "45248f29fa624ac4909df71d1759a63a37dbd65206733443fab5f9fc7fb90691",
+        "e5658ba5ed81ffb9b92b257527a3e9d31206281611c54e60e8f831e2bb77c35f",
+        "eeff51c150127be5caa14cd6395dcaa0a79ab54882d84da1b5ac02cc6348efc9",
+        "e0f6ce5711093cd2d9deabd1d8232b77cf4269083ecfb1670ded237cef03cae1"
+      ],
+      "reason": "Final capture-manifest verifies17 exact state markers and image hashes with no overflow, broken images or page errors. Separate browser-qa.json records10 passing interactions,22 responsive checks, keyboard checks and0 computed text-contrast failures.83/83 Angular,58/58 MCP and9/9 hosted-helper tests passed; production/preview builds passed with existing soft warnings and no budget escalation. Live23/23 privacy/atomic-history probes passed before private bootstrap. Computed contrast is not full WCAG certification; synthetic interactions are not signed-in owner browser validation."
+    }
+  },
+  "nonblocking_followups": [
+    "Scope the decisions-list empty-search wording to decisions rather than all history, since capture receipts have a separate matching list.",
+    "Clear an earlier source-approval form confirmation after later pause/enable actions to remove minor temporal ambiguity; the current top notice and record state are correct."
+  ],
+  "evidence_limits": [
+    "Production deployment and hosted acceptance are verified separately after publication; this record does not preclaim them.",
+    "No signed-in owner browser session was available through the Browser connection. Real private persistence/isolation is checked through authorized server/client tests, not these synthetic screenshots.",
+    "Owner visual acceptance remains not-reviewed."
+  ]
+}
+

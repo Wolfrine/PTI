@@ -17,6 +17,12 @@ export const routes: Routes = [
     { path: 'dashboard', redirectTo: 'home', pathMatch: 'full' },
     { path: 'new-dashboard', redirectTo: 'home', pathMatch: 'full' },
     {
+        path: 'atlas',
+        title: 'Civilization Atlas · PTI',
+        loadComponent: () => import('./components/new-atlas/new-atlas.component').then(m => m.NewAtlasComponent),
+        canActivate: [AuthGuard],
+    },
+    {
         path: 'domains',
         component: ManageDomainsComponent,
         canActivate: [AuthGuard],

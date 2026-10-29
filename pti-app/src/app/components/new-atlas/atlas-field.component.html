@@ -1,0 +1,20 @@
+<div class="field-guide"><span>Select a sector to focus; open a subject to go deeper.</span><span><i class="work-dot" aria-hidden="true"></i> Our work: recorded evidence or self-report</span></div>
+<div class="field-composition">
+  <article class="selected-field" aria-live="polite">
+    <p class="eyebrow">SECTOR IN FOCUS</p>
+    <h3>{{ context.fieldSector().title }}</h3>
+    <p class="field-description">{{ context.fieldSector().subtitle }}</p>
+    <p class="field-scope">{{ context.countLabel(context.fieldSubjects().length, 'subject') }} in focus. Open one for its sources and your progression.</p>
+    <button type="button" class="field-subject" *ngFor="let subject of context.fieldSubjects()" (click)="context.openSubject(subject)"><span>{{ subject.title }}</span><span aria-hidden="true">↗</span><small>{{ subject.coverage === 'seed' ? 'Seed knowledge' : 'Outline' }}<ng-container *ngIf="context.service.snapshot().loadedAt"> · {{ context.countLabel(context.evidenceFor(subject.id).length, 'loaded record') }}</ng-container></small></button>
+    <p class="field-key" *ngIf="!context.service.snapshot().loadedAt">Personal records {{ context.service.loading() ? 'loading' : 'not loaded' }}.</p><p class="field-key">Focus changes the detail, not a sector’s importance.</p>
+  </article>
+  <div class="sector-index" aria-label="Choose a sector to focus">
+    <button type="button" class="sector" *ngFor="let sector of context.sectors; let i=index" [class.selected]="sector.id === context.fieldSector().id" [attr.aria-pressed]="sector.id === context.fieldSector().id" (click)="context.selectFieldSector(sector)">
+      <span class="sector-number">{{ (i + 1).toString().padStart(2, '0') }} <i *ngIf="context.sectorHasWork(sector)" class="work-dot" aria-hidden="true"></i></span>
+      <span class="sector-title">{{ sector.title }}</span>
+      <span class="sector-scope">{{ sector.subtitle }}</span><span class="sector-foot"><span class="sector-count">{{ context.countLabel(sector.subjectIds.length, 'subject') }}</span> <span class="sector-work" *ngIf="context.sectorHasWork(sector)">· Our work</span><span aria-hidden="true">↗</span></span>
+    </button>
+  </div>
+</div>
+<div class="map-caption"><span>Select a sector to bring its subjects into focus.</span><span><i class="work-dot" aria-hidden="true"></i> Our work = recorded evidence or self-report</span></div>
+

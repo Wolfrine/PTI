@@ -61,6 +61,17 @@ describe('NewHomeComponent public launcher', () => {
     expect(home.apps.find(app => app.id === 'one-piece')?.href).toBe('https://pti-app-2ab59-one-piece.web.app/');
   });
 
+  it('opens Civilization Atlas inside PTI without changing existing default pins', () => {
+    const home = createHome();
+    const atlas = home.apps.find(app => app.id === 'atlas');
+    expect(atlas?.href).toBe('/atlas'); expect(atlas?.external).toBeUndefined();
+    home.setCategory('Knowledge');
+    expect(home.filteredApps.map(app => app.id)).toContain('atlas');
+    expect(home.pinnedIds).toEqual(['tracker', 'morsel', 'venture', 'personal', 'luminary', 'sefpo']);
+    home.searchQuery = 'civilization';
+    expect(home.filteredApps.map(app => app.id)).toEqual(['atlas']);
+  });
+
   it('retires dashboard and CEO IDs from all launcher surfaces and purges saved IDs', () => {
     localStorage.setItem('pti.home.pins.v1', JSON.stringify(['pti-dashboard', 'tracker', 'ceo-command']));
     localStorage.setItem('pti.home.recent.v1', JSON.stringify(['ceo-command', 'noveliaa']));

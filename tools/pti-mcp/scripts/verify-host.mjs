@@ -39,6 +39,8 @@ try{
  console.log('PASS: deployed authenticated tools/list and food_plan share real owner history and the coherent meal model.');
  const venture=await client.callTool({name:'venture_context',arguments:{}});assert(!venture.isError);const studio=JSON.parse(venture.content.find(c=>c.type==='text').text);assert.equal(studio.root,`users/${user.uid}/ventureData/workspace`);for(const name of ['threads','messages','branches','researchTasks','findings','decisions','experiments','opportunities'])assert(Array.isArray(studio[name]));assert(studio.messages.every(m=>!m.audioData));
  console.log('PASS: deployed Venture tools are listed and authenticated context reads the owner workspace without exposing audio payloads.');
+ const {verifyAtlasHost}=await import('./verify-atlas-host.mjs');
+ await verifyAtlasHost(client,db,user.uid);
  const cb=db.batch();cb.set(codexSession,{expiresAt:now()+300,revoked:false});cb.set(codexAccess,{uid:user.uid,email:user.email,authenticatedAt:now(),clientId:'local-codex-deployment-check',scopes:['local-codex:jobs'],sessionId:codexSessionId,resource:origin+'/local-codex/mcp',expiresAt:now()+300});await cb.commit();
  codexClient=new Client({name:'local-codex-live-acceptance',version:'1'});await codexClient.connect(new StreamableHTTPClientTransport(new URL(origin+'/local-codex/mcp'),{requestInit:{headers:{Authorization:'Bearer '+codexToken}}}));
  const codexNames=(await codexClient.listTools()).tools.map(t=>t.name).sort();assert.deepEqual(codexNames,['bridge_status','cancel_task','continue_task','get_task','list_projects','respond_to_task','start_task']);

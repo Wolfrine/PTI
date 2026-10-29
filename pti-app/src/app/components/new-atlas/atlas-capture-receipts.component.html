@@ -1,0 +1,18 @@
+<section class="capture-receipts" aria-labelledby="capture-receipts-heading">
+  <p class="eyebrow">AGENT CAPTURE HISTORY</p><h3 id="capture-receipts-heading">Capture receipts</h3>
+  <p class="receipt-explanation">What an agent submitted and what the import recorded. Coverage is caller-declared within the stated scope; it is not proof of exhaustive capture or personal understanding.</p>
+  <p class="receipt-explanation" *ngIf="!context.service.snapshot().loadedAt">Capture receipts have not loaded. Refresh or retry before assessing capture history.</p>
+  <p class="receipt-explanation" *ngIf="context.service.snapshot().hasMore.runs">More receipts remain unloaded. These are only the currently loaded records.</p>
+  <article *ngFor="let run of runs" class="capture-run">
+    <div class="receipt-top"><time>{{ context.time(text(run, 'capturedAt')) }}</time><span class="run-status">{{ status(run) }}</span></div>
+    <h4>{{ scopeText(run, 'system') || 'Source system not recorded' }}</h4>
+    <p class="scope-locator">{{ scopeText(run, 'locator') || 'Capture scope not recorded' }}</p>
+    <p class="coverage">Agent-declared coverage: <strong>{{ scopeText(run, 'completeness') || 'not recorded' }}</strong></p>
+    <p *ngIf="scopeText(run, 'limitation')" class="limitation">{{ scopeText(run, 'limitation') }}</p>
+    <ul class="capture-counts"><li>{{ count(run, 'inputCount') === null ? 'Input count not recorded' : context.countLabel(count(run, 'inputCount')!, 'input record') }}</li><li>{{ count(run, 'addedIds') === null ? 'Added count not recorded' : context.countLabel(count(run, 'addedIds')!, 'added record') }}</li><li>{{ count(run, 'duplicateIds') === null ? 'Duplicate count not recorded' : context.countLabel(count(run, 'duplicateIds')!, 'duplicate') }}</li><li>{{ count(run, 'conflictEventIds') === null ? 'Conflict count not recorded' : context.countLabel(count(run, 'conflictEventIds')!, 'conflict event') }}</li></ul>
+    <p class="limitation" *ngIf="count(run, 'unresolvedConflictCount')">{{ context.countLabel(count(run, 'unresolvedConflictCount')!, 'unresolved conflict') }} recorded at capture time.</p>
+    <details><summary>Inspect exact receipt</summary><pre tabindex="0">{{ run | json }}</pre></details>
+  </article>
+  <p class="receipt-explanation" *ngIf="context.service.snapshot().loadedAt && !runs.length">{{ context.query() ? 'No loaded capture receipts match this search.' : 'No capture receipts in the loaded selection.' }}</p>
+  <button class="load-receipts" type="button" *ngIf="context.service.snapshot().hasMore.runs" (click)="context.service.loadMore('runs')" [disabled]="context.service.loading() || context.service.saving()">Load more capture receipts</button>
+</section>

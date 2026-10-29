@@ -1,0 +1,31 @@
+    <section class="main-region" *ngIf="context.view() === 'atlas'">
+      <div class="section-top">
+        <div class="breadcrumbs" *ngIf="context.selectedSector(); else overviewLabel"><button type="button" (click)="context.overview()">All sectors</button><span aria-hidden="true">/</span><button type="button" *ngIf="context.selectedSubject(); else sectorTitle" (click)="context.openSector(context.selectedSector()!)">{{ context.selectedSector()!.title }}</button><ng-template #sectorTitle><span>{{ context.selectedSector()!.title }}</span></ng-template></div>
+        <ng-template #overviewLabel><span class="eyebrow">THE KNOWN LANDSCAPE</span></ng-template>
+        <span class="scope-label">A growing map, not a completeness score</span>
+      </div>
+
+      <ng-container *ngIf="!context.selectedSector() && !context.query()">
+        <h2 class="sr-only" tabindex="-1">Explore the knowledge landscape</h2>
+        <app-atlas-field [context]="context"></app-atlas-field>
+      </ng-container>
+
+      <ng-container *ngIf="context.query() || (context.selectedSector() && !context.selectedSubject())">
+        <div class="section-title"><p class="eyebrow">{{ context.query() ? 'SEARCH THE MAP' : 'SECTOR' }}</p><h2 tabindex="-1">{{ context.query() ? 'Search results' : context.selectedSector()!.title }}</h2><p class="search-query" *ngIf="context.query()">{{ context.query() }}</p><p>{{ context.query() ? context.countLabel(context.matchingSubjects().length, 'subject') + ' in the current scope' : context.selectedSector()!.subtitle }}</p></div>
+        <div class="subject-list" *ngIf="context.matchingSubjects().length; else noSubjects">
+          <button type="button" class="subject-row" *ngFor="let subject of context.matchingSubjects(); let i = index" (click)="context.openSubject(subject)"><span class="row-number">{{ (i + 1).toString().padStart(2, '0') }}</span><span><span class="subject-title">{{ subject.title }}</span><span class="subject-summary">{{ subject.summary }}</span><span class="subject-meta">{{ context.countLabel(subject.sources.length, 'source reference') }} <span aria-hidden="true">·</span> <ng-container *ngIf="context.service.snapshot().loadedAt; else privateNotLoaded">{{ context.countLabel(context.evidenceFor(subject.id).length, 'loaded evidence record') }}</ng-container><ng-template #privateNotLoaded>Personal records not loaded</ng-template></span></span><span class="row-arrow" aria-hidden="true">↗</span></button>
+        </div>
+        <ng-template #noSubjects><div class="empty-state"><h3>No subjects match this search.</h3><p>Try a broader term or return to all sectors. Missing coverage is not missing knowledge.</p><button type="button" class="text-button" (click)="context.overview()">Explore all sectors →</button></div></ng-template>
+      </ng-container>
+
+      <article *ngIf="context.selectedSubject() && !context.query()" class="subject-reading">
+        <p class="eyebrow">LAYER 1 / HUMANITY’S KNOWLEDGE</p><h2 tabindex="-1">{{ context.selectedSubject()!.title }}</h2><p class="subject-deck">{{ context.selectedSubject()!.summary }}</p>
+        <p class="seed-note">{{ context.selectedSubject()!.coverage === 'outline' ? 'Outline coverage' : 'Seed coverage' }} · a starting point, not a complete account of this field.</p>
+        <nav class="subject-jumps" aria-label="Subject sections"><button type="button" (click)="context.jumpTo('atlas-knowledge')">Knowledge</button><button type="button" (click)="context.jumpTo('atlas-position')">Our position</button><button type="button" (click)="context.jumpTo('atlas-evidence')">Evidence</button></nav><section id="atlas-knowledge" tabindex="-1" class="knowledge-section"><h3>What is established</h3><p *ngIf="!context.selectedSubject()!.known.length" class="helper">Not mapped yet. This branch is an outline awaiting sourced foundations.</p><ol *ngIf="context.selectedSubject()!.known.length"><li *ngFor="let fact of context.selectedSubject()!.known">{{ fact }}</li></ol></section>
+        <section class="knowledge-section questions"><h3>Where to look deeper</h3><ul><li *ngFor="let question of context.selectedSubject()!.questions">{{ question }}</li></ul></section>
+        <section class="knowledge-section"><h3>Go to the sources</h3><p class="helper" *ngIf="!context.selectedSubject()!.sources.length">No source references have been mapped for this outline yet.</p><a *ngFor="let source of context.selectedSubject()!.sources" class="source-reference" [href]="context.safeUrl(source.url)" target="_blank" rel="noopener noreferrer"><span><strong>{{ source.label }}</strong><small>{{ context.sourceLabel(source.url) }}</small></span><span aria-hidden="true">↗</span></a><p class="helper" *ngIf="context.selectedSubject()!.sources.length">Public references last checked {{ context.date(context.sourceCheckedAt) }}. References support the seed subject, not anyone’s understanding.</p></section>
+        <section class="knowledge-section" *ngIf="context.selectedSubject()!.relatedIds.length"><h3>Connected subjects</h3><div class="related-subjects"><ng-container *ngFor="let relatedId of context.selectedSubject()!.relatedIds"><ng-container *ngFor="let related of context.subjects"><button type="button" *ngIf="related.id === relatedId" (click)="context.openSubject(related)">{{ related.title }} <span aria-hidden="true">↗</span></button></ng-container></ng-container></div></section>
+      </article>
+    </section>
+
+

@@ -14,3 +14,9 @@ export function assertPath(value: string, kind: 'document' | 'collection', owner
 }
 export const assertDocumentPath = (value: string) => assertPath(value, 'document');
 export const assertCollectionPath = (value: string) => assertPath(value, 'collection');
+export function assertWritablePath(value: string, kind: 'document' | 'collection', owner?: string): string {
+  const path = assertPath(value, kind, owner), parts = path.split('/');
+  if (parts[0] === 'users' && parts[2] === 'atlasData')
+    throw new Error('Atlas data requires its specialized tools or owner client transactions; generic writes are disabled.');
+  return path;
+}

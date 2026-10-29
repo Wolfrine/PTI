@@ -60,6 +60,14 @@
                             "extractLicenses": false,
                             "sourceMap": true
                         },
+                        "atlas-preview": {
+                            "browser": "src/dev-atlas-preview.ts",
+                            "tsConfig": "tsconfig.atlas-preview.json",
+                            "serviceWorker": false,
+                            "optimization": false,
+                            "extractLicenses": false,
+                            "sourceMap": true
+                        },
                         "usage-preview": {
                             "browser": "src/dev-usage-preview.ts",
                             "tsConfig": "tsconfig.preview.json",
@@ -79,6 +87,9 @@
                         },
                         "development": {
                             "buildTarget": "pti-app:build:development"
+                        },
+                        "atlas-preview": {
+                            "buildTarget": "pti-app:build:atlas-preview"
                         },
                         "usage-preview": {
                             "buildTarget": "pti-app:build:usage-preview"

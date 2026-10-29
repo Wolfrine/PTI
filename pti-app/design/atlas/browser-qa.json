@@ -1,0 +1,391 @@
+{
+  "scope": "synthetic local preview; no authentication or production mutations",
+  "results": [
+    {
+      "name": "12 sectors and desktop focus preserve overview",
+      "status": "passed"
+    },
+    {
+      "name": "Subject drill, self-report and history",
+      "status": "passed"
+    },
+    {
+      "name": "Linking evidence does not create mastery or progression",
+      "status": "passed"
+    },
+    {
+      "name": "Dismissed evidence remains reviewable but does not imply current work",
+      "status": "passed"
+    },
+    {
+      "name": "Pause, enable and bounded source approval validation",
+      "status": "passed"
+    },
+    {
+      "name": "Export produces only the loaded synthetic snapshot",
+      "status": "passed"
+    },
+    {
+      "name": "Unknown personal position and pending review are not guessed on partial reads",
+      "status": "passed"
+    },
+    {
+      "name": "Mobile drill replaces the index and offers sector return",
+      "status": "passed"
+    },
+    {
+      "name": "Capture receipts have an explicit route to load remaining pages",
+      "status": "passed"
+    },
+    {
+      "name": "Keyboard search and explicit subject jump focus",
+      "status": "passed"
+    }
+  ],
+  "runtimeErrors": [],
+  "layout": [
+    {
+      "state": "overview",
+      "width": 1440,
+      "documentWidth": 1440,
+      "outOfBounds": []
+    },
+    {
+      "state": "overview",
+      "width": 390,
+      "documentWidth": 390,
+      "outOfBounds": []
+    },
+    {
+      "state": "overview",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "subject",
+      "width": 1440,
+      "documentWidth": 1440,
+      "outOfBounds": []
+    },
+    {
+      "state": "subject",
+      "width": 390,
+      "documentWidth": 390,
+      "outOfBounds": []
+    },
+    {
+      "state": "subject",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "review",
+      "width": 1440,
+      "documentWidth": 1440,
+      "outOfBounds": []
+    },
+    {
+      "state": "review",
+      "width": 390,
+      "documentWidth": 390,
+      "outOfBounds": []
+    },
+    {
+      "state": "review",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "sources",
+      "width": 1440,
+      "documentWidth": 1440,
+      "outOfBounds": []
+    },
+    {
+      "state": "sources",
+      "width": 390,
+      "documentWidth": 390,
+      "outOfBounds": []
+    },
+    {
+      "state": "sources",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "history",
+      "width": 1440,
+      "documentWidth": 1440,
+      "outOfBounds": []
+    },
+    {
+      "state": "history",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "work",
+      "width": 1440,
+      "documentWidth": 1440,
+      "outOfBounds": []
+    },
+    {
+      "state": "work",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "empty",
+      "width": 390,
+      "documentWidth": 390,
+      "outOfBounds": []
+    },
+    {
+      "state": "loading",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "error",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "partial",
+      "width": 390,
+      "documentWidth": 390,
+      "outOfBounds": []
+    },
+    {
+      "state": "long-review",
+      "width": 320,
+      "documentWidth": 320,
+      "outOfBounds": []
+    },
+    {
+      "state": "long-source",
+      "width": 390,
+      "documentWidth": 390,
+      "outOfBounds": []
+    }
+  ],
+  "focus": [
+    {
+      "tag": "A",
+      "text": "Skip to Atlas content",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "A",
+      "text": "←PTIAll apps",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Export",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "↻ Refresh",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "text": "",
+      "outline": "none",
+      "outlineWidth": "0px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "The atlas",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Our work",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Review8",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "History",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Sources",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Software engineering↗Seed knowledge · 2 loaded records",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Data management↗Seed knowledge · 2 loaded records",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Agent systems↗Seed knowledge · 1 loaded record",
+      "outline": "solid",
+      "outlineWidth": "3px",
+      "visible": true
+    }
+  ],
+  "contrast": [
+    {
+      "state": "overview",
+      "width": 1440,
+      "failures": []
+    },
+    {
+      "state": "overview",
+      "width": 390,
+      "failures": []
+    },
+    {
+      "state": "overview",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "subject",
+      "width": 1440,
+      "failures": []
+    },
+    {
+      "state": "subject",
+      "width": 390,
+      "failures": []
+    },
+    {
+      "state": "subject",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "review",
+      "width": 1440,
+      "failures": []
+    },
+    {
+      "state": "review",
+      "width": 390,
+      "failures": []
+    },
+    {
+      "state": "review",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "sources",
+      "width": 1440,
+      "failures": []
+    },
+    {
+      "state": "sources",
+      "width": 390,
+      "failures": []
+    },
+    {
+      "state": "sources",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "history",
+      "width": 1440,
+      "failures": []
+    },
+    {
+      "state": "history",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "work",
+      "width": 1440,
+      "failures": []
+    },
+    {
+      "state": "work",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "empty",
+      "width": 390,
+      "failures": []
+    },
+    {
+      "state": "loading",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "error",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "partial",
+      "width": 390,
+      "failures": []
+    },
+    {
+      "state": "long-review",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "state": "long-source",
+      "width": 390,
+      "failures": []
+    }
+  ],
+  "contrastFailures": 0,
+  "limitations": [
+    "Computed solid-colour text contrast is a bounded audit, not WCAG certification.",
+    "Disabled controls are excluded from text-contrast checks.",
+    "Browser interactions use a synthetic service; production persistence has separate rules and integration tests."
+  ]
+}

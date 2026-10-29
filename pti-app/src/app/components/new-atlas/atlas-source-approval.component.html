@@ -1,0 +1,15 @@
+<section class="source-approval">
+  <button type="button" class="approval-toggle" (click)="opened = !opened" [attr.aria-expanded]="opened" aria-controls="atlas-source-form"><span>Approve a source</span><span aria-hidden="true">{{ opened ? '−' : '+' }}</span></button>
+  <form id="atlas-source-form" *ngIf="opened" (ngSubmit)="approve()">
+    <p class="approval-intro">Approve specific records for future agent captures. This does not collect evidence or grant the agent access to a service account.</p>
+    <p class="permission-note">No whole Drive, Pages or chat-history grants. Pages and documents require exact locations. GitHub prefixes must remain within one repository. Tracker paths must belong to your authenticated account; the server verifies ownership.</p>
+    <p class="form-message" *ngIf="!service.snapshot().loadedAt">Load your private source approvals before adding another.</p>
+    <div class="form-message" *ngIf="service.snapshot().hasMore.sources">More source approvals remain unloaded. <button type="button" (click)="service.loadMore('sources')">Load more sources</button></div>
+    <div class="source-fields"><label>Source ID<input [disabled]="service.saving()" name="sourceId" [(ngModel)]="draft.sourceId" maxlength="128" placeholder="e.g. project-research" required></label><label>System<select [disabled]="service.saving()" name="system" [(ngModel)]="draft.system" (ngModelChange)="changeSystem()"><option *ngFor="let system of systems" [value]="system">{{ labels[system] }}</option></select></label></div>
+    <label>Source label or locator<input [disabled]="service.saving()" name="locator" [(ngModel)]="draft.locator" maxlength="2000" placeholder="A recognizable source name or its canonical location" required></label>
+    <label>Exact record locations <small>One per line · maximum 8</small><textarea [disabled]="service.saving()" maxlength="18000" name="exact" [(ngModel)]="draft.exact" rows="3" placeholder="Paste each exact page, document or record location"></textarea></label>
+    <label *ngIf="prefixesAllowed()">Bounded prefixes <small>One per line · maximum 4</small><textarea [disabled]="service.saving()" maxlength="9000" name="prefixes" [(ngModel)]="draft.prefixes" rows="2" [placeholder]="draft.system === 'github' ? 'https://github.com/OWNER/REPOSITORY/' : 'users/YOUR_UID/trackerData/workspace/evidence/'"></textarea></label>
+    <p class="form-error" *ngIf="error()" role="alert">{{ error() }}</p><p class="form-success" *ngIf="confirmation()" role="status">{{ confirmation() }}</p>
+    <button type="submit" class="approve-button" [disabled]="service.saving() || service.loading() || !service.snapshot().loadedAt || service.snapshot().hasMore.sources">{{ service.saving() ? 'Saving approval…' : 'Approve and enable source' }}</button>
+  </form>
+</section>

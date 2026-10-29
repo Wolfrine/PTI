@@ -1,0 +1,257 @@
+[
+  {
+    "state": "overview-desktop",
+    "marker": "THE KNOWN LANDSCAPE",
+    "viewport": "desktop",
+    "width": 1440,
+    "path": "final-overview-desktop.png",
+    "sha256": "9e9cf3b86dda0c3a52c19bd58b3939c2ffb5743514abd80f297dab2082d1cf4c",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/"
+  },
+  {
+    "state": "overview-mobile",
+    "marker": "THE KNOWN LANDSCAPE",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-overview-mobile.png",
+    "sha256": "62f4835da3b70f9bea2248b125a490ce1e9f91f5fde18ad3112974340d00d41d",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/"
+  },
+  {
+    "state": "subject-desktop",
+    "marker": "Your place",
+    "viewport": "desktop",
+    "width": 1440,
+    "path": "final-subject-desktop.png",
+    "sha256": "9243d7ecbac5bc8386dff0cc468cbcfb93d307fcc1136d0decc6e676632a67f1",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?subject=software-engineering"
+  },
+  {
+    "state": "subject-mobile",
+    "marker": "Your place",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-subject-mobile.png",
+    "sha256": "1f3fd57b624c83663f0980ea9e374716a2191d06964d46b89d7f200a0cdf3618",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?subject=software-engineering"
+  },
+  {
+    "state": "linked-mobile",
+    "marker": "Linked",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-linked-mobile.png",
+    "sha256": "4528bbe612acb0ab7f3082c3326599e7798260c39dc09833e0a494c1212699ab",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?fixture=reviewed&subject=software-engineering"
+  },
+  {
+    "state": "outline-desktop",
+    "marker": "No source references have been mapped",
+    "viewport": "desktop",
+    "width": 1440,
+    "path": "final-outline-desktop.png",
+    "sha256": "9473202370fc33dd4320c6ccbe6000b3e8565630eb09b50f7b9e54c94b9b76d4",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?subject=physics"
+  },
+  {
+    "state": "review-desktop",
+    "marker": "Make the connection.",
+    "viewport": "desktop",
+    "width": 1440,
+    "path": "final-review-desktop.png",
+    "sha256": "366a0aae48269868b34d2889f503b27cb4a12646a0184fa922b7fdc1cb32e472",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?view=review"
+  },
+  {
+    "state": "sources-desktop",
+    "marker": "Approve and enable source",
+    "viewport": "desktop",
+    "width": 1440,
+    "path": "final-sources-desktop.png",
+    "sha256": "b733330ca846c159f4b32ea45602c4ec63a0f1ca9db94ef04630a659f1f01f7f",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?view=sources"
+  },
+  {
+    "state": "source-success-mobile",
+    "marker": "Paused · enable",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-source-success-mobile.png",
+    "sha256": "edbd4e90f35541163afee7e4946f147beafe8eb5d295d4a3a0763e5c417fc4db",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?view=sources"
+  },
+  {
+    "state": "long-source-mobile",
+    "marker": "long-human-readable-source-context-",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-long-source-mobile.png",
+    "sha256": "38e307b2aeda61a5b0829392399ad1418793729f5818fa9b3e717f2b807f778c",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?fixture=long&view=sources"
+  },
+  {
+    "state": "inspect-mobile",
+    "marker": "Make the connection.",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-inspect-mobile.png",
+    "sha256": "6b66ad827679645923653f4d8a8c3968aaec63357afa39e1827dd1d100cc1081",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?view=review"
+  },
+  {
+    "state": "history-mobile",
+    "marker": "Capture receipts",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-history-mobile.png",
+    "sha256": "356b29b360f165806045148c5cdc1fe621d6e4915a7d663e1da90dd12dfed3f7",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?view=history"
+  },
+  {
+    "state": "error-mobile",
+    "marker": "Evidence is not loaded",
+    "viewport": "mobile",
+    "width": 320,
+    "path": "final-error-mobile.png",
+    "sha256": "e766745f342b07fa03318ad985a8ecd4ada46eecc79d842af10c970356ba7cd1",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?fixture=error&subject=software-engineering"
+  },
+  {
+    "state": "partial-mobile",
+    "marker": "Review not loaded",
+    "viewport": "mobile",
+    "width": 390,
+    "path": "final-partial-mobile.png",
+    "sha256": "45248f29fa624ac4909df71d1759a63a37dbd65206733443fab5f9fc7fb90691",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?fixture=partial&subject=software-engineering"
+  },
+  {
+    "state": "loading-mobile",
+    "marker": "Loading your private evidence",
+    "viewport": "mobile",
+    "width": 320,
+    "path": "final-loading-mobile.png",
+    "sha256": "e5658ba5ed81ffb9b92b257527a3e9d31206281611c54e60e8f831e2bb77c35f",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?fixture=loading&subject=software-engineering"
+  },
+  {
+    "state": "empty-desktop",
+    "marker": "Your progression starts with evidence.",
+    "viewport": "desktop",
+    "width": 1440,
+    "path": "final-empty-desktop.png",
+    "sha256": "eeff51c150127be5caa14cd6395dcaa0a79ab54882d84da1b5ac02cc6348efc9",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/?fixture=empty&view=work"
+  },
+  {
+    "state": "empty-search-mobile",
+    "marker": "No subjects match this search.",
+    "viewport": "mobile",
+    "width": 320,
+    "path": "final-empty-search-mobile.png",
+    "sha256": "e0f6ce5711093cd2d9deabd1d8232b77cf4269083ecfb1670ded237cef03cae1",
+    "checks": {
+      "state_identity": true,
+      "overflow": false,
+      "broken_images": false,
+      "page_errors": false
+    },
+    "url": "http://127.0.0.1:4206/"
+  }
+]

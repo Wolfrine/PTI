@@ -32,4 +32,12 @@ describe('PTI Home route retirement', () => {
       expect(router.url).toBe(path);
     }
   });
+
+  it('keeps Atlas lazy-loaded inside PTI with the existing authentication guard', () => {
+    const atlas = routes.find(route => route.path === 'atlas');
+    expect(atlas?.canActivate).toContain(AuthGuard);
+    expect(atlas?.loadComponent).toBeDefined();
+    expect(atlas?.redirectTo).toBeUndefined();
+    expect(atlas?.title).toBe('Civilization Atlas · PTI');
+  });
 });

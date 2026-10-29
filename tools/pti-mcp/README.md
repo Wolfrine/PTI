@@ -1,6 +1,6 @@
 # PTI shared MCP
 
-One server for PTI, Luminary, Personal / Daily Intelligence and SEFPO, using the existing `pti-app-2ab59` default Firestore database. `pti_apps_list` discovers apps; `pti_app_context` returns their canonical paths. Add future apps in `src/apps.ts`.
+One server for PTI and its connected applications, including Civilization Atlas, Luminary, Personal / Daily Intelligence and SEFPO, using the existing `pti-app-2ab59` default Firestore database. `pti_apps_list` discovers apps; `pti_app_context` returns their canonical paths. Add future apps in `src/apps.ts`.
 
 **Velum exception:** its media is in Google Drive and its votes/view history are browser-local. Discovery reports this accurately; this server cannot access those stores until a Drive/sync adapter is implemented.
 
@@ -26,9 +26,12 @@ After successful deployment: ChatGPT → Plugins → + → name **PTI Apps**, de
 - Generic Firestore: list collections, get, bounded query, create, update, batch, delete. Hosted paths must belong to the connected UID. Update tokens prevent stale writes; deletes require exact path confirmation.
 - SEFPO: compact search/context/change retrieval, draft creation, status transitions, links and inbox capture.
 - Daily Intelligence: `personal_context` reads preferences, explicit feedback and opted-in thread titles; `personal_publish` validates five items and checks pause, topic selection, generation and preference version transactionally. Existing scheduled agents should use these tools; no new schedule is created.
+- Civilization Atlas: `atlas_context` reads one owner-scoped collection with explicit pagination; `atlas_import_evidence` atomically imports up to 20 records from enabled bounded source policies using an idempotent run ID. Imported evidence remains immutable and pending. Generic write tools cannot modify Atlas; owner reviews, self-reported progression and source consent use the authenticated UI with immutable history. Follow [the Atlas agent contract](../../pti-app/atlas/AGENT.md).
 - Authentication keys and OAuth storage cannot be read or changed by data tools. Audit records are server-managed.
 
 Verify locally: `npm run build && npm test`; also `node --test ../../personal-harness/core.test.mjs`.
+
+Atlas deployment acceptance also checks a real existing receipt replay without changing it or its evidence, alongside cross-account rejection and the generic-write boundary. The separate synthetic live rules probe creates and cleans only its own generated identities and documents. The private baseline is not part of this repository. If the connected ChatGPT tool list is stale, refresh PTI Apps tools; do not fall back to generic Atlas writes or alternate credentials.
 
 ## Deployment status
 

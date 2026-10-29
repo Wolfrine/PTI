@@ -2,11 +2,12 @@
 import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
 import { FieldValue, Timestamp, getFirestore, type Query, type Transaction } from "firebase-admin/firestore";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { assertPath, assertUser } from "./access.js";
+import { assertPath, assertUser, assertWritablePath } from "./access.js";
 import { appCatalog } from "./apps.js";
 import { registerFoodTools } from "./food.js";
 import { registerPersonalTools } from "./personal.js";
 import { registerVentureTools } from "./venture.js";
+import { registerAtlasTools } from "./atlas.js";
 import { z } from "zod";
 
 const projectId =
@@ -37,6 +38,7 @@ const message = (value: string) => ({
 });
 
 function assertDocumentPath(value: string): string { return assertPath(value, 'document', context.uid); }
+function assertWritableDocumentPath(value: string): string { return assertWritablePath(value, 'document', context.uid); }
 function assertCollectionPath(value: string): string { return assertPath(value, 'collection', context.uid); }
 function assertUid(value: string): string { return assertUser(value, context.uid); }
 function boundedLimit(value?: number, max = 100): number {
@@ -219,7 +221,7 @@ server.registerTool(
     annotations: write,
   },
   async (input) => {
-    const path = assertDocumentPath(input.path);
+    const path = assertWritableDocumentPath(input.path);
     await db.doc(path).create({
       ...input.data,
       createdAt: input.data["createdAt"] ?? FieldValue.serverTimestamp(),
@@ -244,7 +246,7 @@ server.registerTool(
     annotations: write,
   },
   async (input) => {
-    const path = assertDocumentPath(input.path);
+    const path = assertWritableDocumentPath(input.path);
     const before = await snapshot(path);
     if (!before) throw new Error("Document not found.");
     await db.doc(path).update(
@@ -275,7 +277,7 @@ server.registerTool(
     const batch = db.batch();
     const before: Record<string, unknown> = {};
     for (const item of writes) {
-      const path = assertDocumentPath(item.path);
+      const path = assertWritableDocumentPath(item.path);
       const ref = db.doc(path);
       before[path] = await snapshot(path);
       if (item.operation === "create") batch.create(ref, item.data);
@@ -305,7 +307,7 @@ server.registerTool(
     annotations: destructive,
   },
   async (input) => {
-    const path = assertDocumentPath(input.path);
+    const path = assertWritableDocumentPath(input.path);
     if (input.confirmation !== `DELETE ${path}`) throw new Error(`Confirmation must be "DELETE ${path}".`);
     const before = await snapshot(path);
     if (!before) throw new Error("Document not found.");
@@ -656,6 +658,7 @@ server.registerTool("pti_app_context", {
 registerPersonalTools(server, db, context.uid, audit);
 registerFoodTools(server, db, context.uid);
 registerVentureTools(server, db, context.uid);
+registerAtlasTools(server, db, context.uid, taskReference);
 return server;
 }
 

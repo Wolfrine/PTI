@@ -45,6 +45,7 @@ npm run build --prefix pti-app -- --configuration production
 npm test --prefix tools/pti-mcp
 node --test tools/pti-mcp/scripts/verify-atlas-host.selftest.mjs
 node --test tools/pti-mcp/scripts/verify-data.selftest.mjs
+node --test pti-app/atlas/tests/verify-production.selftest.cjs
 node tools/codex-usage-monitor/scripts/check-home-contract.mjs
 node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/tests/atlas.rules.test.mjs'
 ```
@@ -53,7 +54,7 @@ The emulator requires Java 21 and the existing locked One Piece test dependencie
 
 Local visual/interaction testing uses the separate `atlas-preview` build configuration and `src/dev-atlas-preview.ts`. This entry contains synthetic data and is **not** imported by production `main.ts`. It is not an authentication bypass. Keep production and preview output directories distinct.
 
-After deployment, `node pti-app/atlas/tests/verify-production.cjs` compares the public release marker and every hashed JavaScript/CSS production asset with the reviewed local build. This is read-only asset verification, not a signed-in owner-browser test. Hosted acceptance separately checks actual owner scope and a replay of the already-persisted baseline receipt without changing its evidence.
+After deployment, `node pti-app/atlas/tests/verify-production.cjs` requires the exact public source marker and verifies the complete generated JavaScript/CSS dependency graph and entry HTML. Different build runtimes can name byte-identical chunks differently. The verifier permits only a unique, proven filename mapping, then requires byte equality after applying that mapping; changed code or dependency edges still fail. Its report separates byte-identical from filename-relinked assets. This is read-only public-asset verification, not a signed-in owner-browser test. Hosted acceptance separately checks actual owner scope and replay of the already-persisted receipt without changing its evidence. See [RELEASE.md](RELEASE.md) for observed release evidence and limits.
 
 With that preview served on loopback and Playwright available, `node atlas/tests/browser-qa.cjs http://127.0.0.1:4206/ /tmp/atlas-qa.json` runs the interaction, keyboard, responsive and computed text-contrast checks from `pti-app`. `CHROME_BIN` can point to an installed Chromium. `atlas/tests/capture.cjs` captures the state-identified synthetic review set. Both refuse a non-loopback target. Production persistence and account isolation are tested separately; a synthetic UI test is not a signed-in owner browser inspection.
 

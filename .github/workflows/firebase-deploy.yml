@@ -82,6 +82,7 @@ jobs:
       - name: Test Home, retired routes and local usage monitor
         run: |
           npm test --prefix pti-app -- --watch=false --browsers=ChromeHeadless
+          node --test pti-app/atlas/tests/verify-production.selftest.cjs
           npm ci --prefix tools/codex-usage-monitor --ignore-scripts --no-audit --no-fund
           npm test --prefix tools/codex-usage-monitor
           npm test --prefix tools/local-service-initiator
@@ -254,6 +255,9 @@ jobs:
           assert.deepEqual(topLevel.sort(),['index.html','manifest.webmanifest','ngsw-worker.js','one-piece']);
           console.log(`Verified one canonical app, redirect-only legacy entry, native-login return and ${assets.length} exact One Piece assets.`);
           NODE
+
+      - name: Verify deployed Atlas source marker and generated asset graph
+        run: node pti-app/atlas/tests/verify-production.cjs
 
       - name: Deploy optional Firebase Functions MCP
         continue-on-error: true

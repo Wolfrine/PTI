@@ -46,6 +46,8 @@ jobs:
       - run: npm test --prefix apps/one-piece
       - run: npm test --prefix apps/one-piece/companion
       - run: npm run test:emulator --prefix apps/one-piece
+      - name: Verify Atlas owner isolation and atomic history
+        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/atlas.rules.test.mjs'
 
   deploy:
     needs: [verify_venture, verify_one_piece]
@@ -135,12 +137,14 @@ jobs:
           npm install -g firebase-tools
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
-          # The access-request PR requires a read-only live predecessor check.
-          # Only the exact previously deployed LF Git blob is accepted here.
-          git show b00df300e4de29c5cbdeec1198ed1072538752b8:personal-harness/firestore.rules > /tmp/pre-one-piece.rules
-          APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-one-piece.rules node personal-functions/provision.mjs
+          # Atlas adds an isolated namespace over the reviewed current baseline.
+          # Keep the exact-source and concurrent-release checks; never overwrite
+          # an unreviewed live rules change.
+          git show cee67b732634a7ccb12906d4c4c27e5b93377de4:personal-harness/firestore.rules > /tmp/pre-atlas.rules
+          APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-atlas.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs
+          node tools/pti-mcp/scripts/verify-atlas-live-rules.mjs
 
           ONE_PIECE_SITE_ID=pti-app-2ab59-one-piece
           if firebase hosting:sites:get "$ONE_PIECE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then

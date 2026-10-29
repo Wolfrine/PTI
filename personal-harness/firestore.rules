@@ -8,7 +8,7 @@ service cloud.firestore {
   match /_ptiLocalServices/{document=**} { allow read, write: if false; }
   match /users/{uid} {
    allow read, write: if request.auth != null;
-    match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects'; }
+    match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'atlasData'; }
   }
   // Keep legacy project policy except the reserved, private account-usage document.
   // The generic grant above must exclude codexProjects: matching allows are additive.
@@ -333,6 +333,97 @@ service cloud.firestore {
    }
   }
 
+  // Civilization Atlas: private evidence is agent-created and immutable. Human
+  // progress, reviews and source consent require atomic, append-only history.
+  match /users/{uid}/atlasData/workspace {
+   function id(value) { return value is string && value.matches('[A-Za-z0-9_-]{1,128}'); }
+   function text(d,k,n) { return d[k] is string && d[k].size() <= n; }
+   function base(d) { return d.schemaVersion == 1 && d.revision is int && d.revision > 0 && d.revision <= 9007199254740991
+    && d.updatedAt is int && d.updatedAt >= 0 && d.updatedAt <= request.time.toMillis() + 300000 && id(d.lastEventId); }
+   function progress(d,subjectId) { return d.keys().hasAll(['schemaVersion','subjectId','state','note','basis','revision','updatedAt','lastEventId'])
+    && d.keys().hasOnly(['schemaVersion','subjectId','state','note','basis','revision','updatedAt','lastEventId']) && base(d)
+    && id(subjectId) && d.subjectId == subjectId && d.state in ['unknown','aware','learning','practicing','applying','paused']
+    && text(d,'note',4000) && d.basis == 'self-report'; }
+   function review(d,evidenceId) { return d.keys().hasAll(['schemaVersion','evidenceId','status','note','revision','updatedAt','lastEventId'])
+    && d.keys().hasOnly(['schemaVersion','evidenceId','status','note','revision','updatedAt','lastEventId']) && base(d)
+    && evidenceId.matches('ev_[a-f0-9]{64}') && d.evidenceId == evidenceId && d.status in ['accepted','rejected','needs-context'] && text(d,'note',4000)
+    && exists(/databases/$(database)/documents/users/$(uid)/atlasData/workspace/evidence/$(evidenceId)); }
+   function prefix(system,p) { return p is string && p.size() <= 2000
+    && ((system == 'pti-tracker-firestore' && p.matches('users/' + uid + '/trackerData/workspace/(evidence|events|nodes|edges|assessments|dayIndex|sourceState|runs)/'))
+     || (system == 'github' && p.matches('https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/([^?# ]*/)?') && !p.lower().matches('.*/chatgpt_harness/.*'))); }
+   function exact(system,p) { return p is string && p.size() <= 2000
+    && ((system == 'pti-tracker-firestore' && p.matches('users/' + uid + '/trackerData/workspace/(evidence|events|nodes|edges|assessments|dayIndex|sourceState|runs)/[A-Za-z0-9_-]{1,200}'))
+     || (system == 'github' && p.matches('https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[^?# ]*)?') && !p.lower().matches('.*/chatgpt_harness(/.*)?'))
+     || (system == 'chatgpt-pages' && p.matches('https://chatgpt[.]com/space/page_[a-z0-9]+'))
+     || (system == 'google-drive-spreadsheet' && p.matches('https://docs[.]google[.]com/spreadsheets/d/[A-Za-z0-9_-]+(/[^# ]*)?'))
+     || (system == 'google-drive-document' && p.matches('https://docs[.]google[.]com/document/d/[A-Za-z0-9_-]+(/[^# ]*)?'))
+     || (system == 'user-report' && p.matches('owner-report/[A-Za-z0-9_-]{1,128}'))
+     || (system == 'web-primary-source' && p.matches('https://[A-Za-z0-9.-]+(/[^# ]*)?')
+      && !p.matches('https://(chatgpt[.]com|chat[.]openai[.]com|docs[.]google[.]com|drive[.]google[.]com)(/.*)?'))); }
+   function exactAt(d,n) { return d.recordLocators.size() <= n || exact(d.system,d.recordLocators[n]); }
+   function source(d,sourceId) { return d.keys().hasAll(['schemaVersion','sourceId','system','locator','recordLocatorPrefixes','recordLocators','enabled','revision','updatedAt','lastEventId'])
+    && d.keys().hasOnly(['schemaVersion','sourceId','system','locator','recordLocatorPrefixes','recordLocators','enabled','revision','updatedAt','lastEventId'])
+    && base(d) && id(sourceId) && d.sourceId == sourceId && d.system in ['github','chatgpt-pages','pti-tracker-firestore','google-drive-spreadsheet','google-drive-document','web-primary-source','user-report']
+    && text(d,'locator',2000) && d.locator.size() > 0 && d.enabled is bool
+    && d.recordLocators is list && d.recordLocators.size() <= 20 && d.recordLocatorPrefixes is list && d.recordLocatorPrefixes.size() <= 4
+    && d.recordLocators.size() + d.recordLocatorPrefixes.size() > 0
+    && (d.recordLocatorPrefixes.size() < 1 || prefix(d.system,d.recordLocatorPrefixes[0]))
+    && (d.recordLocatorPrefixes.size() < 2 || prefix(d.system,d.recordLocatorPrefixes[1]))
+    && (d.recordLocatorPrefixes.size() < 3 || prefix(d.system,d.recordLocatorPrefixes[2]))
+    && (d.recordLocatorPrefixes.size() < 4 || prefix(d.system,d.recordLocatorPrefixes[3]))
+    && exactAt(d,0) && exactAt(d,1) && exactAt(d,2) && exactAt(d,3) && exactAt(d,4)
+    && exactAt(d,5) && exactAt(d,6) && exactAt(d,7) && exactAt(d,8) && exactAt(d,9)
+    && exactAt(d,10) && exactAt(d,11) && exactAt(d,12) && exactAt(d,13) && exactAt(d,14)
+    && exactAt(d,15) && exactAt(d,16) && exactAt(d,17) && exactAt(d,18) && exactAt(d,19); }
+   function change(kind,targetId,before,after) {
+    let path = /databases/$(database)/documents/users/$(uid)/atlasData/workspace/events/$(after.lastEventId);
+    let e = getAfter(path).data;
+    return !exists(path) && e.schemaVersion == 1 && e.eventId == after.lastEventId && e.kind == kind && e.targetId == targetId
+     && e.before == before && e.after == after && e.revision == after.revision && e.createdAt == after.updatedAt;
+   }
+   function newVersion(d) { return d.revision == 1; }
+   function nextVersion(d) { return d.revision == resource.data.revision + 1 && d.updatedAt >= resource.data.updatedAt; }
+   allow read: if owner(uid);
+   allow write: if false;
+   match /progress/{subjectId} {
+    allow read: if owner(uid);
+    allow create: if owner(uid) && progress(request.resource.data,subjectId) && newVersion(request.resource.data) && change('progress',subjectId,null,request.resource.data);
+    allow update: if owner(uid) && progress(request.resource.data,subjectId) && nextVersion(request.resource.data) && change('progress',subjectId,resource.data,request.resource.data);
+    allow delete: if false;
+   }
+   match /reviews/{evidenceId} {
+    allow read: if owner(uid);
+    allow create: if owner(uid) && review(request.resource.data,evidenceId) && newVersion(request.resource.data) && change('review',evidenceId,null,request.resource.data);
+    allow update: if owner(uid) && review(request.resource.data,evidenceId) && nextVersion(request.resource.data) && change('review',evidenceId,resource.data,request.resource.data);
+    allow delete: if false;
+   }
+   match /sources/{sourceId} {
+    allow read: if owner(uid);
+    allow create: if owner(uid) && source(request.resource.data,sourceId) && newVersion(request.resource.data) && change('source',sourceId,null,request.resource.data);
+    allow update: if owner(uid) && source(request.resource.data,sourceId) && nextVersion(request.resource.data) && change('source',sourceId,resource.data,request.resource.data);
+    allow delete: if false; // Disable through a revision; preserve consent history.
+   }
+   match /events/{eventId} {
+    function valid(d) {
+     let collection = d.kind == 'progress' ? 'progress' : d.kind == 'review' ? 'reviews' : 'sources';
+     let path = /databases/$(database)/documents/users/$(uid)/atlasData/workspace/$(collection)/$(d.targetId);
+     let after = getAfter(path).data;
+     return d.keys().hasAll(['schemaVersion','eventId','kind','targetId','revision','createdAt','before','after'])
+      && d.keys().hasOnly(['schemaVersion','eventId','kind','targetId','revision','createdAt','before','after'])
+      && d.schemaVersion == 1 && id(eventId) && d.eventId == eventId && d.kind in ['progress','review','source'] && id(d.targetId)
+      && d.after == after && after.lastEventId == eventId && d.revision == after.revision && d.createdAt == after.updatedAt
+      && ((!exists(path) && d.before == null && after.revision == 1)
+       || (exists(path) && d.before == get(path).data && after.revision == d.before.revision + 1));
+    }
+    allow read: if owner(uid);
+    allow create: if owner(uid) && valid(request.resource.data);
+    allow update, delete: if false;
+   }
+   match /{collection}/{documentId} {
+    allow read: if owner(uid) && collection in ['evidence','runs','sourceState'];
+    allow write: if false;
+   }
+  }
   // PTI Self-Tracking is owner-readable and agent-written through Admin SDK / PTI MCP.
   match /users/{uid}/trackerData/workspace {
    allow read: if owner(uid);

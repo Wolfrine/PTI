@@ -17,7 +17,7 @@ let token='',until=0,client,lastSuccess=state.lastSuccess||0,stopping=false,auth
 function persist(){write(stateFile,state);}
 async function local(name,args={}){
   if(!client){const candidate=new Client({name:'pti-codex-relay',version:VERSION});try{await candidate.connect(new StdioClientTransport({command:process.execPath,args:[path.join(path.dirname(fileURLToPath(import.meta.url)),'server.mjs')],cwd:home,env:subscriptionEnvironment(),stderr:'pipe'}));client=candidate;client.onclose=()=>{client=undefined;authUntil=0;};}catch(error){await candidate.close().catch(()=>{});throw error;}}
-  const result=await client.callTool({name,arguments:args});if(result.isError){const error=Error(result.content?.[0]?.text||'Local task failed.');error.scope='local';throw error;}return result.structuredContent||JSON.parse(result.content[0].text);
+  const result=await client.callTool({name,arguments:args});if(result.isError){const error=Error(result.content?.[0]?.text||'Local task failed.');error.scope='local';error.retryable=error.message==='The previous worker is still exiting; retry shortly.';throw error;}return result.structuredContent||JSON.parse(result.content[0].text);
 }
 async function api(action,body){
   if(Date.now()>until){const session=await refresh(await loadCredential());await saveCredential(session.refreshToken);token=session.idToken;until=Date.now()+3000000;}
@@ -58,7 +58,7 @@ try{
       write(path.join(home,'data','status.json'),{version:VERSION,at:new Date().toISOString(),state:'online',authMode:'chatgpt',activeTask:state.active?.id||null});
     }catch(error){
       if(error.message==='lease_lost'&&state.active){if(state.active.localId)await local('cancel_task',{task_id:state.active.localId}).catch(()=>{});state.active=null;persist();}
-      else if(error.scope==='local'&&state.active){const job=state.active;try{await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'failed',error:error.message.slice(0,2000)}});state.active=null;persist();}catch{/* Keep the durable claim until the relay accepts its terminal report. */}}
+      else if(error.scope==='local'&&!error.retryable&&state.active){const job=state.active;try{await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'failed',error:error.message.slice(0,2000)}});state.active=null;persist();}catch{/* Keep the durable claim until the relay accepts its terminal report. */}}
       write(path.join(home,'data','status.json'),{version:VERSION,at:new Date().toISOString(),state:'unavailable',errorCode:error.message==='lease_lost'?'lease_lost':'connection_or_signin_required'});
     }
     await new Promise(resolve=>setTimeout(resolve,state.active?3000:15000));

@@ -16,8 +16,15 @@ export function subscriptionEnvironment() {
 export const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 export function write(file, value) {
   const temporary = `${file}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  fs.writeFileSync(temporary, JSON.stringify(value, null, 2));
-  fs.renameSync(temporary, file);
+  try{
+    fs.writeFileSync(temporary, JSON.stringify(value, null, 2));
+    // Windows readers and antivirus can briefly hold a destination without
+    // delete-sharing. Retain the old complete file while retrying replacement.
+    for(let attempt=0;;attempt++){
+      try{fs.renameSync(temporary,file);break;}
+      catch(error){if(!['EPERM','EACCES','EBUSY'].includes(error.code)||attempt>=19)throw error;Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,50);}
+    }
+  }finally{if(fs.existsSync(temporary))fs.unlinkSync(temporary);}
 }
 export function config() {
   const value = read(configFile);

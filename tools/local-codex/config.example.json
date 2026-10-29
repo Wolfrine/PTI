@@ -1,5 +1,4 @@
 {
-  "codexPath": "C:/Users/Sachit Tewary/AppData/Local/OpenAI/Codex/bin/9614f1d9b40d9c4f/codex.exe",
   "maxTaskMinutes": 30,
   "projects": {
     "scratch": { "name": "Local Codex scratch", "path": "F:/Workspace/Support/LocalCodexBridge/scratch" },

@@ -1,9 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
-  function interactiveUser() { return request.auth != null && request.auth.uid != 'pending-device-enrollment'
+  function interactiveUser() { return request.auth != null && request.auth.uid != 'f1bmD2SAJcQf25YwkhLcE0hJyS22'
    && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
-  function owner(uid) { return request.auth != null && request.auth.uid == uid && uid != 'pending-device-enrollment'
+  function owner(uid) { return request.auth != null && request.auth.uid == uid && uid != 'f1bmD2SAJcQf25YwkhLcE0hJyS22'
    && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
   // Preserve the live legacy policy without allowing it to overlap Personal.
    match /{collection}/{document=**} { allow read, write: if collection != 'users' && collection != '_ptiMcpAuth' && collection != 'mcpAuditLog' && collection != '_ptiLocalServices' && interactiveUser(); }
@@ -16,31 +16,64 @@ service cloud.firestore {
   // Private Studio drafts and bytes. The gallery's Drive scope remains read-only.
   match /users/{uid}/velumStudio/workspace {
    function studioOwner() { return owner(uid) && uid == '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2'; }
+   // Public identity pin provisioned by trusted installation, never a bearer token.
+   function pinnedDevice() { return uid == '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2' && request.auth != null
+    && request.auth.uid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && request.auth.token.get('firebase',{}).get('sign_in_provider','') == 'anonymous'; }
+   function studioDevice() { return pinnedDevice()
+    && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/devices/$(request.auth.uid)).data.status == 'approved'; }
    function model(id) { return id in ['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15']; }
    function instant(t) { return t is int && t > 0 && t <= request.time.toMillis() + 300000; }
-   function job(d) { return d.schemaVersion == 1 && model(d.model) && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 6000
+   function job(d) { return d.schemaVersion == 2 && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && model(d.model) && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 6000
     && d.seed is int && d.seed >= 0 && d.seed <= 2147483647 && d.width == 768 && d.height == 1024 && d.consent == true
-    && instant(d.createdAt) && d.expiresAt == d.createdAt + 900000; }
+    && instant(d.createdAt) && d.expiresAt == d.createdAt + 604800000; }
    allow read, write: if false;
+   match /devices/{deviceUid} {
+    function valid(d) { return d.keys().hasOnly(['deviceUid','label','grantHash','createdAt','expiresAt','status','approvedAt','revokedAt'])
+     && d.deviceUid == deviceUid && deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && d.label == 'Owner Windows PC'
+     && d.grantHash is string && d.grantHash.matches('[a-f0-9]{64}') && instant(d.createdAt) && d.expiresAt == d.createdAt + 86400000
+     && d.status in ['pending','approved','revoked']; }
+    allow get: if studioOwner() || (pinnedDevice() && request.auth.uid == deviceUid);
+    allow list: if studioOwner();
+    allow create: if pinnedDevice() && request.auth.uid == deviceUid && valid(request.resource.data)
+     && request.resource.data.keys().hasOnly(['deviceUid','label','grantHash','createdAt','expiresAt','status'])
+     && request.resource.data.status == 'pending' && request.resource.data.createdAt >= request.time.toMillis() - 300000
+     && request.resource.data.expiresAt > request.time.toMillis();
+    allow update: if valid(request.resource.data) && (
+     (pinnedDevice() && request.auth.uid == deviceUid && resource.data.status == 'pending' && resource.data.expiresAt <= request.time.toMillis()
+      && request.resource.data.status == 'pending' && request.resource.data.createdAt >= request.time.toMillis() - 300000
+      && request.resource.data.expiresAt > request.time.toMillis() && request.resource.data.grantHash != resource.data.grantHash
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['grantHash','createdAt','expiresAt']))
+     || (studioOwner() && request.resource.data.status == 'approved' && resource.data.status in ['pending','revoked']
+      && (resource.data.status == 'revoked' || resource.data.expiresAt > request.time.toMillis()) && instant(request.resource.data.approvedAt)
+      && request.resource.data.approvedAt >= request.time.toMillis() - 300000
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','approvedAt']))
+     || (studioOwner() && resource.data.status in ['approved','pending'] && request.resource.data.status == 'revoked'
+      && instant(request.resource.data.revokedAt) && request.resource.data.revokedAt >= request.time.toMillis() - 300000
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','revokedAt'])));
+    allow delete: if false;
+   }
    match /status/pc {
-    allow read: if studioOwner();
-    allow create, update: if studioOwner() && request.resource.data.keys().hasOnly(['updatedAt','installed','state','activeJob','version'])
+    allow read: if studioOwner() || studioDevice();
+    allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version'])
+     && request.resource.data.deviceUid == request.auth.uid
      && instant(request.resource.data.updatedAt) && request.resource.data.installed is list && request.resource.data.installed.size() <= 4
      && request.resource.data.installed.hasOnly(['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15'])
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
-     && request.resource.data.version == '1.0.0';
+     && request.resource.data.version == '2.0.0';
     allow delete: if studioOwner();
    }
    match /jobs/{id} {
-    allow read, delete: if studioOwner();
+    allow read: if studioOwner() || (studioDevice() && resource.data.deviceUid == request.auth.uid);
+    allow delete: if studioOwner();
     allow create: if studioOwner() && id.matches('[A-Za-z0-9_-]{1,80}') && job(request.resource.data)
-     && request.resource.data.keys().hasOnly(['schemaVersion','model','prompt','seed','width','height','status','createdAt','expiresAt','consent'])
+     && request.resource.data.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent'])
      && request.resource.data.status == 'queued' && request.resource.data.expiresAt > request.time.toMillis();
-    allow update: if studioOwner() && job(request.resource.data)
+    allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid && job(request.resource.data)
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startedAt','finishedAt','workerId','progress','result','error'])
      && ((resource.data.status == 'queued' && request.resource.data.status in ['running','failed'])
       || (resource.data.status == 'running' && request.resource.data.status in ['running','completed','failed']))
-     && request.resource.data.get('workerId','') is string && request.resource.data.get('workerId','').size() <= 80
+     && (request.resource.data.status != 'running' || (request.resource.data.workerId == request.auth.uid
+      && (resource.data.status != 'queued' || resource.data.expiresAt > request.time.toMillis())))
      && request.resource.data.get('error','') in ['', 'expired','interrupted','resource-guard','inference-failed','invalid-output','output-too-large','model-unavailable']
      && request.resource.data.get('progress',{}).keys().hasOnly(['step','total'])
      && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds'])
@@ -50,8 +83,10 @@ service cloud.firestore {
       && request.resource.data.result.sha256.matches('[a-f0-9]{64}') && request.resource.data.result.settings is map
       && request.resource.data.result.settings.model == resource.data.model && request.resource.data.result.settings.seed == resource.data.seed));
     match /chunks/{chunkId} {
-     allow read, delete: if studioOwner();
-     allow create: if studioOwner() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.status == 'running'
+     allow read: if studioOwner() || (studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.deviceUid == request.auth.uid);
+     allow delete: if studioOwner();
+     allow create: if studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.status == 'running'
+      && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.deviceUid == request.auth.uid
       && request.resource.data.keys().hasOnly(['data','index']) && request.resource.data.index is int && request.resource.data.index >= 0 && request.resource.data.index < 16
       && chunkId == string(request.resource.data.index) && request.resource.data.data is string && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 600000;
      allow update: if false;
@@ -89,7 +124,7 @@ service cloud.firestore {
   // One Piece: the owner path is fixed by the paired app/companion configuration.
   // No recursive grant here: unknown records and collections stay private.
   match /users/{familyUid}/onePieceData/workspace {
-   function google() { return request.auth != null && request.auth.token.get('email_verified',false) == true
+   function google() { return interactiveUser() && request.auth.token.get('email_verified',false) == true
     && request.auth.token.get('email','') is string && request.auth.token.email.size() <= 254
     && request.auth.token.email.lower().matches('[^/@ ]+@[^/@ ]+[.][^/@ ]+')
     && request.auth.token.get('firebase',{}).get('sign_in_provider','') == 'google.com'; }
@@ -216,7 +251,7 @@ service cloud.firestore {
   }
    // Wedding: one shared family record. A public invitation never reads this namespace.
    match /users/{uid}/weddingData/workspace {
-    function verified() { return request.auth != null && request.auth.token.get('email_verified',false) == true && request.auth.token.get('email','') is string && request.auth.token.email.size() > 3; }
+    function verified() { return interactiveUser() && request.auth.token.get('email_verified',false) == true && request.auth.token.get('email','') is string && request.auth.token.email.size() > 3; }
     function memberRole() {
      return verified() && exists(/databases/$(database)/documents/users/$(uid)/weddingData/workspace/members/$(request.auth.token.email.lower()))
       ? get(/databases/$(database)/documents/users/$(uid)/weddingData/workspace/members/$(request.auth.token.email.lower())).data.get('role','pending') : 'pending';
@@ -328,7 +363,7 @@ service cloud.firestore {
   // Venture Studio: only the owner and explicitly invited verified Google accounts.
   match /users/{uid}/ventureData/workspace {
    function participant() {
-    return owner(uid) || (request.auth != null && request.auth.token.get('email_verified', false) == true
+    return owner(uid) || (interactiveUser() && request.auth.token.get('email_verified', false) == true
       && request.auth.token.get('email', '') is string
       && exists(/databases/$(database)/documents/users/$(uid)/ventureData/workspace/members/$(request.auth.token.email.lower())));
    }

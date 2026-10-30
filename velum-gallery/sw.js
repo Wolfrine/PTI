@@ -1,5 +1,5 @@
 const CACHE='velum-shell-__VELUM_CACHE__';
-const SHELL=['./','./index.html','./styles.css','./media-upgrades.css','./studio.css','./studio.mjs','./studio-contract.mjs','./interaction-upgrades.js','./stats-upgrades.js','./bootstrap.js','./app.js','./feed.mjs','./drift-gestures.mjs','./affection.mjs','./heart-effects.mjs','./manifest.webmanifest','./assets/icons/icon.svg'];
+const SHELL=['./','./index.html','./styles.css','./media-upgrades.css','./studio.css','./studio.mjs','./studio-contract.mjs','./device-config.mjs','./interaction-upgrades.js','./stats-upgrades.js','./bootstrap.js','./app.js','./feed.mjs','./drift-gestures.mjs','./affection.mjs','./heart-effects.mjs','./manifest.webmanifest','./assets/icons/icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));

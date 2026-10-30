@@ -147,7 +147,7 @@ jobs:
           # predecessor for this isolated Velum device-auth change. Older Atlas
           # baselines differ, so pinning them would reject even our own live rules.
           # The provisioner still rejects ANY unexpected concurrent live change.
-          git show 3a27a3d34c5e15f9d25f4f0b364c5b3075c82f44:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
+          git show c62adf2193b64894327fa3e40d2fb344d777739d:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-platform-usage.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs
@@ -367,7 +367,7 @@ jobs:
           base="https://pti-app-2ab59-velum.web.app"
           for attempt in 1 2 3 4 5 6; do
             matched=1
-            for asset in index.html sw.js app.js bootstrap.js studio.mjs studio-contract.mjs studio.css drift-gestures.mjs affection.mjs heart-effects.mjs interaction-upgrades.js styles.css stats-upgrades.js; do
+            for asset in index.html sw.js app.js bootstrap.js studio.mjs studio-contract.mjs device-config.mjs studio.css drift-gestures.mjs affection.mjs heart-effects.mjs interaction-upgrades.js styles.css stats-upgrades.js; do
               output="$RUNNER_TEMP/velum-$(basename "$asset")"
               if ! curl --fail --silent --show-error --location --max-time 20 \
                 "$base/$asset?deployment-check=$GITHUB_SHA" -o "$output" \

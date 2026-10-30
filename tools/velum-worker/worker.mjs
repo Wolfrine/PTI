@@ -2,8 +2,11 @@ import {mkdir,open,readFile,writeFile,unlink,stat} from 'node:fs/promises';
 import {spawn,execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {randomUUID} from 'node:crypto';
-import {pairOwner,refreshSession,OWNER_UID,PROJECT} from './session.mjs';
+import {randomBytes} from 'node:crypto';
+import {DeviceStore,restoreDevice,refreshSession,enrollment,secureDirectory,OWNER_UID,PROJECT} from './session.mjs';
+import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
+import {finishClaimed,retryDelay} from './lifecycle.mjs';
+import {acquireWorkerLock} from './worker-lock.mjs';
 import {WEIGHTS,runnable,encode,decode,imagePayload} from './core.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
@@ -12,7 +15,7 @@ const DATA='H:\\AI-ImageGen\\portrait-pilot';
 const PYTHON='F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe';
 const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const ROOT=`users/${OWNER_UID}/velumStudio/workspace`;
-const VERSION='1.0.0';
+const VERSION='2.0.0';
 const EXPECTED_BYTES={
  'z_image_turbo_nvfp4.safetensors':4509509600,'flux-2-klein-4b-fp8.safetensors':4070624520,
  'RealVisXL_V5.0_fp16.safetensors':6938065488,'Realistic_Vision_V6.0_NV_B1_fp16.safetensors':2132625894,
@@ -20,10 +23,15 @@ const EXPECTED_BYTES={
  'flux2-vae.safetensors':336211292,'vae-ft-mse-840000-ema-pruned.safetensors':334641190,
 };
 export class Queue {
- constructor(session){this.session=session;this.renewing=null;}
+ constructor(session,{store}={}){this.session=session;this.store=store;this.renewing=null;}
  async token(){
   if(this.session.expiresAt-Date.now()<300000){
-   this.renewing??=refreshSession(this.session.refreshToken).finally(()=>{this.renewing=null;});
+   this.renewing??=(async()=>{
+    const next=await refreshSession(this.session.refreshToken,this.session.uid);
+    const saved={...this.session.saved,refreshToken:next.refreshToken};
+    if(this.store)await this.store.save(saved);
+    return {...next,saved};
+   })().finally(()=>{this.renewing=null;});
    this.session=await this.renewing;
   }
   return this.session.idToken;
@@ -35,10 +43,11 @@ export class Queue {
   const text=await response.text();return {status:response.status,value:text?JSON.parse(text):null};
  }
  async privacy(){
-  const own=await this.request(`${ROOT}/status/pc`,{allow:[404]});
+  const own=await this.request(`${ROOT}/devices/${this.session.uid}`,{allow:[404]});
   const anonymous=await this.request(`${ROOT}/status/pc`,{anonymous:true,allow:[403]});
   const other=await this.request('users/velum-isolation-probe/velumStudio/workspace/status/pc',{allow:[403]});
-  if(![200,404].includes(own.status)||anonymous.status!==403||other.status!==403)throw new Error('private-rules-not-ready');
+  const legacy=await this.request('velum-isolation-probe/absent',{allow:[403,404]});
+  if(![200,404].includes(own.status)||anonymous.status!==403||other.status!==403||legacy.status!==403)throw new Error('private-rules-not-ready');
  }
  async write(relative,values,{updateTime,create=false}={}){
   const params=new URLSearchParams();
@@ -48,8 +57,12 @@ export class Queue {
   return this.request(`${ROOT}/${relative}?${params}`,{method:'PATCH',value:{fields:encode(values).mapValue.fields}});
  }
  async jobs(status){
-  const response=await this.request(`${ROOT}:runQuery`,{method:'POST',value:{structuredQuery:{from:[{collectionId:'jobs'}],where:{fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:encode(status)}},limit:20}}});
+  const response=await this.request(`${ROOT}:runQuery`,{method:'POST',value:{structuredQuery:{from:[{collectionId:'jobs'}],where:{compositeFilter:{op:'AND',filters:[{fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:encode(status)}},{fieldFilter:{field:{fieldPath:'deviceUid'},op:'EQUAL',value:encode(this.session.uid)}}]}},limit:20}}});
   return (response.value||[]).filter(item=>item.document).map(({document})=>({id:document.name.split('/').at(-1),updateTime:document.updateTime,job:decode({mapValue:{fields:document.fields}})})).sort((a,b)=>a.job.createdAt-b.job.createdAt);
+ }
+ async binding(){
+  const response=await this.request(`${ROOT}/devices/${this.session.uid}`,{allow:[404]});
+  return response.status===404?null:decode({mapValue:{fields:response.value.fields}});
  }
 }
 async function installedModels(){
@@ -60,7 +73,7 @@ async function installedModels(){
  }
  await stat(PYTHON);return installed;
 }
-export async function infer(id,job,onProgress=()=>{}){
+export async function infer(id,job,onProgress=()=>{},{signal}={}){
  // No shell, client-supplied path, ComfyUI port, network-capable model process or warmup.
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
  const logs=path.join(DATA,'velum-studio','logs');await mkdir(logs,{recursive:true});
@@ -68,6 +81,7 @@ export async function infer(id,job,onProgress=()=>{}){
  return new Promise((resolve,reject)=>{
   const child=spawn(PYTHON,['-B',path.join(HERE,'infer.py')],{cwd:HERE,windowsHide:true,shell:false,
    env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated},stdio:['pipe','pipe','pipe']});
+  const abort=()=>child.kill();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
   let buffer='',diagnostic='',failure='inference-failed',saved=false;
   const timer=setTimeout(()=>{child.kill();reject(new Error('resource-guard'));},1830000);
   child.stdout.on('data',chunk=>{
@@ -81,9 +95,11 @@ export async function infer(id,job,onProgress=()=>{}){
   // Bounded diagnostics stay beside private H-drive outputs, never in cloud documents.
   child.stderr.on('data',chunk=>{diagnostic=(diagnostic+chunk.toString()).slice(-65536);});
   child.on('error',()=>{clearTimeout(timer);reject(new Error('inference-failed'));});
-  child.on('close',async(code,signal)=>{
+  child.on('close',async(code,exitSignal)=>{
+   signal?.removeEventListener('abort',abort);
+   // This disposable child owns all loaded model resources.
    clearTimeout(timer);
-   await writeFile(path.join(logs,`${id}.json`),JSON.stringify({code,signal,saved,diagnostic})).catch(()=>{});
+   await writeFile(path.join(logs,`${id}.json`),JSON.stringify({code,signal:exitSignal,saved,diagnostic})).catch(()=>{});
    code===0&&saved?resolve():reject(new Error(failure));
   });
   child.stdin.on('error',()=>{});child.stdin.end(JSON.stringify({id,job}));
@@ -92,61 +108,87 @@ export async function infer(id,job,onProgress=()=>{}){
 async function main(){
  if(process.platform!=='win32')throw new Error('windows-required');
  await mkdir(STATE,{recursive:true});
- const account=execFileSync('whoami',[],{encoding:'utf8',windowsHide:true}).trim();
- execFileSync('icacls',[STATE,'/inheritance:r','/grant:r',`${account}:(OI)(CI)F`,'SYSTEM:(OI)(CI)F'],{windowsHide:true,stdio:'ignore'});
- let lock;
- try{lock=await open(path.join(STATE,'worker.lock'),'wx');await lock.writeFile(String(process.pid));}
- catch{throw new Error('worker-already-running-or-lock-needs-review');}
- const workerId=randomUUID();let installed=[],queue,activeJob='',stopping=false,heartbeat;
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,updatedAt:Date.now(),...values}));
- const publish=async(state)=>{if(queue)await queue.write('status/pc',{updatedAt:Date.now(),installed,state,activeJob,version:VERSION});await local({state,activeJob,installed});};
+ secureDirectory(STATE);
+ const lockPath=path.join(STATE,'worker.lock');
+ const lock=await acquireWorkerLock(lockPath,fileURLToPath(import.meta.url));
+ const store=new DeviceStore(path.join(STATE,'device.dpapi'));
+ let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0;
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',...values}));
+ const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>60000||lastState!==state)){
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION});lastPublish=Date.now();lastState=state;}};
+ const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
+ const fail=(item,error)=>queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});
+ const load=async id=>{
+  try{
+   const output=path.join(DATA,'velum-studio',id),bytes=await readFile(path.join(output,'image.png'));
+   const metadata=JSON.parse(await readFile(path.join(output,'result.json'),'utf8')),payload=imagePayload(bytes);
+   if(payload.result.sha256!==metadata.sha256)throw new Error('invalid-output');
+   return {...payload,metadata};
+  }catch(error){if(error.code==='ENOENT')return null;throw error;}
+ };
+ const upload=async(item,output)=>{
+  for(let index=0;index<output.chunks.length;index++){
+   await approved();const relative=`jobs/${item.id}/chunks/${index}`;
+   const existing=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
+   if(existing.status===200){const data=decode({mapValue:{fields:existing.value.fields}});if(data.index!==index||data.data!==output.chunks[index])throw new Error('invalid-output');}
+   else await queue.write(relative,{index,data:output.chunks[index]},{create:true});
+  }
+  await approved();await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds}});
+ };
+ const run=async(item,resumed)=>{
+  activeJob=item.id;controller=new AbortController();await publish('running');
+  try{await finishClaimed(item,{resumed,load,upload,fail,approved,infer:async()=>{
+   let pending=Promise.resolve(),lastStep=0;
+   await infer(item.id,item.job,progress=>{if(progress.step>lastStep){lastStep=progress.step;pending=pending.then(()=>queue.write(`jobs/${item.id}`,{status:'running',progress})).catch(()=>{});}},{signal:controller.signal});
+   await pending;
+  }});}finally{activeJob='';controller=null;}
+ };
+ process.on('SIGINT',()=>{stopping=true;controller?.abort();});process.on('SIGTERM',()=>{stopping=true;controller?.abort();});
  try{
   installed=await installedModels();
-  await local({state:'owner-login-required',installed});
-  const session=await pairOwner({onUrl:async url=>{await writeFile(path.join(STATE,'pairing-url.txt'),url);},verify:session=>new Queue(session).privacy()});
-  await unlink(path.join(STATE,'pairing-url.txt')).catch(()=>{});
-  queue=new Queue(session);await queue.privacy();
-  // A claimed job is never silently resampled after a worker crash.
-  for(const item of await queue.jobs('running'))await queue.write(`jobs/${item.id}`,{status:'failed',error:'interrupted',finishedAt:Date.now()},{updateTime:item.updateTime});
-  process.on('SIGINT',()=>{stopping=true;});process.on('SIGTERM',()=>{stopping=true;});
-  heartbeat=setInterval(()=>publish(activeJob?'running':'idle').catch(()=>{}),30000);
-  const deadline=Date.now()+4*60*60*1000;
-  while(!stopping&&Date.now()<deadline){
-   await publish('idle');
-   for(const item of await queue.jobs('queued')){
-    if(stopping)break;
-    if(!/^[A-Za-z0-9_-]{1,80}$/.test(item.id))continue;
-    if(!runnable(item.job)){await queue.write(`jobs/${item.id}`,{status:'failed',error:'expired',finishedAt:Date.now()},{updateTime:item.updateTime});continue;}
-    if(!installed.includes(item.job.model)){await queue.write(`jobs/${item.id}`,{status:'failed',error:'model-unavailable',finishedAt:Date.now()},{updateTime:item.updateTime});continue;}
-    try{await queue.write(`jobs/${item.id}`,{status:'running',workerId,startedAt:Date.now()},{updateTime:item.updateTime});}
-    catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
-    activeJob=item.id;await publish('running');
-    let pending=Promise.resolve(),lastStep=0;
-    try{
-     await infer(item.id,item.job,progress=>{if(progress.step>lastStep){lastStep=progress.step;pending=pending.then(()=>queue.write(`jobs/${item.id}`,{status:'running',progress})).catch(()=>{});}});
-     await pending;
-     const output=path.join(DATA,'velum-studio',item.id);
-     const bytes=await readFile(path.join(output,'image.png'));
-     const metadata=JSON.parse(await readFile(path.join(output,'result.json'),'utf8'));
-     const payload=imagePayload(bytes);
-     if(payload.result.sha256!==metadata.sha256)throw new Error('invalid-output');
-     for(let index=0;index<payload.chunks.length;index++)await queue.write(`jobs/${item.id}/chunks/${index}`,{index,data:payload.chunks[index]},{create:true});
-     await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...payload.result,settings:metadata.settings,seconds:metadata.seconds}});
-    }catch(error){
-     const allowed=['resource-guard','invalid-output','output-too-large'];
-     await queue.write(`jobs/${item.id}`,{status:'failed',error:allowed.includes(error.message)?error.message:'inference-failed',finishedAt:Date.now()});
-    }finally{activeJob='';}
+  await local({state:'restoring-device',installed});
+  let checking=false;
+  heartbeat=setInterval(async()=>{
+   if(process.env.VELUM_HOST_PID){try{process.kill(Number(process.env.VELUM_HOST_PID),0);}catch{stopping=true;controller?.abort();}}
+   if(!activeJob||checking)return;checking=true;
+   try{await approved();await publish('running');}catch(error){if(error.message==='device-not-approved'||error.message==='firebase-403')controller?.abort();}finally{checking=false;}
+  },15000);
+  while(!stopping){
+   try{
+    if(!queue){const session=await restoreDevice(store);if(session.uid!==PC_DEVICE_UID)throw new Error('device-identity-mismatch');const candidate=new Queue(session,{store});await candidate.privacy();queue=candidate;}
+    let binding=await queue.binding();
+    if(!binding){queue.session.saved={...queue.session.saved,grant:randomBytes(32).toString('hex'),grantCreatedAt:Date.now()};await store.save(queue.session.saved);await queue.write(`devices/${queue.session.uid}`,enrollment(queue.session.saved),{create:true});binding=await queue.binding();}
+    if(binding.status==='pending'&&binding.expiresAt<=Date.now()){
+     if(queue.session.saved.grantCreatedAt<=binding.createdAt){queue.session.saved={...queue.session.saved,grant:randomBytes(32).toString('hex'),grantCreatedAt:Date.now()};await store.save(queue.session.saved);}
+     const next=enrollment(queue.session.saved);await queue.write(`devices/${queue.session.uid}`,{grantHash:next.grantHash,createdAt:next.createdAt,expiresAt:next.expiresAt});
+    }
+    if(binding.status!=='approved'){await local({state:binding.status==='revoked'?'revoked':'approval-required',installed,activeJob:''});attempt=0;}
+    else{
+     await publish('idle');
+     for(const item of await queue.jobs('running')){if(stopping)break;await run(item,true);}
+     for(const item of await queue.jobs('queued')){
+      if(stopping)break;await approved();
+      if(!runnable(item.job)){await fail(item,'expired');continue;}
+      if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
+      try{await queue.write(`jobs/${item.id}`,{status:'running',workerId:queue.session.uid,startedAt:Date.now()},{updateTime:item.updateTime});}
+      catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
+      await run(item,false);
+     }
+     attempt=0;
+    }
+   }catch(error){
+    await local({state:error.message==='device-not-approved'?'approval-required':'reconnecting',installed,activeJob:'',error:['device-identity-mismatch','private-rules-not-ready','device-auth-not-enabled-or-invalid'].includes(error.message)?error.message:'connection-unavailable'});
+    await new Promise(resolve=>setTimeout(resolve,retryDelay(attempt++)));continue;
    }
-   await new Promise(resolve=>setTimeout(resolve,10000));
+   await new Promise(resolve=>setTimeout(resolve,15000));
   }
  }finally{
   clearInterval(heartbeat);await publish('offline').catch(()=>{});
   if(queue)queue.session=null;await lock?.close();await unlink(path.join(STATE,'worker.lock')).catch(()=>{});
-  await unlink(path.join(STATE,'pairing-url.txt')).catch(()=>{});
  }
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(async error=>{
- const allowed=['owner-login-required','owner-account-required','private-rules-not-ready','pairing-unavailable','worker-already-running-or-lock-needs-review'];
+ const allowed=['device-identity-mismatch','private-rules-not-ready','device-auth-unavailable','worker-already-running','invalid-worker-lock'];
  await writeFile(path.join(STATE,'error.json'),JSON.stringify({at:Date.now(),error:allowed.includes(error.message)?error.message:'worker-unavailable'})).catch(()=>{});
  process.exitCode=1;
 });

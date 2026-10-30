@@ -2,7 +2,9 @@ import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
 import { affectionScore, totalAffectionMs, isQuickSkip } from './affection.mjs';
 import { createHeartEffects } from './heart-effects.mjs';
 import { createDriftGestures } from './drift-gestures.mjs';
-import { mountStudio } from './studio.mjs';
+const studioModule = new URL('./studio.mjs', import.meta.url);
+studioModule.search = new URL(import.meta.url).search;
+const { mountStudio } = await import(studioModule.href);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,

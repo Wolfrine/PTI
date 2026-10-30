@@ -24,7 +24,7 @@ test('incomplete, tampered, duplicate and excessive chunks cannot become a previ
 
 test('queue status remains explicit and reports actual worker steps', () => {
   assert.equal(formatJobStatus({ status: 'running', progress: { step: 2, total: 4 } }), 'Generating · step 2 of 4');
-  assert.equal(formatJobStatus({ status: 'queued' }), 'Queued on your PC');
+  assert.equal(formatJobStatus({ status: 'queued' }), 'Queued for your PC');
   assert.equal(formatJobStatus({ status: 'failed' }), 'Generation stopped');
   assert.equal(formatJobStatus({ status: 'completed' }), 'Ready for your review');
 });

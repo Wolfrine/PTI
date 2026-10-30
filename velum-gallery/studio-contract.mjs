@@ -13,7 +13,7 @@ export const MODEL_IDS = MODELS.map(model=>model.id);
 export const MODEL_REFERENCE_LIMITS = Object.freeze({'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1});
 export function modelReferenceLimit(status,model) {
  if(!MODEL_REFERENCE_LIMITS[model])return 0;
- if(status?.version==='2.1.0'&&status?.capabilities?.referenceModels?.includes(model))return MODEL_REFERENCE_LIMITS[model];
+ if(['2.1.0','2.2.0'].includes(status?.version)&&status?.capabilities?.referenceModels?.includes(model))return MODEL_REFERENCE_LIMITS[model];
  return status?.version==='2.0.0'&&model==='flux2-klein-fp8'&&status?.capabilities?.referenceModel===model&&status?.capabilities?.maxReferences===2?2:0;
 }
 export const JOB_TTL = 7*24*60*60*1000, MAX_CHUNKS = 16, CHUNK_SIZE = 600000;
@@ -55,8 +55,8 @@ export function devicePending(binding,now=Date.now()) {
 }
 export function deviceCanQueue(binding,status,model) {
   // The last verified installation survives a stale heartbeat. Work waits in Firestore.
-  return Boolean(deviceApproved(binding) && status?.deviceUid===PC_DEVICE_UID && ['2.0.0','2.1.0'].includes(status.version) && MODEL_IDS.includes(model) && status.installed?.includes(model));
+ return Boolean(deviceApproved(binding) && status?.deviceUid===PC_DEVICE_UID && ['2.0.0','2.1.0','2.2.0'].includes(status.version) && MODEL_IDS.includes(model) && status.installed?.includes(model));
 }
 export function workerOnline(status,now=Date.now()) {
-  return Boolean(status?.deviceUid===PC_DEVICE_UID && ['2.0.0','2.1.0'].includes(status.version) && ['idle','running'].includes(status.state) && Number.isFinite(status.updatedAt) && now-status.updatedAt>=-30000 && now-status.updatedAt<90000);
+ return Boolean(status?.deviceUid===PC_DEVICE_UID && ['2.0.0','2.1.0','2.2.0'].includes(status.version) && ['idle','running'].includes(status.state) && Number.isFinite(status.updatedAt) && now-status.updatedAt>=-30000 && now-status.updatedAt<90000);
 }

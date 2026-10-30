@@ -10,6 +10,7 @@ import {acquireWorkerLock} from './worker-lock.mjs';
 import {WEIGHTS,runnable,encode,decode,imagePayload} from './core.mjs';
 import {downloadReferences,thumbnailPayload} from './reference-input.mjs';
 import {ThumbnailBackfill} from './thumbnail-backfill.mjs';
+import {pendingRecovery} from '../../velum-gallery/studio-recovery.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -17,7 +18,7 @@ const DATA='H:\\AI-ImageGen\\portrait-pilot';
 const PYTHON='F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe';
 const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const ROOT=`users/${OWNER_UID}/velumStudio/workspace`;
-const VERSION='2.1.0';
+const VERSION='2.2.0';
 const EXPECTED_BYTES={
  'z_image_turbo_nvfp4.safetensors':4509509600,'flux-2-klein-4b-fp8.safetensors':4070624520,
  'RealVisXL_V5.0_fp16.safetensors':6938065488,'Realistic_Vision_V6.0_NV_B1_fp16.safetensors':2132625894,
@@ -71,6 +72,10 @@ export class Queue {
  }
  async binding(){
   const response=await this.request(`${ROOT}/devices/${this.session.uid}`,{allow:[404]});
+  return response.status===404?null:decode({mapValue:{fields:response.value.fields}});
+ }
+ async recovery(){
+  const response=await this.request(`${ROOT}/controls/worker-start`,{allow:[404]});
   return response.status===404?null:decode({mapValue:{fields:response.value.fields}});
  }
 }
@@ -127,10 +132,11 @@ async function main(){
  const lockPath=path.join(STATE,'worker.lock');
  const lock=await acquireWorkerLock(lockPath,fileURLToPath(import.meta.url));
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
- let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0;
+ const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
+ let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false;
  const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:{referenceModel:'flux2-klein-fp8',maxReferences:2,referenceModels:['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'],referenceOutputWidth:512,referenceOutputHeight:768}});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:{referenceModel:'flux2-klein-fp8',maxReferences:2,referenceModels:['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'],referenceOutputWidth:512,referenceOutputHeight:768,recoveryControl:recoveryInstalled}});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=(item,error)=>queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});
  const load=async id=>{
@@ -214,6 +220,13 @@ async function main(){
     if(binding.status!=='approved'){await local({state:binding.status==='revoked'?'revoked':'approval-required',installed,activeJob:''});attempt=0;}
     else{
      await publish('idle');
+      // A request can also be acknowledged by the already-running worker.
+      // Acknowledgment alone is not success: the browser requires a fresh heartbeat.
+      if(!recoveryChecked){
+       const recovery=await queue.recovery().catch(error=>{if(error.message==='firebase-403')return null;throw error;});
+       if(pendingRecovery(recovery))await queue.write('controls/worker-start',{status:'attempted',attemptedAt:Date.now()}).catch(error=>{if(error.message!=='firebase-403')throw error;});
+       recoveryChecked=true;
+      }
      for(const item of await queue.jobs('running')){if(stopping)break;await run(item,true);}
      for(const item of await queue.jobs('queued')){
       if(stopping)break;await approved();

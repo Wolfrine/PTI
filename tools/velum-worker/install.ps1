@@ -1,6 +1,7 @@
 param([switch]$NoStart)
 $ErrorActionPreference = 'Stop'
 $taskName = 'PTI Velum Studio Worker'
+$recoveryTaskName = 'PTI Velum Studio Recovery'
 $runtime = Join-Path $PSScriptRoot '.runtime'
 if ((Get-Item -LiteralPath $PSScriptRoot).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Worker source cannot be a junction.' }
 New-Item -ItemType Directory -Path $runtime -Force | Out-Null
@@ -26,5 +27,10 @@ $triggers = @((New-ScheduledTaskTrigger -AtLogOn -User $account),(New-ScheduledT
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 $principal = New-ScheduledTaskPrincipal -UserId $account -LogonType Interactive -RunLevel Limited
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $triggers -Settings $settings -Principal $principal -Description ('Dedicated owner-approved Velum device; outbound Firebase queue; no inference while idle; logon and one-minute recovery. host-source-sha256=' + $sourceHash) -Force | Out-Null
+$recoveryScript = Join-Path $PSScriptRoot 'recovery.ps1'
+if (!(Test-Path -LiteralPath $recoveryScript) -or !(Test-Path -LiteralPath (Join-Path $PSScriptRoot 'recovery.mjs'))) { throw 'Velum recovery helper is missing.' }
+$recoveryAction = New-ScheduledTaskAction -Execute (Join-Path $PSHOME 'powershell.exe') -Argument ('-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $recoveryScript + '" -NodePath "' + $node + '"') -WorkingDirectory $PSScriptRoot
+$recoverySettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Seconds 45) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -TaskName $recoveryTaskName -Action $recoveryAction -Trigger $triggers -Settings $recoverySettings -Principal $principal -Description 'Fixed-purpose owner-approved Velum start request: checks private Firestore and starts only the installed Velum worker task. No arbitrary commands.' -Force | Out-Null
 if (!$NoStart) { Start-ScheduledTask -TaskName $taskName }
-Write-Output 'Velum auto-start installed for this Windows user. It runs while signed in, including locked; pre-logon startup requires an administrator service setup. Approve this PC only from Velum Studio.'
+Write-Output 'Velum auto-start and remote recovery helper installed for this Windows user. They run while signed in, including locked. A sleeping or powered-off PC cannot be started remotely; no pre-logon service is installed.'

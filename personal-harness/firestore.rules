@@ -79,14 +79,38 @@ service cloud.firestore {
      && instant(request.resource.data.updatedAt) && request.resource.data.installed is list && request.resource.data.installed.size() <= 4
      && request.resource.data.installed.hasOnly(['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15'])
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
-     && request.resource.data.version in ['2.0.0','2.1.0']
-     && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight'])
+      && request.resource.data.version in ['2.0.0','2.1.0','2.2.0']
+      && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight','recoveryControl'])
       && request.resource.data.capabilities.referenceModel == 'flux2-klein-fp8' && request.resource.data.capabilities.maxReferences == 2
       && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768
       && (request.resource.data.version == '2.0.0' ? !('referenceModels' in request.resource.data.capabilities) :
-       ('referenceModels' in request.resource.data.capabilities && request.resource.data.capabilities.referenceModels == ['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4']))));
+        ('referenceModels' in request.resource.data.capabilities && request.resource.data.capabilities.referenceModels == ['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4']))
+       && (request.resource.data.version == '2.2.0' ? ('recoveryControl' in request.resource.data.capabilities && request.resource.data.capabilities.recoveryControl is bool)
+        : !('recoveryControl' in request.resource.data.capabilities))));
     allow delete: if studioOwner();
    }
+    // Owner-only start request; pinned approved Windows device may only acknowledge it.
+    // Neither party may inject a command, executable, arguments or filesystem path.
+    match /controls/worker-start {
+     function validRequest(d) { return d.keys().hasOnly(['action','deviceUid','requestId','requestedAt','expiresAt','status'])
+      && d.action == 'start' && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22'
+      && d.requestId is string && d.requestId.matches('[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}')
+      && d.status == 'requested' && instant(d.requestedAt) && d.requestedAt >= request.time.toMillis() - 300000
+      && d.expiresAt == d.requestedAt + 600000; }
+     allow get: if studioOwner() || studioDevice();
+     allow list, delete: if false;
+     allow create: if studioOwner() && validRequest(request.resource.data);
+     allow update: if (studioOwner() && validRequest(request.resource.data)
+       && (resource.data.status == 'attempted' || resource.data.expiresAt <= request.time.toMillis())
+       && request.resource.data.requestId != resource.data.requestId
+       && request.resource.data.requestedAt >= resource.data.requestedAt + 60000)
+      || (studioDevice() && resource.data.status == 'requested'
+       && resource.data.expiresAt > request.time.toMillis()
+       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','attemptedAt'])
+       && request.resource.data.status == 'attempted'
+       && instant(request.resource.data.attemptedAt)
+       && request.resource.data.attemptedAt >= request.time.toMillis() - 300000);
+    }
    match /jobs/{id} {
     allow read: if studioOwner() || (studioDevice() && resource.data.deviceUid == request.auth.uid);
     allow delete: if studioOwner();

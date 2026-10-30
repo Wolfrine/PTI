@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import { decodeResult, formatJobStatus } from '../studio.mjs';
 import { archiveStatusMark, pendingJob } from '../studio-view.mjs';
+import {makeRecoveryRequest,pendingRecovery,recoveryPhase} from '../studio-recovery.mjs';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aC1cAAAAASUVORK5CYII=', 'base64');
 const manifest = { mime: 'image/png', bytes: png.length, chunks: 2, sha256: createHash('sha256').update(png).digest('hex') };
@@ -57,4 +58,16 @@ test('edit drafts survive failed input preparation and show explicit model selec
  const clearPrompt=controller.indexOf("root.querySelector('#studioPrompt').value=''",start);
  assert.ok(attach>start&&clearPrompt>attach,'new reference must prepare before clearing the prompt');
  assert.match(view,/id="studioEditModel"/);
+});
+test('worker start control is confined to PC panel and depends on an independent helper',()=>{
+ const view=readFileSync(new URL('../studio-view.mjs',import.meta.url),'utf8');
+ const controller=readFileSync(new URL('../studio.mjs',import.meta.url),'utf8');
+ assert.match(view,/studioDevice \.studio-device-note/);
+ assert.match(view,/studioRequestRecovery/);
+ assert.match(view,/fresh heartbeat/);
+ assert.match(controller,/controls','worker-start/);
+ const now=1770000000000,req=makeRecoveryRequest(now,'c083a24a-b79d-4346-bca5-35c718cc4a42');
+ assert.equal(pendingRecovery(req,now),true);
+ assert.equal(recoveryPhase(req,null,false,now),'waiting');
+ assert.equal(recoveryPhase(req,null,true,now),'online');
 });

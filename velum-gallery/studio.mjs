@@ -5,6 +5,7 @@ const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
 const {renderStudioShell,renderStudioState,renderCreationDetails,selectedJob,pendingJob,formatJobStatus}=await localModule('./studio-view.mjs');
 const {ARCHIVE_PAGE_SIZE,archiveSource,mergeArchivePage,decodeThumbnail}=await localModule('./studio-archive.mjs');
 const {prepareReference,MAX_REFERENCES}=await localModule('./studio-reference.mjs');
+const {makeRecoveryRequest,pendingRecovery,RECOVERY_COOLDOWN_MS}=await localModule('./studio-recovery.mjs');
 export {renderStudioShell,renderStudioState,formatJobStatus};
 
 export async function decodeResult(result,chunks){
@@ -19,7 +20,7 @@ export async function mountStudio({app,auth,drive}){
   const {onAuthStateChanged}=await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js');
   if(!drive)throw new Error('Studio Drive integration is unavailable. Refresh Velum.');
   const db=getFirestore(app);
-  const state={signedIn:false,connected:navigator.onLine,mode:'create',worker:null,binding:null,bindingBusy:false,jobs:[],selectedId:'',resultUrl:'',feedback:null,message:'',references:[],archiveJobs:[],archiveFilter:'all',archiveModel:'',archiveDate:'',archiveHasMore:true,archiveLoading:false,archiveError:'',saves:{},feedbackMap:{},removed:{},lastRemovedId:''};
+   const state={signedIn:false,connected:navigator.onLine,mode:'create',worker:null,binding:null,bindingBusy:false,recovery:null,recoveryBusy:false,jobs:[],selectedId:'',resultUrl:'',feedback:null,message:'',references:[],archiveJobs:[],archiveFilter:'all',archiveModel:'',archiveDate:'',archiveHasMore:true,archiveLoading:false,archiveError:'',saves:{},feedbackMap:{},removed:{},lastRemovedId:''};
   let uid='',epoch=0,timer=0,polling=false,resultJob='',resultBlob=null,archiveCursor=null,archiveEpoch=0,thumbActive=0,locked=false,pendingUpload=null,autoSelect=true,undoTimer=0;
   const thumbs=new Map(),thumbMissing=new Set(),thumbQueue=[],thumbPending=new Set();
   const workspace=()=>['users',uid,'velumStudio','workspace'];
@@ -52,13 +53,15 @@ export async function mountStudio({app,auth,drive}){
   async function poll(){
     clearTimeout(timer);if(!uid||locked||polling)return;polling=true;const token=epoch;
     try{
-      const [status,jobs,binding]=await Promise.all([
+      const checkRecovery=!workerOnline(state.worker)||state.recovery?.status==='requested';
+      const [status,jobs,binding,recovery]=await Promise.all([
         getDoc(doc(db,...workspace(),'status','pc')),
         getDocs(query(collection(db,...workspace(),'jobs'),orderBy('createdAt','desc'),limit(4))),
-        getDoc(doc(db,...workspace(),'devices',PC_DEVICE_UID))
+        getDoc(doc(db,...workspace(),'devices',PC_DEVICE_UID)),
+        checkRecovery?getDoc(doc(db,...workspace(),'controls','worker-start')).catch(()=>null):Promise.resolve(null)
       ]);
       if(token!==epoch||!uid||locked)return;
-      state.worker=status.exists()?status.data():null;state.binding=binding.exists()?binding.data():null;
+      state.worker=status.exists()?status.data():null;state.binding=binding.exists()?binding.data():null;if(checkRecovery)state.recovery=recovery?.exists()?recovery.data():null;
       state.jobs=jobs.docs.map(item=>({...item.data(),id:item.id}));state.connected=navigator.onLine;
       if(autoSelect&&!state.selectedId&&state.jobs.length)state.selectedId=state.jobs[0].id;
       draw();await loadResult();
@@ -67,6 +70,19 @@ export async function mountStudio({app,auth,drive}){
     }finally{
       polling=false;if(uid&&!locked&&token===epoch)timer=setTimeout(poll,document.hidden?60000:15000);else if(uid&&!locked)timer=setTimeout(poll,0);
     }
+  }
+  async function requestRecovery(){
+    if(!uid||locked||!state.signedIn||state.recoveryBusy||!navigator.onLine||!state.connected||!deviceApproved(state.binding))return;
+    if(state.worker?.version!=='2.2.0'||state.worker?.capabilities?.recoveryControl!==true){state.message='Remote start requires the updated Windows recovery helper on this PC.';draw();return;}
+    const now=Date.now();
+    if(pendingRecovery(state.recovery,now)){state.message='A start request is already waiting for the PC.';draw();return;}
+    if(state.recovery?.requestedAt>now-RECOVERY_COOLDOWN_MS){state.message='Wait one minute between recovery attempts.';draw();return;}
+    const token=epoch,next=makeRecoveryRequest(now);state.recoveryBusy=true;state.message='';draw();
+    try{
+      await setDoc(doc(db,...workspace(),'controls','worker-start'),next);
+      if(token===epoch&&uid&&!locked){state.recovery=next;state.message='Worker start requested. Velum will confirm only when the PC sends a fresh heartbeat.';}
+    }catch(error){if(token===epoch)state.message=error?.code==='permission-denied'?'Recovery request was not authorized. Refresh and retry.':'Recovery request was not confirmed. Reconnect and retry.';}
+    finally{if(token===epoch){state.recoveryBusy=false;draw();poll();}}
   }
   async function changeBinding(action){if(!uid||state.bindingBusy||!navigator.onLine||!state.connected||(action==='approve'?!(devicePending(state.binding)||(state.binding?.deviceUid===PC_DEVICE_UID&&state.binding.status==='revoked')):!deviceApproved(state.binding)))return;const token=epoch;state.bindingBusy=action;state.message='';draw();try{const update=action==='approve'?{status:'approved',approvedAt:Date.now()}:{status:'revoked',revokedAt:Date.now()};await updateDoc(doc(db,...workspace(),'devices',PC_DEVICE_UID),update);if(token!==epoch||!uid)return;state.binding={...state.binding,...update};state.message=action==='approve'?'PC approved. Private requests can reach it whenever Windows is online.':'PC access revoked.';}catch{if(token===epoch)state.message='Device approval was not confirmed. Refresh and retry.';}finally{if(token===epoch){state.bindingBusy=false;draw();poll();}}}
   async function addReference(blob,source,replace=false){if(locked)throw new Error('Unlock Studio before adding a reference.');const select=root.querySelector('#studioModel'),model=select.value,limit=modelReferenceLimit(state.worker,model);if(!limit)throw new Error('This model cannot edit a reference on the currently installed worker. Select a supported model.');if(!replace&&state.references.length>=Math.min(MAX_REFERENCES,limit))throw new Error(`This model accepts ${limit} reference image${limit===1?'':'s'}.`);const token=epoch,reference=await prepareReference(blob,source);if(token!==epoch||!uid||locked){URL.revokeObjectURL(reference.url);return;}if(!replace&&state.references.length>=Math.min(MAX_REFERENCES,limit)){URL.revokeObjectURL(reference.url);throw new Error('Reference capacity changed while preparing the image.');}if(replace)clearReferences();state.references.push(reference);state.referencePick=false;state.mode='create';root.querySelector('#studioReferenceSources').hidden=true;root.querySelector('#studioReferenceOpen').setAttribute('aria-expanded','false');state.message='Reference attached. Write your instruction; a new original will be created.';draw();}
@@ -99,7 +115,7 @@ export async function mountStudio({app,auth,drive}){
     if(button.matches('[data-mode]')){state.referencePick=false;switchMode(button.dataset.mode);}
     if(button.matches('[data-close]'))button.closest('dialog').close();
     if(button.id==='studioDeviceOpen')showDialog('#studioDevicePanel');if(button.id==='studioAdvancedOpen')showDialog('#studioAdvancedPanel');if(button.id==='studioRefresh'){state.message='';clearResult();draw();poll();if(state.mode==='creations')loadArchive(true);}
-    if(button.id==='studioApprove')changeBinding('approve');if(button.id==='studioRevoke')changeBinding('revoke');
+    if(button.id==='studioApprove')changeBinding('approve');if(button.id==='studioRevoke')changeBinding('revoke');if(button.id==='studioRequestRecovery')await requestRecovery();
     if(button.id==='studioNew'){autoSelect=false;state.referencePick=false;clearResult();clearReferences();state.selectedId='';root.querySelector('#studioPrompt').value='';root.querySelector('#studioSeed').value='';switchMode('create');root.querySelector('#studioPrompt').focus();}
     if(button.dataset.action==='retry-upload')await uploadReferences();
     if(button.dataset.action==='cancel-upload'){const job=selectedJob(state);if(job?.status==='uploading'){await updateDoc(doc(db,...workspace(),'jobs',job.id),{status:'cancelled'});if(pendingUpload?.id===job.id)pendingUpload=null;job.status='cancelled';state.canRetryUpload=false;state.message='Incomplete upload cancelled. Reference bytes remain private; no inference was requested.';draw();poll();}}
@@ -160,7 +176,7 @@ export async function mountStudio({app,auth,drive}){
     finally{if(token===epoch){state.submitting=false;state.uploadProgress='';draw();poll();}}
   });
   root.querySelector('#studioDetails').addEventListener('submit',async event=>{if(event.target.id!=='studioFeedback')return;event.preventDefault();const form=event.target,output=form.querySelector('#studioFeedbackStatus'),button=form.querySelector('button[type=submit]'),data=new FormData(form);button.disabled=true;output.textContent='Saving…';try{await feedbackSave(data.get('verdict'),String(data.get('note')||''));output.textContent='Feedback saved';draw();}catch(error){output.textContent=error.message||'Not saved. Reconnect and retry.';}finally{button.disabled=false;}});
-  onAuthStateChanged(auth,user=>{const previousUid=uid;epoch++;archiveEpoch++;clearTimeout(timer);clearTimeout(undoTimer);clearPrivateSession();clearResult();clearReferences();closeDialogs();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();thumbPending.clear();uid=user?.uid||'';Object.assign(state,{signedIn:Boolean(uid),jobs:[],archiveJobs:[],worker:null,binding:null,bindingBusy:false,selectedId:'',message:'',submitting:false,archiveLoading:false,archiveHasMore:true,archiveError:'',saves:{},feedbackMap:{},removed:{},lastRemovedId:'',saving:false});archiveCursor=null;autoSelect=true;if(!uid||previousUid!==uid){root.querySelector('#studioPrompt').value='';root.querySelector('#studioConsent').checked=false;root.querySelector('#studioSeed').value='';root.querySelector('#studioDetails').replaceChildren();}draw();if(uid)poll();});
+  onAuthStateChanged(auth,user=>{const previousUid=uid;epoch++;archiveEpoch++;clearTimeout(timer);clearTimeout(undoTimer);clearPrivateSession();clearResult();clearReferences();closeDialogs();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();thumbPending.clear();uid=user?.uid||'';Object.assign(state,{signedIn:Boolean(uid),jobs:[],archiveJobs:[],worker:null,binding:null,bindingBusy:false,recovery:null,recoveryBusy:false,selectedId:'',message:'',submitting:false,archiveLoading:false,archiveHasMore:true,archiveError:'',saves:{},feedbackMap:{},removed:{},lastRemovedId:'',saving:false});archiveCursor=null;autoSelect=true;if(!uid||previousUid!==uid){root.querySelector('#studioPrompt').value='';root.querySelector('#studioConsent').checked=false;root.querySelector('#studioSeed').value='';root.querySelector('#studioDetails').replaceChildren();}draw();if(uid)poll();});
   window.addEventListener('velum:lock',clearPrivateSession);
   window.addEventListener('pagehide',clearPrivateSession);
   window.addEventListener('velum:lock',()=>{locked=true;epoch++;archiveEpoch++;clearTimeout(timer);clearTimeout(undoTimer);closeDialogs();clearResult();clearReferences();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();state.jobs=[];state.archiveJobs=[];state.selectedId='';state.feedbackMap={};state.saves={};state.removed={};state.lastRemovedId='';state.submitting=false;state.saving=false;state.archiveLoading=false;root.querySelector('#studioPrompt').value='';root.querySelector('#studioConsent').checked=false;root.querySelector('#studioSeed').value='';root.querySelector('#studioDetails').replaceChildren();draw();});

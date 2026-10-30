@@ -144,9 +144,9 @@ jobs:
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
           # Last verified production predecessor: CI deploy+Velum both passed
-          # for 75d4f238. Preserve exact-hash protection against concurrent edits.
+          # for 19bf1725. Preserve exact-hash protection against concurrent edits.
           # No Firestore rules are overwritten if live differs from this revision.
-          git show 75d4f2386fc78c4ded6be9286f25e3660353e9ac:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
+          git show 19bf17252b6036066c6beaa0cf81f243d733af17:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-platform-usage.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs
@@ -320,8 +320,11 @@ jobs:
           node --check velum-gallery/sw.js
           node --check velum-gallery/studio.mjs
           node --check velum-gallery/studio-contract.mjs
+           node --check velum-gallery/studio-recovery.mjs
           node --check tools/velum-worker/worker.mjs
-          node --test tools/velum-worker/worker.test.mjs tools/velum-worker/reference.test.mjs tools/velum-worker/thumbnail-backfill.test.mjs
+           node --check tools/velum-worker/recovery.mjs
+           node --check tools/velum-worker/recovery-control.mjs
+           node --test tools/velum-worker/worker.test.mjs tools/velum-worker/recovery.test.mjs tools/velum-worker/reference.test.mjs tools/velum-worker/thumbnail-backfill.test.mjs
           node --test velum-gallery/tests/*.test.mjs
 
       - name: Stamp Velum release version into HTML and PWA cache

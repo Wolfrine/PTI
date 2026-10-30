@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {makeJob} from '../../velum-gallery/studio-contract.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
+import {makeRecoveryRequest} from '../../velum-gallery/studio-recovery.mjs';
 const require=createRequire(new URL('../../apps/one-piece/package.json',import.meta.url));
 const {initializeTestEnvironment,assertSucceeds,assertFails}=require('@firebase/rules-unit-testing');
 const {doc,setDoc,getDoc,updateDoc,deleteDoc}=require('firebase/firestore');
@@ -74,9 +75,35 @@ test('thumbnail and capability writes require approved pinned device and revoke 
  const status={deviceUid:PC_DEVICE_UID,installed:['flux2-klein-fp8'],state:'idle',activeJob:'',version:'2.0.0',updatedAt:Date.now(),capabilities:{referenceModel:'flux2-klein-fp8',maxReferences:2,referenceOutputWidth:512,referenceOutputHeight:768}};
  await assertSucceeds(setDoc(path(device(),'status/pc'),status));
  await assertFails(setDoc(path(device(),'status/pc'),{...status,capabilities:{...status.capabilities,maxReferences:4}}));
+ const upgraded={...status,version:'2.2.0',capabilities:{...status.capabilities,referenceModels:['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'],recoveryControl:true}};
+ await assertSucceeds(setDoc(path(device(),'status/pc'),upgraded));
+ await assertFails(setDoc(path(device(),'status/pc'),{...upgraded,capabilities:{...upgraded.capabilities,recoveryControl:'yes'}}));
+ await assertFails(setDoc(path(device(),'status/pc'),{...upgraded,capabilities:{...upgraded.capabilities,remoteCommand:'cmd.exe'}}));
  for(const db of [client('other'),client('anonymous','anonymous'),client(null)])await assertFails(getDoc(path(db,'thumbs/result')));
  await env.withSecurityRulesDisabled(context=>setDoc(path(context.firestore(),`devices/${PC_DEVICE_UID}`),{status:'revoked'}));
  await assertFails(getDoc(path(device(),'thumbs/result')));await assertSucceeds(getDoc(path(owner(),'thumbs/result')));
+});
+test('remote start is a bounded owner request with a pinned device acknowledgment, never a shell command',async()=>{
+ await approve();
+ const now=Date.now(),req=makeRecoveryRequest(now-70000,'c083a24a-b79d-4346-bca5-35c718cc4a42'),target='controls/worker-start';
+ await assertSucceeds(setDoc(path(owner(),target),req));
+ await assertSucceeds(getDoc(path(device(),target)));
+ for(const db of [client('other'),client('anonymous','anonymous'),client(null)]){
+  await assertFails(getDoc(path(db,target)));
+  await assertFails(setDoc(path(db,target),req));
+ }
+ await assertFails(setDoc(path(device(),target),req));
+ await assertFails(setDoc(path(owner(),target),{...req,command:'powershell'}));
+ await assertFails(setDoc(path(owner(),target),{...req,expiresAt:now+6000000}));
+ await assertFails(updateDoc(path(device(),target),{status:'attempted',attemptedAt:now,command:'shutdown'}));
+ await assertFails(updateDoc(path(owner(),target),{status:'attempted',attemptedAt:now}));
+ await assertSucceeds(updateDoc(path(device(),target),{status:'attempted',attemptedAt:Date.now()}));
+ await assertFails(updateDoc(path(device(),target),{status:'requested'}));
+ const next=makeRecoveryRequest(Date.now(),'909198f8-e44f-4f9d-a77d-92b97a8a3638');
+ await assertSucceeds(setDoc(path(owner(),target),next));
+ await env.withSecurityRulesDisabled(context=>setDoc(path(context.firestore(),`devices/${PC_DEVICE_UID}`),{status:'revoked'}));
+ await assertFails(getDoc(path(device(),target)));
+ await assertFails(updateDoc(path(device(),target),{status:'attempted',attemptedAt:Date.now()}));
 });
 test('removed creations are owner-only and restore without touching originals',async()=>{
  await completed();const hidden={jobId:'result',removedAt:Date.now()};

@@ -143,11 +143,10 @@ jobs:
           npm install -g firebase-tools
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
-          # Review the immediately preceding deployed rules as the exact allowed
-          # predecessor for this isolated Velum device-auth change. Older Atlas
-          # baselines differ, so pinning them would reject even our own live rules.
-          # The provisioner still rejects ANY unexpected concurrent live change.
-          git show 2cc33ee53772f40b1efc39937de12aebf8667f13:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
+          # Last verified production predecessor: CI deploy+Velum both passed
+          # for 75d4f238. Preserve exact-hash protection against concurrent edits.
+          # No Firestore rules are overwritten if live differs from this revision.
+          git show 75d4f2386fc78c4ded6be9286f25e3660353e9ac:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-platform-usage.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs

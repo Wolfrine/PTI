@@ -8,6 +8,7 @@ class Memory implements RelayStore {
   async heartbeat(_uid:string,w:Worker){this.host=structuredClone(w);}
   async queued(){return [...this.jobs.values()].filter(j=>j.status==='queued').map(j=>j.id);}
   async list(){return [...this.jobs.values()].sort((a,b)=>b.updatedAt-a.updatedAt);}
+  async clearActive(_uid:string,id:string){if(this.host?.activeTask===id)this.host.activeTask=null;}
   async update<T>(_uid:string,id:string,fn:(job:Job|undefined,worker:Worker|undefined)=>{job:Job;result:T}){const result=fn(structuredClone(this.jobs.get(id)),structuredClone(this.host));this.jobs.set(id,result.job);return result.result;}
 }
 function fixture(){let at=1000000;const store=new Memory(),relay=new CodexRelay(store,()=>at);const heartbeat={instanceId:randomUUID(),authMode:'chatgpt' as const,version:'0.3.0',projects:[{key:'scratch',name:'Scratch',path:'F:/scratch',available:true}]};const args={project:'scratch',prompt:'inspect',mode:'inspect' as const,request_key:'request-one'};return {store,relay,heartbeat,args,advance:(ms:number)=>at+=ms,pair:()=>relay.poll(OWNER,{heartbeat})};}
@@ -41,8 +42,11 @@ describe('Local Codex relay',()=>{
     await expect(f.relay.start(OWNER,{...f.args,request_key:'unrelated-one'})).rejects.toThrow('busy');
     await expect(f.relay.command(OWNER,{action:'list',args:{}},'history-one')).rejects.toThrow('Nothing was queued');
     expect(f.store.jobs.size).toBe(1);
-    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed'}});await f.pair();
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed'}});
     expect(await f.relay.status(OWNER)).toMatchObject({busy:false,activeTask:null});
+    const second=await f.relay.start(OWNER,{...f.args,request_key:'second-after-idle'});await f.pair();
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed'}});
+    expect(await f.relay.status(OWNER)).toMatchObject({busy:true,activeTask:second.id});
   });
   it('rejects offline and foreign-account requests without storing work',async()=>{const f=fixture();await expect(f.relay.start(OWNER,f.args)).rejects.toThrow('unavailable');await expect(f.relay.status('another')).rejects.toThrow('authorized');expect(f.store.jobs.size).toBe(0);});
   it('deduplicates requests and rejects different arguments with the same key',async()=>{const f=fixture();await f.pair();const j=await f.relay.start(OWNER,f.args);expect((await f.relay.start(OWNER,f.args)).id).toBe(j.id);await expect(f.relay.start(OWNER,{...f.args,prompt:'changed'})).rejects.toThrow('different');expect(f.store.jobs.size).toBe(1);});

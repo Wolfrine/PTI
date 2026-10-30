@@ -31,6 +31,7 @@ export interface RelayStore {
   update<T>(uid:string,id:string,operation:(job:Job|undefined,worker:Worker|undefined)=>{job:Job;result:T}):Promise<T>;
   queued(uid:string):Promise<string[]>;
   list(uid:string):Promise<Job[]>;
+  clearActive(uid:string,id:string):Promise<void>;
 }
 export class FirestoreRelayStore implements RelayStore {
   constructor(private db:Firestore) {}
@@ -48,6 +49,7 @@ export class FirestoreRelayStore implements RelayStore {
   }
   async queued(uid:string) { return (await this.root(uid).collection('jobs').where('status','==','queued').limit(10).get()).docs.map(d=>d.id); }
   async list(uid:string) { return (await this.root(uid).collection('jobs').orderBy('updatedAt','desc').limit(100).get()).docs.map(d=>d.data() as Job); }
+  async clearActive(uid:string,id:string) {await this.db.runTransaction(async tx=>{const root=this.root(uid),state=await tx.get(root);if(state.data()?.activeTask===id)tx.update(root,{activeTask:null});});}
 }
 export class CodexRelay {
   constructor(readonly store:RelayStore,readonly clock=()=>Date.now()) {}
@@ -138,7 +140,7 @@ export class CodexRelay {
     return {job:null,controls:null};
   }
   async report(uid:string,body:{id:string;generation:number;lease:string;snapshot:Record<string,unknown>}) {
-    this.owner(uid);return this.store.update(uid,body.id,job=>{
+    this.owner(uid);const outcome=await this.store.update(uid,body.id,job=>{
       if(!job||job.generation!==body.generation||job.lease!==body.lease||(job.leaseUntil||0)<this.clock())throw Error('lease_lost');
       const status=String(body.snapshot.status);if(!['running','waiting_for_user',...terminal].includes(status))throw Error('Invalid task status.');
       // An old/in-flight progress report must never reopen a finished job.
@@ -146,6 +148,8 @@ export class CodexRelay {
       job.status=status;job.updatedAt=this.clock();job.snapshot=body.snapshot;job.leaseUntil=this.clock()+90000;
       return {job,result:{accepted:true}};
     });
+    if(terminal.includes(String(body.snapshot.status)))await this.store.clearActive(uid,body.id);
+    return outcome;
   }
 }
 export function createCodexServer(relay:CodexRelay,uid:string) {

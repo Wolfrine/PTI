@@ -32,8 +32,8 @@ export function createHttpApp(options: {
     const pending = await provider.pending(id);
     const codex = pending.resource === `${provider.origin}/local-codex/mcp`;
     const product = codex ? 'Local Codex' : 'PTI Firestore';
-    const access = codex ? 'request local Codex inspections and authorized edits, read job results, and continue or cancel your tasks' : 'read, create, update and delete your PTI app data on your behalf';
-    const boundary = codex ? 'Your PC must be online. Codex uses your existing ChatGPT sign-in. No OpenAI API key is requested. This connection exposes Codex jobs, not your other PTI app data.' : 'Tools access that account’s app data.';
+    const access = codex ? 'request local Codex inspections and authorized edits, read results, continue or cancel tasks, and search, read, rename, archive or restore selected saved Codex chats' : 'read, create, update and delete your PTI app data on your behalf';
+    const boundary = codex ? 'Your PC must be online. Codex uses your existing ChatGPT sign-in. No OpenAI API key is requested. This connection provides Codex jobs and selected chat history; other PTI app data remains separate. Archiving uses Codex native behavior and can include descendant chats.' : 'Tools access that account’s app data.';
     const nonce = randomBytes(18).toString('base64url');
     res.set('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}' https://www.gstatic.com https://apis.google.com; style-src 'nonce-${nonce}'; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com; frame-src https://*.firebaseapp.com https://accounts.google.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`);
     const config = JSON.stringify(options.firebaseConfig).replace(/</g,'\\u003c');

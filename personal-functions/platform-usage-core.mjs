@@ -68,12 +68,11 @@ async function githubRuns({ repo, start, token, fetchImpl }) {
   return { runs24h: expected, failed24h: runs.filter(run => run?.conclusion === 'failure').length };
 }
 
-async function discoverGithubRepositories(token, fetchImpl) {
-  if (!token) return [];
+async function discoverGithubRepositories(token, fetchImpl, ownerToken = false) {
   const discovered = [];
   for (let page = 1; page <= 3; page++) {
-    const url = new URL('https://api.github.com/user/repos');
-    url.searchParams.set('affiliation', 'owner'); url.searchParams.set('per_page', '100');
+    const url = new URL(ownerToken ? 'https://api.github.com/user/repos' : 'https://api.github.com/users/Wolfrine/repos');
+    url.searchParams.set(ownerToken ? 'affiliation' : 'type', 'owner'); url.searchParams.set('per_page', '100');
     url.searchParams.set('page', String(page));
     const items = await requestJson(url, githubHeaders(token), fetchImpl);
     if (!Array.isArray(items)) throw new Error('github-repository-schema');
@@ -103,7 +102,7 @@ export async function collectGithub({ now, billingToken, workflowToken, reposito
   }
 
   let discovered = [];
-  try { discovered = await discoverGithubRepositories(billingToken, fetchImpl); }
+  try { discovered = await discoverGithubRepositories(billingToken || workflowToken, fetchImpl, !!billingToken); }
   catch { /* A restricted Plan token need not grant repository enumeration. */ }
   const registry = repositories([...repositoryConfig, ...discovered]);
   const active = registry.filter(repo => !repo.archived);
@@ -246,25 +245,21 @@ export function pacificUsageWindow(now) {
 export async function listFirestoreDatabases({ projectId, token, fetchImpl = fetch }) {
   const all = [], seen = new Set();
   const url = new URL(`https://firestore.googleapis.com/v1/projects/${projectId}/databases`);
-  url.searchParams.set('pageSize', '100');
-  let nextPageToken = '';
-  for (let page = 0; page < 10; page++) {
-    if (nextPageToken) url.searchParams.set('pageToken', nextPageToken);
-    const result = await requestJson(url, { Authorization: `Bearer ${token}` }, fetchImpl);
-    if (result?.databases !== undefined && !Array.isArray(result.databases)) throw new Error('firestore-databases-schema');
-    for (const database of result?.databases || []) {
-      const match = typeof database?.name === 'string' &&
-        database.name.match(new RegExp(`^projects/${projectId}/databases/([a-zA-Z0-9_()\\-]{1,100})$`));
-      if (!match || seen.has(match[1])) continue;
-      seen.add(match[1]);
-      all.push({ databaseId: match[1], freeTier: typeof database.freeTier === 'boolean' ? database.freeTier : null,
-        edition: database.databaseEdition === 'STANDARD' || database.databaseEdition === 'ENTERPRISE'
-          ? database.databaseEdition : null });
-    }
-    nextPageToken = typeof result?.nextPageToken === 'string' ? result.nextPageToken : '';
-    if (!nextPageToken) return all;
+  // projects.databases.list has no pageSize/pageToken query parameters. Sending
+  // invented pagination fields can make an otherwise authorized request fail.
+  const result = await requestJson(url, { Authorization: `Bearer ${token}` }, fetchImpl);
+  if (result?.databases !== undefined && !Array.isArray(result.databases)) throw new Error('firestore-databases-schema');
+  if (Array.isArray(result?.unreachable) && result.unreachable.length) throw new Error('firestore-databases-unreachable');
+  for (const database of result?.databases || []) {
+    const match = typeof database?.name === 'string' &&
+      database.name.match(new RegExp(`^projects/${projectId}/databases/([a-zA-Z0-9_()\\-]{1,100})$`));
+    if (!match || seen.has(match[1])) continue;
+    seen.add(match[1]);
+    all.push({ databaseId: match[1], freeTier: typeof database.freeTier === 'boolean' ? database.freeTier : null,
+      edition: database.databaseEdition === 'STANDARD' || database.databaseEdition === 'ENTERPRISE'
+        ? database.databaseEdition : null });
   }
-  throw new Error('firestore-databases-truncated');
+  return all;
 }
 
 export async function collectFirebase({ now, token, projects, fetchImpl = fetch }) {
@@ -273,7 +268,8 @@ export async function collectFirebase({ now, token, projects, fetchImpl = fetch 
   const results = [];
   for (const projectId of projects) {
     const result = { projectId, status: token ? 'error' : 'not-connected', reads24h: null, writes24h: null, deletes24h: null,
-      databaseMetadataStatus: token ? 'unavailable' : 'not-connected', databases: [] };
+      databaseMetadataStatus: token ? 'unavailable' : 'not-connected',
+      dailyMetricsStatus: token ? 'error' : 'not-connected', databases: [] };
     if (!token) { results.push(result); continue; }
     const responses = await Promise.allSettled([
       listFirestoreDatabases({ projectId, token, fetchImpl }),
@@ -283,6 +279,7 @@ export async function collectFirebase({ now, token, projects, fetchImpl = fetch 
     const metadata = responses[0].status === 'fulfilled' ? responses[0].value : [];
     if (responses[0].status === 'fulfilled') result.databaseMetadataStatus = 'ok';
     const daily = responses.slice(4);
+    if (daily.every(item => item.status === 'fulfilled')) result.dailyMetricsStatus = 'ok';
     const allIds = new Set(metadata.map(item => item.databaseId));
     for (const reading of daily) if (reading.status === 'fulfilled') {
       for (const id of Object.keys(reading.value.byDatabase)) allIds.add(id);
@@ -307,7 +304,7 @@ export async function collectFirebase({ now, token, projects, fetchImpl = fetch 
   }
   const successful = results.filter(item => item.status === 'ok').length;
   const metadataComplete = results.every(item => item.databaseMetadataStatus === 'ok');
-  const dailyComplete = results.every(item => item.databases.every(database => database.status === 'ok'));
+  const dailyComplete = results.every(item => item.dailyMetricsStatus === 'ok');
   return { status: !token ? 'not-connected' : successful === results.length && metadataComplete && dailyComplete ? 'ok'
     : successful ? 'partial' : 'error', dayPacific: pacific.dayPacific, nextResetAt: pacific.nextResetAt, projects: results };
 }

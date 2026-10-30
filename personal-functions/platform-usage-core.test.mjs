@@ -62,7 +62,7 @@ test('Firestore metrics are summed across database series without inventing miss
   const output = await collectFirebase({ now, token: 'synthetic-cloud', projects: ['pti-app-2ab59'], fetchImpl });
   assert.equal(output.status, 'ok');
   assert.deepEqual(output.projects, [{ projectId: 'pti-app-2ab59', status: 'ok', reads24h: 71, writes24h: 8,
-    deletes24h: null, databaseMetadataStatus: 'ok', databases: [] }]);
+    deletes24h: null, databaseMetadataStatus: 'ok', dailyMetricsStatus: 'ok', databases: [] }]);
 });
 
 test('Cloud Monitoring access failures are visible, and project discovery is explicit', async () => {
@@ -105,6 +105,19 @@ test('GitHub run counts are scoped to reporting active repositories and permissi
   assert.equal(result.status, 'partial');
   assert.deepEqual(result.repos.find(item => item.repo === 'Wolfrine/private-app'),
     { repo: 'Wolfrine/private-app', status: 'not-connected', runs24h: null, failed24h: null });
+});
+
+test('new public repositories are discovered without a cross-private GitHub token', async () => {
+  const output = await collectGithub({ now, workflowToken: 'synthetic-gh', fetchImpl: async url => {
+    if (String(url).includes('/users/Wolfrine/repos')) return json([
+      { full_name: 'Wolfrine/new-public-app', archived: false },
+      { full_name: 'somebody/another-app', archived: false },
+    ]);
+    return json({ total_count: 0, workflow_runs: [] });
+  } });
+  assert.equal(output.repositoryCount, 2);
+  assert.equal(output.coveredRepoCount, 2);
+  assert.ok(output.repos.some(repo => repo.repo === 'Wolfrine/new-public-app'));
 });
 
 test('Firestore quota window resets at Pacific midnight on normal and DST transition days', () => {
@@ -164,6 +177,19 @@ test('only confirmed eligible Standard database gets free tier comparison data',
   assert.ok(urls.some(url => url.includes('resource.type%3D%22firestore.googleapis.com')));
 });
 
+test('Firestore database inventory uses documented unpaginated REST method and rejects unreachable coverage', async () => {
+  const metadata = await listFirestoreDatabases({ projectId: 'pti-app-2ab59', token: 'synthetic-cloud',
+    fetchImpl: async url => {
+      assert.equal(new URL(url).search, '');
+      return json({ databases: [{ name: 'projects/pti-app-2ab59/databases/(default)',
+        freeTier: true, databaseEdition: 'STANDARD' }] });
+    } });
+  assert.equal(metadata[0].freeTier, true);
+  await assert.rejects(listFirestoreDatabases({ projectId: 'pti-app-2ab59', token: 'synthetic-cloud',
+    fetchImpl: async () => json({ databases: [], unreachable: ['projects/pti-app-2ab59/locations/europe-west2'] }) }),
+  /unreachable/);
+});
+
 test('Firestore metadata permission denial does not fabricate free eligibility or billable zero', async () => {
   const fetchImpl = async url => String(url).includes('/databases') ? json({ error: 'forbidden' }, 403)
     : json({ timeSeries: [{ resource: { type: 'firestore.googleapis.com/Database', labels: { database_id: '(default)' } },
@@ -174,4 +200,17 @@ test('Firestore metadata permission denial does not fabricate free eligibility o
   assert.equal(reading.projects[0].databaseMetadataStatus, 'unavailable');
   assert.equal(reading.projects[0].databases[0].freeTier, null);
   assert.equal(reading.projects[0].databases[0].readsToday, 500);
+});
+
+test('a failed Pacific-day metric never produces a falsely healthy Firebase section', async () => {
+  const fetchImpl = async url => {
+    if (String(url).includes('/databases')) return json({ databases: [] });
+    const query = new URL(url).searchParams;
+    if (query.get('interval.startTime') === '2026-10-30T07:00:00.000Z') return json({ error: 'temporary outage' }, 503);
+    return json({});
+  };
+  const reading = await collectFirebase({ now, token: 'synthetic-cloud', projects: ['pti-app-2ab59'], fetchImpl });
+  assert.equal(reading.projects[0].status, 'ok');
+  assert.equal(reading.projects[0].dailyMetricsStatus, 'error');
+  assert.equal(reading.status, 'partial');
 });

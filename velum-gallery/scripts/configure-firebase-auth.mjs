@@ -35,17 +35,20 @@ async function configureAuthorizedDomains() {
   const required = [`${siteId}.web.app`, `${siteId}.firebaseapp.com`];
   const existing = current.authorizedDomains || [];
   const authorizedDomains = [...new Set([...existing, ...required])];
-  const changed = required.some(domain => !existing.includes(domain));
+  const changed = required.some(domain => !existing.includes(domain))
+    || current.signIn?.anonymous?.enabled !== true || current.autodeleteAnonymousUsers === true;
 
   if (!changed) {
-    console.log('Velum Firebase Auth domains are already authorized.');
+    console.log('Velum Firebase Auth domains and durable device sign-in are configured.');
     return;
   }
 
-  const patchResponse = await fetch(`${base}?updateMask=authorizedDomains`, {
+  // This step depends on the owner/device-isolation rules deployment. Never run
+  // an Admin credential on the PC; CI only configures the existing Auth project.
+  const patchResponse = await fetch(`${base}?updateMask=authorizedDomains,signIn.anonymous.enabled,autodeleteAnonymousUsers`, {
     method: 'PATCH',
     headers,
-    body: JSON.stringify({ authorizedDomains })
+    body: JSON.stringify({ authorizedDomains, signIn: { anonymous: { enabled: true } }, autodeleteAnonymousUsers: false })
   });
   if (!patchResponse.ok) {
     throw new Error(`Could not update Firebase Auth config (${patchResponse.status}): ${await patchResponse.text()}`);

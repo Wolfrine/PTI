@@ -51,7 +51,7 @@ jobs:
       - name: Verify private platform usage and Codex Firestore rules
         run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-codex-usage-tests --config firebase.one-piece-tests.json 'node tools/codex-usage-monitor/test/rules.mjs'
       - name: Verify private Velum jobs and immutable prompts
-        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-tests --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs'
+        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-tests --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs tools/velum-worker/device-isolation.rules.test.mjs'
 
   deploy:
     needs: [verify_venture, verify_one_piece]
@@ -144,10 +144,10 @@ jobs:
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
           # Review the immediately preceding deployed rules as the exact allowed
-          # predecessor for this isolated Velum Studio addition. Older Atlas
+          # predecessor for this isolated Velum device-auth change. Older Atlas
           # baselines differ, so pinning them would reject even our own live rules.
           # The provisioner still rejects ANY unexpected concurrent live change.
-          git show d01bbf984440e1893c6251dc1baaf94d1a8d0507:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
+          git show 3a27a3d34c5e15f9d25f4f0b364c5b3075c82f44:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-platform-usage.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs

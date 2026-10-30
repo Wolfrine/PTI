@@ -141,11 +141,12 @@ jobs:
           npm install -g firebase-tools
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
-          # Atlas adds an isolated namespace over the reviewed current baseline.
-          # Keep the exact-source and concurrent-release checks; never overwrite
-          # an unreviewed live rules change.
-          git show 1ce8f224bcb4b1331cb3883635779e1c5c478cbc:personal-harness/firestore.rules > /tmp/pre-atlas.rules
-          APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-atlas.rules node personal-functions/provision.mjs
+          # Review the immediately preceding deployed rules as the exact allowed
+          # predecessor for this isolated resourceUsage addition. Older Atlas
+          # baselines differ, so pinning them would reject even our own live rules.
+          # The provisioner still rejects ANY unexpected concurrent live change.
+          git show 27262454bdcb2b810b4e90ed84f63684247af3eb:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
+          APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-platform-usage.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs
           node tools/pti-mcp/scripts/verify-atlas-live-rules.mjs

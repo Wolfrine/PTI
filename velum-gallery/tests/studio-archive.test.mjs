@@ -10,8 +10,16 @@ test('144 creation records page in bounded groups without losing old ids or dupl
   assert.equal(loaded.length,144);assert.equal(loaded.at(-1).id,'job-143');loaded=mergeArchivePage(loaded,[{...jobs[0],status:'failed'}]);assert.equal(loaded.length,144);assert.equal(loaded[0].status,'failed');
   assert.equal(visibleCreations(loaded,{model:'flux2-klein-fp8'}).length,72);assert.equal(visibleCreations(loaded,{filter:'drafts',saves:{'job-1':{fileId:'saved'}}}).length,142);
 });
+test('reversible removal excludes cards but keeps original jobs unchanged',()=>{
+ const jobs=[{id:'a',status:'completed'},{id:'b',status:'failed'},{id:'c',status:'uploading'}],removed={b:{removedAt:10},c:{removedAt:11}};
+ assert.deepEqual(visibleCreations(jobs,{removed}).map(job=>job.id),['a']);
+ assert.deepEqual(visibleCreations(jobs,{removed,filter:'removed'}).map(job=>job.id),['b','c']);
+ delete removed.b;
+ assert.deepEqual(visibleCreations(jobs,{removed}).map(job=>job.id),['a','b']);
+ assert.equal(jobs[1].status,'failed');
+});
 test('kept and saved use dedicated cursor collections, unsaved filtering never claims a global count',()=>{
-  assert.deepEqual(archiveSource('kept'),{collection:'feedback',order:'updatedAt',where:['verdict','==','keep']});assert.deepEqual(archiveSource('saved'),{collection:'saves',order:'savedAt'});assert.equal(archiveSource('all').collection,'jobs');assert.deepEqual(archiveSource('drafts').where,['status','==','completed']);
+  assert.deepEqual(archiveSource('kept'),{collection:'feedback',order:'updatedAt',where:['verdict','==','keep']});assert.deepEqual(archiveSource('saved'),{collection:'saves',order:'savedAt'});assert.equal(archiveSource('all').collection,'jobs');assert.deepEqual(archiveSource('drafts').where,['status','==','completed']);assert.deepEqual(archiveSource('removed'),{collection:'removed',order:'removedAt'});
 });
 test('local path and protected remote availability never imply an unsaved Drive upload',()=>{
   const location=creationLocation({id:'job-17',status:'completed',result:{chunks:2}},null);assert.equal(location.localPath,'H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\job-17\\image.png');assert.equal(location.metadataPath.endsWith('result.json'),true);assert.equal(location.drive,'Not saved to Drive');assert.match(location.remote,/Private remote/);assert.match(creationLocation({id:'job-17',status:'completed'},null).remote,/Local original only/);

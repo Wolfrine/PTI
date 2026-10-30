@@ -16,3 +16,21 @@
 .studio-dialog-tools{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:8px;background:#1a1118f5;border-bottom:1px solid #49303e}.studio-dialog-tools .studio-dialog-close{position:static;flex:0 0 40px}.studio-dialog-exit{min-height:40px;padding:8px 12px;border:1px solid #735267;border-radius:7px;color:#e4c8d9;font-size:12px}.studio-small-dialog{padding-top:0}.studio-small-dialog .studio-dialog-tools{margin-bottom:16px}
 @media(max-width:719px){.studio-hint,.studio-submit-note,.studio-consent,.studio-empty p,.studio-device p,.studio-reference-sources p{font-size:12px;line-height:1.6;color:#bd9caf}.studio-model{min-height:44px}.studio-detail-actions button,.studio-detail-actions a{min-height:44px;font-size:12px}.studio-original summary,.studio-location summary{font-size:12px;min-height:32px}.studio-detail-meta,.studio-original p,.studio-location dd,.studio-feedback legend,.studio-feedback fieldset label{font-size:12px}.studio-pc{min-height:44px}.studio-modes button,.studio-filters button{min-height:44px}}
 @media(prefers-reduced-motion:reduce){.studio-empty.running .studio-canvas-mark,.studio-progress-track i{animation:none}}@keyframes studio-spin{to{transform:rotate(360deg)}}@keyframes studio-progress{50%{transform:translateX(68px)}}
+
+/* Compact, truthful archive previews; tap for full-size metadata and controls. */
+.studio-archive-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 6px;margin-top:14px}
+.studio-creation{border-radius:5px;overflow:hidden}
+.studio-thumb{aspect-ratio:3/4;min-height:65px;border-radius:4px}
+.studio-thumb img{object-fit:contain}
+.studio-thumb>small{display:none}
+.studio-thumb>span{font-size:21px}
+.studio-creation-caption{display:none}
+.studio-tile-state{position:absolute;right:3px;bottom:3px;border-radius:50%;width:18px;height:18px;display:grid;place-items:center;background:#22141bbb;color:#e8b7d6;font:700 11px/1 system-ui}
+.studio-alert{display:flex;align-items:center;gap:10px}
+.studio-alert>.studio-message{flex:1}
+.studio-alert>#studioUndoRemove:not([hidden]){flex:none;min-height:38px;border:1px solid #aa6d91;border-radius:99px;color:#f6d4e6;padding:6px 15px;font-size:12px}
+.studio-removal-note{font-size:11px;line-height:1.5;color:#af8c9f;max-width:430px}
+@media(min-width:720px){.studio-archive-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:14px 10px}}
+@media(min-width:1200px){.studio-archive-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:17px 12px}}
+@media(max-width:719px){.studio-filters{gap:5px}.studio-filters button{padding:0 10px;font-size:10px}}
+@media(max-width:359px){.studio-archive-grid{gap:6px 4px}.studio-thumb{min-height:58px}}

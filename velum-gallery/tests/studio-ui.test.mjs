@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import { decodeResult, formatJobStatus } from '../studio.mjs';
 import { archiveStatusMark, pendingJob } from '../studio-view.mjs';
 
@@ -38,4 +39,12 @@ test('stopped and cancelled archive records have a static mark and never keep th
   for (const status of ['uploading','running','queued']) assert.equal(archiveStatusMark({status}),'◌');
   assert.equal(formatJobStatus({status:'uploading'}),'Uploading private references');
   assert.equal(formatJobStatus({status:'cancelled'}),'Request cancelled');
+});
+
+test('compact four-column archive is image-first and reversible',()=>{
+ const css=readFileSync(new URL('../studio.css',import.meta.url),'utf8');
+ const view=readFileSync(new URL('../studio-view.mjs',import.meta.url),'utf8');
+ assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.match(css,/studio-thumb img\{object-fit:contain\}/);
+ assert.match(view,/Remove from Creations/);assert.match(view,/Restore to Creations/);assert.match(view,/Undo/);
 });

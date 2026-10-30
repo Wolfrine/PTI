@@ -19,9 +19,16 @@ test('reference queue waits for input completion, preserves original provenance 
  const legacy=makeJob({...request,references:[],parentJobId:''},1000);assert.equal(legacy.schemaVersion,2);assert.equal(runnable(legacy,2000),true);
  assert.equal(runnable({...legacy,references:[manifest]},2000),false);
 });
-test('capability contract rejects other models, over-budget references, injected provenance and unready queue',()=>{
- for(const invalid of [{model:'zimage-nvfp4'},{references:[manifest,{...manifest,index:1},{...manifest,index:2}]},{references:[{...manifest,width:2048}]},{references:[{...manifest,bytes:2097153}]},{references:[{...manifest,sha256:'a'.repeat(63)}]},{references:[{...manifest,chunks:1}]},{references:[{...manifest,source:{...manifest.source,path:'C:/forbidden'}}]},{parentJobId:'../escape'}])assert.throws(()=>makeJob({...request,...invalid},1000));
+test('capability contract rejects excess references, injected provenance and unready queue',()=>{
+ for(const invalid of [{model:'zimage-nvfp4',references:[manifest,{...manifest,index:1}]},{references:[manifest,{...manifest,index:1},{...manifest,index:2}]},{references:[{...manifest,width:2048}]},{references:[{...manifest,bytes:2097153}]},{references:[{...manifest,sha256:'a'.repeat(63)}]},{references:[{...manifest,chunks:1}]},{references:[{...manifest,source:{...manifest.source,path:'C:/forbidden'}}]},{parentJobId:'../escape'}])assert.throws(()=>makeJob({...request,...invalid},1000));
  assert.equal(runnable({...makeJob(request,1000),status:'queued'},2000),false);
+});
+test('each edit model supports a single source; only FLUX supports two',()=>{
+ for(const model of ['realvis-dynamic','realistic-sd15','zimage-nvfp4']){
+  const job=makeJob({...request,model},1000);assert.equal(job.schemaVersion,3);assert.equal(job.width,512);
+  assert.throws(()=>makeJob({...request,model,references:[manifest,{...manifest,index:1}]},1000));
+ }
+ assert.equal(makeJob({...request,references:[manifest,{...manifest,index:1}]},1000).references.length,2);
 });
 test('reference chunks bind exact bytes, MIME magic, hash and bounded transport',()=>{
  assert.ok(referenceBytes(manifest,chunks).equals(bytes));

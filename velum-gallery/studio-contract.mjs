@@ -10,6 +10,12 @@ export const MODELS = Object.freeze([
   {id:'realistic-sd15',label:'Realistic Vision 6',hint:'28 steps · lighter fallback · less detail'},
 ]);
 export const MODEL_IDS = MODELS.map(model=>model.id);
+export const MODEL_REFERENCE_LIMITS = Object.freeze({'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1});
+export function modelReferenceLimit(status,model) {
+ if(!MODEL_REFERENCE_LIMITS[model])return 0;
+ if(status?.version==='2.1.0'&&status?.capabilities?.referenceModels?.includes(model))return MODEL_REFERENCE_LIMITS[model];
+ return status?.version==='2.0.0'&&model==='flux2-klein-fp8'&&status?.capabilities?.referenceModel===model&&status?.capabilities?.maxReferences===2?2:0;
+}
 export const JOB_TTL = 7*24*60*60*1000, MAX_CHUNKS = 16, CHUNK_SIZE = 600000;
 export const REFERENCE_LIMITS = Object.freeze({count:2,bytes:2097152,edge:1024,pixels:1048576,chunks:5,inferencePixels:262144,width:512,height:768});
 export function validateReference(reference,index) {
@@ -30,7 +36,7 @@ export function validateJob(job) {
   if (job.schemaVersion===3) {
     if (!Array.isArray(job.references) || job.references.length>REFERENCE_LIMITS.count || typeof job.inputsReady!=='boolean' || typeof job.parentJobId!=='string' || (job.parentJobId && !/^[A-Za-z0-9_-]{1,80}$/.test(job.parentJobId))) throw new Error('Invalid reference job.');
     job.references.forEach(validateReference); referenced=job.references.length>0;
-    if (referenced && job.model!=='flux2-klein-fp8') throw new Error('References require FLUX.2 Klein.');
+    if (referenced && job.references.length>MODEL_REFERENCE_LIMITS[job.model]) throw new Error('This model supports fewer reference images.');
     if (job.status==='queued' && !job.inputsReady) throw new Error('Reference upload is incomplete.');
   }
   if (job.width!==(referenced?REFERENCE_LIMITS.width:768) || job.height!==(referenced?REFERENCE_LIMITS.height:1024) || job.consent!==true) throw new Error('Confirm lawful, consensual adult use.');
@@ -49,8 +55,8 @@ export function devicePending(binding,now=Date.now()) {
 }
 export function deviceCanQueue(binding,status,model) {
   // The last verified installation survives a stale heartbeat. Work waits in Firestore.
-  return Boolean(deviceApproved(binding) && status?.deviceUid===PC_DEVICE_UID && status.version==='2.0.0' && MODEL_IDS.includes(model) && status.installed?.includes(model));
+  return Boolean(deviceApproved(binding) && status?.deviceUid===PC_DEVICE_UID && ['2.0.0','2.1.0'].includes(status.version) && MODEL_IDS.includes(model) && status.installed?.includes(model));
 }
 export function workerOnline(status,now=Date.now()) {
-  return Boolean(status?.deviceUid===PC_DEVICE_UID && status.version==='2.0.0' && ['idle','running'].includes(status.state) && Number.isFinite(status.updatedAt) && now-status.updatedAt>=-30000 && now-status.updatedAt<90000);
+  return Boolean(status?.deviceUid===PC_DEVICE_UID && ['2.0.0','2.1.0'].includes(status.version) && ['idle','running'].includes(status.state) && Number.isFinite(status.updatedAt) && now-status.updatedAt>=-30000 && now-status.updatedAt<90000);
 }

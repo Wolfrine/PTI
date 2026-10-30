@@ -6,7 +6,7 @@ import {makeJob} from '../../velum-gallery/studio-contract.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
 const require=createRequire(new URL('../../apps/one-piece/package.json',import.meta.url));
 const {initializeTestEnvironment,assertSucceeds,assertFails}=require('@firebase/rules-unit-testing');
-const {doc,setDoc,getDoc,updateDoc}=require('firebase/firestore');
+const {doc,setDoc,getDoc,updateDoc,deleteDoc}=require('firebase/firestore');
 const uid='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',root=`users/${uid}/velumStudio/workspace`;
 const env=await initializeTestEnvironment({projectId:'demo-studio2-tests',firestore:{host:'127.0.0.1',port:8085,rules:await readFile(new URL('../../personal-harness/firestore.rules',import.meta.url),'utf8')}});
 after(()=>env.cleanup());beforeEach(()=>env.clearFirestore());
@@ -37,7 +37,14 @@ test('reference manifests and upload chunks are owner scoped, bounded and immuta
  await assertSucceeds(updateDoc(path(device(),'jobs/edit'),{status:'running',workerId:PC_DEVICE_UID}));
  await assertFails(setDoc(path(owner(),'jobs/edit/inputs/0/chunks/0'),{index:0,data:'new'}));
  assert.equal((await getDoc(path(owner(),'jobs/edit'))).data().prompt,item.prompt);
- for(const bad of [{model:'realvis-dynamic'},{references:[reference,reference,reference]},{width:2048},{references:[{...reference,bytes:2097153}]},{references:[{...reference,source:{...reference.source,secret:'no'}}]}])await assertFails(setDoc(path(owner(),'jobs/bad'),{...item,...bad}));
+ for(const bad of [{model:'realvis-dynamic',references:[reference,{...reference,index:1}]},{references:[reference,reference,reference]},{width:2048},{references:[{...reference,bytes:2097153}]},{references:[{...reference,source:{...reference.source,secret:'no'}}]}])await assertFails(setDoc(path(owner(),'jobs/bad'),{...item,...bad}));
+});
+test('other models accept one reference but reject two',async()=>{
+ for(const model of ['realvis-dynamic','realistic-sd15','zimage-nvfp4']){
+  const id=`edit-${model}`,payload=makeJob({model,prompt:'edit',seed:3,consent:true,references:[reference]});
+  await assertSucceeds(setDoc(path(owner(),`jobs/${id}`),payload));
+  await assertFails(setDoc(path(owner(),`jobs/${id}-bad`),{...payload,references:[reference,{...reference,index:1}]}));
+ }
 });
 test('two maximum five-chunk references can finish upload within the rules read budget',async()=>{
  const refs=[0,1].map(index=>({...reference,index,bytes:2097152,chunks:5}));
@@ -70,6 +77,17 @@ test('thumbnail and capability writes require approved pinned device and revoke 
  for(const db of [client('other'),client('anonymous','anonymous'),client(null)])await assertFails(getDoc(path(db,'thumbs/result')));
  await env.withSecurityRulesDisabled(context=>setDoc(path(context.firestore(),`devices/${PC_DEVICE_UID}`),{status:'revoked'}));
  await assertFails(getDoc(path(device(),'thumbs/result')));await assertSucceeds(getDoc(path(owner(),'thumbs/result')));
+});
+test('removed creations are owner-only and restore without touching originals',async()=>{
+ await completed();const hidden={jobId:'result',removedAt:Date.now()};
+ await assertSucceeds(setDoc(path(owner(),'removed/result'),hidden));
+ for(const db of [device(),client('other'),client(null)]){
+  await assertFails(getDoc(path(db,'removed/result')));
+  await assertFails(setDoc(path(db,'removed/result'),hidden));
+ }
+ await assertFails(updateDoc(path(owner(),'removed/result'),{jobId:'changed'}));
+ await assertSucceeds(deleteDoc(path(owner(),'removed/result')));
+ assert.equal((await getDoc(path(owner(),'jobs/result'))).data().status,'completed');
 });
 test('Drive reservations and receipts bind immutable original identity without OAuth or session secrets',async()=>{
  const result=await completed(),reservation={jobId:'result',fileId:'drive_file_reserved_1',sha256:result.sha256,bytes:result.bytes,createdAt:Date.now()};

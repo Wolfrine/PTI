@@ -1,5 +1,5 @@
 export const ARCHIVE_PAGE_SIZE = 36;
-export const ARCHIVE_FILTERS = ['all', 'kept', 'saved', 'drafts'];
+export const ARCHIVE_FILTERS = ['all', 'kept', 'saved', 'drafts', 'removed'];
 
 export function mergeArchivePage(previous, next) {
   const merged = new Map(previous.map(job => [job.id, job]));
@@ -9,8 +9,8 @@ export function mergeArchivePage(previous, next) {
 
 // Secondary filters are deliberately scoped to pages already fetched. We never
 // scan an owner's entire history to fill a screen or download full PNGs here.
-export function visibleCreations(jobs, { filter = 'all', model = '', date = '', saves = {} } = {}) {
-  return jobs.filter(job => (!model || job.model === model) &&
+export function visibleCreations(jobs, { filter = 'all', model = '', date = '', saves = {}, removed = {} } = {}) {
+  return jobs.filter(job => (filter==='removed' ? Boolean(removed[job.id]) : !removed[job.id]) && (!model || job.model === model) &&
     (!date || new Date(job.createdAt).toISOString().slice(0, 10) === date) &&
     (filter !== 'drafts' || (job.status === 'completed' && !saves[job.id])));
 }
@@ -42,7 +42,7 @@ export async function decodeThumbnail(thumb) {
 }
 
 export function archiveSource(filter = 'all') {
-  return filter === 'kept' ? { collection: 'feedback', order: 'updatedAt', where: ['verdict', '==', 'keep'] } :
+  return filter === 'removed' ? { collection: 'removed', order: 'removedAt' } : filter === 'kept' ? { collection: 'feedback', order: 'updatedAt', where: ['verdict', '==', 'keep'] } :
     filter === 'saved' ? { collection: 'saves', order: 'savedAt' } :
     filter === 'drafts' ? { collection: 'jobs', order: 'createdAt', where: ['status', '==', 'completed'] } :
     { collection: 'jobs', order: 'createdAt' };

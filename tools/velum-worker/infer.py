@@ -47,7 +47,8 @@ def main():
     if not 1 <= len(jid) <= 80 or not all(c.isascii() and (c.isalnum() or c in '_-') for c in jid):
         raise ValueError('invalid-job')
     references = job.get('references', [])
-    if not isinstance(references, list) or len(references) > 2 or (references and (job.get('schemaVersion') != 3 or job['model'] != 'flux2-klein-fp8' or job.get('inputsReady') is not True)):
+    reference_limits = {'flux2-klein-fp8': 2, 'realvis-dynamic': 1, 'realistic-sd15': 1, 'zimage-nvfp4': 1}
+    if not isinstance(references, list) or len(references) > reference_limits.get(job['model'], 0) or (references and (job.get('schemaVersion') != 3 or job.get('inputsReady') is not True)):
         raise ValueError('invalid-reference')
     expected_size = (512, 768) if references else (768, 1024)
     if (job['width'], job['height']) != expected_size or job.get('consent') is not True:
@@ -143,8 +144,18 @@ def main():
                 positive = nodes.CLIPTextEncode().encode(clip, prompt)[0]
                 negative = nodes.CLIPTextEncode().encode(clip, '')[0]
                 steps, cfg, sampler, scheduler = 28, 5., 'dpmpp_sde', 'karras'
-                latent = nodes.EmptyLatentImage().generate(width, height, 1)[0]
-                samples = nodes.KSampler().sample(model, seed, steps, cfg, sampler, scheduler, positive, negative, latent, denoise=1.)[0]
+                denoise = .62 if source_images else 1.
+                if source_images:
+                    from PIL import ImageOps, Image
+                    import numpy as np
+                    frame = ImageOps.fit(source_images[0], (width, height), method=Image.Resampling.LANCZOS)
+                    pixels = torch.from_numpy(np.asarray(frame, dtype=np.float32) / 255.).unsqueeze(0)
+                    latent = {'samples': vae.encode_tiled(pixels, tile_x=512, tile_y=512, overlap=64)}
+                    del pixels, frame
+                    emit(event='references-encoded', count=1, method='VAE-img2img')
+                else:
+                    latent = nodes.EmptyLatentImage().generate(width, height, 1)[0]
+                samples = nodes.KSampler().sample(model, seed, steps, cfg, sampler, scheduler, positive, negative, latent, denoise=denoise)[0]
             elif mode in ('flux2-klein-fp8', 'zimage-nvfp4'):
                 import comfy.sd
                 clip = comfy.sd.load_clip(ckpt_paths=[str(DATA/'models/text_encoders/qwen_3_4b_fp8_mixed.safetensors')],
@@ -187,8 +198,18 @@ def main():
                     model = ModelSamplingAuraFlow().patch_aura(model, 3.)[0]
                     vae = nodes.VAELoader().load_vae('ae.safetensors')[0]
                     steps, sampler, scheduler = 8, 'res_multistep', 'simple'
-                    latent = EmptySD3LatentImage().generate(width, height, 1)[0]
-                    samples = nodes.KSampler().sample(model, seed, steps, cfg, sampler, scheduler, positive, negative, latent, denoise=1.)[0]
+                    denoise = .62 if source_images else 1.
+                    if source_images:
+                        from PIL import ImageOps, Image
+                        import numpy as np
+                        frame = ImageOps.fit(source_images[0], (width, height), method=Image.Resampling.LANCZOS)
+                        pixels = torch.from_numpy(np.asarray(frame, dtype=np.float32) / 255.).unsqueeze(0)
+                        latent = {'samples': vae.encode_tiled(pixels, tile_x=512, tile_y=512, overlap=64)}
+                        del pixels, frame
+                        emit(event='references-encoded', count=1, method='VAE-img2img')
+                    else:
+                        latent = EmptySD3LatentImage().generate(width, height, 1)[0]
+                    samples = nodes.KSampler().sample(model, seed, steps, cfg, sampler, scheduler, positive, negative, latent, denoise=denoise)[0]
             else:
                 raise ValueError('invalid-model')
             from PIL import Image, PngImagePlugin
@@ -197,9 +218,9 @@ def main():
             if not np.isfinite(pixels).all():
                 raise RuntimeError('invalid-output')
             image = Image.fromarray((pixels.clip(0, 1)*255).round().astype(np.uint8))
-            settings = dict(model=mode, seed=seed, width=width, height=height, steps=steps, cfg=cfg, sampler=sampler, scheduler=scheduler, negativePrompt='', denoise=1.)
+            settings = dict(model=mode, seed=seed, width=width, height=height, steps=steps, cfg=cfg, sampler=sampler, scheduler=scheduler, negativePrompt='', denoise=1. if not references or mode=='flux2-klein-fp8' else .62)
             if references:
-                settings.update(referenceMethod='flux2-native-reference-latent', referenceCount=len(references), referencePixels=[dict(width=image.width, height=image.height) for image in source_images])
+                settings.update(referenceMethod='flux2-native-reference-latent' if mode=='flux2-klein-fp8' else 'vae-img2img', referenceCount=len(references), referencePixels=[dict(width=source.width, height=source.height) for source in source_images])
             meta = PngImagePlugin.PngInfo()
             provenance = dict(prompt=prompt, settings=settings, parentJobId=job.get('parentJobId',''), references=references)
             meta.add_text('velum', json.dumps(provenance, ensure_ascii=False))

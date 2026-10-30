@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeJob,validateJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,MODEL_IDS,JOB_TTL} from '../studio-contract.mjs';
+import {makeJob,validateJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,MODEL_IDS,JOB_TTL,modelReferenceLimit} from '../studio-contract.mjs';
 import {PC_DEVICE_UID} from '../device-config.mjs';
 const input={model:'flux2-klein-fp8',prompt:'  Fictional adult, sheer silk.\nSensual lighting.  ',seed:42,consent:true};
 test('raw wording and whitespace survive submission exactly',()=>{
@@ -25,6 +25,14 @@ test('installed weights do not imply a fresh worker heartbeat',()=>{
   assert.equal(workerOnline({...status,updatedAt:40000},1000),false);
   assert.equal(workerOnline({...status,deviceUid:'another-PC'},2000),false);
   assert.equal(workerOnline({...status,version:'1.0.0'},2000),false);
+});
+test('capability heartbeat gates edit models without breaking old FLUX worker',()=>{
+ const legacy={version:'2.0.0',capabilities:{referenceModel:'flux2-klein-fp8',maxReferences:2}};
+ assert.equal(modelReferenceLimit(legacy,'flux2-klein-fp8'),2);
+ assert.equal(modelReferenceLimit(legacy,'realvis-dynamic'),0);
+ const updated={version:'2.1.0',capabilities:{referenceModels:MODEL_IDS}};
+ assert.equal(modelReferenceLimit(updated,'flux2-klein-fp8'),2);
+ for(const model of MODEL_IDS.filter(id=>id!=='flux2-klein-fp8'))assert.equal(modelReferenceLimit(updated,model),1);
 });
 test('remote device approval expires once but approved identity persists until revoked',()=>{
   const binding={deviceUid:PC_DEVICE_UID,status:'pending',createdAt:1000,expiresAt:2000};

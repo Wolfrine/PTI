@@ -33,8 +33,8 @@ service cloud.firestore {
     && r.source.id is string && r.source.id.size() <= 160 && r.source.name is string && r.source.name.size() <= 160; }
    function modern(d) { return d.references is list && d.references.size() <= 2 && d.inputsReady is bool
     && d.parentJobId is string && (d.parentJobId == '' || d.parentJobId.matches('[A-Za-z0-9_-]{1,80}'))
-    && (d.references.size() == 0 || (d.model == 'flux2-klein-fp8' && reference(d.references[0],0)))
-    && (d.references.size() < 2 || reference(d.references[1],1)); }
+    && (d.references.size() == 0 || reference(d.references[0],0))
+    && (d.references.size() < 2 || (d.model == 'flux2-klein-fp8' && reference(d.references[1],1))); }
    function job(d) { return d.schemaVersion in [2,3] && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && model(d.model) && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 6000
     && d.seed is int && d.seed >= 0 && d.seed <= 2147483647 && d.consent == true
     && instant(d.createdAt) && d.expiresAt == d.createdAt + 604800000
@@ -79,10 +79,12 @@ service cloud.firestore {
      && instant(request.resource.data.updatedAt) && request.resource.data.installed is list && request.resource.data.installed.size() <= 4
      && request.resource.data.installed.hasOnly(['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15'])
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
-     && request.resource.data.version == '2.0.0'
-     && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceOutputWidth','referenceOutputHeight'])
+     && request.resource.data.version in ['2.0.0','2.1.0']
+     && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight'])
       && request.resource.data.capabilities.referenceModel == 'flux2-klein-fp8' && request.resource.data.capabilities.maxReferences == 2
-      && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768));
+      && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768
+      && (request.resource.data.version == '2.0.0' ? !('referenceModels' in request.resource.data.capabilities) :
+       ('referenceModels' in request.resource.data.capabilities && request.resource.data.capabilities.referenceModels == ['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4']))));
     allow delete: if studioOwner();
    }
    match /jobs/{id} {
@@ -112,7 +114,7 @@ service cloud.firestore {
      && request.resource.data.get('progress',{}).keys().hasOnly(['step','total'])
      && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds','localPath','referenceMethod'])
      && (!('localPath' in request.resource.data.get('result',{})) || request.resource.data.result.localPath == 'H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\' + id + '\\image.png')
-     && (!('referenceMethod' in request.resource.data.get('result',{})) || request.resource.data.result.referenceMethod in ['','flux2-reference-latent'])
+     && (!('referenceMethod' in request.resource.data.get('result',{})) || request.resource.data.result.referenceMethod in ['','flux2-reference-latent','vae-img2img'])
      && (request.resource.data.status != 'completed' || (request.resource.data.result.mime == 'image/png'
       && request.resource.data.result.bytes is int && request.resource.data.result.bytes > 100 && request.resource.data.result.bytes <= 7200000
       && request.resource.data.result.chunks is int && request.resource.data.result.chunks >= 1 && request.resource.data.result.chunks <= 16
@@ -137,6 +139,17 @@ service cloud.firestore {
       && request.resource.data.data is string && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 600000;
      allow update, delete: if false;
     }
+   }
+   // Reversible removal: do not delete the job, input chunks, originals or Drive copy.
+   match /removed/{jobId} {
+    allow read: if studioOwner();
+    allow create: if studioOwner() && jobId.matches('[A-Za-z0-9_-]{1,80}')
+     && exists(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId))
+     && request.resource.data.keys().hasOnly(['jobId','removedAt'])
+     && request.resource.data.jobId == jobId && instant(request.resource.data.removedAt)
+     && request.resource.data.removedAt >= request.time.toMillis() - 300000;
+    allow delete: if studioOwner();
+    allow update: if false;
    }
    match /feedback/{jobId} {
     allow read, delete: if studioOwner();

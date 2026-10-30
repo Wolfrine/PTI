@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { z } from 'zod';
 import { registerChatCaptureTools } from './chat-capture.js';
 
-function fixture(uid: string | undefined = 'owner') {
+function fixture(uid: string | undefined | null = 'owner') {
   const data = new Map<string,any>(), handlers = new Map<string,(arg:any)=>Promise<any>>();
   const doc = (path:string):any => ({path,id:path.split('/').at(-1),
     get:async()=>snap(path)});
@@ -28,7 +28,7 @@ function fixture(uid: string | undefined = 'owner') {
   const server:any={registerTool:(name:string,def:any,fn:any)=>{
     handlers.set(name,async(arg:any)=>fn(z.object(def.inputSchema).parse(arg)));
   }};
-  registerChatCaptureTools(server,db,uid);
+  registerChatCaptureTools(server,db,uid ?? undefined);
   const call=async(name:string,args:any)=>JSON.parse((await handlers.get(name)!(args)).content[0].text);
   return {data,call,uid};
 }
@@ -72,6 +72,6 @@ test('unconsented, identity-ambiguous, oversized and unauthenticated calls canno
   await expect(f.call('chat_capture_turn',{...payload,newConversation:false})).rejects.toThrow('Missing known chat ID');
   await expect(f.call('chat_capture_turn',{...payload,assistantText:'x'.repeat(700001)})).rejects.toThrow();
   expect(f.data.size).toBe(0);
-  const other=fixture(undefined);
+  const other=fixture(null);
   await expect(other.call('chat_capture_turn',payload)).rejects.toThrow('authenticated owner');
 });

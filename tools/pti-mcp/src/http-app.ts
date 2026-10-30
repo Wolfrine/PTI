@@ -68,8 +68,8 @@ button.onclick=async()=>{button.disabled=true;try{
     app.post('/local-codex/mcp',express.json({limit:'256kb'}),async(req,res)=>{
       const auth=req.auth!;
       if(auth.resource?.href!==resource||auth.extra?.uid!==OWNER){res.status(403).json({error:'Local Codex owner authorization required.'});return;}
-      const server=createCodexServer(relay,OWNER),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
-      res.on('close',()=>{void transport.close();void server.close();});await server.connect(transport);await transport.handleRequest(req,res,req.body);
+      const waiting=new AbortController(),server=createCodexServer(relay,OWNER,waiting.signal),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
+      res.on('close',()=>{waiting.abort();void transport.close();void server.close();});await server.connect(transport);await transport.handleRequest(req,res,req.body);
     });
     app.all('/local-codex/mcp',(_req,res)=>{res.set('Allow','POST');res.status(405).end();});
     app.post('/local-codex/worker/:action',express.json({limit:'768kb'}),async(req,res)=>{

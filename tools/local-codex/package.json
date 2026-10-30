@@ -1,11 +1,11 @@
 {
   "name": "@pti/local-codex-worker",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test test/bridge.test.mjs test/subscription.test.mjs",
+    "test": "node --test test/bridge.test.mjs test/subscription.test.mjs test/progress.test.mjs",
     "start": "node dist/relay.mjs"
   },
   "dependencies": {

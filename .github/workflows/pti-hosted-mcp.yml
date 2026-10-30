@@ -27,7 +27,7 @@ jobs:
       - name: Verify Atlas replay safety and canonical app discovery
         run: node --test tools/pti-mcp/scripts/verify-atlas-host.selftest.mjs tools/pti-mcp/scripts/verify-data.selftest.mjs
       - run: npm ci --prefix tools/local-codex --ignore-scripts --no-audit --no-fund && npm run build --prefix tools/local-codex
-      - run: node --test tools/local-codex/test/subscription.test.mjs
+      - run: node --test tools/local-codex/test/subscription.test.mjs tools/local-codex/test/progress.test.mjs
       - run: node --test personal-harness/core.test.mjs food-app/*.test.mjs
   deploy:
     if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'

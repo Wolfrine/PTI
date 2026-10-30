@@ -6,6 +6,7 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 import {home,config,project,read,write,digest,alive,subscriptionEnvironment,VERSION} from './common.mjs';
 import {loadCredential,saveCredential,refresh} from './credentials.mjs';
+import {reportChangedSnapshot} from './progress.mjs';
 const base='https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker';
 fs.mkdirSync(path.join(home,'data'),{recursive:true});
 const lock=path.join(home,'data','relay.lock');
@@ -63,7 +64,7 @@ try{
         if(response.controls?.cancel)await local('cancel_task',{task_id:job.localId});
         for(const answer of response.controls?.responses||[]){const {task_id,...rest}=answer;try{await local('respond_to_task',{task_id:job.localId,...rest});}catch{/* Responses are idempotent; a completed request can already be absent. */}}
         const current=await local('get_task',{task_id:job.localId,wait_seconds:0});
-        await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:snapshot(current)});
+        if(await reportChangedSnapshot(job,snapshot(current),value=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:value})))persist();
         if(['completed','failed','interrupted'].includes(current.status)){state.active=null;persist();}
         }
       }

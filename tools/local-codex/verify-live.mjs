@@ -23,18 +23,18 @@ const session=await refresh(await loadCredential());
 const consent=await request('/consent',{requestId:new URL(auth.headers.get('location')).searchParams.get('request'),idToken:session.idToken},{Origin:origin,Cookie:cookie});
 const exchange=await fetch(origin+'/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',client_id,redirect_uri,code:new URL(consent.redirect).searchParams.get('code'),code_verifier:verifier,resource}),signal:AbortSignal.timeout(30000)});
 assert.equal(exchange.status,200);const tokens=await exchange.json();
-const client=new Client({name:'local-codex-subscription-acceptance',version:'0.2.0'});
+const client=new Client({name:'local-codex-subscription-acceptance',version:'0.3.0'});
 const checks=[],active=new Set(),startedAt=new Date().toISOString();
 async function call(name,args={}){const result=await client.callTool({name,arguments:args});assert(!result.isError,result.content?.[0]?.text);return JSON.parse(result.content.find(c=>c.type==='text').text);}
 async function until(id,states){const end=Date.now()+240000;while(Date.now()<end){const value=await call('get_task',{task_id:id,wait_seconds:20});console.log(JSON.stringify({task:id,status:value.status}));if(states.includes(value.status))return value;if(['failed','interrupted','waiting_for_user'].includes(value.status))throw Error(value.error||value.status);}throw Error('Live task timed out.');}
 try{
  await client.connect(new StreamableHTTPClientTransport(new URL(resource),{requestInit:{headers:{Authorization:'Bearer '+tokens.access_token}}}));
- assert.equal((await client.listTools()).tools.length,7);assert.equal((await call('bridge_status')).online,true);
+ assert.equal((await client.listTools()).tools.length,12);assert.equal((await call('bridge_status')).online,true);
  const projects=await call('list_projects');assert(projects.projects.some(p=>p.key==='scratch'&&p.available));checks.push('deployed OAuth and scheduled worker online');
  const nonce=randomUUID(),target=project('scratch'),filename=`relay-acceptance-${nonce}.txt`,marker='LOCAL_CODEX_'+nonce;
  const args={project:'scratch',mode:'inspect',prompt:`Read only ${filename} in the current directory. Reply with its complete contents. Do not edit anything.`,request_key:'accept-inspect-'+nonce};
  let inspection,edit,cancel;const editname=`relay-acceptance-${nonce}-edit.txt`;
- if(!process.argv.includes('--offline-only')){
+ if(!process.argv.includes('--offline-only')&&!process.argv.includes('--threads')){
  fs.writeFileSync(path.join(target.path,filename),marker+'\n');
  inspection=await call('start_task',args);active.add(inspection.id);assert.equal((await call('start_task',args)).id,inspection.id);
  const read=await until(inspection.id,['completed']);active.delete(inspection.id);assert(read.final.includes(marker));checks.push('real subscription Codex read through cloud relay and deduplicated request');
@@ -59,8 +59,9 @@ try{
    }finally{ps("Enable-ScheduledTask -TaskName 'PTI Local Codex Relay' | Out-Null; Start-ScheduledTask -TaskName 'PTI Local Codex Relay'");}
    let restored=false;const end=Date.now()+60000;while(Date.now()<end){if((await call('bridge_status')).online){restored=true;break;}await new Promise(r=>setTimeout(r,5000));}assert(restored);checks.push('windowless scheduled restart restored heartbeat');
  }
- const evidence={startedAt,finishedAt:new Date().toISOString(),mock:false,checks,inspectionTask:inspection?.id,editTask:edit?.id,cancelTask:cancel?.id,...(inspection?{markerHash:createHash('sha256').update(marker).digest('hex'),scratchFiles:[filename,editname]}:{})};
- fs.writeFileSync(path.join(target.path,process.argv.includes('--offline-only')?'relay-offline-acceptance.json':'relay-live-acceptance.json'),JSON.stringify(evidence,null,2));console.log(JSON.stringify(evidence,null,2));
+ const threads=process.argv.includes('--threads')?await (await import('./verify-threads.mjs')).verifyThreads(call,until,target,active,checks):undefined;
+ const evidence={startedAt,finishedAt:new Date().toISOString(),mock:false,checks,inspectionTask:inspection?.id,editTask:edit?.id,cancelTask:cancel?.id,...(threads?{threads}:{}),...(inspection?{markerHash:createHash('sha256').update(marker).digest('hex'),scratchFiles:[filename,editname]}:{})};
+ fs.writeFileSync(path.join(target.path,process.argv.includes('--threads')?'relay-threads-acceptance.json':process.argv.includes('--offline-only')?'relay-offline-acceptance.json':'relay-live-acceptance.json'),JSON.stringify(evidence,null,2));console.log(JSON.stringify(evidence,null,2));
 }finally{
  for(const id of active)await call('cancel_task',{task_id:id}).catch(()=>{});
  await client.close().catch(()=>{});

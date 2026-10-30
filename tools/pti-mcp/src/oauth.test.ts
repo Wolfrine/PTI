@@ -54,7 +54,7 @@ describe('Persistent OAuth authorization',()=>{
     const grant=await f.provider.verifyAccessToken(tokens.access_token);expect(grant.scopes).toEqual([CODEX_SCOPE]);expect(grant.resource?.href).toBe(resource);
     const rpc=(endpoint:string,token:string)=>fetch(base+endpoint,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})});
     expect((await rpc('/mcp',tokens.access_token)).status).toBe(403);
-    const listed=await rpc('/local-codex/mcp',tokens.access_token);expect(listed.status).toBe(200);const names=(await listed.json()).result.tools.map((t:{name:string})=>t.name);expect(names).toHaveLength(7);expect(names).toContain('bridge_status');expect(names).not.toContain('test_read');
+    const listed=await rpc('/local-codex/mcp',tokens.access_token);expect(listed.status).toBe(200);const names=(await listed.json()).result.tools.map((t:{name:string})=>t.name);expect(names).toHaveLength(12);expect(names).toContain('bridge_status');expect(names).toContain('list_codex_threads');expect(names).toContain('resume_codex_thread');expect(names).not.toContain('test_read');
     const root=await fixture();const rootToken=await root.provider.exchangeAuthorizationCode(root.client,await root.code(),undefined,root.client.redirect_uris[0]);const rootBase=await serverFor(root.provider);
     expect((await fetch(rootBase+'/local-codex/mcp',{method:'POST',headers:{Authorization:`Bearer ${rootToken.access_token}`}})).status).toBe(403);
     expect(()=>assertDocumentPath('_ptiLocalServices/local-codex')).toThrow();

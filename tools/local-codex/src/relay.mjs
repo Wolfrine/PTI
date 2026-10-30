@@ -24,7 +24,7 @@ async function api(action,body){
   const response=await fetch(`${base}/${action}`,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
   if(!response.ok){await response.body?.cancel();if(response.status===401||response.status===400)until=0;throw Error(response.status===409?'lease_lost':'Relay request unavailable.');}return response.json();
 }
-function snapshot(job){return {status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,messages:job.messages.slice(-10).map(m=>({text:m.text,phase:m.phase||null})),pending:job.pending||[],...(job.model?{model:job.model}:{})};}
+function snapshot(job){return {status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,messages:job.messages.slice(-10).map(m=>({text:m.text,phase:m.phase||null})),pending:job.pending||[],...(job.model?{model:job.model}:{}),...(job.threadId?{thread_id:job.threadId}:{})};}
 async function authMode(){
   // A local no-model probe verifies the same installed runtime's auth mode. Worker checks again before every turn.
   if(Date.now()>authUntil){const health=await local('bridge_status');cachedAuth=health.authMode;authUntil=Date.now()+60000;}return cachedAuth;
@@ -43,10 +43,21 @@ try{
       if(response.job){state.active={...response.job,localId:null};persist();}
       if(state.active){
         const job=state.active;
+        if(job.command){
+          const receipt=path.join(home,'data',`history-${job.id}.json`);
+          let result;
+          if(response.controls?.cancel)await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'interrupted'}});
+          else{
+            if(fs.existsSync(receipt))result=read(receipt);
+            else{result=await local('codex_history',job.command);write(receipt,result);}
+            await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'completed',result}});
+          }
+          state.active=null;persist();
+        }else{
         if(!job.localId){
           const request_key=`relay-${job.id}-${job.generation}`;
           const previous=state.localTasks?.[job.id];
-          const result=previous?await local('continue_task',{task_id:previous,prompt:job.prompt,request_key}):await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key});
+          const result=previous?await local('continue_task',{task_id:previous,prompt:job.prompt,request_key}):await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{})});
           job.localId=result.id;state.localTasks||={};state.localTasks[job.id]=result.id;persist();
         }
         if(response.controls?.cancel)await local('cancel_task',{task_id:job.localId});
@@ -54,6 +65,7 @@ try{
         const current=await local('get_task',{task_id:job.localId,wait_seconds:0});
         await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:snapshot(current)});
         if(['completed','failed','interrupted'].includes(current.status)){state.active=null;persist();}
+        }
       }
       write(path.join(home,'data','status.json'),{version:VERSION,at:new Date().toISOString(),state:'online',authMode:'chatgpt',activeTask:state.active?.id||null});
     }catch(error){

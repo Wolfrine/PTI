@@ -38,6 +38,9 @@ test('CI stamps the same immutable release into HTML and a fresh service worker'
   assert.doesNotMatch(stamp.html, /__VELUM_RELEASE__|__VELUM_REV__/);
   assert.match(stamp.worker, /const CACHE='velum-shell-20261022160045-a1234567-123456789-1';/);
   assert.doesNotMatch(stamp.worker, /__VELUM_CACHE__/);
+  for (const asset of ['styles.css','studio.css','interaction-upgrades.js','stats-upgrades.js','bootstrap.js']) {
+    assert.ok(stamp.html.includes(`${asset}?v=${stamp.releaseId}`), `${asset} must be tied to the visible release`);
+  }
 });
 
 test('distinct deploy attempts and repeated same-day releases never share worker cache', () => {

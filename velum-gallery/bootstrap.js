@@ -252,7 +252,9 @@ async function bootGallery() {
   const hasPin = Boolean(localStorage.getItem(PIN_KEY));
   await showPinGate({ setup: !hasPin });
   await silentlyRenewDriveToken();
-  await import('./app.js');
+  const appModule = new URL('./app.js', import.meta.url);
+  appModule.search = new URL(import.meta.url).search;
+  await import(appModule.href);
 
   const returnBtn = document.getElementById('returnBtn');
   const neutralScreen = document.getElementById('neutralScreen');

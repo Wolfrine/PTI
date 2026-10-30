@@ -31,7 +31,10 @@ self.addEventListener('fetch',event=>{
           }
           return response;
         })
-        .catch(()=>caches.match(request).then(cached=>cached || caches.match('./index.html')))
+        // Release query strings deliberately bypass stale browser HTTP caches.
+        // The installed shell also has canonical unversioned entries for offline use.
+        .catch(()=>caches.match(request,{ignoreSearch:true}).then(cached=>cached ||
+          (request.mode==='navigate' ? caches.match('./index.html') : Response.error())))
     );
     return;
   }

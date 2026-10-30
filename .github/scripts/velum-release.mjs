@@ -43,7 +43,11 @@ export function stampRelease({ html, worker, date, sha, runId = '', attempt = ''
     String(attempt || '1')].join('-');
   const stampedHtml = html
     .replaceAll(RELEASE_MARKER, version)
-    .replaceAll(REVISION_MARKER, revision);
+    .replaceAll(REVISION_MARKER, revision)
+    // A fresh HTML label must also load fresh entry scripts/styles, even when
+    // an older browser HTTP cache still considers their unversioned URLs fresh.
+    .replace(/\b(src|href)="([^":?#]+\.(?:m?js|css))"/g,
+      (_, attribute, asset) => `${attribute}="${asset}?v=${releaseId}"`);
   const stampedWorker = worker.replaceAll(CACHE_MARKER, releaseId);
   return { html: stampedHtml, worker: stampedWorker, version, revision, releaseId };
 }

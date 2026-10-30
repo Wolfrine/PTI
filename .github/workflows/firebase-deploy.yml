@@ -50,6 +50,8 @@ jobs:
         run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/tests/atlas.rules.test.mjs'
       - name: Verify private platform usage and Codex Firestore rules
         run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-codex-usage-tests --config firebase.one-piece-tests.json 'node tools/codex-usage-monitor/test/rules.mjs'
+      - name: Verify private Velum jobs and immutable prompts
+        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-tests --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs'
 
   deploy:
     needs: [verify_venture, verify_one_piece]
@@ -142,10 +144,10 @@ jobs:
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
           # Review the immediately preceding deployed rules as the exact allowed
-          # predecessor for this isolated resourceUsage addition. Older Atlas
+          # predecessor for this isolated Velum Studio addition. Older Atlas
           # baselines differ, so pinning them would reject even our own live rules.
           # The provisioner still rejects ANY unexpected concurrent live change.
-          git show 27262454bdcb2b810b4e90ed84f63684247af3eb:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
+          git show d01bbf984440e1893c6251dc1baaf94d1a8d0507:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-platform-usage.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs
@@ -293,6 +295,7 @@ jobs:
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:mcp --non-interactive
 
   deploy_velum:
+    needs: deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -316,6 +319,10 @@ jobs:
           node --check velum-gallery/feed.mjs
           node --check velum-gallery/interaction-upgrades.js
           node --check velum-gallery/sw.js
+          node --check velum-gallery/studio.mjs
+          node --check velum-gallery/studio-contract.mjs
+          node --check tools/velum-worker/worker.mjs
+          node --test tools/velum-worker/worker.test.mjs
           node --test velum-gallery/tests/*.test.mjs
 
       - name: Stamp Velum release version into HTML and PWA cache
@@ -360,7 +367,7 @@ jobs:
           base="https://pti-app-2ab59-velum.web.app"
           for attempt in 1 2 3 4 5 6; do
             matched=1
-            for asset in index.html sw.js app.js drift-gestures.mjs affection.mjs heart-effects.mjs interaction-upgrades.js styles.css stats-upgrades.js; do
+            for asset in index.html sw.js app.js studio.mjs studio-contract.mjs studio.css drift-gestures.mjs affection.mjs heart-effects.mjs interaction-upgrades.js styles.css stats-upgrades.js; do
               output="$RUNNER_TEMP/velum-$(basename "$asset")"
               if ! curl --fail --silent --show-error --location --max-time 20 \
                 "$base/$asset?deployment-check=$GITHUB_SHA" -o "$output" \

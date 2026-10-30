@@ -54,7 +54,7 @@
   statsNav.className = 'nav-item';
   statsNav.dataset.view = 'stats';
   statsNav.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Stats</span>';
-  nav.appendChild(statsNav);
+  nav.insertBefore(statsNav, nav.querySelector('[data-view="studio"]'));
 
   const ranges = statsView.querySelector('#statsRanges');
   const body = statsView.querySelector('#statsBody');
@@ -502,6 +502,7 @@
     document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el === statsNav));
     document.querySelector('#driftView')?.classList.remove('active');
     document.querySelector('#browseView')?.classList.remove('active');
+    document.querySelector('#studioView')?.classList.remove('active');
     statsView.classList.add('active');
     addLocalEvent({ type: 'interaction', action: 'nav-stats' });
     renderStats();

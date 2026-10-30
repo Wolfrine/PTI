@@ -2,6 +2,7 @@ import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
 import { affectionScore, totalAffectionMs, isQuickSkip } from './affection.mjs';
 import { createHeartEffects } from './heart-effects.mjs';
 import { createDriftGestures } from './drift-gestures.mjs';
+import { mountStudio } from './studio.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
@@ -29,6 +30,10 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
+mountStudio({ app, auth }).catch(() => {
+  const studio = document.querySelector('#studioView');
+  if (studio) studio.textContent = 'Studio could not load. Reconnect and refresh Velum.';
+});
 await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
 const $ = s => document.querySelector(s);
@@ -200,6 +205,19 @@ async function connectDrive() {
   }
 }
 connectBtn.addEventListener('click', connectDrive);
+// Studio needs Firebase owner sign-in, independently of the read-only Drive grant.
+$('#openStudioBtn')?.addEventListener('click', async () => {
+  const button = $('#openStudioBtn');
+  button.disabled = true;
+  try {
+    if (!auth.currentUser) await signInWithPopup(auth, new GoogleAuthProvider());
+    if (!auth.currentUser) return;
+    activateView('studio');
+    authGate.classList.remove('open');
+  } catch {
+    setAuthMessage('Studio sign-in needed', 'Sign in with the owner Google account to open your private Studio.', 'No Drive permission is requested for Studio.');
+  } finally { button.disabled = false; }
+});
 
 signOutBtn.addEventListener('click', async () => {
   sessionStorage.removeItem('velum-drive-token');
@@ -637,17 +655,26 @@ sortSelect.onchange = renderBrowse;
 
 function activateView(view, { incoming = false } = {}) {
   const browse = view === 'browse';
+  const drift = view === 'drift';
+  const studio = view === 'studio';
+  if (!studio && !initializedGallery && !tokenProbablyFresh()) {
+    authGate.classList.add('open');
+    setAuthMessage('Private collection', 'Reconnect Drive to open your gallery.', 'Studio uses your owner sign-in separately.');
+    return;
+  }
   document.querySelectorAll('.nav-item').forEach(btn =>
     btn.classList.toggle('active', btn.dataset.view === view));
-  $('#driftView').classList.toggle('active', !browse);
+  $('#driftView').classList.toggle('active', drift);
   $('#browseView').classList.toggle('active', browse);
-  if (browse) {
+  $('#studioView')?.classList.toggle('active', studio);
+  $('#statsView')?.classList.toggle('active', view === 'stats');
+  if (!drift) {
     finalizeView(false);
     window.__velumInteraction?.clearAdvance?.();
     driftMedia.querySelector('.drift-video')?.pause();
     gestures.fit();
-    renderBrowse();
-  } else if (!incoming) {
+    if (browse) renderBrowse();
+  } else if (!incoming && initializedGallery) {
     gestures.fit();
     viewStarted = Date.now();
     const video = driftMedia.querySelector('.drift-video');

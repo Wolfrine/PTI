@@ -44,3 +44,8 @@ codex-usage-activation-report.json
 
 # Generated Firebase Hosting cache is local build state.
 .firebase/
+
+# Studio private runtime and local-only render fixtures.
+.velum-qa/
+tools/velum-worker/.runtime/
+tools/velum-worker/__pycache__/

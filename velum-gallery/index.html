@@ -10,6 +10,7 @@
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="media-upgrades.css" />
+  <link rel="stylesheet" href="studio.css" />
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -20,6 +21,7 @@
         <h1 id="authTitle">Private collection</h1>
         <p id="authCopy">Connect the Google account that owns the private media folder.</p>
         <button id="connectBtn" class="connect-btn">Connect Google Drive</button>
+        <button id="openStudioBtn" class="studio-auth-btn" type="button">Open private Studio</button>
         <small id="authStatus">Media stays in Google Drive; reactions stay on this device.</small>
       </div>
     </section>
@@ -71,6 +73,7 @@
         </div>
         <div id="browseGrid" class="masonry-grid"></div>
       </section>
+      <section id="studioView" class="view studio-view" aria-label="Studio"></section>
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
@@ -81,6 +84,10 @@
       <button class="nav-item" data-view="browse">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>
         <span>Browse</span>
+      </button>
+      <button class="nav-item" data-view="studio">
+        <svg viewBox="0 0 24 24"><path d="m12 3 2.3 6.7L21 12l-6.7 2.3L12 21l-2.3-6.7L3 12l6.7-2.3Z"/></svg>
+        <span>Studio</span>
       </button>
       <output id="velumRelease" class="release-stamp"
         aria-label="Velum release __VELUM_RELEASE__"

@@ -137,7 +137,10 @@
         "firebase.json",
         "**/.*",
         "**/node_modules/**",
-        "README.md"
+        "README.md",
+        "tests/**",
+        "scripts/**",
+        "design/**"
       ],
       "headers": [
         {

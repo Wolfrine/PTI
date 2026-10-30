@@ -2,6 +2,14 @@
 
 Static phone-first gallery deployed as a secondary Firebase Hosting site in the PTI Firebase project.
 
+## Studio: private local generation
+
+Studio is the fourth navigation item after Drift/Browse/Stats. It uses PTI Google sign-in independently of the gallery's read-only Drive permission. Choose one of four PC-verified installed models, enter your prompt verbatim, optionally choose a seed, confirm lawful/consensual adult use, and Generate. The PC must run the separate [finite Studio worker](../tools/velum-worker/README.md). Installation and a fresh online heartbeat are separate states. No hidden rewrite, enhancer, aesthetic correction or negative wording is added. Original prompt, seed and settings remain attached to each result.
+
+The outbound Firebase queue, real PNG bytes and explicit Keep/Iterate/Reject feedback are private to the owner under `users/{uid}/velumStudio/workspace`. They are separate from local gallery reactions and never go to GitHub or Firebase Hosting. Actual preview requires a completed image manifest and successful SHA-256 verification; pending/error states show no fabricated result. The private Firestore transfer is bounded and uses normal quota/storage. The gallery remains read-only: Download is explicit; gallery saving and source-image editing are deferred.
+
+Studio has its own scroll region for phone keyboards, preserves Quick Exit/PIN and pauses Drift media/auto-advance. The PWA cannot wake or launch an offline PC. A worker session requires its own interactive PTI owner sign-in; existing monitor credentials are never reused. See [first-pass verification](design/studio-first-pass.md) for the distinction between rendered fixtures, engine tests, production delivery and end-to-end acceptance.
+
 ## Data boundaries
 - Gallery code is public in the PTI repository.
 - Private images are **not** stored in GitHub or Firebase Hosting.

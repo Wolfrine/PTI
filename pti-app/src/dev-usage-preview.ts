@@ -38,12 +38,22 @@ const platformReading: PlatformUsageState = {
     github: {
       status: 'ok', period: '2026-10', billedActionsMinutes: 41, billedActionsUsd: 0.32,
       workflowRuns24h: 5, failedRuns24h: 1, workflowRepoScope: 'Wolfrine/PTI',
+      repositoryCount: 11, coveredRepoCount: 3,
+      repos: [
+        { repo: 'Wolfrine/PTI', status: 'ok', runs24h: 5, failed24h: 1 },
+        { repo: 'Wolfrine/Noveliaa', status: 'ok', runs24h: 2, failed24h: 0 },
+        { repo: 'Wolfrine/FoodApp', status: 'error', runs24h: null, failed24h: null },
+      ],
     },
     firebase: {
       status: 'ok', projects: [
-        { projectId: 'pti-app-2ab59', status: 'ok', reads24h: 4826, writes24h: 151, deletes24h: 2 },
-        { projectId: 'gtop-app', status: 'ok', reads24h: 1461, writes24h: 62, deletes24h: 0 },
-      ],
+        { projectId: 'pti-app-2ab59', status: 'ok', reads24h: 9826, writes24h: 151, deletes24h: 2, databases: [
+          { databaseId: '(default)', freeTier: true, edition: 'STANDARD', status: 'ok', readsToday: 7312, writesToday: 114, deletesToday: 2 },
+        ] },
+        { projectId: 'gtop-app', status: 'ok', reads24h: 1461, writes24h: 62, deletes24h: 0, databases: [
+          { databaseId: 'analytics', freeTier: false, edition: 'STANDARD', status: 'ok', readsToday: 992, writesToday: 43, deletesToday: 0 },
+        ] },
+      ], dayPacific: '2026-10-30', nextResetAt: new Date(now + 9 * 60 * 60 * 1000).toISOString(),
     },
   },
 };
@@ -53,8 +63,19 @@ if (platformFixture === 'partial') {
   platformReading.reading!.github.billedActionsUsd = null;
   platformReading.reading!.firebase.status = 'partial';
   platformReading.reading!.firebase.projects[1] = { projectId: 'gtop-app', status: 'error', reads24h: null, writes24h: null, deletes24h: null };
+  platformReading.reading!.firebase.projects[1].databases = [{ databaseId: '(default)', freeTier: true, edition: 'STANDARD', status: 'error', readsToday: null, writesToday: null, deletesToday: null }];
 }
 if (platformFixture === 'long') platformReading.reading!.firebase.projects[1].projectId = 'very-long-monitoring-project-name-unavailable';
+if (platformFixture === 'over') {
+  const database = platformReading.reading!.firebase.projects[0].databases![0];
+  database.readsToday = 75000; database.writesToday = 21000;
+  platformReading.reading!.firebase.projects[0].reads24h = 75120;
+  platformReading.reading!.firebase.projects[0].writes24h = 21114;
+}
+if (platformFixture === 'zero') {
+  const database = platformReading.reading!.firebase.projects[0].databases![0];
+  database.readsToday = 0; database.writesToday = 0; database.deletesToday = 0;
+}
 if (['loading', 'unconnected', 'error'].includes(platformFixture)) {
   platformReading.status = platformFixture === 'error' ? 'unavailable' : platformFixture as 'loading' | 'unconnected';
   platformReading.reading = null;

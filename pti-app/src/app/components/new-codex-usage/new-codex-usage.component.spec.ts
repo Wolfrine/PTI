@@ -26,20 +26,22 @@ describe('Codex usage display', () => {
     expect(component.sectionStatus({ status: 'error', lastSuccessAt: new Date(now).toISOString() }, false)).toBe('Update failed · no saved reading');
     expect(component.sectionStatus({ status: 'error', lastSuccessAt: new Date(now).toISOString() }, true)).toBe('Update failed · last good reading');
   });
-  it('renders real counts with their source date, independent partial status and stale warning', async () => {
+  it('keeps allowance and reset visible while hiding the daily token count', async () => {
     const stream = new BehaviorSubject<UsageState>(fresh());
     await TestBed.configureTestingModule({ imports: [NewCodexUsageComponent], providers: [{ provide: CodexUsageService, useValue: { watch: () => stream } }] }).compileComponents();
     const fixture = TestBed.createComponent(NewCodexUsageComponent); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('24');
     expect(fixture.nativeElement.textContent).toContain('76% remaining');
-    expect(fixture.nativeElement.textContent).toContain('Reported for 2026-10-23');
+    expect(fixture.nativeElement.textContent).toContain('Weekly allowance');
+    expect(fixture.nativeElement.textContent).toContain('Resets in');
+    expect(fixture.nativeElement.textContent).not.toContain('1,500');
+    expect(fixture.nativeElement.textContent).not.toContain('Daily tokens');
     const partial = fresh(); partial.reading!.daily = { status: 'unsupported', lastSuccessAt: null, latest: null };
     stream.next(partial); fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Partial');
-    expect(fixture.nativeElement.textContent).toContain('Not supported by this Codex version');
-    expect(fixture.nativeElement.textContent).not.toContain('1,500');
+    expect(fixture.nativeElement.textContent).toContain('Up to date');
+    expect(fixture.nativeElement.textContent).not.toContain('Not supported by this Codex version');
     fixture.componentInstance.now = now + USAGE_STALE_MS; fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Stale reading');
+    expect(fixture.nativeElement.textContent).toContain('Stale');
     fixture.destroy();
   });
   it('unsubscribes its sole reading stream on navigation destruction', async () => {

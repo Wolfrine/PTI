@@ -26,17 +26,24 @@ try {
   const actual = ruleset.source?.files;
   const sha = source => createHash('sha256').update(source).digest('hex');
   if (actual?.length !== 1 || sha(actual[0].content) !== sha(expected)) throw new Error('live-resource-privacy-not-verified');
+  const firestore = getFirestore(app);
+  // The inventory is owner-only Firestore data. PTI is a public repository:
+  // never embed private repository names or project associations in source.
+  const registry = (await firestore.doc(`users/${OWNER_UID}/resourceUsage/config`).get()).data();
+  const trustedRegistry = registry?.schemaVersion === 1 && registry?.source === 'github-repository-mapping-audit' ? registry : {};
   const snapshot = await createPlatformSnapshot({
     cloudToken: token,
     workflowToken: process.env.GITHUB_TOKEN || '',
     billingToken: process.env.PTI_GITHUB_USAGE_TOKEN || '',
     configuredProjects: process.env.PTI_FIREBASE_PROJECT_IDS || '',
+    registeredProjects: trustedRegistry.firebaseProjectIds,
+    repositoryConfig: trustedRegistry.githubRepositories,
   });
   // Service Account roles are deliberately restricted by Google IAM. A project
   // without Monitoring Viewer shows as unavailable rather than inventing zeros.
-  await getFirestore(app).doc(`users/${OWNER_UID}/resourceUsage/current`).set(snapshot);
+  await firestore.doc(`users/${OWNER_UID}/resourceUsage/current`).set(snapshot);
   const available = snapshot.firebase.projects.filter(project => project.status === 'ok').length;
-  console.log(`Published private platform snapshot: GitHub ${snapshot.github.status}, Firebase ${available}/${snapshot.firebase.projects.length} projects; billing ${snapshot.github.billedActionsMinutes === null ? 'not connected' : 'connected'}.`);
+  console.log(`Published private platform snapshot: GitHub ${snapshot.github.coveredRepoCount}/${snapshot.github.repositoryCount} active repositories, Firebase ${available}/${snapshot.firebase.projects.length} projects; billing ${snapshot.github.billedActionsMinutes === null ? 'not connected' : 'connected'}.`);
 } finally {
   await app.delete();
 }

@@ -20,15 +20,6 @@
         </ng-container>
         <p class="metric-unavailable" *ngIf="!hasAllowanceWindows">Allowance windows unavailable</p>
       </div>
-      <article class="daily-usage">
-        <h3>Daily tokens</h3>
-        <ng-container *ngIf="reading.daily.latest as latest; else noDaily">
-          <strong class="token-count">{{ latest.tokens | number:'1.0-0' }}</strong>
-          <p class="source-date">Reported for {{ latest.startDate }}</p>
-        </ng-container>
-        <ng-template #noDaily><p class="metric-unavailable">Unavailable</p><p class="source-date">No daily count reported</p></ng-template>
-        <p class="section-notice" *ngIf="sectionStatus(reading.daily, !!reading.daily.latest)">{{ sectionStatus(reading.daily, !!reading.daily.latest) }}</p>
-      </article>
     </div>
     <footer class="usage-footer"><span *ngIf="lastSuccess; else neverUpdated">Last successful update <time [attr.datetime]="lastSuccess">{{ lastSuccess | date:'MMM d, h:mm a' }}</time></span><ng-template #neverUpdated><span>No successful reading yet</span></ng-template><span>{{ offline ? 'Offline · saved reading' : state.fromCache ? 'Saved reading · waiting for server' : 'Syncs from your PC every 5 minutes' }}</span></footer>
   </ng-container>

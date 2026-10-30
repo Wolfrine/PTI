@@ -58,16 +58,15 @@ export class NewCodexUsageComponent implements OnInit, OnDestroy {
     if (this.state.status === 'loading') return 'Connecting';
     if (this.state.status === 'unconnected') return this.state.fromCache ? 'Waiting for connection' : 'Not connected';
     if (!this.state.reading) return 'Unavailable';
-    const { allowance, daily } = this.state.reading;
-    if (!allowance.buckets.some(bucket => bucket.windows.length) && !daily.latest) return 'Unavailable';
-    if ([allowance, daily].some(section => section.lastSuccessAt && readingStale(section, this.now))) return 'Stale';
+    const { allowance } = this.state.reading;
+    if (!allowance.buckets.some(bucket => bucket.windows.length)) return 'Unavailable';
+    if (allowance.lastSuccessAt && readingStale(allowance, this.now)) return 'Stale';
     if (allowance.buckets.some(bucket => bucket.windows.some(window => window.resetsAt !== null && window.resetsAt * 1000 <= this.now))) return 'Awaiting allowance';
-    if (allowance.status !== 'ok' || daily.status !== 'ok' || !allowance.buckets.some(bucket => bucket.windows.length) || !daily.latest) return 'Partial';
+    if (allowance.status !== 'ok') return 'Partial';
     return this.state.fromCache ? 'Cached' : 'Up to date';
   }
   get lastSuccess(): string | null {
-    return [this.state.reading?.allowance.lastSuccessAt, this.state.reading?.daily.lastSuccessAt]
-      .filter((value): value is string => !!value).sort().at(-1) ?? null;
+    return this.state.reading?.allowance.lastSuccessAt ?? null;
   }
   get hasAllowanceWindows(): boolean { return this.state.reading?.allowance.buckets.some(bucket => bucket.windows.length > 0) ?? false; }
   get emptyMessage(): string {

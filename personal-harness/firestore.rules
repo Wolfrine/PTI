@@ -13,7 +13,7 @@ service cloud.firestore {
    allow read, write: if interactiveUser();
     match /{collection}/{document=**} { allow read, write: if collection != 'atlasData' && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'resourceUsage' && collection != 'velumStudio' && interactiveUser(); }
   }
-  // Private Studio drafts and bytes. The gallery's Drive scope remains read-only.
+  // Private Studio drafts, reference inputs, thumbnails and explicit Drive save receipts.
   match /users/{uid}/velumStudio/workspace {
    function studioOwner() { return owner(uid) && uid == '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2'; }
    // Public identity pin provisioned by trusted installation, never a bearer token.
@@ -23,9 +23,29 @@ service cloud.firestore {
     && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/devices/$(request.auth.uid)).data.status == 'approved'; }
    function model(id) { return id in ['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15']; }
    function instant(t) { return t is int && t > 0 && t <= request.time.toMillis() + 300000; }
-   function job(d) { return d.schemaVersion == 2 && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && model(d.model) && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 6000
-    && d.seed is int && d.seed >= 0 && d.seed <= 2147483647 && d.width == 768 && d.height == 1024 && d.consent == true
-    && instant(d.createdAt) && d.expiresAt == d.createdAt + 604800000; }
+   function reference(r,i) { return r is map && r.keys().hasOnly(['index','mime','bytes','sha256','width','height','pixels','chunks','source'])
+    && r.index == i && r.mime in ['image/png','image/jpeg'] && r.bytes is int && r.bytes >= 100 && r.bytes <= 2097152
+    && r.sha256 is string && r.sha256.matches('[a-f0-9]{64}') && r.width is int && r.height is int
+    && r.width > 0 && r.width <= 1024 && r.height > 0 && r.height <= 1024 && r.width*r.height <= 1048576
+    && r.get('pixels',r.width*r.height) == r.width*r.height && r.chunks is int && r.chunks >= 1 && r.chunks <= 5
+    && r.chunks == int((int((r.bytes+2) / 3)*4+599999) / 600000)
+    && r.source is map && r.source.keys().hasOnly(['kind','id','name']) && r.source.kind in ['file','studio','drive']
+    && r.source.id is string && r.source.id.size() <= 160 && r.source.name is string && r.source.name.size() <= 160; }
+   function modern(d) { return d.references is list && d.references.size() <= 2 && d.inputsReady is bool
+    && d.parentJobId is string && (d.parentJobId == '' || d.parentJobId.matches('[A-Za-z0-9_-]{1,80}'))
+    && (d.references.size() == 0 || (d.model == 'flux2-klein-fp8' && reference(d.references[0],0)))
+    && (d.references.size() < 2 || reference(d.references[1],1)); }
+   function job(d) { return d.schemaVersion in [2,3] && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && model(d.model) && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 6000
+    && d.seed is int && d.seed >= 0 && d.seed <= 2147483647 && d.consent == true
+    && instant(d.createdAt) && d.expiresAt == d.createdAt + 604800000
+    && ((d.schemaVersion == 2 && d.width == 768 && d.height == 1024)
+     || (d.schemaVersion == 3 && modern(d) && ((d.references.size() == 0 && d.width == 768 && d.height == 1024)
+      || (d.references.size() > 0 && d.width == 512 && d.height == 768)))); }
+   function completeInput(id,r) {
+    let base = /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)/inputs/$(string(r.index))/chunks;
+    return existsAfter(/$(base)/0) && (r.chunks < 2 || existsAfter(/$(base)/1)) && (r.chunks < 3 || existsAfter(/$(base)/2))
+     && (r.chunks < 4 || existsAfter(/$(base)/3)) && (r.chunks < 5 || existsAfter(/$(base)/4));
+   }
    allow read, write: if false;
    match /devices/{deviceUid} {
     function valid(d) { return d.keys().hasOnly(['deviceUid','label','grantHash','createdAt','expiresAt','status','approvedAt','revokedAt'])
@@ -54,29 +74,45 @@ service cloud.firestore {
    }
    match /status/pc {
     allow read: if studioOwner() || studioDevice();
-    allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version'])
+    allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version','capabilities'])
      && request.resource.data.deviceUid == request.auth.uid
      && instant(request.resource.data.updatedAt) && request.resource.data.installed is list && request.resource.data.installed.size() <= 4
      && request.resource.data.installed.hasOnly(['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15'])
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
-     && request.resource.data.version == '2.0.0';
+     && request.resource.data.version == '2.0.0'
+     && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceOutputWidth','referenceOutputHeight'])
+      && request.resource.data.capabilities.referenceModel == 'flux2-klein-fp8' && request.resource.data.capabilities.maxReferences == 2
+      && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768));
     allow delete: if studioOwner();
    }
    match /jobs/{id} {
     allow read: if studioOwner() || (studioDevice() && resource.data.deviceUid == request.auth.uid);
     allow delete: if studioOwner();
     allow create: if studioOwner() && id.matches('[A-Za-z0-9_-]{1,80}') && job(request.resource.data)
-     && request.resource.data.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent'])
-     && request.resource.data.status == 'queued' && request.resource.data.expiresAt > request.time.toMillis();
+     && request.resource.data.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent','references','parentJobId','inputsReady'])
+     && ((request.resource.data.schemaVersion == 2 && !request.resource.data.keys().hasAny(['references','parentJobId','inputsReady']) && request.resource.data.status == 'queued')
+      || (request.resource.data.schemaVersion == 3 && ((request.resource.data.references.size() > 0 && request.resource.data.status == 'uploading' && request.resource.data.inputsReady == false)
+       || (request.resource.data.references.size() == 0 && request.resource.data.status == 'queued' && request.resource.data.inputsReady == true))))
+     && request.resource.data.expiresAt > request.time.toMillis();
+    allow update: if studioOwner() && resource.data.schemaVersion == 3 && resource.data.status == 'uploading'
+     && resource.data.inputsReady == false && request.resource.data.inputsReady == true && request.resource.data.status == 'queued'
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','inputsReady']) && resource.data.expiresAt > request.time.toMillis()
+     && completeInput(id,resource.data.references[0]) && (resource.data.references.size() < 2 || completeInput(id,resource.data.references[1]));
+    // Abandon an incomplete transfer without deleting any input bytes or originals.
+    allow update: if studioOwner() && resource.data.status == 'uploading' && resource.data.schemaVersion == 3
+     && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
     allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid && job(request.resource.data)
+     && (resource.data.schemaVersion == 2 || resource.data.inputsReady == true)
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startedAt','finishedAt','workerId','progress','result','error'])
      && ((resource.data.status == 'queued' && request.resource.data.status in ['running','failed'])
       || (resource.data.status == 'running' && request.resource.data.status in ['running','completed','failed']))
      && (request.resource.data.status != 'running' || (request.resource.data.workerId == request.auth.uid
       && (resource.data.status != 'queued' || resource.data.expiresAt > request.time.toMillis())))
-     && request.resource.data.get('error','') in ['', 'expired','interrupted','resource-guard','inference-failed','invalid-output','output-too-large','model-unavailable']
+     && request.resource.data.get('error','') in ['', 'expired','interrupted','resource-guard','inference-failed','invalid-output','output-too-large','model-unavailable','invalid-input','invalid-reference']
      && request.resource.data.get('progress',{}).keys().hasOnly(['step','total'])
-     && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds'])
+     && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds','localPath','referenceMethod'])
+     && (!('localPath' in request.resource.data.get('result',{})) || request.resource.data.result.localPath == 'H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\' + id + '\\image.png')
+     && (!('referenceMethod' in request.resource.data.get('result',{})) || request.resource.data.result.referenceMethod in ['','flux2-reference-latent'])
      && (request.resource.data.status != 'completed' || (request.resource.data.result.mime == 'image/png'
       && request.resource.data.result.bytes is int && request.resource.data.result.bytes > 100 && request.resource.data.result.bytes <= 7200000
       && request.resource.data.result.chunks is int && request.resource.data.result.chunks >= 1 && request.resource.data.result.chunks <= 16
@@ -91,12 +127,58 @@ service cloud.firestore {
       && chunkId == string(request.resource.data.index) && request.resource.data.data is string && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 600000;
      allow update: if false;
     }
+    match /inputs/{inputId}/chunks/{chunkId} {
+     function parent() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data; }
+     allow read: if studioOwner() || (studioDevice() && parent().deviceUid == request.auth.uid);
+     allow create: if studioOwner() && parent().schemaVersion == 3 && parent().status == 'uploading' && parent().inputsReady == false
+      && parent().expiresAt > request.time.toMillis() && inputId in ['0','1'] && int(inputId) < parent().references.size()
+      && request.resource.data.keys().hasOnly(['index','data']) && request.resource.data.index is int && request.resource.data.index >= 0
+      && request.resource.data.index < parent().references[int(inputId)].chunks && chunkId == string(request.resource.data.index)
+      && request.resource.data.data is string && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 600000;
+     allow update, delete: if false;
+    }
    }
    match /feedback/{jobId} {
     allow read, delete: if studioOwner();
     allow create, update: if studioOwner() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.status == 'completed'
      && request.resource.data.keys().hasOnly(['verdict','note','updatedAt']) && request.resource.data.verdict in ['keep','iterate','reject']
      && request.resource.data.note is string && request.resource.data.note.size() <= 2000 && instant(request.resource.data.updatedAt);
+   }
+   match /thumbs/{jobId} {
+    allow read: if studioOwner() || (studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid);
+    allow create: if studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid
+     && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.status in ['running','completed']
+     && request.resource.data.keys().hasOnly(['jobId','mime','data','sha256','bytes','width','height','createdAt']) && request.resource.data.jobId == jobId
+     && request.resource.data.mime == 'image/jpeg' && request.resource.data.data is string && request.resource.data.data.size() <= 87384
+     && request.resource.data.bytes is int && request.resource.data.bytes > 0 && request.resource.data.bytes <= 65536
+     && request.resource.data.width is int && request.resource.data.width > 0 && request.resource.data.width <= 512
+     && request.resource.data.height is int && request.resource.data.height > 0 && request.resource.data.height <= 512
+     && request.resource.data.sha256.matches('[a-f0-9]{64}') && instant(request.resource.data.createdAt);
+    allow update, delete: if false;
+   }
+   match /saves/{jobId} {
+    function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
+    allow read: if studioOwner();
+    allow create: if studioOwner() && original().status == 'completed'
+     && request.resource.data.keys().hasOnly(['jobId','fileId','name','webViewLink','savedAt','mime','sha256','bytes','folderId'])
+     && request.resource.data.jobId == jobId && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
+     && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
+     && request.resource.data.webViewLink == 'https://drive.google.com/file/d/' + request.resource.data.fileId + '/view'
+     && request.resource.data.folderId == '1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA' && request.resource.data.mime == 'image/png'
+     && request.resource.data.sha256 == original().result.sha256 && request.resource.data.bytes == original().result.bytes && instant(request.resource.data.savedAt)
+     && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/uploads/$(jobId)).data.fileId == request.resource.data.fileId;
+    // Receipts are immutable. A retry verifies Drive before recovering the same receipt.
+    allow update: if studioOwner() && request.resource.data == resource.data;
+    allow delete: if false;
+   }
+   match /uploads/{jobId} {
+    function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
+    allow read: if studioOwner();
+    allow create: if studioOwner() && original().status == 'completed'
+     && request.resource.data.keys().hasOnly(['jobId','fileId','sha256','bytes','createdAt']) && request.resource.data.jobId == jobId
+     && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
+     && request.resource.data.sha256 == original().result.sha256 && request.resource.data.bytes == original().result.bytes && instant(request.resource.data.createdAt);
+    allow update, delete: if false;
    }
   }
   // Cached infrastructure telemetry is readable by its owner only. The scheduled

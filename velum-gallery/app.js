@@ -5,16 +5,21 @@ import { createDriftGestures } from './drift-gestures.mjs';
 const studioModule = new URL('./studio.mjs', import.meta.url);
 studioModule.search = new URL(import.meta.url).search;
 const { mountStudio } = await import(studioModule.href);
+const driveModule = new URL('./studio-drive.mjs', import.meta.url);
+driveModule.search = new URL(import.meta.url).search;
+const { createStudioDrive,readBoundedImage } = await import(driveModule.href);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  reauthenticateWithPopup,
   signOut,
   setPersistence,
   browserLocalPersistence,
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import {getFirestore,doc,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -32,10 +37,6 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
-mountStudio({ app, auth }).catch(() => {
-  const studio = document.querySelector('#studioView');
-  if (studio) studio.textContent = 'Studio could not load. Reconnect and refresh Velum.';
-});
 await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
 const $ = s => document.querySelector(s);
@@ -109,6 +110,41 @@ let wakeLock = null;
 let browseObserver = null;
 let initializedGallery = false;
 let renderSerial = 0;
+const studioDrive = createStudioDrive({auth,apiKey:FIREBASE_CONFIG.apiKey,appId:FIREBASE_CONFIG.messagingSenderId,
+  reserve: async (job,candidate) => {
+    const uid=auth.currentUser?.uid;
+    if(uid!=='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2')throw new Error('Owner sign-in is required.');
+    const db=getFirestore(app),ref=doc(db,`users/${uid}/velumStudio/workspace/uploads/${job.id}`);
+    return runTransaction(db,async tx=>{
+      const snapshot=await tx.get(ref);
+      if(snapshot.exists()){
+        const saved=snapshot.data();
+        if(saved.sha256!==job.result.sha256||saved.bytes!==job.result.bytes)throw new Error('Drive reservation does not match the original.');
+        return saved.fileId;
+      }
+      if(!candidate)return null;
+      tx.set(ref,{jobId:job.id,fileId:candidate,sha256:job.result.sha256,bytes:job.result.bytes,createdAt:Date.now()});
+      return candidate;
+    });
+  },
+  requestAccess: async scope => {
+    const provider = new GoogleAuthProvider();
+    provider.addScope(scope);
+    provider.setCustomParameters({prompt:'consent'});
+    const result = await reauthenticateWithPopup(auth.currentUser,provider);
+    return GoogleAuthProvider.credentialFromResult(result);
+  }
+});
+studioDrive.setGalleryProvider({list:()=>images.filter(item=>item.kind==='image'),current:()=>currentMediaItem(),read:async (id,signal)=>{
+  if(imageById(id)?.size>16*1024*1024)throw new Error('Choose a reference smaller than 16 MB.');
+  const response=await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`,{signal});
+  return readBoundedImage(response);
+}});
+mountStudio({ app, auth, drive:studioDrive }).catch(() => {
+  const studio = document.querySelector('#studioView');
+  if (studio) studio.textContent = 'Studio could not load. Reconnect and refresh Velum.';
+});
+window.addEventListener('velum:lock',()=>studioDrive.clear());
 
 class EventStore {
   constructor() { this.db = null; this.memory = []; }
@@ -222,6 +258,7 @@ $('#openStudioBtn')?.addEventListener('click', async () => {
 });
 
 signOutBtn.addEventListener('click', async () => {
+  studioDrive.clear();
   sessionStorage.removeItem('velum-drive-token');
   sessionStorage.removeItem('velum-drive-token-at');
   accessToken = '';
@@ -697,9 +734,11 @@ function openInDrift(id) {
   renderMoment(moment);
 }
 
-$('#exitBtn').onclick = () => $('#neutralScreen').classList.add('open');
+function quickExit(){studioDrive.clear();window.dispatchEvent(new Event('velum:lock'));$('#neutralScreen').classList.add('open');}
+window.addEventListener('velum:quick-exit',quickExit);
+$('#exitBtn').onclick = quickExit;
 $('#returnBtn').onclick = () => $('#neutralScreen').classList.remove('open');
-$('#brandBtn').onclick = () => $('#neutralScreen').classList.add('open');
+$('#brandBtn').onclick = quickExit;
 
 document.addEventListener('visibilitychange', () => {
   const video = driftMedia.querySelector('.drift-video');

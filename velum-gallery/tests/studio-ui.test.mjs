@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { decodeResult, formatJobStatus } from '../studio.mjs';
+import { archiveStatusMark, pendingJob } from '../studio-view.mjs';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aC1cAAAAASUVORK5CYII=', 'base64');
 const manifest = { mime: 'image/png', bytes: png.length, chunks: 2, sha256: createHash('sha256').update(png).digest('hex') };
@@ -27,4 +28,14 @@ test('queue status remains explicit and reports actual worker steps', () => {
   assert.equal(formatJobStatus({ status: 'queued' }), 'Queued for your PC');
   assert.equal(formatJobStatus({ status: 'failed' }), 'Generation stopped');
   assert.equal(formatJobStatus({ status: 'completed' }), 'Ready for your review');
+});
+
+test('stopped and cancelled archive records have a static mark and never keep the queue busy', () => {
+  for (const status of ['failed','cancelled','expired']) {
+    assert.equal(archiveStatusMark({status}),'—');
+    assert.equal(pendingJob({status}),false);
+  }
+  for (const status of ['uploading','running','queued']) assert.equal(archiveStatusMark({status}),'◌');
+  assert.equal(formatJobStatus({status:'uploading'}),'Uploading private references');
+  assert.equal(formatJobStatus({status:'cancelled'}),'Request cancelled');
 });

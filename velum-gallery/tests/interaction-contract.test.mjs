@@ -62,7 +62,12 @@ test('statistics and exported intensity remain entirely in browser storage',()=>
   assert.doesNotMatch(stats,/affectionStrength/);
   assert.match(stats,/e\.type === 'impression'/);
   assert.match(app,/indexedDB\.open\('velum-local'/);
-  assert.doesNotMatch(app,/firestore|createDocument|updateDocument|notion\.so/i);
+  // Studio's owner-only Drive reservation uses Firestore. Gallery reactions and
+  // statistics remain in the existing local EventStore and local export path.
+  const eventStore=app.slice(app.indexOf('class EventStore'),app.indexOf('const store = new EventStore'));
+  assert.ok(eventStore.includes("indexedDB.open('velum-local'"));
+  assert.doesNotMatch(eventStore,/firestore|createDocument|updateDocument|notion\.so/i);
+  assert.doesNotMatch(stats,/firestore|createDocument|updateDocument|notion\.so/i);
 });
 test('auto-advance pauses during touch and zoom and resumes after grace',()=>{
   const interaction=source('interaction-upgrades.js');

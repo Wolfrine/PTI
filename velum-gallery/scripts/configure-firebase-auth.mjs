@@ -124,3 +124,61 @@ async function ensureDriveApi() {
 
 await configureAuthorizedDomains();
 await ensureDriveApi();
+
+// Picker grants drive.file access to the existing folder; a read-only metadata
+// response cannot establish that grant. Use only the existing CI identity.
+async function ensurePickerApi(){
+  const base=`https://serviceusage.googleapis.com/v1/projects/${projectId}/services/picker.googleapis.com`;
+  const current=await fetch(base,{headers});
+  if(current.ok&&(await current.json()).state==='ENABLED'){console.log('Google Picker API is enabled.');return;}
+  const response=await fetch(`${base}:enable`,{method:'POST',headers,body:'{}'});
+  if(!response.ok)throw new Error(`Google Picker API could not be enabled by the existing CI identity (${response.status}). Owner cloud setup may be required; Drive saving remains unverified until the phone folder grant succeeds.`);
+  const operation=await response.json();
+  if(operation.done){console.log('Google Picker API enabled.');return;}
+  for(let attempt=0;attempt<30;attempt++){
+    await new Promise(resolve=>setTimeout(resolve,1000));
+    const poll=await fetch(`https://serviceusage.googleapis.com/v1/${operation.name}`,{headers});
+    if(!poll.ok)continue;const data=await poll.json();if(data.error)throw new Error(`Google Picker enable operation failed: ${data.error.message}`);
+    if(data.done){console.log('Google Picker API enabled.');return;}
+  }
+  throw new Error('Google Picker enablement is still pending. Verify the phone folder grant before treating Save to Drive as available.');
+}
+async function configurePickerKey(){
+  // Reuse the public Firebase web key. Preserve every existing restriction;
+  // add only the two APIs and iframe origin required by Google's Picker guide.
+  const lookup=await fetch(`https://apikeys.googleapis.com/v2/keys:lookupKey?keyString=${encodeURIComponent(webApiKey)}`,{headers});
+  if(!lookup.ok)throw new Error(`Existing CI identity cannot inspect the public web key's Picker restrictions (${lookup.status}). Phone Picker availability remains unverified.`);
+  const name=(await lookup.json()).name;
+  if(typeof name!=='string'||!name.startsWith('projects/185802494856/'))throw new Error('Unexpected public web key project; no key configuration changed.');
+  const response=await fetch(`https://apikeys.googleapis.com/v2/${name}`,{headers});
+  if(!response.ok)throw new Error(`Could not inspect public web key restrictions (${response.status}).`);
+  const key=await response.json(),restrictions=structuredClone(key.restrictions||{});let changed=false;
+  if(restrictions.apiTargets?.length){
+    for(const service of ['picker.googleapis.com','drive.googleapis.com'])if(!restrictions.apiTargets.some(target=>target.service===service)){restrictions.apiTargets.push({service});changed=true;}
+  }
+  if(restrictions.browserKeyRestrictions){
+    const refs=restrictions.browserKeyRestrictions.allowedReferrers||=[];
+    for(const origin of [`https://${siteId}.web.app/*`,`https://${siteId}.firebaseapp.com/*`,'https://docs.google.com/*'])if(!refs.includes(origin)){refs.push(origin);changed=true;}
+  }
+  if(!changed){console.log('Existing public web key permits the Picker configuration.');return;}
+  const update=await fetch(`https://apikeys.googleapis.com/v2/${name}?updateMask=restrictions`,{method:'PATCH',headers,body:JSON.stringify({name,etag:key.etag,restrictions})});
+  if(!update.ok)throw new Error(`Existing CI identity cannot add the narrowly required Picker restrictions (${update.status}). No replacement credential was created.`);
+  console.log('Existing public web key Picker restrictions updated; original restrictions retained.');
+}
+async function ensureStudioIndexes(){
+  const base=`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/collectionGroups`;
+  for(const [collection,field,ordered] of [['jobs','status','createdAt'],['feedback','verdict','updatedAt']]){
+    const fields=[{fieldPath:field,order:'ASCENDING'},{fieldPath:ordered,order:'DESCENDING'},{fieldPath:'__name__',order:'DESCENDING'}];
+    const response=await fetch(`${base}/${collection}/indexes`,{headers});
+    if(!response.ok)throw new Error(`Could not inspect Studio ${collection} pagination index (${response.status}).`);
+    const existing=(await response.json()).indexes||[];
+    const matched=existing.find(index=>index.queryScope==='COLLECTION'&&JSON.stringify(index.fields)===JSON.stringify(fields));
+    if(matched){console.log(`Studio ${collection} archive index ${matched.state}.`);continue;}
+    const create=await fetch(`${base}/${collection}/indexes`,{method:'POST',headers,body:JSON.stringify({queryScope:'COLLECTION',fields})});
+    if(!create.ok&&create.status!==409)throw new Error(`Could not create Studio ${collection} archive index (${create.status}).`);
+    console.log(`Studio ${collection} archive index requested; indexing may briefly delay filtered history.`);
+  }
+}
+await ensureStudioIndexes();
+await ensurePickerApi();
+await configurePickerKey();

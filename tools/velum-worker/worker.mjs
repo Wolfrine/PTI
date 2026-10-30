@@ -8,6 +8,8 @@ import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
 import {finishClaimed,retryDelay} from './lifecycle.mjs';
 import {acquireWorkerLock} from './worker-lock.mjs';
 import {WEIGHTS,runnable,encode,decode,imagePayload} from './core.mjs';
+import {downloadReferences,thumbnailPayload} from './reference-input.mjs';
+import {ThumbnailBackfill} from './thumbnail-backfill.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -60,6 +62,13 @@ export class Queue {
   const response=await this.request(`${ROOT}:runQuery`,{method:'POST',value:{structuredQuery:{from:[{collectionId:'jobs'}],where:{compositeFilter:{op:'AND',filters:[{fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:encode(status)}},{fieldFilter:{field:{fieldPath:'deviceUid'},op:'EQUAL',value:encode(this.session.uid)}}]}},limit:20}}});
   return (response.value||[]).filter(item=>item.document).map(({document})=>({id:document.name.split('/').at(-1),updateTime:document.updateTime,job:decode({mapValue:{fields:document.fields}})})).sort((a,b)=>a.job.createdAt-b.job.createdAt);
  }
+ async archivePage(cursor=''){
+  const prefix=`projects/${PROJECT}/databases/(default)/documents/${ROOT}/jobs/`;
+  if(cursor&&(!cursor.startsWith(prefix)||!/^[A-Za-z0-9_-]{1,80}$/.test(cursor.slice(prefix.length))))throw new Error('invalid-thumbnail-backfill');
+  const response=await this.request(`${ROOT}:runQuery`,{method:'POST',value:{structuredQuery:{from:[{collectionId:'jobs'}],where:{fieldFilter:{field:{fieldPath:'deviceUid'},op:'EQUAL',value:encode(this.session.uid)}},orderBy:[{field:{fieldPath:'__name__'},direction:'ASCENDING'}],limit:24,...(cursor?{startAt:{values:[{referenceValue:cursor}],before:false}}:{})}}});
+  const documents=(response.value||[]).filter(item=>item.document).map(item=>item.document);
+  return {count:documents.length,cursor:documents.at(-1)?.name||cursor,items:documents.map(document=>({id:document.name.split('/').at(-1),job:decode({mapValue:{fields:document.fields}})}))};
+ }
  async binding(){
   const response=await this.request(`${ROOT}/devices/${this.session.uid}`,{allow:[404]});
   return response.status===404?null:decode({mapValue:{fields:response.value.fields}});
@@ -73,7 +82,13 @@ async function installedModels(){
  }
  await stat(PYTHON);return installed;
 }
-export async function infer(id,job,onProgress=()=>{},{signal}={}){
+async function loadThumbnail(directory,metadata){
+ let thumbnail=metadata.thumbnail;
+ try{await stat(path.join(directory,'thumbnail.jpg'));}catch(error){if(error.code==='ENOENT')thumbnail=null;else throw error;}
+ if(!thumbnail)thumbnail=JSON.parse(execFileSync(PYTHON,['-B',path.join(HERE,'media.py'),'thumbnail',directory],{windowsHide:true,encoding:'utf8',timeout:15000}));
+ return {...thumbnail,bytes:await readFile(path.join(directory,'thumbnail.jpg'))};
+}
+export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={}){
  // No shell, client-supplied path, ComfyUI port, network-capable model process or warmup.
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
  const logs=path.join(DATA,'velum-studio','logs');await mkdir(logs,{recursive:true});
@@ -88,7 +103,7 @@ export async function infer(id,job,onProgress=()=>{},{signal}={}){
    buffer+=chunk.toString();if(buffer.length>1000000)buffer=buffer.slice(-100000);
    let end;while((end=buffer.indexOf('\n'))>=0){
     const line=buffer.slice(0,end);buffer=buffer.slice(end+1);
-    try{const event=JSON.parse(line);if(event.event==='progress')onProgress({step:event.step,total:event.total});
+    try{const event=JSON.parse(line);onEvent(event);if(event.event==='progress')onProgress({step:event.step,total:event.total});
      if(event.event==='failed'&&event.error==='resource-guard')failure=event.error;if(event.event==='saved')saved=true;}catch{}
    }
   });
@@ -115,29 +130,63 @@ async function main(){
  let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0;
  const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:{referenceModel:'flux2-klein-fp8',maxReferences:2,referenceOutputWidth:512,referenceOutputHeight:768}});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=(item,error)=>queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});
  const load=async id=>{
+  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-output');
   try{
    const output=path.join(DATA,'velum-studio',id),bytes=await readFile(path.join(output,'image.png'));
    const metadata=JSON.parse(await readFile(path.join(output,'result.json'),'utf8')),payload=imagePayload(bytes);
    if(payload.result.sha256!==metadata.sha256)throw new Error('invalid-output');
-   return {...payload,metadata};
+   return {...payload,metadata,thumbnail:await loadThumbnail(output,metadata)};
   }catch(error){if(error.code==='ENOENT')return null;throw error;}
  };
  const upload=async(item,output)=>{
+  const expected=item.job,actual=output.metadata;
+  if(['model','seed','width','height'].some(key=>actual.settings?.[key]!==expected[key])||(actual.prompt!==undefined&&actual.prompt!==expected.prompt)||(expected.schemaVersion===3&&JSON.stringify(actual.references)!==JSON.stringify(expected.references)))throw new Error('invalid-output');
   for(let index=0;index<output.chunks.length;index++){
    await approved();const relative=`jobs/${item.id}/chunks/${index}`;
    const existing=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
    if(existing.status===200){const data=decode({mapValue:{fields:existing.value.fields}});if(data.index!==index||data.data!==output.chunks[index])throw new Error('invalid-output');}
    else await queue.write(relative,{index,data:output.chunks[index]},{create:true});
   }
-  await approved();await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds}});
+  await approved();
+  const thumb=thumbnailPayload(output.thumbnail.bytes,{id:item.id,width:output.thumbnail.width,height:output.thumbnail.height,createdAt:item.job.createdAt});
+  const prior=await queue.request(`${ROOT}/thumbs/${item.id}`,{allow:[404]});
+  if(prior.status===404)await queue.write(`thumbs/${item.id}`,thumb,{create:true});
+  else if(decode({mapValue:{fields:prior.value.fields}}).sha256!==thumb.sha256)throw new Error('invalid-output');
+  await approved();await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,localPath:path.join(DATA,'velum-studio',item.id,'image.png')}});
  };
+ const backfill=new ThumbnailBackfill(path.join(STATE,'thumbnail-backfill.json'),{
+  page:cursor=>queue.archivePage(cursor),
+  hasThumbnail:async id=>(await queue.request(`${ROOT}/thumbs/${id}`,{allow:[404]})).status===200,
+  load:async(id,job)=>{
+   if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))return null;
+   const directory=path.join(DATA,'velum-studio',id);
+   try{
+    await stat(path.join(directory,'image.png'));
+    const metadata=JSON.parse(await readFile(path.join(directory,'result.json'),'utf8'));
+    if(metadata.sha256!==job.result?.sha256||['model','seed','width','height'].some(key=>metadata.settings?.[key]!==job[key]))return null;
+    const thumbnail=await loadThumbnail(directory,metadata);
+    return {metadata,thumbnail,bytes:thumbnail.bytes};
+   }catch(error){if(error.code==='ENOENT')return null;throw error;}
+  },
+  publish:async(item,output)=>{
+   await approved();await queue.write(`thumbs/${item.id}`,thumbnailPayload(output.bytes,{id:item.id,width:output.thumbnail.width,height:output.thumbnail.height,createdAt:item.job.createdAt}),{create:true});
+  },
+ });
  const run=async(item,resumed)=>{
+  if(!/^[A-Za-z0-9_-]{1,80}$/.test(item.id))throw new Error('invalid-job');
   activeJob=item.id;controller=new AbortController();await publish('running');
-  try{await finishClaimed(item,{resumed,load,upload,fail,approved,infer:async()=>{
+  try{await finishClaimed(item,{resumed,load,upload,fail,approved,
+   canResumeInference:async()=>{
+    if(!item.job.references?.length)return false;
+    try{await stat(path.join(DATA,'velum-studio',item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
+   },
+   prepare:async()=>downloadReferences(item.id,item.job,{root:path.join(DATA,'velum-studio'),approved,fetchChunk:async(reference,index)=>{
+    const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}/chunks/${index}`);return decode({mapValue:{fields:response.value.fields}});
+   }}),infer:async()=>{
    let pending=Promise.resolve(),lastStep=0;
    await infer(item.id,item.job,progress=>{if(progress.step>lastStep){lastStep=progress.step;pending=pending.then(()=>queue.write(`jobs/${item.id}`,{status:'running',progress})).catch(()=>{});}},{signal:controller.signal});
    await pending;
@@ -174,6 +223,7 @@ async function main(){
       catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
       await run(item,false);
      }
+     if(!stopping)await backfill.step().catch(()=>backfill.recordError().catch(()=>{}));
      attempt=0;
     }
    }catch(error){

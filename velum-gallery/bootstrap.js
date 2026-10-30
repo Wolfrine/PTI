@@ -264,6 +264,7 @@ async function bootGallery() {
       event.stopImmediatePropagation();
       await showPinGate({ setup: false });
       neutralScreen.classList.remove('open');
+      window.dispatchEvent(new Event('velum:unlock'));
     }, true);
   }
 }

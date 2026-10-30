@@ -46,7 +46,11 @@ def main():
     job, jid = request['job'], request['id']
     if not 1 <= len(jid) <= 80 or not all(c.isascii() and (c.isalnum() or c in '_-') for c in jid):
         raise ValueError('invalid-job')
-    if job['width'] != 768 or job['height'] != 1024 or job.get('consent') is not True:
+    references = job.get('references', [])
+    if not isinstance(references, list) or len(references) > 2 or (references and (job.get('schemaVersion') != 3 or job['model'] != 'flux2-klein-fp8' or job.get('inputsReady') is not True)):
+        raise ValueError('invalid-reference')
+    expected_size = (512, 768) if references else (768, 1024)
+    if (job['width'], job['height']) != expected_size or job.get('consent') is not True:
         raise ValueError('invalid-job')
     if not isinstance(job['prompt'], str) or not job['prompt'].strip() or len(job['prompt']) > 6000:
         raise ValueError('invalid-job')
@@ -57,8 +61,21 @@ def main():
     inference_lock.seek(0)
     msvcrt.locking(inference_lock.fileno(), msvcrt.LK_NBLCK, 1)
     work = OUT / jid
-    work.mkdir(exist_ok=False)
+    work.mkdir(exist_ok=True)
+    # A downloaded-input directory may predate this process. Completed originals,
+    # failed attempts and inference markers are never overwritten or resampled.
+    if any(file.name != 'inputs' for file in work.iterdir()):
+        raise ValueError('existing-job-output')
     WORK = work
+    from media import read_reference, thumbnail
+    source_images = []
+    for index, manifest in enumerate(references):
+        if manifest.get('index') != index:
+            raise ValueError('invalid-reference')
+        extension = 'png' if manifest['mime'] == 'image/png' else 'jpg'
+        source_images.append(read_reference(work/'inputs'/f'{index}.{extension}', manifest))
+    with (work/'inference-started.json').open('x', encoding='utf-8') as marker:
+        json.dump(dict(jobId=jid, prompt=job['prompt'], seed=job['seed'], references=references), marker, ensure_ascii=False)
     for key, relative in {'TEMP':'tmp', 'TMP':'tmp', 'TMPDIR':'tmp', 'HF_HOME':'cache/hf', 'TORCH_HOME':'cache/torch',
         'TORCH_EXTENSIONS_DIR':'cache/torch-extensions', 'TORCHINDUCTOR_CACHE_DIR':'cache/inductor',
         'TRITON_CACHE_DIR':'cache/triton', 'CUDA_CACHE_PATH':'cache/cuda', 'XDG_CACHE_HOME':'cache',
@@ -143,9 +160,22 @@ def main():
                 if mode == 'flux2-klein-fp8':
                     from comfy_extras.nodes_flux import EmptyFlux2LatentImage, Flux2Scheduler
                     from comfy_extras.nodes_custom_sampler import SamplerCustom
+                    from comfy_extras.nodes_edit_model import ReferenceLatent
                     import comfy.samplers
-                    model = nodes.UNETLoader().load_unet('flux-2-klein-4b-fp8.safetensors', 'default')[0]
                     vae = nodes.VAELoader().load_vae('flux2-vae.safetensors')[0]
+                    if source_images:
+                        import numpy as np
+                        for source in source_images:
+                            pixels = torch.from_numpy(np.array(source).astype(np.float32)/255.).unsqueeze(0)
+                            reference = {'samples':vae.encode_tiled(pixels, tile_x=512, tile_y=512, overlap=64)}
+                            positive = ReferenceLatent.execute(positive, reference)[0]
+                            negative = ReferenceLatent.execute(negative, reference)[0]
+                            del pixels, reference
+                        mm.unload_all_models()
+                        gc.collect()
+                        mm.soft_empty_cache()
+                        emit(event='references-encoded', count=len(source_images), method='ReferenceLatent', sizes=[list(image.size) for image in source_images])
+                    model = nodes.UNETLoader().load_unet('flux-2-klein-4b-fp8.safetensors', 'default')[0]
                     steps, sampler, scheduler = 4, 'euler', 'Flux2Scheduler'
                     latent = EmptyFlux2LatentImage.execute(width, height, 1)[0]
                     sigmas = Flux2Scheduler.execute(steps, width, height)[0]
@@ -168,15 +198,20 @@ def main():
                 raise RuntimeError('invalid-output')
             image = Image.fromarray((pixels.clip(0, 1)*255).round().astype(np.uint8))
             settings = dict(model=mode, seed=seed, width=width, height=height, steps=steps, cfg=cfg, sampler=sampler, scheduler=scheduler, negativePrompt='', denoise=1.)
+            if references:
+                settings.update(referenceMethod='flux2-native-reference-latent', referenceCount=len(references), referencePixels=[dict(width=image.width, height=image.height) for image in source_images])
             meta = PngImagePlugin.PngInfo()
-            meta.add_text('velum', json.dumps(dict(prompt=prompt, settings=settings), ensure_ascii=False))
+            provenance = dict(prompt=prompt, settings=settings, parentJobId=job.get('parentJobId',''), references=references)
+            meta.add_text('velum', json.dumps(provenance, ensure_ascii=False))
             file = work/'image.png'
             image.save(file, pnginfo=meta)
             with Image.open(file) as decoded:
                 decoded.load()
                 assert decoded.size == (width, height)
-            result = dict(settings=settings, seconds=round(time.monotonic()-START, 2), sha256=hashlib.sha256(file.read_bytes()).hexdigest())
-            (work/'result.json').write_text(json.dumps(result), encoding='utf-8')
+            thumb = thumbnail(image, work)
+            result = dict(**provenance, localPath=str(file), thumbnail=thumb, seconds=round(time.monotonic()-START, 2), sha256=hashlib.sha256(file.read_bytes()).hexdigest())
+            with (work/'result.json').open('x', encoding='utf-8') as metadata:
+                json.dump(result, metadata, ensure_ascii=False)
             emit(event='saved', **result)
     finally:
         STOP.set()
@@ -194,6 +229,10 @@ if __name__ == '__main__':
         traceback.print_exc(file=sys.stderr)
         code = REASON or ('resource-guard' if str(error) == 'resource-guard' else 'inference-failed')
         if WORK:
-            (WORK/'failure.json').write_text(json.dumps(dict(error=code, traceback=traceback.format_exc())), encoding='utf-8')
+            try:
+                with (WORK/'failure.json').open('x', encoding='utf-8') as failure:
+                    json.dump(dict(error=code, traceback=traceback.format_exc()), failure)
+            except FileExistsError:
+                pass
         emit(event='failed', error=code)
         sys.exit(2)

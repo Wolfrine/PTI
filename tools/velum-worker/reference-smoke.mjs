@@ -1,0 +1,21 @@
+// Explicit, one-shot offline acceptance proof; never queues, uploads or uses private media.
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {infer} from './worker.mjs';
+import {imagePayload} from './core.mjs';
+import {makeJob} from '../../velum-gallery/studio-contract.mjs';
+const id=`reference-smoke-${randomUUID()}`;
+const references=JSON.parse(execFileSync('F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe',['-B',fileURLToPath(new URL('./reference-smoke.py',import.meta.url)),id],{encoding:'utf8',windowsHide:true,timeout:15000}));
+const prompt='Place the red rectangular block from image 1 next to the blue circular disk from image 2 on a plain white background.';
+const job={...makeJob({model:'flux2-klein-fp8',prompt,seed:31102026,consent:true,references}),status:'queued',inputsReady:true};
+const events=[];
+await infer(id,job,progress=>console.log(JSON.stringify({kind:'reference-engine-smoke',...progress})),{onEvent:event=>{if(event.event==='references-encoded')events.push(event);}});
+const directory=`H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\${id}`;
+const bytes=await readFile(`${directory}\\image.png`),result=JSON.parse(await readFile(`${directory}\\result.json`,'utf8'));
+const payload=imagePayload(bytes);
+assert.equal(payload.result.sha256,result.sha256);assert.equal(result.prompt,prompt);assert.deepEqual(result.references,references);
+assert.equal(result.settings.referenceCount,2);assert.equal(result.settings.referenceMethod,'flux2-native-reference-latent');assert.equal(events[0]?.count,2);
+console.log(JSON.stringify({kind:'reference-engine-smoke',directory,result,bytes:bytes.length,conditioning:events,firebase:false,gallery:false}));

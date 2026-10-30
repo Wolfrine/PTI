@@ -54,7 +54,7 @@
   statsNav.className = 'nav-item';
   statsNav.dataset.view = 'stats';
   statsNav.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Stats</span>';
-  nav.insertBefore(statsNav, nav.querySelector('[data-view="studio"]'));
+  nav.insertBefore(statsNav, nav.querySelector('.release-stamp'));
 
   const ranges = statsView.querySelector('#statsRanges');
   const body = statsView.querySelector('#statsBody');

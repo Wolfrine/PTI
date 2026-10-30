@@ -54,6 +54,24 @@ test('offline result delivery retries saved output and never resamples on reconn
  await assert.rejects(finishClaimed({id:'job'},deps),/network-offline/);
  await finishClaimed({id:'job'},{...deps,resumed:true});assert.equal(runs,1);assert.equal(uploads,2);
 });
+test('input transport retries after restart until inference marker, then preserves the exact result',async()=>{
+ let disk=null,started=false,runs=0,prepares=0,uploads=0;
+ const deps={load:async()=>disk,approved:async()=>{},canResumeInference:async()=>!started,
+  prepare:async()=>{if(++prepares===1)throw new Error('network-offline');},
+  infer:async()=>{started=true;runs++;disk={sha256:'reference-conditioned-result'};},
+  upload:async()=>{uploads++;},fail:async()=>assert.fail('retryable transport must retain claim')};
+ await assert.rejects(finishClaimed({id:'reference'},deps),/network-offline/);
+ await finishClaimed({id:'reference'},{...deps,resumed:true});
+ await finishClaimed({id:'reference'},{...deps,resumed:true});
+ assert.equal(runs,1);assert.equal(prepares,2);assert.equal(uploads,2);
+});
+test('invalid references stop before inference and an attempted interrupted edit never repeats',async()=>{
+ let failure;
+ const deps={load:async()=>null,approved:async()=>{},canResumeInference:async()=>false,
+  prepare:async()=>{throw new Error('invalid-reference');},infer:async()=>assert.fail('untrusted or repeated inference'),upload:async()=>assert.fail(),fail:async(_,error)=>{failure=error;}};
+ await finishClaimed({id:'invalid-reference'},deps);assert.equal(failure,'invalid-reference');
+ await finishClaimed({id:'attempted'},{...deps,resumed:true});assert.equal(failure,'interrupted');
+});
 test('interrupted claim, expired queue and revocation never start duplicate inference',async()=>{
  let failure;
  const deps={load:async()=>null,infer:async()=>assert.fail('must not resample'),upload:async()=>assert.fail('no output'),fail:async(_,error)=>{failure=error;},approved:async()=>{}};

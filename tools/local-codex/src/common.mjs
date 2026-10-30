@@ -2,8 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
+import {modelSelection} from './model-policy.mjs';
 
-export const VERSION = '0.3.2';
+export const VERSION = '0.3.3';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');
@@ -84,7 +85,8 @@ export function health() {
   if (result.status !== 0) throw new Error('The configured Codex runtime did not start.');
   const login=spawnSync(executable,['login','status'],{encoding:'utf8',windowsHide:true,timeout:10000,env:subscriptionEnvironment()});
   const authMode=login.status===0&&/Logged in using ChatGPT/i.test(login.stdout+login.stderr)?'chatgpt':'unavailable';
-  return { version: VERSION, codexVersion: result.stdout.trim(), codexPath: executable, dataPath: home,
+  const selection=modelSelection(config());
+  return { version: VERSION, codexVersion: result.stdout.trim(), codexPath: executable, dataPath: home, model:selection.model, reasoning_effort:selection.effort,
     authMode,
     transport: 'stdio', networkListener: false, signIn: 'Uses the current Windows user Codex sign-in; verified when a task starts.',
     webMobile: 'Available through the authenticated PTI job relay when this worker is online.' };

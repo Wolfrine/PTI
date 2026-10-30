@@ -18,6 +18,7 @@ lines.on('line', line => {
   const m = JSON.parse(line);
   if (m.method === 'initialize') send({ id: m.id, result: { userAgent: 'fixture' } });
   if (m.method === 'account/read') send({ id:m.id,result:{account:{type:process.argv.includes('--api-key')?'apiKey':'chatgpt'}} });
+  if (m.method === 'model/list') send({id:m.id,result:{data:process.argv.includes('--missing-model')?[]:[{model:'gpt-6.1-sol',supportedReasoningEfforts:[{reasoningEffort:'xhigh'}]}],nextCursor:null}});
   if(m.method==='thread/read')send({id:m.id,result:{thread:fixtureThread()}});
   if(m.method==='thread/list')send({id:m.id,result:{data:state().archived===!!m.params.archived?[fixtureThread()]:[],nextCursor:null}});
   if(m.method==='thread/turns/list')send({id:m.id,result:{data:[{id:'turn-old',status:'completed',items:[{type:'userMessage',content:[{type:'text',text:'Old user prompt'}]},{type:'commandExecution',command:'PRIVATE TOOL OUTPUT'},{type:'agentMessage',text:'x'.repeat(6000)}]}],nextCursor:'fixture-next'}});
@@ -27,9 +28,10 @@ lines.on('line', line => {
     cwd = m.params.cwd;
     sandbox = m.params.sandbox === 'read-only' ? 'readOnly' : 'workspaceWrite';
     fs.writeFileSync(path.join(cwd, 'fixture-options.json'), JSON.stringify(m.params));
-    send({ id: m.id, result: { thread: { id:threadId }, model: 'fixture-model', modelProvider:'openai', sandbox: { type: sandbox } } });
+    send({ id: m.id, result: { thread: { id:threadId }, model:process.argv.includes('--wrong-model')?'lower-model':m.params.model, reasoningEffort:m.params.config.model_reasoning_effort, modelProvider:'openai', sandbox: { type: sandbox } } });
   }
   if (m.method === 'turn/start') {
+    fs.writeFileSync(path.join(cwd, 'fixture-turn-options.json'), JSON.stringify(m.params));
     prompt = m.params.input[0].text;
     turn++;
     send({ id: m.id, result: { turn: { id: `fixture-turn-${turn}`, status: 'inProgress' } } });

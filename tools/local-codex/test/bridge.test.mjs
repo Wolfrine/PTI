@@ -53,6 +53,11 @@ try {
   checks.push('work key reuse returns the original task without silently submitting a follow-up');
   const options = JSON.parse(fs.readFileSync(path.join(testHome, 'scratch/fixture-options.json'), 'utf8'));
   assert.equal(options.sandbox, 'read-only'); assert.equal(options.approvalPolicy, 'never');
+  assert.equal(options.model,'gpt-6.1-sol'); assert.equal(options.config.model_reasoning_effort,'xhigh');
+  assert.equal(done.model,'gpt-6.1-sol'); assert.equal(done.reasoningEffort,'xhigh');
+  const turnOptions=JSON.parse(fs.readFileSync(path.join(testHome,'scratch/fixture-turn-options.json'),'utf8'));
+  assert.equal(turnOptions.model,'gpt-6.1-sol');assert.equal(turnOptions.effort,'xhigh');
+  checks.push('new threads and turns explicitly use owner-selected model and effort');
   checks.push('inspection mode, result retrieval and duplicate-request protection');
   let continued;
   const continueDeadline=Date.now()+8000;
@@ -69,6 +74,9 @@ try {
   await call(client, 'respond_to_task', { task_id: done.id, request_id: pending.pending[0].id, decision: 'decline' });
   const declined = await until(client, done.id, ['completed']);
   assert.equal(declined.final, '{"decision":"decline"}');
+  const resumedOptions=JSON.parse(fs.readFileSync(path.join(testHome,'scratch/fixture-options.json'),'utf8'));
+  assert.equal(resumedOptions.model,'gpt-6.1-sol');assert.equal(resumedOptions.config.model_reasoning_effort,'xhigh');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(testHome,'scratch/fixture-turn-options.json'),'utf8')).effort,'xhigh');
   checks.push('continuation, human approval forwarding and stale-request rejection');
   const waiting = await call(client, 'start_task', { project: 'fixture', prompt: 'wait', request_key: `wait-${nonce}` });
   await until(client, waiting.id, ['running']);
@@ -98,6 +106,13 @@ try {
   fs.writeFileSync(configFile,JSON.stringify({...configuration,codexArgs:[...configuration.codexArgs,'--api-key']}));
   try{const apiTask=await call(second,'start_task',{project:'fixture',prompt:'complete',request_key:`api-auth-${nonce}`});assert.match((await until(second,apiTask.id,['failed'])).error,/ChatGPT subscription sign-in is required/);checks.push('API-authenticated runtime refused before a model turn');}
   finally{fs.writeFileSync(configFile,JSON.stringify(configuration));}
+  for(const flag of ['--missing-model','--wrong-model']){
+    const turnFile=path.join(testHome,'scratch/fixture-turn-options.json');fs.rmSync(turnFile,{force:true});
+    fs.writeFileSync(configFile,JSON.stringify({...configuration,codexArgs:[...configuration.codexArgs,flag]}));
+    try{const refused=await call(second,'start_task',{project:'fixture',prompt:'complete',request_key:`model-${flag}-${nonce}`});assert.match((await until(second,refused.id,['failed'])).error,/Ask the owner.*no fallback/);assert.equal(fs.existsSync(turnFile),false);}
+    finally{fs.writeFileSync(configFile,JSON.stringify(configuration));}
+  }
+  checks.push('missing preferred model and runtime model substitution cannot start inference');
   const listed=await call(second,'codex_history',{action:'list',args:{project:'fixture'}});
   assert.equal(listed.threads[0].thread_id,'01900000-0000-7000-8000-000000000001');
   const historical=await call(second,'codex_history',{action:'read',args:{thread_id:listed.threads[0].thread_id}});

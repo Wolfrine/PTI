@@ -2,7 +2,7 @@ import {afterEach,describe,it,expect,vi} from 'vitest';
 import {randomUUID} from 'node:crypto';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
-import {CodexRelay,createCodexServer,FirestoreRelayStore,OWNER,type RelayStore,type Job,type Worker} from './local-codex.js';
+import {CodexRelay,createCodexServer,FirestoreRelayStore,OWNER,heartbeatSchema,workerReportSchema,type RelayStore,type Job,type Worker} from './local-codex.js';
 class Memory implements RelayStore {
   jobs=new Map<string,Job>(); host?:Worker;
   listeners=new Map<string,Set<{changed:(job:Job|undefined)=>void;failed:(error:Error)=>void}>>(); reads=0;
@@ -22,6 +22,15 @@ class Memory implements RelayStore {
 function fixture(){let at=1000000;const store=new Memory(),relay=new CodexRelay(store,()=>at);const heartbeat={instanceId:randomUUID(),authMode:'chatgpt' as const,version:'0.3.0',projects:[{key:'scratch',name:'Scratch',path:'F:/scratch',available:true}]};const args={project:'scratch',prompt:'inspect',mode:'inspect' as const,request_key:'request-one'};return {store,relay,heartbeat,args,advance:(ms:number)=>at+=ms,pair:()=>relay.poll(OWNER,{heartbeat})};}
 afterEach(()=>vi.useRealTimers());
 describe('Local Codex relay',()=>{
+  it('reports configured model preference and retains the confirmed turn model and effort',async()=>{
+    const f=fixture();const heartbeat=heartbeatSchema.parse({...f.heartbeat,version:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
+    await f.relay.poll(OWNER,{heartbeat});
+    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.3.3',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
+    const task=await f.relay.start(OWNER,f.args),claim=(await f.relay.poll(OWNER,{heartbeat})).job!;
+    const report=workerReportSchema.parse({id:claim.id,generation:claim.generation,lease:claim.lease,snapshot:{status:'completed',model:'gpt-6.1-sol',reasoning_effort:'xhigh',final:'Fixture result'}});
+    await f.relay.report(OWNER,report);
+    expect(await f.relay.get(OWNER,task.id)).toMatchObject({model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
+  });
   it('reuses a stable work key without silently submitting the next prompt, while keeping modes separate',async()=>{
     const f=fixture();await f.pair();const args={...f.args,title:'One outcome',work_key:'one-outcome'};
     const first=await f.relay.start(OWNER,args),again=await f.relay.start(OWNER,{...args,prompt:'follow up',request_key:'second-request'});

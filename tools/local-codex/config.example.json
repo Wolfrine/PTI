@@ -1,5 +1,8 @@
 {
   "maxTaskMinutes": 30,
+  "model": "gpt-6.1-sol",
+  "reasoningEffort": "xhigh",
+  "firebaseAuthApiKey": "REPLACE_WITH_DEDICATED_NATIVE_FIREBASE_AUTH_KEY",
   "projects": {
     "scratch": { "name": "Local Codex scratch", "path": "F:/Workspace/Support/LocalCodexBridge/scratch" },
     "pti": { "name": "PTI", "path": "F:/Workspace/Programs/Independent-Products/PTI" },

@@ -2,9 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {WindowsProtection} from '../../codex-usage-monitor/src/dpapi.mjs';
-import {home,write,read} from './common.mjs';
+import {home,write,read,config} from './common.mjs';
 export const OWNER='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
-export const FIREBASE={apiKey:'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',authDomain:'pti-app-2ab59.firebaseapp.com',projectId:'pti-app-2ab59',appId:'1:185802494856:web:5e9777771492528c6e203d'};
+export const FIREBASE={authDomain:'pti-app-2ab59.firebaseapp.com',projectId:'pti-app-2ab59',appId:'1:185802494856:web:5e9777771492528c6e203d'};
+export function firebaseAuthConfig(){
+  const apiKey=config().firebaseAuthApiKey;
+  if(typeof apiKey!=='string'||!/^AIza[\w-]{35}$/.test(apiKey))throw Error('Configure firebaseAuthApiKey with the dedicated PTI native Firebase Authentication key.');
+  return {...FIREBASE,apiKey};
+}
 const entropy=createHash('sha256').update(`local-codex-v1:${OWNER}`).digest();
 const directory=path.join(home,'data'),file=path.join(directory,'credential.json');
 const protection=new WindowsProtection();
@@ -21,7 +26,7 @@ export async function loadCredential(){
   try{const value=JSON.parse(clear.toString());if(value.uid!==OWNER)throw Error('Wrong account.');return value.refreshToken;}finally{clear.fill(0);}
 }
 export async function refresh(refreshToken){
-  const response=await fetch(`https://securetoken.googleapis.com/v1/token?key=${FIREBASE.apiKey}`,{method:'POST',redirect:'error',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken}),signal:AbortSignal.timeout(15000)});
+  const response=await fetch(`https://securetoken.googleapis.com/v1/token?key=${firebaseAuthConfig().apiKey}`,{method:'POST',redirect:'error',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken}),signal:AbortSignal.timeout(15000)});
   if(!response.ok){await response.body?.cancel();throw Error('PTI sign-in needs reconnecting.');}
   const value=await response.json();if(value.user_id!==OWNER||![FIREBASE.projectId,'185802494856'].includes(String(value.project_id))||!value.id_token||!value.refresh_token)throw Error('PTI account mismatch.');
   return {idToken:value.id_token,refreshToken:value.refresh_token};

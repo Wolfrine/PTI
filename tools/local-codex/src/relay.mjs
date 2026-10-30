@@ -6,6 +6,7 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 import {home,config,project,read,write,digest,alive,subscriptionEnvironment,VERSION} from './common.mjs';
 import {loadCredential,saveCredential,refresh} from './credentials.mjs';
+import {modelSelection} from './model-policy.mjs';
 import {reportChangedSnapshot} from './progress.mjs';
 const base='https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker';
 fs.mkdirSync(path.join(home,'data'),{recursive:true});
@@ -25,7 +26,7 @@ async function api(action,body){
   const response=await fetch(`${base}/${action}`,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
   if(!response.ok){await response.body?.cancel();if(response.status===401||response.status===400)until=0;throw Error(response.status===409?'lease_lost':'Relay request unavailable.');}return response.json();
 }
-function snapshot(job){return {status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,messages:job.messages.slice(-10).map(m=>({text:m.text,phase:m.phase||null})),pending:job.pending||[],...(job.model?{model:job.model}:{}),...(job.threadId?{thread_id:job.threadId}:{})};}
+function snapshot(job){return {status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,messages:job.messages.slice(-10).map(m=>({text:m.text,phase:m.phase||null})),pending:job.pending||[],...(job.model?{model:job.model}:{}),...(job.reasoningEffort?{reasoning_effort:job.reasoningEffort}:{}),...(job.threadId?{thread_id:job.threadId}:{})};}
 async function authMode(){
   // A local no-model probe verifies the same installed runtime's auth mode. Worker checks again before every turn.
   if(Date.now()>authUntil){const health=await local('bridge_status');cachedAuth=health.authMode;authUntil=Date.now()+60000;}return cachedAuth;
@@ -37,7 +38,8 @@ try{
       if(state.active&&Date.now()-lastSuccess>45000){if(state.active.localId)await local('cancel_task',{task_id:state.active.localId});}
       const mode=await authMode();
       if(mode!=='chatgpt')throw Error('ChatGPT subscription sign-in required.');
-      const heartbeat={instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,projects:Object.keys(config().projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',available:false};}})};
+      const selection=modelSelection(config());
+      const heartbeat={model:selection.model,reasoning_effort:selection.effort,instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,projects:Object.keys(config().projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',available:false};}})};
       const active=state.active;
       const response=await api('poll',{heartbeat,...(active?{active:{id:active.id,generation:active.generation,lease:active.lease}}:{})});
       lastSuccess=Date.now();state.lastSuccess=lastSuccess;persist();

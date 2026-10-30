@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { home, config, project, read, write, runtime, task, taskDir, digest, alive, subscriptionEnvironment } from './common.mjs';
 import {assertStoredIdle} from './codex-history.mjs';
+import {modelSelection,requireModel,verifyModel} from './model-policy.mjs';
 
 const id = process.argv[2];
 const directory = taskDir(id);
@@ -142,6 +143,8 @@ try {
   send({ method: 'initialized', params: {} });
   const account = await rpc('account/read', { refreshToken: false });
   if (account.account?.type !== 'chatgpt') throw new Error('ChatGPT subscription sign-in is required. API-key authentication is disabled for this bridge.');
+  const selection = modelSelection(config());
+  await requireModel(rpc, selection);
   if(job.threadId){
     const {thread}=await rpc('thread/read',{threadId:job.threadId,includeTurns:false});await assertStoredIdle(rpc,thread,id);
     // The caller explicitly selects the allowlisted project for a historical
@@ -152,21 +155,23 @@ try {
     const fd=fs.openSync(threadLock,'wx');fs.writeFileSync(fd,JSON.stringify({pid:process.pid,taskId:id}));fs.closeSync(fd);
   }
   const sandbox = job.mode === 'edit' ? 'workspace-write' : 'read-only';
-  const options = { cwd: job.cwd, sandbox, approvalPolicy: job.mode === 'inspect' ? 'never' : 'on-request', developerInstructions: instructions,
-    config: { 'plugins.local-codex@local-codex-bridge.enabled': false, 'plugins.local-codex@created-by-me-remote.enabled': false } };
+  const options = { cwd: job.cwd, model: selection.model, sandbox, approvalPolicy: job.mode === 'inspect' ? 'never' : 'on-request', developerInstructions: instructions,
+    config: { model_reasoning_effort: selection.effort, 'plugins.local-codex@local-codex-bridge.enabled': false, 'plugins.local-codex@created-by-me-remote.enabled': false } };
   const started = job.threadId
     ? await rpc('thread/resume', { ...options, threadId: job.threadId,excludeTurns:true })
     : await rpc('thread/start', { ...options, serviceName: 'local_codex_bridge' });
   const expected = job.mode === 'edit' ? 'workspaceWrite' : 'readOnly';
   if (started.modelProvider !== 'openai') throw new Error('Only the signed-in ChatGPT provider is allowed.');
   if (started.sandbox?.type !== expected) throw new Error(`Codex returned unexpected sandbox ${started.sandbox?.type}; refusing to start.`);
+  verifyModel(started, selection);
   const isNewThread=!job.threadId;
   job.threadId = started.thread.id;
   job.model = started.model;
+  job.reasoningEffort = started.reasoningEffort;
   job.sandbox = started.sandbox;
   save();
   if(isNewThread&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
-  const turn = await rpc('turn/start', { threadId: job.threadId, input: [{ type: 'text', text: job.prompt }] });
+  const turn = await rpc('turn/start', { threadId: job.threadId, model: selection.model, effort: selection.effort, input: [{ type: 'text', text: job.prompt }] });
   job.turnId = turn.turn.id;
   save();
 } catch (error) { finish('failed', error.message); }

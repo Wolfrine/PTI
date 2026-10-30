@@ -25,10 +25,38 @@ jobs:
       - run: npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
       - run: npm run build --prefix tools/pti-mcp && npm test --prefix tools/pti-mcp
       - name: Verify Atlas replay safety and canonical app discovery
-        run: node --test tools/pti-mcp/scripts/verify-atlas-host.selftest.mjs tools/pti-mcp/scripts/verify-data.selftest.mjs
+        run: node --test tools/pti-mcp/scripts/verify-atlas-host.selftest.mjs tools/pti-mcp/scripts/verify-data.selftest.mjs tools/pti-mcp/scripts/configure-native-auth.selftest.mjs
       - run: npm ci --prefix tools/local-codex --ignore-scripts --no-audit --no-fund && npm run build --prefix tools/local-codex
-      - run: node --test tools/local-codex/test/subscription.test.mjs tools/local-codex/test/progress.test.mjs
+      - run: node --test tools/local-codex/test/subscription.test.mjs tools/local-codex/test/progress.test.mjs tools/local-codex/test/model-policy.test.mjs
       - run: node --test personal-harness/core.test.mjs food-app/*.test.mjs
+  native_auth:
+    if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          token_format: access_token
+      - name: Verify isolated native Firebase Authentication configuration
+        env:
+          ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
+          NATIVE_AUTH_OUTPUT: native-firebase-auth.json
+        run: node tools/pti-mcp/scripts/configure-native-auth.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-firebase-auth
+          path: native-firebase-auth.json
+          retention-days: 7
+          if-no-files-found: error
   deploy:
     if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'
     needs: verify

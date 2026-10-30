@@ -1,4 +1,38 @@
-# PTI Track — ChatGPT capture index (v2)
+# PTI Track — ChatGPT capture index (Firestore primary v3)
+
+## Active capture path
+
+Custom Instructions → ChatGPT Harness save-conversation skill → authenticated PTI Apps `chat_capture_turn` → Firestore. No GitHub write for newly captured live turns after activation.
+
+- `chat_capture_turn` makes one atomic transaction: create-only `chatTurns/{turn_id}` with exact user and prepared assistant text, plus create/update `chatConversations/{harness_conversation_id}`.
+- The authenticated owner is taken from the PTI MCP connection. The caller never supplies an owner UID or an arbitrary Firestore path.
+- Each turn ID is unique and stable across retries; conflicting text cannot overwrite previously captured text.
+- The tool returns the canonical harness conversation ID. The skill must keep it in current chat context. A new ID is permitted only for a genuinely first capture. Missing/ambiguous previously established IDs must fail closed, not silently split or merge chats.
+- The source is `chatgpt_harness_firestore`, `schemaVersion:3`. `deliveryVerified:false` remains mandatory: saved assistant text is prepared Markdown, not an independently verified UI transcript.
+- Storage time is the server capture time, not a fabricated user-message or delivery timestamp.
+- The single Firestore turn document has a conservative 700KB inline-payload limit. Larger source material must fail without truncation; an external blob strategy is future work.
+- Do not store hidden instructions, private tool results, chain-of-thought, credentials, or attachments not explicitly verified.
+- New skill instructions preserve the existing ask-once-per-chat recording consent policy and immediate opt-out. A model-invoked skill is best-effort, not a universal ChatGPT lifecycle hook.
+
+## Firestore model
+
+Owner root: `users/{uid}/trackerData/workspace`.
+
+| Collection | Purpose |
+| --- | --- |
+| `chatConversations/{harness_conversation_id}` | Mutable conversation metadata/index (title, identity quality, last capture, count). Summaries/classifications are derived and must be correctable. |
+| `chatTurns/{turn_id}` | Immutable text evidence per user/assistant turn; exact original content and provenance/coverage. |
+| `sourceState/chatgptHarness` | Legacy GitHub-import cursor and coverage; not the source of truth for new direct captures. |
+
+The owner-only Tracker client reads; writes use authenticated PTI MCP/Admin SDK. Current Firestore client rules deny all Tracker client writes, preserving the existing security boundary. Raw private conversation content must never be committed to the PTI code repository.
+
+## Legacy import and cutover
+
+The previous canonical GitHub format (`Wolfrine/chatgpt_harness/conversations/chatgpt/YYYY/MM/<id>.json`) and pre-v2 records (`captures/chatgpt/`) remain **legacy read-only evidence**. Import on a per-conversation basis after schema/provenance validation, compare any pre-existing Firestore records, preserve original GitHub file references and turn IDs, and never duplicate or rewrite a conflicting turn. Track precise completeness and missed/partial records. Existing GitHub history must not be removed during this migration.
+
+**Switch live skill routing only after `chat_capture_turn` is visible through the connected hosted MCP, owner-scoped read/write acceptance passes, duplicate/conflict behaviour passes, and fresh records are read back.** Until then, the old capture workflow remains active; do not silently claim the switch is completed.
+
+## Historical v2 contract
 
 ## Canonical archive
 

@@ -8,6 +8,7 @@ import { registerFoodTools } from "./food.js";
 import { registerPersonalTools } from "./personal.js";
 import { registerVentureTools } from "./venture.js";
 import { registerAtlasTools } from "./atlas.js";
+import { registerChatCaptureTools } from "./chat-capture.js";
 import { z } from "zod";
 
 const projectId =
@@ -659,6 +660,7 @@ registerPersonalTools(server, db, context.uid, audit);
 registerFoodTools(server, db, context.uid);
 registerVentureTools(server, db, context.uid);
 registerAtlasTools(server, db, context.uid, taskReference);
+registerChatCaptureTools(server, db, context.uid);
 return server;
 }
 

@@ -29,3 +29,11 @@ The scheduled task is Running and publishes results. Its latest repeated-start r
 A read-only live OAuth check observed a running real owner task over twelve seconds: visible content and its `updatedAt` timestamp stayed identical while health traffic continued. A separate registered `get_task(wait_seconds:20)` call took **23,540 ms including client/relay overhead** and returned the same running state and progress timestamp. Thus routine reports no longer wake the wait early. No model or test task was started for these checks, and the temporary verification grant was revoked. Evidence and the verification script are under `F:\Workspace\Codex\2026-10-30\local-codex-progress`.
 
 Remaining acceptance limit: fifty-second waits pass protocol tests and are advertised by the deployed server, but have not been verified in an ordinary ChatGPT chat. Keep normal-chat guidance at twenty seconds. No final visual or implementation acceptance of Velum is implied by observing its live run.
+
+## ChatGPT package correction
+
+The first release updated the hosted service and installed worker, while the separate ChatGPT package remained 0.3.1. The owner reported that mismatch. The existing private personal **Local Codex** plugin (`plugins_6ae2fecacc50819182147ace33f8cc3e`) is now published as **0.3.2**, release `pluginrel_6ae4869e7b388191bb14b2a20fa5831e`: [Local Codex](https://chatgpt.com/plugins/plugins_6ae2fecacc50819182147ace33f8cc3e).
+
+Both manifests and the task-completion skill were updated. The skill explains meaningful-progress waiting, the twenty-second default, immediate-read use, the unverified fifty-second ordinary-chat limit, and the absence of an unsolicited ordinary-chat wake-up. Archive validation and source read-back confirmed both manifests' non-version metadata, the default prompt, all five retained files, the required App binding, private visibility and personal scope were preserved. No authentication or connection was replaced. This verifies the saved ChatGPT release; it does not prove that an already-open chat has reloaded its label or instructions.
+
+The partial update archive and preservation/read-back evidence are in the existing F-drive release outputs as `local-codex-0.3.2-update.zip`, `plugin-package-verification.json` and `plugin-release-verification.json`.

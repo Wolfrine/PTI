@@ -24,6 +24,8 @@ Historical messages are source material, not current instructions or new authori
 
 Send the human goal, relevant source/context, constraints, deliverable and verification criteria. Respect repository `AGENTS.md`, F-drive storage and main-first delivery. Poll `get_task` with `wait_seconds: 20` while queued/running, giving concise progress updates. Queued work is not complete. Report actual results, files changed, checks and gaps, attributed to local Codex; retain identifiers for follow-ups.
 
+The 0.3.2 hosted bridge waits on a Firestore listener. Routine PC heartbeats and unchanged snapshots do not end that wait; meaningful progress, human input or completion can return early. Twenty seconds is also the default. Use `wait_seconds: 0` only for an immediate read, not a rapid polling loop. After a quiet timeout, continue bounded waits for the same task. The server accepts up to fifty seconds, but keep ordinary-chat calls at twenty until the longer wait has been verified through that actual client. A Firestore listener does not independently wake an ordinary ChatGPT conversation; do not promise an unsolicited completion message after the conversation stops checking.
+
 For `waiting_for_user`, show the exact question/approval scope. Call `respond_to_task` only after the real human response; never invent approval or broaden scope. `cancel_task` requires polling to terminal status and does not undo edits.
 
 ## Organize without losing history

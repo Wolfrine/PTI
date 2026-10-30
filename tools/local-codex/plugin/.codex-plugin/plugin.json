@@ -13,7 +13,7 @@
   },
   "requires_local_executor": false,
   "name": "local-codex",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "apps": "./.app.json",
   "description": "Delegate local project inspection and authorized file edits to Codex on Sachit's Windows PC.",
   "author": {

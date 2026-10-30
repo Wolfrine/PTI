@@ -32,6 +32,8 @@ Reference jobs use schema 3 and FLUX.2 Klein 4B FP8 only: up to two PNG/JPEG inp
 
 Save to Drive runs entirely in the owner's browser using incremental `drive.file` consent and Google Picker approval of the existing pinned Private folder. Originals are resumably uploaded into that exact folder root. An immutable owner-only upload reservation keeps one preallocated Drive file ID across browsers/retries. A save receipt is written only after verifying the resulting Drive object's job/hash/size/parent. OAuth tokens and upload session URLs never enter cloud documents or the worker. Actual consent, Picker configuration and a completed upload require phone-side acceptance; tests do not substitute for that grant.
 
+The existing Firebase CI identity checks Service Usage activation, archive indexes and the public web key's Picker restrictions. A Drive endpoint's expected `401 CREDENTIALS_MISSING` is distinct from `SERVICE_DISABLED`; it is not an enablement failure. Completed/no-op service operations are accepted immediately, while permission errors and unfinished operations remain explicit. No Admin credential is placed on the PC for this setup.
+
 Owner requests can queue while an approved PC is offline and expire after seven days. Studio distinguishes approval, verified installation, a fresh worker heartbeat, connectivity, active work and errors. Installation hints survive a stale heartbeat; an offline PC is never presented as online. Work begins automatically when the Windows session is awake and online again.
 
 ## Checks

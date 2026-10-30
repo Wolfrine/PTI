@@ -48,3 +48,13 @@ test('compact four-column archive is image-first and reversible',()=>{
  assert.match(css,/studio-thumb img\{object-fit:contain\}/);
  assert.match(view,/Remove from Creations/);assert.match(view,/Restore to Creations/);assert.match(view,/Undo/);
 });
+
+test('edit drafts survive failed input preparation and show explicit model selection',()=>{
+ const controller=readFileSync(new URL('../studio.mjs',import.meta.url),'utf8');
+ const view=readFileSync(new URL('../studio-view.mjs',import.meta.url),'utf8');
+ const start=controller.indexOf('async function creationReference(');
+ const attach=controller.indexOf('await addReference(',start);
+ const clearPrompt=controller.indexOf("root.querySelector('#studioPrompt').value=''",start);
+ assert.ok(attach>start&&clearPrompt>attach,'new reference must prepare before clearing the prompt');
+ assert.match(view,/id="studioEditModel"/);
+});

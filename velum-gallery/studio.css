@@ -34,3 +34,5 @@
 @media(min-width:1200px){.studio-archive-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:17px 12px}}
 @media(max-width:719px){.studio-filters{gap:5px}.studio-filters button{padding:0 10px;font-size:10px}}
 @media(max-width:359px){.studio-archive-grid{gap:6px 4px}.studio-thumb{min-height:58px}}
+.studio-edit-model{display:grid;gap:5px;color:#bd99ae;font-size:11px;min-width:170px}
+.studio-edit-model select{background:#251822;color:#e6c4d7;border:1px solid #634056;border-radius:6px;padding:8px;min-height:36px;max-width:230px}

@@ -335,6 +335,18 @@ jobs:
             exit 1
           fi
 
+      - name: Verify required Velum Auth, Drive and Picker setup
+        env:
+          FIREBASE_PROJECT_ID: pti-app-2ab59
+          VELUM_SITE_ID: pti-app-2ab59-velum
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npm install --no-save google-auth-library
+          node velum-gallery/scripts/configure-firebase-auth.mjs
+
       - name: Create and deploy Velum secondary Hosting site
         env:
           FIREBASE_PROJECT_ID: pti-app-2ab59
@@ -385,19 +397,6 @@ jobs:
           done
           echo "::error::Velum Hosting did not serve the expected release assets."
           exit 1
-
-      - name: Authorize Velum Firebase Auth domains
-        continue-on-error: true
-        env:
-          FIREBASE_PROJECT_ID: pti-app-2ab59
-          VELUM_SITE_ID: pti-app-2ab59-velum
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          set -euo pipefail
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          npm install --no-save google-auth-library
-          node velum-gallery/scripts/configure-firebase-auth.mjs
 
   deploy_luminary:
     runs-on: ubuntu-latest

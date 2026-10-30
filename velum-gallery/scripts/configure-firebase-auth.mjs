@@ -16,6 +16,7 @@ const auth = new GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/cloud-platform']
 });
 const client = await auth.getClient();
+console.log(`Velum cloud setup principal: ${client.email || 'unavailable from auth client metadata'}`);
 const token = await client.getAccessToken();
 const accessToken = typeof token === 'string' ? token : token?.token;
 if (!accessToken) throw new Error('Could not obtain Google Cloud access token.');
@@ -111,9 +112,6 @@ async function ensureDriveApi() {
   if (!(await probeDriveApi())) throw new Error('Google Drive API still appears disabled after enable request.');
 }
 
-await configureAuthorizedDomains();
-await ensureDriveApi();
-
 // Picker grants drive.file access to the existing folder; a read-only metadata
 // response cannot establish that grant. Use only the existing CI identity.
 async function ensurePickerApi(){
@@ -128,20 +126,21 @@ async function configurePickerKey(){
     const body=await lookup.clone().json().catch(()=>({}));
     if(serviceDisabled(body,'apikeys.googleapis.com')){await ensureCloudService('apikeys.googleapis.com');lookup=await fetch(url,{headers});}
   }
-  if(!lookup.ok)throw new Error(`Existing CI identity cannot inspect the public web key's Picker restrictions (${lookup.status}). Phone Picker availability remains unverified.`);
+  if(!lookup.ok)throw new Error(`Existing CI identity cannot inspect the public web key's Picker restrictions (${lookup.status}). Check the API Keys role against the logged setup principal; release stopped without further cloud changes.`);
   const name=(await lookup.json()).name;
   if(typeof name!=='string'||!name.startsWith('projects/185802494856/'))throw new Error('Unexpected public web key project; no key configuration changed.');
   const response=await fetch(`https://apikeys.googleapis.com/v2/${name}`,{headers});
   if(!response.ok)throw new Error(`Could not inspect public web key restrictions (${response.status}).`);
-  const key=await response.json(),restrictions=structuredClone(key.restrictions||{});let changed=false;
+  const key=await response.json(),restrictions=structuredClone(key.restrictions||{}),additions=[];let changed=false;
   if(restrictions.apiTargets?.length){
-    for(const service of ['picker.googleapis.com','drive.googleapis.com'])if(!restrictions.apiTargets.some(target=>target.service===service)){restrictions.apiTargets.push({service});changed=true;}
+    for(const service of ['picker.googleapis.com','drive.googleapis.com'])if(!restrictions.apiTargets.some(target=>target.service===service)){restrictions.apiTargets.push({service});additions.push(service);changed=true;}
   }
   if(restrictions.browserKeyRestrictions){
     const refs=restrictions.browserKeyRestrictions.allowedReferrers||=[];
-    for(const origin of [`https://${siteId}.web.app/*`,`https://${siteId}.firebaseapp.com/*`,'https://docs.google.com/*'])if(!refs.includes(origin)){refs.push(origin);changed=true;}
+    for(const origin of [`https://${siteId}.web.app/*`,`https://${siteId}.firebaseapp.com/*`,'https://docs.google.com/*'])if(!refs.includes(origin)){refs.push(origin);additions.push(origin);changed=true;}
   }
   if(!changed){console.log('Existing public web key permits the Picker configuration.');return;}
+  console.log(`Public web key restriction additions: ${additions.join(', ')}`);
   const update=await fetch(`https://apikeys.googleapis.com/v2/${name}?updateMask=restrictions`,{method:'PATCH',headers,body:JSON.stringify({name,etag:key.etag,restrictions})});
   if(!update.ok)throw new Error(`Existing CI identity cannot add the narrowly required Picker restrictions (${update.status}). No replacement credential was created.`);
   await waitForServiceOperation(await update.json(),{read:async operation=>{
@@ -170,8 +169,16 @@ async function ensureStudioIndexes(){
     console.log(`Studio ${collection} archive index requested; indexing may briefly delay filtered history.`);
   }
 }
-const prerequisites=await Promise.allSettled([ensureStudioIndexes(),ensurePickerApi(),configurePickerKey()]);
-const failures=prerequisites.filter(result=>result.status==='rejected');
-for(const failure of failures)console.error(failure.reason.message);
-if(failures.length)throw new Error(`${failures.length} Studio cloud prerequisite check(s) failed; no owner consent or upload was attempted.`);
-console.log('Studio cloud prerequisites verified. Owner phone OAuth and exact Private folder grant are still required for an actual save.');
+// Required checks are sequential: a key permission denial must stop release
+// before optional index creation or any later cloud changes.
+await configureAuthorizedDomains();
+await ensureDriveApi();
+await ensurePickerApi();
+await configurePickerKey();
+console.log('Required Studio Auth, Drive and Picker prerequisites verified.');
+try {
+  await ensureStudioIndexes();
+} catch (error) {
+  console.warn(`::warning::Optional Studio archive indexes: ${error.message} Filtered archive history may remain unavailable; required Drive/Picker checks passed.`);
+}
+console.log('Owner phone OAuth and exact Private folder grant are still required for an actual save.');

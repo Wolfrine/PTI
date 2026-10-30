@@ -46,7 +46,7 @@ export function safeCode(error) {
   const code = error?.code;
   return ['rpc-timeout', 'rpc-exited', 'rpc-unavailable', 'unsupported-method', 'codex-login-required', 'codex-account-mismatch',
     'codex-binary-unavailable', 'invalid-source-response', 'source-unavailable', 'firebase-login-required', 'firebase-account-mismatch',
-    'firebase-unavailable', 'firebase-permission-denied', 'private-rules-not-verified', 'protected-store-unavailable', 'run-timeout'].includes(code) ? code : 'source-unavailable';
+    'firebase-auth-config-required', 'firebase-auth-key-restricted', 'firebase-unavailable', 'firebase-permission-denied', 'private-rules-not-verified', 'protected-store-unavailable', 'run-timeout'].includes(code) ? code : 'source-unavailable';
 }
 export function fingerprint(account, limits) {
   if (!account || account.type !== 'chatgpt') throw new MonitorError('codex-login-required');

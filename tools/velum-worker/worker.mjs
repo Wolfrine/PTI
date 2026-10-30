@@ -240,7 +240,7 @@ async function main(){
      attempt=0;
     }
    }catch(error){
-    await local({state:error.message==='device-not-approved'?'approval-required':'reconnecting',installed,activeJob:'',error:['device-identity-mismatch','private-rules-not-ready','device-auth-not-enabled-or-invalid'].includes(error.message)?error.message:'connection-unavailable'});
+    await local({state:error.message==='device-not-approved'?'approval-required':'reconnecting',installed,activeJob:'',error:['device-auth-config-required','device-auth-key-restricted','device-login-required','device-identity-mismatch','private-rules-not-ready','device-auth-not-enabled-or-invalid'].includes(error.message)?error.message:'connection-unavailable'});
     await new Promise(resolve=>setTimeout(resolve,retryDelay(attempt++)));continue;
    }
    await new Promise(resolve=>setTimeout(resolve,15000));

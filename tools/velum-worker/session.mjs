@@ -3,10 +3,15 @@ import {readFile,writeFile,rename,mkdir,unlink} from 'node:fs/promises';
 import {execFileSync,spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {readFileSync} from 'node:fs';
 import {randomBytes,createHash,randomUUID} from 'node:crypto';
 export const PROJECT='pti-app-2ab59', OWNER_UID='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
-export const CONFIG={apiKey:'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',authDomain:'pti-app-2ab59.firebaseapp.com',projectId:PROJECT,appId:'1:185802494856:web:5e9777771492528c6e203d'};
 const HERE=path.dirname(fileURLToPath(import.meta.url));
+export function nativeAuthKey(file=path.join(HERE,'.runtime','native-auth.json')){
+ let value;try{value=JSON.parse(readFileSync(file,'utf8'));}catch{throw new Error('device-auth-config-required');}
+ if(value.projectId!==PROJECT||value.keyResource!=='projects/185802494856/locations/global/keys/pti-native-firebase-auth'||value.applicationRestrictions!=='none'||!/^AIza[\w-]{35}$/.test(value.firebaseAuthApiKey||'')||value.apiTargets?.length!==2||!['identitytoolkit.googleapis.com','securetoken.googleapis.com'].every(service=>value.apiTargets.includes(service)))throw new Error('device-auth-config-required');
+ return value.firebaseAuthApiKey;
+}
 export const GRANT_TTL=86400000;
 export function secureDirectory(directory){
  execFileSync('icacls',[directory,'/inheritance:r','/grant:r',`${execFileSync('whoami',[],{encoding:'utf8',windowsHide:true}).trim()}:(OI)(CI)F`,'SYSTEM:(OI)(CI)F'],{windowsHide:true,stdio:'ignore'});
@@ -50,16 +55,16 @@ function session(value,uid){
 }
 async function authRequest(url,body,fetchImpl){
  const response=await fetchImpl(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(20000)});
- if(!response.ok){await response.body?.cancel();throw new Error(response.status===400?'device-auth-not-enabled-or-invalid':'device-auth-unavailable');}
+ if(!response.ok){await response.body?.cancel();throw new Error(response.status===403?'device-auth-key-restricted':response.status===400?'device-auth-not-enabled-or-invalid':'device-auth-unavailable');}
  return response.json();
 }
-export async function createDevice(fetchImpl=fetch){
- return session(await authRequest(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${CONFIG.apiKey}`,{returnSecureToken:true},fetchImpl));
+export async function createDevice(fetchImpl=fetch,apiKey=nativeAuthKey()){
+ return session(await authRequest(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,{returnSecureToken:true},fetchImpl));
 }
-export async function refreshSession(refreshToken,uid,fetchImpl=fetch){
+export async function refreshSession(refreshToken,uid,fetchImpl=fetch,apiKey=nativeAuthKey()){
  if(!validUid(uid)||typeof refreshToken!=='string'||refreshToken.length<20||refreshToken.length>16384)throw new Error('invalid-device-session');
- const response=await fetchImpl(`https://securetoken.googleapis.com/v1/token?key=${CONFIG.apiKey}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken}),redirect:'error',signal:AbortSignal.timeout(20000)});
- if(!response.ok){await response.body?.cancel();throw new Error('device-auth-unavailable');}
+ const response=await fetchImpl(`https://securetoken.googleapis.com/v1/token?key=${apiKey}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken}),redirect:'error',signal:AbortSignal.timeout(20000)});
+ if(!response.ok){await response.body?.cancel();throw new Error(response.status===403?'device-auth-key-restricted':[400,401].includes(response.status)?'device-login-required':'device-auth-unavailable');}
  return session(await response.json(),uid);
 }
 export async function restoreDevice(store,{create=createDevice,refresh=refreshSession}={}){
@@ -75,5 +80,5 @@ export function enrollment(saved){
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const store=new DeviceStore(path.join(HERE,'.runtime','device.dpapi'));
  try{const value=await restoreDevice(store);console.log(JSON.stringify({deviceUid:value.uid,persisted:true,protection:'Windows DPAPI CurrentUser'}));}
- catch(error){console.error(['device-auth-not-enabled-or-invalid','device-auth-unavailable','device-protection-unavailable'].includes(error.message)?error.message:'device-identity-unavailable');process.exitCode=1;}
+ catch(error){console.error(['device-auth-config-required','device-auth-key-restricted','device-login-required','device-auth-not-enabled-or-invalid','device-auth-unavailable','device-protection-unavailable'].includes(error.message)?error.message:'device-identity-unavailable');process.exitCode=1;}
 }

@@ -10,6 +10,7 @@ import { runOnce } from '../src/monitor.mjs';
 import { fingerprint, MonitorError } from '../src/core.mjs';
 import { atomicJson, readJson, acquireLease } from '../src/store.mjs';
 import { refreshSession, verifyPrivateAccess } from '../src/credentials.mjs';
+import { nativeAuthKey } from '../src/config.mjs';
 
 const account = { type: 'chatgpt', email: 'synthetic@example.test' };
 const results = { account, allowanceResult: { rateLimits: { primary: { usedPercent: 3, windowDurationMins: 10080, resetsAt: 1893456000 } } }, dailyResult: { dailyUsageBuckets: [{ startDate: '2026-10-23', tokens: 100 }] } };
@@ -21,6 +22,13 @@ async function fixture(t) {
     resolve: async () => ({ executable: 'synthetic-codex.exe', version: 'synthetic1' }), read: async () => structuredClone(results),
     refresh: async () => ({ idToken: 'synthetic-id-token', refreshToken: credential.refreshToken }), write: async (_token, data) => writes.push(data) };
 }
+test('packaged native auth requires the exact dedicated configuration without browser fallback',async t=>{
+  const f=await fixture(t),file=path.join(f.root,'native-auth.json');
+  assert.throws(()=>nativeAuthKey(file),/firebase-auth-config-required/);
+  const value={projectId:'pti-app-2ab59',keyResource:'projects/185802494856/locations/global/keys/pti-native-firebase-auth',firebaseAuthApiKey:'AIza'+'x'.repeat(35),applicationRestrictions:'none',apiTargets:['identitytoolkit.googleapis.com','securetoken.googleapis.com']};
+  for(const invalid of [{...value,keyResource:'browser-key'},{...value,applicationRestrictions:'browser'},{...value,apiTargets:[...value.apiTargets,'drive.googleapis.com']}]){await writeFile(file,JSON.stringify(invalid));assert.throws(()=>nativeAuthKey(file),/firebase-auth-config-required/);}
+  await writeFile(file,JSON.stringify(value));assert.equal(nativeAuthKey(file),value.firebaseAuthApiKey);
+});
 test('actual run contract publishes once and a fresh process recovers pending after a network failure', async t => {
   const f = await fixture(t);
   await assert.rejects(runOnce({ ...f, write: async () => { throw new MonitorError('firebase-unavailable'); } }));
@@ -69,8 +77,15 @@ test('atomic replacement leaves prior complete JSON after a failed serialization
 });
 test('refresh endpoint validates project and owner, not just a returned token', async () => {
   const fetchImpl = async () => new Response(JSON.stringify({ user_id: 'wrong', project_id: 'pti-app-2ab59', id_token: 'x'.repeat(30), refresh_token: 'y'.repeat(30) }));
-  await assert.rejects(refreshSession('z'.repeat(30), { fetchImpl }), /firebase-account-mismatch/);
-  await assert.rejects(refreshSession('z'.repeat(30), { fetchImpl: async () => new Response('{}', { status: 400 }) }), /firebase-login-required/);
+  await assert.rejects(refreshSession('z'.repeat(30), { fetchImpl, apiKey: 'fixture-native-key' }), /firebase-account-mismatch/);
+  await assert.rejects(refreshSession('z'.repeat(30), { apiKey: 'fixture-native-key', fetchImpl: async () => new Response('{}', { status: 400 }) }), /firebase-login-required/);
+});
+test('native refresh has no browser Referer and API-key denial never asks for sign-in',async()=>{
+  await assert.rejects(refreshSession('z'.repeat(30), { apiKey: 'fixture-native-key', fetchImpl: async (url, options) => {
+    assert.equal(new URL(url).searchParams.get('key'), 'fixture-native-key');
+    assert.equal(new Headers(options.headers).has('Referer'), false);
+    return new Response('{}', { status: 403 });
+  } }), /firebase-auth-key-restricted/);
 });
 test('privacy preflight rejects legacy broad authenticated access even for absent records', async () => {
   let count = 0;

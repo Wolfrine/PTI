@@ -4,9 +4,13 @@ import { createRequire } from 'node:module';
 import { randomBytes } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
+import { configureNativeAuth } from './configure-native-auth.mjs';
 const require = createRequire(new URL('../../../personal-functions/runtime.cjs', import.meta.url));
-const { db, auth } = require('./runtime.cjs');
-const project = 'pti-app-2ab59', apiKey = 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs';
+const { app, db, auth } = require('./runtime.cjs');
+const project = 'pti-app-2ab59';
+// Native CI exchanges must prove the same no-Referer path as Windows workers.
+// Browser/Picker restrictions are verified separately by Velum cloud setup.
+const { firebaseAuthApiKey: apiKey } = await configureNativeAuth({ accessToken: (await app.options.credential.getAccessToken()).access_token });
 const suffix = randomBytes(8).toString('hex'), uids = [`atlas-probe-a-${suffix}`, `atlas-probe-b-${suffix}`];
 const root = `users/${uids[0]}/atlasData/workspace`;
 const base = `https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents`;
@@ -35,7 +39,7 @@ async function request(path, token, method = 'GET', data) {
 async function login(uid) {
   await auth.createUser({ uid }); createdUsers.add(uid);
   const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Referer': 'https://pti-app-2ab59-velum.web.app/' }, body: JSON.stringify({ token: await auth.createCustomToken(uid), returnSecureToken: true }), signal: AbortSignal.timeout(15000), redirect: 'error',
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: await auth.createCustomToken(uid), returnSecureToken: true }), signal: AbortSignal.timeout(15000), redirect: 'error',
   });
   const data = await response.json(), claims = typeof data.idToken === 'string' ? JSON.parse(Buffer.from(data.idToken.split('.')[1], 'base64url').toString()) : {};
   assert(response.ok && claims.sub === uid && claims.aud === project, 'Synthetic identity exchange failed.'); return data.idToken;

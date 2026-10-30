@@ -6,6 +6,8 @@ This monitor performs no AI inference. Every five minutes it launches the instal
 
 ## Setup on Windows
 
+Version 1.0.1 requires the dedicated native Firebase Authentication key configuration produced by `tools/pti-mcp/scripts/configure-native-auth.mjs` through the existing cloud CI identity. Pass the local public artifact to `install.ps1 -NativeAuthConfig <path>`; subsequent upgrades reuse the installed `native-auth.json` and package it beside each release. Do not commit the artifact or use the browser/Picker key. Native requests never send a fabricated Referer. A 403 reports `firebase-auth-key-restricted`, separately from `firebase-login-required`; a valid existing DPAPI refresh credential needs no new interactive sign-in. Credentials and Codex identity binding stay outside versioned releases.
+
 Requirements: your existing Codex desktop login, Node.js20+, npm, Windows Task Scheduler and one interactive Google login to the existing PTI owner account. No service-account key, Windows password, new database or paid service is needed. Existing project/database: `pti-app-2ab59` / `(default)`.
 
 1. Deploy current `main` through `.github/workflows/firebase-deploy.yml`. Its guarded rules release and synthetic real-client privacy checks must pass first. Do not bypass a rules-baseline rejection.

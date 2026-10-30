@@ -1,4 +1,4 @@
-param([switch]$Setup, [switch]$NoSchedule)
+param([switch]$Setup, [switch]$NoSchedule, [string]$NativeAuthConfig)
 $ErrorActionPreference = 'Stop'
 $sourceRoot = $PSScriptRoot
 $installRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\codex-usage-monitor')
@@ -6,6 +6,10 @@ $expectedRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\codex-usage-mon
 if ($installRoot -ne $expectedRoot) { throw 'Unexpected install target.' }
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 $npmPath = (Get-Command npm.cmd -ErrorAction Stop).Source
+$nativeConfig = Join-Path $installRoot 'native-auth.json'
+if (!$NativeAuthConfig) { $NativeAuthConfig = $nativeConfig }
+& $nodePath --input-type=module -e 'const {nativeAuthKey}=await import(process.argv[1]); nativeAuthKey(process.argv[2]);' ([Uri](Join-Path $sourceRoot 'src\config.mjs')).AbsoluteUri $NativeAuthConfig
+if ($LASTEXITCODE -ne 0) { throw 'Verified dedicated native Firebase auth configuration is required. Browser keys are not a fallback.' }
 $version = (Get-Content -LiteralPath (Join-Path $sourceRoot 'package.json') -Raw | ConvertFrom-Json).version
 $revision = (& git -C $sourceRoot rev-parse --short HEAD 2>$null)
 if (-not $revision) { $revision = 'source' }
@@ -20,6 +24,8 @@ New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
 $protectModule = Join-Path $sourceRoot 'src\dpapi.mjs'
 & $nodePath --input-type=module -e "const url=await import('node:url'); const {WindowsProtection}=await import(url.pathToFileURL(process.argv[1]).href); await new WindowsProtection().secureDirectory(process.argv[2]);" $protectModule $installRoot
 if ($LASTEXITCODE -ne 0) { throw 'Private installation directory could not be secured.' }
+if ([IO.Path]::GetFullPath($NativeAuthConfig) -ne [IO.Path]::GetFullPath($nativeConfig)) { Copy-Item -LiteralPath $NativeAuthConfig -Destination $nativeConfig -Force }
+Copy-Item -LiteralPath $nativeConfig -Destination (Join-Path $releaseRoot 'native-auth.json') -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'package.json'),(Join-Path $sourceRoot 'package-lock.json') -Destination $releaseRoot -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'src') -Destination $releaseRoot -Recurse -Force
 Push-Location $releaseRoot

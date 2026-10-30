@@ -3,9 +3,11 @@ import { createRequire } from 'node:module';
 import { randomBytes } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
+import { configureNativeAuth } from '../../pti-mcp/scripts/configure-native-auth.mjs';
 const require = createRequire(new URL('../../../personal-functions/runtime.cjs', import.meta.url));
-const { db, auth } = require('./runtime.cjs');
-const apiKey = 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs';
+const { app, db, auth } = require('./runtime.cjs');
+// Browser Picker checks live in Velum setup; these real clients are native.
+const { firebaseAuthApiKey: apiKey } = await configureNativeAuth({ accessToken: (await app.options.credential.getAccessToken()).access_token });
 const suffix = randomBytes(8).toString('hex');
 const uids = [`usage-probe-a-${suffix}`, `usage-probe-b-${suffix}`];
 const root = `users/${uids[0]}/codexProjects/codex-usage`;
@@ -25,7 +27,7 @@ async function request(target, token, method = 'GET', value) {
 }
 async function login(uid) {
   await auth.createUser({ uid });
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Referer': 'https://pti-app-2ab59-velum.web.app/' },
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token: await auth.createCustomToken(uid), returnSecureToken: true }), signal: AbortSignal.timeout(15000) });
   const value = await response.json();
   const claims = typeof value.idToken === 'string' ? JSON.parse(Buffer.from(value.idToken.split('.')[1], 'base64url').toString()) : {};

@@ -38,6 +38,7 @@ apps/one-piece/**/.pytest_cache/
 # Local monitor packages are committed; installed runtimes and private state are not.
 tools/codex-usage-monitor/node_modules/
 tools/codex-usage-monitor/.state/
+tools/codex-usage-monitor/native-auth.json
 codex-usage-activation-report.json
 .codex-usage-qa/
 **/.codex-dev-server.log

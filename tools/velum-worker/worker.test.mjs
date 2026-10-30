@@ -3,15 +3,24 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {runnable,encode,decode,imagePayload} from './core.mjs';
 import {makeJob} from '../../velum-gallery/studio-contract.mjs';
-import {refreshSession,restoreDevice,DeviceStore,PROJECT,protect,enrollment,GRANT_TTL} from './session.mjs';
+import {refreshSession,restoreDevice,DeviceStore,PROJECT,protect,enrollment,GRANT_TTL,nativeAuthKey} from './session.mjs';
 import {finishClaimed,retryDelay} from './lifecycle.mjs';
 import {lockMatches} from './worker-lock.mjs';
-import {mkdtemp,readFile,unlink,rmdir} from 'node:fs/promises';
+import {mkdtemp,readFile,writeFile,unlink,rmdir} from 'node:fs/promises';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 const DEVICE='fixtureDeviceIdentity001';
 const jwt=(uid=DEVICE,project=PROJECT,provider='anonymous')=>`e30.${Buffer.from(JSON.stringify({aud:project,iss:`https://securetoken.google.com/${project}`,sub:uid,firebase:{sign_in_provider:provider}})).toString('base64url')}.fixture`;
 const input={model:'flux2-klein-fp8',prompt:'  Sheer silk study\nFictional consenting adult.  ',seed:123,consent:true};
+test('native config fails closed for missing, browser or broader keys',async()=>{
+ const directory=await mkdtemp(path.join(process.cwd(),'.velum-device-test-')),file=path.join(directory,'native-auth.json');
+ const value={projectId:PROJECT,keyResource:'projects/185802494856/locations/global/keys/pti-native-firebase-auth',firebaseAuthApiKey:'AIza'+'x'.repeat(35),applicationRestrictions:'none',apiTargets:['identitytoolkit.googleapis.com','securetoken.googleapis.com']};
+ try{
+  assert.throws(()=>nativeAuthKey(file),/device-auth-config-required/);
+  for(const invalid of [{...value,keyResource:'browser-key'},{...value,applicationRestrictions:'browser'},{...value,apiTargets:[...value.apiTargets,'drive.googleapis.com']}]){await writeFile(file,JSON.stringify(invalid));assert.throws(()=>nativeAuthKey(file),/device-auth-config-required/);}
+  await writeFile(file,JSON.stringify(value));assert.equal(nativeAuthKey(file),value.firebaseAuthApiKey);
+ }finally{await unlink(file).catch(()=>{});await rmdir(directory);}
+});
 test('worker preserves raw words and refuses expired or already-claimed work',()=>{
  const job=makeJob(input,1000);assert.equal(runnable(job,2000),true);assert.equal(job.prompt,input.prompt);
  assert.equal(runnable(job,job.expiresAt+1),false);assert.equal(runnable({...job,status:'running'},2000),false);
@@ -28,9 +37,18 @@ test('private result transport hashes exact bytes and bounds upload size',()=>{
 test('device refresh binds exact UID, project and anonymous provider',async()=>{
  const value={user_id:DEVICE,project_id:PROJECT,id_token:jwt(),refresh_token:'fixture-refreshed-session',expires_in:'3600'};
  const response=data=>async()=>({ok:true,json:async()=>data});
- const session=await refreshSession('fixture-only-refresh-token',DEVICE,response(value));assert.equal(session.idToken,value.id_token);
+ const session=await refreshSession('fixture-only-refresh-token',DEVICE,response(value),'fixture-native-key');assert.equal(session.idToken,value.id_token);
  for(const changed of [{user_id:'anotherDeviceIdentity001'},{project_id:'other'},{expires_in:'invalid'},{id_token:jwt(DEVICE,'other')},{id_token:jwt(DEVICE,PROJECT,'google.com')}])
-  await assert.rejects(refreshSession('fixture-only-refresh-token',DEVICE,response({...value,...changed})),/device-identity-mismatch/);
+  await assert.rejects(refreshSession('fixture-only-refresh-token',DEVICE,response({...value,...changed}),'fixture-native-key'),/device-identity-mismatch/);
+});
+test('native auth has no Referer and distinguishes key restrictions from expired login',async()=>{
+ for(const [status,error] of [[403,'device-auth-key-restricted'],[400,'device-login-required'],[503,'device-auth-unavailable']]){
+  await assert.rejects(refreshSession('fixture-only-refresh-token',DEVICE,async(url,options)=>{
+   assert.equal(new URL(url).searchParams.get('key'),'fixture-native-key');
+   assert.equal(new Headers(options.headers).has('Referer'),false);
+   return new Response('{}',{status});
+  },'fixture-native-key'),new RegExp(error));
+ }
 });
 test('restart restores same device and commits token rotation before use',async()=>{
  let disk=null,creates=0;

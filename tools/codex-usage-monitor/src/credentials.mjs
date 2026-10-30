@@ -6,7 +6,7 @@ import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/fir
 import { WindowsProtection } from './dpapi.mjs';
 import { atomicJson, readJson } from './store.mjs';
 import { MonitorError } from './core.mjs';
-import { DOCUMENT, FIREBASE_CONFIG, OWNER_UID, PROJECT } from './config.mjs';
+import { DOCUMENT, FIREBASE_CONFIG, OWNER_UID, PROJECT, nativeAuthKey } from './config.mjs';
 
 const entropy = createHash('sha256').update(`pti-codex-usage-v1:${PROJECT}:${OWNER_UID}`).digest();
 const tokenValid = value => typeof value === 'string' && value.length > 20 && value.length < 16384 && !/\s/.test(value);
@@ -32,17 +32,17 @@ export class CredentialStore {
     } finally { clear?.fill(0); }
   }
 }
-export async function refreshSession(refreshToken, { fetchImpl = fetch } = {}) {
+export async function refreshSession(refreshToken, { fetchImpl = fetch, apiKey = nativeAuthKey() } = {}) {
   if (!tokenValid(refreshToken)) throw new MonitorError('firebase-login-required');
   let response;
   try {
-    response = await fetchImpl(`https://securetoken.googleapis.com/v1/token?key=${FIREBASE_CONFIG.apiKey}`, {
+    response = await fetchImpl(`https://securetoken.googleapis.com/v1/token?key=${apiKey}`, {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }),
       signal: AbortSignal.timeout(15000), redirect: 'error',
     });
   } catch { throw new MonitorError('firebase-unavailable', { transient: true }); }
-  if (!response.ok) { await response.body?.cancel(); throw new MonitorError([400, 401, 403].includes(response.status) ? 'firebase-login-required' : 'firebase-unavailable', { transient: response.status >= 500 || response.status === 429 }); }
+  if (!response.ok) { await response.body?.cancel(); throw new MonitorError(response.status === 403 ? 'firebase-auth-key-restricted' : [400, 401].includes(response.status) ? 'firebase-login-required' : 'firebase-unavailable', { transient: response.status >= 500 || response.status === 429 }); }
   const text = await response.text(); if (text.length > 65536) throw new MonitorError('firebase-account-mismatch');
   let value; try { value = JSON.parse(text); } catch { throw new MonitorError('firebase-unavailable', { transient: true }); }
   if (value.user_id !== OWNER_UID || ![PROJECT, '185802494856'].includes(String(value.project_id)) || !tokenValid(value.id_token) || !tokenValid(value.refresh_token)) throw new MonitorError('firebase-account-mismatch');

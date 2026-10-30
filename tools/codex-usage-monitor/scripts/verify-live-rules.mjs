@@ -25,7 +25,7 @@ async function request(target, token, method = 'GET', value) {
 }
 async function login(uid) {
   await auth.createUser({ uid });
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Referer': 'https://pti-app-2ab59-velum.web.app/' },
     body: JSON.stringify({ token: await auth.createCustomToken(uid), returnSecureToken: true }), signal: AbortSignal.timeout(15000) });
   const value = await response.json();
   const claims = typeof value.idToken === 'string' ? JSON.parse(Buffer.from(value.idToken.split('.')[1], 'base64url').toString()) : {};

@@ -35,7 +35,7 @@ async function request(path, token, method = 'GET', data) {
 async function login(uid) {
   await auth.createUser({ uid }); createdUsers.add(uid);
   const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: await auth.createCustomToken(uid), returnSecureToken: true }), signal: AbortSignal.timeout(15000), redirect: 'error',
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Referer': 'https://pti-app-2ab59-velum.web.app/' }, body: JSON.stringify({ token: await auth.createCustomToken(uid), returnSecureToken: true }), signal: AbortSignal.timeout(15000), redirect: 'error',
   });
   const data = await response.json(), claims = typeof data.idToken === 'string' ? JSON.parse(Buffer.from(data.idToken.split('.')[1], 'base64url').toString()) : {};
   assert(response.ok && claims.sub === uid && claims.aud === project, 'Synthetic identity exchange failed.'); return data.idToken;

@@ -1,20 +1,52 @@
-<div class="field-guide"><span>Select a sector to focus; open a subject to go deeper.</span><span><i class="work-dot" aria-hidden="true"></i> Our work: recorded evidence or self-report</span></div>
-<div class="field-composition">
-  <article class="selected-field" aria-live="polite">
-    <p class="eyebrow">SECTOR IN FOCUS</p>
-    <h3>{{ context.fieldSector().title }}</h3>
-    <p class="field-description">{{ context.fieldSector().subtitle }}</p>
-    <p class="field-scope">{{ context.countLabel(context.fieldSubjects().length, 'subject') }} in focus. Open one for its sources and your progression.</p>
-    <button type="button" class="field-subject" *ngFor="let subject of context.fieldSubjects()" (click)="context.openSubject(subject)"><span>{{ subject.title }}</span><span aria-hidden="true">↗</span><small>{{ subject.coverage === 'seed' ? 'Seed knowledge' : 'Outline' }}<ng-container *ngIf="context.service.snapshot().loadedAt"> · {{ context.countLabel(context.evidenceFor(subject.id).length, 'loaded record') }}</ng-container></small></button>
-    <p class="field-key" *ngIf="!context.service.snapshot().loadedAt">Personal records {{ context.service.loading() ? 'loading' : 'not loaded' }}.</p><p class="field-key">Focus changes the detail, not a sector’s importance.</p>
-  </article>
-  <div class="sector-index" aria-label="Choose a sector to focus">
-    <button type="button" class="sector" *ngFor="let sector of context.sectors; let i=index" [class.selected]="sector.id === context.fieldSector().id" [attr.aria-pressed]="sector.id === context.fieldSector().id" (click)="context.selectFieldSector(sector)">
-      <span class="sector-number">{{ (i + 1).toString().padStart(2, '0') }} <i *ngIf="context.sectorHasWork(sector)" class="work-dot" aria-hidden="true"></i></span>
-      <span class="sector-title">{{ sector.title }}</span>
-      <span class="sector-scope">{{ sector.subtitle }}</span><span class="sector-foot"><span class="sector-count">{{ context.countLabel(sector.subjectIds.length, 'subject') }}</span> <span class="sector-work" *ngIf="context.sectorHasWork(sector)">· Our work</span><span aria-hidden="true">↗</span></span>
+<div class="field-guide">
+  <span>EXPLORE THE HUMAN FIELD <span class="guide-note">· Twelve equal starting fields. Select a field to read deeper.</span></span>
+  <span class="field-key"><i class="status-dot seed" aria-hidden="true"></i> Sourced starting seed <i class="status-dot outline" aria-hidden="true"></i> Editorial outline</span>
+</div>
+
+<section class="radial-canvas" #radialCanvas aria-label="Radial map of twelve knowledge fields">
+  <svg class="radial-art" [attr.viewBox]="'0 0 ' + scene().width + ' ' + scene().height" preserveAspectRatio="none" role="group" aria-label="Choose a field on the twelve-part radial wheel">
+    <circle [attr.cx]="scene().cx" [attr.cy]="scene().cy" [attr.r]="scene().outerRadius + 26" fill="none" stroke="#dce6de" stroke-width="1"></circle>
+    <circle [attr.cx]="scene().cx" [attr.cy]="scene().cy" [attr.r]="scene().centerSize / 2 - 4" fill="none" stroke="#d4e5d9" stroke-width="1"></circle>
+    <path *ngFor="let band of scene().outerBands" [attr.d]="band.path" fill="none" [attr.stroke]="band.color" stroke-width="2.6" stroke-linecap="round" opacity=".63"></path>
+    <path *ngFor="let field of scene().fields; trackBy: trackSector" class="radial-leader" [class.active]="context.fieldSector().id === field.sector.id" [attr.d]="field.leader" [attr.stroke]="field.accent" fill="none" stroke-width="1.1"></path>
+    <g *ngFor="let field of scene().fields; let i = index; trackBy: trackSector" class="radial-wedge" [class.active]="context.fieldSector().id === field.sector.id" [attr.aria-label]="'Explore ' + field.sector.title" role="button" tabindex="0" (mouseenter)="focusSector(field.sector)" (focus)="focusSector(field.sector)" (click)="context.openSector(field.sector)" (keydown)="onWedgeKeydown($event, i)">
+      <path class="radial-sector-shape" [attr.d]="field.wedge" [attr.fill]="context.fieldSector().id === field.sector.id ? field.active : field.quiet"></path>
+      <circle *ngFor="let dot of field.dots" class="radial-status" [class.seed]="dot.coverage === 'seed'" [class.outline]="dot.coverage === 'outline'" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4.1"></circle>
+    </g>
+  </svg>
+
+  <div class="radial-labels">
+    <button *ngFor="let field of scene().fields; trackBy: trackSector" type="button" class="radial-label" [class.side-left]="field.side === 'left'" [class.active]="context.fieldSector().id === field.sector.id" [style.left.px]="field.labelX" [style.top.px]="field.labelY" [style.width.px]="field.labelWidth" [style.height.px]="field.labelHeight" (mouseenter)="focusSector(field.sector)" (focus)="focusSector(field.sector)" (click)="context.openSector(field.sector)" [attr.aria-label]="'Explore ' + field.sector.title + ': ' + field.subjects.length + ' starting subjects'">
+      <span class="label-line"><span class="label-index" [style.color]="field.accent">{{ field.number }} <i class="work-dot" *ngIf="context.sectorHasWork(field.sector)" aria-label="Our work recorded"></i></span><strong>{{ field.sector.title }}</strong></span>
+      <span class="label-subjects">{{ field.subjects[0].title }} · {{ field.subjects[1].title }} · {{ field.subjects[2].title }}</span>
     </button>
   </div>
-</div>
-<div class="map-caption"><span>Select a sector to bring its subjects into focus.</span><span><i class="work-dot" aria-hidden="true"></i> Our work = recorded evidence or self-report</span></div>
 
+  <article class="radial-lens" aria-live="polite" [style.width.px]="scene().centerSize" [style.height.px]="scene().centerSize" [style.left.px]="scene().cx - scene().centerSize / 2" [style.top.px]="scene().cy - scene().centerSize / 2">
+    <p class="lens-eyebrow">FIELD {{ (context.sectors.indexOf(context.fieldSector()) + 1).toString().padStart(2, '0') }} / 12</p>
+    <h2>{{ context.fieldSector().title }}</h2>
+    <p class="lens-description">{{ context.fieldSector().subtitle }}</p>
+    <div class="lens-subjects" aria-label="Subjects in this field">
+      <button type="button" class="lens-subject" *ngFor="let subject of context.fieldSubjects()" (click)="context.openSubject(subject)">
+        <i class="status-dot" [class.seed]="subject.coverage === 'seed'" [class.outline]="subject.coverage === 'outline'" aria-hidden="true"></i>
+        <span>{{ subject.title }}</span>
+        <i class="work-dot" *ngIf="context.workEvidenceFor(subject.id).length || (context.progressFor(subject.id) && context.progressFor(subject.id)!.state !== 'unknown')" aria-label="Our work recorded"></i>
+      </button>
+    </div>
+    <button type="button" class="lens-open" (click)="context.openSector(context.fieldSector())">Explore this field <span aria-hidden="true">↗</span></button>
+  </article>
+
+  <div class="radial-bottom-note"><span>THE ATLAS · 12 FIELDS / 36 STARTING SUBJECTS</span><span><i class="work-dot" aria-hidden="true"></i> Our work is distinct from public knowledge</span></div>
+</section>
+
+<section class="mobile-fields" aria-label="Explore knowledge fields">
+  <p class="mobile-guide">Choose a field to explore its subjects and sources.</p>
+  <div class="mobile-grid">
+    <button type="button" *ngFor="let sector of context.sectors; let i = index" (click)="context.openSector(sector)">
+      <span class="mobile-num">{{ (i + 1).toString().padStart(2, '0') }} <i *ngIf="context.sectorHasWork(sector)" class="work-dot" aria-label="Our work recorded"></i></span>
+      <strong>{{ sector.title }}</strong>
+      <small>{{ sector.subtitle }}</small>
+      <span class="mobile-open">View 3 subjects ↗</span>
+    </button>
+  </div>
+</section>

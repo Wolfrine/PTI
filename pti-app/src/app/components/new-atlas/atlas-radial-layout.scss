@@ -1,0 +1,70 @@
+/* The soft radial index occupies the first viewport. Detail, review and history
+   retain their existing, scrollable document flow and owner-scoped controls. */
+.atlas-shell.is-overview {
+  height:100dvh;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding:0 26px;
+  background:#f7faf7;
+}
+.is-overview .topbar {
+  min-height:50px;
+  flex:0 0 50px;
+  border-color:#dce6dc;
+}
+.is-overview .home-link strong { font:700 20px Arial,Helvetica,sans-serif; letter-spacing:-.055em; }
+.is-overview .top-actions button { min-height:32px; padding:6px 11px; }
+.is-overview .top-actions .refresh-button {
+  border-radius:5px;
+  background:#f1f7f0;
+  border-color:#c8d9cd;
+}
+.is-overview .top-context { color:#4d6c5c; font-size:10px; letter-spacing:.1em; }
+.is-index .view-nav { gap:14px; min-height:47px; border-color:#cbded1; }
+.is-index .view-buttons { gap:19px; }
+.is-index .view-buttons button { font-size:12px; min-height:46px; padding:11px 0; }
+.is-index .index-search {
+  margin-left:auto;
+  min-width:205px;
+  width:clamp(205px,21vw,285px);
+  padding:4px 10px;
+  border-radius:4px;
+  background:#fffdfb;
+  border-color:#cfdfd1;
+}
+.is-index .index-search input { min-height:25px; font-size:11px; }
+.is-index .index-search>span { font-size:19px; }
+.is-index .map-extent { display:none; }
+.atlas-main.overview-main { flex:1; min-height:0; display:block; }
+.atlas-main.overview-main app-atlas-map { display:block; height:100%; }
+.is-overview .atlas-footer {
+  flex:0 0 22px;
+  min-height:22px;
+  padding:4px 3px 0;
+  border-color:transparent;
+}
+.is-overview .atlas-footer span { font-size:9px; color:#506d5e; }
+@media (max-width:1100px) {
+  .is-index .view-buttons { gap:13px; }
+  .is-index .view-buttons button { font-size:11px; }
+  .is-index .index-search { min-width:180px; width:195px; }
+}
+@media (max-width:850px) {
+  .atlas-shell.is-overview {
+    height:auto;
+    min-height:100vh;
+    display:block;
+    overflow:visible;
+    padding:0 20px;
+  }
+  .atlas-main.overview-main { display:block; min-height:0; }
+  .atlas-main.overview-main app-atlas-map { height:auto; }
+  .is-index .view-nav { flex-wrap:wrap; padding-bottom:9px; }
+  .is-index .view-buttons { width:100%; justify-content:space-between; gap:8px; }
+  .is-index .index-search { margin-left:0; width:100%; min-width:0; }
+  .is-overview .atlas-footer { display:flex; }
+  .is-index .home-link span:last-child { display:none; }
+  .is-index .top-context { display:block; font-size:8px; letter-spacing:.025em; }
+}

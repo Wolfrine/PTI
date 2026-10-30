@@ -66,6 +66,6 @@ const preview = {
   setSource: async (source: AtlasSourceInput) => mutate('source', source.sourceId, source as unknown as Record<string, unknown>),
   exportData: () => { const url = URL.createObjectURL(new Blob([JSON.stringify({ synthetic: true, ...snapshot() }, null, 2)], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = 'synthetic-atlas-preview.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); },
 };
-@Component({ selector: 'app-root', standalone: true, imports: [RouterOutlet], template: `<aside style="font:12px system-ui;padding:8px 20px;background:#e9e6dc;color:#455451">LOCAL SYNTHETIC FIXTURE · {{fixture}} · no authentication or database access</aside><router-outlet />` })
+@Component({ selector: 'app-root', standalone: true, imports: [RouterOutlet], template: `<aside style="position:fixed;bottom:3px;left:6px;z-index:50;font:9px system-ui;padding:3px 6px;background:rgba(233,230,220,.94);color:#455451;pointer-events:none">LOCAL SYNTHETIC FIXTURE · {{fixture}} · no authentication or database access</aside><router-outlet />` })
 class AtlasPreview { readonly fixture = fixture; }
 bootstrapApplication(AtlasPreview, { providers: [provideRouter([{ path: '', component: NewAtlasComponent }, { path: 'atlas', component: NewAtlasComponent }]), { provide: AtlasService, useValue: preview }] }).catch(error => console.error(error));

@@ -21,7 +21,7 @@ type ReviewFilter = 'pending' | 'all' | AtlasReviewStatus;
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, AtlasMapComponent, AtlasContextComponent, AtlasWorkspaceComponent],
   templateUrl: './new-atlas.component.html',
-  styleUrl: './new-atlas.component.scss',
+  styleUrls: ['./new-atlas.component.scss', './atlas-radial-layout.scss'],
 })
 export class NewAtlasComponent implements OnInit {
   readonly service = inject(AtlasService);

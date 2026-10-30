@@ -1,7 +1,7 @@
-    <section class="main-region" *ngIf="context.view() === 'atlas'">
+    <section class="main-region" [class.overview-region]="!context.selectedSector() && !context.query().trim()" *ngIf="context.view() === 'atlas'">
       <div class="section-top">
         <div class="breadcrumbs" *ngIf="context.selectedSector(); else overviewLabel"><button type="button" (click)="context.overview()">All sectors</button><span aria-hidden="true">/</span><button type="button" *ngIf="context.selectedSubject(); else sectorTitle" (click)="context.openSector(context.selectedSector()!)">{{ context.selectedSector()!.title }}</button><ng-template #sectorTitle><span>{{ context.selectedSector()!.title }}</span></ng-template></div>
-        <ng-template #overviewLabel><span class="eyebrow">THE KNOWN LANDSCAPE</span></ng-template>
+        <ng-template #overviewLabel><span class="eyebrow">THE KNOWN LANDSCAPE <span class="overview-tagline">/ A luminous index of human knowledge</span></span></ng-template>
         <span class="scope-label">A growing map, not a completeness score</span>
       </div>
 

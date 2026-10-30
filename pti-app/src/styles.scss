@@ -58,3 +58,20 @@ body {
 .mat-chip {
     color: black !important;
 }
+
+// The Atlas wheel is a full-viewport view. PTI's general document padding and
+// bottom margin are intended for scrollable pages, not this single canvas.
+// Keep the reset tightly scoped so all other pages and Atlas detail remain intact.
+@media (min-width: 851px) {
+    html:has(.atlas-shell.is-overview) {
+        margin-bottom: 0;
+    }
+
+    body:has(.atlas-shell.is-overview) {
+        padding: 0;
+    }
+
+    app-new-atlas:has(.atlas-shell.is-overview) {
+        margin: 0;
+    }
+}

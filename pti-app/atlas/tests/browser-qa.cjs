@@ -16,8 +16,8 @@ assert(['127.0.0.1', 'localhost'].includes(new URL(base).hostname), 'Only a loop
   const page = await context.newPage();
   const runtimeErrors = [], results = [], contrast = [], layout = [], focus = [];
   page.on('pageerror', error => runtimeErrors.push(error.message));
-  async function visit(params = '', width = 1440) {
-    await page.setViewportSize({ width, height: width < 760 ? 844 : 1000 });
+  async function visit(params = '', width = 1440, height = width < 760 ? 844 : 1000) {
+    await page.setViewportSize({ width, height });
     await page.goto(base + params, { waitUntil: 'networkidle' });
     assert.match(await page.locator('body').innerText(), /LOCAL SYNTHETIC FIXTURE/);
     assert.equal(await page.locator('app-new-atlas').count(), 1);
@@ -43,19 +43,35 @@ assert(['127.0.0.1', 'localhost'].includes(new URL(base).hostname), 'Only a loop
         const threshold = size >= 24 || (size >= 18.66 && weight >= 700) ? 3 : 4.5;
         if (ratio + .01 < threshold) text.push({ text: ownText.slice(0, 100), tag: element.tagName, class: element.className, color: css.color, background: bg, size, ratio: +ratio.toFixed(2), threshold });
       }
-      return { viewport: innerWidth, document: document.documentElement.scrollWidth, overflow, contrastFailures: text };
+      return { viewport: innerWidth, document: document.documentElement.scrollWidth,
+        viewportHeight: innerHeight, documentHeight: document.documentElement.scrollHeight,
+        overflow, contrastFailures: text };
     });
-    layout.push({ state, width, documentWidth: measurement.document, outOfBounds: measurement.overflow });
+    layout.push({ state, width, documentWidth: measurement.document, documentHeight: measurement.documentHeight,
+      viewportHeight: measurement.viewportHeight, outOfBounds: measurement.overflow });
     contrast.push({ state, width, failures: measurement.contrastFailures });
     assert.equal(measurement.document <= width + 1, true, `${state}: document overflow`);
     assert.equal(measurement.overflow.length, 0, `${state}: content/control clipped outside viewport`);
   }
   try {
-    await check('12 sectors and desktop focus preserve overview', async () => {
-      await visit(); assert.equal(await page.locator('.sector').count(), 12);
-      await page.locator('.sector').filter({ hasText: 'Engineering & materials' }).click();
-      assert.match(await page.locator('.selected-field').innerText(), /Robotics/);
-      assert.equal(await page.locator('.sector').count(), 12);
+    await check('12 radial fields retain real subjects and working drill-downs', async () => {
+      await visit();
+      assert.equal(await page.locator('.radial-wedge').count(), 12);
+      assert.equal(await page.locator('.radial-status').count(), 36);
+      await page.locator('.radial-label').filter({ hasText: 'Engineering & materials' }).click();
+      assert.match(await page.locator('.subject-list').innerText(), /Robotics/);
+      assert.equal(await page.locator('.subject-row').count(), 3);
+      await tab('All sectors');
+      assert.equal(await page.locator('.radial-wedge').count(), 12);
+    });
+    await check('Compact radial landing fits 1366 × 590 without a page scrollbar', async () => {
+      await visit('', 1366, 590);
+      const fit = await page.evaluate(() => ({
+        page: document.documentElement.scrollHeight, viewport: innerHeight,
+        wheel: document.querySelector('.radial-canvas')?.getBoundingClientRect().height,
+      }));
+      assert(fit.wheel >= 365, 'The radial wheel must remain usable');
+      assert(fit.page <= fit.viewport + 1, `Overview scroll: ${fit.page}px > ${fit.viewport}px`);
     });
     await check('Subject drill, self-report and history', async () => {
       await visit('?subject=software-engineering');
@@ -114,10 +130,10 @@ assert(['127.0.0.1', 'localhost'].includes(new URL(base).hostname), 'Only a loop
     });
     await check('Mobile drill replaces the index and offers sector return', async () => {
       await visit('', 390);
-      await page.locator('.sector').filter({ hasText: 'Engineering & materials' }).click();
-      assert.equal(await page.locator('.sector-index').count(), 0);
+      await page.locator('.mobile-grid button').filter({ hasText: 'Engineering & materials' }).click();
+      assert.equal(await page.locator('.mobile-fields').count(), 0);
       assert.equal(await page.locator('.subject-row').count(), 3);
-      await tab('All sectors'); assert.equal(await page.locator('.sector').count(), 12);
+      await tab('All sectors'); assert.equal(await page.locator('.mobile-grid button').count(), 12);
     });
     await check('Capture receipts have an explicit route to load remaining pages', async () => {
       await visit('?fixture=partial&view=history');

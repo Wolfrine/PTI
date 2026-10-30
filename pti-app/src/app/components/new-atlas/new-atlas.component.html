@@ -1,4 +1,4 @@
-<div class="atlas-shell" [class.is-drilled]="query() || selectedSector() || view() !== 'atlas'">
+<div class="atlas-shell" [class.is-drilled]="query() || selectedSector() || view() !== 'atlas'" [class.is-index]="view() === 'atlas' && !selectedSector()" [class.is-overview]="view() === 'atlas' && !selectedSector() && !query().trim()">
   <a class="skip-link" href="#atlas-content">Skip to Atlas content</a>
   <header class="topbar">
     <a routerLink="/home" class="home-link"><span aria-hidden="true">←</span><strong>PTI</strong><span>All apps</span></a>
@@ -9,14 +9,15 @@
     </div>
   </header>
 
-  <section class="intro" aria-labelledby="atlas-title">
+  <section class="intro" *ngIf="view() !== 'atlas' || selectedSector()" aria-labelledby="atlas-title">
     <div><p class="eyebrow">KNOWLEDGE, IN PERSPECTIVE</p><h1 id="atlas-title">Civilization <em>Atlas.</em></h1><p class="intro-copy">What humanity knows. Where we are in it.</p></div>
     <label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Search {{ view() === 'atlas' ? 'subjects' : view() }}</span><input #atlasSearch type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" [placeholder]="view() === 'atlas' ? 'Find a subject, idea or field' : 'Search ' + view()" autocomplete="off" maxlength="200"><kbd aria-hidden="true">/</kbd></label>
   </section>
 
   <nav class="view-nav" aria-label="Atlas views">
     <div class="view-buttons"><button *ngFor="let tab of tabs" type="button" [class.active]="view() === tab.id" [attr.aria-pressed]="view() === tab.id" (click)="setView(tab.id)">{{ tab.label }}<span class="count" *ngIf="tab.id === 'review' && service.snapshot().loadedAt">{{ awaitingEvidence().length }}{{ (service.snapshot().hasMore.evidence || service.snapshot().hasMore.reviews) ? '+' : '' }}</span></button></div>
-    <span class="map-extent">{{ sectors.length }} sectors <span aria-hidden="true">·</span> {{ subjects.length }} starting subjects</span>
+    <label class="search-box index-search" *ngIf="view() === 'atlas' && !selectedSector()"><span aria-hidden="true">⌕</span><span class="sr-only">Search subjects and fields</span><input #atlasSearch type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Find a subject or field" autocomplete="off" maxlength="200"><kbd aria-hidden="true">/</kbd></label>
+    <span class="map-extent">{{ sectors.length }} fields <span aria-hidden="true">·</span> {{ subjects.length }} starting subjects</span>
   </nav>
 
   <div class="message error" *ngIf="actionError() || service.error()" role="alert"><span>{{ actionError() || service.error() }}</span><button type="button" (click)="refresh()" [disabled]="service.loading()">Retry</button></div>
@@ -25,9 +26,9 @@
   <div class="message loading" *ngIf="service.loading()" role="status">Loading your private evidence and progression. The knowledge map remains available.</div>
   <div class="coverage-note" *ngIf="partial()">Showing a loaded selection. Use “Load more” in each view before treating counts or an export as complete.</div>
 
-  <main #contentHeading id="atlas-content" tabindex="-1" class="atlas-main" [class.reading]="selectedSubject() && !query()" [class.full-view]="view() !== 'atlas'">
+  <main #contentHeading id="atlas-content" tabindex="-1" class="atlas-main" [class.reading]="selectedSubject() && !query()" [class.full-view]="view() !== 'atlas'" [class.overview-main]="view() === 'atlas' && !selectedSector() && !query().trim()">
     <app-atlas-map *ngIf="view() === 'atlas'" [context]="this"></app-atlas-map>
-    <app-atlas-context *ngIf="view() === 'atlas'" [context]="this"></app-atlas-context>
+    <app-atlas-context *ngIf="view() === 'atlas' && (selectedSector() || query())" [context]="this"></app-atlas-context>
     <app-atlas-workspace *ngIf="view() !== 'atlas'" [context]="this"></app-atlas-workspace>
   </main>
 

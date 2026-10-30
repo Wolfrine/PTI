@@ -48,6 +48,8 @@ jobs:
       - run: npm run test:emulator --prefix apps/one-piece
       - name: Verify Atlas owner isolation and atomic history
         run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/tests/atlas.rules.test.mjs'
+      - name: Verify private platform usage and Codex Firestore rules
+        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-codex-usage-tests --config firebase.one-piece-tests.json 'node tools/codex-usage-monitor/test/rules.mjs'
 
   deploy:
     needs: [verify_venture, verify_one_piece]
@@ -82,6 +84,7 @@ jobs:
       - name: Test Home, retired routes and local usage monitor
         run: |
           npm test --prefix pti-app -- --watch=false --browsers=ChromeHeadless
+          node personal-functions/platform-usage-core.test.mjs
           node --test pti-app/atlas/tests/verify-production.selftest.cjs
           npm ci --prefix tools/codex-usage-monitor --ignore-scripts --no-audit --no-fund
           npm test --prefix tools/codex-usage-monitor
@@ -258,6 +261,15 @@ jobs:
 
       - name: Verify deployed Atlas source marker and generated asset graph
         run: node pti-app/atlas/tests/verify-production.cjs
+
+      - name: Seed private Development Resources snapshot after verified rules
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PTI_GITHUB_USAGE_TOKEN: ${{ secrets.PTI_GITHUB_USAGE_TOKEN }}
+          PTI_FIREBASE_PROJECT_IDS: ${{ vars.PTI_FIREBASE_PROJECT_IDS }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: node personal-functions/publish-platform-usage.mjs
 
       - name: Deploy optional Firebase Functions MCP
         continue-on-error: true

@@ -1,0 +1,43 @@
+name: Refresh private PTI platform usage
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Twice daily. This is not a live metrics poll; PTI reads one cached document.
+    - cron: '17 2,14 * * *'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pti-platform-usage-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install existing Firebase Admin runtime
+        run: npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
+      - name: Refresh owner-only cached usage
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PTI_GITHUB_USAGE_TOKEN: ${{ secrets.PTI_GITHUB_USAGE_TOKEN }}
+          PTI_FIREBASE_PROJECT_IDS: ${{ vars.PTI_FIREBASE_PROJECT_IDS }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/pti-platform-monitor.json
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo 'FIREBASE_SERVICE_ACCOUNT is required for this owner-only snapshot.'
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          chmod 600 "$GOOGLE_APPLICATION_CREDENTIALS"
+          node personal-functions/publish-platform-usage.mjs

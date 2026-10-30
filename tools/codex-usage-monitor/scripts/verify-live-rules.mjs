@@ -9,6 +9,7 @@ const apiKey = 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs';
 const suffix = randomBytes(8).toString('hex');
 const uids = [`usage-probe-a-${suffix}`, `usage-probe-b-${suffix}`];
 const root = `users/${uids[0]}/codexProjects/codex-usage`;
+const resourceRoot = `users/${uids[0]}/resourceUsage/current`;
 const base = 'https://firestore.googleapis.com/v1/projects/pti-app-2ab59/databases/(default)/documents';
 const checks = [];
 function fields(value) {
@@ -51,6 +52,16 @@ try {
   }
   const otherRoot = `users/${uids[1]}/codexProjects/codex-usage`;
   const absent = await request(otherRoot, owner); pass('absent other-account usage denied by overlapping rules', absent.status === 403); await absent.body?.cancel();
+  await db.doc(resourceRoot).set({ schemaVersion: 1, source: 'pti-platform-usage', synthetic: true });
+  for (const [name, token] of [['owner', owner], ['different account', other], ['anonymous', null]]) {
+    const response = await request(resourceRoot, token);
+    pass(`${name} ${name === 'owner' ? 'can read' : 'cannot read'} resource snapshot`, response.status === (name === 'owner' ? 200 : 403));
+    await response.body?.cancel();
+    const write = await request(resourceRoot, token, 'PATCH', { fields: fields({ synthetic: 'client-overwrite' }).mapValue.fields });
+    pass(`${name} cannot write resource snapshot`, write.status === 403); await write.body?.cancel();
+  }
+  const missingResource = await request(`users/${uids[1]}/resourceUsage/current`, owner);
+  pass('resource snapshot missing-other-account path is private', missingResource.status === 403); await missingResource.body?.cancel();
   const legacy = await request(`users/${uids[0]}/codexProjects/usage-legacy-probe`, owner, 'PATCH', { fields: fields({ synthetic: 'legacy-preservation' }).mapValue.fields });
   pass('legacy project policy preserved', legacy.ok); await legacy.body?.cancel();
   for (const [name, token] of [['authenticated', owner], ['other', other], ['anonymous', null]]) {
@@ -63,6 +74,7 @@ try {
   await writeFile('codex-usage-activation-report.json', JSON.stringify(report, null, 2));
 } finally {
   await db.doc(`_ptiLocalServices/privacy-probe-${suffix}`).delete();
+  await db.doc(resourceRoot).delete();
   for (const uid of uids) {
     await db.doc(`users/${uid}/codexProjects/codex-usage`).delete();
     await db.doc(`users/${uid}/codexProjects/usage-legacy-probe`).delete();

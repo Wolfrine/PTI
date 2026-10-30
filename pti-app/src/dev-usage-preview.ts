@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { NewHomeComponent } from './app/components/new-home/new-home.component';
 import { CodexUsageService, UsageState } from './app/services/codex-usage.service';
+import { PlatformUsageService, PlatformUsageState } from './app/services/platform-usage.service';
 import { GtopHostService, GtopHostReading, GtopHostStatus } from './app/services/gtop-host.service';
 import { OnePieceHostService, OnePieceHostReading, OnePieceHostStatus } from './app/services/one-piece-host.service';
 
@@ -29,6 +30,35 @@ if (fixture === 'partial') reading.reading!.daily = { status: 'error', lastSucce
 if (fixture === 'unavailable') { reading.reading!.allowance = { status: 'unavailable', lastSuccessAt: null, buckets: [] }; reading.reading!.daily = { status: 'unavailable', lastSuccessAt: null, latest: null }; }
 if (['loading', 'unconnected', 'error'].includes(fixture)) { reading.status = fixture === 'error' ? 'unavailable' : fixture as 'loading' | 'unconnected'; reading.reading = null; }
 if (fixture === 'offline') Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+const platformFixture = query.get('platform') ?? 'fresh';
+const platformReading: PlatformUsageState = {
+  status: 'ready', fromCache: platformFixture === 'cached',
+  reading: {
+    collectedAt: new Date(now - (platformFixture === 'stale' ? 26 * 3600000 : 20 * 60000)).toISOString(),
+    github: {
+      status: 'ok', period: '2026-10', billedActionsMinutes: 41, billedActionsUsd: 0.32,
+      workflowRuns24h: 5, failedRuns24h: 1, workflowRepoScope: 'Wolfrine/PTI',
+    },
+    firebase: {
+      status: 'ok', projects: [
+        { projectId: 'pti-app-2ab59', status: 'ok', reads24h: 4826, writes24h: 151, deletes24h: 2 },
+        { projectId: 'gtop-app', status: 'ok', reads24h: 1461, writes24h: 62, deletes24h: 0 },
+      ],
+    },
+  },
+};
+if (platformFixture === 'partial') {
+  platformReading.reading!.github.status = 'partial';
+  platformReading.reading!.github.billedActionsMinutes = null;
+  platformReading.reading!.github.billedActionsUsd = null;
+  platformReading.reading!.firebase.status = 'partial';
+  platformReading.reading!.firebase.projects[1] = { projectId: 'gtop-app', status: 'error', reads24h: null, writes24h: null, deletes24h: null };
+}
+if (platformFixture === 'long') platformReading.reading!.firebase.projects[1].projectId = 'very-long-monitoring-project-name-unavailable';
+if (['loading', 'unconnected', 'error'].includes(platformFixture)) {
+  platformReading.status = platformFixture === 'error' ? 'unavailable' : platformFixture as 'loading' | 'unconnected';
+  platformReading.reading = null;
+}
 const hostFixture = query.get('host') ?? 'offline';
 const hostService: GtopHostStatus = {
   workerId: 'sachit-windows', state: hostFixture === 'ready' || hostFixture === 'idle' ? 'ready' : hostFixture === 'starting' ? 'starting' : hostFixture === 'failed' ? 'failed' : hostFixture === 'starter-offline' ? 'starter_offline' : 'offline',
@@ -69,10 +99,12 @@ const onePiecePreview = {
 
 @Component({
   selector: 'app-root', standalone: true, imports: [NewHomeComponent],
-  template: `<aside style="font:12px Arial;padding:10px 16px;background:#ede2d2;color:#453a30;position:relative;z-index:99">LOCAL TEST FIXTURE · {{state}} · assistant {{host}} · One Piece {{onePiece}} · synthetic readings · no authentication or database access</aside><app-new-home />`,
+  template: `<aside style="font:12px Arial;padding:10px 16px;background:#ede2d2;color:#453a30;position:relative;z-index:99">LOCAL TEST FIXTURE · Codex {{state}} · platform {{platform}} · assistant {{host}} · One Piece {{onePiece}} · synthetic readings · no authentication or database access</aside><app-new-home />`,
 })
-class UsagePreviewComponent { readonly state = fixture; readonly host = hostFixture; readonly onePiece = onePieceFixture; }
+class UsagePreviewComponent { readonly state = fixture; readonly platform = platformFixture; readonly host = hostFixture; readonly onePiece = onePieceFixture; }
 
 bootstrapApplication(UsagePreviewComponent, {
-  providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } }, { provide: GtopHostService, useValue: hostPreview }, { provide: OnePieceHostService, useValue: onePiecePreview }],
+  providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } },
+    { provide: PlatformUsageService, useValue: { watch: () => of(platformReading) } },
+    { provide: GtopHostService, useValue: hostPreview }, { provide: OnePieceHostService, useValue: onePiecePreview }],
 }).catch(error => console.error(error));

@@ -8,7 +8,13 @@ service cloud.firestore {
   match /_ptiLocalServices/{document=**} { allow read, write: if false; }
   match /users/{uid} {
    allow read, write: if request.auth != null;
-    match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'atlasData'; }
+    match /{collection}/{document=**} { allow read, write: if request.auth != null && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'atlasData' && collection != 'resourceUsage'; }
+  }
+  // Cached infrastructure telemetry is readable by its owner only. The scheduled
+  // server collector writes with Admin credentials; client sessions cannot edit it.
+  match /users/{uid}/resourceUsage/{document=**} {
+   allow read: if owner(uid);
+   allow write: if false;
   }
   // Keep legacy project policy except the reserved, private account-usage document.
   // The generic grant above must exclude codexProjects: matching allows are additive.

@@ -42,3 +42,21 @@ test('legacy project data and retained standalone tools keep their previous poli
   await assertSucceeds(setDoc(doc(owner, root), reading()));
   assert.equal((await assertSucceeds(getDocs(collection(owner, 'users/usage-owner/codexProjects')))).size, 2);
 });
+test('infrastructure snapshots are owner-readable, server-written and isolated', async () => {
+  const root = 'users/usage-owner/resourceUsage/current';
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), root), { schemaVersion: 1, source: 'pti-platform-usage', synthetic: true });
+  });
+  const owner = client('usage-owner'), other = client('usage-other'), anonymous = client(null);
+  assert.equal((await assertSucceeds(getDoc(doc(owner, root)))).data().source, 'pti-platform-usage');
+  assert.equal((await assertSucceeds(getDocs(collection(owner, 'users/usage-owner/resourceUsage')))).size, 1);
+  for (const db of [owner, other, anonymous]) {
+    await assertFails(setDoc(doc(db, root), { synthetic: true }));
+    await assertFails(deleteDoc(doc(db, root)));
+  }
+  for (const db of [other, anonymous]) {
+    await assertFails(getDocs(collection(db, 'users/usage-owner/resourceUsage')));
+    await assertFails(getDoc(doc(db, root)));
+    await assertFails(getDoc(doc(db, 'users/usage-owner/resourceUsage/absent')));
+  }
+});

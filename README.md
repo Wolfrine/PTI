@@ -6,7 +6,7 @@ Start with [AGENTS.md](AGENTS.md) before implementation. The current Home design
 
 ## Current surfaces
 
-- `/home`: the dashboard and app launcher. Its curated apps include Self-Tracking, Morsel, Venture, Personal, Luminary, SEFPO Lab, Civilization Atlas, Wedding Planner, One Piece, Noveliaa, GTOP, Growth Tutorials Hub, Growth Tutorials and Luminar Robotics. StoryForge and other source-only or not-yet-verified work appear on the workbench instead. Velum remains deliberately absent from the curated directory.
+- `/home`: the dashboard and app launcher. It includes private Codex and [Development Resources](docs/platform-usage.md) readings. Its curated apps include Self-Tracking, Morsel, Venture, Personal, Luminary, SEFPO Lab, Civilization Atlas, Wedding Planner, One Piece, Noveliaa, GTOP, Growth Tutorials Hub, Growth Tutorials and Luminar Robotics. StoryForge and other source-only or not-yet-verified work appear on the workbench instead. Velum remains deliberately absent from the curated directory.
 - `/atlas`: [Civilization Atlas](pti-app/atlas/README.md), a guarded PTI feature connecting a bounded public knowledge map with private project evidence and explicitly self-reported progression. Its [agent contract](pti-app/atlas/AGENT.md) uses the existing PTI MCP and owner-only Atlas namespace.
 - `/` and `/login`: the existing Google sign-in flow; normal authenticated return is `/home`.
 - `/domains`, `/domains/:domainId`, `/activities`: retained standalone legacy tools. Their saved data remains intact, but they are not the dashboard or launcher entries.
@@ -15,7 +15,7 @@ Start with [AGENTS.md](AGENTS.md) before implementation. The current Home design
 
 ## Data and delivery
 
-Use the existing `pti-app-2ab59` Firebase project, default Firestore database and Google authentication. The usage document is `users/{uid}/codexProjects/codex-usage`, protected by owner-only rules. Credentials stay local, encrypted with Windows DPAPI. No model inference, session scraping, tool tracking, additional database or new paid service is involved.
+Use the existing `pti-app-2ab59` Firebase project, default Firestore database and Google authentication. Codex readings use `users/{uid}/codexProjects/codex-usage` with credentials encrypted locally under Windows DPAPI. The separately scheduled infrastructure summary uses the owner-only, server-written `users/{uid}/resourceUsage/current` document; provider credentials stay in GitHub Actions secrets and are never sent to the browser. No model inference, session scraping, tool tracking or additional database is involved.
 
 Frontend: `cd pti-app`, `npm ci`, `npm test -- --watch=false --browsers=ChromeHeadless`, `npm run build`. Collector: `cd tools/codex-usage-monitor`, `npm ci`, `npm test`, `npm run probe`. The probe reads real account usage without publishing.
 

@@ -1,0 +1,88 @@
+<section class="resources-area" aria-labelledby="development-resources-title">
+  <header class="resources-heading">
+    <div>
+      <p class="resources-kicker">BEHIND YOUR WORK</p>
+      <h2 id="development-resources-title">Development resources</h2>
+      <p class="resources-intro">The quiet pulse of the tools powering your projects.</p>
+    </div>
+    <span class="resources-status" [class.is-current]="statusLabel === 'Latest snapshot'" [class.is-warning]="statusLabel === 'Update overdue' || statusLabel === 'Some sources unavailable'" role="status">{{ statusLabel }}</span>
+  </header>
+
+  <div class="resources-layout">
+    <app-new-codex-usage class="codex-resource"></app-new-codex-usage>
+
+    <div class="source-stack">
+      <article class="source-card" aria-labelledby="github-resource-title">
+        <header class="source-header">
+          <span class="source-icon github-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8v8m0-6h6a6 6 0 0 1 6 6v-5"/><circle cx="6" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="7" r="2.2"/></svg></span>
+          <div class="source-title"><h3 id="github-resource-title">GitHub</h3><small>Actions &amp; billing</small></div>
+          <span class="source-status" [class.is-on]="github?.status === 'ok'" [class.is-warning]="github?.status === 'partial' || github?.status === 'error'">{{ sourceStatus(github?.status) }}</span>
+        </header>
+
+        <div class="source-signal">
+          <p class="signal-label">PTI WORKFLOWS · LAST 24 HOURS</p>
+          <strong *ngIf="github?.workflowRuns24h !== null && github?.workflowRuns24h !== undefined; else noRuns">{{ github?.workflowRuns24h | number:'1.0-0' }}<span>runs</span></strong>
+          <ng-template #noRuns><strong class="not-reported">Unavailable</strong></ng-template>
+          <p class="signal-context">{{ github?.workflowRepoScope || 'Wolfrine/PTI' }} <span aria-hidden="true">·</span> recent runs</p>
+        </div>
+
+        <div class="source-glance">
+          <div><span>Failed runs</span><strong *ngIf="github?.failedRuns24h !== null && github?.failedRuns24h !== undefined; else notFailed">{{ github?.failedRuns24h | number:'1.0-0' }}</strong><ng-template #notFailed><strong>—</strong></ng-template></div>
+          <div><span>Account billed minutes · month</span><strong *ngIf="github?.billedActionsMinutes !== null && github?.billedActionsMinutes !== undefined; else notBilled">{{ github?.billedActionsMinutes | number:'1.0-0' }} min</strong><ng-template #notBilled><strong>—</strong></ng-template></div>
+        </div>
+
+        <details class="source-details">
+          <summary>View GitHub details <span class="disclosure-arrow" aria-hidden="true">⌄</span></summary>
+          <div class="source-expanded">
+            <div class="expanded-row"><span>Reporting month</span><strong>{{ github?.period || 'Unavailable' }}</strong></div>
+            <div class="expanded-row"><span>Actions billed amount</span><strong *ngIf="github?.billedActionsUsd !== null && github?.billedActionsUsd !== undefined; else noBill">{{ github?.billedActionsUsd | currency:'USD':'symbol':'1.2-2' }}</strong><ng-template #noBill><strong>Unavailable</strong></ng-template></div>
+            <p>Monthly billed minutes cover the connected GitHub account. Recent workflow counts above cover PTI only. Free or unbilled runs may not appear in billing.</p>
+            <a href="https://github.com/settings/billing" target="_blank" rel="noopener noreferrer">GitHub billing <span aria-hidden="true">↗</span></a>
+          </div>
+        </details>
+      </article>
+
+      <article class="source-card" aria-labelledby="firebase-resource-title">
+        <header class="source-header">
+          <span class="source-icon firebase-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="7" ry="2.7"/><path d="M5 5v14c0 4 14 4 14 0V5M5 12c0 4 14 4 14 0"/></svg></span>
+          <div class="source-title"><h3 id="firebase-resource-title">Firebase</h3><small>Firestore activity</small></div>
+          <span class="source-status" [class.is-on]="firebase?.status === 'ok'" [class.is-warning]="firebase?.status === 'partial' || firebase?.status === 'error'">{{ sourceStatus(firebase?.status) }}</span>
+        </header>
+
+        <div class="source-signal">
+          <p class="signal-label">DOCUMENT READS · LAST 24 HOURS</p>
+          <strong *ngIf="totalFirebaseReads !== null; else noReads">{{ totalFirebaseReads | number:'1.0-0' }}<span>reads</span></strong>
+          <ng-template #noReads><strong class="not-reported">Unavailable</strong></ng-template>
+          <p class="signal-context">{{ firebaseScope }}</p>
+        </div>
+
+        <div class="source-glance">
+          <div><span>Document writes · 24h</span><strong *ngIf="totalFirebaseWrites !== null; else noWrites">{{ totalFirebaseWrites | number:'1.0-0' }}</strong><ng-template #noWrites><strong>—</strong></ng-template></div>
+          <div><span>Projects in scope</span><strong>{{ firebase?.projects?.length ? firebase?.projects?.length : '—' }}</strong></div>
+        </div>
+
+        <details class="source-details">
+          <summary>View Firebase projects <span class="disclosure-arrow" aria-hidden="true">⌄</span></summary>
+          <div class="source-expanded">
+            <ng-container *ngIf="firebase?.projects?.length; else noProjects">
+              <div class="project-reading" *ngFor="let project of firebase?.projects">
+                <div class="project-reading-title"><strong>{{ project.projectId }}</strong><span>{{ sourceStatus(project.status) }}</span></div>
+                <div class="expanded-row"><span>Reads · 24h</span><strong>{{ project.reads24h === null ? 'Unavailable' : (project.reads24h | number:'1.0-0') }}</strong></div>
+                <div class="expanded-row"><span>Writes · 24h</span><strong>{{ project.writes24h === null ? 'Unavailable' : (project.writes24h | number:'1.0-0') }}</strong></div>
+                <div class="expanded-row"><span>Deletes · 24h</span><strong>{{ project.deletes24h === null ? 'Unavailable' : (project.deletes24h | number:'1.0-0') }}</strong></div>
+              </div>
+            </ng-container>
+            <ng-template #noProjects><p>No authorized Firebase project readings have arrived yet.</p></ng-template>
+            <p>Activity is estimated from Cloud Monitoring; it does not represent exact billable operations. Other Firebase services are not yet included.</p>
+            <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer">Firebase console <span aria-hidden="true">↗</span></a>
+          </div>
+        </details>
+      </article>
+    </div>
+  </div>
+
+  <p class="resources-timestamp" *ngIf="reading; else awaitingSources">
+    Snapshot received <time [attr.datetime]="reading.collectedAt">{{ reading.collectedAt | date:'MMM d, h:mm a' }}</time> <span aria-hidden="true">·</span> Private to your PTI account
+  </p>
+  <ng-template #awaitingSources><p class="resources-timestamp">GitHub and Firebase summaries appear here after the first authorized collection. No usage is assumed.</p></ng-template>
+</section>

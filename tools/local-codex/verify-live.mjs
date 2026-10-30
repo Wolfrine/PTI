@@ -30,6 +30,11 @@ async function until(id,states){const end=Date.now()+240000;while(Date.now()<end
 try{
  await client.connect(new StreamableHTTPClientTransport(new URL(resource),{requestInit:{headers:{Authorization:'Bearer '+tokens.access_token}}}));
  assert.equal((await client.listTools()).tools.length,12);assert.equal((await call('bridge_status')).online,true);
+ if(process.argv.includes('--threads')){
+   const deadline=Date.now()+35*60000;let status=await call('bridge_status');
+   while(status.busy&&Date.now()<deadline){console.log('Waiting for the existing owner task to finish before acceptance.');await new Promise(r=>setTimeout(r,10000));status=await call('bridge_status');}
+   assert(!status.busy,'Owner work is still active; no acceptance task was submitted.');
+ }
  const projects=await call('list_projects');assert(projects.projects.some(p=>p.key==='scratch'&&p.available));checks.push('deployed OAuth and scheduled worker online');
  const nonce=randomUUID(),target=project('scratch'),filename=`relay-acceptance-${nonce}.txt`,marker='LOCAL_CODEX_'+nonce;
  const args={project:'scratch',mode:'inspect',prompt:`Read only ${filename} in the current directory. Reply with its complete contents. Do not edit anything.`,request_key:'accept-inspect-'+nonce};

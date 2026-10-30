@@ -1,6 +1,7 @@
 // Drive tokens and resumable session URLs stay in this browser. No server or PC OAuth.
 export const PRIVATE_FOLDER_ID = '1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA';
 export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const GOOGLE_CLIENT_ID = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com';
 const API = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 const OWNER = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2', PREFIX = 'velum-drive-upload-v1:';
 const FIELDS = 'id,name,mimeType,size,parents,appProperties,trashed,webViewLink';
@@ -100,12 +101,38 @@ function loadPicker(){
     const script=document.createElement('script');script.src='https://apis.google.com/js/api.js';script.async=true;script.onload=load;script.onerror=()=>reject(new Error('Google Picker needs a network connection.'));document.head.append(script);
   }).catch(error=>{pickerLoading=null;throw error;});
 }
-export function createStudioDrive({auth,requestAccess,reserve,apiKey,appId,fetchImpl=fetch,storage=globalThis.sessionStorage}){
-  let token='',issuedAt=0,gallery,folderApproved=false,epoch=0;
+export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reserve,apiKey,appId,fetchImpl=fetch,storage=globalThis.sessionStorage}){
+  let token='',expiresAt=0,gallery,epoch=0;
   const controllers=new Set(),pickers=new Map();
   const owner=()=>{if(auth.currentUser?.uid!==OWNER)throw new Error('Owner sign-in is required.');};
-  async function authorize(){owner();if(token&&Date.now()-issuedAt<50*60000)return;const generation=epoch,credential=await requestAccess(DRIVE_FILE_SCOPE);owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');if(!credential?.accessToken)throw new Error('Google did not grant Drive file access.');token=credential.accessToken;issuedAt=Date.now();folderApproved=false;}
-  async function request(url,options={}){owner();if(!token||Date.now()-issuedAt>=50*60000)throw new Error('Drive access expired. Tap Save again to reconnect on this device.');const response=await fetchImpl(url,{...options,headers:{...options.headers,Authorization:`Bearer ${token}`}});if(response.status===401){token='';issuedAt=0;throw new Error('Drive access expired. Tap Save again to reconnect on this device.');}return response;}
+  // Firebase identity, Drive scopes and folder authorization are separate grants.
+  // Validate combined/reloaded read tokens too: a timestamp or canAddChildren is
+  // not proof that Google granted drive.file to this app and this Google user.
+  async function inspect(candidate,generation){
+    if(!candidate)return false;
+    let response;
+    try{response=await fetchImpl('https://oauth2.googleapis.com/tokeninfo',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({access_token:candidate}),cache:'no-store',credentials:'omit'});}
+    catch{throw new Error('Could not verify Drive access. Reconnect when online and retry.');}
+    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
+    if(response.status===400||response.status===401)return false;
+    if(!response.ok)throw new Error('Could not verify Drive access. Retry when Google is available.');
+    const info=await response.json(),googleId=auth.currentUser.providerData?.find(item=>item.providerId==='google.com')?.uid;
+    if((info.aud||info.audience||info.issued_to)!==GOOGLE_CLIENT_ID || (googleId&&(info.sub||info.user_id)!==googleId))return false;
+    const seconds=Number(info.expires_in);
+    if(!String(info.scope||'').split(/\s+/).includes(DRIVE_FILE_SCOPE)||!Number.isFinite(seconds)||seconds<=60)return false;
+    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
+    token=candidate;expiresAt=Date.now()+Math.min(seconds-60,50*60)*1000;return true;
+  }
+  async function authorize(){
+    owner();if(token&&Date.now()<expiresAt)return;
+    const generation=epoch;token='';expiresAt=0;
+    if(await inspect(getReadAccess(),generation))return;
+    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
+    const credential=await requestAccess(DRIVE_FILE_SCOPE);
+    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
+    if(!await inspect(credential?.accessToken,generation))throw new Error('Google did not grant Drive file access. No image was uploaded.');
+  }
+  async function request(url,options={}){owner();const generation=epoch;if(!token||Date.now()>=expiresAt)throw new Error('Drive access expired. Tap Save again to reconnect on this device.');const response=await fetchImpl(url,{...options,headers:{...options.headers,Authorization:`Bearer ${token}`}});owner();if(generation!==epoch)throw new Error('Studio locked.');if(response.status===401){token='';expiresAt=0;throw new Error('Drive access expired. Tap Save again to reconnect on this device.');}return response;}
   async function pick(folder){
     const generation=epoch;await loadPicker();owner();if(generation!==epoch)throw new Error('Studio locked.');
     return new Promise((resolve,reject)=>{
@@ -119,13 +146,13 @@ export function createStudioDrive({auth,requestAccess,reserve,apiKey,appId,fetch
     });
   }
   async function folderGrant(){
-    const path=`${API}/files/${PRIVATE_FOLDER_ID}?fields=id,mimeType,capabilities(canAddChildren)`;
-    if(folderApproved)return;
+    const generation=epoch;
+    const path=`${API}/files/${PRIVATE_FOLDER_ID}?fields=id,mimeType,trashed,isAppAuthorized,capabilities(canAddChildren)`;
+    const writable=async()=>{const response=await request(path);if(response.status===403||response.status===404)return false;if(!response.ok)throw new Error(`Could not verify the Private folder (${response.status}). Retry when online.`);const data=await response.json();return data.id===PRIVATE_FOLDER_ID&&data.mimeType==='application/vnd.google-apps.folder'&&!data.trashed&&data.isAppAuthorized===true&&data.capabilities?.canAddChildren===true;};
+    const approved=await writable();if(generation!==epoch)throw new Error('Studio locked.');if(approved)return;
     const selected=await pick(true);
     if(selected?.id!==PRIVATE_FOLDER_ID)throw new Error('Choose the existing Private folder used by Drift. No image was uploaded.');
-    const response=await request(path);const data=response.ok?await response.json():{};
-    if(!response.ok||data.id!==PRIVATE_FOLDER_ID||!data.capabilities?.canAddChildren)throw new Error('The existing Private folder has not been granted writable access. Check the phone-side Picker grant. No broader Drive scope was requested.');
-    folderApproved=true;
+    if(!await writable())throw new Error('The existing Private folder has not been granted writable access. Check the phone-side Picker grant. No broader Drive scope was requested.');
   }
   return {
     authorize,
@@ -149,6 +176,6 @@ export function createStudioDrive({auth,requestAccess,reserve,apiKey,appId,fetch
       }finally{controllers.delete(controller);}
     },
     setGalleryProvider(provider){gallery=provider;},
-    clear(){epoch++;for(const controller of controllers)controller.abort();controllers.clear();for(const[picker,reject]of pickers){picker.dispose();reject(new Error('Studio locked.'));}pickers.clear();token='';issuedAt=0;folderApproved=false;try{for(let index=storage.length-1;index>=0;index--){const key=storage.key(index);if(key?.startsWith(PREFIX))storage.removeItem(key);}}catch{}}
+    clear(){epoch++;for(const controller of controllers)controller.abort();controllers.clear();for(const[picker,reject]of pickers){picker.dispose();reject(new Error('Studio locked.'));}pickers.clear();token='';expiresAt=0;try{for(let index=storage.length-1;index>=0;index--){const key=storage.key(index);if(key?.startsWith(PREFIX))storage.removeItem(key);}}catch{}}
   };
 }

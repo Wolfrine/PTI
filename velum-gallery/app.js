@@ -109,8 +109,11 @@ let viewStarted = 0;
 let wakeLock = null;
 let browseObserver = null;
 let initializedGallery = false;
+let connectingDrive = false;
+let pendingGalleryView = '';
 let renderSerial = 0;
 const studioDrive = createStudioDrive({auth,apiKey:FIREBASE_CONFIG.apiKey,appId:FIREBASE_CONFIG.messagingSenderId,
+  getReadAccess: () => tokenProbablyFresh() ? accessToken : '',
   reserve: async (job,candidate) => {
     const uid=auth.currentUser?.uid;
     if(uid!=='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2')throw new Error('Owner sign-in is required.');
@@ -130,7 +133,7 @@ const studioDrive = createStudioDrive({auth,apiKey:FIREBASE_CONFIG.apiKey,appId:
   requestAccess: async scope => {
     const provider = new GoogleAuthProvider();
     provider.addScope(scope);
-    provider.setCustomParameters({prompt:'consent'});
+    provider.setCustomParameters({include_granted_scopes:'true'});
     const result = await reauthenticateWithPopup(auth.currentUser,provider);
     return GoogleAuthProvider.credentialFromResult(result);
   }
@@ -216,20 +219,28 @@ function setAuthMessage(title, copy, status = '') {
 }
 
 async function connectDrive() {
+  connectingDrive = true;
   connectBtn.disabled = true;
   setAuthMessage('Connecting', 'Choose the Google account that owns the private collection.', 'Waiting for Google…');
   try {
-    const provider = new GoogleAuthProvider();
-    provider.addScope(DRIVE_SCOPE);
-    provider.setCustomParameters({ prompt: 'consent' });
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (!credential?.accessToken) throw new Error('Google did not return a Drive access token.');
-    accessToken = credential.accessToken;
-    tokenIssuedAt = Date.now();
-    sessionStorage.setItem('velum-drive-token', accessToken);
-    sessionStorage.setItem('velum-drive-token-at', String(tokenIssuedAt));
+    if (!tokenProbablyFresh()) {
+      const provider = new GoogleAuthProvider();
+      provider.addScope(DRIVE_SCOPE);
+      provider.setCustomParameters({ include_granted_scopes: 'true' });
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (!credential?.accessToken) throw new Error('Google did not return a Drive access token.');
+      accessToken = credential.accessToken;
+      tokenIssuedAt = Date.now();
+      sessionStorage.setItem('velum-drive-token', accessToken);
+      sessionStorage.setItem('velum-drive-token-at', String(tokenIssuedAt));
+    }
     await syncDrive({ initial: true });
+    if (pendingGalleryView && initializedGallery) {
+      const view = pendingGalleryView;
+      pendingGalleryView = '';
+      activateView(view);
+    }
   } catch (error) {
     console.error(error);
     let status = error?.message || 'Could not connect.';
@@ -237,8 +248,10 @@ async function connectDrive() {
       status = `One-time Firebase setup needed: add ${location.hostname} to Authentication → Settings → Authorized domains.`;
     }
     setAuthMessage('Connection needed', 'Velum reads only the configured Private folder after you sign in.', status);
-    authGate.classList.add('open');
+    if (!$('#studioView').classList.contains('active')) authGate.classList.add('open');
+    else showToast(status);
   } finally {
+    connectingDrive = false;
     connectBtn.disabled = false;
   }
 }
@@ -338,7 +351,7 @@ async function listPrivateImages() {
 async function syncDrive({ initial = false } = {}) {
   syncBtn.disabled = true;
   syncLabel.textContent = 'Syncing';
-  if (initial) {
+  if (initial && !$('#studioView').classList.contains('active')) {
     authGate.classList.add('open');
     setAuthMessage('Opening collection', 'Reading media metadata from your Private Google Drive folder.', 'Media remains in Google Drive.');
   }
@@ -356,7 +369,9 @@ async function syncDrive({ initial = false } = {}) {
     }
   } catch (error) {
     console.error(error);
-    authGate.classList.add('open');
+    if (initial && auth.currentUser && !tokenProbablyFresh() && !connectingDrive) activateView('studio');
+    else if (!$('#studioView').classList.contains('active')) authGate.classList.add('open');
+    else showToast('Drive gallery needs reconnecting. Studio is still available.');
     setAuthMessage('Could not open collection', 'Reconnect the Google account that owns the Private Drive folder.', error?.message || 'Drive access failed.');
   } finally {
     syncBtn.disabled = false;
@@ -697,6 +712,7 @@ function activateView(view, { incoming = false } = {}) {
   const drift = view === 'drift';
   const studio = view === 'studio';
   if (!studio && !initializedGallery && !tokenProbablyFresh()) {
+    pendingGalleryView = view;
     authGate.classList.add('open');
     setAuthMessage('Private collection', 'Reconnect Drive to open your gallery.', 'Studio uses your owner sign-in separately.');
     return;
@@ -707,6 +723,7 @@ function activateView(view, { incoming = false } = {}) {
   $('#browseView').classList.toggle('active', browse);
   $('#studioView')?.classList.toggle('active', studio);
   $('#statsView')?.classList.toggle('active', view === 'stats');
+  if (studio && auth.currentUser) authGate.classList.remove('open');
   if (!drift) {
     finalizeView(false);
     window.__velumInteraction?.clearAdvance?.();
@@ -766,9 +783,14 @@ function initGallery() {
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 
 onAuthStateChanged(auth, async user => {
-  if (!user || !tokenProbablyFresh()) {
+  if (connectingDrive) return;
+  if (!user) {
     authGate.classList.add('open');
-    setAuthMessage('Private collection', 'Connect the Google account that owns the Drive folder.', user ? 'Drive permission needs refreshing.' : 'Images stay in Google Drive; votes stay on this device.');
+    setAuthMessage('Private collection', 'Connect the Google account that owns the Drive folder.', 'Images stay in Google Drive; votes stay on this device.');
+    return;
+  }
+  if (!tokenProbablyFresh()) {
+    activateView('studio');
     return;
   }
   await syncDrive({ initial: true });

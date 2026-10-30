@@ -1,15 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
-  function interactiveUser() { return request.auth != null && request.auth.token.get('firebase',{}).get('sign_in_provider','') != 'anonymous'; }
-  function owner(uid) { return interactiveUser() && request.auth.uid == uid; }
+  function interactiveUser() { return request.auth != null && request.auth.uid != 'pending-device-enrollment'
+   && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+  function owner(uid) { return request.auth != null && request.auth.uid == uid && uid != 'pending-device-enrollment'
+   && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
   // Preserve the live legacy policy without allowing it to overlap Personal.
-   match /{collection}/{document=**} { allow read, write: if interactiveUser() && collection != 'users' && collection != '_ptiMcpAuth' && collection != 'mcpAuditLog' && collection != '_ptiLocalServices'; }
+   match /{collection}/{document=**} { allow read, write: if collection != 'users' && collection != '_ptiMcpAuth' && collection != 'mcpAuditLog' && collection != '_ptiLocalServices' && interactiveUser(); }
   // Fixed service mailboxes are server-only, including for the PTI owner.
   match /_ptiLocalServices/{document=**} { allow read, write: if false; }
   match /users/{uid} {
    allow read, write: if interactiveUser();
-    match /{collection}/{document=**} { allow read, write: if interactiveUser() && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'atlasData' && collection != 'resourceUsage' && collection != 'velumStudio'; }
+    match /{collection}/{document=**} { allow read, write: if collection != 'atlasData' && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'resourceUsage' && collection != 'velumStudio' && interactiveUser(); }
   }
   // Private Studio drafts and bytes. The gallery's Drive scope remains read-only.
   match /users/{uid}/velumStudio/workspace {

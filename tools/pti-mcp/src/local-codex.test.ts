@@ -34,6 +34,14 @@ function concurrentFixture(maxConcurrentTasks=3){
 function safeTelemetry(){return {schemaVersion:1,runId:randomUUID(),generation:1,tokenBasis:'latest-response',strategy:'auto',purpose:'work',startedAt:new Date(1000000).toISOString(),finishedAt:new Date(1000100).toISOString(),durationMs:100,waitingMs:0,approvals:0,questions:0,commands:0,toolCalls:0,toolFailures:0,modelReroutes:0,parentUsage:null,usageCoverage:'none',children:[],childrenSeen:0};}
 afterEach(()=>vi.useRealTimers());
 describe('Local Codex relay',()=>{
+  it('waits for terminal progress after an already acknowledged cancellation instead of returning in a hot loop',async()=>{
+    const f=fixture();await f.pair();const task=await f.relay.start(OWNER,f.args),claim=(await f.pair()).job!;
+    await f.relay.cancel(OWNER,task.id);let returned=false;
+    const waiting=f.relay.wait(OWNER,task.id,1).then(value=>{returned=true;return value;});
+    await new Promise(resolve=>setImmediate(resolve));expect(returned).toBe(false);
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'interrupted'}});
+    expect((await waiting).status).toBe('interrupted');expect(f.store.listeners.size).toBe(0);
+  });
   it('reserves modern capacity atomically for queued work and deduplicates retries even when full',async()=>{
     const f=concurrentFixture();await f.pair();
     const submissions=await Promise.allSettled(Array.from({length:9},(_,i)=>f.relay.start(OWNER,{...f.args,request_key:`concurrent-${i}`})));

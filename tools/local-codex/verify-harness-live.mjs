@@ -29,6 +29,7 @@ async function until(id,states,requireModel=false){
     console.log(JSON.stringify({id,status:value.status,generation:value.generation,model:value.model||null,effort:value.reasoning_effort||null}));
     if(states.includes(value.status)&&(!requireModel||value.model))return value;
     if(['completed','failed','interrupted','waiting_for_user'].includes(value.status))throw Error(value.error||`Unexpected task state ${value.status}.`);
+    if(value.cancelRequested)await new Promise(resolve=>setTimeout(resolve,1000));
   }
   throw Error('Live harness acceptance timed out.');
 }

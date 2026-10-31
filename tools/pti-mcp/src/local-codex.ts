@@ -132,7 +132,7 @@ export class CodexRelay {
     let current=await this.store.read(uid,jobId);
     if(!current)throw Error('Unknown task.');
     const before=this.public(current);
-    if(seconds<=0||!['queued','running'].includes(before.status)||before.cancelRequested)return before;
+    if(seconds<=0||!['queued','running'].includes(before.status))return before;
     const deadline=Date.now()+Math.min(seconds,50)*1000;
     return new Promise<typeof before>((resolve,reject)=>{
       let done=false,unsubscribe:(()=>void)|undefined,timer:ReturnType<typeof setTimeout>|undefined;

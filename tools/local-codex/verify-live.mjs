@@ -29,7 +29,7 @@ async function call(name,args={}){const result=await client.callTool({name,argum
 async function until(id,states){const end=Date.now()+240000;while(Date.now()<end){const value=await call('get_task',{task_id:id,wait_seconds:20});console.log(JSON.stringify({task:id,status:value.status}));if(states.includes(value.status))return value;if(['failed','interrupted','waiting_for_user'].includes(value.status))throw Error(value.error||value.status);}throw Error('Live task timed out.');}
 try{
  await client.connect(new StreamableHTTPClientTransport(new URL(resource),{requestInit:{headers:{Authorization:'Bearer '+tokens.access_token}}}));
- assert.equal((await client.listTools()).tools.length,12);assert.equal((await call('bridge_status')).online,true);
+ assert.equal((await client.listTools()).tools.length,13);assert.equal((await call('bridge_status')).online,true);
  if(process.argv.includes('--threads')){
    const deadline=Date.now()+35*60000;let status=await call('bridge_status');
    while(status.busy&&Date.now()<deadline){console.log('Waiting for the existing owner task to finish before acceptance.');await new Promise(r=>setTimeout(r,10000));status=await call('bridge_status');}

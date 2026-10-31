@@ -1,5 +1,7 @@
 {
   "maxTaskMinutes": 30,
+  "maxConcurrentTasks": 3,
+  "maxSubagentsPerTask": 2,
   "model": "gpt-6.1-sol",
   "reasoningEffort": "xhigh",
   "firebaseAuthApiKey": "REPLACE_WITH_DEDICATED_NATIVE_FIREBASE_AUTH_KEY",

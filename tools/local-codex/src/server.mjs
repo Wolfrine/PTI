@@ -30,23 +30,26 @@ register('list_projects', 'List the configured F-drive project keys available to
 register('start_task', 'Start an asynchronous local Codex task. Inspect reads a project; edit may change files in that project and requires explicit human authorization. Return the task ID and poll get_task. Reuse request_key on retries.', {
   project: z.string(), prompt, mode: z.enum(['inspect', 'edit']).default('inspect'), request_key: key,
   work_key:key.optional(),title:z.string().trim().min(1).max(100).optional(),thread_id:z.string().uuid().optional(),
+  strategy:z.enum(['auto','single','team']).default('auto'),purpose:z.enum(['work','acceptance']).default('work'),
 }, false, args => {
   const target = project(args.project);
   const jobId = digest(args.work_key?`work:${target.key}:${args.mode}:${args.work_key}`:args.request_key).slice(0, 32);
   const requestKeyDigest=digest(args.request_key);
-  const inputHash = digest(JSON.stringify({ project: target.key, prompt: args.prompt, mode: args.mode,title:args.title,thread_id:args.thread_id }));
+  const inputHash = digest(JSON.stringify({ project: target.key, prompt: args.prompt, mode: args.mode,title:args.title,thread_id:args.thread_id,strategy:args.strategy,purpose:args.purpose }));
+  const legacyHash=args.strategy==='auto'&&args.purpose==='work'?digest(JSON.stringify({project:target.key,prompt:args.prompt,mode:args.mode,title:args.title,thread_id:args.thread_id})):null;
   const directory = taskDir(jobId);
   fs.mkdirSync(path.dirname(directory), { recursive: true });
   try { fs.mkdirSync(directory); } catch (error) {
     if (error.code !== 'EEXIST') throw error;
     const existing = task(jobId);
-    if(args.work_key&&existing.requestKeyDigest!==requestKeyDigest)return {...view(existing),reused:true,followup_required:existing.inputHash!==inputHash};
-    if (existing.inputHash !== inputHash) throw new Error('request_key was already used for a different request.');
+    const sameInput=existing.inputHash===inputHash||existing.inputHash===legacyHash;
+    if(args.work_key&&existing.requestKeyDigest!==requestKeyDigest)return {...view(existing),reused:true,followup_required:!sameInput};
+    if (!sameInput) throw new Error('request_key was already used for a different request.');
     return view(existing);
   }
   const now = new Date().toISOString();
   const title=args.title||args.prompt.split(/[\r\n]/)[0].replace(/\s+/g,' ').slice(0,80);
-  const job = { id: jobId, project: target.key, cwd: target.path, mode: args.mode, inputHash, prompt: args.prompt,title,workKey:args.work_key,requestKeyDigest,
+  const job = { id: jobId, project: target.key, cwd: target.path, resourcePath:target.resourcePath, mode: args.mode,strategy:args.strategy,purpose:args.purpose,inputHash, prompt: args.prompt,title,workKey:args.work_key,requestKeyDigest,
     createdAt: now, updatedAt: now, status: 'queued', threadId: args.thread_id||null, turnId: null, messages: [], pending: [], history: [] };
   write(path.join(directory, 'task.json'), job);
   launch(jobId, worker);

@@ -78,6 +78,7 @@ button.onclick=async()=>{button.disabled=true;try{
         const identity=await options.verifyIdentity(bearer[1]);await provider.checkUser(identity.uid,identity.authenticatedAt);if(identity.uid!==OWNER)throw Error('authentication_required');
         if(req.params.action==='poll')res.json(await relay.poll(identity.uid,workerPollSchema.parse(req.body)));
         else if(req.params.action==='report')res.json(await relay.report(identity.uid,workerReportSchema.parse(req.body)));
+        else if(req.params.action==='review_data')res.json(await relay.reviewData(identity.uid));
         else res.status(404).json({error:'Unknown worker action.'});
       }catch(error){const message=(error as Error).message;res.status(message==='lease_lost'?409:400).json({error:message==='lease_lost'?'lease_lost':'Worker request rejected.'});}
     });

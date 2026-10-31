@@ -3,7 +3,7 @@ $installRoot = 'F:\Workspace\Support\LocalCodexBridge'
 $stateFile = Join-Path $installRoot 'data\relay-state.json'
 if (Test-Path -LiteralPath $stateFile) {
   $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
-  if ($state.active) { throw 'Cancel the active Local Codex job and wait for its terminal result before stopping or upgrading.' }
+  if (@($state.active | Where-Object { $null -ne $_ }).Count -gt 0) { throw 'Wait for all active Local Codex jobs to finish before stopping or upgrading. Do not cancel unrelated owner work.' }
 }
 $scheduled = Get-ScheduledTask -TaskName 'PTI Local Codex Relay' -ErrorAction SilentlyContinue
 if ($scheduled) { Stop-ScheduledTask -TaskName 'PTI Local Codex Relay' }

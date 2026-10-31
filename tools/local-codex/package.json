@@ -1,11 +1,11 @@
 {
   "name": "@pti/local-codex-worker",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test test/bridge.test.mjs test/subscription.test.mjs test/progress.test.mjs test/model-policy.test.mjs",
+    "test": "node --test test/bridge.test.mjs test/subscription.test.mjs test/progress.test.mjs test/model-policy.test.mjs test/relay-state.test.mjs test/review-usage.test.mjs test/telemetry.test.mjs test/harness-policy.test.mjs test/workspace-locks.test.mjs test/worker-harness.test.mjs",
     "start": "node dist/relay.mjs"
   },
   "dependencies": {

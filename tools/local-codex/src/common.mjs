@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import {modelSelection} from './model-policy.mjs';
 
-export const VERSION = '0.3.3';
+export const VERSION = '0.4.0';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');
@@ -31,6 +31,11 @@ export function config() {
   const value = read(configFile);
   if (!path.win32.isAbsolute(home) || !home.toLowerCase().startsWith('f:')) throw new Error('Bridge data must be on F:.');
   if (!value.projects || !Object.keys(value.projects).length) throw new Error('Configure at least one project.');
+  for(const [name,fallback,min,max] of [['maxConcurrentTasks',3,1,4],['maxSubagentsPerTask',2,0,4]]){
+    const setting=value[name]??fallback;
+    if(!Number.isInteger(setting)||setting<min||setting>max)throw Error(`${name} must be an integer from ${min} to ${max}.`);
+    value[name]=setting;
+  }
   return value;
 }
 export function project(key) {
@@ -39,7 +44,12 @@ export function project(key) {
   const actual = fs.realpathSync.native(target.path);
   if (!actual.toLowerCase().startsWith('f:\\')) throw new Error('The resolved project must be on F:.');
   if (!fs.statSync(actual).isDirectory()) throw new Error('The project is not a directory.');
-  return { key, name: target.name || key, path: actual };
+  let resourcePath=actual,candidate=actual;
+  while(candidate!==path.dirname(candidate)){
+    if(fs.existsSync(path.join(candidate,'.git'))){resourcePath=candidate;break;}
+    candidate=path.dirname(candidate);
+  }
+  return { key, name: target.name || key, path: actual, resourcePath };
 }
 export function taskDir(id) {
   if (!/^[a-f0-9]{32}$/.test(id)) throw new Error('Invalid task ID.');
@@ -87,6 +97,7 @@ export function health() {
   const authMode=login.status===0&&/Logged in using ChatGPT/i.test(login.stdout+login.stderr)?'chatgpt':'unavailable';
   const selection=modelSelection(config());
   return { version: VERSION, codexVersion: result.stdout.trim(), codexPath: executable, dataPath: home, model:selection.model, reasoning_effort:selection.effort,
+    maxConcurrentTasks:config().maxConcurrentTasks,maxSubagentsPerTask:config().maxSubagentsPerTask,
     authMode,
     transport: 'stdio', networkListener: false, signIn: 'Uses the current Windows user Codex sign-in; verified when a task starts.',
     webMobile: 'Available through the authenticated PTI job relay when this worker is online.' };

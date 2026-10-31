@@ -25,7 +25,14 @@ async function until(client, id, states) {
   const timeout = Date.now() + 15000;
   while (Date.now() < timeout) {
     const job = await call(client, 'get_task', { task_id: id, wait_seconds: 1 });
-    if (states.includes(job.status)) return job;
+    if (states.includes(job.status)) {
+      if(['completed','failed','interrupted'].includes(job.status)&&Number.isInteger(job.workerPid)){
+        const exiting=Date.now()+5000;
+        while(Date.now()<exiting){try{process.kill(job.workerPid,0);}catch{return job;}await new Promise(resolve=>setTimeout(resolve,25));}
+        throw Error('The terminal fixture worker did not release its process.');
+      }
+      return job;
+    }
     await new Promise(resolve => setTimeout(resolve, 150));
   }
   throw new Error('Task timed out.');
@@ -99,7 +106,7 @@ try {
   await until(second, edit.id, ['running']);
   await new Promise(resolve => setTimeout(resolve, 300));
   const competing = await call(second, 'start_task', { project: 'fixture', mode: 'edit', prompt: 'complete', request_key: `edit-compete-${nonce}` });
-  assert.match((await until(second, competing.id, ['failed'])).error, /EEXIST/);
+  assert.match((await until(second, competing.id, ['failed'])).error, /conflicting task/);
   await call(second, 'cancel_task', { task_id: edit.id }); await until(second, edit.id, ['interrupted']);
   checks.push('two simultaneous edit tasks cannot own the same project');
   const configFile=path.join(testHome,'config.json'),configuration=JSON.parse(fs.readFileSync(configFile,'utf8'));

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import {spawn} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
 import {config,home,project,read,runtime,subscriptionEnvironment,alive} from './common.mjs';
 
 // History operations use the installed, signed-in protocol directly. They never
@@ -30,7 +30,15 @@ export async function withCodex(operation) {
     const account=await rpc('account/read',{refreshToken:false});
     if(account.account?.type!=='chatgpt')throw Error('ChatGPT subscription sign-in is required.');
     return await operation(rpc);
-  }finally{rejectAll(Error('History operation finished.'));lines.close();proc.stdin.end();if(proc.pid&&alive(proc.pid))proc.kill();}
+  }finally{
+    rejectAll(Error('History operation finished.'));lines.close();proc.stdin.end();
+    if(proc.pid&&alive(proc.pid)){
+      // The Windows runtime launcher can own descendants holding the pipes.
+      // End only this operation's process tree, never other Codex sessions.
+      if(process.platform==='win32')spawnSync('taskkill.exe',['/PID',String(proc.pid),'/T','/F'],{windowsHide:true,stdio:'ignore',timeout:10000});
+      else proc.kill();
+    }
+  }
 }
 
 export function summary(thread) {

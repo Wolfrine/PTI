@@ -43,9 +43,9 @@ try{
  await verifyAtlasHost(client,db,user.uid);
  const cb=db.batch();cb.set(codexSession,{expiresAt:now()+300,revoked:false});cb.set(codexAccess,{uid:user.uid,email:user.email,authenticatedAt:now(),clientId:'local-codex-deployment-check',scopes:['local-codex:jobs'],sessionId:codexSessionId,resource:origin+'/local-codex/mcp',expiresAt:now()+300});await cb.commit();
  codexClient=new Client({name:'local-codex-live-acceptance',version:'1'});await codexClient.connect(new StreamableHTTPClientTransport(new URL(origin+'/local-codex/mcp'),{requestInit:{headers:{Authorization:'Bearer '+codexToken}}}));
- const codexNames=(await codexClient.listTools()).tools.map(t=>t.name).sort();assert.deepEqual(codexNames,['bridge_status','cancel_task','continue_task','get_task','list_codex_threads','list_projects','list_tasks','organize_codex_thread','read_codex_thread','respond_to_task','resume_codex_thread','start_task']);
+ const codexNames=(await codexClient.listTools()).tools.map(t=>t.name).sort();assert.deepEqual(codexNames,['bridge_status','cancel_task','continue_task','get_task','list_codex_threads','list_projects','list_tasks','organize_codex_thread','read_codex_thread','record_task_outcome','respond_to_task','resume_codex_thread','start_task']);
  const health=await codexClient.callTool({name:'bridge_status',arguments:{}});assert(!health.isError);assert.equal(JSON.parse(health.content.find(c=>c.type==='text').text).openaiApiKeyRequired,false);
  assert.equal((await fetch(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+codexToken}})).status,403);
  assert.equal((await fetch(origin+'/local-codex/mcp',{method:'POST',headers:{Authorization:'Bearer '+token}})).status,403);
- console.log('PASS: Local Codex has exactly twelve authenticated work/history tools, and PTI/Codex tokens cannot cross resources. No local job was submitted.');
+ console.log('PASS: Local Codex has exactly thirteen authenticated work/history/outcome tools, and PTI/Codex tokens cannot cross resources. No local job was submitted.');
 }finally{await client?.close().catch(()=>{});await codexClient?.close().catch(()=>{});const batch=db.batch();for(const ref of [accessRef,sessionRef,codexAccess,codexSession])batch.delete(ref);await batch.commit();}

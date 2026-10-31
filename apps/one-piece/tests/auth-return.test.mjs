@@ -31,8 +31,8 @@ test('current PTI login stays available and legacy family handoff happens before
  const compiled=await transform(source.replace(/^import .*;\r?\n/gm,''),{loader:'ts',format:'cjs',target:'es2022'});
  for(const [redirect,expected] of [['/one-piece/?episode=500#player','alias'],['/home','pti']]){
   const calls=[],module={exports:{}};
-  vm.runInNewContext(compiled.code,{module,exports:module.exports,Component:()=>type=>type,onePieceLoginAlias,safeLoginReturn,navigateAfterLogin,window:{location:{replace:url=>calls.push(['replace',url])}}});
-  const auth={getUser:()=>{calls.push(['getUser']);return{subscribe:handler=>handler(null)};},initGoogleOneTap:()=>calls.push(['google'])};
+  vm.runInNewContext(compiled.code,{module,exports:module.exports,Component:()=>type=>type,CommonModule:Symbol('common'),DestroyRef:Symbol('destroy'),inject:()=>({}),takeUntilDestroyed:()=>source=>source,onePieceLoginAlias,safeLoginReturn,navigateAfterLogin,window:{location:{replace:url=>calls.push(['replace',url])}}});
+  const auth={getUser:()=>{calls.push(['getUser']);const user={subscribe:handler=>handler(null),pipe:operator=>operator(user)};return user;},initGoogleOneTap:()=>calls.push(['google'])};
   new module.exports.LoginComponent(auth,{}, {snapshot:{queryParamMap:{get:()=>redirect}}}).ngOnInit();
   if(expected==='alias')assert.deepEqual(calls,[['replace',`${canonical}/one-piece/?episode=500#player`]]);
   else assert.deepEqual(calls,[['getUser'],['google']]);

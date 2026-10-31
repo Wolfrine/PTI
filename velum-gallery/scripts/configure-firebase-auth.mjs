@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { GoogleAuth } from 'google-auth-library';
 import {serviceDisabled,waitForServiceOperation} from './cloud-checks.mjs';
+import {appendPtiReferrers,verifyBrowserRestrictions,probeBrowserAuth} from './browser-key-restrictions.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID || 'pti-app-2ab59';
 const siteId = process.env.VELUM_SITE_ID || 'pti-app-2ab59-velum';
@@ -118,8 +119,8 @@ async function ensurePickerApi(){
   await ensureCloudService('picker.googleapis.com');
 }
 async function configurePickerKey(){
-  // Reuse the public Firebase web key. Preserve every existing restriction;
-  // add only the two APIs and iframe origin required by Google's Picker guide.
+  // Reuse the browser key. Only append PTI's exact two Hosting origins;
+  // preserve every API target, method restriction, Picker and other referrer.
   const url=`https://apikeys.googleapis.com/v2/keys:lookupKey?keyString=${encodeURIComponent(webApiKey)}`;
   let lookup=await fetch(url,{headers});
   if(!lookup.ok){
@@ -131,18 +132,12 @@ async function configurePickerKey(){
   if(typeof name!=='string'||!name.startsWith('projects/185802494856/'))throw new Error('Unexpected public web key project; no key configuration changed.');
   const response=await fetch(`https://apikeys.googleapis.com/v2/${name}`,{headers});
   if(!response.ok)throw new Error(`Could not inspect public web key restrictions (${response.status}).`);
-  const key=await response.json(),restrictions=structuredClone(key.restrictions||{}),additions=[];let changed=false;
-  if(restrictions.apiTargets?.length){
-    for(const service of ['picker.googleapis.com','drive.googleapis.com'])if(!restrictions.apiTargets.some(target=>target.service===service)){restrictions.apiTargets.push({service});additions.push(service);changed=true;}
-  }
-  if(restrictions.browserKeyRestrictions){
-    const refs=restrictions.browserKeyRestrictions.allowedReferrers||=[];
-    for(const origin of [`https://${siteId}.web.app/*`,`https://${siteId}.firebaseapp.com/*`,'https://docs.google.com/*'])if(!refs.includes(origin)){refs.push(origin);additions.push(origin);changed=true;}
-  }
-  if(!changed){console.log('Existing public web key permits the Picker configuration.');return;}
+  const key=await response.json(),{restrictions,additions}=appendPtiReferrers(key.restrictions);
+  if(restrictions.apiTargets?.length && ['picker.googleapis.com','drive.googleapis.com'].some(service=>!restrictions.apiTargets.some(target=>target.service===service))) throw new Error('Existing browser key is missing a required Picker/Drive API target; this repair does not broaden API targets.');
+  if(!additions.length){verifyBrowserRestrictions(restrictions,key.restrictions);console.log('Existing public web key permits PTI browser origins and retains Picker restrictions.');return;}
   console.log(`Public web key restriction additions: ${additions.join(', ')}`);
   const update=await fetch(`https://apikeys.googleapis.com/v2/${name}?updateMask=restrictions`,{method:'PATCH',headers,body:JSON.stringify({name,etag:key.etag,restrictions})});
-  if(!update.ok)throw new Error(`Existing CI identity cannot add the narrowly required Picker restrictions (${update.status}). No replacement credential was created.`);
+  if(!update.ok)throw new Error(`Existing CI identity cannot append the exact PTI browser origins (${update.status}). No replacement credential was created.`);
   await waitForServiceOperation(await update.json(),{read:async operation=>{
     const response=await fetch(`https://apikeys.googleapis.com/v2/${operation}`,{headers});
     if(!response.ok)throw new Error(`Public web key update status unavailable (HTTP ${response.status}).`);
@@ -151,9 +146,8 @@ async function configurePickerKey(){
   const verified=await fetch(`https://apikeys.googleapis.com/v2/${name}`,{headers});
   if(!verified.ok)throw new Error('Could not verify the updated public web key restrictions.');
   const actual=(await verified.json()).restrictions||{};
-  if(restrictions.apiTargets?.some(target=>!actual.apiTargets?.some(value=>value.service===target.service))
-    || restrictions.browserKeyRestrictions?.allowedReferrers?.some(origin=>!actual.browserKeyRestrictions?.allowedReferrers?.includes(origin)))throw new Error('Public web key restrictions have not finished updating.');
-  console.log('Existing public web key Picker restrictions verified; original restrictions retained.');
+  verifyBrowserRestrictions(restrictions,actual);
+  console.log('PTI browser origins appended and exact restriction readback verified; API targets and Picker restrictions retained.');
 }
 async function ensureStudioIndexes(){
   const base=`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/collectionGroups`;
@@ -175,6 +169,13 @@ await configureAuthorizedDomains();
 await ensureDriveApi();
 await ensurePickerApi();
 await configurePickerKey();
+// API-key restriction propagation can lag the operation/readback briefly.
+let browserChecks;
+for(let attempt=0;attempt<12;attempt++){
+  try{browserChecks=await probeBrowserAuth(webApiKey);break;}
+  catch(error){if(attempt===11)throw error;await new Promise(resolve=>setTimeout(resolve,5000));}
+}
+for(const check of browserChecks)console.log(`PASS browser ${check.origin} ${check.endpoint}: HTTP ${check.status} ${check.result}`);
 console.log('Required Studio Auth, Drive and Picker prerequisites verified.');
 try {
   await ensureStudioIndexes();

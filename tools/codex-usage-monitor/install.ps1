@@ -22,8 +22,17 @@ if (Test-Path -LiteralPath $installRoot) {
 New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
 # Reuse PTI's tested current-user DPAPI/DACL helper before putting private state here.
 $protectModule = Join-Path $sourceRoot 'src\dpapi.mjs'
-& $nodePath --input-type=module -e "const url=await import('node:url'); const {WindowsProtection}=await import(url.pathToFileURL(process.argv[1]).href); await new WindowsProtection().secureDirectory(process.argv[2]);" $protectModule $installRoot
-if ($LASTEXITCODE -ne 0) { throw 'Private installation directory could not be secured.' }
+# Reapplying an inherited DACL to all old node_modules releases can exceed the
+# helper's deadline. Reuse only an already exact, protected CurrentUser/SYSTEM
+# full-control DACL; otherwise retain the existing protection helper.
+$ownerSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+$existingAcl = Get-Acl -LiteralPath $installRoot
+. (Join-Path $sourceRoot 'scripts\private-install-acl.ps1')
+$privateAcl = Test-PrivateMonitorAcl -Acl $existingAcl -OwnerSid $ownerSid
+if (!$privateAcl) {
+  & $nodePath --input-type=module -e "const url=await import('node:url'); const {WindowsProtection}=await import(url.pathToFileURL(process.argv[1]).href); await new WindowsProtection().secureDirectory(process.argv[2]);" $protectModule $installRoot
+  if ($LASTEXITCODE -ne 0) { throw 'Private installation directory could not be secured.' }
+} else { Write-Output 'Existing private installation ACL verified; encrypted credentials preserved.' }
 if ([IO.Path]::GetFullPath($NativeAuthConfig) -ne [IO.Path]::GetFullPath($nativeConfig)) { Copy-Item -LiteralPath $NativeAuthConfig -Destination $nativeConfig -Force }
 Copy-Item -LiteralPath $nativeConfig -Destination (Join-Path $releaseRoot 'native-auth.json') -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'package.json'),(Join-Path $sourceRoot 'package-lock.json') -Destination $releaseRoot -Force

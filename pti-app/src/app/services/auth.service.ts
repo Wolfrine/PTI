@@ -11,6 +11,7 @@ import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { navigateAfterLogin } from './login-return';
+import { SignInState, signInErrorMessage } from './sign-in-feedback';
 
 declare global {
     interface Window {
@@ -24,6 +25,8 @@ declare global {
 export class AuthService {
     private userSubject = new BehaviorSubject<any>(null);
     user$ = this.userSubject.asObservable();
+    private signInStateSubject = new BehaviorSubject<SignInState>({ busy: false, error: null });
+    signInState$ = this.signInStateSubject.asObservable();
     googleClientId = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com'; // Replace with Firebase OAuth Client ID
 
     constructor(
@@ -55,7 +58,7 @@ export class AuthService {
         });
     }
 
-    initGoogleOneTap() {
+    async initGoogleOneTap(): Promise<void> {
         if (this.oneTapInitialized || this.userSubject.value) {
             console.log('Skipping One Tap: Already initialized or user logged in.');
             return;
@@ -63,7 +66,7 @@ export class AuthService {
 
         this.oneTapInitialized = true;
 
-        this.loadGoogleScript().then(() => {
+        await this.loadGoogleScript().then(() => {
             if (window.google?.accounts) {
                 window.google.accounts.id.initialize({
                     client_id: this.googleClientId,
@@ -73,9 +76,10 @@ export class AuthService {
                 });
 
                 window.google.accounts.id.prompt();
-            }
+            } else { throw new Error('Google sign-in script unavailable'); }
         }).catch((error) => {
-            console.error('Google One Tap failed to initialize:', error);
+            this.oneTapInitialized = false;
+            if (!this.signInStateSubject.value.busy) this.setSignInState({ busy: false, error: 'Google sign-in could not load. Tap Continue with Google to try again.' });
         });
     }
 
@@ -84,32 +88,38 @@ export class AuthService {
 
     // ✅ Handle One Tap Credential Response
     async handleCredentialResponse(response: { credential: string }) {
+        if (this.signInStateSubject.value.busy) return;
+        this.setSignInState({ busy: true, error: null });
         try {
-            const credential = GoogleAuthProvider.credential(response.credential);
-            const result = await signInWithCredential(this.auth, credential);
+            const result = await this.oneTapCredential(response.credential);
             const user = result.user;
 
             await this.storeUserInFirestore(user);
             this.userSubject.next(user);
         } catch (error) {
-            console.error('Google One Tap Sign-In Error:', error);
-        }
+            this.setSignInState({ busy: false, error: signInErrorMessage(error) });
+        } finally { this.setSignInState({ ...this.signInStateSubject.value, busy: false }); }
     }
 
     // ✅ Sign in with Google Popup
     async signInWithGoogle(redirectRoute: string = '/home'): Promise<void> {
+        if (this.signInStateSubject.value.busy) return;
+        this.setSignInState({ busy: true, error: null });
         try {
-            const provider = new GoogleAuthProvider();
-            const credential = await signInWithPopup(this.auth, provider);
+            const credential = await this.popupCredential();
             const user = credential.user;
 
             await this.storeUserInFirestore(user);
             this.userSubject.next(user);
             navigateAfterLogin(redirectRoute, this.router);
         } catch (error) {
-            console.error('Login Error:', error);
-        }
+            this.setSignInState({ busy: false, error: signInErrorMessage(error) });
+        } finally { this.setSignInState({ ...this.signInStateSubject.value, busy: false }); }
     }
+
+    private setSignInState(state: SignInState) { this.ngZone.run(() => this.signInStateSubject.next(state)); }
+    private popupCredential() { return signInWithPopup(this.auth, new GoogleAuthProvider()); }
+    private oneTapCredential(token: string) { return signInWithCredential(this.auth, GoogleAuthProvider.credential(token)); }
 
     // ✅ Store User in Firestore (Fix: Preserve `createdOn` date)
     private async storeUserInFirestore(user: any): Promise<void> {

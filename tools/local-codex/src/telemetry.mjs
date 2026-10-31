@@ -21,7 +21,7 @@ export function createTelemetry(job, {clock = Date.now} = {}) {
   let commands = 0, toolCalls = 0, toolFailures = 0, modelReroutes = 0;
   let parentUsage = null, finishedAt = null, finishedTime = null;
   const runId = randomUUID();
-  const generation = (job.history?.length || 0) + 1;
+  const generation = Number.isInteger(job.relayGeneration)&&job.relayGeneration>0?job.relayGeneration:(job.history?.length || 0) + 1;
   function child(id) {
     if (!uuid(id)) return null;
     if (!children.has(id) && children.size < 16) children.set(id, {threadId: id, status: 'unknown', model: null, reasoningEffort: null, selectionVerified: false, executionVerified: null, usage: null});

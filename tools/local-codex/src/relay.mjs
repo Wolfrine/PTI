@@ -8,7 +8,7 @@ import {home,config,project,read,write,alive,subscriptionEnvironment,VERSION,tas
 import {loadCredential,saveCredential,refresh} from './credentials.mjs';
 import {modelSelection} from './model-policy.mjs';
 import {reportChangedSnapshot} from './progress.mjs';
-import {claims,mergeClaims,withoutClaim} from './relay-state.mjs';
+import {claims,mergeClaims,withoutClaim,retryableLocal} from './relay-state.mjs';
 
 const base='https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker';
 fs.mkdirSync(path.join(home,'data'),{recursive:true});
@@ -33,7 +33,7 @@ async function local(name,args={}){
     await connecting;
   }
   const result=await client.callTool({name,arguments:args});
-  if(result.isError){const error=Error(result.content?.[0]?.text||'Local task failed.');error.scope='local';error.retryable=error.message==='The previous worker is still exiting; retry shortly.';throw error;}
+  if(result.isError){const error=Error(result.content?.[0]?.text||'Local task failed.');error.scope='local';error.retryable=retryableLocal(name,error.message);throw error;}
   return result.structuredContent||JSON.parse(result.content[0].text);
 }
 async function api(action,body){
@@ -81,8 +81,8 @@ async function service(job,controls){
     if(!job.localId){
       const request_key=`relay-${job.id}-${job.generation}`,previous=state.localTasks?.[job.id];
       const result=previous
-        ?await local('continue_task',{task_id:previous,prompt:job.prompt,request_key})
-        :await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,strategy:job.strategy||'auto',purpose:job.purpose||'work',...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{})});
+        ?await local('continue_task',{task_id:previous,prompt:job.prompt,request_key,relay_generation:job.generation})
+        :await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:job.generation,strategy:job.strategy||'auto',purpose:job.purpose||'work',...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{})});
       job.localId=result.id;state.localTasks||={};state.localTasks[job.id]=result.id;persist();
     }
     if(controls?.cancel)await local('cancel_task',{task_id:job.localId});

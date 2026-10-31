@@ -31,6 +31,7 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
   project: z.string(), prompt, mode: z.enum(['inspect', 'edit']).default('inspect'), request_key: key,
   work_key:key.optional(),title:z.string().trim().min(1).max(100).optional(),thread_id:z.string().uuid().optional(),
   strategy:z.enum(['auto','single','team']).default('auto'),purpose:z.enum(['work','acceptance']).default('work'),
+  relay_generation:z.number().int().positive().optional(),
 }, false, args => {
   const target = project(args.project);
   const jobId = digest(args.work_key?`work:${target.key}:${args.mode}:${args.work_key}`:args.request_key).slice(0, 32);
@@ -49,7 +50,7 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
   }
   const now = new Date().toISOString();
   const title=args.title||args.prompt.split(/[\r\n]/)[0].replace(/\s+/g,' ').slice(0,80);
-  const job = { id: jobId, project: target.key, cwd: target.path, resourcePath:target.resourcePath, mode: args.mode,strategy:args.strategy,purpose:args.purpose,inputHash, prompt: args.prompt,title,workKey:args.work_key,requestKeyDigest,
+  const job = { id: jobId, project: target.key, cwd: target.path, resourcePath:target.resourcePath, mode: args.mode,strategy:args.strategy,purpose:args.purpose,relayGeneration:args.relay_generation,inputHash, prompt: args.prompt,title,workKey:args.work_key,requestKeyDigest,
     createdAt: now, updatedAt: now, status: 'queued', threadId: args.thread_id||null, turnId: null, messages: [], pending: [], history: [] };
   write(path.join(directory, 'task.json'), job);
   launch(jobId, worker);
@@ -78,7 +79,7 @@ register('get_task', 'Read a bridge-created task, progress, pending human questi
   return job;
 });
 register('continue_task', 'Continue a completed or interrupted bridge-created Codex task in its existing thread. Cannot change its project or inspect/edit mode. Reuse request_key on retry.', {
-  task_id: id, prompt, request_key: key,
+  task_id: id, prompt, request_key: key,relay_generation:z.number().int().positive().optional(),
 }, false, args => {
   const directory = taskDir(args.task_id);
   const job = view(task(args.task_id));
@@ -100,6 +101,7 @@ register('continue_task', 'Continue a completed or interrupted bridge-created Co
     if (current.updatedAt !== job.updatedAt) throw new Error('Task changed; retrieve it before continuing.');
     for (const name of ['cancel.json', 'worker.lock']) if (fs.existsSync(path.join(directory, name))) fs.unlinkSync(path.join(directory, name));
     Object.assign(job, { prompt: args.prompt, status: 'queued', pending: [], final: null, error: null, updatedAt: new Date().toISOString() });
+    job.relayGeneration=args.relay_generation;
     job.history.push({ key: action, inputHash });
     write(path.join(directory, 'task.json'), job);
     launch(job.id, worker);

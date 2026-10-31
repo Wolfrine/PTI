@@ -48,13 +48,14 @@ try {
   assert.match((await call(client, 'start_task', { project: 'forbidden', prompt: 'inspect', request_key: 'forbidden-test' })).error, /F:/);
   checks.push('C-drive targets rejected after path resolution');
   const nonce = Date.now();
-  const args = { project: 'fixture', prompt: 'complete', request_key: `complete-${nonce}`,work_key:`fixture-outcome-${nonce}`,title:'Fixture outcome' };
+  const args = { project: 'fixture', prompt: 'complete', request_key: `complete-${nonce}`,work_key:`fixture-outcome-${nonce}`,title:'Fixture outcome',relay_generation:3 };
   const started = await call(client, 'start_task', args);
   const retry = await call(client, 'start_task', args);
   assert.equal(started.id, retry.id);
   assert.match((await call(client, 'start_task', { ...args, prompt: 'different' })).error, /different request/);
   const done = await until(client, started.id, ['completed']);
   assert.equal(done.final, 'fixture completed');
+  assert.equal(done.telemetry.generation,3);
   const reused=await call(client,'start_task',{...args,prompt:'follow up without duplication',request_key:`reused-${nonce}`});
   assert.equal(reused.id,done.id);assert.equal(reused.reused,true);assert.equal(reused.followup_required,true);assert.equal(reused.prompt,'complete');
   checks.push('work key reuse returns the original task without silently submitting a follow-up');
@@ -69,7 +70,7 @@ try {
   let continued;
   const continueDeadline=Date.now()+8000;
   do{
-    continued=await call(client,'continue_task',{task_id:done.id,prompt:'approval',request_key:`continue-${nonce}`});
+    continued=await call(client,'continue_task',{task_id:done.id,prompt:'approval',request_key:`continue-${nonce}`,relay_generation:4});
     if(!continued.error)break;
     assert.equal(continued.error,'The previous worker is still exiting; retry shortly.');
     await new Promise(resolve=>setTimeout(resolve,150));
@@ -81,6 +82,7 @@ try {
   await call(client, 'respond_to_task', { task_id: done.id, request_id: pending.pending[0].id, decision: 'decline' });
   const declined = await until(client, done.id, ['completed']);
   assert.equal(declined.final, '{"decision":"decline"}');
+  assert.equal(declined.telemetry.generation,4);
   const resumedOptions=JSON.parse(fs.readFileSync(path.join(testHome,'scratch/fixture-options.json'),'utf8'));
   assert.equal(resumedOptions.model,'gpt-6.1-sol');assert.equal(resumedOptions.config.model_reasoning_effort,'xhigh');
   assert.equal(JSON.parse(fs.readFileSync(path.join(testHome,'scratch/fixture-turn-options.json'),'utf8')).effort,'xhigh');

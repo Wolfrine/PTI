@@ -5,6 +5,10 @@ const parent='01900000-0000-7000-8000-000000000001',child='01900000-0000-7000-80
 const selection={model:'gpt-6.1-sol',effort:'xhigh'};
 const usage={totalTokens:30,inputTokens:20,cachedInputTokens:10,outputTokens:10,reasoningOutputTokens:4};
 const event=(method,params)=>({method,params});
+test('explicit relay generations survive skipped remote runs without being replaced by local history length',()=>{
+  assert.equal(createTelemetry({relayGeneration:7,history:[{}]}).snapshot().generation,7);
+  assert.equal(createTelemetry({history:[{}]}).snapshot().generation,2);
+});
 test('per-run telemetry is content-free, deduplicates updates, and marks missing child usage',()=>{
   let now=1000;const metric=createTelemetry({strategy:'team',purpose:'acceptance',history:[{}]},{clock:()=>now});
   for(let i=0;i<2;i++)metric.observe(event('thread/tokenUsage/updated',{threadId:parent,tokenUsage:{last:usage,total:{...usage,totalTokens:9999}}}),parent,selection);

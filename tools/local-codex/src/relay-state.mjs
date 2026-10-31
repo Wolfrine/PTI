@@ -17,3 +17,6 @@ export function mergeClaims(active,incoming) {
 export function withoutClaim(active,claim) {
   return claims(active).filter(item=>item.id!==claim.id||item.generation!==claim.generation||item.lease!==claim.lease);
 }
+export function retryableLocal(method,message){
+  return method==='continue_task'&&['The previous worker is still exiting; retry shortly.','Wait for completion or cancel the active turn first.'].includes(message);
+}

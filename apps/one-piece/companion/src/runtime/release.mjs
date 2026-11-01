@@ -14,7 +14,7 @@ export function parseReleaseTree(text){return text.split('\0').filter(Boolean).m
  const match=/^(100644|100755) blob ([a-f0-9]{40})\t(.+)$/.exec(record);if(!match||!selected(match[3])||match[3].split('/').includes('..')||match[3].includes('\\'))throw new Error('release-tree');
  return{blob:match[2],relative:match[3]};
 });}
-export function releasePath(commit){if(!/^[a-f0-9]{40}$/.test(commit??''))throw new Error('release-commit');return path.win32.join('H:/PTI-OnePiece/releases',commit);}
+export function releasePath(commit,{legacy=false}={}){if(!/^[a-f0-9]{40}$/.test(commit??''))throw new Error('release-commit');return path.win32.join(legacy?'H:/PTI-OnePiece/releases':'F:/Workspace/Support/PTI/one-piece/releases',commit);}
 const STOP_INSPECTION=String.raw`
 $ErrorActionPreference='Stop'
 try{
@@ -50,7 +50,11 @@ async function stopped(config){
 }
 async function digest(file){return createHash('sha256').update(await readFile(file)).digest('hex');}
 export async function verifyRelease(commit){
- const destination=releasePath(commit),manifest=JSON.parse(await readFile(path.join(destination,'release-manifest.json'),'utf8'));
+ let destination=releasePath(commit);
+ // Existing H: releases remain verifiable for rollback, never a destination for
+ // new source. An existing but invalid F: release must fail, not fall back.
+ try{await access(destination);}catch(error){if(error.code!=='ENOENT')throw error;destination=releasePath(commit,{legacy:true});}
+ const manifest=JSON.parse(await readFile(path.join(destination,'release-manifest.json'),'utf8'));
  if(manifest.version!==1||manifest.commit!==commit||path.win32.normalize(manifest.releaseRoot)!==destination||!Array.isArray(manifest.files)||manifest.files.length>10000)throw new Error('release-manifest');
  const unique=new Set();for(const file of manifest.files){
   const relative=file.path;if(typeof relative!=='string'||relative.includes('\\')||relative.split('/').includes('..')||path.win32.isAbsolute(relative)||(!selected(relative)&&!relative.startsWith(`${PREFIX}/node_modules/jose/`))||unique.has(relative.toLowerCase())||!Number.isSafeInteger(file.bytes)||file.bytes<0||file.bytes>50*1024*1024||!/^[a-f0-9]{64}$/.test(file.sha256))throw new Error('release-manifest-file');
@@ -61,8 +65,10 @@ export async function verifyRelease(commit){
 export async function activateRelease({commit,configPath='H:/PTI-OnePiece/runtime/private/config.json'}={}){
  const manifest=await verifyRelease(commit),config=await loadRuntimeConfig(configPath);await stopped(config);
  const previous={...config};delete previous.configPath;await atomicJson(path.join(config.privateRoot,'previous-runtime-config.json'),previous);
- const destination=releasePath(commit),updated=validateRuntimeConfig({...previous,repositoryRoot:destination,serverEntry:path.join(destination,PREFIX,'src/server.mjs'),catalogPath:path.join(destination,CATALOG),activeRelease:commit});
- await copyFile(path.join(destination,PREFIX,'src/runtime/launcher.mjs'),path.join(config.runtimeRoot,'launch-current.mjs'));await atomicJson(configPath,updated);
+ const destination=manifest.releaseRoot,updated=validateRuntimeConfig({...previous,repositoryRoot:destination,serverEntry:path.join(destination,PREFIX,'src/server.mjs'),catalogPath:path.join(destination,CATALOG),activeRelease:commit});
+ const launcherSource=path.join(destination,PREFIX,'src/runtime/launcher.mjs'),launcherTarget=path.join(config.runtimeRoot,'launch-current.mjs');
+ if(await digest(launcherSource)!==await digest(launcherTarget))await copyFile(launcherSource,launcherTarget);
+ await atomicJson(configPath,updated);
  await atomicJson(path.join(config.privateRoot,'release-activation-proof.json'),{recordedAt:new Date().toISOString(),activeRelease:commit,previousRelease:config.activeRelease??null,verifiedFiles:manifest.files.length});return{activated:true,commit,releaseRoot:destination,verifiedFiles:manifest.files.length};
 }
 export async function packageRelease({repositoryRoot,commit,activate=false,configPath='H:/PTI-OnePiece/runtime/private/config.json'}={}){
@@ -74,7 +80,7 @@ export async function packageRelease({repositoryRoot,commit,activate=false,confi
  const tree=parseReleaseTree(await git(['ls-tree','-rz','--full-tree',commit,'--',...paths]));
  if(!tree.some(x=>x.relative===CATALOG)||!tree.some(x=>x.relative===`${PREFIX}/src/server.mjs`)||!tree.some(x=>x.relative===`${PREFIX}/src/runtime/launcher.mjs`))throw new Error('release-incomplete');
  const config=await loadRuntimeConfig(configPath);if(activate)await stopped(config);
- await protection.secureDirectory('H:/PTI-OnePiece/releases');
+ await protection.secureDirectory(path.win32.dirname(destination));
  let exists=false;try{await access(destination);exists=true;}catch{}
  if(exists)throw new Error('release-already-exists-verify-before-reuse');
  await mkdir(destination);await protection.secureDirectory(destination);

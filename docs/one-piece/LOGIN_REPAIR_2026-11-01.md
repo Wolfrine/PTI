@@ -27,3 +27,9 @@ An authentication API HTTP 403 now denies the request as an infrastructure
 failure while retaining the encrypted viewer connection. Actual invalid/revoked
 credentials and family access revocations continue to fail closed and clear
 their saved connection. No administrator identity or project IAM is changed.
+
+New versioned companion source releases use
+`F:\Workspace\Support\PTI\one-piece\releases`, following the F-drive storage
+rule. Existing H-drive media/private state and old releases are preserved;
+legacy releases can still be verified for rollback. Activation retains the
+existing stable launcher when its bytes already match.

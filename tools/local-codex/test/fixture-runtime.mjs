@@ -4,7 +4,7 @@ import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 const lines = readline.createInterface({ input: process.stdin });
 const send = message => process.stdout.write(`${JSON.stringify(message)}\n`);
-let cwd, sandbox, prompt, turn = 0;
+let cwd, sandbox, prompt, turn = 0, resumed = false, injected = false;
 let threadId=process.argv.includes('--unique-thread-id')?randomUUID():'01900000-0000-7000-8000-000000000001';
 const childThreadId='01900000-0000-7000-8000-000000000002';
 const fixtureHome=process.env.LOCAL_CODEX_BRIDGE_HOME;
@@ -27,13 +27,18 @@ lines.on('line', line => {
   if(m.method==='thread/name/set'){fs.writeFileSync(historyFile,JSON.stringify({...state(),name:m.params.name}));send({id:m.id,result:{}});}
   if(m.method==='thread/archive'||m.method==='thread/unarchive'){fs.writeFileSync(historyFile,JSON.stringify({...state(),archived:m.method==='thread/archive'}));send({id:m.id,result:{}});}
   if (m.method === 'thread/start' || m.method === 'thread/resume') {
-    if(m.method==='thread/resume')threadId=m.params.threadId;
+    if(m.method==='thread/resume'){threadId=m.params.threadId;resumed=true;}
     cwd = m.params.cwd;
-    sandbox = m.params.sandbox === 'read-only' ? 'readOnly' : 'workspaceWrite';
+    sandbox = process.argv.includes('--wrong-sandbox')?'workspaceWrite':m.params.sandbox === 'read-only' ? 'readOnly' : m.params.sandbox === 'danger-full-access'?'dangerFullAccess':'workspaceWrite';
     fs.writeFileSync(path.join(cwd, 'fixture-options.json'), JSON.stringify(m.params));
-    send({ id: m.id, result: { thread: { id:threadId }, model:process.argv.includes('--wrong-model')?'lower-model':m.params.model, reasoningEffort:m.params.config.model_reasoning_effort, modelProvider:'openai', sandbox: { type: sandbox } } });
+    send({ id: m.id, result: { thread: { id:threadId }, model:process.argv.includes('--wrong-model')?'lower-model':m.params.model, reasoningEffort:m.params.config.model_reasoning_effort, modelProvider:'openai', sandbox: { type: sandbox },approvalPolicy:process.argv.includes('--wrong-approval')?'on-request':m.params.approvalPolicy } });
+  }
+  if(m.method==='thread/inject_items'){
+    if(process.argv.includes('--reject-injection')){send({id:m.id,error:{code:-32601,message:'Fixture rejects instruction injection'}});return;}
+    injected=true;fs.writeFileSync(path.join(cwd,'fixture-instructions.json'),JSON.stringify(m.params));send({id:m.id,result:{}});
   }
   if (m.method === 'turn/start') {
+    if(resumed&&!injected){send({id:m.id,error:{code:-32602,message:'Resume retained stale developer instructions'}});return;}
     fs.writeFileSync(path.join(cwd, 'fixture-turn-options.json'), JSON.stringify(m.params));
     prompt = m.params.input[0].text;
     turn++;

@@ -14,6 +14,8 @@ Keep the discussion here. The current human request defines scope; project instr
 3. Default capacity is three parents, configured maximum four. Teams default to at most two native children, within the configured child cap (zero to four). Respect live limits and account headroom; more agents are not inherently better. Do not override caps. Different project names may share a working copy. Respect workspace conflict admission and serialize main delivery.
 4. Use `inspect` for discovery/questions; `edit` only for currently authorized changes. A continuation cannot broaden mode or project. Newly authorized edits after inspection use `resume_codex_thread` with its exact thread ID, explicit project/edit mode and a distinct work key.
 
+Worker 0.4.1 preserves the owner's trusted desktop permissions for edit jobs: Full Access with approval `never`; inspect remains read-only with approval `never`. Check actual task permission metadata. Full Access enables authorized Git/network and named service-path work but does not expand the current task. Historical-thread resumes explicitly refresh the current bridge instructions. On an older worker, a stale mode, a returned permission mismatch or repeated approval prompts, report the harness mismatch and seek maintenance through the authorized native path; do not ask the owner to grant the same task again or repeatedly retry a blocked operation. Human questions still require real answers.
+
 ## Keep identity and model choice
 
 Retain task ID, native thread ID, project, mode and work key. Continue the same outcome with `continue_task`; recover missing IDs through `list_tasks` filtered by project/title/work key and `get_task`. Select by goal and evidence, not recency. Ask only when ambiguity remains.

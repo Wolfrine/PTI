@@ -24,3 +24,13 @@ test('archived failure truth survives a later successful continuation and remote
   const actual=summarizeTasks([{...task,error:null,runs:[prior,current]}],{now,remoteData:{jobs:[],limit:100,limitReached:true}});
   assert.equal(actual.rows[0].failureClass,'model-or-harness-policy');assert.equal(actual.rows[1].failureClass,null);assert.equal(actual.coverage.remoteLimitReached,true);assert.equal(actual.coverage.remoteHasMore,null);
 });
+
+test('an approval-wait interruption is actionable without inventing an owner verdict',()=>{
+  const run={runId:'stalled',generation:1,finishedAt:task.updatedAt,status:'interrupted',purpose:'work',approvals:1,questions:0,waitingMs:688985,durationMs:1800047};
+  const result=summarizeTasks([{...task,mode:'edit',runs:[run]}],{now});
+  assert.equal(result.candidates[0].id,'inspect-approval-wait-interruption');assert.equal(result.rows[0].ownerOutcome,'unknown');assert.equal(result.rows[0].sandboxType,'unknown');
+  assert.deepEqual(summarizeTasks([{...task,purpose:'acceptance',runs:[{...run,purpose:'acceptance'}]}],{now}).candidates,[]);
+  assert.deepEqual(summarizeTasks([{...task,runs:[{...run,approvals:0,questions:1}]}],{now}).candidates,[]);
+  assert.deepEqual(summarizeTasks([{...task,runs:[{...run,approvals:1,questions:1}]}],{now}).candidates,[]);
+  assert.deepEqual(summarizeTasks([{...task,runs:[{...run,waitingMs:299999}]}],{now}).candidates,[]);
+});

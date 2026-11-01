@@ -37,7 +37,9 @@ export function summarizeTasks(tasks,{now=Date.now(),days=7,remoteData=null,loca
         status:['queued','running','waiting_for_user','completed','failed','interrupted'].includes(status)?status:'unknown',
         strategy:['auto','single','team'].includes(run?.strategy||task.strategy)?run?.strategy||task.strategy:'unknown',
         at:new Date(at).toISOString(),durationMs:numeric(run?.durationMs),waitingMs:numeric(run?.waitingMs),
-        commands:numeric(run?.commands),toolCalls:numeric(run?.toolCalls),toolFailures:numeric(run?.toolFailures),
+        commands:numeric(run?.commands),toolCalls:numeric(run?.toolCalls),toolFailures:numeric(run?.toolFailures),approvals:numeric(run?.approvals),questions:numeric(run?.questions),
+        sandboxType:['readOnly','workspaceWrite','dangerFullAccess'].includes(run?.executionPolicy?.sandboxType)?run.executionPolicy.sandboxType:'unknown',
+        approvalPolicy:run?.executionPolicy?.approvalPolicy==='never'?'never':'unknown',
         childrenSeen:numeric(run?.childrenSeen),childrenWithVerifiedSelection:run?.children?.filter(c=>c.selectionVerified===true).length??null,
         observedResponseTokens:numeric(run?.parentUsage?.totalTokens),tokenBasis:run?.tokenBasis||'unknown',usageCoverage:run?.usageCoverage||'unknown',
         ownerOutcome:feedback.get(`${task.id}:${generation}`)||'unknown',failureClass:['failed','interrupted'].includes(status)?run?(failureCategories.has(run.errorCategory)?run.errorCategory:'unclassified'):failureClass(task):null});
@@ -46,6 +48,8 @@ export function summarizeTasks(tasks,{now=Date.now(),days=7,remoteData=null,loca
   const work=rows.filter(row=>row.purpose==='work'),probes=rows.filter(row=>row.purpose==='acceptance'),unclassified=rows.filter(row=>row.purpose==='unknown');
   const counts=(source,key)=>Object.fromEntries([...new Set(source.map(row=>row[key]))].map(value=>[String(value),source.filter(row=>row[key]===value).length]));
   const candidates=[];
+  const stalledApprovals=work.filter(row=>row.status==='interrupted'&&row.approvals>0&&row.questions===0&&row.waitingMs>=300000);
+  if(stalledApprovals.length)candidates.push({id:'inspect-approval-wait-interruption',decision:'investigate',evidence:stalledApprovals.map(row=>row.taskId).slice(0,12),reason:'An interrupted work run spent at least five minutes awaiting human approval. Check actual task policy and delivery state; completion and owner acceptance remain separate.'});
   if(work.filter(row=>['failed','interrupted'].includes(row.status)).length>=3)candidates.push({id:'inspect-repeated-execution-failure',decision:'investigate',evidence:work.filter(row=>row.failureClass).map(row=>row.taskId).slice(0,12),reason:'At least three failed/interrupted executions. Establish the mechanism and owner impact before changing the harness.'});
   const emptyTeams=work.filter(row=>row.strategy==='team'&&row.childrenSeen===0&&row.status==='completed');
   if(emptyTeams.length>=3)candidates.push({id:'review-unnecessary-team-routing',decision:'candidate',evidence:emptyTeams.map(row=>row.taskId).slice(0,12),reason:'At least three team requests completed without children. Check whether explicit single routing would reduce overhead for comparable tasks.'});

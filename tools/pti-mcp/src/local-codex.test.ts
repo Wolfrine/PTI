@@ -136,6 +136,16 @@ describe('Local Codex relay',()=>{
     await expect(f.relay.reviewData('foreign')).rejects.toThrow('authorized');
     expect(workerReportSchema.safeParse({...report,snapshot:{...report.snapshot,telemetry:{...telemetry,prompt:'PRIVATE_RAW'}}}).success).toBe(false);
   });
+  it('returns only strictly validated execution permission metadata through the normal task read',async()=>{
+    const f=fixture();await f.relay.poll(OWNER,{heartbeat:f.heartbeat});
+    const task=await f.relay.start(OWNER,{...f.args,mode:'edit'}),claim=(await f.relay.poll(OWNER,{heartbeat:f.heartbeat})).job!;
+    const policy={version:1,mode:'edit',sandboxType:'dangerFullAccess',approvalPolicy:'never',instructionRefresh:'history-injection',verifiedAt:new Date().toISOString()};
+    const report={id:claim.id,generation:claim.generation,lease:claim.lease,snapshot:{status:'completed',execution_policy:policy}};
+    await expect(f.relay.report(OWNER,{...report,snapshot:{...report.snapshot,execution_policy:{...policy,mode:'inspect',sandboxType:'readOnly'}}})).rejects.toThrow('admitted task mode');
+    await f.relay.report(OWNER,workerReportSchema.parse(report));
+    expect(await f.relay.get(OWNER,task.id)).toMatchObject({execution_policy:policy});
+    for(const patch of [{credential:'PRIVATE_RAW'},{sandboxType:'workspaceWrite'},{approvalPolicy:'on-request'},{mode:'inspect'}])expect(workerReportSchema.safeParse({...report,snapshot:{...report.snapshot,execution_policy:{...policy,...patch}}}).success).toBe(false);
+  });
   it('reports configured model preference and retains the confirmed turn model and effort',async()=>{
     const f=fixture();const heartbeat=heartbeatSchema.parse({...f.heartbeat,version:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     await f.relay.poll(OWNER,{heartbeat});

@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import {modelSelection} from './model-policy.mjs';
 
-export const VERSION = '0.4.0';
+export const VERSION = '0.4.1';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');

@@ -6,11 +6,11 @@ import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 const root=fileURLToPath(new URL('../',import.meta.url));
-async function run({flags=[],strategy='team',prior}={}){
-  const home=prior?.home||path.join(root,'test-data','harness-'+randomUUID()),scratch=path.join(home,'scratch');fs.mkdirSync(scratch,{recursive:true});
+async function run({flags=[],strategy='team',prior,resume,mode='inspect'}={}){
+  const home=prior?.home||resume?.home||path.join(root,'test-data','harness-'+randomUUID()),scratch=path.join(home,'scratch');fs.mkdirSync(scratch,{recursive:true});
   fs.writeFileSync(path.join(home,'config.json'),JSON.stringify({codexPath:process.execPath,codexArgs:[path.join(root,'test/fixture-runtime.mjs'),...flags],projects:{fixture:{path:scratch}},maxTaskMinutes:1,maxSubagentsPerTask:2}));
   const id=prior?.job.id||randomUUID().replaceAll('-',''),directory=path.join(home,'tasks',id);fs.mkdirSync(directory,{recursive:true});
-  const job=prior?{...prior.job,prompt:'complete',status:'queued',final:null,error:null,history:[...prior.job.history,{key:randomUUID(),inputHash:'fixture'}]}:{id,project:'fixture',cwd:fs.realpathSync.native(scratch),mode:'inspect',strategy,purpose:'acceptance',prompt:'complete',status:'queued',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),threadId:null,turnId:null,messages:[],pending:[],history:[]};
+  const job=prior?{...prior.job,prompt:'complete',status:'queued',final:null,error:null,history:[...prior.job.history,{key:randomUUID(),inputHash:'fixture'}]}:{id,project:'fixture',cwd:fs.realpathSync.native(scratch),mode,strategy,purpose:'acceptance',prompt:'complete',status:'queued',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),threadId:resume?.job.threadId||null,turnId:null,messages:[],pending:[],history:[]};
   fs.writeFileSync(path.join(directory,'task.json'),JSON.stringify(job));
   const child=spawn(process.execPath,[path.join(root,'src/worker.mjs'),id],{cwd:home,env:{...process.env,LOCAL_CODEX_BRIDGE_HOME:home},windowsHide:true,stdio:'ignore'});
   await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{if(process.platform==='win32')spawnSync('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});else child.kill();reject(Error('Fixture worker timed out.'));},15000);child.on('exit',()=>{clearTimeout(timer);resolve();});child.on('error',error=>{clearTimeout(timer);reject(error);});});
@@ -20,6 +20,35 @@ test('worker tracks child telemetry without child answer contamination and prese
   const first=await run({flags:['--telemetry']});assert.equal(first.job.status,'completed');assert.equal(first.job.final,'fixture completed');assert(!JSON.stringify(first.job.messages).includes('PRIVATE_CHILD_ANSWER'));assert(!JSON.stringify(first.job.telemetry).includes('PRIVATE_'));assert.equal(first.job.telemetry.commands,1);assert.equal(first.job.telemetry.childrenSeen,1);assert.equal(first.job.telemetry.children[0].selectionVerified,true);assert.equal(first.job.telemetry.children[0].executionVerified,null);assert.equal(first.job.telemetry.usageCoverage,'partial-team');assert.equal(first.job.telemetry.generation,1);
   const second=await run({flags:['--telemetry'],prior:first});assert.equal(second.job.status,'completed');assert.equal(second.job.runs.length,2);assert.deepEqual(second.job.runs.map(r=>r.generation),[1,2]);assert.notEqual(second.job.runs[0].runId,second.job.runs[1].runId);assert(second.job.runs.every(r=>r.finishedAt&&r.durationMs>=0));
   const options=JSON.parse(fs.readFileSync(path.join(second.home,'scratch/fixture-options.json'),'utf8'));assert.equal(options.config['agents.default_subagent_model'],'gpt-6.1-sol');assert.equal(options.config['agents.default_subagent_reasoning_effort'],'xhigh');
+});
+
+test('edit uses verified Full Access and refreshes historical inspect instructions before inference',{skip:process.platform!=='win32'},async()=>{
+  const inspected=await run({strategy:'single'});
+  assert.equal(inspected.job.sandbox.type,'readOnly');assert.equal(inspected.job.approvalPolicy,'never');
+  const edited=await run({resume:inspected,mode:'edit',strategy:'single'});
+  assert.equal(edited.job.status,'completed');assert.equal(edited.job.threadId,inspected.job.threadId);assert.notEqual(edited.job.id,inspected.job.id);
+  assert.equal(edited.job.sandbox.type,'dangerFullAccess');assert.equal(edited.job.approvalPolicy,'never');
+  assert.equal(edited.job.executionPolicy.instructionRefresh,'history-injection');
+  const injected=JSON.parse(fs.readFileSync(path.join(edited.home,'scratch/fixture-instructions.json'),'utf8'));
+  assert.equal(injected.items[0].role,'developer');assert.match(injected.items[0].content[0].text,/Current bridge mode: edit/);
+  assert(!injected.items[0].content[0].text.includes('Current bridge mode: inspect'));
+  const inspectedAgain=await run({resume:edited,mode:'inspect',strategy:'single'});
+  assert.equal(inspectedAgain.job.status,'completed');assert.equal(inspectedAgain.job.sandbox.type,'readOnly');
+  const current=JSON.parse(fs.readFileSync(path.join(edited.home,'scratch/fixture-instructions.json'),'utf8'));
+  assert.match(current.items[0].content[0].text,/Current bridge mode: inspect/);
+});
+
+test('permission mismatches and unavailable instruction refresh fail before a model turn',{skip:process.platform!=='win32'},async()=>{
+  for(const flag of ['--wrong-sandbox','--wrong-approval']){
+    const refused=await run({flags:[flag],mode:'edit',strategy:'single'});
+    assert.equal(refused.job.status,'failed');assert.match(refused.job.error,/unexpected (sandbox|approval policy)/);
+    assert.equal(fs.existsSync(path.join(refused.home,'scratch/fixture-turn-options.json')),false);
+  }
+  const first=await run({strategy:'single'});
+  fs.unlinkSync(path.join(first.home,'scratch/fixture-turn-options.json'));
+  const refused=await run({flags:['--reject-injection'],resume:first,mode:'edit',strategy:'single'});
+  assert.equal(refused.job.status,'failed');assert.match(refused.job.error,/rejects instruction injection/);
+  assert.equal(fs.existsSync(path.join(refused.home,'scratch/fixture-turn-options.json')),false);
 });
 test('worker refuses model reroutes, lower-model children and subagents under single strategy',{skip:process.platform!=='win32'},async()=>{
   const rerouted=await run({flags:['--rerouted']});assert.equal(rerouted.job.status,'failed');assert.match(rerouted.job.error,/rerouted/);

@@ -9,6 +9,7 @@ import {modelSelection,requireModel,verifyModel} from './model-policy.mjs';
 import {harnessPolicy} from './harness-policy.mjs';
 import {createTelemetry,archiveRun} from './telemetry.mjs';
 import {acquireWorkspaceLock} from './workspace-locks.mjs';
+import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execution-policy.mjs';
 
 const id = process.argv[2];
 const directory = taskDir(id);
@@ -121,10 +122,9 @@ function notification(message) {
     save();
   }
 }
-const instructions = `You are the local Codex worker requested by a ChatGPT conversation. The human request below is the task authority. Preserve the existing project AGENTS.md and instructions. Use the selected F-drive workspace for project files, artifacts, reports and scratch. Inspect mode allows discovery only; do not edit files, deploy, send messages, restart jobs, or change external data. Edit mode allows work explicitly requested by the human in the selected project; do not infer deployment, publication or messages to people unless requested. For authorized repository delivery use main and the existing pipeline. Never call this Local Codex bridge recursively. Do not read or return authentication files, tokens, environment secrets or unrelated conversations. Report outcome, files changed, evidence and checks, and any remaining gap. When blocked on human input, request it through the protocol. Current bridge mode: ${job.mode}.`;
-
 try {
   if(job.telemetry&&!(job.runs||[]).some(run=>run.runId===job.telemetry.runId))archiveRun(job,job.telemetry,job.telemetry.finishedAt?'unknown':'interrupted');
+  delete job.executionPolicy;
   telemetry=createTelemetry(job);
   const settings=config();selection=modelSelection(settings);policy=harnessPolicy(job,settings,selection);
   job.strategy=policy.strategy;job.purpose||='work';job.turnId=null;job.model=null;job.reasoningEffort=null;
@@ -187,15 +187,15 @@ try {
     // thread. Resume applies that cwd and reloads its current project guidance.
     acquireThreadLock(job.threadId);
   }
-  const sandbox = job.mode === 'edit' ? 'workspace-write' : 'read-only';
-  const options = { cwd: job.cwd, model: selection.model, sandbox, approvalPolicy: job.mode === 'inspect' ? 'never' : 'on-request', developerInstructions: instructions+' '+policy.instructions,
+  const permissions = executionPolicy(job.mode);
+  const instructions = workerInstructions(job)+' '+policy.instructions;
+  const options = { cwd: job.cwd, model: selection.model, sandbox: permissions.sandbox, approvalPolicy: permissions.approvalPolicy, developerInstructions: instructions,
     config: { model_reasoning_effort: selection.effort, ...policy.config, 'plugins.local-codex@local-codex-bridge.enabled': false, 'plugins.local-codex@created-by-me-remote.enabled': false } };
   const started = job.threadId
     ? await rpc('thread/resume', { ...options, threadId: job.threadId,excludeTurns:true })
     : await rpc('thread/start', { ...options, serviceName: 'local_codex_bridge' });
-  const expected = job.mode === 'edit' ? 'workspaceWrite' : 'readOnly';
   if (started.modelProvider !== 'openai') throw new Error('Only the signed-in ChatGPT provider is allowed.');
-  if (started.sandbox?.type !== expected) throw new Error(`Codex returned unexpected sandbox ${started.sandbox?.type}; refusing to start.`);
+  verifyExecutionPolicy(started, permissions);
   verifyModel(started, selection);
   const isNewThread=!job.threadId;
   if(isNewThread)acquireThreadLock(started.thread.id);
@@ -203,6 +203,15 @@ try {
   job.model = started.model;
   job.reasoningEffort = started.reasoningEffort;
   job.sandbox = started.sandbox;
+  job.approvalPolicy = started.approvalPolicy;
+  // Resuming can retain the initial developer message even when the resume
+  // response reflects new sandbox settings. Append the current contract through
+  // the supported history API before inference, rather than trusting an echo.
+  if(!isNewThread){
+    const injected=await rpc('thread/inject_items',{threadId:job.threadId,items:[{type:'message',role:'developer',content:[{type:'input_text',text:instructions}]}]});
+    if(!injected||typeof injected!=='object'||Array.isArray(injected))throw Error('Codex did not acknowledge the current instruction refresh; refusing to start.');
+  }
+  job.executionPolicy = {version:1,mode:job.mode,sandboxType:started.sandbox.type,approvalPolicy:started.approvalPolicy,instructionRefresh:isNewThread?'thread-start':'history-injection',verifiedAt:new Date().toISOString()};
   save();
   if(isNewThread&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
   const turn = await rpc('turn/start', { threadId: job.threadId, model: selection.model, effort: selection.effort, input: [{ type: 'text', text: job.prompt }] });

@@ -49,6 +49,7 @@ function snapshot(job){return {
   status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,
   messages:job.messages.slice(-10).map(m=>({text:m.text,phase:m.phase||null})),pending:job.pending||[],
   ...(job.model?{model:job.model}:{}),...(job.reasoningEffort?{reasoning_effort:job.reasoningEffort}:{}),
+  ...(job.executionPolicy?{execution_policy:job.executionPolicy}:{}),
   ...(job.threadId?{thread_id:job.threadId}:{}),...(job.telemetry?{telemetry:job.telemetry}:{}),
 };}
 async function authMode(){

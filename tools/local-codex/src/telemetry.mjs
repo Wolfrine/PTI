@@ -119,5 +119,5 @@ export function archiveRun(job, telemetry, status = job.status) {
       /Workspace|conflicting/i.test(job.error||'') ? 'workspace-conflict' : /sign-in|subscription/i.test(job.error||'') ? 'sign-in-required' :
         /timed out|duration elapsed/i.test(job.error||'') ? 'timeout' : 'task-failed';
   job.runs = [...(job.runs || []).filter(run => run.runId !== value.runId), {...value, status, project: job.project, mode: job.mode,
-    model: job.model || null, reasoningEffort: job.reasoningEffort || null, errorCategory:failure}].slice(-50);
+    model: job.model || null, reasoningEffort: job.reasoningEffort || null, executionPolicy:job.executionPolicy?{version:job.executionPolicy.version,mode:job.executionPolicy.mode,sandboxType:job.executionPolicy.sandboxType,approvalPolicy:job.executionPolicy.approvalPolicy,instructionRefresh:job.executionPolicy.instructionRefresh}:null,errorCategory:failure}].slice(-50);
 }

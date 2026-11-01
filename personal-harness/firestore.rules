@@ -46,6 +46,40 @@ service cloud.firestore {
     return existsAfter(/$(base)/0) && (r.chunks < 2 || existsAfter(/$(base)/1)) && (r.chunks < 3 || existsAfter(/$(base)/2))
      && (r.chunks < 4 || existsAfter(/$(base)/3)) && (r.chunks < 5 || existsAfter(/$(base)/4));
    }
+   // Historical creations use the existing archive/chunks, never inference status.
+   function historical(d) { return d.get('schemaVersion',0) == 4 && d.get('recordType','') == 'historical-import'; }
+   function readyCreation(d) { return d.get('status','') == 'completed' || (historical(d) && d.importState == 'ready'); }
+   function historicalCatalog(id,d) {
+    return (id == 'history-phase2-a' && d.provenance.phase == 'phase2' && d.provenance.variant == 'A' && d.result.bytes == 465382 && d.result.sha256 == '6e07512ad8b86d879d9250ba79ce8e67e29994930b409becfdc3ffc48bf65b7b')
+     || (id == 'history-phase2-b' && d.provenance.phase == 'phase2' && d.provenance.variant == 'B' && d.result.bytes == 355858 && d.result.sha256 == '75faf9c95f77a1b243287a17e57cbd34e7226c7bb9dc3dcc15013a5fb8a068fd')
+     || (id == 'history-phase5-a' && d.provenance.phase == 'phase5' && d.provenance.variant == 'A' && d.result.bytes == 488112 && d.result.sha256 == '590cbed1fef9ab3f5f0981f4f54c94f711a1238b33faf8f8e17975bff86f5a12')
+     || (id == 'history-phase5-b' && d.provenance.phase == 'phase5' && d.provenance.variant == 'B' && d.result.bytes == 486687 && d.result.sha256 == '4a8f9d2985bc6a6e7b0ada0b3dc94887ea629eca737d955df838affbd3ed4376');
+   }
+   function historicalInput(d) { return d is map && d.keys().hasOnly(['sha256','localPath','role'])
+    && d.sha256 is string && d.sha256.matches('[a-f0-9]{64}') && d.localPath is string && d.localPath.size() <= 512 && d.role is string && d.role.size() <= 160; }
+   function historicalRecord(id,d) {
+    let p = d.provenance;
+    return historical(d) && d.keys().hasOnly(['schemaVersion','recordType','importState','deviceUid','model','seed','width','height','createdAt','importedAt','result','provenance'])
+     && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && d.model == 'flux2-klein-fp8' && d.seed == 873111462 && d.width == 512 && d.height == 768
+     && d.importState in ['staging','ready'] && instant(d.createdAt) && instant(d.importedAt)
+     && d.result.keys().hasOnly(['mime','bytes','chunks','sha256','settings','localPath']) && d.result.mime == 'image/png'
+     && d.result.chunks == int((int((d.result.bytes+2) / 3)*4+599999) / 600000) && d.result.chunks in [1,2]
+     && d.result.localPath is string && d.result.localPath.size() <= 512
+     && d.result.settings is map && d.result.settings.keys().hasOnly(['model','seed','width','height','steps','cfg','denoise','sampler','scheduler','referenceCount','referenceMethod','referencePixels']) && d.result.settings.model == d.model && d.result.settings.seed == d.seed && d.result.settings.width == d.width && d.result.settings.height == d.height
+     && p.keys().hasOnly(['phase','variant','label','comparison','metadataPath','metadataSha256','manifestSha256','recordedAt','recordedAtBasis','promptSha256','composedPromptSha256','original','pose','quality'])
+     && p.label is string && p.label.size() <= 80 && p.comparison is string && p.comparison.size() <= 200 && p.metadataPath is string && p.metadataPath.size() <= 512
+     && instant(p.recordedAt) && p.metadataSha256.matches('[a-f0-9]{64}') && p.manifestSha256.matches('[a-f0-9]{64}') && p.recordedAtBasis == 'local-result-file-mtime'
+     && p.promptSha256 == '009bed88a1d1991f7d3f94928425d1cfcf88455d4cd9d2d1c2284399ef71526d'
+     && historicalInput(p.original) && p.original.sha256 == '761e1c0d1c2eabc32539ee49e7e10ccf7c84a449018557156598aef6585aab15'
+     && ((p.phase == 'phase2' && p.pose == null && p.composedPromptSha256 == '') || (p.phase == 'phase5' && historicalInput(p.pose)
+      && p.pose.sha256 == 'b3d8dd39972adedee458f30fcf58c827575313591ca2a5ea57486dc454cd562c' && p.composedPromptSha256.matches('[a-f0-9]{64}')))
+     && p.quality == {'identity':'UNKNOWN','pose':'UNKNOWN','photorealism':'UNKNOWN','winner':'UNKNOWN'} && historicalCatalog(id,d);
+   }
+   function historicalBytesPresent(id,d) {
+    let chunks = /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)/chunks;
+    return existsAfter(/$(chunks)/0) && (d.result.chunks < 2 || existsAfter(/$(chunks)/1))
+     && existsAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/thumbs/$(id));
+   }
    allow read, write: if false;
    match /devices/{deviceUid} {
     function valid(d) { return d.keys().hasOnly(['deviceUid','label','grantHash','createdAt','expiresAt','status','approvedAt','revokedAt'])
@@ -112,6 +146,12 @@ service cloud.firestore {
        && request.resource.data.attemptedAt >= request.time.toMillis() - 300000);
     }
    match /jobs/{id} {
+    // Only the approved pinned PC may import the four cataloged historical outputs.
+    allow create: if studioDevice() && historicalRecord(id,request.resource.data) && request.resource.data.importState == 'staging';
+    allow update: if studioDevice() && historical(resource.data) && resource.data.deviceUid == request.auth.uid
+     && resource.data.importState == 'staging' && request.resource.data.importState == 'ready'
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['importState'])
+     && historicalBytesPresent(id,request.resource.data);
     allow read: if studioOwner() || (studioDevice() && resource.data.deviceUid == request.auth.uid);
     allow delete: if studioOwner();
     allow create: if studioOwner() && id.matches('[A-Za-z0-9_-]{1,80}') && job(request.resource.data)
@@ -147,7 +187,7 @@ service cloud.firestore {
     match /chunks/{chunkId} {
      allow read: if studioOwner() || (studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.deviceUid == request.auth.uid);
      allow delete: if studioOwner();
-     allow create: if studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.status == 'running'
+     allow create: if studioDevice() && (get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.get('status','') == 'running' || (historical(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data) && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.importState == 'staging' && request.resource.data.index < get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.result.chunks))
       && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.deviceUid == request.auth.uid
       && request.resource.data.keys().hasOnly(['data','index']) && request.resource.data.index is int && request.resource.data.index >= 0 && request.resource.data.index < 16
       && chunkId == string(request.resource.data.index) && request.resource.data.data is string && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 600000;
@@ -177,14 +217,14 @@ service cloud.firestore {
    }
    match /feedback/{jobId} {
     allow read, delete: if studioOwner();
-    allow create, update: if studioOwner() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.status == 'completed'
+    allow create, update: if studioOwner() && readyCreation(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data)
      && request.resource.data.keys().hasOnly(['verdict','note','updatedAt']) && request.resource.data.verdict in ['keep','iterate','reject']
      && request.resource.data.note is string && request.resource.data.note.size() <= 2000 && instant(request.resource.data.updatedAt);
    }
    match /thumbs/{jobId} {
     allow read: if studioOwner() || (studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid);
     allow create: if studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid
-     && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.status in ['running','completed']
+     && (get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.get('status','') in ['running','completed'] || (historical(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data) && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.importState == 'staging'))
      && request.resource.data.keys().hasOnly(['jobId','mime','data','sha256','bytes','width','height','createdAt']) && request.resource.data.jobId == jobId
      && request.resource.data.mime == 'image/jpeg' && request.resource.data.data is string && request.resource.data.data.size() <= 87384
      && request.resource.data.bytes is int && request.resource.data.bytes > 0 && request.resource.data.bytes <= 65536
@@ -196,7 +236,7 @@ service cloud.firestore {
    match /saves/{jobId} {
     function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
     allow read: if studioOwner();
-    allow create: if studioOwner() && original().status == 'completed'
+    allow create: if studioOwner() && readyCreation(original())
      && request.resource.data.keys().hasOnly(['jobId','fileId','name','webViewLink','savedAt','mime','sha256','bytes','folderId'])
      && request.resource.data.jobId == jobId && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
      && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
@@ -211,7 +251,7 @@ service cloud.firestore {
    match /uploads/{jobId} {
     function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
     allow read: if studioOwner();
-    allow create: if studioOwner() && original().status == 'completed'
+    allow create: if studioOwner() && readyCreation(original())
      && request.resource.data.keys().hasOnly(['jobId','fileId','sha256','bytes','createdAt']) && request.resource.data.jobId == jobId
      && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
      && request.resource.data.sha256 == original().result.sha256 && request.resource.data.bytes == original().result.bytes && instant(request.resource.data.createdAt);

@@ -86,7 +86,7 @@ const failCode = error => {
  * Decode PTI MCP text envelopes in the injected functions; throw on isError.
  * No automatic changed-payload revision approval: conflicts remain pending for review.
  */
-export async function syncBlinkitBatch({ reader, persistence, runId, mode = 'history', maxPages = 2, maxDetails = 20, now = () => new Date().toISOString() }) {
+export async function syncBlinkitBatch({ reader, persistence, runId, mode = 'history', maxPages = 2, maxDetails = 20, scopePolicy = () => null, now = () => new Date().toISOString() }) {
   if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 10 || !Number.isInteger(maxDetails) || maxDetails < 1 || maxDetails > 100) throw new Error('invalid_batch_bounds');
   let state = await persistence.context({ runId });
   if (state.ingestionPaused) return { paused: true, run: state.run };
@@ -103,6 +103,12 @@ export async function syncBlinkitBatch({ reader, persistence, runId, mode = 'his
   while (details < maxDetails) {
     const pending = run.pending.find(row => !attempted.has(row.order));
     if (pending) {
+      // Explicit injected decisions only. Missing food words never authorize an exclusion.
+      const exclusion = await scopePolicy({...pending});
+      if(exclusion){
+        await mutate('exclude',{exclusions:[{order:pending.order,reason:exclusion.reason,basis:exclusion.basis}]});
+        continue;
+      }
       attempted.add(pending.order); details++;
       let detail;
       try { detail = await reader.detail(pending.order); }
@@ -121,7 +127,7 @@ export async function syncBlinkitBatch({ reader, persistence, runId, mode = 'his
     if (run.pending.length) return { partial: true, pages, details, run };
     if (run.endReached) {
       if (!run.historyComplete) await mutate('finish');
-      return { historyComplete: run.historyComplete, complete: run.status === 'complete', pages, details, run };
+      return { historyComplete: run.historyComplete, complete: ['complete','food_scope_complete'].includes(run.status), pages, details, run };
     }
     if (pages >= maxPages) break;
     try {
@@ -135,5 +141,5 @@ export async function syncBlinkitBatch({ reader, persistence, runId, mode = 'his
     }
   }
   if (run.endReached && !run.pending.length && !run.historyComplete) await mutate('finish');
-  return { partial: !run.historyComplete, complete: run.status === 'complete', pages, details, run };
+  return { partial: !run.historyComplete, complete: ['complete','food_scope_complete'].includes(run.status), pages, details, run };
 }

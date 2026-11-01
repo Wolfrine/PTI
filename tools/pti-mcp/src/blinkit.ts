@@ -29,8 +29,8 @@ const rules = [
   'First-party Blinkit page WebMCP reads only: get_session, list_orders, get_order. Discover suffixed names each document/turn. No scraping, REST endpoints, cart, address, payment or login writes.',
   'Purchases are separate from restaurant receipts, dish/restaurant frequencies, recommendations and confirmed taste. Purchase never establishes consumption, enjoyment or nutrition.',
   'Food/unknown classification uses a conservative product-name heuristic. Unknown lines require review. Nonfood names, sessions, account IDs, address and payment data are excluded.',
-  'Whole bill total includes excluded items and charges/refunds. Food line amounts are not food spend. Exact display dates have no known year/ISO; capturedAt is observation time.',
-  'History is complete only after end-of-pagination and all listed details persisted or verified identical. Live/unknown orders and unlisted live orders remain reconciliation work. No autonomous schedule.',
+  'Whole bill total includes excluded items and charges/refunds. Food line amounts are not food spend. Preserve exact display dates without synthesizing source ISO timestamps; capturedAt is observation time.',
+  'Food-scope history coverage requires end-of-pagination and every listed row persisted/verified identical or explicitly excluded from food scope. Preview-only exclusions do not establish full basket contents. Live/unknown orders remain reconciliation work. No autonomous schedule.',
 ];
 const loadModel = async () => { const path = './blinkit/model.mjs'; return import(path); };
 
@@ -56,13 +56,16 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
     const purchaseRef = ref.collection('purchases').doc(purchase.id), stateRef = ref.collection('purchaseSyncState').doc('blinkit');
     const runRef = input.runId ? ref.collection('purchaseSyncRuns').doc(input.runId) : null;
     const result = await db.runTransaction(async tx => {
-      const [settings, existingSnap, stateSnap, runSnap] = await Promise.all([
+      const coverageRef = runRef?.collection('coverage').doc(model.hash(input.detail.order));
+      const [settings, existingSnap, stateSnap, runSnap, coverageSnap] = await Promise.all([
         tx.get(ref), tx.get(purchaseRef), tx.get(stateRef), runRef ? tx.get(runRef) : Promise.resolve(null),
+        coverageRef ? tx.get(coverageRef) : Promise.resolve(null),
       ]);
       if (settings.get('ingestionPaused') === true) throw new Error('Morsel ingestion is paused by its owner.');
       const existing = existingSnap.data(), state: any = stateSnap.data() || {}, run: any = runSnap?.data();
       if (runRef && !run) throw new Error('Start the sync run before ingesting its pending rows.');
       const pending = run?.pending.find((p: any) => p.order === input.detail.order);
+      if (coverageSnap?.get('disposition') === 'outside_scope') throw new Error('Order explicitly outside food scope; no detail import is authorized by this run.');
       if (runRef && !pending && !existing) throw new Error('This order is not pending in this run.');
       if (existing && (!Number.isInteger(existing.revision) || !existing.fingerprint)) throw new Error('Unversioned purchase requires repair; refusing unsafe overwrite.');
       const duplicate = existing?.fingerprint === purchase.fingerprint;
@@ -87,10 +90,13 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
           revisionCount: (state.revisionCount || 0) + 1, statusCounts: counts, lastPersistedAt: at });
       }
       if (runRef && pending) {
+        const coverage = run.coverage ? { ...run.coverage } : null;
+        if (coverage && coverageSnap?.get('disposition') !== 'persisted') { coverage.persisted++; coverage.unresolved--; }
         const next = settle({ ...run, pending: run.pending.filter((p: any) => p.order !== input.detail.order),
           verifiedRows: run.verifiedRows + 1, duplicateRows: run.duplicateRows + (duplicate ? 1 : 0),
-          revision: run.revision + 1, updatedAt: at, status: 'running', lastError: null });
+          ...(coverage ? {coverage} : {}), revision: run.revision + 1, updatedAt: at, status: 'running', lastError: null });
         tx.set(runRef, next);
+        if (coverageRef) tx.set(coverageRef, {...(coverageSnap?.data() || {}),order:input.detail.order,disposition:'persisted',purchaseId:purchase.id,verifiedAt:at});
       }
       return { ok: true, duplicate, purchaseId: purchase.id, revision, fingerprint: purchase.fingerprint,
         needsReconciliation: duplicate ? existing!.needsReconciliation : purchase.needsReconciliation };
@@ -126,7 +132,9 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
     const products = purchases.flatMap(p => [...p.foodItems, ...p.unknownItems].filter(i => !needle || i.name.toLocaleLowerCase().includes(needle)).map(item => ({
       purchaseId: p.id, reference: p.reference, phase: p.phase, placedText: p.placedText, purchasedAt: null, capturedAt: p.capturedAt, item,
     })));
-    return json({ namespace: ref.path, ingestionPaused: settings.get('ingestionPaused') === true,
+    let scopeExclusions:any[]=[];
+    if(input.runId){const excluded=await ref.collection('purchaseSyncRuns').doc(input.runId).collection('coverage').where('disposition','==','outside_scope').limit(30).get();scopeExclusions=excluded.docs.map(d=>d.data());}
+    return json({ namespace: ref.path, ingestionPaused: settings.get('ingestionPaused') === true,scopeExclusions,scopeExclusionWindow:'first 30; all remain in run/coverage',
       state: state.data() || null, run: run?.data() || null, purchases: needle ? purchases.filter(p => products.some(i => i.purchaseId === p.id)) : purchases,
       products, ...(revisions ? { revisions, revisionWindow: 'latest 10; older immutable revisions remain under purchase/revisions' } : {}),
       window: { scanned: purchases.length, nextAfter, complete: nextAfter === null, basis: 'document ID page, not purchase chronology' }, rules });
@@ -134,10 +142,11 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
 
   server.registerTool('food_blinkit_sync', {
     title: 'Checkpoint a manual Blinkit purchase sync',
-    description: 'Start a bounded history or reconciliation run; stage a redacted first-party list page before any details; retain failed rows; finish only after end reached and every row verified by specialized ingest. Revision guard protects checkpoints. Never schedules or calls Blinkit. Read current run through food_blinkit_context.',
-    inputSchema: { uid, action: z.enum(['start', 'page', 'fail', 'block', 'finish']), runId: id,
+    description: 'Stage a redacted first-party list page before eligible detail reads. Explicitly exclude outside-food-scope tokens without reading sensitive details; retain unresolved rows and honest unique coverage. Finish only after end and every row persisted/identical or explicitly excluded. Revision guards protect checkpoints. Never schedules or calls Blinkit.',
+    inputSchema: { uid, action: z.enum(['start', 'page', 'exclude', 'fail', 'block', 'finish']), runId: id,
       mode: z.enum(['history', 'reconcile']).default('history'), expectedRevision: z.number().int().positive().optional(),
-      page: page.optional(), order: z.string().min(1).max(500).optional(), errorCode: errorCode.optional() },
+      page: page.optional(), order: z.string().min(1).max(500).optional(), errorCode: errorCode.optional(),
+      exclusions:z.array(z.object({order:z.string().min(1).max(500),reason:z.enum(['outside_food_scope','nonfood_only_preview']),basis:z.enum(['explicit_verified_scope','preview_only'])}).strict()).min(1).max(30).optional() },
     annotations: { readOnlyHint: false, destructiveHint: false },
   }, async input => {
     const ref = root(input.uid), runRef = ref.collection('purchaseSyncRuns').doc(input.runId), stateRef = ref.collection('purchaseSyncState').doc('blinkit');
@@ -152,7 +161,8 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
           return { ok: true, run: current };
         }
         const run = { runId: input.runId, provider: 'blinkit', mode: input.mode, revision: 1, cursor: null, nextCursor: null,
-          pending: [], pageCount: 0, listedRows: 0, verifiedRows: 0, duplicateRows: 0, repeatedRows: 0,
+          pending: [], pageCount: 0, listedRows: 0, verifiedRows: 0, duplicateRows: 0, repeatedRows: 0, excludedRows:0,
+          coverage:{scanned:0,persisted:0,outsideScope:0,unresolved:0,previewOnlyExclusions:0},
           unlistedLiveOrders: 0, endReached: false, historyComplete: false, status: 'running', lastError: null, startedAt: at, updatedAt: at };
         tx.create(runRef, run); return { ok: true, run };
       }
@@ -176,7 +186,19 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
         const rows = new Map<string, any>();
         // Live context takes precedence if the same order is repeated across both lists.
         for (const r of [...p.orders, ...p.live]) rows.set(r.order, r);
-        run.pending = [...rows.values()].map(r => ({ ...r, attempts: 0, lastError: null }));
+        const coverageRefs=[...rows.values()].map(r=>runRef.collection('coverage').doc(model.hash(r.order)));
+        const coverageSnaps=await Promise.all(coverageRefs.map(r=>tx.get(r)));
+        run.coverage=run.coverage?{...run.coverage}:null;
+        run.pending=[];
+        [...rows.values()].forEach((r,i)=>{
+          const old=coverageSnaps[i];
+          if(!old.exists){
+            if(run.coverage){run.coverage.scanned++;run.coverage.unresolved++;}
+            tx.create(coverageRefs[i],{...r,disposition:'unresolved',firstListedAt:at});
+          }
+          if(old.get('disposition')==='outside_scope')run.excludedRows=(run.excludedRows||0)+1;
+          else run.pending.push({...r,attempts:0,lastError:null});
+        });
         run.nextCursor = p.nextCursor; run.pageCount++; run.listedRows += rows.size;
         run.repeatedRows += p.orders.length + p.live.length - rows.size;
         run.unlistedLiveOrders = Math.max(run.unlistedLiveOrders, p.unlistedLiveOrders);
@@ -185,6 +207,21 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
         tx.create(pageRef, { pageId, stagedAt: at, rowCount: rows.size, repeatedRows: p.orders.length + p.live.length - rows.size,
           hasMore: p.hasMore, unlistedLiveOrders: p.unlistedLiveOrders }); // no redundant cursors/names/session blobs
         tx.set(stateRef, { ...state, provider: 'blinkit', unlistedLiveOrders: p.unlistedLiveOrders, lastListObservedAt: at });
+      } else if (input.action === 'exclude') {
+        if(!input.exclusions || new Set(input.exclusions.map(e=>e.order)).size!==input.exclusions.length)throw new Error('Explicit unique exclusions are required.');
+        if(!run.coverage)throw new Error('Legacy run lacks unique coverage; start a new food-scope run.');
+        const refs=input.exclusions.map(e=>runRef.collection('coverage').doc(model.hash(e.order)));
+        const snaps=await Promise.all(refs.map(r=>tx.get(r)));
+        input.exclusions.forEach((e,i)=>{
+          if(!run.pending.some((r:any)=>r.order===e.order)||!snaps[i].exists||snaps[i].get('disposition')!=='unresolved')throw new Error('Only an unresolved pending row may be excluded.');
+        });
+        run.coverage={...run.coverage};
+        input.exclusions.forEach((e,i)=>{
+          tx.set(refs[i],{...snaps[i].data(),disposition:'outside_scope',reason:e.reason,basis:e.basis,excludedAt:at,detailRead:false,foodContentsKnown:false});
+          run.coverage.outsideScope++;run.coverage.unresolved--;if(e.basis==='preview_only')run.coverage.previewOnlyExclusions++;
+        });
+        const tokens=new Set(input.exclusions.map(e=>e.order));run.pending=run.pending.filter((r:any)=>!tokens.has(r.order));
+        run.excludedRows=(run.excludedRows||0)+tokens.size;run.status='running';run.lastError=null;settle(run);
       } else if (input.action === 'fail') {
         if (!input.errorCode || !run.pending.some((p: any) => p.order === input.order)) throw new Error('Name a pending order and a bounded error code.');
         run.pending = run.pending.map((p: any) => p.order === input.order ? { ...p, attempts: p.attempts + 1, lastError: input.errorCode } : p);
@@ -193,10 +230,11 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
         if (!input.errorCode) throw new Error('A bounded error code is required.');
         run.status = 'blocked'; run.lastError = input.errorCode;
       } else if (input.action === 'finish') {
-        if (!run.endReached || run.pending.length || run.listedRows !== run.verifiedRows) throw new Error('Cannot finish: history end and all persisted/identical rows must be verified.');
+        if (!run.endReached || run.pending.length || run.listedRows !== run.verifiedRows+(run.excludedRows||0) || run.coverage?.unresolved) throw new Error('Cannot finish: history end and all food-scope rows persisted/identical or explicitly excluded are required.');
         run.historyComplete = true; run.completedAt = at;
+        run.coverageScope='food-only-with-explicit-exclusions';run.allOrderDetailsKnown=(run.coverage?.outsideScope||0)===0;
         const unresolved = (state.statusCounts?.live || 0) + (state.statusCounts?.unknown || 0) + run.unlistedLiveOrders;
-        run.status = unresolved ? 'history_complete_reconciliation_pending' : 'complete';
+        run.status = unresolved ? 'history_complete_reconciliation_pending' : (run.coverage?.outsideScope ? 'food_scope_complete' : 'complete');
         tx.set(stateRef, { ...state, provider: 'blinkit', ...(run.mode === 'history' ? { lastHistoryRunId: input.runId, lastHistoryScanCompletedAt: at } : { lastReconciliationRunId: input.runId, lastReconciliationScanCompletedAt: at }),
           lastScanStatus: run.status });
       }

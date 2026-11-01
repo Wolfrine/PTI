@@ -5,6 +5,7 @@ if(result.status!==0)process.exit(result.status||1);
 mkdirSync('dist/food',{recursive:true});
 mkdirSync('dist/blinkit',{recursive:true});
 for(const file of ['model.mjs','connector.mjs'])copyFileSync(`blinkit/${file}`,`dist/blinkit/${file}`);
+copyFileSync('../../food-app/blinkit-projection.mjs','dist/blinkit/projection.mjs');
 copyFileSync('../../personal-harness/core.mjs','dist/personal-core.mjs');
 copyFileSync('../../food-app/core.mjs','dist/food-core.mjs');
 for(const file of ['core.mjs','intelligence.mjs','places.mjs'])copyFileSync(`../../food-app/${file}`,`dist/food/${file}`);

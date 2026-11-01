@@ -1,6 +1,8 @@
 import {mealStudio, interpretCraving, interpretNote, swapMeal, restoreMealSession} from './intelligence.mjs';
 import {places} from './places.mjs';
 import { MOODS, FEEDBACK, entityId, mealKey } from './core.mjs';
+import {firebaseConfig} from './firebase-config.mjs';
+import {createMorselBlinkitBridge} from './blinkit-webmcp.mjs';
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = value => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(value);
@@ -9,6 +11,8 @@ const date = value => new Date(value).toLocaleDateString('en-IN',{day:'numeric',
 const captions = {Comfort:'Warm. Familiar. Unhurried.',Light:'A little less. Still satisfying.',Spicy:'A little fire at the table.',Indulgent:'Make room for a treat.',Familiar:'The comfort of knowing.',Explore:'A new flavour, your way.',Quick:'An easy direction to check.','Proper meal':'A plate that feels complete.'};
 let state = {orders:[],feedback:[],settings:{},mood:'Comfort',hunger:'Regular',budget:0,view:'tonight',user:null,loading:false,error:'',demo:false,craving:'',diners:1,mode:'delivery',wants:[],removedWants:[],avoid:[],otherWants:[],rejectedDishIds:[],lighter:false,learning:[],preferences:[],sessions:[],memories:[],research:[]}, result, historyLimit=25, selectedChoice=null, selectedOrder=null;
 let auth,db,api,root,unsubs=[],sessionGeneration=0,studio,selectedPlan=null,editingSessionId=null,dialogOrigin=null,tasteFocus=null,dialogError='';
+const blinkitBridge=createMorselBlinkitBridge({document,location,getCurrentUser:()=>auth?.currentUser});
+addEventListener('pagehide',()=>blinkitBridge.dispose());
 const orderDrafts=new Map(), mealVisualKeys=new Map();
 const dialogVisualKeys=new Set(),sessionVisualKeys=new Map();
 let pendingSavedFood=null,planRenderGeneration=0,planEditor=null;
@@ -162,6 +166,7 @@ async function settingsChange(key,value){
 async function login(){if(!auth){toast('Sign-in is loading. Please try again in a moment.');return}try{await api.signInWithPopup(auth,new api.GoogleAuthProvider())}catch(e){if(e.code==='auth/popup-blocked')return api.signInWithRedirect(auth,new api.GoogleAuthProvider());toast(e.message||'Sign-in did not finish.')}}
 function stopListeners(){dismissPlanEditor();orderDrafts.clear();unsubs.forEach(fn=>fn());unsubs=[];sessionGeneration++}
 function listen(user){
+ void blinkitBridge.setUser(user);
  stopListeners();if(!user){root=null;state={...state,user:null,orders:[],feedback:[],settings:{},learning:[],preferences:[],sessions:[],memories:[],research:[],loading:false,error:''};render();return}
  state.user=user;state.loading=true;state.error='';root=api.doc(db,'users',user.uid,'foodData','workspace');const generation=sessionGeneration,ready=new Set();
  const failure=e=>{if(generation!==sessionGeneration)return;state.loading=false;state.error=e.code==='permission-denied'?'Private food access is not active for this account.':e.message;render()};
@@ -205,7 +210,7 @@ async function boot(){
  if(sample||qa){const fixture=qa||await import('./sample.mjs').then(m=>m.sample);state={...state,...fixture,demo:true,user:null};render();return}
  try{
   const [app,authModule,firestore]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]);
-  api={...authModule,...firestore};const fb=app.initializeApp({apiKey:'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',authDomain:'pti-app-2ab59.firebaseapp.com',projectId:'pti-app-2ab59',storageBucket:'pti-app-2ab59.firebasestorage.app',messagingSenderId:'185802494856',appId:'1:185802494856:web:5e9777771492528c6e203d'});
+  api={...authModule,...firestore};const fb=app.initializeApp(firebaseConfig);
   auth=api.getAuth(fb);db=api.initializeFirestore(fb,{localCache:api.persistentLocalCache({tabManager:api.persistentMultipleTabManager()})});api.onAuthStateChanged(auth,listen);
  }catch(e){state.error='Could not load sign-in. Check your connection and retry.';render();console.error(e)}
 }

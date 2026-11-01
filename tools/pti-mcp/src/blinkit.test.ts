@@ -6,6 +6,8 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { registerBlinkitTools } from '../dist/blinkit.js';
 import { assertWritablePath } from './access.js';
 import { appCatalog } from './apps.js';
+import express from 'express';
+import {morselBlinkitRouter,MORSEL_ORIGIN} from '../dist/morsel-blinkit-http.js';
 // @ts-ignore JavaScript connector is deliberately reusable without the MCP server.
 import { normalizePurchase, projectDetail, packQuantity, classify } from '../dist/blinkit/model.mjs';
 // @ts-ignore
@@ -192,6 +194,32 @@ describe('deployed MCP purchase transactions', () => {
 });
 
 describe('our read-only WebMCP adapter and durable coordinator', () => {
+  it('never detail-reads explicit scope exclusions and records honest food-only coverage',async()=>{
+    const t=await fixture(),calls:any[]=[];
+    const r=reader(async(name:string,args:any)=>{
+      calls.push([name,args]);if(name.startsWith('get_session'))return envelope({});
+      if(name.startsWith('list_orders'))return envelope(page([row(),row('synthetic-excluded-a',{itemNames:['SYNTHETIC PRIVATE PERSONAL PRODUCT']}),row('synthetic-excluded-b')]));
+      expect(args.order).toBe('synthetic-row-1');return envelope(detail(args.order));
+    });
+    const explicit=new Set(['synthetic-excluded-a','synthetic-excluded-b']);
+    const result=await syncBlinkitBatch({reader:r,persistence:t.persistence,runId:'food-scope-run',now:()=>at,
+      scopePolicy:(r:any)=>explicit.has(r.order)?{reason:'nonfood_only_preview',basis:'preview_only'}:null});
+    expect(result.complete).toBe(true);expect(result.run).toMatchObject({allOrderDetailsKnown:false,verifiedRows:1,excludedRows:2,coverage:{scanned:3,persisted:1,outsideScope:2,unresolved:0,previewOnlyExclusions:2}});
+    expect(calls.filter(([n])=>n.startsWith('get_order'))).toHaveLength(1);
+    const ctx=await t.context({runId:'food-scope-run'});expect(ctx.state.purchaseCount).toBe(1);expect(ctx.scopeExclusions).toHaveLength(2);
+    expect(ctx.scopeExclusions.every((r:any)=>r.detailRead===false&&r.foodContentsKnown===false&&!('reference'in r))).toBe(true);
+    expect(JSON.stringify([...t.db.rows])).not.toContain('SYNTHETIC PRIVATE PERSONAL PRODUCT');
+    await expect(t.ingest({runId:'food-scope-run',detail:detail('synthetic-excluded-a')})).rejects.toThrow('outside food scope');
+  });
+  it('does not exclude a previously persisted token or an unstaged token and never guesses from absent food words',async()=>{
+    const t=await fixture();await t.sync({action:'start',runId:'synthetic-run'});await step(t,'page',{page:page()});
+    const before=structuredClone(t.db.rows);
+    await expect(step(t,'exclude',{exclusions:[{order:'not-listed',reason:'outside_food_scope',basis:'explicit_verified_scope'}]})).rejects.toThrow('unresolved');expect(t.db.rows).toEqual(before);
+    await t.ingest({runId:'synthetic-run'});
+    await expect(step(t,'exclude',{exclusions:[{order:'synthetic-row-1',reason:'outside_food_scope',basis:'explicit_verified_scope'}]})).rejects.toThrow('unresolved');
+    let reads=0;const r=reader(async(name:string,args:any)=>name.startsWith('get_session')?envelope({}):name.startsWith('list_orders')?envelope(page([row('synthetic-unknown',{itemNames:[]})])):(reads++,envelope(detail(args.order))));
+    expect((await syncBlinkitBatch({reader:r,persistence:t.persistence,runId:'no-guess-run',now:()=>at})).complete).toBe(true);expect(reads).toBe(1);
+  });
   it('discovers fresh suffixed names, decodes JSON-string MCP envelopes and refuses ambiguity or anonymous login', async () => {
     expect(decodeEnvelope(envelope({ value: 1 })).result.value).toBe(1);
     expect(decodeEnvelope({ content: [{ type: 'text', text: envelope({ value: 2 }) }] }).result.value).toBe(2);
@@ -254,5 +282,43 @@ describe('our read-only WebMCP adapter and durable coordinator', () => {
     const limited = createBlinkitReader({ discoverTools: async () => ['get_session', 'list_orders', 'get_order'], sleep: async (ms: number) => { waited += ms; },
       callTool: async () => { attempts++; return JSON.stringify({ structuredContent: { ok: false, error: { code: 'rate_limited', retryAfterMs: 10, Recovery: 'SYNTHETIC PRIVATE TEXT' } } }); } });
     await expect(limited.open()).rejects.toThrow('rate_limited'); expect(attempts).toBe(2); expect(waited).toBe(10);
+  });
+});
+
+describe('Morsel protected page transport',()=>{
+  async function httpFixture(){
+    const t=await fixture();let allowed=true,verified=0;
+    const app=express();app.use('/morsel/blinkit',morselBlinkitRouter({
+      verifyIdentity:async(token:string)=>{verified++;if(token!=='synthetic-owner')throw Error('invalid');return {uid:'owner',email:'owner@example.invalid',authenticatedAt:1};},
+      checkUser:async()=>{if(!allowed)throw Error('revoked');},
+      createServer:({uid}:any)=>{const s=new McpServer({name:'synthetic-page-test',version:'1'});registerBlinkitTools(s,t.db as any,uid);return s;},
+    }));
+    const listener=app.listen(0,'127.0.0.1');await new Promise<void>(r=>listener.on('listening',r));cleanups.push(()=>new Promise<void>(r=>listener.close(()=>r())));
+    const url='http://127.0.0.1:'+(listener.address()as any).port+'/morsel/blinkit';
+    const post=(body:any,headers:any={})=>fetch(url,{method:'POST',headers:{Origin:MORSEL_ORIGIN,Authorization:'Bearer synthetic-owner','Content-Type':'application/json',...headers},body:JSON.stringify(body)});
+    return {...t,url,post,revoke:()=>{allowed=false;},verified:()=>verified};
+  }
+  it('denies unsigned, fake-origin, revoked and account-injection requests without writes',async()=>{
+    const t=await httpFixture();const before=structuredClone(t.db.rows);
+    expect((await t.post({action:'context'},{Origin:'https://fake.example'})).status).toBe(403);expect(t.verified()).toBe(0);
+    expect((await t.post({action:'context'},{Authorization:''})).status).toBe(401);
+    expect((await t.post({action:'context'},{Authorization:'Bearer expired'})).status).toBe(403);
+    expect((await t.post({action:'context',args:{uid:'another-owner'}})).status).toBe(400);
+    expect((await t.post({action:'ingest',args:{records:Array(11).fill({})}})).status).toBe(400);
+    expect((await t.post({action:'ingest',args:{records:[{uid:'another-owner'}]}})).status).toBe(400);
+    expect((await t.post({action:'context',args:{large:'x'.repeat(270000)}})).status).toBe(413);
+    t.revoke();expect((await t.post({action:'context'})).status).toBe(403);expect(t.db.rows).toEqual(before);
+  });
+  it('uses canonical tools for bounded bulk replay, context and pause, with strict CORS',async()=>{
+    const t=await httpFixture();
+    const preflight=await fetch(t.url,{method:'OPTIONS',headers:{Origin:MORSEL_ORIGIN,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'authorization, content-type'}});expect(preflight.status).toBe(204);expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(MORSEL_ORIGIN);expect(preflight.headers.has('Access-Control-Allow-Credentials')).toBe(false);
+    expect((await fetch(t.url,{method:'OPTIONS',headers:{Origin:MORSEL_ORIGIN,'Access-Control-Request-Method':'DELETE'}})).status).toBe(403);
+    const cap=await (await t.post({action:'capabilities'})).json();expect(cap.tools).toHaveLength(3);expect(cap.tools.every((x:any)=>!x.inputSchema.properties.uid)).toBe(true);
+    const args={records:[{detail:detail(),capturedAt:at},{detail:detail('synthetic-page-two'),capturedAt:at}]};
+    const first=await(await t.post({action:'ingest',args})).json();expect(first).toMatchObject({ok:true,processed:2});
+    const replay=await(await t.post({action:'ingest',args})).json();expect(replay.results.every((r:any)=>r.duplicate)).toBe(true);
+    const context=await(await t.post({action:'context',args:{limit:2}})).json();expect(context.state.purchaseCount).toBe(2);expect(context.products).toHaveLength(8);
+    t.db.rows.set(root,{ingestionPaused:true,orderCount:97});
+    const paused=await(await t.post({action:'ingest',args})).json();expect(paused.results.every((r:any)=>r.error.code==='ingestion_paused')).toBe(true);expect(t.db.rows.get(root+'/purchaseSyncState/blinkit').purchaseCount).toBe(2);
   });
 });

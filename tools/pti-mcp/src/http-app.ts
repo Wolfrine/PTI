@@ -6,6 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE, type UserIdentity } from './oauth.js';
 import { CodexRelay, createCodexServer, workerPollSchema, workerReportSchema, OWNER } from './local-codex.js';
+import { morselBlinkitRouter } from './morsel-blinkit-http.js';
 
 function escape(value: string) { return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]!)); }
 export function createHttpApp(options: {
@@ -25,6 +26,7 @@ export function createHttpApp(options: {
     next();
   });
   app.get('/health', (_req,res) => res.json({ service:'pti-firestore-mcp', version:'0.2.0', status:'ok' }));
+  app.use('/morsel/blinkit',morselBlinkitRouter({verifyIdentity:options.verifyIdentity,checkUser:provider.checkUser,createServer:options.createServer}));
   app.use(mcpAuthRouter({ provider, issuerUrl:new URL(provider.origin), resourceServerUrl:new URL(provider.resource),
     scopesSupported:[MCP_SCOPE,CODEX_SCOPE], resourceName:'PTI Firestore', clientRegistrationOptions:{clientSecretExpirySeconds:0} }));
   app.get('/consent', async (req,res) => {

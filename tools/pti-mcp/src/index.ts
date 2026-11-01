@@ -5,6 +5,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { assertPath, assertUser, assertWritablePath } from "./access.js";
 import { appCatalog } from "./apps.js";
 import { registerFoodTools } from "./food.js";
+import { registerBlinkitTools } from "./blinkit.js";
 import { registerPersonalTools } from "./personal.js";
 import { registerVentureTools } from "./venture.js";
 import { registerAtlasTools } from "./atlas.js";
@@ -658,6 +659,7 @@ server.registerTool("pti_app_context", {
 });
 registerPersonalTools(server, db, context.uid, audit);
 registerFoodTools(server, db, context.uid);
+registerBlinkitTools(server, db, context.uid);
 registerVentureTools(server, db, context.uid);
 registerAtlasTools(server, db, context.uid, taskReference);
 registerChatCaptureTools(server, db, context.uid);

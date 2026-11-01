@@ -18,5 +18,7 @@ export function assertWritablePath(value: string, kind: 'document' | 'collection
   const path = assertPath(value, kind, owner), parts = path.split('/');
   if (parts[0] === 'users' && parts[2] === 'atlasData')
     throw new Error('Atlas data requires its specialized tools or owner client transactions; generic writes are disabled.');
+  if (parts[0] === 'users' && parts[2] === 'foodData' && parts[3] === 'workspace' && ['purchases', 'purchaseSyncRuns', 'purchaseSyncState'].includes(parts[4]))
+    throw new Error('Blinkit purchase data requires its specialized tools; generic writes cannot bypass pause, revisions or counters.');
   return path;
 }

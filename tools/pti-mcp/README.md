@@ -41,6 +41,8 @@ Use the latest `PTI shared MCP` workflow result as deployment evidence. ChatGPT 
 
 ## Morsel receipt capture and recovery
 
+Blinkit grocery purchases use our separate [first-party WebMCP connector and agent recipe](blinkit/README.md): `food_blinkit_context`, `food_blinkit_ingest`, `food_blinkit_sync`. They honor ingestion pause and keep purchases/revisions/sync state separate from restaurant receipts and taste counts. Full detail is required; nonfood names/session/address/payment data are excluded. No autonomous schedule or local browser driver is provided. Historical import must run in the owner's authenticated ChatGPT Browser, with real persistence readback before claiming success.
+
 Receipt automation uses the existing Gmail event task and account-scoped PTI connection. Server deployment does not refresh ChatGPT's cached tool list: after adding tools, use **PTI Apps → Manage → Refresh tools** and verify the imported tool names. Check actual saved receipts; a completed task whose reply says “not imported” is a failed product outcome.
 
 For every event, fetch the actual Gmail message and authenticate the Zomato sender. Read food app context and workspace settings; honour `ingestionPaused`. Prefer `food_ingest_email`, then read back `orders/zomato-{orderId}`, items, amount and source message ID. Never infer consumption or enjoyment.

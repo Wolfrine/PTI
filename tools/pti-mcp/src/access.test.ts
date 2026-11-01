@@ -32,13 +32,16 @@ describe('Shared PTI account boundary', () => {
     await Promise.all([server.connect(a), client.connect(b)]);
     try {
       const names = (await client.listTools()).tools.map(x => x.name);
-      expect(names).toEqual(expect.arrayContaining(['pti_apps_list', 'pti_app_context', 'personal_context', 'personal_publish', 'sefpo_search', 'firestore_update_document', 'atlas_context', 'atlas_import_evidence']));
+      expect(names).toEqual(expect.arrayContaining(['pti_apps_list', 'pti_app_context', 'personal_context', 'personal_publish', 'sefpo_search', 'firestore_update_document', 'atlas_context', 'atlas_import_evidence', 'food_blinkit_context', 'food_blinkit_ingest', 'food_blinkit_sync']));
       const discovery = await client.callTool({ name: 'pti_apps_list', arguments: {} });
       expect(discovery.isError).not.toBe(true);
       for (const [name, args] of [
         ['firestore_get_document', { path: 'users/other' }],
         ['firestore_create_document', { path: 'users/other/sefpoData/workspace', data: {} }],
         ['personal_context', { uid: 'other' }],
+        ['food_blinkit_context', { uid: 'other' }],
+        ['food_blinkit_sync', { uid: 'other', action: 'start', runId: 'denied' }],
+        ['firestore_create_document', { path: 'users/owner/foodData/workspace/purchases/test', data: {} }],
         ['pti_app_context', { appId: 'personal', uid: 'other' }],
         ['atlas_context', { uid: 'other' }],
         ['firestore_create_document', { path: 'users/owner/atlasData/workspace/evidence/test', data: {} }],

@@ -37,6 +37,8 @@ try{
  const names=(await client.listTools()).tools.map(t=>t.name);for(const name of ['food_context','food_plan','food_record_learning','food_publish_research','food_ingest_email','venture_context','venture_claim_research','venture_publish_research'])assert(names.includes(name));
  const result=await client.callTool({name:'food_plan',arguments:{craving:'Comforting, not too rich',mood:'Comfort'}});assert(!result.isError);const data=JSON.parse(result.content.find(c=>c.type==='text').text);assert(data.profile.orderCount>=93);assert(data.plans.length>0);assert(data.plans.every(p=>p.items.every(i=>i.restaurantId===p.restaurantId)));
  console.log('PASS: deployed authenticated tools/list and food_plan share real owner history and the coherent meal model.');
+ const {verifyBlinkitHost}=await import('./verify-blinkit-host.mjs');
+ await verifyBlinkitHost(client);
  const venture=await client.callTool({name:'venture_context',arguments:{}});assert(!venture.isError);const studio=JSON.parse(venture.content.find(c=>c.type==='text').text);assert.equal(studio.root,`users/${user.uid}/ventureData/workspace`);for(const name of ['threads','messages','branches','researchTasks','findings','decisions','experiments','opportunities'])assert(Array.isArray(studio[name]));assert(studio.messages.every(m=>!m.audioData));
  console.log('PASS: deployed Venture tools are listed and authenticated context reads the owner workspace without exposing audio payloads.');
  const {verifyAtlasHost}=await import('./verify-atlas-host.mjs');

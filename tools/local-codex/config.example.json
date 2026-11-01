@@ -1,17 +1,38 @@
 {
-  "maxTaskMinutes": 30,
-  "maxConcurrentTasks": 3,
-  "maxSubagentsPerTask": 2,
+  "maxTaskMinutes": null,
+  "maxConcurrentTasks": null,
+  "maxSubagentsPerTask": null,
   "model": "gpt-6.1-sol",
   "reasoningEffort": "xhigh",
   "firebaseAuthApiKey": "REPLACE_WITH_DEDICATED_NATIVE_FIREBASE_AUTH_KEY",
   "projects": {
-    "scratch": { "name": "Local Codex scratch", "path": "F:/Workspace/Support/LocalCodexBridge/scratch" },
-    "pti": { "name": "PTI", "path": "F:/Workspace/Programs/Independent-Products/PTI" },
-    "noveliaa": { "name": "Noveliaa", "path": "F:/Workspace/Programs/Independent-Products/Noveliaa" },
-    "gtop": { "name": "GTOP", "path": "F:/Workspace/Programs/Growth-Tutorials/gtop-app" },
-    "growth-tutorials": { "name": "Growth Tutorials", "path": "F:/Workspace/Programs/Growth-Tutorials/growth-tutorials" },
-    "novasaga": { "name": "NovaSaga", "path": "F:/Workspace/NovaSaga" },
-    "worldline": { "name": "Worldline", "path": "F:/Workspace/Programs/Worldline" }
+    "scratch": {
+      "name": "Local Codex scratch",
+      "path": "F:/Workspace/Support/LocalCodexBridge/scratch"
+    },
+    "pti": {
+      "name": "PTI",
+      "path": "F:/Workspace/Programs/Independent-Products/PTI"
+    },
+    "noveliaa": {
+      "name": "Noveliaa",
+      "path": "F:/Workspace/Programs/Independent-Products/Noveliaa"
+    },
+    "gtop": {
+      "name": "GTOP",
+      "path": "F:/Workspace/Programs/Growth-Tutorials/gtop-app"
+    },
+    "growth-tutorials": {
+      "name": "Growth Tutorials",
+      "path": "F:/Workspace/Programs/Growth-Tutorials/growth-tutorials"
+    },
+    "novasaga": {
+      "name": "NovaSaga",
+      "path": "F:/Workspace/NovaSaga"
+    },
+    "worldline": {
+      "name": "Worldline",
+      "path": "F:/Workspace/Programs/Worldline"
+    }
   }
 }

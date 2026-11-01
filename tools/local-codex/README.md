@@ -20,6 +20,12 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 
 ## Authorization and evidence
 
+### No arbitrary execution caps (0.4.2)
+
+The owner explicitly withdrew the bridge-generated three-parent, two-child, single-layer and 30-minute ceilings. `maxConcurrentTasks`, `maxSubagentsPerTask` and `maxTaskMinutes` default to `null`, meaning no bridge cap. This is not a large replacement number. Admission, heartbeat schemas and durable recovery accept more than four claims; child observation has no 16-agent cutoff. Numeric settings remain available only for an explicit owner choice. Ask before introducing a new restriction.
+
+Native Codex still chooses its own subagent concurrency when its optional setting is omitted; the bridge neither invents a native unlimited sentinel nor claims platform limits disappear. Native descendants remain subject to the exact Sol/xhigh contract and current task ownership. Real workspace/shared Git and native-thread conflicts still require coordination. Existing active workers keep their loaded policy until their next explicit continuation; release activation does not cancel or restart them.
+
 ### Trusted edit permissions (0.4.1)
 
 The owner explicitly requires parity with the trusted desktop's Full Access setting. Edit tasks use `danger-full-access` with approval `never`; inspect tasks remain `read-only` with approval `never`. Before inference the worker verifies the returned sandbox, approval policy, model and effort. Permission mismatches fail before a model turn. Full Access permits authorized filesystem and network operations, including Git delivery and named service paths; the selected project, current user request, applicable instructions and ownership still define scope. It is not filesystem isolation or permission for unrelated actions.
@@ -48,7 +54,7 @@ New features require worker 0.3.0; the host refuses to queue them for an older w
 
 Only the approved PTI owner can use the endpoint. OAuth scope `local-codex:jobs` is bound to the `/local-codex/mcp` resource and cannot call root PTI tools. Worker routes require a verified owner Firebase ID token. Queue records live in the existing server-only `_ptiLocalServices` namespace, also rejected by generic PTI data tools. No Firestore rule expansion is required.
 
-`inspect` is the default, with the CLI read-only sandbox. `edit` uses workspace-write and requires user intent. Project instructions apply. Pending questions and approvals are returned to chat; only an actual human response may be forwarded. Work uses main and existing pipelines when delivery is authorized. The bridge does not recursively delegate to itself; selected historical chats are accessible through the explicit history tools below.
+`inspect` is the default, with the CLI read-only sandbox. `edit` uses Full Access with approval never and requires user intent. Project instructions apply. Pending questions and approvals are returned to chat; only an actual human response may be forwarded. Work uses main and existing pipelines when delivery is authorized. The bridge does not recursively delegate to itself; selected historical chats are accessible through the explicit history tools below.
 
 Tests cover OAuth/resource isolation, offline rejection, expiry, idempotency, lease loss, continuation, cancellation, questions, approvals, F-drive enforcement, edit concurrency and API-auth refusal. Fixture results are synthetic protocol tests. Live acceptance must separately demonstrate a scheduled heartbeat and a real Codex result through the deployed relay. A Connected badge alone is insufficient, and desktop/mobile layout checks do not prove physical mobile execution.
 

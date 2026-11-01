@@ -1,7 +1,7 @@
 export function claims(value) {
   if(!value)return [];
   const result=Array.isArray(value)?value:[value];
-  if(result.length>4||result.some(job=>!job||!/^[a-f0-9]{32}$/.test(job.id)||!Number.isInteger(job.generation)||job.generation<1||typeof job.lease!=='string'))throw Error('Invalid durable relay claims.');
+  if(result.some(job=>!job||!/^[a-f0-9]{32}$/.test(job.id)||!Number.isInteger(job.generation)||job.generation<1||typeof job.lease!=='string'))throw Error('Invalid durable relay claims.');
   if(new Set(result.map(job=>job.id)).size!==result.length)throw Error('Duplicate durable relay claims.');
   return result;
 }

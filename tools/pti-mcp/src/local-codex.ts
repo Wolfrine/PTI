@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Firestore } from 'firebase-admin/firestore';
 import { digest } from './auth-store.js';
-import {admission,capacity,concurrentWorker,reservations,changedReservation,resourcePath as normalizeResourcePath,type Reservation,type SchedulerPatch} from './local-codex-admission.js';
+import {admission,capacity,concurrentWorker,uncappedWorker,reservations,changedReservation,resourcePath as normalizeResourcePath,type Reservation,type SchedulerPatch} from './local-codex-admission.js';
 
 export const OWNER = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 export const terminal = ['completed', 'failed', 'interrupted'];
@@ -17,7 +17,7 @@ const commandArgs=z.object({project:z.string().optional(),thread_id:threadId.opt
 type Command={action:'list'|'read'|'rename'|'archive'|'unarchive';args:z.infer<typeof commandArgs>};
 type Start={project:string;prompt:string;mode:'inspect'|'edit';request_key:string;title?:string;work_key?:string;thread_id?:string;strategy?:'auto'|'single'|'team';purpose?:'work'|'acceptance'};
 const project = z.object({key:z.string().regex(/^[a-z0-9-]{1,64}$/),name:z.string().max(100),path:z.string().regex(/^F:[\\/]/i).max(2048),resourcePath:z.string().regex(/^F:[\\/]/i).max(2048).optional(),available:z.boolean()}).strict();
-export const heartbeatSchema = z.object({instanceId:z.string().uuid(),authMode:z.literal('chatgpt'),version:z.string().max(40),model:z.string().max(100).optional(),reasoning_effort:z.string().max(20).optional(),maxConcurrentTasks:z.number().int().min(1).max(4).optional(),maxSubagentsPerTask:z.number().int().min(0).max(4).optional(),projects:z.array(project).max(30)}).strict();
+export const heartbeatSchema = z.object({instanceId:z.string().uuid(),authMode:z.literal('chatgpt'),version:z.string().max(40),model:z.string().max(100).optional(),reasoning_effort:z.string().max(20).optional(),maxConcurrentTasks:z.number().int().min(1).nullable().optional(),maxSubagentsPerTask:z.number().int().min(0).nullable().optional(),maxTaskMinutes:z.number().positive().nullable().optional(),projects:z.array(project).max(30)}).strict();
 export type Worker = z.infer<typeof heartbeatSchema> & {at:number;activeTask?:string|null;reservations?:Reservation[]};
 export type Job = {
   id:string;project:string;mode:'inspect'|'edit';prompt:string;inputHash:string;generation:number;status:string;
@@ -49,7 +49,7 @@ export class FirestoreRelayStore implements RelayStore {
   }
   async heartbeat(uid:string,value:Worker) {
     const {reservations:_private,...metadata}=value;
-    await this.root(uid).set({...metadata,maxConcurrentTasks:concurrentWorker(value)?value.maxConcurrentTasks||3:1,maxSubagentsPerTask:concurrentWorker(value)?value.maxSubagentsPerTask||0:0},{merge:true});
+    await this.root(uid).set({...metadata,maxConcurrentTasks:capacity(value),maxSubagentsPerTask:concurrentWorker(value)?value.maxSubagentsPerTask??(uncappedWorker(value)?null:0):0},{merge:true});
   }
   async update<T>(uid:string,id:string,operation:(job:Job|undefined,worker:Worker|undefined)=>{job:Job;result:T;scheduler?:SchedulerPatch}) {
     return this.db.runTransaction(async tx=>{
@@ -88,12 +88,12 @@ export class CodexRelay {
   }
   async status(uid:string) {
     this.owner(uid);const worker=await this.store.worker(uid),online=!!worker&&this.clock()-worker.at<=60000;
-    const active=worker&&online?reservations(worker,this.clock()):[],limit=worker?capacity(worker):1,available=Math.max(0,limit-active.length);
-    return {version:'0.4.0',workerVersion:worker?.version||null,model:worker?.model||null,reasoning_effort:worker?.reasoning_effort||null,online,
-      busy:online&&active.length>=limit,activeTask:active.find(slot=>slot.status!=='queued')?.id||null,
+    const active=worker&&online?reservations(worker,this.clock()):[],limit=worker?capacity(worker):1,available=limit===null?null:Math.max(0,limit-active.length);
+    return {version:'0.4.2',workerVersion:worker?.version||null,model:worker?.model||null,reasoning_effort:worker?.reasoning_effort||null,online,
+      busy:online&&limit!==null&&active.length>=limit,activeTask:active.find(slot=>slot.status!=='queued')?.id||null,
       activeTasks:active.map(({id,project,mode,resourcePath,threadId,status})=>({id,project,mode,resourcePath,...(threadId?{thread_id:threadId}:{}),status})),
-      capacity:limit,usedSlots:active.length,availableSlots:online?available:0,canAcceptMore:online&&available>0,
-      maxSubagentsPerTask:worker?.maxSubagentsPerTask||0,authMode:worker?.authMode||'unavailable',lastSeenAt:worker?new Date(worker.at).toISOString():null,transport:'private-pti-relay',openaiApiKeyRequired:false};
+      capacity:limit,capacityLimited:limit!==null,usedSlots:active.length,availableSlots:online?available:0,canAcceptMore:online&&(available===null||available>0),
+      maxSubagentsPerTask:worker?.maxSubagentsPerTask??(worker&&uncappedWorker(worker)?null:0),maxTaskMinutes:worker?.maxTaskMinutes??null,limitPolicy:worker&&uncappedWorker(worker)?'owner-only':'legacy-worker',authMode:worker?.authMode||'unavailable',lastSeenAt:worker?new Date(worker.at).toISOString():null,transport:'private-pti-relay',openaiApiKeyRequired:false};
   }
   async projects(uid:string) { this.owner(uid);return {projects:this.ready(await this.store.worker(uid)).projects}; }
   async list(uid:string,args:{project?:string;query?:string;limit:number}) {this.owner(uid);const jobs=(await this.store.list(uid)).filter(j=>!j.command&&(!args.project||j.project===args.project)&&(!args.query||[j.title,j.workKey,j.id].some(v=>v?.toLowerCase().includes(args.query!.toLowerCase()))));return {tasks:jobs.slice(0,args.limit).map(j=>({id:j.id,title:j.title||'Legacy bridge task',project:j.project,mode:j.mode,work_key:j.workKey||null,status:this.public(j).status,thread_id:j.snapshot?.thread_id||j.threadId||null,updatedAt:new Date(j.updatedAt).toISOString(),final:typeof j.snapshot?.final==='string'?j.snapshot.final.slice(0,1000):null})),has_more:jobs.length>args.limit,notice:'Recent bridge work only. For older desktop/mobile Codex sessions use list_codex_threads.'};}
@@ -171,7 +171,6 @@ export class CodexRelay {
       if(job.resourcePath&&normalizeResourcePath(job.resourcePath)!==normalizeResourcePath(target.resourcePath||target.path))throw Error('The project resource path changed. Review list_projects and start a new task for the selected destination.');
       if(!job.threadId&&typeof job.snapshot?.thread_id==='string')job.threadId=job.snapshot.thread_id;
       job.generation++;job.prompt=args.prompt;job.status='queued';job.expiresAt=this.clock()+120000;job.updatedAt=this.clock();job.history.push({key:action,inputHash:hash});
-      if(job.history.length>100)throw Error('This task reached its continuation limit. Start a new task.');
       delete job.lease;delete job.leaseUntil;delete job.snapshot;job.cancelRequested=false;job.responses=[];
       delete job.ownerOutcome;delete job.outcomeAt;delete job.outcomeGeneration;
       job.resourcePath=target.resourcePath||target.path;
@@ -191,7 +190,7 @@ export class CodexRelay {
       if(request.kind==='question'&&(!args.answers||args.decision||(request.details?.questions||[]).some(q=>!args.answers?.[q.id]?.length)))throw Error('Answer the displayed questions.');
       job.responses ||= [];const previous=job.responses.find(r=>r.request_id===args.request_id);
       if(previous&&JSON.stringify(previous)!==JSON.stringify(args))throw Error('This request already has a different response.');
-      if(!previous)job.responses.push(args);if(job.responses.length>20)throw Error('Too many pending responses.');job.updatedAt=this.clock();return {job,result:{task_id:job.id,accepted:true}};
+      if(!previous)job.responses.push(args);job.updatedAt=this.clock();return {job,result:{task_id:job.id,accepted:true}};
     });
   }
   async recordOutcome(uid:string,args:{task_id:string;generation:number;outcome:'accepted'|'needs_rework'|'abandoned'}) {
@@ -264,7 +263,10 @@ export class CodexRelay {
       catch(error){if((error as Error).message!=='lease_lost')throw error;lost.push(entry.id);}
     }
     const jobs:NonNullable<Awaited<ReturnType<CodexRelay['claim']>>>[]=[];
-    const available=Math.max(0,capacity({...body.heartbeat,at:this.clock()})-active.length+lost.length);
+    const limit=capacity({...body.heartbeat,at:this.clock()});
+    // Use the existing queue query page as a transport batch, never as an
+    // active-task ceiling. Further pages are claimed on subsequent polls.
+    const available=limit===null?(await this.store.queued(uid)).length:Math.max(0,limit-active.length+lost.length);
     for(let slot=0;slot<available;slot++){const job=await this.claim(uid,body.heartbeat);if(!job)break;jobs.push(job);}
     return {jobs,controls,lost};
   }
@@ -308,7 +310,7 @@ export function createCodexServer(relay:CodexRelay,uid:string,requestSignal?:Abo
 }
 const activeClaim=z.object({id,generation:z.number().int().positive(),lease:z.string().uuid()}).strict();
 const executionPolicySchema=z.object({version:z.literal(1),mode:z.enum(['inspect','edit']),sandboxType:z.enum(['readOnly','dangerFullAccess']),approvalPolicy:z.literal('never'),instructionRefresh:z.enum(['thread-start','history-injection']),verifiedAt:z.string().datetime({offset:true})}).strict().refine(value=>value.sandboxType===(value.mode==='edit'?'dangerFullAccess':'readOnly'),'Execution policy mode and sandbox disagree');
-export const workerPollSchema=z.object({heartbeat:heartbeatSchema,active:z.union([activeClaim,z.array(activeClaim).max(4).refine(claims=>new Set(claims.map(claim=>claim.id)).size===claims.length,'Duplicate active task')]).optional()}).strict();
+export const workerPollSchema=z.object({heartbeat:heartbeatSchema,active:z.union([activeClaim,z.array(activeClaim).refine(claims=>new Set(claims.map(claim=>claim.id)).size===claims.length,'Duplicate active task')]).optional()}).strict();
 const usageCounters=z.object({totalTokens:z.number().int().nonnegative().nullable(),inputTokens:z.number().int().nonnegative().nullable(),cachedInputTokens:z.number().int().nonnegative().nullable(),outputTokens:z.number().int().nonnegative().nullable(),reasoningOutputTokens:z.number().int().nonnegative().nullable()}).strict();
-const telemetry=z.object({schemaVersion:z.literal(1),runId:z.string().uuid(),generation:z.number().int().positive(),tokenBasis:z.literal('latest-response'),strategy:z.enum(['auto','single','team']),purpose:z.enum(['work','acceptance']),startedAt:z.string().datetime({offset:true}),finishedAt:z.string().datetime({offset:true}).nullable(),durationMs:z.number().nonnegative().nullable(),waitingMs:z.number().nonnegative(),approvals:z.number().int().nonnegative(),questions:z.number().int().nonnegative(),commands:z.number().int().nonnegative(),toolCalls:z.number().int().nonnegative(),toolFailures:z.number().int().nonnegative(),modelReroutes:z.number().int().nonnegative(),parentUsage:usageCounters.nullable(),usageCoverage:z.enum(['none','parent','partial-team','team']),children:z.array(z.object({threadId:z.string().uuid(),status:z.enum(['queued','running','waiting_for_user','completed','failed','interrupted','unknown']),model:z.string().max(100).nullable(),reasoningEffort:z.string().max(20).nullable(),selectionVerified:z.boolean(),executionVerified:z.null(),usage:usageCounters.nullable()}).strict()).max(16),childrenSeen:z.number().int().nonnegative()}).strict();
-export const workerReportSchema=z.object({id,generation:z.number().int().positive(),lease:z.string().uuid(),snapshot:z.object({status:z.enum(['running','waiting_for_user','completed','failed','interrupted']),final:z.string().max(48000).nullable().optional(),result:z.record(z.string(),z.unknown()).refine(v=>JSON.stringify(v).length<=24000,'History result too large').optional(),thread_id:threadId.optional(),error:z.string().max(2000).nullable().optional(),messages:z.array(z.object({text:z.string().max(48000),phase:z.string().nullable().optional()}).strict()).max(10).optional(),pending:z.array(z.object({id:z.string().max(200),kind:z.enum(['approval','question']),method:z.string().max(100),details:z.record(z.string(),z.unknown())}).strict()).max(10).optional(),model:z.string().max(100).optional(),reasoning_effort:z.string().max(20).optional(),execution_policy:executionPolicySchema.optional(),telemetry:telemetry.optional()}).strict()}).strict();
+const telemetry=z.object({schemaVersion:z.literal(1),runId:z.string().uuid(),generation:z.number().int().positive(),tokenBasis:z.literal('latest-response'),strategy:z.enum(['auto','single','team']),purpose:z.enum(['work','acceptance']),startedAt:z.string().datetime({offset:true}),finishedAt:z.string().datetime({offset:true}).nullable(),durationMs:z.number().nonnegative().nullable(),waitingMs:z.number().nonnegative(),approvals:z.number().int().nonnegative(),questions:z.number().int().nonnegative(),commands:z.number().int().nonnegative(),toolCalls:z.number().int().nonnegative(),toolFailures:z.number().int().nonnegative(),modelReroutes:z.number().int().nonnegative(),parentUsage:usageCounters.nullable(),usageCoverage:z.enum(['none','parent','partial-team','team']),children:z.array(z.object({threadId:z.string().uuid(),status:z.enum(['queued','running','waiting_for_user','completed','failed','interrupted','unknown']),model:z.string().max(100).nullable(),reasoningEffort:z.string().max(20).nullable(),selectionVerified:z.boolean(),executionVerified:z.null(),usage:usageCounters.nullable()}).strict()),childrenSeen:z.number().int().nonnegative()}).strict();
+export const workerReportSchema=z.object({id,generation:z.number().int().positive(),lease:z.string().uuid(),snapshot:z.object({status:z.enum(['running','waiting_for_user','completed','failed','interrupted']),final:z.string().max(48000).nullable().optional(),result:z.record(z.string(),z.unknown()).refine(v=>JSON.stringify(v).length<=24000,'History result too large').optional(),thread_id:threadId.optional(),error:z.string().max(2000).nullable().optional(),messages:z.array(z.object({text:z.string().max(48000),phase:z.string().nullable().optional()}).strict()).max(10).optional(),pending:z.array(z.object({id:z.string().max(200),kind:z.enum(['approval','question']),method:z.string().max(100),details:z.record(z.string(),z.unknown())}).strict()).optional(),model:z.string().max(100).optional(),reasoning_effort:z.string().max(20).optional(),execution_policy:executionPolicySchema.optional(),telemetry:telemetry.optional()}).strict()}).strict();

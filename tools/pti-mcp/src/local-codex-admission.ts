@@ -3,12 +3,21 @@ export type Reservation = {
   status:'queued'|'running'|'waiting_for_user';until:number;
 };
 export type SchedulerPatch = {reservations:Reservation[];activeTask?:string|null};
-type Host = {version:string;maxConcurrentTasks?:number;activeTask?:string|null;at:number;reservations?:Reservation[]};
+type Host = {version:string;maxConcurrentTasks?:number|null;activeTask?:string|null;at:number;reservations?:Reservation[]};
 export function concurrentWorker(host:Pick<Host,'version'>) {
   const [major,minor]=host.version.split('.').map(Number);
   return major>0||minor>=4;
 }
-export function capacity(host:Host) { return concurrentWorker(host)?Math.min(4,Math.max(1,host.maxConcurrentTasks||3)):1; }
+export function uncappedWorker(host:Pick<Host,'version'>) {
+  const [major,minor,patch=0]=host.version.split('.').map(Number);
+  return major>0||minor>4||minor===4&&patch>=2;
+}
+// null means no bridge ceiling. Preserve older workers' actual capabilities
+// until upgraded; do not reinterpret their omitted fields as unbounded support.
+export function capacity(host:Host):number|null {
+  if(!concurrentWorker(host))return 1;
+  return host.maxConcurrentTasks??(uncappedWorker(host)?null:3);
+}
 export function resourcePath(value:string) {return value.replaceAll('\\','/').replace(/\/+$/,'').toLowerCase();}
 export function pathsOverlap(a:string,b:string) {const left=resourcePath(a),right=resourcePath(b);return left===right||left.startsWith(right+'/')||right.startsWith(left+'/');}
 export function reservations(host:Host,now:number) {
@@ -25,7 +34,8 @@ export function admission(host:Host,next:Reservation,now:number):SchedulerPatch 
   const threadConflict=next.threadId?current.find(slot=>slot.threadId===next.threadId):undefined;
   const pathConflict=next.resourcePath?current.find(slot=>slot.resourcePath&&(next.mode==='edit'||slot.mode==='edit')&&pathsOverlap(next.resourcePath!,slot.resourcePath)):undefined;
   if(threadConflict||pathConflict)throw Error(`Local Codex work conflicts with task ${(threadConflict||pathConflict)!.id}. Wait for that task to finish. Nothing was queued.`);
-  if(current.length>=capacity(host))throw Error(concurrentWorker(host)
+  const limit=capacity(host);
+  if(limit!==null&&current.length>=limit)throw Error(concurrentWorker(host)
     ?`Local Codex capacity is full (${current.map(slot=>slot.id).join(', ')}). Nothing was queued.`
     :`Local Codex is busy with task ${current[0].id}. Wait for that task to finish. Nothing was queued.`);
   return {reservations:[...current,next]};

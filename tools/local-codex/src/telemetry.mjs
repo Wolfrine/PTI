@@ -24,7 +24,7 @@ export function createTelemetry(job, {clock = Date.now} = {}) {
   const generation = Number.isInteger(job.relayGeneration)&&job.relayGeneration>0?job.relayGeneration:(job.history?.length || 0) + 1;
   function child(id) {
     if (!uuid(id)) return null;
-    if (!children.has(id) && children.size < 16) children.set(id, {threadId: id, status: 'unknown', model: null, reasoningEffort: null, selectionVerified: false, executionVerified: null, usage: null});
+    if (!children.has(id)) children.set(id, {threadId: id, status: 'unknown', model: null, reasoningEffort: null, selectionVerified: false, executionVerified: null, usage: null});
     return children.get(id) || null;
   }
   function childMetadata(id, metadata, selection, resolved) {
@@ -48,7 +48,7 @@ export function createTelemetry(job, {clock = Date.now} = {}) {
   }
   function observe(message, parentId, selection) {
     const p = message.params || {};
-    if (message.method === 'thread/started' && p.thread?.parentThreadId === parentId && uuid(parentId)) {
+    if (message.method === 'thread/started' && (p.thread?.parentThreadId === parentId || children.has(p.thread?.parentThreadId)) && uuid(parentId)) {
       return childMetadata(p.thread.id, p.thread, selection, true);
     }
     const related = p.threadId === parentId || children.has(p.threadId);

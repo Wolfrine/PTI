@@ -32,6 +32,14 @@ test('unknown thread data stays excluded and mismatched model/reroute is actiona
   assert.match(metric.observe(event('thread/started',{thread:{id:child,parentThreadId:parent,model:'lower-model',reasoningEffort:'xhigh'}}),parent,selection),/Ask the owner/);
   assert.match(metric.observe(event('model/rerouted',{threadId:parent,toModel:'lower-model'}),parent,selection),/Ask the owner/);
 });
+test('descendant selection remains observed beyond sixteen children',()=>{
+  const metric=createTelemetry({});
+  for(let i=1;i<=25;i++)metric.observe(event('thread/started',{thread:{id:'01900000-0000-7000-8000-'+String(i).padStart(12,'0'),parentThreadId:parent,model:selection.model,reasoningEffort:selection.effort}}),parent,selection);
+  assert.equal(metric.snapshot().childrenSeen,25);
+  const ancestor=metric.snapshot().children[24].threadId;
+  assert.match(metric.observe(event('thread/started',{thread:{id:'01900000-0000-7000-8000-000000000099',parentThreadId:ancestor,model:'lower-model',reasoningEffort:'xhigh'}}),parent,selection),/different model/);
+});
+
 test('invalid counters stay unknown, runs are unique and history is bounded',()=>{
   assert.equal(usageCounters({totalTokens:-1}),null);assert.equal(usageCounters({totalTokens:2}).inputTokens,null);
   const job={project:'fixture',mode:'inspect',model:'gpt-6.1-sol',reasoningEffort:'xhigh'};

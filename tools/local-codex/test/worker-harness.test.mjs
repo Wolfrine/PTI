@@ -6,9 +6,9 @@ import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 const root=fileURLToPath(new URL('../',import.meta.url));
-async function run({flags=[],strategy='team',prior,resume,mode='inspect'}={}){
+async function run({flags=[],strategy='team',prior,resume,mode='inspect',maxSubagentsPerTask=null}={}){
   const home=prior?.home||resume?.home||path.join(root,'test-data','harness-'+randomUUID()),scratch=path.join(home,'scratch');fs.mkdirSync(scratch,{recursive:true});
-  fs.writeFileSync(path.join(home,'config.json'),JSON.stringify({codexPath:process.execPath,codexArgs:[path.join(root,'test/fixture-runtime.mjs'),...flags],projects:{fixture:{path:scratch}},maxTaskMinutes:1,maxSubagentsPerTask:2}));
+  fs.writeFileSync(path.join(home,'config.json'),JSON.stringify({codexPath:process.execPath,codexArgs:[path.join(root,'test/fixture-runtime.mjs'),...flags],projects:{fixture:{path:scratch}},maxTaskMinutes:null,maxSubagentsPerTask}));
   const id=prior?.job.id||randomUUID().replaceAll('-',''),directory=path.join(home,'tasks',id);fs.mkdirSync(directory,{recursive:true});
   const job=prior?{...prior.job,prompt:'complete',status:'queued',final:null,error:null,history:[...prior.job.history,{key:randomUUID(),inputHash:'fixture'}]}:{id,project:'fixture',cwd:fs.realpathSync.native(scratch),mode,strategy,purpose:'acceptance',prompt:'complete',status:'queued',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),threadId:resume?.job.threadId||null,turnId:null,messages:[],pending:[],history:[]};
   fs.writeFileSync(path.join(directory,'task.json'),JSON.stringify(job));
@@ -53,8 +53,14 @@ test('permission mismatches and unavailable instruction refresh fail before a mo
 test('worker refuses model reroutes, lower-model children and subagents under single strategy',{skip:process.platform!=='win32'},async()=>{
   const rerouted=await run({flags:['--rerouted']});assert.equal(rerouted.job.status,'failed');assert.match(rerouted.job.error,/rerouted/);
   const mismatch=await run({flags:['--telemetry','--child-wrong-model']});assert.equal(mismatch.job.status,'failed');assert.match(mismatch.job.error,/different model/);
-  const single=await run({flags:['--telemetry'],strategy:'single'});assert.equal(single.job.status,'failed');assert.match(single.job.error,/subagent bound/);
-  const nested=await run({flags:['--telemetry','--nested-child']});assert.equal(nested.job.status,'failed');assert.match(nested.job.error,/Nested subagent/);
+  const single=await run({flags:['--telemetry'],strategy:'single'});assert.equal(single.job.status,'failed');assert.match(single.job.error,/subagent limit/);
+  const nested=await run({flags:['--telemetry','--nested-child']});assert.equal(nested.job.status,'completed');assert.equal(nested.job.telemetry.childrenSeen,2);
   const unknown=await run({flags:['--telemetry','--child-unknown']});assert.equal(unknown.job.status,'completed');assert.equal(unknown.job.telemetry.children[0].selectionVerified,false);assert.equal(unknown.job.telemetry.children[0].reasoningEffort,null);
   const resolved=await run({flags:['--resolved-question']});assert.equal(resolved.job.status,'completed');assert.equal(resolved.job.telemetry.questions,1);assert.equal(resolved.job.pending.length,0);
+});
+
+test('more than two children and descendants are observed without bridge rejection while model mismatches still fail',{skip:process.platform!=='win32'},async()=>{
+  const many=await run({flags:['--telemetry','--many-children']});assert.equal(many.job.status,'completed');assert.equal(many.job.telemetry.childrenSeen,4);
+  const bounded=await run({flags:['--telemetry','--many-children'],maxSubagentsPerTask:2});assert.equal(bounded.job.status,'failed');assert.match(bounded.job.error,/owner-selected subagent limit/);
+  const bad=await run({flags:['--telemetry','--nested-child','--grandchild-wrong-model']});assert.equal(bad.job.status,'failed');assert.match(bad.job.error,/different model/);
 });

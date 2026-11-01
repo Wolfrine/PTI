@@ -21,6 +21,12 @@ test('invalid or duplicate durable claims fail without inventing a recovery task
   assert.throws(()=>claims([first,first]),/Duplicate/);
   assert.throws(()=>claims([{id:'unexpected',generation:1,lease:'x'}]),/Invalid/);
 });
+
+test('more than four claims survive persistence and isolated cancellation without a replacement ceiling',()=>{
+  const active=Array.from({length:25},(_,i)=>({...first,id:(i+1).toString(16).padStart(32,'0'),localId:'local-'+i,lease:'lease-'+i}));
+  const resumed=mergeClaims(claims(JSON.parse(JSON.stringify(active))),[]);assert.equal(resumed.length,25);
+  assert.equal(withoutClaim(resumed,resumed[8]).length,24);assert.equal(resumed[24].localId,'local-24');
+});
 test('a resumed generation waits for its own cancelled predecessor without retrying unrelated failures',()=>{
   assert.equal(retryableLocal('continue_task','Wait for completion or cancel the active turn first.'),true);
   assert.equal(retryableLocal('continue_task','The previous worker is still exiting; retry shortly.'),true);

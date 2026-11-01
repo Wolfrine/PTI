@@ -3,8 +3,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import {modelSelection} from './model-policy.mjs';
+import {ownerLimit,ownerDuration} from './limits.mjs';
 
-export const VERSION = '0.4.1';
+export const VERSION = '0.4.2';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');
@@ -31,11 +32,10 @@ export function config() {
   const value = read(configFile);
   if (!path.win32.isAbsolute(home) || !home.toLowerCase().startsWith('f:')) throw new Error('Bridge data must be on F:.');
   if (!value.projects || !Object.keys(value.projects).length) throw new Error('Configure at least one project.');
-  for(const [name,fallback,min,max] of [['maxConcurrentTasks',3,1,4],['maxSubagentsPerTask',2,0,4]]){
-    const setting=value[name]??fallback;
-    if(!Number.isInteger(setting)||setting<min||setting>max)throw Error(`${name} must be an integer from ${min} to ${max}.`);
-    value[name]=setting;
+  for(const [name,min] of [['maxConcurrentTasks',1],['maxSubagentsPerTask',0]]){
+    value[name]=ownerLimit(value[name],name,min);
   }
+  value.maxTaskMinutes=ownerDuration(value.maxTaskMinutes);
   return value;
 }
 export function project(key) {
@@ -97,7 +97,7 @@ export function health() {
   const authMode=login.status===0&&/Logged in using ChatGPT/i.test(login.stdout+login.stderr)?'chatgpt':'unavailable';
   const selection=modelSelection(config());
   return { version: VERSION, codexVersion: result.stdout.trim(), codexPath: executable, dataPath: home, model:selection.model, reasoning_effort:selection.effort,
-    maxConcurrentTasks:config().maxConcurrentTasks,maxSubagentsPerTask:config().maxSubagentsPerTask,
+    maxConcurrentTasks:config().maxConcurrentTasks,maxSubagentsPerTask:config().maxSubagentsPerTask,maxTaskMinutes:config().maxTaskMinutes,
     authMode,
     transport: 'stdio', networkListener: false, signIn: 'Uses the current Windows user Codex sign-in; verified when a task starts.',
     webMobile: 'Available through the authenticated PTI job relay when this worker is online.' };

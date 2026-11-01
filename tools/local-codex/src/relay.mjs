@@ -108,7 +108,7 @@ try{
       if(await authMode()!=='chatgpt')throw Error('ChatGPT subscription sign-in required.');
       const selection=modelSelection(config()),settings=config();
       const heartbeat={model:selection.model,reasoning_effort:selection.effort,instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,
-        maxConcurrentTasks:settings.maxConcurrentTasks,maxSubagentsPerTask:settings.maxSubagentsPerTask,
+        maxConcurrentTasks:settings.maxConcurrentTasks,maxSubagentsPerTask:settings.maxSubagentsPerTask,maxTaskMinutes:settings.maxTaskMinutes,
         projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',resourcePath:'F:/unavailable',available:false};}})};
       const response=await api('poll',{heartbeat,active:state.active.map(({id,generation,lease})=>({id,generation,lease}))});
       lastSuccess=Date.now();state.lastSuccess=lastSuccess;

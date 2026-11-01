@@ -10,6 +10,7 @@ import {harnessPolicy} from './harness-policy.mjs';
 import {createTelemetry,archiveRun} from './telemetry.mjs';
 import {acquireWorkspaceLock} from './workspace-locks.mjs';
 import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execution-policy.mjs';
+import {executionDeadline,deadlineElapsed} from './limits.mjs';
 
 const id = process.argv[2];
 const directory = taskDir(id);
@@ -39,7 +40,7 @@ function rpc(method, params) {
 function finish(status, error) {
   if (closed) return;
   closed = true;
-  clearInterval(timer); clearTimeout(deadline);
+  clearInterval(timer);
   job.status = status;
   job.pending = [];
   if (error) job.error = error;
@@ -84,16 +85,13 @@ function notification(message) {
   }
   const violation=telemetry?.observe(message,job.threadId,selection);
   if(violation){finish('failed',violation);return;}
-  if(['collabAgentToolCall','collabToolCall'].includes(p.item?.type)&&['spawnAgent','spawn_agent'].includes(p.item?.tool)&&p.item?.senderThreadId&&p.item.senderThreadId!==job.threadId){
-    finish('failed','Nested subagent delegation is outside this harness task bound. Ask the owner before expanding it.');return;
-  }
   if(telemetry&&policy){
     const observed=telemetry.snapshot();
-    if(observed.childrenSeen>policy.maxSubagents){finish('failed','The configured subagent bound was exceeded. Ask the owner before expanding it.');return;}
+    if(policy.maxSubagents!==null&&observed.childrenSeen>policy.maxSubagents){finish('failed','The owner-selected subagent limit was exceeded.');return;}
     for(const child of observed.children){
       if(child.selectionVerified||childChecks.has(child.threadId))continue;
       const check=rpc('thread/read',{threadId:child.threadId,includeTurns:false}).then(({thread})=>{
-        if(closed||thread?.parentThreadId!==job.threadId)return;
+        if(closed||thread?.parentThreadId!==job.threadId&&!telemetry.snapshot().children.some(value=>value.threadId===thread?.parentThreadId))return;
         const mismatch=thread.modelProvider&&thread.modelProvider!=='openai'?'A subagent selected a different model provider. Ask the owner; no fallback is allowed.':telemetry.childMetadata(child.threadId,thread,selection,true);
         if(mismatch)finish('failed',mismatch);else save();
       }).catch(()=>{/* Missing metadata remains unknown, not verified execution. */});
@@ -159,6 +157,7 @@ try {
         finish('interrupted');
         return;
       }
+      if(deadlineElapsed(deadline,Date.now())){finish('interrupted','The owner-configured maximum task duration elapsed. Continue explicitly to resume.');return;}
       for (const [requestId, message] of waiting) {
         const responseFile = path.join(directory, `response-${digest(requestId)}.json`);
         if (!fs.existsSync(responseFile)) continue;
@@ -175,7 +174,9 @@ try {
       }
     } catch (error) { finish('failed', error.message); }
   }, 500);
-  deadline = setTimeout(() => finish('interrupted', 'The configured maximum task duration elapsed. Continue explicitly to resume.'), (config().maxTaskMinutes || 30) * 60000);
+  // Check the optional owner deadline on the existing control timer. A large
+  // explicit duration must not overflow setTimeout into a one-millisecond kill.
+  deadline=executionDeadline(Date.now(),settings.maxTaskMinutes);
   await rpc('initialize', { clientInfo: { name: 'local_codex_bridge', title: 'Local Codex Bridge', version: '0.1.0' }, capabilities: { experimentalApi: false } });
   send({ method: 'initialized', params: {} });
   const account = await rpc('account/read', { refreshToken: false });

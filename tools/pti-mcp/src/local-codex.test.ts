@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {CodexRelay,createCodexServer,FirestoreRelayStore,OWNER,heartbeatSchema,workerPollSchema,workerReportSchema,type RelayStore,type Job,type Worker} from './local-codex.js';
-import type {SchedulerPatch} from './local-codex-admission.js';
+import {capacity,type SchedulerPatch} from './local-codex-admission.js';
 class Memory implements RelayStore {
   jobs=new Map<string,Job>(); host?:Worker;
   listeners=new Map<string,Set<{changed:(job:Job|undefined)=>void;failed:(error:Error)=>void}>>(); reads=0;
@@ -14,15 +14,15 @@ class Memory implements RelayStore {
     return ()=>{listeners.delete(entry);if(!listeners.size)this.listeners.delete(id);};
   }
   async worker(){return this.host;}
-  async heartbeat(_uid:string,w:Worker){const reservations=this.host?.reservations;this.host={...structuredClone(w),reservations,maxConcurrentTasks:Number(w.version.split('.')[1])>=4?w.maxConcurrentTasks||3:1};}
+  async heartbeat(_uid:string,w:Worker){const reservations=this.host?.reservations;this.host={...structuredClone(w),reservations,maxConcurrentTasks:capacity(w)};}
   async queued(){return [...this.jobs.values()].filter(j=>j.status==='queued').map(j=>j.id);}
   async list(){return [...this.jobs.values()].sort((a,b)=>b.updatedAt-a.updatedAt);}
   async clearActive(_uid:string,id:string){if(this.host?.activeTask===id)this.host.activeTask=null;}
   async update<T>(_uid:string,id:string,fn:(job:Job|undefined,worker:Worker|undefined)=>{job:Job;result:T;scheduler?:SchedulerPatch}){const result=fn(structuredClone(this.jobs.get(id)),structuredClone(this.host));this.jobs.set(id,result.job);if(result.scheduler&&this.host)Object.assign(this.host,structuredClone(result.scheduler));for(const listener of this.listeners.get(id)||[])listener.changed(structuredClone(result.job));return result.result;}
 }
 function fixture(){let at=1000000;const store=new Memory(),relay=new CodexRelay(store,()=>at);const heartbeat={instanceId:randomUUID(),authMode:'chatgpt' as const,version:'0.3.0',projects:[{key:'scratch',name:'Scratch',path:'F:/scratch',available:true}]};const args={project:'scratch',prompt:'inspect',mode:'inspect' as const,request_key:'request-one'};return {store,relay,heartbeat,args,advance:(ms:number)=>at+=ms,pair:()=>relay.poll(OWNER,{heartbeat})};}
-function concurrentFixture(maxConcurrentTasks=3){
-  const f=fixture(),heartbeat=heartbeatSchema.parse({...f.heartbeat,version:'0.4.0',maxConcurrentTasks,maxSubagentsPerTask:2,projects:[
+function concurrentFixture(maxConcurrentTasks:number|null=3){
+  const f=fixture(),heartbeat=heartbeatSchema.parse({...f.heartbeat,version:maxConcurrentTasks===null?'0.4.2':'0.4.0',maxConcurrentTasks,maxSubagentsPerTask:maxConcurrentTasks===null?null:2,maxTaskMinutes:null,projects:[
     {key:'one',name:'One',path:'F:/Repos/Main',resourcePath:'F:/Repos/Main',available:true},
     {key:'alias',name:'Alias',path:'F:/Junction',resourcePath:'f:\\repos\\MAIN\\',available:true},
     {key:'nested',name:'Nested',path:'F:/Repos/Main/Sub',available:true},
@@ -41,6 +41,45 @@ describe('Local Codex relay',()=>{
     await new Promise(resolve=>setImmediate(resolve));expect(returned).toBe(false);
     await f.relay.report(OWNER,{...claim,snapshot:{status:'interrupted'}});
     expect((await waiting).status).toBe('interrupted');expect(f.store.listeners.size).toBe(0);
+  });
+  it('admits and renews more than four parents without replacing the removed ceiling',async()=>{
+    const f=concurrentFixture(null);await f.pair();
+    const tasks=await Promise.all(Array.from({length:25},(_,i)=>f.relay.start(OWNER,{...f.args,request_key:`uncapped-${i}`})));
+    expect(tasks).toHaveLength(25);expect(f.store.host?.reservations).toHaveLength(25);
+    expect(await f.relay.status(OWNER)).toMatchObject({capacity:null,capacityLimited:false,usedSlots:25,availableSlots:null,busy:false,canAcceptMore:true,maxSubagentsPerTask:null,maxTaskMinutes:null,limitPolicy:'owner-only'});
+    const claims=(await f.pair()).jobs!;expect(claims).toHaveLength(25);
+    expect(workerPollSchema.safeParse({heartbeat:f.heartbeat,active:claims.map(({id,generation,lease})=>({id,generation,lease}))}).success).toBe(true);
+    await f.relay.cancel(OWNER,tasks[3].id);
+    const controls=await f.pair(claims);expect(controls.controls![tasks[3].id].cancel).toBe(true);expect(controls.controls![tasks[24].id].cancel).toBe(false);
+    expect(await f.relay.status(OWNER)).toMatchObject({usedSlots:25,canAcceptMore:true});
+    expect(await f.relay.start(OWNER,{...f.args,request_key:'uncapped-24'})).toMatchObject({id:tasks[24].id});
+  });
+  it('does not clamp an explicitly owner-selected finite capacity to four',async()=>{
+    const f=concurrentFixture(9);await f.pair();for(let i=0;i<9;i++)await f.relay.start(OWNER,{...f.args,request_key:`finite-${i}`});
+    expect(await f.relay.status(OWNER)).toMatchObject({capacity:9,usedSlots:9,canAcceptMore:false});
+    await expect(f.relay.start(OWNER,{...f.args,request_key:'finite-extra'})).rejects.toThrow('capacity');
+  });
+  it('drains paginated transport batches beyond ten without limiting active parents and renews every existing claim',async()=>{
+    const f=concurrentFixture(null),queued=f.store.queued.bind(f.store);f.store.queued=async()=> (await queued()).slice(0,10);await f.pair();
+    const tasks=await Promise.all(Array.from({length:25},(_,i)=>f.relay.start(OWNER,{...f.args,request_key:`paged-${i}`})));
+    let active:NonNullable<Awaited<ReturnType<typeof f.pair>>['jobs']>=[];
+    for(const expected of [10,10,5]){const response=await f.pair(active);expect(response.jobs).toHaveLength(expected);active.push(...response.jobs!);}
+    expect(active).toHaveLength(25);expect(new Set(active.map(c=>c.id)).size).toBe(25);expect((await f.store.queued())).toHaveLength(0);
+    const before=f.store.jobs.get(tasks[24].id)!.leaseUntil!;f.advance(31000);const refreshed=await f.pair(active);
+    expect(Object.keys(refreshed.controls!)).toHaveLength(25);expect(f.store.jobs.get(tasks[24].id)!.leaseUntil).toBeGreaterThan(before);
+    expect(await f.relay.status(OWNER)).toMatchObject({usedSlots:25,capacity:null,canAcceptMore:true});
+  });
+  it('continues the same task beyond one hundred prior turns and keeps more than twenty human answers',async()=>{
+    const f=concurrentFixture(null);await f.pair();const task=await f.relay.start(OWNER,f.args),claim=(await f.pair()).jobs![0];
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:randomUUID()}});
+    const stored=f.store.jobs.get(task.id)!;stored.history=Array.from({length:150},(_,i)=>({key:'previous-'+i,inputHash:'hash-'+i}));stored.generation=151;
+    const continued=await f.relay.continue(OWNER,{task_id:task.id,prompt:'Continue',request_key:'turn-after-one-hundred'});expect(continued).toMatchObject({generation:152});
+    const current=(await f.pair()).jobs![0];
+    for(let i=0;i<25;i++){
+      const request_id='question-'+i;await f.relay.report(OWNER,{...current,snapshot:{status:'waiting_for_user',pending:[{id:request_id,kind:'question',details:{questions:[{id:'choice'}]}}]}});
+      await f.relay.respond(OWNER,{task_id:task.id,request_id,answers:{choice:['actual human answer']}});
+    }
+    expect(f.store.jobs.get(task.id)!.responses).toHaveLength(25);
   });
   it('reserves modern capacity atomically for queued work and deduplicates retries even when full',async()=>{
     const f=concurrentFixture();await f.pair();
@@ -149,7 +188,7 @@ describe('Local Codex relay',()=>{
   it('reports configured model preference and retains the confirmed turn model and effort',async()=>{
     const f=fixture();const heartbeat=heartbeatSchema.parse({...f.heartbeat,version:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     await f.relay.poll(OWNER,{heartbeat});
-    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.0',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
+    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.2',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     const task=await f.relay.start(OWNER,f.args),claim=(await f.relay.poll(OWNER,{heartbeat})).job!;
     const report=workerReportSchema.parse({id:claim.id,generation:claim.generation,lease:claim.lease,snapshot:{status:'completed',model:'gpt-6.1-sol',reasoning_effort:'xhigh',final:'Fixture result'}});
     await f.relay.report(OWNER,report);

@@ -4,16 +4,16 @@ This is a neutral operational checkpoint, not an import receipt. It contains no 
 
 | Evidence | Current truth |
 | --- | --- |
-| First-party list acquisition | Owner's ChatGPT Browser observed 23 pages, 226 unique rows, pagination end reached, zero unreadable rows |
-| Historical boundary | Owner observed source history back to 3 November 2023; this is source-list coverage, not persisted food-detail coverage |
-| Detail acquisition | Owner reported 69 details acquired into browser memory; that memory is currently inaccessible |
+| First-party list acquisition | Assistant observed 23 pages in the owner's authenticated ChatGPT Browser, 226 unique rows, pagination end reached, zero unreadable rows |
+| Historical boundary | Assistant observed source history back to 3 November 2023; this is source-list coverage, not persisted food-detail coverage |
+| Detail acquisition | Assistant acquired 69 details into browser memory; that memory is currently inaccessible |
 | Outside food scope | Five rows intentionally excluded using actual nonfood-only previews; one sensitive nonfood detail read was rejected by automatic approval review and was not pursued |
 | Real purchases imported | **Zero**, reverified after deployment through the authorized PTI connection; purchase query empty and purchase sync state absent. Neither supplied food record has passed actual persistence/readback |
 | Cloud browser | Host removed the browser surface; further real acquisition or browser acceptance is blocked until the host restores it |
 | Morsel sign-in | Original referrer gate repaired and probed after deployment; Google popup/normal owner sign-in remain unverified because Browser is unavailable |
 | Local specialized-callback fallback | Existing local ADC was unavailable (`app/invalid-credential`); no credentials were exported/replaced and no generic writes attempted |
 
-The owner supplied two real, sanitized, food-only detail observations for acceptance. Their contents remain in task context only, never repository fixtures or reports. Preserve their supplied capture times, exact display-date text and `purchasedAt:null` when they can be imported. Test success and deployment must never be presented as those imports succeeding.
+The assistant retrieved two real, sanitized, food-only detail observations through the owner's authenticated Blinkit browser session for acceptance. Their contents remain in task context only, never repository fixtures or reports. Preserve their supplied capture times, exact display-date text and `purchasedAt:null` when they can be imported. Test success and deployment must never be presented as those imports succeeding.
 
 ## Authorized independent repair
 

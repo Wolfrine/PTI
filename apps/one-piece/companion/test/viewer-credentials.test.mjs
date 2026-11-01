@@ -55,7 +55,7 @@ async function fixture(t, overrides = {}) {
     return Buffer.concat([decipher.update(value.subarray(28)), decipher.final()]);
   };
   const fetchImpl = async (url, init) => {
-    state.calls.push({ url, method: init.method ?? 'GET', signal: init.signal, redirect: init.redirect });
+    state.calls.push({ url, method: init.method ?? 'GET', signal: init.signal, redirect: init.redirect, headers:new Headers(init.headers) });
     assert.equal(init.redirect, 'error'); assert.ok(init.signal instanceof AbortSignal);
     if (url.startsWith('https://firestore.googleapis.com/')) {
       if (state.failMembership) return json({}, 503);
@@ -207,6 +207,17 @@ test('a failed refresh or failed encrypted rotation denies authorization with no
   assert.equal((await f.store.getAuthorized('fixture-viewer')).uid, 'fixture-viewer');
   const g = await fixture(t, { protect: async input => Buffer.from(input) });
   await assert.rejects(g.pair(), { code: 'viewer-credential-unavailable' }); assert.deepEqual(await readdir(g.root), []);
+});
+
+test('a Firebase API-key restriction denies playback but preserves the saved account for recovery',async t=>{
+ const f=await fixture(t);await f.pair();f.advance(3_600_000);
+ const file=path.join(f.root,filename('fixture-viewer')),before=await readFile(file,'utf8');
+ f.state.failRefresh=403;
+ await assert.rejects(f.store.getAuthorized('fixture-viewer'),{code:'viewer-identity-unavailable',status:503});
+ assert.equal(await readFile(file,'utf8'),before);
+ f.state.failRefresh=null;
+ assert.equal((await new ViewerCredentials(f.config).getAuthorized('fixture-viewer')).uid,'fixture-viewer');
+ assert.ok(f.state.calls.every(call=>!call.headers.has('referer')));
 });
 
 test('distinct viewers retain separate identities; Windows case variants have different private paths', async t => {

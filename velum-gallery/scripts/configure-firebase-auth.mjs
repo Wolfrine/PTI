@@ -119,7 +119,7 @@ async function ensurePickerApi(){
   await ensureCloudService('picker.googleapis.com');
 }
 async function configurePickerKey(){
-  // Reuse the browser key. Only append PTI's exact two Hosting origins;
+  // Reuse the browser key. Only append PTI and One Piece's exact Hosting origins;
   // preserve every API target, method restriction, Picker and other referrer.
   const url=`https://apikeys.googleapis.com/v2/keys:lookupKey?keyString=${encodeURIComponent(webApiKey)}`;
   let lookup=await fetch(url,{headers});

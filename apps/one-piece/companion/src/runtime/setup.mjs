@@ -7,6 +7,7 @@ import { WindowsProtection } from '../dpapi.mjs';
 import { atomicJson } from '../progress.mjs';
 import { dedicatedEngineDescriptor } from '../media/runtime.mjs';
 import { CADDY_SHA256,HOUSEHOLD_CA_SHA256,validateRuntimeConfig,loadRuntimeConfig,loadRuntimeSecret,saveRuntimeSecret,usesPublicTls,enableIndependentAppOrigins } from './config.mjs';
+import {readNativeFirebaseKey} from './native-auth.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 export const SETUP_POWERSHELL='C:/Users/Sachit Tewary/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe';
@@ -26,7 +27,7 @@ export async function installRuntimeTrust(config,{installTrust=true,runPowerShel
   if(usesPublicTls(config))return{installed:false,reason:'public-certificate'};
   return installTrust?runPowerShellImpl(path.resolve(HERE,'../../scripts/install-household-ca.ps1'),['-CertificatePath',config.caddy.rootCertificatePath]):{installed:false,reason:'not-requested'};
 }
-export async function prepareRuntime({repositoryRoot=path.resolve(HERE,'../../../../..'),recordedAt=new Date().toISOString(),installTrust=true}={}){
+export async function prepareRuntime({repositoryRoot=path.resolve(HERE,'../../../../..'),recordedAt=new Date().toISOString(),installTrust=true,nativeAuthConfigPath}={}){
   const protection=new WindowsProtection(),runtimeRoot='H:/PTI-OnePiece/runtime',privateRoot=runtimeRoot+'/private';
   await protection.secureDirectory(runtimeRoot);await protection.secureDirectory(privateRoot);
   const configurationPath=privateRoot+'/config.json';
@@ -35,10 +36,16 @@ export async function prepareRuntime({repositoryRoot=path.resolve(HERE,'../../..
     const trust=await installRuntimeTrust(existing,{installTrust});
     await loadRuntimeSecret(existing,'proxySecret',{protection});
     await atomicJson(privateRoot+'/setup-proof.json',{recordedAt:new Date().toISOString(),dpapiCurrentUserRoundtrip:true,privateDirectoriesSecured:true,ca:trust,windowsPasswordStored:false,firewallChanged:false,preLoginVerified:false,rebootVerified:false});
+    if(nativeAuthConfigPath!==undefined){
+      const firebaseApiKey=await readNativeFirebaseKey(nativeAuthConfigPath);
+      const {configPath,...saved}=existing;
+      const updated=validateRuntimeConfig({...saved,firebaseApiKey});
+      await atomicJson(configurationPath,updated);
+      return {...updated,configPath};
+    }
     return existing;
   }
-  const firebaseSource=await readFile(path.join(repositoryRoot,'pti-app/src/app/app.config.ts'),'utf8');
-  const firebaseApiKey=/apiKey:\s*"([^"]+)"/.exec(firebaseSource)?.[1];
+  const firebaseApiKey=await readNativeFirebaseKey(nativeAuthConfigPath);
   const nodeExecutable=process.execPath;
   const pythonExecutable='C:/Users/Sachit Tewary/AppData/Local/Programs/Python/Python312/python.exe';
   const config=createNewRuntimeConfig({version:1,repositoryRoot,runtimeRoot,privateRoot,dataRoot:runtimeRoot+'/data',cacheRoot:runtimeRoot+'/media',cacheAccountingRoots:['H:/PTI-OnePiece/production-media','H:/PTI-OnePiece/pilot/jellyfin/cache',runtimeRoot+'/jellyfin'],progressRoot:runtimeRoot+'/data/progress',viewerCredentialsRoot:privateRoot+'/viewers',ownerBindingPath:privateRoot+'/family-binding.json',proxySecretPath:privateRoot+'/proxy-secret.dpapi',jellyfinTokenPath:privateRoot+'/jellyfin-token.dpapi',jellyfinCredentialsPath:privateRoot+'/jellyfin-admin.dpapi',setupChallengePath:privateRoot+'/setup-challenge.dpapi',statePath:privateRoot+'/supervisor-state.json',

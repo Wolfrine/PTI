@@ -1,6 +1,10 @@
 import {isDeepStrictEqual} from 'node:util';
 
-export const PTI_REFERRERS = ['https://pti-app-2ab59.web.app/*', 'https://pti-app-2ab59.firebaseapp.com/*'];
+// This browser key is shared by PTI and its independently hosted One Piece PWA.
+// Keep both app origins: Firebase authorizedDomains alone does not permit the
+// Identity Toolkit or Secure Token requests under HTTP-referrer restrictions.
+export const ONE_PIECE_REFERRERS = ['https://pti-app-2ab59-one-piece.web.app/*', 'https://pti-app-2ab59-one-piece.firebaseapp.com/*'];
+export const PTI_REFERRERS = ['https://pti-app-2ab59.web.app/*', 'https://pti-app-2ab59.firebaseapp.com/*', ...ONE_PIECE_REFERRERS];
 
 export function appendPtiReferrers(current) {
   if (!Array.isArray(current?.browserKeyRestrictions?.allowedReferrers)) throw new Error('Expected the existing browser-restricted web key; refusing to replace application restrictions.');

@@ -80,7 +80,9 @@ export class ViewerCredentials {
         }); } catch { throw new AccessError('viewer-identity-unavailable', 503); }
         if (!response.ok) {
           void response.body?.cancel().catch(() => {});
-          throw new AccessError([400, 401, 403].includes(response.status) ? 'viewer-reauthentication-required' : 'viewer-identity-unavailable', [400, 401, 403].includes(response.status) ? 401 : 503);
+          // Google 403 includes key/referrer restrictions, not revoked user
+          // credentials. Deny this request without deleting a saved connection.
+          throw new AccessError([400, 401].includes(response.status) ? 'viewer-reauthentication-required' : 'viewer-identity-unavailable', [400, 401].includes(response.status) ? 401 : 503);
         }
         return boundedJson(response, 64 * 1024);
       })()]);

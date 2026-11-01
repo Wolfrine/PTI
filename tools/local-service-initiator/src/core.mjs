@@ -1,9 +1,12 @@
 import path from 'node:path';
+import {endpointPort,GTOP_MODELS,samePath} from './gtop-runner.mjs';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 export const FAILURES = new Set(['start_failed','model_unavailable','port_in_use','configuration_invalid','worker_start_timeout','companion_start_timeout']);
 export function validateSettings(value) {
   if (value?.workerId !== 'sachit-windows') throw Error('configuration_invalid');
+  endpointPort(value.ollamaEndpoint);
+  if(!samePath(value.modelDirectory,GTOP_MODELS))throw Error('configuration_invalid');
   const url = new URL(value.gateway);
   if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash ||
       !['https://gtop-question-papers.web.app/api','https://us-central1-gtop-app.cloudfunctions.net/gtopAssistantGateway'].includes(url.href.replace(/\/$/,''))) throw Error('configuration_invalid');

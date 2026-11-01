@@ -2,6 +2,7 @@ param(
     [string]$WorkerConfig = 'H:\GTOP-Local-AI\pilot-runtime\worker.json',
     [string]$ControllerRoot = 'H:\GTOP-Local-AI\gtop-documentation\tools\gtop-assistant',
     [string]$ModelDirectory = 'H:\GTOP-Local-AI\models\ollama',
+    [string]$OllamaEndpoint = 'http://127.0.0.1:11435',
     [switch]$NoSchedule,
     [switch]$EnableOnePiece
 )
@@ -13,7 +14,9 @@ $nodeSource = $null
 foreach ($candidate in $nodeCandidates) { if (Test-Path -LiteralPath $candidate -PathType Leaf) { $reportedVersion = & $candidate --version; if ($reportedVersion -match '^v(\d+)\.' -and [int]$Matches[1] -ge 22) { $nodeSource = $candidate; break } } }
 if (!$nodeSource) { throw 'Node.js 22+ is required. No existing supported runtime was found.' }
 $worker = Get-Content -LiteralPath $WorkerConfig -Raw | ConvertFrom-Json
-if ($worker.workerId -ne 'sachit-windows' -or !$worker.secretProtected -or $worker.ollama -ne 'http://127.0.0.1:11434') { throw 'Existing protected GTOP pairing is required.' }
+if ($OllamaEndpoint -notmatch '^http://127\.0\.0\.1:([1-9]\d{3,4})$' -or [int]$Matches[1] -gt 65535 -or [int]$Matches[1] -lt 1024 -or [int]$Matches[1] -eq 11434) { throw 'Use an explicit dedicated loopback GTOP port; default 11434 belongs to other apps.' }
+if ([IO.Path]::GetFullPath($ModelDirectory).TrimEnd('\') -ine 'H:\GTOP-Local-AI\models\ollama') { throw 'GTOP must retain its existing model directory.' }
+if ($worker.workerId -ne 'sachit-windows' -or !$worker.secretProtected -or $worker.ollama -ne $OllamaEndpoint -or $worker.runnerContractVersion -ne 1) { throw 'GTOP worker must consume runner contract v1 and the same dedicated endpoint. Preserve protected pairing; install does not migrate it.' }
 foreach ($required in @($WorkerConfig,(Join-Path $ControllerRoot 'start-worker.ps1'),$ModelDirectory)) { if (!(Test-Path -LiteralPath $required)) { throw 'A configured GTOP dependency is missing.' } }
 $ollamaPath = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama.exe'
 if (!(Test-Path -LiteralPath $ollamaPath -PathType Leaf)) { throw 'Existing Ollama application is missing.' }
@@ -38,7 +41,7 @@ $nativeDirectory = Join-Path $releaseRoot 'native'
 & (Join-Path $sourceRoot 'native\build.ps1') -OutputDirectory $nativeDirectory | Out-Null
 & (Join-Path $sourceRoot 'native\test.ps1') -BuildDirectory $nativeDirectory | Out-Null
 foreach ($file in @('run.ps1','run-hidden.vbs','status.ps1')) { Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination $installRoot -Force }
-$settings = @{workerId=$worker.workerId;gateway=$worker.gateway;workerConfig=[IO.Path]::GetFullPath($WorkerConfig);controllerRoot=[IO.Path]::GetFullPath($ControllerRoot);ollamaExecutable=$ollamaPath;modelDirectory=[IO.Path]::GetFullPath($ModelDirectory);stateDirectory=(Join-Path $installRoot 'data');helperExecutable=(Join-Path $nativeDirectory 'PTI.LocalServiceHost.exe');workerNodeExecutable=$nodePath}
+$settings = @{workerId=$worker.workerId;gateway=$worker.gateway;workerConfig=[IO.Path]::GetFullPath($WorkerConfig);controllerRoot=[IO.Path]::GetFullPath($ControllerRoot);ollamaExecutable=$ollamaPath;ollamaEndpoint=$OllamaEndpoint;modelDirectory=[IO.Path]::GetFullPath($ModelDirectory);stateDirectory=(Join-Path $installRoot 'data');helperExecutable=(Join-Path $nativeDirectory 'PTI.LocalServiceHost.exe');workerNodeExecutable=$nodePath}
 if ($EnableOnePiece) {
     if (!(Test-Path -LiteralPath 'H:\PTI-OnePiece\runtime\private\config.json' -PathType Leaf)) { throw 'Existing One Piece installation is required.' }
     $settings.onePieceEnabled = $true

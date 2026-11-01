@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
@@ -47,19 +49,24 @@ internal static class NativeLauncher
             {
                 try { acquired = mutex.WaitOne(0); } catch (AbandonedMutexException) { acquired = true; }
                 if (!acquired) return 0;
-                string executable, arguments, stdout, stderr, processRecord = null, configPath = null;
+                string executable, arguments, stdout, stderr, processRecord = null, configPath = null, contractId = null;
                 ProcessStartInfo info;
                 if (mode == "ollama")
                 {
                     executable = Path.GetFullPath(Text(settings, "ollamaExecutable"));
                     string expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Programs\Ollama\ollama.exe");
                     if (!SamePath(executable, expected) || !File.Exists(executable)) throw new InvalidDataException();
-                    string models = ExistingDirectory(Text(settings, "modelDirectory"));
+                    string models = GtopModels(settings);
+                    Uri endpoint = RunnerEndpoint(Text(settings, "ollamaEndpoint"));
+                    // Recheck under the role mutex, closing the JS-to-native race.
+                    // An occupied dedicated port is refused, never stopped or commandeered.
+                    foreach (IPEndPoint listener in IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners())
+                        if (listener.Port == endpoint.Port) throw new InvalidOperationException();
                     arguments = "serve";
                     stdout = Path.Combine(state, "ollama.stdout.log");
                     stderr = Path.Combine(state, "ollama.stderr.log");
                     info = HiddenInfo(executable, arguments);
-                    info.EnvironmentVariables["OLLAMA_HOST"] = "127.0.0.1:11434";
+                    info.EnvironmentVariables["OLLAMA_HOST"] = endpoint.Authority;
                     info.EnvironmentVariables["OLLAMA_MODELS"] = models;
                     info.EnvironmentVariables["OLLAMA_NO_CLOUD"] = "1";
                     info.EnvironmentVariables["OLLAMA_NUM_PARALLEL"] = "1";
@@ -89,6 +96,10 @@ internal static class NativeLauncher
                     configPath = Path.GetFullPath(Text(settings, "workerConfig"));
                     Dictionary<string, object> config = ReadObject(configPath);
                     if (Text(config, "workerId") != "sachit-windows") throw new InvalidDataException();
+                    string contractFile = Path.Combine(state, "gtop-runner.json");
+                    Dictionary<string, object> contract = ReadObject(contractFile);
+                    ValidateContract(settings, config, contract);
+                    contractId = Text(contract, "id");
                     string data = ExistingDirectory(Text(config, "dataDirectory"));
                     string loader = Path.Combine(root, @"node_modules\tsx\dist\loader.mjs");
                     string main = Path.Combine(root, @"src\main.ts");
@@ -99,6 +110,10 @@ internal static class NativeLauncher
                     processRecord = Path.Combine(data, "process.json");
                     info = HiddenInfo(executable, arguments);
                     info.WorkingDirectory = root;
+                    info.EnvironmentVariables["GTOP_RUNNER_CONTRACT"] = contractFile;
+                    info.EnvironmentVariables["GTOP_OLLAMA_ENDPOINT"] = Text(contract, "ollamaEndpoint");
+                    info.EnvironmentVariables["GTOP_CODEX_EXECUTABLE"] = Text(contract, "codexExecutable");
+                    info.EnvironmentVariables["GTOP_CODEX_RESOLVER"] = Text(contract, "codexResolverModule");
                 }
                 string record = Path.Combine(state, mode + "-host.json");
                 string startedAt = DateTime.UtcNow.ToString("o");
@@ -117,6 +132,13 @@ internal static class NativeLauncher
                     child.BeginOutputReadLine(); child.BeginErrorReadLine();
                     try { child.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { }
                     Dictionary<string, object> host = Object("mode", mode, "helperPid", Process.GetCurrentProcess().Id, "childPid", child.Id, "startedAt", startedAt, "executable", executable, "helperExecutable", Executable(), "phase", "running", "createNoWindow", true);
+                    if (mode != "one-piece") {
+                        host["childStartedAt"] = child.StartTime.ToUniversalTime().ToString("o");
+                        host["helperStartedAt"] = Process.GetCurrentProcess().StartTime.ToUniversalTime().ToString("o");
+                        host["ollamaEndpoint"] = Text(settings, "ollamaEndpoint");
+                        host["modelDirectory"] = GtopModels(settings);
+                        if (contractId != null) host["runnerContractId"] = contractId;
+                    }
                     if (processRecord != null) AtomicJson(processRecord, Object("pid", child.Id, "startedAt", startedAt, "config", configPath, "stdout", stdout, "stderr", stderr));
                     // Publish host readiness only after the compatibility PID record is durable.
                     AtomicJson(record, host);
@@ -128,6 +150,34 @@ internal static class NativeLauncher
             }
             finally { if (acquired) mutex.ReleaseMutex(); }
         }
+    }
+
+    private static Uri RunnerEndpoint(string value)
+    {
+        Uri endpoint;
+        if (!Uri.TryCreate(value, UriKind.Absolute, out endpoint) || endpoint.Scheme != "http" || endpoint.Host != "127.0.0.1" || endpoint.Port < 1024 || endpoint.Port > 65535 || endpoint.Port == 11434 || value != "http://127.0.0.1:" + endpoint.Port) throw new InvalidDataException();
+        return endpoint;
+    }
+    private static string GtopModels(Dictionary<string, object> settings)
+    {
+        string models = Path.GetFullPath(Text(settings, "modelDirectory"));
+        if (!SamePath(models, @"H:\GTOP-Local-AI\models\ollama")) throw new InvalidDataException();
+        return ExistingDirectory(models);
+    }
+    private static void ValidateContract(Dictionary<string, object> settings, Dictionary<string, object> config, Dictionary<string, object> contract)
+    {
+        string endpoint = RunnerEndpoint(Text(settings, "ollamaEndpoint")).GetLeftPart(UriPartial.Authority);
+        if (!config.ContainsKey("runnerContractVersion") || Convert.ToInt32(config["runnerContractVersion"]) != 1 ||
+            Convert.ToInt32(contract["schemaVersion"]) != 1 || Text(contract, "workerId") != "sachit-windows" ||
+            !SamePath(Text(contract, "workerConfig"), Text(settings, "workerConfig")) ||
+            Text(config, "ollama") != endpoint || Text(contract, "ollamaEndpoint") != endpoint ||
+            !SamePath(Text(contract, "modelDirectory"), GtopModels(settings)) || Text(contract, "model") != Text(config, "model") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(Text(contract, "id"), "^[a-f0-9]{64}$")) throw new InvalidDataException();
+        string codex = Path.GetFullPath(Text(contract, "codexExecutable"));
+        string resolver = Path.GetFullPath(Text(contract, "codexResolverModule"));
+        if (!SamePath(resolver, Path.Combine(Path.GetDirectoryName(Executable()), @"..\src\gtop-runner.mjs")) || !File.Exists(resolver)) throw new InvalidDataException();
+        string codexRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"OpenAI\Codex\bin") + Path.DirectorySeparatorChar;
+        if (!codex.StartsWith(codexRoot, StringComparison.OrdinalIgnoreCase) || Path.GetFileName(codex) != "codex.exe" || !File.Exists(codex)) throw new InvalidDataException();
     }
 
     private static ProcessStartInfo HiddenInfo(string executable, string arguments)

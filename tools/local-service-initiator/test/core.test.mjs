@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import {Initiator,validateSettings} from '../src/core.mjs';
 
 const settings={workerId:'sachit-windows',gateway:'https://gtop-question-papers.web.app/api',workerConfig:'H:\\GTOP-Local-AI\\pilot-runtime\\worker.json',controllerRoot:'H:\\GTOP-Local-AI\\gtop-documentation\\tools\\gtop-assistant',ollamaExecutable:'C:\\Program Files\\Ollama\\ollama.exe',modelDirectory:'H:\\GTOP-Local-AI\\models\\ollama',stateDirectory:'F:\\Workspace\\Support\\PTI\\local-service-initiator\\data',helperExecutable:'F:\\Workspace\\Support\\PTI\\local-service-initiator\\releases\\1.0.1-test\\native\\PTI.LocalServiceHost.exe',workerNodeExecutable:'F:\\Workspace\\Support\\PTI\\local-service-initiator\\runtime\\node.exe'};
+settings.ollamaEndpoint='http://127.0.0.1:11435';
 test('only the fixed worker, gateway and local absolute dependencies are accepted',()=>{
   assert.equal(validateSettings(settings),settings);
-  for(const bad of [{workerId:'another-pc'},{gateway:'https://attacker.example/api'},{gateway:'https://gtop-question-papers.web.app/api?token=secret'},{stateDirectory:'C:\\temp'},{stateDirectory:'F:\\Workspace\\Support\\PTI\\local-service-initiator\\..\\elsewhere'},{workerConfig:'relative.json'}])assert.throws(()=>validateSettings({...settings,...bad}));
+  for(const bad of [{workerId:'another-pc'},{gateway:'https://attacker.example/api'},{gateway:'https://gtop-question-papers.web.app/api?token=secret'},{stateDirectory:'C:\\temp'},{stateDirectory:'F:\\Workspace\\Support\\PTI\\local-service-initiator\\..\\elsewhere'},{workerConfig:'relative.json'},{ollamaEndpoint:'http://127.0.0.1:11434'},{ollamaEndpoint:undefined},{modelDirectory:'F:\\SEFPO\\models'}])assert.throws(()=>validateSettings({...settings,...bad}));
 });
 function fixture({prior=null,request={id:'start-123',action:'start',expiresAt:'2026-10-26T10:02:00Z'},start=async()=>{},running=false}={}) {
   let saved=prior,calls=[],starts=0;

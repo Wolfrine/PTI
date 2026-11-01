@@ -7,7 +7,7 @@ import {OnePieceHost,ONE_PIECE_GATEWAY,onePiecePollBody} from './one-piece.mjs';
 const settings=validateSettings(await readJson(process.argv[2]));
 await mkdir(settings.stateDirectory,{recursive:true});
 const worker=await readJson(settings.workerConfig);
-if(worker?.workerId!==settings.workerId || worker.gateway.replace(/\/$/,'')!==settings.gateway.replace(/\/$/,'') || !worker.secretProtected || worker.ollama!=='http://127.0.0.1:11434')throw Error('configuration_invalid');
+if(worker?.workerId!==settings.workerId || worker.gateway.replace(/\/$/,'')!==settings.gateway.replace(/\/$/,'') || !worker.secretProtected)throw Error('configuration_invalid');
 let token='',until=0,refreshing;
 async function json(url,body,headers={}) {
   const response=await fetch(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});

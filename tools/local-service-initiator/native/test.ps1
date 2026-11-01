@@ -18,6 +18,16 @@ $cases=@(
     @{input='embedded"quote';expected='"embedded\"quote"'}
 )
 foreach ($case in $cases) { if ($quote.Invoke($null,@($case.input)) -ne $case.expected) { throw 'Windows fixed-argument escaping regression.' } }
+$endpoint=$assembly.GetType('NativeLauncher').GetMethod('RunnerEndpoint',[Reflection.BindingFlags]'NonPublic,Static')
+if ($endpoint.Invoke($null,@('http://127.0.0.1:11435')).Port -ne 11435) { throw 'Dedicated GTOP endpoint was not accepted.' }
+foreach ($bad in @('http://127.0.0.1:11434','http://0.0.0.0:11435','http://localhost:11435','http://127.0.0.1:11435/','http://127.0.0.1:11435?token=x','http://127.0.0.1:011435')) {
+    $rejected=$false
+    try { $endpoint.Invoke($null,@($bad)) | Out-Null } catch { $rejected=$true }
+    if (!$rejected) { throw 'Unsafe/shared endpoint accepted by native launcher.' }
+}
+$hidden=$assembly.GetType('NativeLauncher').GetMethod('HiddenInfo',[Reflection.BindingFlags]'NonPublic,Static')
+$info=$hidden.Invoke($null,@([string]$helper,[string]'--probe'))
+if (!$info.CreateNoWindow -or $info.UseShellExecute -or $info.EnvironmentVariables.ContainsKey('OLLAMA_MODELS') -or $info.EnvironmentVariables.ContainsKey('OLLAMA_HOST')) { throw 'Hidden child must not inherit shared Ollama settings.' }
 $process=Start-Process -FilePath $helper -ArgumentList @('F:\not-the-protected-settings.json','worker') -PassThru -Wait -WindowStyle Hidden
 if ($process.ExitCode -ne 2) { throw 'An arbitrary settings path must be refused before any service launch.' }
 & (Join-Path $PSScriptRoot 'probe.ps1') -BuildDirectory $BuildDirectory -Output (Join-Path $BuildDirectory 'probe.json')

@@ -88,4 +88,4 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances 
 $principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $triggers -Settings $settings -Principal $principal -Description 'Receive authenticated fixed GTOP and optional One Piece start requests; no inference, public port, password or PC wake.' -Force | Out-Null
 Start-ScheduledTask -TaskName $taskName
-Write-Output 'Windowless initiator scheduled. Only a remote authorized start request launches GTOP; idle model remains unloaded.'
+Write-Output 'Windowless initiator scheduled. Initial GTOP start requires an authorized request; previously managed absent workers recover after authentication. Idle model remains unloaded.'

@@ -34,6 +34,8 @@ The assistant retrieved two real, sanitized, food-only detail observations throu
 
 Deployment/test results belong in the release evidence; update this checkpoint only with verified real persistence. No autonomous schedule is authorized.
 
+**2 November scope update:** the owner subsequently authorized a bounded owner-PC reader for email-triggered **new-order** capture. Its local queue polling/recovery task is covered by that explicit instruction; it does not authorize historical scheduling. Backfill remains deferred. See the [separate local-reader release and blocked acceptance checkpoint](morsel-blinkit-local-reader-status.md). No historical purchase import is established by that release.
+
 ## Verified independent release
 
 Source commit: `0fecb9b7326512982be38aac00b289b2a34989b9` on main.

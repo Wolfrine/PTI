@@ -25,8 +25,9 @@ export async function unprotect(secretProtected) {
   return runPowerShell(script,{secret:secretProtected});
 }
 export class WorkerHost {
-  constructor(settings,settingsFile,{read=readJson,write=atomicJson,run=runPowerShell,wait=pause,now=()=>performance.now(),fetchImpl=fetch,checkAccess=access,resolveCodex}={}) {
-    Object.assign(this,{settings,settingsFile,read,write,run,wait,now,fetchImpl,checkAccess,resolveCodex});
+  constructor(settings,settingsFile,{read=readJson,write=atomicJson,run=runPowerShell,wait=pause,now=()=>performance.now(),fetchImpl=fetch,checkAccess=access,resolveCodex,pidAlive=pid=>{try{process.kill(pid,0);return true;}catch(error){if(error.code==='ESRCH')return false;throw error;}}}={}) {
+    Object.assign(this,{settings,settingsFile,read,write,run,wait,now,fetchImpl,checkAccess,resolveCodex,pidAlive});
+    this.identityChecks=0;
   }
   async startOnePieceTask() {
     if(this.settings.onePieceEnabled!==true)throw Error('configuration_invalid');
@@ -78,10 +79,49 @@ $processes=@($ps|Where-Object {$relevant -contains [int]$_.ProcessId}|ForEach-Ob
     const s=this.settings,child=snapshot.processes.find(p=>p.pid===record?.childPid),helper=snapshot.processes.find(p=>p.pid===record?.helperPid);
     const stamp=(actual,expected)=>Number.isFinite(Date.parse(actual)) && Math.abs(Date.parse(actual)-Date.parse(expected))<100;
     return record?.phase==='running' && record.mode===mode && child && helper &&
-      samePath(helper.executable,s.helperExecutable) && samePath(record.helperExecutable,s.helperExecutable) &&
+      samePath(helper.executable,record.helperExecutable) && this.trustedHelper(record.helperExecutable) &&
       samePath(child.executable,mode==='ollama'?s.ollamaExecutable:s.workerNodeExecutable) &&
       stamp(child.startedAt,record.childStartedAt) && stamp(helper.startedAt,record.helperStartedAt) &&
       record.ollamaEndpoint===s.ollamaEndpoint && samePath(record.modelDirectory,s.modelDirectory);
+  }
+  trustedHelper(file) {
+    if(samePath(file,this.settings.helperExecutable))return true;
+    // Protected immutable previous releases remain valid during a starter-only upgrade.
+    if(typeof file!=='string')return false;
+    const relative=path.win32.relative(path.win32.join(this.settings.stateDirectory,'..','releases'),file);
+    return /^\d+\.\d+\.\d+-[a-f0-9]+\\native\\PTI\.LocalServiceHost\.exe$/i.test(relative);
+  }
+  activeContract(record,contract,worker) {
+    try{validateRunner(this.settings,worker);}catch{return false;}
+    return contract?.schemaVersion===1 && contract.workerId===this.settings.workerId &&
+      samePath(contract.workerConfig,this.settings.workerConfig) && contract.ollamaEndpoint===this.settings.ollamaEndpoint &&
+      samePath(contract.modelDirectory,this.settings.modelDirectory) && contract.model===worker.model &&
+      /^[a-f0-9]{64}$/.test(contract.id||'') && record?.runnerContractId===contract.id;
+  }
+  async observe(force=false) {
+    const record=await this.read(this.hostFile('worker'));
+    const contract=await this.read(path.join(this.settings.stateDirectory,'gtop-runner.json'));
+    const key=JSON.stringify([record,contract?.id]);
+    const cached=this.observed;
+    // Native host publishes exit immediately. PID probes cost no network or shell.
+    // Revalidate executable/creation time/arguments at least once per minute.
+    if(force||!cached||cached.key!==key||this.now()-cached.at>=60000||
+      cached.state==='running'&&(!this.pidAlive(record.childPid)||!this.pidAlive(record.helperPid))){
+      this.identityChecks++;
+      const snapshot=await this.snapshot();
+      const worker=await this.read(this.settings.workerConfig);
+      let state='unknown';
+      if(!snapshot.workers.length&&!snapshot.hosts.some(h=>h.mode==='worker'))state='stopped';
+      else if(snapshot.workers.length===1&&snapshot.workers[0]===record?.childPid&&this.owns(record,'worker',snapshot)&&this.activeContract(record,contract,worker))state='running';
+      this.observed={key,at:this.now(),state,dataDirectory:worker?.dataDirectory};
+    }
+    const result={state:this.observed.state};
+    if(result.state==='running'&&this.observed.dataDirectory){
+      const health=await this.read(path.join(this.observed.dataDirectory,'worker-health.json'));
+      const age=Date.now()-Date.parse(health?.checkedAt);
+      result.healthy=health?.pid===record.childPid&&health.runnerContractId===contract.id&&health.endpoint===this.settings.ollamaEndpoint&&age>=0&&age<90000&&health.available===true;
+    }
+    return result;
   }
   async workerRunning() {
     const [snapshot,record,contract]=await Promise.all([this.snapshot(),this.read(this.hostFile('worker')),this.read(path.join(this.settings.stateDirectory,'gtop-runner.json'))]);
@@ -112,12 +152,16 @@ $processes=@($ps|Where-Object {$relevant -contains [int]$_.ProcessId}|ForEach-Ob
       // Separate safe local instructions from the fixed error codes sent to the gateway.
       try { validateRunner(s,worker); }
       catch { throw startupFailure('configuration_invalid','configuration'); }
-      try { contract=await runnerContract(s,worker,{resolveCodex:this.resolveCodex,checkAccess:this.checkAccess}); }
-      catch { throw startupFailure('configuration_invalid','codex'); }
       let snapshot=await inspect(),record=await this.read(this.hostFile('worker'));
       if(snapshot.workers.length || snapshot.hosts.some(h=>h.mode==='worker')) {
-        if(snapshot.workers.length!==1 || snapshot.workers[0]!==record?.childPid || !this.owns(record,'worker',snapshot) || record.runnerContractId!==contract.id)throw startupFailure('configuration_invalid','worker_conflict');
+        const active=await this.read(path.join(s.stateDirectory,'gtop-runner.json'));
+        if(snapshot.workers.length!==1 || snapshot.workers[0]!==record?.childPid || !this.owns(record,'worker',snapshot) || !this.activeContract(record,active,worker))throw startupFailure('configuration_invalid','worker_conflict');
+        // Preserve a live worker's contract/resolver across starter or Codex upgrades.
+        // A later launch resolves the newest Codex and the current release helper.
+        return;
       }
+      try { contract=await runnerContract(s,worker,{resolveCodex:this.resolveCodex,checkAccess:this.checkAccess}); }
+      catch { throw startupFailure('configuration_invalid','codex'); }
       const dispatcherDeadline=Math.min(deadline,this.now()+45000);
       let launched=false;
       for(;;) {

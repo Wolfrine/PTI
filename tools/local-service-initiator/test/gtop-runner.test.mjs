@@ -124,6 +124,50 @@ test('changed contract or stale worker host identity cannot trigger a duplicate 
   await assert.rejects(f.host.start(),{message:'configuration_invalid'});assert.deepEqual(f.launches,['ollama','worker']);
 });
 
+test('starter and Codex upgrade preserve a verified prior-release worker and its active resolver',async()=>{
+  const f=fixture();await f.host.start();
+  const contract=structuredClone(f.files.get(stateFile('gtop-runner.json')));
+  const priorHelper='F:\\Workspace\\Support\\PTI\\local-service-initiator\\releases\\1.2.0-7e29cf8\\native\\PTI.LocalServiceHost.exe';
+  for(const mode of ['worker','ollama']){
+    const record=f.files.get(f.host.hostFile(mode));record.helperExecutable=priorHelper;
+    f.snapshot.processes.find(p=>p.pid===record.helperPid).executable=priorHelper;
+  }
+  f.host.resolveCodex=async()=>{throw Error('the prior desktop build was removed');};
+  await f.host.start();
+  assert.equal(await f.host.workerRunning(),true);assert.deepEqual(f.launches,['ollama','worker']);
+  assert.deepEqual(f.files.get(stateFile('gtop-runner.json')),contract);
+});
+
+test('recovery reuses an owned prior-release dispatcher and resolves the newest Codex for a new worker',async()=>{
+  const f=fixture();await f.host.start();
+  const ollama=f.files.get(f.host.hostFile('ollama'));
+  ollama.helperExecutable='F:\\Workspace\\Support\\PTI\\local-service-initiator\\releases\\1.2.0-7e29cf8\\native\\PTI.LocalServiceHost.exe';
+  f.snapshot.processes.find(p=>p.pid===ollama.helperPid).executable=ollama.helperExecutable;
+  const prior=f.files.get(f.host.hostFile('worker'));prior.phase='exited';
+  f.snapshot.workers=[];f.snapshot.hosts=f.snapshot.hosts.filter(h=>h.mode!=='worker');
+  f.snapshot.processes=f.snapshot.processes.filter(p=>![prior.childPid,prior.helperPid].includes(p.pid));
+  const current=codex.replace('current-build','upgraded-build');f.host.resolveCodex=async()=>current;
+  await f.host.start();assert.deepEqual(f.launches,['ollama','worker','worker']);
+  assert.equal(f.files.get(stateFile('gtop-runner.json')).codexExecutable,current);
+});
+
+test('local PID/exit probes cache exact ownership and recheck immediately on worker death or record change',async()=>{
+  const f=fixture();await f.host.start();let snapshots=0;
+  const inspect=f.host.snapshot;f.host.snapshot=async()=>{snapshots++;return inspect();};
+  f.host.pidAlive=()=>true;
+  assert.equal((await f.host.observe()).state,'running');assert.equal(snapshots,1);
+  for(let i=0;i<29;i++){f.advance(2000);assert.equal((await f.host.observe()).state,'running');}
+  assert.equal(snapshots,1);f.advance(2000);await f.host.observe();assert.equal(snapshots,2);
+  f.host.pidAlive=()=>false;f.snapshot.workers=[];f.snapshot.hosts=f.snapshot.hosts.filter(h=>h.mode!=='worker');
+  assert.equal((await f.host.observe()).state,'stopped');assert.equal(snapshots,3);
+});
+
+test('model/endpoint changes cannot be silently adopted as a healthy live worker',async()=>{
+  const f=fixture();await f.host.start();f.files.set(settings.workerConfig,{...worker,model:'different-model'});
+  assert.equal((await f.host.observe()).state,'unknown');
+  await assert.rejects(f.host.start(),{message:'configuration_invalid'});assert.deepEqual(f.launches,['ollama','worker']);
+});
+
 test('obsolete config is rejected before launching anything; Codex resolver failures are local and actionable',async()=>{
   const f=fixture({config:{...worker,ollama:'http://127.0.0.1:11434'}});
   await assert.rejects(f.host.start(),{message:'configuration_invalid'});assert.deepEqual(f.launches,[]);assert.equal(f.diagnostic().reason,'configuration');

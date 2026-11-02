@@ -3,6 +3,7 @@ import path from 'node:path';
 import {validateSettings,Initiator,VERSION} from './core.mjs';
 import {WorkerHost,unprotect,readJson,atomicJson,pause} from './windows.mjs';
 import {OnePieceHost,ONE_PIECE_GATEWAY,onePiecePollBody} from './one-piece.mjs';
+import {GtopSupervisor,LOCAL_CHECK_MS} from './supervision.mjs';
 
 const settings=validateSettings(await readJson(process.argv[2]));
 await mkdir(settings.stateDirectory,{recursive:true});
@@ -25,10 +26,13 @@ async function workerToken() {
   })().finally(()=>{refreshing=undefined;});
   return refreshing;
 }
-async function poll(body) { return json(settings.gateway+'/worker/service/poll',body,{Authorization:'Bearer '+await workerToken()}); }
+let gtopRemoteCalls=0;
+async function poll(body) { const bearer=await workerToken();gtopRemoteCalls++;return json(settings.gateway+'/worker/service/poll',body,{Authorization:'Bearer '+bearer}); }
 const host=new WorkerHost(settings,process.argv[2]);
 const attemptFile=path.join(settings.stateDirectory,'attempt.json');
-const initiator=new Initiator({api:poll,read:()=>readJson(attemptFile),write:value=>atomicJson(attemptFile,value),start:()=>host.start(),workerRunning:exact=>host.workerRunning(exact)});
+const initiator=new Initiator({api:poll,read:()=>readJson(attemptFile),write:value=>atomicJson(attemptFile,value),start:()=>host.start(),workerRunning:async exact=>(await host.observe(exact)).state==='running'});
+const supervisionFile=path.join(settings.stateDirectory,'gtop-supervision.json');
+const supervisor=new GtopSupervisor({host,poll:()=>initiator.tick(),read:()=>readJson(supervisionFile),write:value=>atomicJson(supervisionFile,value)});
 const onePieceHost=settings.onePieceEnabled===true?new OnePieceHost(host):null;
 const onePieceAttempt=path.join(settings.stateDirectory,'one-piece-attempt.json');
 async function startOnePiece(){
@@ -45,14 +49,11 @@ const onePiece=onePieceHost?new Initiator({
   api:async body=>json(ONE_PIECE_GATEWAY+'/poll',onePiecePollBody(body),{Authorization:'Bearer '+await workerToken()}),
   read:()=>readJson(onePieceAttempt),write:value=>atomicJson(onePieceAttempt,value),start:startOnePiece,workerRunning:()=>onePieceHost.ready()
 }):null;
-let stopping=false,failures=0,onePieceFailures=0;
+let stopping=false,onePieceFailures=0;
 process.on('SIGINT',()=>stopping=true);process.on('SIGTERM',()=>stopping=true);
 async function gtopTick(){
-  let status;
-  try {
-    const service=await initiator.tick();failures=0;
-    status={version:VERSION,pid:process.pid,lastPollAt:new Date().toISOString(),state:service?.state || 'unavailable',workerRunning:await host.workerRunning(),errorCode:null};
-  }catch(error){failures++;status={version:VERSION,pid:process.pid,checkedAt:new Date().toISOString(),state:'unavailable',errorCode:['authentication_required','configuration_invalid'].includes(error.message)?error.message:'gateway_unavailable'};}
+  const status={version:VERSION,pid:process.pid,...await supervisor.tick()};
+  status.counters.remoteCalls=gtopRemoteCalls;status.counters.identityChecks=host.identityChecks;
   await atomicJson(path.join(settings.stateDirectory,'status.json'),status);
 }
 async function onePieceTick(){
@@ -70,4 +71,5 @@ async function loop(tick,errorCount){
 }
 // Independent timers: either service can be starting or unavailable without
 // starving the other's heartbeat or control mailbox.
-await Promise.all([loop(gtopTick,()=>failures),...(onePiece?[loop(onePieceTick,()=>onePieceFailures)]:[])]);
+async function supervise(){while(!stopping){try{await gtopTick();}catch{/* Fail closed on local state failure. */}await pause(LOCAL_CHECK_MS);}}
+await Promise.all([supervise(),...(onePiece?[loop(onePieceTick,()=>onePieceFailures)]:[])]);

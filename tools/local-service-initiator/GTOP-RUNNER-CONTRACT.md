@@ -1,5 +1,7 @@
 # GTOP runner consumption contract v1
 
+**2026-11-02 update:** PTI 1.3.0 preserves this consumer contract and adds local exit supervision, authenticated recovery of a previously managed absent worker, and 60-second healthy starter heartbeats. Verified prior-release native hosts and the live worker's runner contract remain valid during a starter-only upgrade. No alive/unhealthy worker is restarted. Current installed acceptance and the superseding owner authorization are recorded in [quiet supervision](QUIET-SUPERVISION-2026-11-02.md); the source-only runtime exclusions below describe the original November 1 lane.
+
 PTI source lane, 2026-11-01. This is the handoff to the concurrent GTOP harness lane; it does not change GTOP source, private config, installed services or credentials. PTI initiator 1.2.0 requires the consumer below before installation/cutover. No startup/health test is paper-delivery acceptance.
 
 ## Configuration and ownership

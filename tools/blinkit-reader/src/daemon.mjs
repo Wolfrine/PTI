@@ -15,7 +15,7 @@ try{lock=await open(lockPath,'wx');}catch{
 }
 await lock.writeFile(JSON.stringify({pid:process.pid}));
 const active=await read(join(root,'active.json'));
-let runtime,status={schemaVersion:1,version:'1.0.0',pid:process.pid,startedAt:new Date().toISOString(),status:'starting',lastCycleAt:null,processed:0,verified:0},queueCursor=null,sourceBlocked=false;
+let runtime,stopMonitor,stopping=false,status={schemaVersion:1,version:'1.0.0',pid:process.pid,startedAt:new Date().toISOString(),status:'starting',lastCycleAt:null,processed:0,verified:0},queueCursor=null,sourceBlocked=false;
 const publish=async patch=>{status={...status,...patch,lastCycleAt:new Date().toISOString()};await writeFile(statusPath+'.tmp',JSON.stringify(status));await rename(statusPath+'.tmp',statusPath);};
 const wait=async ms=>{const end=Date.now()+ms;while(Date.now()<end&&!await exists(stopPath)){if(status.status==='ready'&&await exists(replayPath))break;await new Promise(r=>setTimeout(r,Math.min(1000,end-Date.now())));}};
 const once=process.argv.includes('--once'),replayIndex=process.argv.indexOf('--replay'),replay=replayIndex>=0?process.argv[replayIndex+1]:null;
@@ -24,6 +24,10 @@ try{
  if(!await exists(stopPath)){
   runtime=new BrowserRuntime({profile:join(root,'browser-profile'),chromePath:active.chromePath});
   try{await runtime.open();}catch{await publish({status:'browser_profile_in_use'});throw Error('browser_profile_in_use');}
+  // Closing our own context interrupts pending tool/network waits without killing
+  // another browser or process. An ingest may already have committed; its atomic
+  // event checkpoint, not a local success claim, is authoritative on restart.
+  stopMonitor=setInterval(async()=>{if(!stopping&&await exists(stopPath)){stopping=true;await runtime.close().catch(()=>{});}},500);
   while(!await exists(stopPath)){
    try{
     await runtime.surface('morsel',{reload:status.status!=='ready'});await new Promise(r=>setTimeout(r,2000));
@@ -52,4 +56,4 @@ try{
   }
  }
 }catch(error){if(status.status!=='browser_profile_in_use')await publish({status:'blocked',lastOutcome:'runtime_unavailable'});}
-finally{await runtime?.close().catch(()=>{});await publish({status:await exists(stopPath)?'stopped':status.status});await lock.close();await unlink(lockPath).catch(()=>{});}
+finally{clearInterval(stopMonitor);await runtime?.close().catch(()=>{});await publish({status:await exists(stopPath)?'stopped':status.status});await lock.close();await unlink(lockPath).catch(()=>{});}

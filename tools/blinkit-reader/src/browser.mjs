@@ -24,7 +24,7 @@ export class BrowserRuntime{
    const api=document.modelContext;if(typeof api?.getTools!=='function'||typeof api.executeTool!=='function')throw Error('webmcp_unavailable');
    const found=(await api.getTools()).filter(t=>new RegExp('^'+base+'(?:__[A-Za-z0-9_-]+)?$').test(t.name));
    if(found.length!==1)throw Error('tool_unavailable');
-   return api.executeTool(found[0],args);
+   return api.executeTool(found[0],args,{signal:AbortSignal.timeout(45000)});
   },{base,args});
  }
  async morsel(action,args){

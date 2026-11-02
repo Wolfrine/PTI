@@ -7,7 +7,7 @@ foreach($path in @($node,$npm,$chrome)){if(!(Test-Path -LiteralPath $path)){thro
 if(Test-Path -LiteralPath (Join-Path $root 'active.json')){& (Join-Path $root 'stop.ps1')}
 New-Item -ItemType Directory -Path (Join-Path $root 'data') -Force | Out-Null
 $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-& icacls.exe $root /inheritance:r /grant:r ($sid+':(OI)(CI)F') 'SYSTEM:(OI)(CI)F' | Out-Null
+& icacls.exe $root /inheritance:r /grant:r ('*'+$sid+':(OI)(CI)F') '*S-1-5-18:(OI)(CI)F' | Out-Null
 if($LASTEXITCODE -ne 0){throw 'Private runtime ACL was not applied.'}
 $revision=(& git -C $PSScriptRoot rev-parse --short HEAD).Trim();$name='1.0.0-'+$revision;$release=Join-Path $root ('releases\'+$name)
 New-Item -ItemType Directory -Path $release -Force | Out-Null
@@ -26,6 +26,6 @@ $triggers=@((New-ScheduledTaskTrigger -AtLogOn -User $user),(New-ScheduledTaskTr
 $settings=New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principal=New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
 Register-ScheduledTask -TaskName 'PTI Blinkit Reader' -Action $action -Trigger $triggers -Settings $settings -Principal $principal -Description 'Owner-authorized first-party Blinkit payment-event reader. No mail access, inference, source scraping or purchases.' -Force | Out-Null
-$flag=Join-Path $root 'data\stop.request';if(Test-Path -LiteralPath $flag){Remove-Item -LiteralPath $flag}
-if(!$NoStart){Start-ScheduledTask -TaskName 'PTI Blinkit Reader'}
+$flag=Join-Path $root 'data\stop.request'
+if($NoStart){[IO.File]::WriteAllText($flag,'stop')}else{if(Test-Path -LiteralPath $flag){Remove-Item -LiteralPath $flag};Start-ScheduledTask -TaskName 'PTI Blinkit Reader'}
 Write-Output 'Installed windowless PTI Blinkit Reader. Auth/readback acceptance remains separate; use status.ps1.'

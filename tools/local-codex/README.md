@@ -20,6 +20,16 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 
 ## Authorization and evidence
 
+### Module chat lifecycle (0.4.4)
+
+`module_key` names an explicit stable functional module, such as `local-codex`. Related outcomes use the same module key with different `work_key` values: they get NEW task/authorization records and reuse the module's idle native parent in the same physical project/checkout. Same outcome uses `continue_task`. `resume_codex_thread` can explicitly adopt a selected existing parent into a module. Caller source identity is stored separately from router selection and learned native identity; work-key retries no longer mistake a learned thread for a different caller source.
+
+The existing owner-only server namespace contains durable `modules/{hash}` pointers. Task admission, module selection and reservations share one Firestore transaction. Active modules, native threads and conflicting workspaces identify their owner and reject competing work; prefer native subagents coordinated by that parent for independent lanes. Mode changes create a new task and refresh permissions/instructions on the reused thread. Physical aliases share affinity; other projects/checkouts/modules do not. An omitted module key remains compatible and never guesses from titles.
+
+Stored `notLoaded` chats can resume. Native metadata and unfinished-turn checks protect selection. An automatically selected missing/deleted, archived or incompatible thread can be replaced with an audited reason; an explicit source or task continuation cannot silently switch. Transient or ambiguous failures stop. Explicit `chat_policy:rotate` requires `module_key`, `rotation_reason` (`context-bloat`, `incompatible`, `invalid`) and a compact `handoff` of project facts/evidence; it does not archive/delete the former chat or copy a transcript. No context-size/age/count threshold is imposed. Previous tasks and their authorizations remain intact.
+
+The MCP schema and plugin skill expose these optional fields. Older workers reject module routing before queueing; upgrade the worker to 0.4.4 before using it. Existing tasks without module metadata keep their existing behavior. See [lifecycle decision](decisions/2026-11-02-chat-lifecycle.md).
+
 ### Listener transport (0.4.3)
 
 The PC holds one Firebase `onSnapshot` subscription on `_ptiLocalServices/local-codex/owners/{owner}/signals/dispatch`. The owner can get only this exact marker; collection queries, sibling documents, jobs and client writes remain denied. It contains only a version, random revision and timestamp. The existing encrypted Firebase session supplies a public `FirebaseServerApp` user context; no Admin credential or new sign-in is installed. The session is replaced before token expiry, with SDK reconnect handling and fresh discovery on each server reconnection.
@@ -46,7 +56,7 @@ Use `continue_task` for the same outcome/project/mode. `list_tasks` recovers rec
 
 Version 0.4.0 replaces the serial busy fence with atomic capacity and workspace admission. The Windows worker advertises `maxConcurrentTasks` (default 3, configurable 1â€“4) and `maxSubagentsPerTask` (default 2, configurable 0â€“4). `bridge_status` exposes `activeTasks`, `capacity`, `usedSlots`, `availableSlots` and `canAcceptMore`; `busy` means all modern slots are occupied. An older worker stays serial. Full capacity or a workspace/native-thread conflict rejects work without queueing it. Reads may coexist, while edits exclude other tasks in the same physical Git working copy or nested workspace. Each task has independent leases, human controls, progress and cancellation. A durable active array survives worker restart; one lost claim does not cancel peers.
 
-`start_task` / `resume_codex_thread` accept `strategy: auto|single|team` and `purpose: work|acceptance`. The plugin harness chooses a small topology and a synthesizing parent for one multi-lane outcome. Separate outcomes/chats may run independent parents. All parent and child settings retain the owner preference. See [HARNESS.md](HARNESS.md) for the operating and improvement contract.
+`start_task` / `resume_codex_thread` accept `strategy: auto|single|team` and `purpose: work|acceptance`. The plugin harness chooses a small topology and a synthesizing parent for one multi-lane outcome. Related outcomes/chats reuse the same module parent; other modules may use independent parents. All parent and child settings retain the owner preference. See [HARNESS.md](HARNESS.md) for the operating and improvement contract.
 
 Version 0.3.2 separates health traffic from visible progress. The hosted service ignores duplicate snapshots, preserves the progress timestamp, and renews a valid 90-second lease only when less than 60 seconds remain. Unchanged transactions do not write the task document. This also fixes false progress for an installed 0.3.0 worker. The 0.3.2 worker additionally fingerprints acknowledged snapshots in its durable claim, sending only changed messages, approvals, status, or results; failed uploads remain retryable.
 

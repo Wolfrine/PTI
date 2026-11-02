@@ -6,11 +6,12 @@ import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 const root=fileURLToPath(new URL('../',import.meta.url));
-async function run({flags=[],strategy='team',prior,resume,mode='inspect',maxSubagentsPerTask=null}={}){
+async function run({flags=[],strategy='team',prior,resume,mode='inspect',maxSubagentsPerTask=null,chatRouting,affinityFallback=false}={}){
   const home=prior?.home||resume?.home||path.join(root,'test-data','harness-'+randomUUID()),scratch=path.join(home,'scratch');fs.mkdirSync(scratch,{recursive:true});
   fs.writeFileSync(path.join(home,'config.json'),JSON.stringify({codexPath:process.execPath,codexArgs:[path.join(root,'test/fixture-runtime.mjs'),...flags],projects:{fixture:{path:scratch}},maxTaskMinutes:null,maxSubagentsPerTask}));
   const id=prior?.job.id||randomUUID().replaceAll('-',''),directory=path.join(home,'tasks',id);fs.mkdirSync(directory,{recursive:true});
   const job=prior?{...prior.job,prompt:'complete',status:'queued',final:null,error:null,history:[...prior.job.history,{key:randomUUID(),inputHash:'fixture'}]}:{id,project:'fixture',cwd:fs.realpathSync.native(scratch),mode,strategy,purpose:'acceptance',prompt:'complete',status:'queued',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),threadId:resume?.job.threadId||null,turnId:null,messages:[],pending:[],history:[]};
+  if(chatRouting){job.chatRouting=chatRouting;job.affinityFallback=affinityFallback;}
   fs.writeFileSync(path.join(directory,'task.json'),JSON.stringify(job));
   const child=spawn(process.execPath,[path.join(root,'src/worker.mjs'),id],{cwd:home,env:{...process.env,LOCAL_CODEX_BRIDGE_HOME:home},windowsHide:true,stdio:'ignore'});
   await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{if(process.platform==='win32')spawnSync('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});else child.kill();reject(Error('Fixture worker timed out.'));},15000);child.on('exit',()=>{clearTimeout(timer);resolve();});child.on('error',error=>{clearTimeout(timer);reject(error);});});
@@ -36,6 +37,21 @@ test('edit uses verified Full Access and refreshes historical inspect instructio
   assert.equal(inspectedAgain.job.status,'completed');assert.equal(inspectedAgain.job.sandbox.type,'readOnly');
   const current=JSON.parse(fs.readFileSync(path.join(edited.home,'scratch/fixture-instructions.json'),'utf8'));
   assert.match(current.items[0].content[0].text,/Current bridge mode: inspect/);
+});
+
+test('module reuse starts distinct authorized tasks on the same parent and known missing/archive fallback rotates without history mutation',{skip:process.platform!=='win32'},async()=>{
+  const route={affinity_id:'a'.repeat(64),module_key:'local-codex',selection:'affinity'};
+  const first=await run({strategy:'single'});
+  const second=await run({strategy:'single',resume:first,mode:'edit',chatRouting:route,affinityFallback:true});
+  assert.equal(second.job.status,'completed');assert.notEqual(second.job.id,first.job.id);assert.equal(second.job.threadId,first.job.threadId);assert.equal(second.job.executionPolicy.mode,'edit');
+  for(const flag of ['--missing-thread','--archived-thread']){
+    const initial=await run({strategy:'single'});
+    const replacement=await run({strategy:'single',resume:initial,chatRouting:route,affinityFallback:true,flags:[flag,'--rotate-thread-id']});
+    assert.equal(replacement.job.status,'completed');assert.notEqual(replacement.job.threadId,initial.job.threadId);
+    assert.equal(replacement.job.chatRouting.previous_thread_id,initial.job.threadId);assert.equal(replacement.job.chatRouting.reason,flag==='--missing-thread'?'missing':'archived');
+  }
+  const active=await run({strategy:'single',resume:first,chatRouting:route,affinityFallback:true,flags:['--active-thread']});
+  assert.equal(active.job.status,'failed');assert.match(active.job.error,/unfinished turn/);assert.equal(active.job.threadId,first.job.threadId);
 });
 
 test('permission mismatches and unavailable instruction refresh fail before a model turn',{skip:process.platform!=='win32'},async()=>{

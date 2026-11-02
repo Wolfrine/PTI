@@ -11,6 +11,10 @@ test('default delegation has no bridge count or nesting ceiling and preserves ex
     assert.equal(Object.hasOwn(value.config,'agents.max_concurrent_threads_per_session'),false);
     assert.match(value.instructions,/ceilings are withdrawn/);assert.match(value.instructions,/inspect tasks remain read-only/);
     assert.match(value.instructions,/Ask the owner before introducing/);assert(!value.instructions.includes('spawn another layer'));
+    assert.match(value.instructions,/Keep one native parent for this project\/module/);
+    assert.match(value.instructions,/prioritize .*native subagents.*under this parent/);
+    assert.match(value.instructions,/narrow, dependent or tiny/);
+    assert.match(value.instructions,/non-overlapping file ownership/);
   }
 });
 test('only explicit single or finite owner choices constrain delegation, without a bridge hard maximum',()=>{

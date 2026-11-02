@@ -18,15 +18,17 @@ function complete(text = 'fixture completed') {
 }
 lines.on('line', line => {
   const m = JSON.parse(line);
+  if(m.method==='thread/read'&&m.params.threadId===threadId&&process.argv.includes('--missing-thread')){send({id:m.id,error:{code:-32602,message:'no rollout found for thread id'}});return;}
   if (m.method === 'initialize') send({ id: m.id, result: { userAgent: 'fixture' } });
   if (m.method === 'account/read') send({ id:m.id,result:{account:{type:process.argv.includes('--api-key')?'apiKey':'chatgpt'}} });
   if (m.method === 'model/list') send({id:m.id,result:{data:process.argv.includes('--missing-model')?[]:[{model:'gpt-6.1-sol',supportedReasoningEfforts:[{reasoningEffort:'xhigh'}]}],nextCursor:null}});
   if(m.method==='thread/read')send({id:m.id,result:{thread:m.params.threadId!==threadId?{id:m.params.threadId,parentThreadId:process.argv.includes('--nested-child')&&m.params.threadId.endsWith('003')?childThreadId:threadId,modelProvider:'openai',model:process.argv.includes('--child-unknown')?null:process.argv.includes('--child-wrong-model')||process.argv.includes('--grandchild-wrong-model')&&m.params.threadId.endsWith('003')?'lower-model':'gpt-6.1-sol',reasoningEffort:process.argv.includes('--child-unknown')?null:'xhigh',status:{type:'idle'}}:fixtureThread()}});
-  if(m.method==='thread/list')send({id:m.id,result:{data:state().archived===!!m.params.archived?[fixtureThread()]:[],nextCursor:null}});
-  if(m.method==='thread/turns/list')send({id:m.id,result:{data:[{id:'turn-old',status:'completed',items:[{type:'userMessage',content:[{type:'text',text:'Old user prompt'}]},{type:'commandExecution',command:'PRIVATE TOOL OUTPUT'},{type:'agentMessage',text:'x'.repeat(6000)}]}],nextCursor:'fixture-next'}});
+  if(m.method==='thread/list')send({id:m.id,result:{data:(state().archived||process.argv.includes('--archived-thread'))===!!m.params.archived?[fixtureThread()]:[],nextCursor:null}});
+  if(m.method==='thread/turns/list')send({id:m.id,result:{data:[{id:'turn-old',status:process.argv.includes('--active-thread')?'inProgress':'completed',items:[{type:'userMessage',content:[{type:'text',text:'Old user prompt'}]},{type:'commandExecution',command:'PRIVATE TOOL OUTPUT'},{type:'agentMessage',text:'x'.repeat(6000)}]}],nextCursor:'fixture-next'}});
   if(m.method==='thread/name/set'){fs.writeFileSync(historyFile,JSON.stringify({...state(),name:m.params.name}));send({id:m.id,result:{}});}
   if(m.method==='thread/archive'||m.method==='thread/unarchive'){fs.writeFileSync(historyFile,JSON.stringify({...state(),archived:m.method==='thread/archive'}));send({id:m.id,result:{}});}
   if (m.method === 'thread/start' || m.method === 'thread/resume') {
+    if(m.method==='thread/start'&&process.argv.includes('--rotate-thread-id'))threadId=randomUUID();
     if(m.method==='thread/resume'){threadId=m.params.threadId;resumed=true;}
     cwd = m.params.cwd;
     sandbox = process.argv.includes('--wrong-sandbox')?'workspaceWrite':m.params.sandbox === 'read-only' ? 'readOnly' : m.params.sandbox === 'danger-full-access'?'dangerFullAccess':'workspaceWrite';

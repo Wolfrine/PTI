@@ -4,10 +4,13 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {CodexRelay,createCodexServer,FirestoreRelayStore,OWNER,heartbeatSchema,workerPollSchema,workerReportSchema,type RelayStore,type Job,type Worker} from './local-codex.js';
 import {capacity,type SchedulerPatch} from './local-codex-admission.js';
+import type {ChatAffinity} from './local-codex-affinity.js';
+import type {SelectAffinity} from './local-codex.js';
 import {createHttpApp} from './http-app.js';
 import {PtiOAuthProvider,CODEX_SCOPE} from './oauth.js';
 class Memory implements RelayStore {
   jobs=new Map<string,Job>(); host?:Worker;
+  modules=new Map<string,ChatAffinity>();
   listeners=new Map<string,Set<{changed:(job:Job|undefined)=>void;failed:(error:Error)=>void}>>(); reads=0;
   async read(_uid:string,id:string){this.reads++;return structuredClone(this.jobs.get(id));}
   watch(_uid:string,id:string,changed:(job:Job|undefined)=>void,failed:(error:Error)=>void){
@@ -20,7 +23,7 @@ class Memory implements RelayStore {
   async queued(){return [...this.jobs.values()].filter(j=>j.status==='queued').map(j=>j.id);}
   async list(){return [...this.jobs.values()].sort((a,b)=>b.updatedAt-a.updatedAt);}
   async clearActive(_uid:string,id:string){if(this.host?.activeTask===id)this.host.activeTask=null;}
-  async update<T>(_uid:string,id:string,fn:(job:Job|undefined,worker:Worker|undefined)=>{job:Job;result:T;scheduler?:SchedulerPatch}){const result=fn(structuredClone(this.jobs.get(id)),structuredClone(this.host));this.jobs.set(id,result.job);if(result.scheduler&&this.host)Object.assign(this.host,structuredClone(result.scheduler));for(const listener of this.listeners.get(id)||[])listener.changed(structuredClone(result.job));return result.result;}
+  async update<T>(_uid:string,id:string,fn:(job:Job|undefined,worker:Worker|undefined,affinity?:ChatAffinity)=>{job:Job;result:T;scheduler?:SchedulerPatch;affinity?:ChatAffinity},selectAffinity?:SelectAffinity){const old=structuredClone(this.jobs.get(id)),host=structuredClone(this.host),scope=selectAffinity?selectAffinity(old,host):old?.affinityId;const result=fn(old,host,structuredClone(scope?this.modules.get(scope):undefined));this.jobs.set(id,result.job);if(result.affinity)this.modules.set(result.affinity.id,structuredClone(result.affinity));if(result.scheduler&&this.host)Object.assign(this.host,structuredClone(result.scheduler));for(const listener of this.listeners.get(id)||[])listener.changed(structuredClone(result.job));return result.result;}
 }
 function fixture(){let at=1000000;const store=new Memory(),relay=new CodexRelay(store,()=>at);const heartbeat={instanceId:randomUUID(),authMode:'chatgpt' as const,version:'0.3.0',projects:[{key:'scratch',name:'Scratch',path:'F:/scratch',available:true}]};const args={project:'scratch',prompt:'inspect',mode:'inspect' as const,request_key:'request-one'};return {store,relay,heartbeat,args,advance:(ms:number)=>at+=ms,pair:()=>relay.poll(OWNER,{heartbeat})};}
 function concurrentFixture(maxConcurrentTasks:number|null=3){
@@ -35,6 +38,120 @@ function concurrentFixture(maxConcurrentTasks:number|null=3){
 }
 function safeTelemetry(){return {schemaVersion:1,runId:randomUUID(),generation:1,tokenBasis:'latest-response',strategy:'auto',purpose:'work',startedAt:new Date(1000000).toISOString(),finishedAt:new Date(1000100).toISOString(),durationMs:100,waitingMs:0,approvals:0,questions:0,commands:0,toolCalls:0,toolFailures:0,modelReroutes:0,parentUsage:null,usageCoverage:'none',children:[],childrenSeen:0};}
 afterEach(()=>vi.useRealTimers());
+function moduleFixture(){const f=concurrentFixture(null);f.heartbeat.version='0.4.4';return f;}
+describe('module parent lifecycle',()=>{
+  const native='01900000-0000-7000-8000-000000000071';
+  async function completed(f:ReturnType<typeof moduleFixture>,args:Parameters<CodexRelay['start']>[1],thread=native){
+    const task=await f.relay.start(OWNER,args),claim=(await f.pair()).jobs!.find(value=>value.id===task.id)!;
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:thread}});return task;
+  }
+  it('reuses work keys after learning a native thread, while source provenance and exact-request idempotency remain strict',async()=>{
+    const f=moduleFixture();await f.pair();const args={...f.args,work_key:'lifecycle-outcome',module_key:'local-codex'};
+    const first=await completed(f,args);
+    expect(await f.relay.start(OWNER,{...args,request_key:'fresh-retry-key'})).toMatchObject({id:first.id,reused:true,followup_required:false,thread_id:native});
+    expect(await f.relay.start(OWNER,{...args,request_key:'followup-key',prompt:'same outcome followup'})).toMatchObject({id:first.id,reused:true,followup_required:true});
+    await expect(f.relay.start(OWNER,{...args,prompt:'changed exact request'})).rejects.toThrow('different work');
+    await expect(f.relay.start(OWNER,{...args,request_key:'other-source',thread_id:native})).rejects.toThrow('different source');
+    await expect(f.relay.start(OWNER,{...args,request_key:'other-module',module_key:'velum'})).rejects.toThrow('different source');
+    const next=await f.relay.continue(OWNER,{task_id:first.id,prompt:'same outcome followup',request_key:'continue-outcome'});
+    expect(next).toMatchObject({id:first.id,generation:2,thread_id:native});expect(f.store.jobs.size).toBe(1);
+  });
+  it('routes distinct work keys and inspect/edit authorizations to one durable parent, surviving a new router instance',async()=>{
+    const f=moduleFixture();await f.pair();const first=await completed(f,{...f.args,work_key:'lifecycle-first',module_key:'local-codex'});
+    const router=new CodexRelay(f.store,f.relay.clock);
+    const second=await router.start(OWNER,{...f.args,work_key:'lifecycle-second',request_key:'second-outcome',module_key:'local-codex',mode:'edit'});
+    expect(second.id).not.toBe(first.id);expect(second).toMatchObject({thread_id:native,mode:'edit',generation:1,chat_routing:{selection:'affinity'}});
+    expect(f.store.jobs.get(second.id)).toMatchObject({sourceThreadId:null,threadId:native});
+    const claim=(await f.pair()).jobs![0];expect(claim).toMatchObject({thread_id:native,mode:'edit',affinity_fallback:true});
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:native}});
+    const third=await router.start(OWNER,{...f.args,work_key:'lifecycle-third',request_key:'third-outcome',module_key:'local-codex'});
+    expect(third).toMatchObject({thread_id:native,mode:'inspect'});expect(new Set([first.id,second.id,third.id]).size).toBe(3);
+    console.info('MOCK lifecycle mapping',JSON.stringify([{task:first.id,mode:'inspect',thread:native},{task:second.id,mode:'edit',thread:second.thread_id},{task:third.id,mode:'inspect',thread:third.thread_id}]));
+  });
+  it('keeps different modules, physical projects/checkouts and unlabelled requests separate without title guessing',async()=>{
+    const f=moduleFixture();await f.pair();await completed(f,{...f.args,title:'Shared title',module_key:'local-codex'});
+    for(const extra of [{module_key:'velum'},{module_key:'local-codex',project:'two'},{title:'Shared title'}]){
+      const task=await f.relay.start(OWNER,{...f.args,request_key:'separate-'+JSON.stringify(extra),...extra});expect(task.thread_id).toBeUndefined();
+      const claim=(await f.pair()).jobs![0];await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:'01900000-0000-7000-8000-000000000072'}});
+    }
+    f.heartbeat.projects[0].resourcePath='F:/NewCheckout';await f.pair();
+    const moved=await f.relay.start(OWNER,{...f.args,request_key:'new-checkout',module_key:'local-codex'});expect(moved.thread_id).toBeUndefined();
+  });
+  it('serializes a module before its first thread is known and blocks rotation or continuation while its parent is reserved',async()=>{
+    const f=moduleFixture();await f.pair();const first=await f.relay.start(OWNER,{...f.args,module_key:'local-codex'});
+    await expect(f.relay.start(OWNER,{...f.args,request_key:'parallel-module',module_key:'local-codex'})).rejects.toThrow(first.id);
+    expect(f.store.jobs.size).toBe(1);expect(f.store.modules.size).toBe(1);
+    const claim=(await f.pair()).jobs![0];await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:native}});
+    const next=await f.relay.start(OWNER,{...f.args,request_key:'next-module',module_key:'local-codex'});
+    await expect(f.relay.continue(OWNER,{task_id:first.id,prompt:'continue',request_key:'old-continue'})).rejects.toThrow(next.id);
+    await expect(f.relay.start(OWNER,{...f.args,request_key:'rotate-busy',module_key:'local-codex',chat_policy:'rotate',rotation_reason:'context-bloat',handoff:'Use repository decision evidence.'})).rejects.toThrow(next.id);
+  });
+  it('requires explicit rotation evidence and preserves the former task without archive/delete or stale-pointer overwrite',async()=>{
+    const f=moduleFixture();await f.pair();const first=await completed(f,{...f.args,module_key:'local-codex'});
+    await expect(f.relay.start(OWNER,{...f.args,request_key:'no-handoff',module_key:'local-codex',chat_policy:'rotate',rotation_reason:'context-bloat'})).rejects.toThrow('handoff');
+    const rotated=await f.relay.start(OWNER,{...f.args,request_key:'rotate-module',module_key:'local-codex',chat_policy:'rotate',rotation_reason:'context-bloat',handoff:'Read the source decision; preserve current owner constraints.'});
+    expect(rotated.thread_id).toBeUndefined();expect(rotated.chat_routing).toMatchObject({selection:'rotate',previous_thread_id:native,reason:'context-bloat'});
+    const claim=(await f.pair()).jobs![0],replacement='01900000-0000-7000-8000-000000000073';
+    expect(claim.handoff).toContain('source decision');await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:replacement}});
+    expect(f.store.jobs.get(first.id)?.threadId).toBe(native);expect([...f.store.modules.values()][0].threadId).toBe(replacement);
+    await f.relay.continue(OWNER,{task_id:first.id,prompt:'explicit old outcome followup',request_key:'continue-retired'});
+    const older=(await f.pair()).jobs![0];expect(older.affinity_fallback).toBe(false);
+    await f.relay.report(OWNER,{...older,snapshot:{status:'completed',thread_id:native}});
+    expect([...f.store.modules.values()][0].threadId).toBe(replacement);
+  });
+  it('adopts only an explicitly selected source; rejects old workers and never substitutes the selected source in a report',async()=>{
+    const f=moduleFixture();await f.pair();const task=await f.relay.start(OWNER,{...f.args,module_key:'local-codex',thread_id:native,work_key:'adopt-source-work'});
+    const claim=(await f.pair()).jobs![0];expect(claim.affinity_fallback).toBe(false);
+    await expect(f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:randomUUID()}})).rejects.toThrow('explicitly selected');
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:native}});
+    expect(await f.relay.start(OWNER,{...f.args,module_key:'local-codex',thread_id:native,work_key:'adopt-source-work',request_key:'source-retry'})).toMatchObject({id:task.id,reused:true});
+    const old=concurrentFixture(null);await old.pair();await expect(old.relay.start(OWNER,{...old.args,module_key:'local-codex'})).rejects.toThrow('0.4.4');
+    await expect(f.relay.start('foreign',{...f.args,module_key:'local-codex'})).rejects.toThrow('authorized');
+  });
+  it('normalizes physical aliases and records fallback without allowing an old generation to replace affinity',async()=>{
+    const f=moduleFixture();f.heartbeat.projects[1].path='f:\\repos\\MAIN\\';await f.pair();
+    await completed(f,{...f.args,module_key:'local-codex'});
+    const second=await f.relay.start(OWNER,{...f.args,project:'alias',module_key:'local-codex',request_key:'alias-reuse'});
+    expect(second.thread_id).toBe(native);expect(f.store.modules.size).toBe(1);
+    const claim=(await f.pair()).jobs![0],replacement='01900000-0000-7000-8000-000000000074';
+    const routing={...second.chat_routing!,selection:'new',previous_thread_id:native,reason:'missing'};
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'running',chat_routing:routing}});
+    await f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:replacement,chat_routing:routing}});
+    expect([...f.store.modules.values()][0].threadId).toBe(replacement);
+    await f.relay.continue(OWNER,{task_id:second.id,prompt:'continue the same outcome',request_key:'follow-replaced'});
+    await expect(f.relay.report(OWNER,{...claim,snapshot:{status:'completed',thread_id:native}})).rejects.toThrow('lease_lost');
+    const continued=(await f.pair()).jobs![0];
+    await expect(f.relay.report(OWNER,{...continued,snapshot:{status:'completed',thread_id:native}})).rejects.toThrow('bound task thread');
+  });
+  it('reads and writes the owner module pointer in the same Firestore transaction as job and reservations',async()=>{
+    const data=new Map<string,any>(),refs=new Map<string,any>(),transactions:string[][]=[];
+    const ref=(path:string):any=>{if(!refs.has(path))refs.set(path,{path,collection:(name:string)=>({doc:(id:string)=>ref(`${path}/${name}/${id}`)}),get:async()=>({data:()=>structuredClone(data.get(path))})});return refs.get(path);};
+    const db={doc:ref,runTransaction:async(fn:any)=>{const writes:{ref:any;value:any;options?:any}[]=[],reads:string[]=[];const result=await fn({get:async(value:any)=>{expect(writes).toHaveLength(0);reads.push(value.path);return {data:()=>structuredClone(data.get(value.path))};},set:(r:any,value:any,options:any)=>writes.push({ref:r,value,options})});for(const write of writes)data.set(write.ref.path,write.options?.merge?{...data.get(write.ref.path),...write.value}:write.value);transactions.push(writes.map(w=>w.ref.path));return result;}};
+    const f=moduleFixture(),root=`_ptiLocalServices/local-codex/owners/${OWNER}`;data.set(root,{...f.heartbeat,at:f.relay.clock()});
+    const router=new CodexRelay(new FirestoreRelayStore(db as never),f.relay.clock);
+    const first=await router.start(OWNER,{...f.args,module_key:'local-codex'});
+    const affinity=[...data.keys()].find(path=>path.includes('/modules/'))!;
+    expect(transactions[0]).toEqual(expect.arrayContaining([`${root}/jobs/${first.id}`,root,affinity,`${root}/signals/dispatch`]));
+    expect(data.get(affinity)).not.toHaveProperty('prompt');
+    await expect(router.start(OWNER,{...f.args,module_key:'local-codex',request_key:'second-atomic'})).rejects.toThrow(first.id);
+    expect(transactions).toHaveLength(1);expect(data.get(affinity).lastTaskId).toBe(first.id);
+    expect(await router.start(OWNER,{...f.args,module_key:'local-codex'})).toMatchObject({id:first.id});expect(transactions[1]).toEqual([]);
+  });
+  it('exposes optional module/rotation fields over MCP and refuses queued routing after a worker downgrade',async()=>{
+    const f=moduleFixture();await f.pair();const server=createCodexServer(f.relay,OWNER),client=new Client({name:'module-schema',version:'1'});
+    const [a,b]=InMemoryTransport.createLinkedPair();await Promise.all([server.connect(a),client.connect(b)]);
+    try{
+      const listing=await client.listTools();expect(listing.tools).toHaveLength(13);
+      const start=listing.tools.find(tool=>tool.name==='start_task')!;expect(start.inputSchema.properties).toHaveProperty('module_key');expect(start.inputSchema.required||[]).not.toContain('module_key');
+      expect(start.inputSchema.properties).toHaveProperty('rotation_reason');
+      const result=await client.callTool({name:'start_task',arguments:{...f.args,module_key:'local-codex'}});expect(result.isError).not.toBe(true);
+      const task=JSON.parse((result.content as {text:string}[])[0].text);expect(task.module_key).toBe('local-codex');
+      expect((await f.relay.list(OWNER,{module_key:'local-codex',limit:10})).tasks[0].module_key).toBe('local-codex');
+      f.heartbeat.version='0.4.3';expect((await f.pair()).jobs).toHaveLength(0);
+      expect(await f.relay.get(OWNER,task.id)).toMatchObject({status:'failed',error:expect.stringContaining('worker 0.4.4')});
+    }finally{await client.close();await server.close();}
+  });
+});
 describe('Local Codex relay',()=>{
   it('waits for terminal progress after an already acknowledged cancellation instead of returning in a hot loop',async()=>{
     const f=fixture();await f.pair();const task=await f.relay.start(OWNER,f.args),claim=(await f.pair()).job!;
@@ -190,7 +307,7 @@ describe('Local Codex relay',()=>{
   it('reports configured model preference and retains the confirmed turn model and effort',async()=>{
     const f=fixture();const heartbeat=heartbeatSchema.parse({...f.heartbeat,version:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     await f.relay.poll(OWNER,{heartbeat});
-    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.3',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
+    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.4',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     const task=await f.relay.start(OWNER,f.args),claim=(await f.relay.poll(OWNER,{heartbeat})).job!;
     const report=workerReportSchema.parse({id:claim.id,generation:claim.generation,lease:claim.lease,snapshot:{status:'completed',model:'gpt-6.1-sol',reasoning_effort:'xhigh',final:'Fixture result'}});
     await f.relay.report(OWNER,report);

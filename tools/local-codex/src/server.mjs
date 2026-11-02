@@ -31,12 +31,14 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
   project: z.string(), prompt, mode: z.enum(['inspect', 'edit']).default('inspect'), request_key: key,
   work_key:key.optional(),title:z.string().trim().min(1).max(100).optional(),thread_id:z.string().uuid().optional(),
   strategy:z.enum(['auto','single','team']).default('auto'),purpose:z.enum(['work','acceptance']).default('work'),
+  chat_routing:z.object({affinity_id:z.string().regex(/^[a-f0-9]{64}$/),module_key:z.string(),selection:z.enum(['new','affinity','explicit','rotate']),previous_thread_id:z.string().uuid().optional(),reason:z.string().optional()}).strict().optional(),
+  affinity_fallback:z.boolean().default(false),handoff:z.string().max(4000).optional(),
   relay_generation:z.number().int().positive().optional(),
 }, false, args => {
   const target = project(args.project);
   const jobId = digest(args.work_key?`work:${target.key}:${args.mode}:${args.work_key}`:args.request_key).slice(0, 32);
   const requestKeyDigest=digest(args.request_key);
-  const inputHash = digest(JSON.stringify({ project: target.key, prompt: args.prompt, mode: args.mode,title:args.title,thread_id:args.thread_id,strategy:args.strategy,purpose:args.purpose }));
+  const inputHash = digest(JSON.stringify({ project: target.key, prompt: args.prompt, mode: args.mode,title:args.title,thread_id:args.thread_id,strategy:args.strategy,purpose:args.purpose,...(args.chat_routing?{chat_routing:args.chat_routing,affinity_fallback:args.affinity_fallback,handoff:args.handoff}:{}) }));
   const legacyHash=args.strategy==='auto'&&args.purpose==='work'?digest(JSON.stringify({project:target.key,prompt:args.prompt,mode:args.mode,title:args.title,thread_id:args.thread_id})):null;
   const directory = taskDir(jobId);
   fs.mkdirSync(path.dirname(directory), { recursive: true });
@@ -44,14 +46,19 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
     if (error.code !== 'EEXIST') throw error;
     const existing = task(jobId);
     const sameInput=existing.inputHash===inputHash||existing.inputHash===legacyHash;
-    if(args.work_key&&existing.requestKeyDigest!==requestKeyDigest)return {...view(existing),reused:true,followup_required:!sameInput};
+    if(args.work_key&&existing.requestKeyDigest!==requestKeyDigest){
+      if(existing.requestedThreadId===undefined&&!sameInput)throw Error('Legacy source identity is unknown; continue the task or use a distinct work key.');
+      if(existing.requestedThreadId!==undefined&&existing.requestedThreadId!==(args.thread_id||null))throw Error('This work key belongs to a different requested source thread.');
+      return {...view(existing),reused:true,followup_required:!sameInput};
+    }
     if (!sameInput) throw new Error('request_key was already used for a different request.');
     return view(existing);
   }
   const now = new Date().toISOString();
   const title=args.title||args.prompt.split(/[\r\n]/)[0].replace(/\s+/g,' ').slice(0,80);
   const job = { id: jobId, project: target.key, cwd: target.path, resourcePath:target.resourcePath, mode: args.mode,strategy:args.strategy,purpose:args.purpose,relayGeneration:args.relay_generation,inputHash, prompt: args.prompt,title,workKey:args.work_key,requestKeyDigest,
-    createdAt: now, updatedAt: now, status: 'queued', threadId: args.thread_id||null, turnId: null, messages: [], pending: [], history: [] };
+    ...(args.chat_routing?{chatRouting:args.chat_routing,affinityFallback:args.affinity_fallback,handoff:args.handoff}:{}),
+    createdAt: now, updatedAt: now, status: 'queued', requestedThreadId:args.thread_id||null,threadId: args.thread_id||null, turnId: null, messages: [], pending: [], history: [] };
   write(path.join(directory, 'task.json'), job);
   launch(jobId, worker);
   return job;
@@ -102,6 +109,7 @@ register('continue_task', 'Continue a completed or interrupted bridge-created Co
     for (const name of ['cancel.json', 'worker.lock']) if (fs.existsSync(path.join(directory, name))) fs.unlinkSync(path.join(directory, name));
     Object.assign(job, { prompt: args.prompt, status: 'queued', pending: [], final: null, error: null, updatedAt: new Date().toISOString() });
     job.relayGeneration=args.relay_generation;
+    job.affinityFallback=false;
     job.history.push({ key: action, inputHash });
     write(path.join(directory, 'task.json'), job);
     launch(job.id, worker);

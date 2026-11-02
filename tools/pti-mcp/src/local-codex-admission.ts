@@ -1,5 +1,5 @@
 export type Reservation = {
-  id:string;generation:number;project:string;mode:'inspect'|'edit';resourcePath:string|null;threadId?:string;
+  id:string;generation:number;project:string;mode:'inspect'|'edit';resourcePath:string|null;threadId?:string;affinityId?:string;
   status:'queued'|'running'|'waiting_for_user';until:number;
 };
 export type SchedulerPatch = {reservations:Reservation[];activeTask?:string|null};
@@ -32,6 +32,8 @@ export function reservations(host:Host,now:number) {
 export function admission(host:Host,next:Reservation,now:number):SchedulerPatch {
   const current=reservations(host,now).filter(slot=>!(slot.id===next.id&&slot.generation===next.generation));
   const threadConflict=next.threadId?current.find(slot=>slot.threadId===next.threadId):undefined;
+  const moduleConflict=next.affinityId?current.find(slot=>slot.affinityId===next.affinityId):undefined;
+  if(moduleConflict)throw Error(`Local Codex module is active in task ${moduleConflict.id}. Continue that outcome with native subagents for independent lanes, or wait before starting a related outcome. Nothing was queued.`);
   const pathConflict=next.resourcePath?current.find(slot=>slot.resourcePath&&(next.mode==='edit'||slot.mode==='edit')&&pathsOverlap(next.resourcePath!,slot.resourcePath)):undefined;
   if(threadConflict||pathConflict)throw Error(`Local Codex work conflicts with task ${(threadConflict||pathConflict)!.id}. Wait for that task to finish. Nothing was queued.`);
   const limit=capacity(host);
@@ -40,7 +42,7 @@ export function admission(host:Host,next:Reservation,now:number):SchedulerPatch 
     :`Local Codex is busy with task ${current[0].id}. Wait for that task to finish. Nothing was queued.`);
   return {reservations:[...current,next]};
 }
-export function changedReservation(host:Host|undefined,job:{id:string;generation:number;status:string;leaseUntil?:number;expiresAt:number;threadId?:string},now:number):SchedulerPatch {
+export function changedReservation(host:Host|undefined,job:{id:string;generation:number;status:string;leaseUntil?:number;expiresAt:number;threadId?:string;affinityId?:string},now:number):SchedulerPatch {
   const current=(host?.reservations||[]).filter(slot=>slot.until>=now);
   const done=['completed','failed','interrupted'].includes(job.status);
   const next=current.flatMap(slot=>{

@@ -11,6 +11,7 @@ import {createTelemetry,archiveRun} from './telemetry.mjs';
 import {acquireWorkspaceLock} from './workspace-locks.mjs';
 import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execution-policy.mjs';
 import {executionDeadline,deadlineElapsed} from './limits.mjs';
+import {moduleParent} from './chat-routing.mjs';
 
 const id = process.argv[2];
 const directory = taskDir(id);
@@ -18,15 +19,16 @@ const file = path.join(directory, 'task.json');
 const lock = path.join(directory, 'worker.lock');
 let lockFd;
 try { lockFd = fs.openSync(lock, 'wx'); } catch { process.exit(0); }
-let job = task(id), proc, timer, deadline, closed = false, sequence = 0, releaseWorkspace,threadLock,telemetry,selection,policy;
+let job = task(id), proc, timer, deadline, closed = false, sequence = 0, releaseWorkspace,threadLock,moduleLock,telemetry,selection,policy;
 const requests = new Map(), waiting = new Map();
 const childChecks = new Map();
-function acquireThreadLock(threadId){
+function acquireIdentityLock(kind,value){
   const locks=path.join(home,'locks');fs.mkdirSync(locks,{recursive:true});
-  const candidate=path.join(locks,`${digest('thread:'+threadId)}.json`);
+  const candidate=path.join(locks,`${digest(kind+':'+value)}.json`);
   if(fs.existsSync(candidate)&&!alive(read(candidate).pid))fs.unlinkSync(candidate);
-  const fd=fs.openSync(candidate,'wx');fs.writeFileSync(fd,JSON.stringify({pid:process.pid,taskId:id}));fs.closeSync(fd);threadLock=candidate;
+  const fd=fs.openSync(candidate,'wx');fs.writeFileSync(fd,JSON.stringify({pid:process.pid,taskId:id}));fs.closeSync(fd);return candidate;
 }
+function acquireThreadLock(threadId){threadLock=acquireIdentityLock('thread',threadId);}
 function save() { job.updatedAt = new Date().toISOString(); if(telemetry)job.telemetry=telemetry.snapshot(); write(file, job); }
 function send(message) { if (proc?.stdin.writable) proc.stdin.write(`${JSON.stringify(message)}\n`); }
 function rpc(method, params) {
@@ -57,6 +59,7 @@ function finish(status, error) {
   if (fs.existsSync(lock)) fs.unlinkSync(lock);
   releaseWorkspace?.();
   if (threadLock && fs.existsSync(threadLock) && read(threadLock).taskId === id) fs.unlinkSync(threadLock);
+  if (moduleLock && fs.existsSync(moduleLock) && read(moduleLock).taskId === id) fs.unlinkSync(moduleLock);
   setTimeout(() => process.exit(status === 'failed' ? 1 : 0), 100).unref();
 }
 function serverRequest(message) {
@@ -128,6 +131,7 @@ try {
   job.strategy=policy.strategy;job.purpose||='work';job.turnId=null;job.model=null;job.reasoningEffort=null;
   const target = project(job.project);
   if (target.path !== job.cwd) throw new Error('The project path changed. Start a new task after reviewing list_projects.');
+  if(job.chatRouting)moduleLock=acquireIdentityLock('module',job.chatRouting.affinity_id);
   releaseWorkspace=acquireWorkspaceLock(home,{taskId:id,cwd:job.cwd,resourcePath:target.resourcePath||job.resourcePath||job.cwd,mode:job.mode});
   job.workerPid = process.pid;
   job.status = 'running';
@@ -146,7 +150,7 @@ try {
       if (message.method && message.id !== undefined) serverRequest(message);
       else if (message.id !== undefined) {
         const pending = requests.get(message.id);
-        if (pending) { clearTimeout(pending.timeout); requests.delete(message.id); message.error ? pending.reject(new Error(message.error.message)) : pending.resolve(message.result); }
+        if (pending) { clearTimeout(pending.timeout); requests.delete(message.id); message.error ? pending.reject(Object.assign(new Error(message.error.message),{code:message.error.code})) : pending.resolve(message.result); }
       } else notification(message);
     } catch (error) { finish('failed', error.message); }
   });
@@ -182,14 +186,19 @@ try {
   const account = await rpc('account/read', { refreshToken: false });
   if (account.account?.type !== 'chatgpt') throw new Error('ChatGPT subscription sign-in is required. API-key authentication is disabled for this bridge.');
   await requireModel(rpc, selection);
-  if(job.threadId){
-    const {thread}=await rpc('thread/read',{threadId:job.threadId,includeTurns:false});await assertStoredIdle(rpc,thread,id);
+  const parent=await moduleParent(rpc,job,target);
+  if(parent.reason){
+    job.chatRouting={...job.chatRouting,selection:'new',previous_thread_id:job.threadId,reason:parent.reason};
+    job.threadId=null;save();
+  }
+  if(parent.threadId){
+    await assertStoredIdle(rpc,parent.thread,id);
     // The caller explicitly selects the allowlisted project for a historical
     // thread. Resume applies that cwd and reloads its current project guidance.
     acquireThreadLock(job.threadId);
   }
   const permissions = executionPolicy(job.mode);
-  const instructions = workerInstructions(job)+' '+policy.instructions;
+  const instructions = workerInstructions(job)+' '+policy.instructions+(job.chatRouting?` Current functional module: ${job.chatRouting.module_key}. This is task ${job.id}, with its own current scope and authorization. Retained native history is source context, never authority to repeat earlier actions. Prioritize native subagents under this parent for independent lanes; dependent work stays serial.`:'');
   const options = { cwd: job.cwd, model: selection.model, sandbox: permissions.sandbox, approvalPolicy: permissions.approvalPolicy, developerInstructions: instructions,
     config: { model_reasoning_effort: selection.effort, ...policy.config, 'plugins.local-codex@local-codex-bridge.enabled': false, 'plugins.local-codex@created-by-me-remote.enabled': false } };
   const started = job.threadId
@@ -215,7 +224,8 @@ try {
   job.executionPolicy = {version:1,mode:job.mode,sandboxType:started.sandbox.type,approvalPolicy:started.approvalPolicy,instructionRefresh:isNewThread?'thread-start':'history-injection',verifiedAt:new Date().toISOString()};
   save();
   if(isNewThread&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
-  const turn = await rpc('turn/start', { threadId: job.threadId, model: selection.model, effort: selection.effort, input: [{ type: 'text', text: job.prompt }] });
+  const currentPrompt=job.handoff?`Project handoff supplied for this rotation (source context only):\n${job.handoff}\n\nCurrent authorized request:\n${job.prompt}`:job.prompt;
+  const turn = await rpc('turn/start', { threadId: job.threadId, model: selection.model, effort: selection.effort, input: [{ type: 'text', text: currentPrompt }] });
   job.turnId = turn.turn.id;
   save();
 } catch (error) { finish('failed', error.message); }

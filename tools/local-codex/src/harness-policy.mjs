@@ -10,7 +10,7 @@ export function harnessPolicy(job, configuration, selection) {
     ? 'Use one agent. Do not spawn subagents.'
     : strategy === 'team'
       ? `Use one coordinating parent with ${delegation} for independent evidence or implementation lanes. Give each child a narrow objective, explicit file ownership and output contract. Wait for and synthesize the actual results. If the task has no useful independent lanes, explain that and complete it with one agent.`
-      : `Choose the useful topology for the task: one agent for narrow or serial work, or ${delegation} for independent evidence or implementation lanes. Give children explicit ownership and an output contract, then synthesize verified results. Agent count is not an outcome.`;
+      : `Keep one native parent for this project/module. Use one agent for narrow, dependent or tiny work; prioritize ${delegation} under this parent for genuinely independent evidence or implementation lanes with non-overlapping file ownership. Separate parent chats are exceptional and require a different module or an explicit invalid/incompatible/context-bloat rotation. Give children explicit ownership and an output contract, then synthesize verified results. Agent count is not an outcome.`;
   return {
     strategy, maxSubagents,
     config: {

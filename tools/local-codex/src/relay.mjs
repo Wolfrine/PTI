@@ -62,6 +62,7 @@ function snapshot(job){return {
   messages:job.messages.slice(-10).map(m=>({text:m.text,phase:m.phase||null})),pending:job.pending||[],
   ...(job.model?{model:job.model}:{}),...(job.reasoningEffort?{reasoning_effort:job.reasoningEffort}:{}),
   ...(job.executionPolicy?{execution_policy:job.executionPolicy}:{}),
+  ...(job.chatRouting?{chat_routing:job.chatRouting}:{}),
   ...(job.threadId?{thread_id:job.threadId}:{}),...(job.telemetry?{telemetry:job.telemetry}:{}),
 };}
 async function authMode(){
@@ -95,7 +96,7 @@ async function service(job,controls){
       const request_key=`relay-${job.id}-${job.generation}`,previous=state.localTasks?.[job.id];
       const result=previous
         ?await local('continue_task',{task_id:previous,prompt:job.prompt,request_key,relay_generation:job.generation})
-        :await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:job.generation,strategy:job.strategy||'auto',purpose:job.purpose||'work',...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{})});
+        :await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:job.generation,strategy:job.strategy||'auto',purpose:job.purpose||'work',...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{}),...(job.chat_routing?{chat_routing:job.chat_routing,affinity_fallback:job.affinity_fallback||false}:{}),...(job.handoff?{handoff:job.handoff}:{})});
       job.localId=result.id;state.localTasks||={};state.localTasks[job.id]=result.id;persist();
     }
     observe(job);

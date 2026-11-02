@@ -1,8 +1,9 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
-import {parseBlinkitBankAlert} from './hdfc-payment-alert.mjs';
+const modulePath = '../blinkit/hdfc-payment-alert.mjs';
+const {parseBlinkitBankAlert} = await import(modulePath);
 
-const fixture = overrides => ({
+const fixture = (overrides: Record<string, unknown> = {}) => ({
   gmailMessageId: '0123456789abcdef', from: 'HDFC Bank InstaAlerts <alerts@hdfcbank.bank.in>',
   subject: '❗  You have done a UPI txn. Check details!', receivedAt: '2026-11-01T08:14:12.000Z',
   authenticationResults: 'mx.google.com; dkim=pass header.i=@hdfcbank.bank.in header.s=sample; dmarc=pass header.from=hdfcbank.bank.in',

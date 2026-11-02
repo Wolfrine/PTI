@@ -9,6 +9,11 @@ service cloud.firestore {
    match /{collection}/{document=**} { allow read, write: if collection != 'users' && collection != '_ptiMcpAuth' && collection != 'mcpAuditLog' && collection != '_ptiLocalServices' && interactiveUser(); }
   // Fixed service mailboxes are server-only, including for the PTI owner.
   match /_ptiLocalServices/{document=**} { allow read, write: if false; }
+  // Local Codex wake marker only. Job payloads, queries and writes remain private.
+  match /_ptiLocalServices/local-codex/owners/5PbKbpGf3AbarNrp6pyqJ5C5Ziu2/signals/dispatch {
+   allow get: if owner('5PbKbpGf3AbarNrp6pyqJ5C5Ziu2');
+   allow list, write: if false;
+  }
   match /users/{uid} {
    allow read, write: if interactiveUser();
     match /{collection}/{document=**} { allow read, write: if collection != 'atlasData' && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'resourceUsage' && collection != 'velumStudio' && interactiveUser(); }

@@ -4,6 +4,8 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {CodexRelay,createCodexServer,FirestoreRelayStore,OWNER,heartbeatSchema,workerPollSchema,workerReportSchema,type RelayStore,type Job,type Worker} from './local-codex.js';
 import {capacity,type SchedulerPatch} from './local-codex-admission.js';
+import {createHttpApp} from './http-app.js';
+import {PtiOAuthProvider,CODEX_SCOPE} from './oauth.js';
 class Memory implements RelayStore {
   jobs=new Map<string,Job>(); host?:Worker;
   listeners=new Map<string,Set<{changed:(job:Job|undefined)=>void;failed:(error:Error)=>void}>>(); reads=0;
@@ -188,7 +190,7 @@ describe('Local Codex relay',()=>{
   it('reports configured model preference and retains the confirmed turn model and effort',async()=>{
     const f=fixture();const heartbeat=heartbeatSchema.parse({...f.heartbeat,version:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     await f.relay.poll(OWNER,{heartbeat});
-    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.2',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
+    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.3',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     const task=await f.relay.start(OWNER,f.args),claim=(await f.relay.poll(OWNER,{heartbeat})).job!;
     const report=workerReportSchema.parse({id:claim.id,generation:claim.generation,lease:claim.lease,snapshot:{status:'completed',model:'gpt-6.1-sol',reasoning_effort:'xhigh',final:'Fixture result'}});
     await f.relay.report(OWNER,report);
@@ -248,7 +250,7 @@ describe('Local Codex relay',()=>{
       await f.relay.poll(OWNER,{heartbeat:f.heartbeat,active:claim});
       await f.relay.report(OWNER,{...claim,snapshot:structuredClone(snapshot)});
     }
-    expect(settled).toBe(false);expect(f.store.reads).toBe(reads+1);expect(f.store.jobs.get(j.id)?.updatedAt).toBe(Date.parse(before.updatedAt));
+    expect(settled).toBe(false);expect(f.store.reads).toBe(reads);expect(f.store.jobs.get(j.id)?.updatedAt).toBe(Date.parse(before.updatedAt));
     await f.relay.report(OWNER,{...claim,snapshot:{...snapshot,messages:[{text:'New progress'}]}});
     expect((await waiting).messages).toEqual([{text:'New progress'}]);expect(f.store.listeners.size).toBe(0);expect(vi.getTimerCount()).toBe(0);
   });
@@ -336,5 +338,21 @@ describe('Local Codex relay',()=>{
       await vi.waitFor(()=>expect(f.store.listeners.size).toBe(1));request.abort();
       expect((await waiting).isError).toBe(true);expect(f.store.listeners.size).toBe(0);
     }finally{await client.close();await server.close();}
+  });
+  it('detaches the Firestore wait when an actual HTTP client disconnects',async()=>{
+    const f=fixture();await f.pair();const job=await f.relay.start(OWNER,f.args);await f.pair();
+    const provider=new PtiOAuthProvider({get:async()=>undefined,put:async()=>{},consume:async()=>{throw Error('Unused test grant');}} as never,'https://pti.example',async()=>{});
+    // Authentication is a fixture here; the production HTTP response close and
+    // real MCP tool/listener lifecycle are exercised through a local socket.
+    vi.spyOn(provider,'verifyAccessToken').mockImplementation(async token=>({token,clientId:'fixture',scopes:[CODEX_SCOPE],expiresAt:Math.floor(Date.now()/1000)+60,resource:new URL('https://pti.example/local-codex/mcp'),extra:{uid:OWNER}}));
+    const app=createHttpApp({provider,codex:f.relay,verifyIdentity:async()=>{throw Error('Unused worker route');},firebaseConfig:{},createServer:()=>{throw Error('Unused root route');}});
+    const http=app.listen(0,'127.0.0.1'),abort=new AbortController();
+    await new Promise<void>(resolve=>http.on('listening',resolve));
+    try{
+      const base=`http://127.0.0.1:${(http.address() as {port:number}).port}`;
+      const response=fetch(base+'/local-codex/mcp',{method:'POST',headers:{Authorization:'Bearer fixture-token','Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'get_task',arguments:{task_id:job.id,wait_seconds:50}}}),signal:abort.signal}).catch(error=>error);
+      await vi.waitFor(()=>expect(f.store.listeners.size).toBe(1));abort.abort();
+      expect((await response).name).toBe('AbortError');await vi.waitFor(()=>expect(f.store.listeners.size).toBe(0));
+    }finally{abort.abort();http.closeAllConnections();await new Promise<void>(resolve=>http.close(()=>resolve()));}
   });
 });

@@ -20,6 +20,14 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 
 ## Authorization and evidence
 
+### Listener transport (0.4.3)
+
+The PC holds one Firebase `onSnapshot` subscription on `_ptiLocalServices/local-codex/owners/{owner}/signals/dispatch`. The owner can get only this exact marker; collection queries, sibling documents, jobs and client writes remain denied. It contains only a version, random revision and timestamp. The existing encrypted Firebase session supplies a public `FirebaseServerApp` user context; no Admin credential or new sign-in is installed. The session is replaced before token expiry, with SDK reconnect handling and fresh discovery on each server reconnection.
+
+Enqueue/continuation, cancellation and a new human answer change the marker atomically with their transaction. Heartbeats, leases and progress never change it. The worker calls authenticated `/worker/sync` with `dispatch:true` after a notification; dispatch reads each ten-job page once and drains full pages. Thirty-second maintenance uses `dispatch:false`: no queue query, one root plus one read per active claim in a single transaction, with due-only lease/root writes. These are health checks. Old workers keep their compatible `/poll` endpoint until upgraded. Listener outages suspend new admission while existing leases can renew.
+
+Local task-file changes wake progress reporting; unchanged progress and telemetry-only changes are suppressed. Final telemetry is retained, failed reports retry and claims keep generation/lease identity. ChatGPT's `get_task` also uses its initial listener snapshot without an extra document read. `data/relay-state.json`, `data/status.json` and the daily review expose cumulative request/event counters, not provider billing. No measured cost saving is claimed from these counters alone. SDK listeners remain metered for initial snapshots, updates and reconnects. See [Firebase user-context authentication](https://firebase.google.com/docs/web/ssr-apps) and [listener billing](https://firebase.google.com/docs/firestore/pricing#listening_to_query_results).
+
 ### No arbitrary execution caps (0.4.2)
 
 The owner explicitly withdrew the bridge-generated three-parent, two-child, single-layer and 30-minute ceilings. `maxConcurrentTasks`, `maxSubagentsPerTask` and `maxTaskMinutes` default to `null`, meaning no bridge cap. This is not a large replacement number. Admission, heartbeat schemas and durable recovery accept more than four claims; child observation has no 16-agent cutoff. Numeric settings remain available only for an explicit owner choice. Ask before introducing a new restriction.

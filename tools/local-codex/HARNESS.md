@@ -14,6 +14,8 @@ Owner instruction, 2026-10-31: provision effective local Codex use through the e
 
 ## Effectiveness loop
 
+Owner instruction, 2026-11-02: use Firestore listeners for PC work notifications and hosted ChatGPT result waits. Keep health/lease maintenance separate, avoid quiet queue queries and repeated unchanged writes, and include sanitized cumulative transport counters in the review. Request counters are not measured Firestore billing. The 0.4.3 transport decision and its regression/installed evidence are in `decisions/2026-11-02-listener-transport.md`.
+
 The daily 10:30 Asia/Kolkata heartbeat runs the deterministic seven-day review documented in README. The review uses owner-scoped bridge metadata and bounded per-generation local telemetry. It records timing, human-wait time, command/tool failures, child activity and selected settings, with latest-response token observations when available. It omits prompts, final answers, command text/output, credentials and unrelated chats. It excludes declared acceptance probes from ordinary-work metrics. Older missing fields remain unknown.
 
 `record_task_outcome(task_id, generation, outcome)` records only an explicit human `accepted`, `needs_rework` or `abandoned` verdict for that completed generation. Silence, successful execution, passing tests and a deployment are not acceptance. Owner-scoped outcome history is bounded and generation-bound. The private worker review endpoint returns sanitized metadata only. Account-wide allowance is headroom, never task attribution.

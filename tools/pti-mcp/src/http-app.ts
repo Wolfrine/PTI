@@ -5,7 +5,7 @@ import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middlew
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE, type UserIdentity } from './oauth.js';
-import { CodexRelay, createCodexServer, workerPollSchema, workerReportSchema, OWNER } from './local-codex.js';
+import { CodexRelay, createCodexServer, workerPollSchema, workerSyncSchema, workerReportSchema, OWNER } from './local-codex.js';
 import { morselBlinkitRouter } from './morsel-blinkit-http.js';
 
 function escape(value: string) { return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]!)); }
@@ -79,6 +79,7 @@ button.onclick=async()=>{button.disabled=true;try{
         const bearer=/^Bearer ([^\s]+)$/.exec(req.get('authorization')||'');if(!bearer)throw Error('authentication_required');
         const identity=await options.verifyIdentity(bearer[1]);await provider.checkUser(identity.uid,identity.authenticatedAt);if(identity.uid!==OWNER)throw Error('authentication_required');
         if(req.params.action==='poll')res.json(await relay.poll(identity.uid,workerPollSchema.parse(req.body)));
+        else if(req.params.action==='sync')res.json(await relay.sync(identity.uid,workerSyncSchema.parse(req.body)));
         else if(req.params.action==='report')res.json(await relay.report(identity.uid,workerReportSchema.parse(req.body)));
         else if(req.params.action==='review_data')res.json(await relay.reviewData(identity.uid));
         else res.status(404).json({error:'Unknown worker action.'});

@@ -5,10 +5,12 @@ import {fileURLToPath} from 'node:url';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 import {home,config,project,read,write,alive,subscriptionEnvironment,VERSION,taskDir} from './common.mjs';
-import {loadCredential,saveCredential,refresh} from './credentials.mjs';
+import {loadCredential,saveCredential,refresh,firebaseAuthConfig,OWNER} from './credentials.mjs';
 import {modelSelection} from './model-policy.mjs';
 import {reportChangedSnapshot} from './progress.mjs';
 import {claims,mergeClaims,withoutClaim,retryableLocal} from './relay-state.mjs';
+import {listenForDispatch} from './notifications.mjs';
+import {eventWakeup,watchTask} from './transport-events.mjs';
 
 const base='https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker';
 fs.mkdirSync(path.join(home,'data'),{recursive:true});
@@ -19,8 +21,17 @@ const stateFile=path.join(home,'data','relay-state.json');
 let state=fs.existsSync(stateFile)?read(stateFile):{instanceId:randomUUID(),active:[]};
 state.active=claims(state.active);
 let token='',until=0,client,connecting,refreshing,lastSuccess=state.lastSuccess||0,stopping=false,authUntil=0,cachedAuth;
+const events=eventWakeup(),watchers=new Map(),dirty=new Set(state.active.map(job=>job.id));
+let syncRequested=true,dispatchRequested=false,listenerToken,stopListener,listenerError,listenerConnected=false,nextMaintenance=0,retryAt=0,retryDelay=1000;
+let lossCancelled=false;
+function deadline(){return Math.min(retryAt||nextMaintenance,state.active.length&&!lossCancelled?lastSuccess+45001:Infinity);}
+const metrics=state.transport||{schemaVersion:1,startedAt:new Date().toISOString(),syncRequests:0,dispatchRequests:0,emptyDispatches:0,notificationEvents:0,listenerSessions:0,localFileEvents:0,reportRequests:0,suppressedReports:0,failedRequests:0,claims:0};
 const persist=()=>write(stateFile,state);
-const remove=job=>{state.active=withoutClaim(state.active,job);persist();};
+const remove=job=>{state.active=withoutClaim(state.active,job);watchers.get(job.id)?.();watchers.delete(job.id);dirty.delete(job.id);persist();};
+function observe(job){
+  if(!job.localId||watchers.has(job.id))return;
+  watchers.set(job.id,watchTask(taskDir(job.localId),()=>{metrics.localFileEvents++;dirty.add(job.id);events.wake();},()=>{watchers.get(job.id)?.();watchers.delete(job.id);dirty.add(job.id);events.wake();}));
+}
 async function local(name,args={}){
   if(!client){
     connecting||=(async()=>{
@@ -41,9 +52,10 @@ async function api(action,body){
     refreshing||=(async()=>{const session=await refresh(await loadCredential());await saveCredential(session.refreshToken);token=session.idToken;until=Date.now()+3000000;})().finally(()=>{refreshing=undefined;});
     await refreshing;
   }
+  if(action==='report')metrics.reportRequests++;
   const response=await fetch(`${base}/${action}`,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
   if(!response.ok){await response.body?.cancel();if(response.status===401)until=0;throw Error(response.status===409?'lease_lost':`Relay request unavailable (HTTP ${response.status}).`);}
-  return response.json();
+  const result=await response.json();lastSuccess=Date.now();lossCancelled=false;return result;
 }
 function snapshot(job){return {
   status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,
@@ -86,10 +98,16 @@ async function service(job,controls){
         :await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:job.generation,strategy:job.strategy||'auto',purpose:job.purpose||'work',...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{})});
       job.localId=result.id;state.localTasks||={};state.localTasks[job.id]=result.id;persist();
     }
-    if(controls?.cancel)await local('cancel_task',{task_id:job.localId});
-    for(const answer of controls?.responses||[]){const {task_id,...rest}=answer;try{await local('respond_to_task',{task_id:job.localId,...rest});}catch{/* An already handled human response is idempotent. */}}
+    observe(job);
+    if(controls?.cancel&&!job.cancelApplied){await local('cancel_task',{task_id:job.localId});job.cancelApplied=true;persist();}
+    for(const answer of controls?.responses||[]){
+      if(job.handledResponses?.includes(answer.request_id))continue;
+      const {task_id,...rest}=answer;
+      await local('respond_to_task',{task_id:job.localId,...rest});
+      (job.handledResponses||=[]).push(answer.request_id);persist();
+    }
     const current=await local('get_task',{task_id:job.localId,wait_seconds:0});
-    if(await reportChangedSnapshot(job,snapshot(current),value=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:value})))persist();
+    if(await reportChangedSnapshot(job,snapshot(current),value=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:value})))persist();else metrics.suppressedReports++;
     if(['completed','failed','interrupted'].includes(current.status))remove(job);
   }catch(error){
     if(error.message==='lease_lost'){await cancelOwned(job);remove(job);return;}
@@ -100,30 +118,62 @@ async function service(job,controls){
     throw error;
   }
 }
-process.on('SIGINT',()=>stopping=true);process.on('SIGTERM',()=>stopping=true);
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{stopping=true;events.wake();});
+const controlsById=new Map();
 try{
   while(!stopping){
     try{
-      if(state.active.length&&Date.now()-lastSuccess>45000)await Promise.allSettled(state.active.map(cancelOwned));
+      if(state.active.length&&!lossCancelled&&Date.now()-lastSuccess>45000){lossCancelled=true;await Promise.allSettled(state.active.map(cancelOwned));}
+      if(retryAt>Date.now()){await events.wait(deadline()-Date.now());continue;}
       if(await authMode()!=='chatgpt')throw Error('ChatGPT subscription sign-in required.');
       const selection=modelSelection(config()),settings=config();
-      const heartbeat={model:selection.model,reasoning_effort:selection.effort,instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,
+      const heartbeat={model:selection.model,reasoning_effort:selection.effort,instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,dispatchReady:listenerConnected,
         maxConcurrentTasks:settings.maxConcurrentTasks,maxSubagentsPerTask:settings.maxSubagentsPerTask,maxTaskMinutes:settings.maxTaskMinutes,
         projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',resourcePath:'F:/unavailable',available:false};}})};
-      const response=await api('poll',{heartbeat,active:state.active.map(({id,generation,lease})=>({id,generation,lease}))});
-      lastSuccess=Date.now();state.lastSuccess=lastSuccess;
-      const lost=[...(response.lost||[]),...Object.keys(response.controls||{}).filter(id=>response.controls[id]?.error==='lease_lost')];
-      for(const lostId of lost){const job=state.active.find(item=>item.id===(typeof lostId==='string'?lostId:lostId.id));if(job){await cancelOwned(job);remove(job);}}
-      state.active=mergeClaims(state.active,response.jobs);persist();
-      const results=await Promise.allSettled([...state.active].map(job=>service(job,response.controls?.[job.id])));
-      const failed=results.some(result=>result.status==='rejected');
-      write(path.join(home,'data','status.json'),{version:VERSION,at:new Date().toISOString(),state:failed?'degraded':'online',authMode:'chatgpt',activeTask:state.active[0]?.id||null,activeTasks:state.active.map(job=>job.id),capacity:settings.maxConcurrentTasks,...(failed?{errorCode:'task_report_retry_pending'}:{})});
+      // Refresh the protected user token through the existing native auth path.
+      // SDK sessions rotate only with the token, never once per maintenance call.
+      if(!stopListener||listenerError||Date.now()>until||listenerToken!==token&&token){
+        await stopListener?.();stopListener=undefined;listenerConnected=false;listenerError=undefined;
+        if(Date.now()>until){refreshing||=(async()=>{const session=await refresh(await loadCredential());await saveCredential(session.refreshToken);token=session.idToken;until=Date.now()+3000000;})().finally(()=>{refreshing=undefined;});await refreshing;}
+        listenerToken=token;metrics.listenerSessions++;
+        stopListener=await listenForDispatch({firebase:firebaseAuthConfig(),idToken:token,uid:OWNER,
+          changed:()=>{metrics.notificationEvents++;dispatchRequested=true;syncRequested=true;events.wake();},
+          connection:online=>{if(listenerConnected!==online){listenerConnected=online;syncRequested=true;events.wake();}},
+          failed:error=>{listenerError=error;events.wake();}});
+      }
+      if(syncRequested||Date.now()>=nextMaintenance){
+        const dispatch=dispatchRequested;dispatchRequested=false;syncRequested=false;
+        metrics.syncRequests++;if(dispatch)metrics.dispatchRequests++;
+        let response;
+        try{response=await api('sync',{heartbeat,dispatch,active:state.active.map(({id,generation,lease})=>({id,generation,lease}))});}
+        catch(error){syncRequested=true;dispatchRequested ||= dispatch;throw error;}
+        nextMaintenance=Date.now()+response.syncDelayMs;state.lastSuccess=lastSuccess;
+        if(dispatch&&!response.jobs?.length)metrics.emptyDispatches++;
+        for(const lostId of response.lost||[]){const job=state.active.find(item=>item.id===lostId);if(job){await cancelOwned(job);remove(job);}controlsById.delete(lostId);}
+        for(const [id,value] of Object.entries(response.controls||{}))controlsById.set(id,value);
+        state.active=mergeClaims(state.active,response.jobs);metrics.claims+=response.jobs?.length||0;
+        for(const job of state.active){observe(job);dirty.add(job.id);}
+        if(response.more){dispatchRequested=true;syncRequested=true;events.wake();}
+      }
+      const selected=state.active.filter(job=>dirty.delete(job.id));
+      const results=await Promise.allSettled(selected.map(job=>service(job,controlsById.get(job.id))));
+      let failed=false;
+      results.forEach((result,index)=>{if(result.status==='rejected'){failed=true;dirty.add(selected[index].id);}});
+      if(failed)throw Error('task_report_retry_pending');
+      if(listenerError)throw Error('notification_listener_unavailable');
+      retryAt=0;retryDelay=1000;state.transport=metrics;state.lastSuccess=lastSuccess;persist();
+      write(path.join(home,'data','status.json'),{version:VERSION,at:new Date().toISOString(),state:listenerConnected?'online':'connecting',transport:'firestore-listener',listenerConnected,authMode:'chatgpt',activeTask:state.active[0]?.id||null,activeTasks:state.active.map(job=>job.id),capacity:settings.maxConcurrentTasks,transportMetrics:metrics});
     }catch(error){
-      write(path.join(home,'data','status.json'),{version:VERSION,at:new Date().toISOString(),state:'unavailable',errorCode:'connection_or_signin_required',activeTasks:state.active.map(job=>job.id)});
+      metrics.failedRequests++;retryAt=Date.now()+retryDelay;retryDelay=Math.min(30000,retryDelay*2);
+      state.transport=metrics;persist();
+      write(path.join(home,'data','status.json'),{version:VERSION,at:new Date().toISOString(),state:'unavailable',transport:'firestore-listener',listenerConnected,errorCode:'connection_or_signin_required',activeTasks:state.active.map(job=>job.id),transportMetrics:metrics});
     }
-    await new Promise(resolve=>setTimeout(resolve,state.active.length?3000:15000));
+    // Only notifications, local file events, retries and health deadlines wake us.
+    // Maintenance checks leases but never queries work when dispatch is false.
+    await events.wait(deadline()-Date.now());
   }
 }finally{
+  await stopListener?.();for(const stop of watchers.values())stop();
   await Promise.allSettled(state.active.map(cancelOwned));await client?.close();
   if(fs.existsSync(lock)&&read(lock).pid===process.pid)fs.unlinkSync(lock);
 }

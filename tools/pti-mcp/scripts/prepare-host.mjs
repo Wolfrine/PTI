@@ -1,6 +1,7 @@
 // Narrow, compare-before-write rules change. No database or billing changes.
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import {withoutDispatchRule} from './local-codex-listener-rules.mjs';
 const project = 'pti-app-2ab59';
 const token = process.env.ACCESS_TOKEN;
 const origin = process.env.PUBLIC_ORIGIN;
@@ -23,6 +24,7 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 // Reviewed pre-food rules at b459b153: only foodData owner isolation is added.
 // Reviewed owner-only Morsel baseline at 63260adc.
 const approved = new Set(['3075107d79eb458b543c467b2acfd91541a2c76e48dbffe3b6531cdca38c031b',hash(target),hash(baseline),'7956d85bf56f3f3e105d9a24de156e413427042ecff0a4455485eec2c8b6b082','5c3cd9cdff141cf9a1536311cb16c68d0742c32b5d8df86878bcc7292b4fc442']);
+approved.add(hash(withoutDispatchRule(target)));
 if (!approved.has(hash(before))) throw new Error('Live rules differ from the reviewed baseline. Inspect before changing.');
 if (before !== target) {
   const ruleset = await request(`${api}/projects/${project}/rulesets`, 'POST', { source: { files: [{ name: 'firestore.rules', content: target }] } });

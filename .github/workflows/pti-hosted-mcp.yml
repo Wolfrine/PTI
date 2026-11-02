@@ -28,8 +28,21 @@ jobs:
       - name: Verify Atlas replay safety and canonical app discovery
         run: node --test tools/pti-mcp/scripts/verify-atlas-host.selftest.mjs tools/pti-mcp/scripts/verify-data.selftest.mjs tools/pti-mcp/scripts/configure-native-auth.selftest.mjs tools/pti-mcp/scripts/configure-morsel-auth.selftest.mjs
       - run: npm ci --prefix tools/local-codex --ignore-scripts --no-audit --no-fund && npm run build --prefix tools/local-codex
-      - run: node --test tools/local-codex/test/subscription.test.mjs tools/local-codex/test/progress.test.mjs tools/local-codex/test/model-policy.test.mjs tools/local-codex/test/relay-state.test.mjs tools/local-codex/test/review-usage.test.mjs tools/local-codex/test/telemetry.test.mjs tools/local-codex/test/harness-policy.test.mjs tools/local-codex/test/execution-policy.test.mjs tools/local-codex/test/workspace-locks.test.mjs tools/local-codex/test/worker-harness.test.mjs
+      - run: node --test tools/local-codex/test/subscription.test.mjs tools/local-codex/test/progress.test.mjs tools/local-codex/test/model-policy.test.mjs tools/local-codex/test/relay-state.test.mjs tools/local-codex/test/review-usage.test.mjs tools/local-codex/test/telemetry.test.mjs tools/local-codex/test/harness-policy.test.mjs tools/local-codex/test/execution-policy.test.mjs tools/local-codex/test/workspace-locks.test.mjs tools/local-codex/test/worker-harness.test.mjs tools/local-codex/test/transport-events.test.mjs
       - run: node --test personal-harness/core.test.mjs food-app/*.test.mjs
+  verify_listener_rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci --prefix apps/one-piece --ignore-scripts --no-audit --no-fund
+      - run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-local-codex-listener --config firebase.one-piece-tests.json 'node --test tools/local-codex/test/notification-rules.test.mjs'
   native_auth:
     if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'
     needs: verify
@@ -64,7 +77,7 @@ jobs:
           if-no-files-found: error
   deploy:
     if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'
-    needs: verify
+    needs: [verify, verify_listener_rules]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

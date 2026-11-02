@@ -82,8 +82,9 @@ export async function reviewUsage({days=7,sync=false,outputDirectory=path.join(h
   const state=fs.existsSync(path.join(home,'data','relay-state.json'))?read(path.join(home,'data','relay-state.json')):{};
   const report=summarizeTasks(tasks,{days,remoteData,localTasks:state.localTasks||{}});
   report.workerVersion=VERSION;report.syncError=syncError;
+  report.transport=state.transport?{...state.transport,basis:'Cumulative local relay request/event counters since transport.startedAt; not billed Firestore operations.',observedAt:new Date().toISOString()}:null;
   report.headroom={freeMemoryBytes:os.freemem(),totalMemoryBytes:os.totalmem()};
-  const fingerprint=createHash('sha256').update(JSON.stringify({windowDays:report.windowDays,rows:report.rows,feedbackSynced:report.coverage.ownerFeedbackSynced,syncError})).digest('hex');
+  const fingerprint=createHash('sha256').update(JSON.stringify({windowDays:report.windowDays,rows:report.rows,feedbackSynced:report.coverage.ownerFeedbackSynced,syncError,transport:state.transport||null})).digest('hex');
   if(!path.win32.isAbsolute(outputDirectory)||!path.win32.resolve(outputDirectory).toLowerCase().startsWith('f:\\'))throw Error('Review outputs must be on F:.');
   let existingParent=outputDirectory;
   while(!fs.existsSync(existingParent))existingParent=path.dirname(existingParent);

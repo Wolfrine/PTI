@@ -2,6 +2,17 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {reportChangedSnapshot} from '../src/progress.mjs';
 
+test('telemetry-only changes publish with real progress and final counters, never as standalone live writes',async()=>{
+  const claim={},sent=[],send=async value=>sent.push(value);
+  const first={status:'running',messages:[],telemetry:{commands:0}};
+  await reportChangedSnapshot(claim,first,send);
+  assert.equal(await reportChangedSnapshot(claim,{...first,telemetry:{commands:10}},send),false);
+  assert.equal(await reportChangedSnapshot(claim,{...first,messages:[{text:'Progress'}],telemetry:{commands:10}},send),true);
+  const final={status:'completed',final:'Done',telemetry:{commands:11}};
+  assert.equal(await reportChangedSnapshot(claim,final,send),true);
+  assert.equal(sent.at(-1).telemetry.commands,11);
+});
+
 test('unchanged progress stays suppressed across restart; messages, approvals and completion publish',async()=>{
   let claim={id:'fixture',generation:1};const reports=[];const send=async value=>reports.push(value);
   const running={status:'running',messages:[]};

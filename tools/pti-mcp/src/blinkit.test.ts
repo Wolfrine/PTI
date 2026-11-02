@@ -8,6 +8,7 @@ import { assertWritablePath } from './access.js';
 import { appCatalog } from './apps.js';
 import express from 'express';
 import {morselBlinkitRouter,MORSEL_ORIGIN} from '../dist/morsel-blinkit-http.js';
+import {createPaymentEvent,eventIdFor} from '../dist/blinkit-events.js';
 // @ts-ignore JavaScript connector is deliberately reusable without the MCP server.
 import { normalizePurchase, projectDetail, packQuantity, classify } from '../dist/blinkit/model.mjs';
 // @ts-ignore
@@ -101,6 +102,46 @@ describe('Blinkit minimization and normalization', () => {
 });
 
 describe('deployed MCP purchase transactions', () => {
+  it('accepts only minimal deterministic create-only payment events; duplicates and non-Blinkit events are safe',async()=>{
+    const t=await fixture(),seen=new Date().toISOString(),paid=new Date(Date.now()+19800000).toISOString().replace('Z','+05:30');
+    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0011',amount:100,currency:'INR',paymentAt:paid,paymentTimezone:'Asia/Kolkata',observedAt:seen,status:'pending'};
+    const path=root+'/purchaseEvents/'+eventIdFor(event.gmailMessageId);
+    const first=await createPaymentEvent(t.db as any,path,event,'owner');expect(first.duplicate).toBe(false);
+    expect((await createPaymentEvent(t.db as any,path,{...event,observedAt:new Date().toISOString()},'owner')).duplicate).toBe(true);
+    await expect(createPaymentEvent(t.db as any,path,{...event,amount:101},'owner')).rejects.toThrow('conflict');
+    await expect(createPaymentEvent(t.db as any,path,{...event,emailBody:'PRIVATE'},'owner')).rejects.toThrow();
+    await expect(createPaymentEvent(t.db as any,path+'wrong',event,'owner')).rejects.toThrow('deterministic');
+    await expect(createPaymentEvent(t.db as any,path,event,'other')).rejects.toThrow('account');
+    expect(await createPaymentEvent(t.db as any,path,{provider:'other',merchant:'other'},'owner')).toEqual({ignored:true});
+    expect(()=>assertWritablePath(path,'document','owner')).toThrow('create-only');expect(assertWritablePath(path,'document','owner','create')).toBe(path);
+    t.db.rows.set(root,{ingestionPaused:true});await expect(createPaymentEvent(t.db as any,path,event,'owner')).rejects.toThrow('paused');
+  });
+  it('leases safely, commits event+purchase once, verifies duplicate replay and preserves restaurant counters',async()=>{
+    const t=await fixture(),capturedAt=new Date().toISOString(),local=new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date()).replace(/\u202f/g,' ');
+    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0022',amount:300,currency:'INR',paymentAt:new Date(Date.now()+19800000).toISOString().replace('Z','+05:30'),paymentTimezone:'Asia/Kolkata',observedAt:capturedAt,status:'pending'};
+    const eventId=eventIdFor(event.gmailMessageId),path=root+'/purchaseEvents/'+eventId;await createPaymentEvent(t.db as any,path,event,'owner');
+    const claim=await t.call('food_blinkit_events',{action:'claim',eventId});await expect(t.call('food_blinkit_events',{action:'claim',eventId})).rejects.toThrow('leased');
+    const d=detail();d.contents.placedText='placed today, '+local;const args={detail:d,capturedAt,eventId,eventLease:claim.lease,sourceRow:{order:d.order,total:300,placedText:'Today, '+local}};
+    await expect(t.ingest({...args,eventLease:'wrong'})).rejects.toThrow('lease');expect(t.db.rows.get(root+'/purchaseSyncState/blinkit')).toBeUndefined();
+    const first=await t.ingest(args);expect(first.duplicate).toBe(false);expect(t.db.rows.get(path)).toMatchObject({status:'imported',purchaseId:first.purchaseId,leaseHash:null});
+    const replay=await t.call('food_blinkit_events',{action:'claim',eventId,replay:true});const again=await t.ingest({...args,eventLease:replay.lease});expect(again.duplicate).toBe(true);
+    expect(t.db.rows.get(root+'/purchaseSyncState/blinkit')).toMatchObject({purchaseCount:1,revisionCount:1});expect(t.db.rows.get(root).orderCount).toBe(97);
+    expect(JSON.stringify(t.db.rows.get(path))).not.toContain(claim.lease);
+  });
+  it('keeps unmatched/expired events pending and supports guarded live-to-final revisions',async()=>{
+    const t=await fixture(),at=new Date().toISOString(),local=new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date()).replace(/\u202f/g,' ');
+    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0033',amount:300,currency:'INR',paymentAt:new Date(Date.now()+19800000).toISOString().replace('Z','+05:30'),paymentTimezone:'Asia/Kolkata',observedAt:at,status:'pending'};
+    const eventId=eventIdFor(event.gmailMessageId),path=root+'/purchaseEvents/'+eventId;await createPaymentEvent(t.db as any,path,event,'owner');
+    let claim=await t.call('food_blinkit_events',{action:'claim',eventId});const d=detail();d.contents.placedText='placed today, '+local;d.phase={kind:'live',status:'packing'};
+    const args={detail:d,capturedAt:at,eventId,eventLease:claim.lease,sourceRow:{order:d.order,total:300,placedText:'Today, '+local}};
+    await expect(t.ingest({...args,sourceRow:{...args.sourceRow,total:999}})).rejects.toThrow('match');
+    t.db.rows.set(path,{...t.db.rows.get(path),leaseExpiresAt:'2020-01-01T00:00:00Z'});await expect(t.ingest(args)).rejects.toThrow('lease');
+    claim=await t.call('food_blinkit_events',{action:'claim',eventId,replay:true});const first=await t.ingest({...args,eventLease:claim.lease});expect(t.db.rows.get(path).status).toBe('reconcile_pending');
+    claim=await t.call('food_blinkit_events',{action:'claim',eventId,replay:true});d.phase={kind:'finished',status:'delivered'};
+    await expect(t.ingest({...args,eventLease:claim.lease,capturedAt:new Date(Date.now()+1).toISOString()})).rejects.toThrow('conflict');
+    const updated=await t.ingest({...args,eventLease:claim.lease,capturedAt:new Date(Date.now()+2).toISOString(),expectedRevision:first.revision});expect(updated.revision).toBe(2);expect(t.db.rows.get(path).status).toBe('imported');
+    expect(t.db.rows.get(root+'/purchaseSyncState/blinkit').purchaseCount).toBe(1);
+  });
   it('runs deployment acceptance with real tool handlers without creating synthetic owner data', async () => {
     const t = await fixture(), before = structuredClone(t.db.rows);
     // @ts-ignore The workflow imports this same JavaScript verifier.
@@ -313,7 +354,7 @@ describe('Morsel protected page transport',()=>{
     const t=await httpFixture();
     const preflight=await fetch(t.url,{method:'OPTIONS',headers:{Origin:MORSEL_ORIGIN,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'authorization, content-type'}});expect(preflight.status).toBe(204);expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(MORSEL_ORIGIN);expect(preflight.headers.has('Access-Control-Allow-Credentials')).toBe(false);
     expect((await fetch(t.url,{method:'OPTIONS',headers:{Origin:MORSEL_ORIGIN,'Access-Control-Request-Method':'DELETE'}})).status).toBe(403);
-    const cap=await (await t.post({action:'capabilities'})).json();expect(cap.tools).toHaveLength(3);expect(cap.tools.every((x:any)=>!x.inputSchema.properties.uid)).toBe(true);
+    const cap=await (await t.post({action:'capabilities'})).json();expect(cap.tools).toHaveLength(4);expect(cap.tools.every((x:any)=>!x.inputSchema.properties.uid)).toBe(true);
     const args={records:[{detail:detail(),capturedAt:at},{detail:detail('synthetic-page-two'),capturedAt:at}]};
     const first=await(await t.post({action:'ingest',args})).json();expect(first).toMatchObject({ok:true,processed:2});
     const replay=await(await t.post({action:'ingest',args})).json();expect(replay.results.every((r:any)=>r.duplicate)).toBe(true);

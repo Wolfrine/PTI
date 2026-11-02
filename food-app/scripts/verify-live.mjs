@@ -44,17 +44,17 @@ try{
  let capabilities;
  for(let attempt=0;attempt<18;attempt++){
   const response=await bridgeCall(ownerToken,'https://pti-app-2ab59-morsel.web.app','capabilities');
-  if(response.ok){capabilities=await response.json();break;}
+  if(response.ok){capabilities=await response.json();if(capabilities.tools?.some(t=>t.name==='food_blinkit_events'))break;await new Promise(r=>setTimeout(r,5000));continue;}
   if(![404,503].includes(response.status))throw Error('Owner page bridge rejected HTTP '+response.status);
   await new Promise(r=>setTimeout(r,5000));
  }
- if(!capabilities?.ok||capabilities.tools.length!==3||!capabilities.tools.find(t=>t.name==='food_blinkit_sync')?.inputSchema.properties.action.enum.includes('exclude'))throw Error('Deployed page bridge capabilities are incomplete.');
+ if(!capabilities?.ok||capabilities.tools.length!==4||!capabilities.tools.find(t=>t.name==='food_blinkit_sync')?.inputSchema.properties.action.enum.includes('exclude'))throw Error('Deployed page bridge capabilities are incomplete.');
  const pageContext=await bridgeCall(ownerToken,'https://pti-app-2ab59-morsel.web.app','context');
  if(!pageContext.ok||!Array.isArray((await pageContext.json()).purchases))throw Error('Owner page purchase context failed.');
  if((await bridgeCall(null,'https://pti-app-2ab59-morsel.web.app','context')).status!==401||
     (await bridgeCall(otherToken,'https://pti-app-2ab59-morsel.web.app','context')).status!==403||
     (await bridgeCall(ownerToken,'https://fake.example','context')).status!==403)throw Error('Page bridge authentication/origin denial failed.');
- console.log('PASS: deployed Morsel page backend has three canonical tools with explicit scope exclusions, owner read, unsigned/outsider/fake-origin denials. No purchase or run created. Browser registration/sign-in still needs owner acceptance.');
+ console.log('PASS: deployed Morsel page backend has four canonical tools with payment-event leases and explicit scope exclusions, owner read, unsigned/outsider/fake-origin denials. No purchase or run created. Browser registration/sign-in still needs owner acceptance.');
  console.log('PASS: owner reads history and saves validated learning/preferences/plans/memories. Outsider/unsigned access, extra fields, invalid learning, invented memories, client menu/receipt writes and forged receipt reconciliation are denied.');
 }finally{for(const path of cleanup){const r=await fetch(base+path,{method:'DELETE',headers:{Authorization:'Bearer '+cleanupToken}});if(!r.ok)throw new Error('Temporary private test document could not be removed.');}await auth.deleteUser(outsider).catch(()=>{});}
 const origin='https://pti-app-2ab59-morsel.web.app/';

@@ -1,0 +1,1 @@
+{"name":"@pti/blinkit-reader","version":"1.0.0","private":true,"type":"module","engines":{"node":">=22"},"scripts":{"build":"node scripts/build.mjs","test":"node scripts/build.mjs && node --test test/*.test.mjs","start":"node src/daemon.mjs"},"dependencies":{"playwright":"1.55.0"}}

@@ -7,14 +7,14 @@ function fixture({fakeOrigin=false}={}){
  const document={modelContext:{registerTool:async(tool,{signal})=>{registered.set(tool.name,tool);signals.push(signal);signal.addEventListener('abort',()=>registered.delete(tool.name));}}};
  const bridge=createMorselBlinkitBridge({document,location:{origin:fakeOrigin?'https://fake.example':origin},getCurrentUser:()=>current,fetchImpl:async(url,options)=>{
   const body=JSON.parse(options.body);requests.push({url,options,body});
-  if(body.action==='capabilities')return Response.json({ok:true,tools:['context','ingest','sync'].map(a=>({name:'food_blinkit_'+a,description:'Synthetic',inputSchema:{type:'object',properties:{}}}))});
+  if(body.action==='capabilities')return Response.json({ok:true,tools:['context','ingest','sync','events'].map(a=>({name:'food_blinkit_'+a,description:'Synthetic',inputSchema:{type:'object',properties:{}}}))});
   return Response.json({ok:true,processed:body.args.records?.length});
  }});
  return {bridge,registered,requests,signals,user,logout:()=>{current=null;}};
 }
 test('tools register only after owner authorization and exact origin, then unregister on logout',async()=>{
  const f=fixture();assert.equal((await f.bridge.setUser(null)).registered,false);assert.equal(f.requests.length,0);
- assert.equal((await f.bridge.setUser(f.user)).registered,true);assert.equal(f.registered.size,3);const stale=f.registered.get('morsel_blinkit_context');
+ assert.equal((await f.bridge.setUser(f.user)).registered,true);assert.equal(f.registered.size,4);const stale=f.registered.get('morsel_blinkit_context');
  f.logout();await f.bridge.setUser(null);assert.equal(f.registered.size,0);assert(f.signals.every(s=>s.aborted));assert.equal((await stale.execute({})).error.code,'sign_in_required');
  const fake=fixture({fakeOrigin:true});assert.equal((await fake.bridge.setUser(fake.user)).registered,false);assert.equal(fake.requests.length,0);
 });

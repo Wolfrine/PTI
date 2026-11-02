@@ -2,7 +2,13 @@
 
 Our own connector to **Blinkit's first-party page WebMCP**. Source contract: [blinkit.com/llms.txt](https://blinkit.com/llms.txt), checked 1 November 2026. There is no standalone REST endpoint. No community Blinkit MCP package, code, endpoint, scraping, credentials or cookie transfer is used.
 
-Backend, orchestration and an additive nonvisual Morsel page WebMCP bridge; no visual redesign. No scheduler is installed. The three hosted tools are `food_blinkit_context`, `food_blinkit_ingest`, `food_blinkit_sync`. Deployment uses existing `pti-hosted-mcp.yml` and `morsel-deploy.yml` lanes. Server deployment, page tool registration and ChatGPT's cached plugin metadata are separate gates. Current real acceptance blockers are recorded in [the neutral backfill checkpoint](../../../docs/morsel-blinkit-backfill-status.md).
+Backend, orchestration and an additive nonvisual Morsel page WebMCP bridge; no visual redesign. Hosted tools are `food_blinkit_context`, `food_blinkit_ingest`, `food_blinkit_sync` and `food_blinkit_events`. The separately authorized [owner-PC reader](../../blinkit-reader/README.md) consumes minimal payment wake-ups with a persistent normal browser profile; this lane does not create Gmail automation. Historical backfill is separate. Deployment uses existing `pti-hosted-mcp.yml` and `morsel-deploy.yml` lanes. Server deployment, page registration, local reader readiness and actual persistence are separate acceptance gates.
+
+## Email wake-ups and the owner PC
+
+The parent creates only minimal verified Blinkit payment metadata under `purchaseEvents/blinkit-gmail-{gmailMessageId}` using the existing generic create tool; see the exact strict schema in [the reader contract](../../blinkit-reader/README.md#queue-contract-for-the-parent). Non-Blinkit events are no-ops. No mail body, account suffix, VPA, UPI reference or item guesses. Generic queue updates/batches and worker-state writes are blocked; no generic purchase write fallback exists.
+
+`food_blinkit_events` / `morsel_blinkit_events` provide owner/pause-guarded context, leases, retry/review outcomes and readiness. A canonical ingest with `eventId`, `eventLease` and a fresh minimal `sourceRow` matches amount/display time and atomically persists/duplicates/revises the purchase **and** acknowledges the event. Initial source reads are bounded to three recent pages, full eligible detail and explicit preview scope; no historical completion is implied. Exact display dates and `purchasedAt:null` remain intact. Source 403/human verification or normal login can block unattended acceptance; never bypass them. Existing local browser readiness is not a saved-purchase claim.
 
 ## Same-browser transfer when the plugin registry is stale
 

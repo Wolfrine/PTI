@@ -2,9 +2,9 @@ name: PTI shared MCP
 on:
   push:
     branches: [main]
-    paths: ['tools/pti-mcp/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'tools/blinkit-reader/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
   pull_request:
-    paths: ['tools/pti-mcp/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'tools/blinkit-reader/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
 permissions:
   contents: read
 concurrency:
@@ -24,6 +24,7 @@ jobs:
           cache-dependency-path: tools/pti-mcp/package-lock.json
       - run: npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
       - run: npm run build --prefix tools/pti-mcp && npm test --prefix tools/pti-mcp
+      - run: npm ci --prefix tools/blinkit-reader --ignore-scripts --no-audit --no-fund && npm test --prefix tools/blinkit-reader
       - name: Verify Atlas replay safety and canonical app discovery
         run: node --test tools/pti-mcp/scripts/verify-atlas-host.selftest.mjs tools/pti-mcp/scripts/verify-data.selftest.mjs tools/pti-mcp/scripts/configure-native-auth.selftest.mjs tools/pti-mcp/scripts/configure-morsel-auth.selftest.mjs
       - run: npm ci --prefix tools/local-codex --ignore-scripts --no-audit --no-fund && npm run build --prefix tools/local-codex

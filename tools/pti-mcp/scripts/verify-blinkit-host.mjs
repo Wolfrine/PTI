@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // before any writes. Never submit synthetic purchases to the real owner workspace.
 export async function verifyBlinkitHost(client) {
   const names = (await client.listTools()).tools.map(t => t.name);
-  for (const name of ['food_blinkit_context', 'food_blinkit_ingest', 'food_blinkit_sync']) assert(names.includes(name), `${name} is not deployed`);
+  for (const name of ['food_blinkit_context', 'food_blinkit_ingest', 'food_blinkit_sync','food_blinkit_events']) assert(names.includes(name), `${name} is not deployed`);
   const call = async (name, args) => {
     const result = await client.callTool({ name, arguments: args });
     assert(!result.isError, `${name} failed`);
@@ -15,6 +15,7 @@ export async function verifyBlinkitHost(client) {
   assert(Array.isArray(data.purchases) && Array.isArray(data.products));
   assert.equal(typeof data.window.complete, 'boolean');
   assert(data.namespace.endsWith('/foodData/workspace'));
+  const queue=await call('food_blinkit_events',{action:'context',limit:1});assert.equal(typeof queue.ingestionPaused,'boolean');assert(Array.isArray(queue.events));
   const catalog = await call('pti_app_context', { appId: 'food' });
   // Discovery wrapper shape is checked by verify-data; the tool names must be visible here too.
   const catalogText = JSON.stringify(catalog);

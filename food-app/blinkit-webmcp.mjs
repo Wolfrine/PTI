@@ -28,7 +28,7 @@ export function createMorselBlinkitBridge({document,location,getCurrentUser,fetc
     const capabilities=await request('capabilities');
     if(!capabilities.ok||!current())return {registered:false,error:capabilities.error?.code||'owner_authorization_required'};
     try{
-      for(const action of ['context','ingest','sync']){
+      for(const action of ['context','ingest','sync','events']){
         const tool=capabilities.tools.find(t=>t.name==='food_blinkit_'+action);if(!tool)throw Error('missing_tool');
         const inputSchema=action==='ingest'?{type:'object',additionalProperties:false,required:['records'],properties:{records:{type:'array',minItems:1,maxItems:10,items:tool.inputSchema}}}:tool.inputSchema;
         await document.modelContext.registerTool({name:'morsel_blinkit_'+action,
@@ -40,7 +40,7 @@ export function createMorselBlinkitBridge({document,location,getCurrentUser,fetc
             if(!Array.isArray(input?.records)||input.records.length<1||input.records.length>10)return {ok:false,error:{code:'bounded_records_required'}};
             try{
               const records=input.records.map(r=>({detail:projectDetail(r.detail),capturedAt:r.capturedAt,
-                ...(r.listPlacedText!==undefined?{listPlacedText:r.listPlacedText}:{}),...(r.runId?{runId:r.runId}:{}),...(r.expectedRevision?{expectedRevision:r.expectedRevision}:{})}));
+                ...(r.listPlacedText!==undefined?{listPlacedText:r.listPlacedText}:{}),...(r.runId?{runId:r.runId}:{}),...(r.expectedRevision?{expectedRevision:r.expectedRevision}:{}),...(r.eventId?{eventId:r.eventId,eventLease:r.eventLease,sourceRow:r.sourceRow}:{})}));
               return request(action,{records},signal);
             }catch{return {ok:false,error:{code:'incomplete_detail'}};}
           }

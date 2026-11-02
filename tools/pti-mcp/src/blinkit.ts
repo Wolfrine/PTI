@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Firestore } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { assertUser } from './access.js';
+import {registerBlinkitEventTools,validateEventLease} from './blinkit-events.js';
 
 const json = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(value) }] });
 const uid = z.string().optional();
@@ -35,6 +36,7 @@ const rules = [
 const loadModel = async () => { const path = './blinkit/model.mjs'; return import(path); };
 
 export function registerBlinkitTools(server: McpServer, db: Firestore, owner: string | undefined) {
+  registerBlinkitEventTools(server,db,owner);
   const root = (requested?: string) => {
     if (requested) assertUser(requested, owner);
     return db.doc(`users/${assertUser(owner || requested || '', owner)}/foodData/workspace`);
@@ -47,22 +49,33 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
   server.registerTool('food_blinkit_ingest', {
     title: 'Import a first-party Blinkit food purchase',
     description: 'Persist full order detail read through Blinkit page WebMCP, with nonfood names redacted. Atomically deduplicate by provider/reference; changed payloads require current expectedRevision and a later capture. Preserve immutable revisions and whole-bill reconciliation. Never infer consumption. Use food_blinkit_sync to checkpoint historical import.',
-    inputSchema: { uid, detail, capturedAt: z.iso.datetime({ offset: true }), listPlacedText: nullableText(), runId: id.optional(), expectedRevision: z.number().int().positive().optional() },
+    inputSchema: { uid, detail, capturedAt: z.iso.datetime({ offset: true }), listPlacedText: nullableText(), runId: id.optional(), expectedRevision: z.number().int().positive().optional(),eventId:z.string().regex(/^blinkit-gmail-[a-f0-9]{8,40}$/).optional(),eventLease:z.string().max(100).optional(),sourceRow:z.object({order:z.string().min(1).max(500),total:amount,placedText:nullableText()}).optional() },
     annotations: { readOnlyHint: false, destructiveHint: false },
   }, async input => {
     const ref = root(input.uid), model = await loadModel();
     if (Date.parse(input.capturedAt) > Date.now() + 300000) throw new Error('Capture time cannot be in the future.');
     const purchase = model.normalizePurchase(input.detail, input.capturedAt, input.listPlacedText);
+    const matchPath='./blinkit/payment-match.mjs',payment=await import(matchPath);
     const purchaseRef = ref.collection('purchases').doc(purchase.id), stateRef = ref.collection('purchaseSyncState').doc('blinkit');
     const runRef = input.runId ? ref.collection('purchaseSyncRuns').doc(input.runId) : null;
+    const eventRef=input.eventId?ref.collection('purchaseEvents').doc(input.eventId):null;
     const result = await db.runTransaction(async tx => {
       const coverageRef = runRef?.collection('coverage').doc(model.hash(input.detail.order));
-      const [settings, existingSnap, stateSnap, runSnap, coverageSnap] = await Promise.all([
+      const [settings, existingSnap, stateSnap, runSnap, coverageSnap,eventSnap] = await Promise.all([
         tx.get(ref), tx.get(purchaseRef), tx.get(stateRef), runRef ? tx.get(runRef) : Promise.resolve(null),
         coverageRef ? tx.get(coverageRef) : Promise.resolve(null),
+        eventRef?tx.get(eventRef):Promise.resolve(null),
       ]);
       if (settings.get('ingestionPaused') === true) throw new Error('Morsel ingestion is paused by its owner.');
       const existing = existingSnap.data(), state: any = stateSnap.data() || {}, run: any = runSnap?.data();
+      const event=eventSnap?.data();
+      if(eventRef){
+        const payload=validateEventLease(event,input.eventLease);
+        if(!input.sourceRow||input.sourceRow.order!==input.detail.order||Date.now()-Date.parse(input.capturedAt)>300000)throw Error('A fresh first-party listed row and detail are required.');
+        if(!purchase.payload.foodItems.length)throw Error('Automatic payment capture needs verified food preview/details; keep unknown purchases for review.');
+        if(event?.purchaseId){if(event.purchaseId!==purchase.id)throw Error('Payment event purchase identity conflict.');}
+        else if(!payment.paymentMatch(payload,input.sourceRow,input.detail,input.capturedAt).matched)throw Error('Payment amount/display-time match was not established.');
+      }else if(input.eventLease||input.sourceRow)throw Error('Payment source evidence requires an event ID.');
       if (runRef && !run) throw new Error('Start the sync run before ingesting its pending rows.');
       const pending = run?.pending.find((p: any) => p.order === input.detail.order);
       if (coverageSnap?.get('disposition') === 'outside_scope') throw new Error('Order explicitly outside food scope; no detail import is authorized by this run.');
@@ -97,6 +110,10 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
           ...(coverage ? {coverage} : {}), revision: run.revision + 1, updatedAt: at, status: 'running', lastError: null });
         tx.set(runRef, next);
         if (coverageRef) tx.set(coverageRef, {...(coverageSnap?.data() || {}),order:input.detail.order,disposition:'persisted',purchaseId:purchase.id,verifiedAt:at});
+      }
+      if(eventRef&&event){
+        const reconcile=purchase.needsReconciliation;
+        tx.set(eventRef,{...event,status:reconcile?'reconcile_pending':'imported',purchaseId:purchase.id,leaseHash:null,leaseExpiresAt:null,nextAttemptAt:reconcile?new Date(Date.now()+Math.max(60000,Math.min(3600000,input.detail.refreshAfterMs||60000))).toISOString():null,lastCode:null,lastResult:{purchaseId:purchase.id,revision,duplicate,foodLineCount:purchase.payload.foodItems.length,unknownLineCount:purchase.payload.unknownItems.length,sourceCapturedAt:input.capturedAt,matchBasis:event.purchaseId?'same-linked-reference+fresh-list':'bill-total+display-time'},updatedAt:at});
       }
       return { ok: true, duplicate, purchaseId: purchase.id, revision, fingerprint: purchase.fingerprint,
         needsReconciliation: duplicate ? existing!.needsReconciliation : purchase.needsReconciliation };

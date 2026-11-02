@@ -6,6 +6,7 @@ import { assertPath, assertUser, assertWritablePath } from "./access.js";
 import { appCatalog } from "./apps.js";
 import { registerFoodTools } from "./food.js";
 import { registerBlinkitTools } from "./blinkit.js";
+import {createPaymentEvent,eventPath} from './blinkit-events.js';
 import { registerPersonalTools } from "./personal.js";
 import { registerVentureTools } from "./venture.js";
 import { registerAtlasTools } from "./atlas.js";
@@ -40,7 +41,7 @@ const message = (value: string) => ({
 });
 
 function assertDocumentPath(value: string): string { return assertPath(value, 'document', context.uid); }
-function assertWritableDocumentPath(value: string): string { return assertWritablePath(value, 'document', context.uid); }
+function assertWritableDocumentPath(value: string,operation='update'): string { return assertWritablePath(value, 'document', context.uid,operation); }
 function assertCollectionPath(value: string): string { return assertPath(value, 'collection', context.uid); }
 function assertUid(value: string): string { return assertUser(value, context.uid); }
 function boundedLimit(value?: number, max = 100): number {
@@ -223,7 +224,8 @@ server.registerTool(
     annotations: write,
   },
   async (input) => {
-    const path = assertWritableDocumentPath(input.path);
+    const path = assertWritableDocumentPath(input.path,'create');
+    if(eventPath(path))return json(await createPaymentEvent(db,path,input.data,context.uid));
     await db.doc(path).create({
       ...input.data,
       createdAt: input.data["createdAt"] ?? FieldValue.serverTimestamp(),

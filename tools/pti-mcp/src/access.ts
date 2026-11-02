@@ -14,11 +14,12 @@ export function assertPath(value: string, kind: 'document' | 'collection', owner
 }
 export const assertDocumentPath = (value: string) => assertPath(value, 'document');
 export const assertCollectionPath = (value: string) => assertPath(value, 'collection');
-export function assertWritablePath(value: string, kind: 'document' | 'collection', owner?: string): string {
+export function assertWritablePath(value: string, kind: 'document' | 'collection', owner?: string, operation='update'): string {
   const path = assertPath(value, kind, owner), parts = path.split('/');
   if (parts[0] === 'users' && parts[2] === 'atlasData')
     throw new Error('Atlas data requires its specialized tools or owner client transactions; generic writes are disabled.');
   if (parts[0] === 'users' && parts[2] === 'foodData' && parts[3] === 'workspace' && ['purchases', 'purchaseSyncRuns', 'purchaseSyncState'].includes(parts[4]))
     throw new Error('Blinkit purchase data requires its specialized tools; generic writes cannot bypass pause, revisions or counters.');
+  if(parts[2]==='foodData'&&parts[3]==='workspace'&&(parts[4]==='purchaseWorkerState'||parts[4]==='purchaseEvents'&&(operation!=='create'||parts.length!==6)))throw Error('Payment events are create-only; worker state requires specialized tools.');
   return path;
 }

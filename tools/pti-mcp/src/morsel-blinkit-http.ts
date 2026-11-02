@@ -6,8 +6,8 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { UserIdentity } from './oauth.js';
 
 export const MORSEL_ORIGIN='https://pti-app-2ab59-morsel.web.app';
-const names=['food_blinkit_context','food_blinkit_ingest','food_blinkit_sync'];
-const requestSchema=z.object({action:z.enum(['capabilities','context','ingest','sync']),args:z.record(z.string(),z.unknown()).default({})}).strict();
+const names=['food_blinkit_context','food_blinkit_ingest','food_blinkit_sync','food_blinkit_events'];
+const requestSchema=z.object({action:z.enum(['capabilities','context','ingest','sync','events']),args:z.record(z.string(),z.unknown()).default({})}).strict();
 const batchSchema=z.object({records:z.array(z.record(z.string(),z.unknown())).min(1).max(10)}).strict();
 function code(message:string){
   return /paused/i.test(message)?'ingestion_paused':/revision|conflict|later capture/i.test(message)?'revision_conflict':/outside food scope/i.test(message)?'outside_food_scope':'invalid_or_unavailable';

@@ -17,14 +17,15 @@ Create one document using the existing authenticated `firestore_create_document`
   "gmailMessageId": "aabbccddeeff0011",
   "amount": 100,
   "currency": "INR",
-  "paymentAt": "2026-11-02T17:30:12+05:30",
-  "paymentTimezone": "Asia/Kolkata",
+  "emailReceivedAt": "2026-11-02T12:00:12Z",
+  "transactionDateText": "02-11-26",
+  "transactionTimezone": "Asia/Kolkata",
   "observedAt": "2026-11-02T12:01:00Z",
   "status": "pending"
 }
 ```
 
-This example is synthetic. Use the actual alert time/offset and actual observation time. The parent authenticates the real mail and verifies the merchant exactly Blinkit from the body before creation. Non-Blinkit events are silent no-ops. Never include the mail body, account/card suffix, VPA, UPI reference, credentials or unrelated identifiers. A payment proves neither items nor consumption. Do not write a purchase from an email alert.
+This example is synthetic. Use Gmail's actual arrival timestamp, the bank's exact displayed transaction date, and the actual observation time. Email arrival is an approximate wake-up time, never an exact payment or purchase time. The parent authenticates the real mail and verifies the merchant exactly Blinkit from the body before creation. Non-Blinkit events are silent no-ops. Never include the mail body, account/card suffix, VPA, UPI reference, credentials or unrelated identifiers. A payment proves neither items nor consumption. Do not write a purchase from an email alert.
 
 The hosted generic create tool routes this exact namespace through strict canonical validation and a pause-checked transaction. The deterministic ID deduplicates the Gmail message; identical replay preserves its existing state, conflicting immutable metadata is rejected. A duplicate create response may also be handled by reading the existing document. Do not update/delete/recreate it. Generic updates, batches and worker-state writes are denied. Only event creation is allowed through the old cached generic tool; purchase writes remain specialized-only.
 
@@ -50,7 +51,7 @@ It stops only this worker gracefully and opens **normal visible Chrome** with Bl
 
 The daemon polls the owner event queue through Morsel's `morsel_blinkit_events` page tool. Before source reads it checks pause and normal first-party login. At most three recent pages are read, each at limit 10 with untouched opaque cursor, duplicate/cursor-cycle detection and one truncated/transient/unavailable retry. No full backfill. Email can precede list availability: unmatched events use exponential server backoff from one minute to one hour, not a false completed result.
 
-A new event needs one unique candidate matching **whole bill total and displayed date/clock**. Today/yesterday are resolved against actual capture-local calendar only for comparison; no purchase ISO is synthesized. Explicitly year-dated displays can be compared as displayed. Missing/uncertain dates or multiple candidates retain review. Full detail must independently match the amount/time and come from a fresh list token. A linked live order can reconcile only the same canonical reference from a fresh list/detail, with the current revision guard.
+A new event needs one unique candidate matching **whole bill total, bank/displayed date, and email-arrival proximity**. Today/yesterday are resolved against actual capture-local calendar only for comparison; no purchase ISO is synthesized. Explicitly year-dated displays can be compared as displayed. Missing/uncertain dates or multiple candidates retain review. Full detail must independently match the amount/time and come from a fresh list token. A linked live order can reconcile only the same canonical reference from a fresh list/detail, with the current revision guard.
 
 Preview scope is conservative: known nonfood-only previews are recorded as outside scope without a detail call; uncertain or mixed sensitive previews need review. Missing food words never silently imply nonfood. No preview names are stored with scope failures. Eligible details always use the canonical projection, retain exact pack text/null unit prices and unknown lines, and preserve whole-basket bills without calling them food spend.
 
@@ -73,3 +74,7 @@ Tests use synthetic fixtures for amount/date/scope matching, retry/replay, canon
 `node scripts/verify-browser.mjs --scratch F:\Workspace\Codex\<task>\browser-api --chrome "C:\Program Files\Google\Chrome\Application\chrome.exe"` exercises the production adapter's discovery/execution against clearly synthetic localhost tools in a separate F-drive test profile. It verifies the installed browser API, suffix changes, unregister lifecycle, interrupted read and read-only denial, without opening either service or accessing owner login state.
 
 The parent's Gmail automation and actual enqueue are deliberately not created by this lane. Preserve failed/pending events. To stop capture, use the existing Morsel ingestion pause or this worker's stop script. Roll back a release by switching only its validated `active.json` release path, retaining the browser profile and canonical queue/purchases. Do not delete a profile or revoke sessions as routine rollback. Remove/disable only **PTI Blinkit Reader** if requested.
+
+## Email time precision
+
+The bank alert has a displayed transaction date, not an exact transaction clock. Use `hdfc-payment-alert.mjs` (under `tools/pti-mcp/blinkit/`) to extract only authenticated Blinkit debit evidence. Queue sources contain `emailReceivedAt`, exact `transactionDateText` and `transactionTimezone`; they never contain an invented `paymentAt`. Matching compares the order's displayed date with that bank date and allows only a unique bill-total match within three minutes of Gmail arrival, including a midnight boundary. This is comparison evidence only; `purchasedAt` remains null. Uncertain or delayed matches stay unresolved. Queue writes reject missing/paused workspaces and raw financial identifiers.

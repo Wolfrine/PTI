@@ -1,10 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {previewScope,processPayment} from '../src/core.mjs';
-import {displayPaymentMatch} from '../src/canonical/payment-match.mjs';
+import {displayArrivalMatch} from '../src/canonical/payment-match.mjs';
 import {normalizePurchase} from '../src/canonical/model.mjs';
 const at='2026-11-02T12:00:00.000Z';
-const event={eventId:'blinkit-gmail-aabbccddeeff0011',amount:100,currency:'INR',paymentAt:'2026-11-02T17:30:12+05:30'};
+const event={eventId:'blinkit-gmail-aabbccddeeff0011',amount:100,currency:'INR',emailReceivedAt:'2026-11-02T12:00:12Z',transactionDateText:'02-11-26',transactionTimezone:'Asia/Kolkata'};
 const row={order:'synthetic-fresh-row',total:100,placedText:'Today, 5:30 pm',itemNames:['Lemon','Popcorn']};
 const detail={order:row.order,phase:{kind:'finished',status:'delivered'},statusText:'Delivered',contents:{kind:'read',reference:'SYNTHETIC-READER-ONE',placedText:'placed today, 5:30 PM',items:[{name:'Lemon',quantityText:'200 g x 1',amount:20},{name:'Cheese Popcorn',quantityText:'3 x 35 g x 1',amount:70}],bill:{billTotal:100,lines:[{label:'Handling charge',amount:10,text:'+₹10'}]}}};
 function fixture({rows=[row],sourceDetail=detail}={}){
@@ -35,11 +35,11 @@ test('scope decisions precede details and never infer food from missing words',a
  const f=fixture({rows:[{...row,itemNames:['Synthetic Keyboard']}]});assert.equal((await f.run()).status,'outside_food_scope');assert.equal(f.counts().reads,0);
 });
 test('relative dates are comparison-only, with explicit day/clock ambiguity rejected',()=>{
- assert.equal(displayPaymentMatch('Yesterday, 5:30 PM','2026-11-01T17:30:12+05:30',at).matched,true);
- assert.equal(displayPaymentMatch("placed on Sun, 01 Nov'26, 5:30 PM",'2026-11-01T17:30:12+05:30',at).matched,true);
- assert.equal(displayPaymentMatch('Yesterday, 5:30 PM',event.paymentAt,at).matched,false);
- assert.equal(displayPaymentMatch('Today, 8:30 PM',event.paymentAt,at).matched,false);
- assert.equal(displayPaymentMatch('5:30 PM',event.paymentAt,at).reason,'unknown_source_date');
+ assert.equal(displayArrivalMatch('Yesterday, 5:30 PM','2026-11-01T12:00:12Z',at,'01-11-26').matched,true);
+ assert.equal(displayArrivalMatch("placed on Sun, 01 Nov'26, 5:30 PM",'2026-11-01T12:00:12Z',at,'01-11-26').matched,true);
+ assert.equal(displayArrivalMatch('Yesterday, 5:30 PM',event.emailReceivedAt,at,event.transactionDateText).matched,false);
+ assert.equal(displayArrivalMatch('Today, 8:30 PM',event.emailReceivedAt,at,event.transactionDateText).matched,false);
+ assert.equal(displayArrivalMatch('5:30 PM',event.emailReceivedAt,at,event.transactionDateText).reason,'unknown_source_date');
 });
 test('recent paging is bounded and repeated opaque cursors cannot cause full backfill',async()=>{
  const f=fixture({rows:[]});let calls=0;f.source.list=async()=>{calls++;return {orders:[],live:[],nextCursor:'same opaque /+=cursor',truncated:false,unreadableRows:0,unlistedLiveOrders:0};};await f.run();assert.equal(calls,2);assert.equal(f.counts().attempted,0);
@@ -50,4 +50,16 @@ test('lost ingest reply never pretends a verified import; pending lease is recov
 });
 test('near-live incomplete display/preview retries rather than becoming a false permanent review',async()=>{
  for(const patch of [{placedText:'Just now',phase:{kind:'live'}},{itemNames:[],phase:{kind:'live'}}]){const f=fixture({rows:[{...row,...patch}]});await f.run();assert.deepEqual(f.counts().deferred,['not_yet_listed']);assert.equal(f.counts().reads,0);}
+});
+
+test('bank date must independently agree and mail arrival is only a proximity hint',()=>{
+ assert.equal(displayArrivalMatch('Today, 5:30 PM',event.emailReceivedAt,at,'01-11-26').matched,false);
+ assert.equal(displayArrivalMatch('Today, 5:30 PM','2026-11-02T12:30:00Z',at,'02-11-26').matched,false);
+ assert.equal(displayArrivalMatch('Today, 5:30 PM',event.emailReceivedAt,at,'02-11-26').reason,'display_date_and_email_arrival_proximity');
+});
+
+test('arrival proximity across midnight still requires the bank source date',()=>{
+ const arrival='2026-11-01T18:30:12Z',capture='2026-11-01T18:31:00Z';
+ assert.equal(displayArrivalMatch('Yesterday, 11:59 PM',arrival,capture,'01-11-26').matched,true);
+ assert.equal(displayArrivalMatch('Yesterday, 11:59 PM',arrival,capture,'02-11-26').matched,false);
 });

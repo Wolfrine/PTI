@@ -101,10 +101,12 @@ describe('Blinkit minimization and normalization', () => {
   });
 });
 
+const bankDateFor=(value:string)=>new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',day:'2-digit',month:'2-digit',year:'2-digit'}).format(new Date(value)).replaceAll('/','-');
+
 describe('deployed MCP purchase transactions', () => {
   it('accepts only minimal deterministic create-only payment events; duplicates and non-Blinkit events are safe',async()=>{
-    const t=await fixture(),seen=new Date().toISOString(),paid=new Date(Date.now()+19800000).toISOString().replace('Z','+05:30');
-    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0011',amount:100,currency:'INR',paymentAt:paid,paymentTimezone:'Asia/Kolkata',observedAt:seen,status:'pending'};
+    const t=await fixture(),seen=new Date().toISOString();
+    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0011',amount:100,currency:'INR',emailReceivedAt:seen,transactionDateText:bankDateFor(seen),transactionTimezone:'Asia/Kolkata',observedAt:seen,status:'pending'};
     const path=root+'/purchaseEvents/'+eventIdFor(event.gmailMessageId);
     const first=await createPaymentEvent(t.db as any,path,event,'owner');expect(first.duplicate).toBe(false);
     expect((await createPaymentEvent(t.db as any,path,{...event,observedAt:new Date().toISOString()},'owner')).duplicate).toBe(true);
@@ -114,11 +116,16 @@ describe('deployed MCP purchase transactions', () => {
     await expect(createPaymentEvent(t.db as any,path,event,'other')).rejects.toThrow('account');
     expect(await createPaymentEvent(t.db as any,path,{provider:'other',merchant:'other'},'owner')).toEqual({ignored:true});
     expect(()=>assertWritablePath(path,'document','owner')).toThrow('create-only');expect(assertWritablePath(path,'document','owner','create')).toBe(path);
+    await expect(createPaymentEvent(t.db as any,path,{...event,paymentAt:seen},'owner')).rejects.toThrow();
+    await expect(createPaymentEvent(t.db as any,path,{...event,transactionDateText:'31-02-26'},'owner')).rejects.toThrow();
     t.db.rows.set(root,{ingestionPaused:true});await expect(createPaymentEvent(t.db as any,path,event,'owner')).rejects.toThrow('paused');
+    t.db.rows.delete(root);await expect(createPaymentEvent(t.db as any,path,event,'owner')).rejects.toThrow('absent');
+    await expect(t.call('food_blinkit_events',{action:'context'})).rejects.toThrow('absent');
+    await expect(t.call('food_blinkit_events',{action:'heartbeat',workerStatus:'ready'})).rejects.toThrow('absent');
   });
   it('leases safely, commits event+purchase once, verifies duplicate replay and preserves restaurant counters',async()=>{
     const t=await fixture(),capturedAt=new Date().toISOString(),local=new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date()).replace(/\u202f/g,' ');
-    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0022',amount:300,currency:'INR',paymentAt:new Date(Date.now()+19800000).toISOString().replace('Z','+05:30'),paymentTimezone:'Asia/Kolkata',observedAt:capturedAt,status:'pending'};
+    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0022',amount:300,currency:'INR',emailReceivedAt:capturedAt,transactionDateText:bankDateFor(capturedAt),transactionTimezone:'Asia/Kolkata',observedAt:capturedAt,status:'pending'};
     const eventId=eventIdFor(event.gmailMessageId),path=root+'/purchaseEvents/'+eventId;await createPaymentEvent(t.db as any,path,event,'owner');
     const claim=await t.call('food_blinkit_events',{action:'claim',eventId});await expect(t.call('food_blinkit_events',{action:'claim',eventId})).rejects.toThrow('leased');
     const d=detail();d.contents.placedText='placed today, '+local;const args={detail:d,capturedAt,eventId,eventLease:claim.lease,sourceRow:{order:d.order,total:300,placedText:'Today, '+local}};
@@ -130,7 +137,7 @@ describe('deployed MCP purchase transactions', () => {
   });
   it('keeps unmatched/expired events pending and supports guarded live-to-final revisions',async()=>{
     const t=await fixture(),at=new Date().toISOString(),local=new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date()).replace(/\u202f/g,' ');
-    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0033',amount:300,currency:'INR',paymentAt:new Date(Date.now()+19800000).toISOString().replace('Z','+05:30'),paymentTimezone:'Asia/Kolkata',observedAt:at,status:'pending'};
+    const event={schemaVersion:1,kind:'payment-alert',provider:'blinkit',merchant:'Blinkit',gmailMessageId:'aabbccddeeff0033',amount:300,currency:'INR',emailReceivedAt:at,transactionDateText:bankDateFor(at),transactionTimezone:'Asia/Kolkata',observedAt:at,status:'pending'};
     const eventId=eventIdFor(event.gmailMessageId),path=root+'/purchaseEvents/'+eventId;await createPaymentEvent(t.db as any,path,event,'owner');
     let claim=await t.call('food_blinkit_events',{action:'claim',eventId});const d=detail();d.contents.placedText='placed today, '+local;d.phase={kind:'live',status:'packing'};
     const args={detail:d,capturedAt:at,eventId,eventLease:claim.lease,sourceRow:{order:d.order,total:300,placedText:'Today, '+local}};

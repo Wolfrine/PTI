@@ -17,8 +17,8 @@ test('extracts only minimal source evidence and preserves date precision', () =>
   assert.doesNotMatch(JSON.stringify(result), /PRIVATE|paymentAt|purchasedAt/);
 });
 test('accepts authenticated sender case, HTML entities and Indian grouping', () => {
-  const result = parseBlinkitBankAlert(fixture({from:'ALERTS@HDFCBANK.BANK.IN',text:'Rs.1,23,456.50 is debited from your account towards VPA hidden (Blinkit) on 01-11-26.&#160;'}));
-  assert.equal(result.eventSource.amount, 123456.5);
+  const result = parseBlinkitBankAlert(fixture({from:'ALERTS@HDFCBANK.BANK.IN',text:'Rs.1,00,000.00 is debited from your account towards VPA hidden (Blinkit) on 01-11-26.&#160;'}));
+  assert.equal(result.eventSource.amount, 100000);
 });
 test('requires actual sender domain and authentication, not lookalikes', () => {
   for (const from of ['alerts@hdfcbank.bank.in.evil.test','attacker@test.invalid','a@test.invalid, alerts@hdfcbank.bank.in'])

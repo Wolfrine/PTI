@@ -66,7 +66,7 @@ export function parseBlinkitBankAlert(input) {
   if (!/^(?:\d+|\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})*,\d{3})(?:\.\d{1,2})?$/.test(amountText))
     return failure('invalid_amount');
   const amount = Number(amountText.replaceAll(',', ''));
-  if (!(amount > 0 && amount <= 1000000)) return failure('invalid_amount');
+  if (!(amount > 0 && amount <= 100000)) return failure('invalid_amount');
   const transaction = text.slice(debit.index + debit[0].length, debit.index + debit[0].length + 1000);
   const merchant = [...transaction.matchAll(/\btowards\s+VPA\s+[^()]{1,200}\(\s*([^()]{1,100}?)\s*\)\s+on\s+(\d{2}-\d{2}-\d{2})(?=[.\s]|$)/gi)];
   if (merchant.length !== 1) return failure(merchant.length ? 'ambiguous_transaction' : 'not_blinkit_debit');

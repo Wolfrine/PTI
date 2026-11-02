@@ -3,7 +3,8 @@ import type {Firestore} from 'firebase-admin/firestore';
 import {createHash,randomUUID} from 'node:crypto';
 import {z} from 'zod';
 import {assertUser} from './access.js';
-export const eventSchema=z.object({schemaVersion:z.literal(1),kind:z.literal('payment-alert'),provider:z.literal('blinkit'),merchant:z.literal('Blinkit'),gmailMessageId:z.string().regex(/^[a-f0-9]{8,40}$/),amount:z.number().positive().max(100000),currency:z.literal('INR'),paymentAt:z.iso.datetime({offset:true}).refine(v=>v.endsWith('+05:30'),'Use the actual Asia/Kolkata offset.'),paymentTimezone:z.literal('Asia/Kolkata'),observedAt:z.iso.datetime({offset:true}),status:z.literal('pending')}).strict();
+function validBankDate(value:string){const [day,month,year]=value.split('-').map(Number);return month>=1&&month<=12&&day>=1&&day<=new Date(Date.UTC(2000+year,month,0)).getUTCDate();}
+export const eventSchema=z.object({schemaVersion:z.literal(1),kind:z.literal('payment-alert'),provider:z.literal('blinkit'),merchant:z.literal('Blinkit'),gmailMessageId:z.string().regex(/^[a-f0-9]{8,40}$/),amount:z.number().positive().max(100000),currency:z.literal('INR'),emailReceivedAt:z.iso.datetime({offset:true}),transactionDateText:z.string().regex(/^\d{2}-\d{2}-\d{2}$/).refine(validBankDate,'Use the exact valid bank date text.'),transactionTimezone:z.literal('Asia/Kolkata'),observedAt:z.iso.datetime({offset:true}),status:z.literal('pending')}).strict();
 export const eventIdFor=(message:string)=>'blinkit-gmail-'+message;
 export const eventPath=(path:string)=>/^users\/[^/]+\/foodData\/workspace\/purchaseEvents\/[^/]+$/.test(path);
 const leaseHash=(value:string)=>createHash('sha256').update(value).digest('hex');
@@ -12,10 +13,11 @@ export async function createPaymentEvent(db:Firestore,path:string,data:any,owner
  if(data.provider!=='blinkit'||data.merchant!=='Blinkit')return {ignored:true};
  const value=eventSchema.parse(data),parts=path.split('/');assertUser(parts[1],owner);
  if(!eventPath(path)||parts[5]!==eventIdFor(value.gmailMessageId))throw Error('Payment event path must use its deterministic Gmail message ID.');
- if(Date.parse(value.observedAt)>Date.now()+300000||Date.parse(value.paymentAt)>Date.parse(value.observedAt)+300000)throw Error('Invalid payment observation time.');
+ if(Date.parse(value.observedAt)>Date.now()+300000||Date.parse(value.emailReceivedAt)>Date.parse(value.observedAt)+300000)throw Error('Invalid payment observation time.');
  const root=db.doc(parts.slice(0,4).join('/')),ref=db.doc(path);
  return db.runTransaction(async tx=>{
   const [settings,existing]=await Promise.all([tx.get(root),tx.get(ref)]);
+  if(!settings.exists)throw Error('Morsel workspace is absent.');
   if(settings.get('ingestionPaused')===true)throw Error('Morsel ingestion is paused by its owner.');
   if(existing.exists){const old=eventPayload(existing.data());const {observedAt:unused,...a}=value,{observedAt:prior,...b}=old;if(JSON.stringify(a)!==JSON.stringify(b))throw Error('Payment event identity conflict.');return {ok:true,duplicate:true,eventId:ref.id};}
   tx.create(ref,{...value,attempts:0,createdAt:new Date().toISOString(),nextAttemptAt:value.observedAt});
@@ -35,17 +37,19 @@ export function registerBlinkitEventTools(server:McpServer,db:Firestore,owner:st
   if(input.action==='context'){
    let q=events.orderBy('__name__');if(input.after)q=q.startAfter(input.after);
    const [settings,state,queue]=await Promise.all([root.get(),root.collection('purchaseWorkerState').doc('local').get(),q.limit(201).get()]);
+   if(!settings.exists)throw Error('Morsel workspace is absent.');
    const now=Date.now(),rows=queue.docs.map(d=>({...d.data(),id:d.id} as any)).filter(d=>d.provider==='blinkit'&&d.merchant==='Blinkit');
    const due=rows.filter(d=>['pending','retry_wait','reconcile_pending','processing'].includes(d.status)&&Date.parse(d.nextAttemptAt||d.observedAt)<=now&&(d.status!=='processing'||Date.parse(d.leaseExpiresAt||'')<=now)).slice(0,input.limit);
    return json({ingestionPaused:settings.get('ingestionPaused')===true,worker:state.data()||null,events:due.map(d=>({eventId:d.id,...eventPayload(d),status:d.status,purchaseId:d.purchaseId||null,attempts:d.attempts||0})),window:{scanned:rows.length,truncated:queue.size>200,nextAfter:queue.size>200?queue.docs[199].id:null},rules:['Payment is a wake-up, never item/consumption evidence.','Only first-party listed tokens, full eligible details and unique amount/display-time matches can be ingested.']});
   }
   if(input.action==='heartbeat'){
    if(!input.workerStatus)throw Error('A bounded worker status is required.');
-   await db.runTransaction(async tx=>{const settings=await tx.get(root);tx.set(root.collection('purchaseWorkerState').doc('local'),{schemaVersion:1,source:'local-firstparty-webmcp',status:settings.get('ingestionPaused')===true?'paused':input.workerStatus,lastSeenAt:new Date().toISOString()});});return json({ok:true});
+   await db.runTransaction(async tx=>{const settings=await tx.get(root);if(!settings.exists)throw Error('Morsel workspace is absent.');tx.set(root.collection('purchaseWorkerState').doc('local'),{schemaVersion:1,source:'local-firstparty-webmcp',status:settings.get('ingestionPaused')===true?'paused':input.workerStatus,lastSeenAt:new Date().toISOString()});});return json({ok:true});
   }
   if(!input.eventId)throw Error('An event ID is required.');const ref=events.doc(input.eventId);
   return json(await db.runTransaction(async tx=>{
-   const [settings,snap]=await Promise.all([tx.get(root),tx.get(ref)]);if(settings.get('ingestionPaused')===true)throw Error('Morsel ingestion is paused by its owner.');
+   const [settings,snap]=await Promise.all([tx.get(root),tx.get(ref)]);if(!settings.exists)throw Error('Morsel workspace is absent.');
+  if(settings.get('ingestionPaused')===true)throw Error('Morsel ingestion is paused by its owner.');
    if(!snap.exists)throw Error('Payment event not found.');const event=snap.data()!,payload=eventPayload(event),now=Date.now();
    if(ref.id!==eventIdFor(payload.gmailMessageId))throw Error('Payment event identity mismatch.');
    if(input.action==='claim'){

@@ -69,12 +69,13 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
       if (settings.get('ingestionPaused') === true) throw new Error('Morsel ingestion is paused by its owner.');
       const existing = existingSnap.data(), state: any = stateSnap.data() || {}, run: any = runSnap?.data();
       const event=eventSnap?.data();
+      if(eventRef&&!settings.exists)throw Error('Morsel workspace is absent.');
       if(eventRef){
         const payload=validateEventLease(event,input.eventLease);
         if(!input.sourceRow||input.sourceRow.order!==input.detail.order||Date.now()-Date.parse(input.capturedAt)>300000)throw Error('A fresh first-party listed row and detail are required.');
         if(!purchase.payload.foodItems.length)throw Error('Automatic payment capture needs verified food preview/details; keep unknown purchases for review.');
         if(event?.purchaseId){if(event.purchaseId!==purchase.id)throw Error('Payment event purchase identity conflict.');}
-        else if(!payment.paymentMatch(payload,input.sourceRow,input.detail,input.capturedAt).matched)throw Error('Payment amount/display-time match was not established.');
+        else if(!payment.paymentMatch(payload,input.sourceRow,input.detail,input.capturedAt).matched)throw Error('Payment amount/display-date/email-arrival match was not established.');
       }else if(input.eventLease||input.sourceRow)throw Error('Payment source evidence requires an event ID.');
       if (runRef && !run) throw new Error('Start the sync run before ingesting its pending rows.');
       const pending = run?.pending.find((p: any) => p.order === input.detail.order);
@@ -113,7 +114,7 @@ export function registerBlinkitTools(server: McpServer, db: Firestore, owner: st
       }
       if(eventRef&&event){
         const reconcile=purchase.needsReconciliation;
-        tx.set(eventRef,{...event,status:reconcile?'reconcile_pending':'imported',purchaseId:purchase.id,leaseHash:null,leaseExpiresAt:null,nextAttemptAt:reconcile?new Date(Date.now()+Math.max(60000,Math.min(3600000,input.detail.refreshAfterMs||60000))).toISOString():null,lastCode:null,lastResult:{purchaseId:purchase.id,revision,duplicate,foodLineCount:purchase.payload.foodItems.length,unknownLineCount:purchase.payload.unknownItems.length,sourceCapturedAt:input.capturedAt,matchBasis:event.purchaseId?'same-linked-reference+fresh-list':'bill-total+display-time'},updatedAt:at});
+        tx.set(eventRef,{...event,status:reconcile?'reconcile_pending':'imported',purchaseId:purchase.id,leaseHash:null,leaseExpiresAt:null,nextAttemptAt:reconcile?new Date(Date.now()+Math.max(60000,Math.min(3600000,input.detail.refreshAfterMs||60000))).toISOString():null,lastCode:null,lastResult:{purchaseId:purchase.id,revision,duplicate,foodLineCount:purchase.payload.foodItems.length,unknownLineCount:purchase.payload.unknownItems.length,sourceCapturedAt:input.capturedAt,matchBasis:event.purchaseId?'same-linked-reference+fresh-list':'bill-total+display-date+email-arrival-proximity'},updatedAt:at});
       }
       return { ok: true, duplicate, purchaseId: purchase.id, revision, fingerprint: purchase.fingerprint,
         needsReconciliation: duplicate ? existing!.needsReconciliation : purchase.needsReconciliation };

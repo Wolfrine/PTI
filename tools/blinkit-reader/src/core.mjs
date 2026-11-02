@@ -1,4 +1,4 @@
-import {displayPaymentMatch,paymentMatch} from './canonical/payment-match.mjs';
+import {displayArrivalMatch,paymentMatch} from './canonical/payment-match.mjs';
 import {classify,normalizePurchase} from './canonical/model.mjs';
 const sensitive=/\b(shampoo|trimmer|sanitary|tampon|menstrual|condom|pregnancy|medicine|tablet|capsule|personal care|body wash|hair oil|razor|deodorant|conditioner|toothpaste|toothbrush|skin care|skincare|face wash|face cream|body cream|lotion|moisturi[sz]\w*|sunscreen|lip balm|lipstick|makeup|supplement|medical|intimate)\b/i;
 export function previewScope(names){
@@ -22,7 +22,7 @@ export async function processPayment({eventId,persistence,source,now=()=>new Dat
     if(linked&&row.order===linked.orderToken){rows.set(row.order,row);continue;}
     if(linked)continue;
     if(Math.round((row.total??NaN)*100)!==Math.round(event.amount*100))continue;
-    const match=displayPaymentMatch(row.placedText,event.paymentAt,now());
+    const match=displayArrivalMatch(row.placedText,event.emailReceivedAt,now(),event.transactionDateText);
     if(match.matched)rows.set(row.order,row);else if(match.reason==='unknown_source_date'){if(row.phase?.kind==='live')unknownLive=true;else uncertain=true;}
    }
    if(batch.nextCursor===null)break;cursor=batch.nextCursor;

@@ -85,3 +85,15 @@ tools/pti-mcp/src/morsel-blinkit-http.ts
 docs/morsel-blinkit-local-reader-status.md
 docs/morsel-blinkit-backfill-status.md
 ```
+
+
+## New-order email route — verified 2 November 2026
+
+This operational update supersedes the earlier payment-time example. The bank email provides a displayed transaction date; Gmail arrival is an approximate matching hint, never an exact payment/purchase timestamp. Source commit `cf72a57da2da20c36ab6bb30653c1a088e71f5c4` uses `emailReceivedAt`, `transactionDateText` and `transactionTimezone`, preserves `purchasedAt:null`, requires a unique bill/date/arrival match, covers midnight, and rejects absent workspaces. No real source identifiers or bank metadata belong in this file.
+
+- Hosted MCP deployment passed: [run 41400757794](https://github.com/Wolfrine/PTI/actions/runs/41400757794). Combined checks: 138 MCP tests and 11 reader tests; the focused parser/matcher run passed 20 cases.
+- The installed release is `1.0.0-cf72a57`; six installed canonical/reader modules matched source hashes. The named task respects the open setup window and retains the same profile. The prior graceful stop/restart check passed; authenticated post-setup restart remains unverified.
+- A real authenticated alert was parsed, created in the canonical PTI event queue, read back field-for-field, and replayed as a duplicate. It remains pending, with no attempts. This verifies the email-to-queue handoff, not a purchase import.
+- The separate **Queue Blinkit payment alerts** Gmail event automation is enabled with exact verified bank-sender/UPI-subject filters and an authenticated Blinkit-merchant body guard. It has no polling schedule. Its saved prompt was read back. No actual future webhook run has occurred yet. The existing **Capture Morsel food orders** Zomato task remains enabled and unchanged.
+- Real first-party Blinkit item capture and purchase replay/readback remain unaccepted. The dedicated normal Chrome sign-in window is open on the owner's PC; normal Blinkit verification/login and Morsel Google sign-in are required there. Closing that window resumes the installed reader. Do not relay credentials/cookies or bypass a remaining source block.
+- Historical backfill is left aside. After authentication, verify the queued event through fresh listed token/full detail, canonical purchase readback, duplicate purchase replay and independent restaurant-count preservation. Never claim queue state or installation proves an imported purchase.

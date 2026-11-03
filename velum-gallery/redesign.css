@@ -1,0 +1,1402 @@
+/* Velum · mobile-first layout, dark-only visual identity, 2026-11-03.
+   Final dark palette below supersedes the historic light exploration.
+   Gallery media, gestures, Drive, PIN, worker and job contracts retain their
+   original DOM IDs and listeners; Drift/Browse remain cinematic. */
+
+:root {
+  --atelier-paper: #f3efe7;
+  --atelier-white: #fffcf6;
+  --atelier-rail: #e8e1d6;
+  --atelier-ink: #292720;
+  --atelier-muted: #71695e;
+  --atelier-border: #d5cdbf;
+  --atelier-accent: #96513a;
+  --atelier-shadow: 0 10px 26px #62513f12;
+}
+
+/* Keep the four navigation targets legible at the small phone widths. An older,
+   Studio-specific rule forced an 18px gap and changed the original gallery nav. */
+@media (max-width: 1023px) {
+  .bottom-nav {
+    justify-content: center !important;
+    gap: clamp(13px, 5vw, 26px) !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .bottom-nav .nav-item { min-width: 54px; min-height: 52px; }
+  .bottom-nav .nav-item span { font-size: 10px; letter-spacing: .055em; }
+}
+
+/* Mobile gallery changes are limited to reducing newer utility chrome. Drift
+   retains its blur, fit behavior, full-screen stage and gesture hit area. */
+.library-tools-drift {
+  inset: auto auto 14px 14px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 7px;
+  align-items: flex-start;
+  padding: 0;
+  width: auto;
+  max-width: calc(100% - 28px);
+}
+.library-tools-drift .library-tools-toggle {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  font: 26px/1 Georgia, serif;
+  border: 1px solid #fff4;
+  border-radius: 99px;
+  background: #150d14b3;
+  color: #f8eff2;
+  backdrop-filter: blur(16px);
+}
+.library-tools-drift .library-tools-toggle[aria-expanded="true"] {
+  background: #3c2634e8;
+  border-color: #c9aab7;
+}
+.library-tools-drift .library-tools-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: min(340px, calc(100vw - 28px));
+  padding: 11px;
+  border: 1px solid #b79eaa77;
+  border-radius: 10px;
+  background: #160f17eb;
+  box-shadow: 0 14px 44px #0008;
+  backdrop-filter: blur(16px);
+}
+.library-tools-drift.collapsed .library-tools-content { display: none; }
+.library-tools-drift .library-tools-content label { color: #f5e9ed; }
+.library-tools-drift .library-tools-content select,
+.library-tools-drift .library-tools-content button { min-height: 44px; }
+.browse-view .browse-head {
+  position: relative;
+  z-index: 15;
+  align-items: center;
+  gap: 9px;
+}
+.browse-view .browse-head .sort-control { margin-left: auto; }
+.browse-view .library-tools-browse {
+  position: relative;
+  z-index: 20;
+  flex: none;
+  display: block;
+  width: auto;
+  padding: 0;
+}
+.browse-view .library-tools-browse .library-tools-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border: 1px solid #57434f;
+  border-radius: 12px;
+  background: #211821;
+  color: #e6d8dd;
+  padding: 0;
+}
+.browse-view .library-tools-browse .library-tools-toggle svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.7;
+}
+.browse-view .library-tools-browse .library-tools-content {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 208px;
+  max-width: calc(100vw - 28px);
+  padding: 13px;
+  border: 1px solid #56414e;
+  border-radius: 11px;
+  background: #1a1219f5;
+  box-shadow: 0 18px 40px #0009;
+  backdrop-filter: blur(18px);
+}
+.browse-view .library-tools-browse.collapsed .library-tools-content { display: none; }
+.browse-view .library-tools-browse .library-tools-content label {
+  display: grid;
+  gap: 7px;
+  color: #bdaab5;
+  font-size: 11px;
+}
+.browse-view .library-tools-browse .library-tools-content select,
+.browse-view .library-tools-browse .library-tools-content button {
+  min-height: 44px;
+  width: 100%;
+  font-size: 12px;
+  padding: 8px 11px;
+}
+.browse-view .tile-folder {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.browse-view .tile:is(:hover, :focus-within) .tile-folder {
+  opacity: 1;
+  transform: none;
+}
+
+/* The Studio link on the Drive gate remains available, but secondary. */
+.auth-gate .studio-auth-btn {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  text-decoration: underline;
+  text-decoration-color: #c7a7b6;
+  text-underline-offset: 5px;
+  min-height: 44px;
+  margin-top: 8px;
+  color: #c8b4be;
+}
+
+/* Studio owns a warm, image-conscious work surface without recoloring the
+   previously successful Drift/Browse viewers. */
+#studioView {
+  background: var(--atelier-paper);
+  color: var(--atelier-ink);
+  scrollbar-color: #c7b8a6 transparent;
+  scroll-padding-block: 14px 110px;
+}
+#studioView :is(button, textarea, select, input) {
+  scroll-margin-block: 12px 125px;
+}
+#studioView .studio-head h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--atelier-ink);
+  letter-spacing: -.045em;
+}
+#studioView .studio-head h1 > span,
+#studioView .studio-composer-heading > span:last-child {
+  color: #695d52;
+}
+#studioView .studio-pc {
+  min-height: 44px;
+  border: 1px solid var(--atelier-border);
+  background: #fffaf2;
+  color: #5d5148;
+  border-radius: 99px;
+  box-shadow: 0 3px 9px #3d2b1a0d;
+}
+#studioView .studio-pc > span:last-child { color: #9e8574; }
+#studioView .studio-pc.online { border-color: #9bb39e; }
+#studioView .studio-pc.online i { background: #527e5d; }
+#studioView .studio-pc.pending i { background: #be9865; }
+#studioView .studio-modes { border-color: var(--atelier-border); }
+#studioView .studio-modes button {
+  min-height: 44px;
+  padding: 0 2px 11px;
+  color: #877c6f;
+  font-size: 13px;
+}
+#studioView .studio-modes button[aria-current] {
+  color: var(--atelier-ink);
+  font-weight: 650;
+}
+#studioView .studio-modes button[aria-current]::after {
+  background: var(--atelier-accent);
+  height: 2px;
+}
+#studioView .studio-modes button > span { color: #8b8075; }
+#studioView .studio-message {
+  color: #763f36;
+  border-color: #ba7459;
+  background: #f4e2d6;
+  font-size: 12px;
+}
+#studioView .studio-alert #studioUndoRemove:not([hidden]) {
+  border: 1px solid #c18c72;
+  color: #904a35;
+}
+
+/* Canvas: never crop an output. State-specific space is intentional — the
+   empty placeholder should not push Generate below the first phone viewport. */
+#studioView .studio-canvas {
+  background: #e6dacf;
+  border: 1px solid #d4c8b9;
+  border-radius: 5px;
+  box-shadow: var(--atelier-shadow);
+}
+#studioView .studio-empty {
+  background: radial-gradient(ellipse at 46% 24%, #faf5ed, #e6ded3 75%);
+  color: var(--atelier-ink);
+}
+#studioView .studio-canvas-mark {
+  color: #a36e57;
+  border-color: #bda590;
+}
+#studioView .studio-empty h2 { color: #51433a; }
+#studioView .studio-empty p { color: #817164; }
+#studioView .studio-progress-track { background: #dccdc0; }
+#studioView .studio-progress-track i { background: var(--atelier-accent); }
+#studioView .studio-output {
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  height: auto;
+  object-fit: contain;
+  background: #dfd2c4;
+}
+#studioView .studio-canvas-caption {
+  color: #fff7f0;
+  background: linear-gradient(transparent, #1e1512ca);
+  font-size: 10px;
+}
+#studioView .studio-canvas-actions button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--atelier-border);
+  border-radius: 5px;
+  background: #fffbf3;
+  color: #7e493a;
+  font-size: 12px;
+  text-decoration: none;
+}
+#studioView .studio-canvas-actions button:last-child { color: #6c4838; }
+#studioView .studio-canvas-actions button:disabled { opacity: .42; }
+
+/* Direct editor: factual model status, exact prompt, current references,
+   optional pose (still OFF by default), real consent and submission states. */
+#studioView .studio-form {
+  min-width: 0;
+  border: 1px solid var(--atelier-border);
+  border-radius: 7px;
+  background: var(--atelier-white);
+  box-shadow: var(--atelier-shadow);
+  color: var(--atelier-ink);
+}
+#studioView .studio-composer-heading > .studio-label {
+  color: #544b42;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+#studioView .studio-label {
+  color: #50483f;
+  font-size: 12px;
+  font-weight: 650;
+}
+#studioView .studio-label > span { color: #8b7a6d; font-size: 11px; }
+#studioView .studio-input {
+  min-height: 46px;
+  border: 1px solid #cfc5b8;
+  border-radius: 5px;
+  background: #fffefa;
+  color: #322b25;
+  font-size: 14px;
+  line-height: 1.5;
+}
+#studioView .studio-model {
+  background: #fffefa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23877668' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 13px center;
+  padding-right: 36px;
+}
+#studioView .studio-input:focus {
+  border-color: #ae7258;
+  box-shadow: 0 0 0 3px #be886923;
+}
+#studioView .studio-input::placeholder { color: #998d81; }
+#studioView .studio-input option { background: #fffefa; color: #352e28; }
+#studioView .studio-input option:disabled { color: #a59a8e; }
+#studioView .studio-prompt {
+  background: #fffefa;
+  white-space: pre-wrap;
+  resize: vertical;
+  font-size: 16px;
+  line-height: 1.58;
+  min-height: 116px;
+}
+#studioView .studio-hint,
+#studioView .studio-submit-note { color: #6d6056; font-size: 11px; line-height: 1.6; }
+#studioView .studio-secondary-actions button {
+  min-height: 44px;
+  color: #8d523d;
+  font-size: 12px;
+  font-weight: 600;
+}
+#studioView .studio-secondary-actions button span { color: #9c8478; }
+#studioView .studio-reference-sources {
+  border-color: var(--atelier-border);
+}
+#studioView .studio-reference-sources button { color: #7c503f; min-height: 44px; font-size: 12px; }
+#studioView .studio-reference-sources p { color: #86796e; font-size: 11px; }
+#studioView .studio-reference {
+  border: 1px solid #d4c5b4;
+  border-radius: 6px;
+  background: #f4ece1;
+  color: var(--atelier-ink);
+}
+#studioView .studio-reference-name strong { color: #5b493c; font-weight: 650; }
+#studioView .studio-reference-name > span { color: #857368; }
+#studioView .studio-reference .studio-reference-controls button {
+  color: #885c4c;
+  border-color: #c8b5a3;
+  min-width: 44px;
+  height: 44px;
+}
+#studioView .studio-reference-actions {
+  grid-column: 2;
+  min-width: 0;
+}
+#studioView .studio-reference-actions > summary {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 7px;
+  list-style: none;
+  color: #895642;
+  font: 700 16px/1 Georgia,serif;
+  cursor: pointer;
+}
+#studioView .studio-reference-actions > summary::-webkit-details-marker { display: none; }
+#studioView .studio-reference-actions:not([open]) .studio-reference-controls { display: none !important; }
+#studioView .studio-reference-actions .studio-reference-controls {
+  display: flex;
+  gap: 5px;
+  padding-top: 5px;
+}
+#studioView .studio-consent {
+  color: #716559;
+  font-size: 11px;
+  line-height: 1.5;
+  min-height: 44px;
+  align-items: center;
+}
+#studioView .studio-consent input { accent-color: var(--atelier-accent); width: 18px; height: 18px; flex-basis: 18px; }
+#studioView .studio-generate {
+  min-height: 54px;
+  border-radius: 5px;
+  background: #823b32;
+  color: #fff7ef;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: .005em;
+}
+#studioView .studio-generate:disabled {
+  background: #e6dbcf;
+  border: 1px solid #d4c7b9;
+  color: #918073;
+}
+#studioView .studio-generate:focus-visible,
+#studioView :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #a76c50;
+  outline-offset: 3px;
+}
+
+/* Real Creations, no invented metrics or ornamental placeholder cards. */
+#studioView .studio-archive-heading h2 { color: #302720; font-size: 31px; }
+#studioView .studio-archive-heading p,
+#studioView .studio-archive-tools label,
+#studioView .studio-archive-empty p { color: #83756a; font-size: 12px; }
+#studioView .studio-archive-heading {
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  margin: 7px 0 10px;
+}
+#studioView #studioArchiveSummary {
+  max-width: 43ch;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+#studioView .studio-archive-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+#studioView .studio-archive-options { position: relative; }
+#studioView .studio-archive-options > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #cbb9a8;
+  border-radius: 99px;
+  background: #fffbf5;
+  color: #86503d;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+#studioView .studio-archive-options > summary::-webkit-details-marker { display: none; }
+#studioView .studio-archive-options > summary > span {
+  color: #897566;
+  font-size: 10px;
+  font-weight: 450;
+}
+#studioView .studio-archive-options[open] > summary {
+  background: #eadbd0;
+  border-color: #a8785f;
+}
+#studioView .studio-archive-options-panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 9px);
+  right: 0;
+  width: min(365px, calc(100vw - 28px));
+  max-height: min(66dvh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 17px;
+  border: 1px solid #ccbdaf;
+  border-radius: 11px;
+  background: #fffcf7;
+  box-shadow: 0 20px 65px #3d281e42;
+}
+#studioView .studio-archive-options-panel .studio-filters { gap: 6px; }
+#studioView .studio-archive-options-panel .studio-filters button {
+  min-height: 39px;
+  padding: 0 12px;
+}
+#studioView .studio-archive-options-panel .studio-archive-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 10px;
+  margin: 14px 0 8px;
+}
+#studioView .studio-archive-options-panel .studio-archive-tools label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+}
+#studioView .studio-archive-options-panel .studio-archive-tools select,
+#studioView .studio-archive-options-panel .studio-archive-tools input {
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+#studioView .studio-archive-options-panel #studioDriveQuality {
+  display: block;
+  min-height: 44px;
+  white-space: normal;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 11px;
+}
+#studioView .studio-archive-options-panel #studioArchiveCoverage {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
+}
+#studioView .studio-archive-grid { margin-top: 10px; }
+#studioView .studio-text-button { color: #8b533d; font-size: 12px; min-height: 44px; }
+#studioView .studio-filters button {
+  border: 1px solid #d2c7b8;
+  background: #fbf8f2;
+  color: #76695e;
+  font-size: 12px;
+  min-height: 44px;
+}
+#studioView .studio-filters button[aria-pressed=true] {
+  background: #833d33;
+  color: #fff9f0;
+  border-color: #833d33;
+}
+#studioView .studio-archive-tools select,
+#studioView .studio-archive-tools input {
+  background: #fffefa;
+  border: 1px solid #d2c7b8;
+  color: #3d342d;
+  color-scheme: light;
+  min-height: 44px;
+}
+#studioView .studio-thumb { background: #e4d9cb; border-color: #cfc4b6; }
+#studioView .studio-creation-caption { color: #655449; }
+#studioView .studio-creation-caption > span:last-child { color: #938175; }
+#studioView .studio-tile-state { background: #49362ece; color: #fff2e3; }
+#studioView .studio-archive-empty { border-color: #c5b8aa; }
+#studioView .studio-archive-empty h3 { color: #534337; }
+#studioView .studio-load-more { border-color: #c6b5a5; color: #81523e; min-height: 44px; }
+
+/* Studio dialogs, reference picker and optional pose retain all existing IDs,
+   native modal controls, Quick Exit, and actual state/error messaging. */
+#studioView .studio-dialog {
+  background: #fdf9f2;
+  color: var(--atelier-ink);
+  color-scheme: light;
+  border: 1px solid #c8b9a9;
+  box-shadow: 0 26px 90px #2318128c;
+}
+#studioView .studio-dialog::backdrop { background: #1b1411c7; }
+#studioView .studio-dialog-tools,
+#studioView .studio-picker-footer {
+  background: #efe7dd;
+  border-color: var(--atelier-border);
+}
+#studioView .studio-dialog-close,
+#studioView .studio-dialog-exit,
+#studioView .studio-picker-privacy button,
+#studioView .studio-picker-close {
+  background: #fffaf3;
+  color: #7f4e3d;
+  border-color: #c8b7a7;
+}
+#studioView .studio-dialog h2,
+#studioView .studio-picker-header h2 { color: #342b24; }
+#studioView .studio-eyebrow { color: #a05d46; }
+#studioView .studio-setting-row,
+#studioView .studio-worker,
+#studioView .studio-original,
+#studioView .studio-location,
+#studioView .studio-quality-review,
+#studioView .studio-pose { border-color: var(--atelier-border); }
+#studioView .studio-setting-row span,
+#studioView .studio-worker span,
+#studioView .studio-device p,
+#studioView .studio-device-note,
+#studioView .studio-location dd,
+#studioView .studio-quality-review p { color: #85766a; }
+#studioView .studio-worker strong,
+#studioView .studio-original summary,
+#studioView .studio-location summary,
+#studioView .studio-quality-review summary { color: #564438; }
+#studioView .studio-worker button,
+#studioView .studio-device-title,
+#studioView .studio-source-comparison button { color: #8b503e; }
+#studioView .studio-device-actions button,
+#studioView .studio-feedback-save,
+#studioView .studio-picker-confirm {
+  background: #8e4936;
+  border-color: #8e4936;
+  color: #fff9f0;
+}
+#studioView .studio-device-actions #studioRevoke,
+#studioView .studio-recovery button,
+#studioView .studio-detail-actions button,
+#studioView .studio-detail-actions a,
+#studioView .studio-pose-options button {
+  background: #fffaf3;
+  border-color: #c6b5a3;
+  color: #85513d;
+}
+#studioView .studio-detail-actions [data-action=keep-save] { background: #8e4936; color: #fff9f0; }
+#studioView .studio-detail-meta,
+#studioView .studio-save-progress,
+#studioView .studio-original p,
+#studioView .studio-original pre,
+#studioView .studio-location code { color: #77685b; }
+#studioView .studio-detail-image { background: #d5cabf; }
+#studioView .studio-feedback h3,
+#studioView .studio-feedback legend { color: #59473b; }
+#studioView .studio-feedback fieldset label { border-color: #cbb8a6; color: #735746; }
+#studioView .studio-feedback input,
+#studioView .studio-pose input { accent-color: #9b583f; }
+#studioView .studio-pose summary,
+#studioView .studio-pose-preview figcaption,
+#studioView .studio-pose-toggle,
+#studioView .studio-pose-two-person { color: #6c5244; }
+#studioView .studio-pose summary > span,
+#studioView .studio-pose-preview figcaption span { color: #8e796b; }
+#studioView .studio-pose-preview img,
+#studioView .studio-source-comparison img { background: #e8ded3; border-color: #d2c6b9; }
+#studioView .studio-reference-picker { color-scheme: light; }
+#studioView .studio-picker-header,
+#studioView .studio-picker-preview { border-color: var(--atelier-border); }
+#studioView .studio-picker-breadcrumb,
+#studioView .studio-picker-preview figcaption span,
+#studioView .studio-picker-preview > p,
+#studioView .studio-picker-tile-caption small { color: #88766b; }
+#studioView .studio-picker-filters button,
+#studioView .studio-picker-more,
+#studioView .studio-picker-error button { border-color: #c6b5a4; color: #83513e; }
+#studioView .studio-picker-filters button[aria-pressed=true] { background: #833f33; color: #fff8ee; border-color: #833f33; }
+#studioView .studio-picker-search { background: #fffefa; border-color: #c9b9a8; }
+#studioView .studio-picker-search input { color: #332922; }
+#studioView .studio-picker-search input::placeholder { color: #948375; }
+#studioView .studio-picker-tile-caption > span,
+#studioView .studio-picker-selection-name strong { color: #4f3d32; }
+#studioView .studio-picker-tile-caption > button { color: #8c523d; }
+#studioView .studio-picker-image,
+#studioView .studio-picker-preview figure > img { background: #e6ded4; border-color: #d0c1b0; }
+#studioView .studio-picker-preview figcaption strong { color: #514036; }
+#studioView .studio-picker-preview-empty h3 { color: #695044; }
+#studioView .studio-picker-preview-empty p,
+#studioView .studio-picker-empty p { color: #827268; }
+#studioView .studio-picker-selection li { background: #f4ede4; border-color: #d0bead; }
+#studioView .studio-picker-selection-index { color: #a56d53; }
+#studioView .studio-picker-selection-name > span { color: #827167; }
+#studioView .studio-picker-selection-tools button { color: #8f5941; }
+#studioView .studio-picker-footer strong { color: #554237; }
+#studioView .studio-picker-footer [role=status] { color: #857365; }
+#studioView .studio-picker-confirm:disabled { background: #e2d8ce; border-color: #d7cabd; color: #9a897a; }
+
+@media (max-width: 1023px) {
+  /* Other two gallery tabs deliberately retain their original dark surfaces. */
+  .app-shell:has(#studioView.active) .topbar {
+    background: #f1eae0f5;
+    border-bottom: 1px solid #d9cfc1;
+  }
+  .app-shell:has(#studioView.active) .topbar .brand { color: #312a24; }
+  .app-shell:has(#studioView.active) .topbar .brand-mark {
+    background: #f9f3e9;
+    border-color: #bea99a;
+  }
+  .app-shell:has(#studioView.active) .topbar .sync-btn {
+    background: #fff9f1;
+    color: #695a4e;
+    border-color: #d7c7b6;
+  }
+  .app-shell:has(#studioView.active) .topbar .icon-btn {
+    background: #eadfd3;
+    color: #7c4e40;
+  }
+  #studioView { padding: 17px 15px 115px; }
+  #studioView .studio-head { margin-bottom: 14px; }
+  #studioView .studio-head h1 { font-size: 30px; }
+  #studioView .studio-head h1 > span { font-size: 10px; }
+  #studioView .studio-modes { margin-bottom: 15px; }
+  #studioView .studio-workspace { display: flex; flex-direction: column; gap: 13px; }
+  #studioView .studio-canvas-column { order: 0; }
+  #studioView .studio-form { order: 1; padding: 19px 17px 20px; }
+  /* No result: show the actual creative task first. Running/completed jobs
+     retain the image/progress first as the protected Studio behavior. */
+  #studioView .studio-workspace:has(#studioCanvasActions[hidden]) .studio-form { order: 0; }
+  #studioView .studio-workspace:has(#studioCanvasActions[hidden]) .studio-canvas-column { display: none; }
+  #studioView .studio-canvas:not(:has(img)),
+  #studioView .studio-empty { min-height: 100px; }
+  #studioView .studio-empty { padding: 13px 17px; }
+  #studioView .studio-empty .studio-canvas-mark { display: none; }
+  #studioView .studio-empty h2 { font-size: 19px; margin: 0 0 5px; }
+  #studioView .studio-empty p { font-size: 11px; line-height: 1.45; }
+  #studioView .studio-output { max-height: 52dvh; }
+  #studioView .studio-canvas-actions { gap: 7px; }
+  #studioView .studio-canvas-actions button { flex: 1 1 100px; }
+  #studioView .studio-composer-heading { display: flex; margin-bottom: 10px; }
+  #studioView .studio-input { font-size: 16px; }
+  #studioView .studio-model { font-size: 14px; min-height: 46px; }
+  #studioView .studio-prompt-label { margin-top: 15px; }
+  #studioView .studio-prompt { min-height: 116px; height: 116px; }
+  #studioView .studio-secondary-actions { margin-top: 9px; }
+  #studioView .studio-references {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 9px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    padding: 0 0 7px;
+  }
+  #studioView .studio-reference {
+    position: relative;
+    flex: 0 0 137px;
+    width: 137px;
+    max-width: none;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    min-width: 0;
+    padding: 6px;
+    scroll-snap-align: start;
+  }
+  #studioView .studio-reference:has(.studio-reference-actions[open]) {
+    flex-basis: 169px;
+    width: 169px;
+  }
+  #studioView .studio-reference > img {
+    display: block;
+    width: 100%;
+    height: 91px;
+    object-fit: cover;
+    border-radius: 3px;
+  }
+  #studioView .studio-reference .studio-reference-name {
+    display: grid;
+    gap: 2px;
+    margin-top: 6px;
+    min-width: 0;
+    font-size: 10px;
+  }
+  #studioView .studio-reference-name strong { font-size: 10px; }
+  #studioView .studio-reference-name > span { font-size: 9px; }
+  #studioView .studio-reference-actions { height: 0; }
+  #studioView .studio-reference-actions > summary {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid #c4b5a5;
+    border-radius: 6px;
+    background: #fffaf2ed;
+    box-shadow: 0 2px 8px #2b1a111a;
+  }
+  #studioView .studio-reference-actions[open] {
+    height: auto;
+    margin-top: 7px;
+  }
+  #studioView .studio-reference-actions .studio-reference-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 0;
+  }
+  #studioView .studio-reference .studio-reference-controls button {
+    min-width: 44px;
+    height: 44px;
+  }
+  #studioView .studio-consent { margin: 10px 0 12px; }
+  #studioView .studio-submit-note { font-size: 11px; }
+  #studioView .studio-archive-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+  #studioView .studio-archive-heading { justify-content: flex-end; margin: 2px 0 12px; }
+  #studioView .studio-archive-heading #studioArchiveSummary { display: none; }
+  #studioView #studioNew { min-height: 44px; padding: 0 8px; }
+  #studioView .studio-thumb { aspect-ratio: 3/4; }
+  #studioView .studio-dialog { max-height: calc(100dvh - 28px); }
+  #studioView .studio-dialog-tools { padding: 7px; }
+}
+
+@media (max-width: 390px) {
+  #studioView { padding-inline: 13px; }
+  #studioView .studio-head { gap: 8px; }
+  #studioView .studio-head h1 { font-size: 27px; }
+  #studioView .studio-pc { padding: 0 9px; font-size: 10px; }
+  #studioView .studio-form { padding: 16px 14px; }
+  #studioView .studio-archive-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+}
+
+/* Tablet gets real width without adopting a cramped desktop side rail. */
+@media (min-width: 720px) and (max-width: 1023px) {
+  .app-shell,
+  .app-shell:has(.studio-view.active) {
+    max-width: none !important;
+    box-shadow: none;
+  }
+  #studioView .studio-workspace,
+  #studioView .studio-head,
+  #studioView .studio-modes,
+  #studioView .studio-archive { max-width: 840px; margin-inline: auto; }
+}
+
+/* Desktop: give every existing tab meaningful real estate. The original 520px
+   centered phone shell was never a useful desktop composition. */
+@media (min-width: 1024px) {
+  html, body { background: #e7e0d6; }
+  .app-shell,
+  .app-shell:has(.studio-view.active) {
+    width: 100%;
+    max-width: none !important;
+    margin: 0;
+    box-shadow: none;
+    background: #e7e0d6;
+  }
+  .app-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 216px;
+    background: var(--atelier-rail);
+    border-right: 1px solid var(--atelier-border);
+  }
+  .topbar,
+  .app-shell:has(.studio-view.active) .topbar {
+    height: 78px;
+    padding: 0 28px;
+    background: linear-gradient(90deg, #e8e1d6 0 216px, #f5f0e8 216px);
+    border-bottom: 1px solid var(--atelier-border);
+    pointer-events: auto;
+  }
+  .topbar .brand { color: #29251f; }
+  .topbar .brand-mark {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #a48c77;
+    background: #f1e9dc;
+    color: #8b4a37;
+    font-size: 21px;
+  }
+  .topbar .brand-word { font: 400 25px/1 Georgia, serif; letter-spacing: -.065em; }
+  .topbar .top-actions { gap: 10px; }
+  .topbar .sync-btn {
+    height: 40px;
+    min-width: 54px;
+    border: 1px solid #d4c5b6;
+    border-radius: 99px;
+    background: #fffaf2;
+    color: #5f5248;
+    font-size: 11px;
+    letter-spacing: .045em;
+  }
+  .topbar .private-dot { background: #63836a; box-shadow: 0 0 0 4px #63836a20; }
+  .topbar .icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 99px;
+    background: #e5d9cc;
+    color: #6f4435;
+  }
+  .bottom-nav,
+  .app-shell:has(.studio-view.active) .bottom-nav {
+    position: absolute;
+    top: 100px;
+    left: 0 !important;
+    right: auto !important;
+    bottom: 0;
+    width: 216px;
+    max-width: none;
+    height: auto;
+    transform: none !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start !important;
+    align-items: stretch;
+    gap: 6px !important;
+    padding: 12px 16px 72px;
+    background: transparent;
+    z-index: 120;
+  }
+  .bottom-nav .nav-item {
+    width: 100%;
+    min-width: 0;
+    min-height: 51px;
+    height: 51px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 0 15px;
+    color: #6b655c;
+  }
+  .bottom-nav .nav-item svg { width: 20px; height: 20px; }
+  .bottom-nav .nav-item span { font-size: 13px; letter-spacing: 0; text-transform: none; }
+  .bottom-nav .nav-item.active {
+    border-left: 3px solid #9d5439;
+    background: #fffaf2;
+    color: #442d25;
+    box-shadow: 0 3px 12px #4d362011;
+    padding-left: 12px;
+  }
+  .bottom-nav .release-stamp {
+    left: 24px;
+    bottom: 24px;
+    transform: none;
+    color: #7e756b;
+    font-size: 9px;
+  }
+  .main-content { inset: 78px 0 0 216px; }
+  .browse-view {
+    padding: 44px clamp(32px, 4vw, 72px) 80px;
+  }
+  .browse-head { padding-bottom: 24px; }
+  .browse-head h1 { font-size: clamp(48px, 4vw, 68px); }
+  .browse-view .browse-head { padding-bottom: 23px; }
+  .masonry-grid { columns: 3; column-gap: 16px; }
+  .tile { border-radius: 6px; margin-bottom: 16px; }
+  .tile:hover .tile-meta { opacity: 1; }
+  .tile:hover::after { opacity: 1; }
+  #studioView {
+    top: 0;
+    bottom: 0;
+    padding: 35px clamp(30px, 3.5vw, 62px) 65px;
+  }
+  #studioView .studio-head h1 { font-size: 37px; }
+  #studioView .studio-head h1 > span { font-size: 11px; }
+  #studioView .studio-modes { margin: 21px 0 24px; }
+  #studioView .studio-workspace {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(330px, 390px);
+    align-items: start;
+    gap: clamp(23px,2.5vw,42px);
+  }
+  #studioView .studio-canvas,
+  #studioView .studio-empty { min-height: min(66dvh, 710px); }
+  #studioView .studio-canvas:not(:has(img)),
+  #studioView .studio-canvas:not(:has(img)) .studio-empty { min-height: min(31dvh, 275px); }
+  #studioView .studio-canvas:not(:has(img)) .studio-empty {
+    align-items: flex-start;
+    text-align: left;
+    padding: 38px clamp(30px, 4vw, 68px);
+    background: linear-gradient(127deg, #faf6ef 0%, #e8dfd4 100%);
+  }
+  #studioView .studio-canvas:not(:has(img)) .studio-canvas-mark {
+    width: 34px;
+    height: 40px;
+    margin-bottom: 16px;
+    font-size: 19px;
+  }
+  #studioView .studio-canvas:not(:has(img)) .studio-empty h2 {
+    font-size: 28px;
+    margin-bottom: 9px;
+  }
+  #studioView .studio-canvas:not(:has(img)) .studio-empty p {
+    max-width: 44ch;
+    font-size: 12px;
+  }
+  #studioView .studio-output { max-height: min(70dvh,760px); }
+  #studioView .studio-form { padding: 24px 23px; }
+  #studioView .studio-composer-heading { display: flex; }
+  #studioView .studio-prompt { min-height: 160px; }
+  #studioView .studio-canvas-actions button { flex: 1 1 120px; }
+  #studioView .studio-archive-grid { grid-template-columns: repeat(5,minmax(0,1fr)); gap: 15px; }
+}
+
+@media (min-width: 1450px) {
+  .masonry-grid { columns: 4; }
+  #studioView .studio-workspace { grid-template-columns: minmax(0, 1fr) minmax(385px, 430px); }
+}
+
+/* The picker is appended directly to <body>, not inside #studioView. On a
+   narrow phone, its protected exit/close actions share one compact heading
+   row and its existing selection/preview buttons remain accessible. */
+@media (max-width: 719px) {
+  #studioView .studio-head h1 > span,
+  #studioView .studio-reference-name > span { font-size: 11px; }
+  .studio-reference-picker .studio-picker-header {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 11px 12px 10px;
+  }
+  .studio-reference-picker .studio-picker-header > div:first-child {
+    min-width: 0;
+    flex: initial;
+  }
+  .studio-reference-picker .studio-picker-header .studio-eyebrow { display: none; }
+  .studio-reference-picker .studio-picker-header h2 {
+    white-space: nowrap;
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: -.04em;
+  }
+  .studio-reference-picker .studio-picker-privacy {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: none;
+    flex-wrap: nowrap;
+    gap: 5px;
+    min-width: 0;
+  }
+  .studio-reference-picker .studio-picker-privacy button {
+    min-height: 44px;
+    padding: 0 7px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .studio-reference-picker .studio-picker-privacy [data-picker-close] {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    font-size: 0;
+    display: grid;
+    place-items: center;
+  }
+  .studio-reference-picker .studio-picker-privacy [data-picker-close] span {
+    display: block;
+    font-size: 23px;
+    line-height: 1;
+  }
+  .studio-reference-picker .studio-picker-browser {
+    padding: 10px 12px 14px;
+  }
+  .studio-reference-picker .studio-picker-breadcrumb {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  .studio-reference-picker .studio-picker-filters {
+    gap: 4px;
+    margin-bottom: 8px;
+    flex-wrap: nowrap;
+  }
+  .studio-reference-picker .studio-picker-filters button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 7px;
+    font-size: 11px;
+  }
+  .studio-reference-picker .studio-picker-search input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .studio-reference-picker .studio-picker-content {
+    margin-top: 12px;
+  }
+  .studio-reference-picker .studio-picker-grid {
+    gap: 12px 8px;
+  }
+  .studio-reference-picker .studio-picker-tile { position: relative; }
+  .studio-reference-picker .studio-picker-tile-caption {
+    position: static;
+    padding-top: 6px;
+  }
+  .studio-reference-picker .studio-picker-tile-caption small { display: none; }
+  .studio-reference-picker .studio-picker-tile-caption > span { font-size: 11px; }
+  .studio-reference-picker .studio-picker-tile-caption > button {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    z-index: 3;
+    display: block;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #e8dce377;
+    border-radius: 50%;
+    background: #180f18d9;
+    color: transparent;
+    font-size: 0;
+  }
+  .studio-reference-picker .studio-picker-tile-caption > button::before {
+    content: "";
+    position: absolute;
+    top: 13px;
+    left: 13px;
+    width: 11px;
+    height: 11px;
+    border: 2px solid #f7ecf2;
+    border-radius: 50%;
+  }
+  .studio-reference-picker .studio-picker-tile-caption > button::after {
+    content: "";
+    position: absolute;
+    top: 26px;
+    left: 26px;
+    width: 8px;
+    height: 2px;
+    background: #f7ecf2;
+    transform: rotate(45deg);
+    transform-origin: left center;
+  }
+  .studio-reference-picker .studio-picker-footer {
+    padding: 9px 12px max(9px,env(safe-area-inset-bottom));
+    align-items: center;
+    gap: 9px;
+  }
+  .studio-reference-picker .studio-picker-footer > div { gap: 2px; }
+  .studio-reference-picker .studio-picker-footer [role=status] {
+    font-size: 11px;
+    line-height: 1.3;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .studio-reference-picker .studio-picker-confirm {
+    flex: none;
+    min-height: 44px;
+    padding: 6px 11px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .browse-view .tile-folder { transition: none; }
+}
+
+/* Dark-only Velum, owner correction 2026-11-03.
+   Retain the mobile-first Studio layout and the original rose-black gallery.
+   This palette overrides the earlier ivory Editorial Atelier experiment; no
+   light/auto branch or theme switch is offered. */
+:root {
+  color-scheme: dark;
+  --atelier-paper: #100b0e;
+  --atelier-white: #1b1118;
+  --atelier-rail: #160e14;
+  --atelier-ink: #f2e2eb;
+  --atelier-muted: #b799a9;
+  --atelier-border: #523647;
+  --atelier-accent: #dfb6cc;
+  --atelier-shadow: 0 12px 28px #0005;
+}
+
+/* Studio create, result, references, Creations, panels and inline controls. */
+#studioView {
+  background: var(--atelier-paper);
+  color: var(--atelier-ink);
+  color-scheme: dark;
+  scrollbar-color: #60404f transparent;
+}
+#studioView .studio-head h1,
+#studioView .studio-archive-heading h2 { color: #f3e4ed; }
+#studioView .studio-head h1 > span,
+#studioView .studio-composer-heading > span:last-child,
+#studioView .studio-label > span,
+#studioView .studio-reference-name > span,
+#studioView .studio-picker-selection-name > span,
+#studioView .studio-creation-caption > span:last-child,
+#studioView .studio-archive-options > summary > span { color: #ab899d; }
+#studioView .studio-pc {
+  border-color: #49313e;
+  background: #21151d;
+  color: #d5bdca;
+  box-shadow: none;
+}
+#studioView .studio-pc > span:last-child { color: #a88c9c; }
+#studioView .studio-pc.online { border-color: #52765b; }
+#studioView .studio-pc.online i { background: #bdd3b7; }
+#studioView .studio-pc.pending i { background: #e0ba91; }
+#studioView .studio-modes { border-color: #402938; }
+#studioView .studio-modes button { color: #ab8b9d; }
+#studioView .studio-modes button[aria-current] { color: #f3e5ee; }
+#studioView .studio-modes button[aria-current]::after { background: #dfb5ca; }
+#studioView .studio-modes button > span { color: #a48395; }
+#studioView .studio-message { color: #f4cddd; border-color: #bb88a6; background: #35202e; }
+#studioView .studio-alert #studioUndoRemove:not([hidden]) { border-color: #a47794; color: #f4d4e4; }
+
+#studioView .studio-canvas {
+  background: #090709;
+  border-color: #392531;
+  box-shadow: 0 12px 28px #0007;
+}
+#studioView .studio-empty {
+  background: radial-gradient(ellipse at 50% 35%, #291925, #140d12 66%, #0b080a);
+  color: #e4cfdc;
+}
+#studioView .studio-canvas-mark { color: #c29bb1; border-color: #705068; }
+#studioView .studio-empty h2 { color: #e7d0dd; }
+#studioView .studio-empty p { color: #b493a6; }
+#studioView .studio-progress-track { background: #432b3a; }
+#studioView .studio-progress-track i { background: #d3a1bd; }
+#studioView .studio-output { background: #090709; }
+#studioView .studio-canvas-caption { color: #f5e8ee; background: linear-gradient(transparent, #080509d9); }
+#studioView .studio-canvas-actions button {
+  border-color: #563748;
+  background: #22151e;
+  color: #e4bcd1;
+}
+#studioView .studio-canvas-actions button:last-child { color: #f0d7e4; }
+
+#studioView .studio-form {
+  border-color: #523647;
+  background: #1b1118;
+  color: #eedde7;
+  box-shadow: 0 9px 25px #0005;
+}
+#studioView .studio-composer-heading > .studio-label,
+#studioView .studio-label { color: #e7d3df; }
+#studioView .studio-input,
+#studioView .studio-prompt,
+#studioView .studio-model {
+  border-color: #5b3a4e;
+  background-color: #120b11;
+  color: #f3e5ee;
+  color-scheme: dark;
+}
+#studioView .studio-model {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23cba9be' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+#studioView .studio-input:focus { border-color: #cf9eb7; box-shadow: 0 0 0 3px #bf8fac38; }
+#studioView .studio-input::placeholder { color: #a78b9a; }
+#studioView .studio-input option { background: #20151c; color: #f0dfe9; }
+#studioView .studio-input option:disabled { color: #947686; }
+#studioView .studio-hint,
+#studioView .studio-submit-note { color: #b89aaa; }
+#studioView .studio-secondary-actions button,
+#studioView .studio-reference-sources button,
+#studioView .studio-text-button,
+#studioView .studio-load-more { color: #e0b7ce; }
+#studioView .studio-secondary-actions button span { color: #ac8a9e; }
+#studioView .studio-reference-sources { border-color: #523547; }
+#studioView .studio-reference-sources p { color: #b593a5; }
+#studioView .studio-reference {
+  border-color: #614155;
+  background: #2b1c27;
+  color: #f0dfeb;
+}
+#studioView .studio-reference-name strong { color: #ead2df; }
+#studioView .studio-reference .studio-reference-controls button { color: #e0b5cd; border-color: #704e61; }
+#studioView .studio-reference-actions > summary { color: #ebc3d8; }
+#studioView .studio-consent { color: #c4a8b8; }
+#studioView .studio-consent input { accent-color: #dfb6cc; }
+#studioView .studio-generate { background: #dfb6cc; color: #2d1a26; }
+#studioView .studio-generate:disabled { background: #3c2935; border-color: #513749; color: #b69aac; }
+#studioView .studio-generate:focus-visible,
+#studioView :is(button, a, input, select, textarea):focus-visible { outline-color: #d5a6bf; }
+
+/* Creations retains the image-first controls but is never a bright page. */
+#studioView .studio-archive-heading p,
+#studioView .studio-archive-tools label,
+#studioView .studio-archive-empty p { color: #b79baa; }
+#studioView .studio-archive-options > summary {
+  border-color: #624359;
+  background: #281a25;
+  color: #e9c4d7;
+}
+#studioView .studio-archive-options[open] > summary { background: #372334; border-color: #aa7894; }
+#studioView .studio-archive-options-panel {
+  border-color: #624258;
+  background: #1c121a;
+  box-shadow: 0 20px 65px #000b;
+}
+#studioView .studio-filters button { border-color: #644257; background: #271923; color: #d0acbf; }
+#studioView .studio-filters button[aria-pressed=true] { border-color: #dcb6ca; background: #dcb6ca; color: #291923; }
+#studioView .studio-archive-tools select,
+#studioView .studio-archive-tools input {
+  border-color: #5c3e50;
+  background: #150d13;
+  color: #f0dce7;
+  color-scheme: dark;
+}
+#studioView .studio-thumb { border-color: #3e2a35; background: #1b1218; }
+#studioView .studio-creation-caption { color: #ead0dd; }
+#studioView .studio-tile-state { background: #281923df; color: #f5e7ed; }
+#studioView .studio-archive-empty { border-color: #55384a; }
+#studioView .studio-archive-empty h3 { color: #e9d0de; }
+#studioView .studio-load-more { border-color: #704a5e; }
+
+/* Settings, details, pose, source comparison and consent dialogs. */
+#studioView .studio-dialog {
+  border-color: #69485a;
+  background: #1a1118;
+  color: #f2e1eb;
+  color-scheme: dark;
+  box-shadow: 0 26px 90px #000c;
+}
+#studioView .studio-dialog::backdrop { background: #050305d9; }
+#studioView .studio-dialog-tools,
+#studioView .studio-picker-footer { border-color: #523749; background: #241620; }
+#studioView .studio-dialog-close,
+#studioView .studio-dialog-exit,
+#studioView .studio-picker-privacy button,
+#studioView .studio-picker-close { border-color: #745065; background: #2b1b26; color: #ecc9dc; }
+#studioView .studio-dialog h2,
+#studioView .studio-picker-header h2 { color: #f3dfec; }
+#studioView .studio-eyebrow { color: #cda0b8; }
+#studioView .studio-setting-row,
+#studioView .studio-worker,
+#studioView .studio-original,
+#studioView .studio-location,
+#studioView .studio-quality-review,
+#studioView .studio-pose { border-color: #57394d; }
+#studioView .studio-setting-row span,
+#studioView .studio-worker span,
+#studioView .studio-device p,
+#studioView .studio-device-note,
+#studioView .studio-location dd,
+#studioView .studio-quality-review p { color: #b89aaa; }
+#studioView .studio-worker strong,
+#studioView .studio-original summary,
+#studioView .studio-location summary,
+#studioView .studio-quality-review summary { color: #ead1df; }
+#studioView .studio-worker button,
+#studioView .studio-device-title,
+#studioView .studio-source-comparison button { color: #e5bdd4; }
+#studioView .studio-device-actions button,
+#studioView .studio-feedback-save,
+#studioView .studio-picker-confirm { border-color: #dfb6cc; background: #dfb6cc; color: #261721; }
+#studioView .studio-device-actions #studioRevoke,
+#studioView .studio-recovery button,
+#studioView .studio-detail-actions button,
+#studioView .studio-detail-actions a,
+#studioView .studio-pose-options button { border-color: #67475b; background: #2a1b26; color: #e5bed4; }
+#studioView .studio-detail-actions [data-action=keep-save] { background: #dfb6cc; color: #291923; }
+#studioView .studio-detail-meta,
+#studioView .studio-save-progress,
+#studioView .studio-original p,
+#studioView .studio-original pre,
+#studioView .studio-location code { color: #bea2b1; }
+#studioView .studio-detail-image { background: #090609; }
+#studioView .studio-feedback h3,
+#studioView .studio-feedback legend { color: #edd6e3; }
+#studioView .studio-feedback fieldset label { border-color: #69485a; color: #e4bfd2; }
+#studioView .studio-feedback input,
+#studioView .studio-pose input { accent-color: #dfb6cc; }
+#studioView .studio-pose summary,
+#studioView .studio-pose-preview figcaption,
+#studioView .studio-pose-toggle,
+#studioView .studio-pose-two-person { color: #dfb9cc; }
+#studioView .studio-pose summary > span,
+#studioView .studio-pose-preview figcaption span { color: #ac8ea0; }
+#studioView .studio-pose-preview img,
+#studioView .studio-source-comparison img { border-color: #58394b; background: #0d090c; }
+
+/* Some picker instances are appended to body rather than nested in Studio. */
+.studio-reference-picker { color-scheme: dark; }
+#studioView .studio-reference-picker { color-scheme: dark; }
+#studioView .studio-picker-header,
+#studioView .studio-picker-preview { border-color: #563a4c; }
+#studioView .studio-picker-breadcrumb,
+#studioView .studio-picker-preview figcaption span,
+#studioView .studio-picker-preview > p,
+#studioView .studio-picker-tile-caption small { color: #b899a9; }
+#studioView .studio-picker-filters button,
+#studioView .studio-picker-more,
+#studioView .studio-picker-error button { border-color: #66475a; color: #e3bdd2; }
+#studioView .studio-picker-filters button[aria-pressed=true] { border-color: #e0b8cd; background: #e0b8cd; color: #291923; }
+#studioView .studio-picker-search { border-color: #674457; background: #100b0f; }
+#studioView .studio-picker-search input { color: #f1dfe9; }
+#studioView .studio-picker-search input::placeholder { color: #b092a1; }
+#studioView .studio-picker-tile-caption > span,
+#studioView .studio-picker-selection-name strong { color: #e5cad9; }
+#studioView .studio-picker-tile-caption > button,
+#studioView .studio-picker-selection-tools button { color: #e5b8ce; }
+#studioView .studio-picker-image,
+#studioView .studio-picker-preview figure > img { border-color: #583849; background: #0e090d; }
+#studioView .studio-picker-preview figcaption strong,
+#studioView .studio-picker-footer strong { color: #ead3e0; }
+#studioView .studio-picker-preview-empty h3 { color: #dfc1d0; }
+#studioView .studio-picker-preview-empty p,
+#studioView .studio-picker-empty p,
+#studioView .studio-picker-footer [role=status] { color: #b798aa; }
+#studioView .studio-picker-selection li { border-color: #5b3d4f; background: #2a1c26; }
+#studioView .studio-picker-selection-index { color: #d9a8c0; }
+#studioView .studio-picker-confirm:disabled { border-color: #624256; background: #3b2734; color: #b99bad; }
+
+@media (max-width: 1023px) {
+  /* Studio no longer changes the global header to ivory. */
+  .app-shell:has(#studioView.active) .topbar {
+    background: #140d13ef;
+    border-color: #362430;
+  }
+  .app-shell:has(#studioView.active) .topbar .brand { color: #f7e8ef; }
+  .app-shell:has(#studioView.active) .topbar .brand-mark { border-color: #735263; background: #2a1b25; }
+  .app-shell:has(#studioView.active) .topbar .sync-btn { border-color: #5b3b4d; background: #271821; color: #e3c3d3; }
+  .app-shell:has(#studioView.active) .topbar .icon-btn { background: #30202a; color: #e5c5d5; }
+  #studioView .studio-reference-actions > summary { border-color: #765267; background: #21151de8; box-shadow: 0 2px 8px #0005; }
+}
+
+@media (min-width: 1024px) {
+  html, body { background: #080608; }
+  .app-shell,
+  .app-shell:has(.studio-view.active) { background: #0d080c; }
+  .app-shell::before { background: #170f16; border-color: #443040; }
+  .topbar,
+  .app-shell:has(.studio-view.active) .topbar {
+    background: linear-gradient(90deg, #170f16 0 216px, #1c1119 216px);
+    border-color: #3f2a39;
+  }
+  .topbar .brand { color: #f4e4ed; }
+  .topbar .brand-mark { border-color: #775367; background: #2c1a26; color: #e0bbcf; }
+  .topbar .sync-btn { border-color: #604052; background: #281922; color: #dcbacd; }
+  .topbar .icon-btn { background: #33212d; color: #dfbdd0; }
+  .bottom-nav .nav-item { color: #af90a1; }
+  .bottom-nav .nav-item.active {
+    border-color: #ddadc5;
+    background: #32202c;
+    color: #f5e7ee;
+    box-shadow: 0 4px 12px #0004;
+  }
+  .bottom-nav .release-stamp { color: #b69aaa; }
+  #studioView .studio-canvas:not(:has(img)) .studio-empty {
+    background: linear-gradient(127deg, #2b1b26 0%, #110a10 100%);
+  }
+}

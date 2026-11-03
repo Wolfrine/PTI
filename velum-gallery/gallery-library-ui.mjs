@@ -6,15 +6,18 @@ export function mountGalleryLibrary({drive,current,getUrl,onFilter,onChanged}){
  const dialog=document.createElement('dialog');dialog.className='library-detail';dialog.setAttribute('aria-labelledby','libraryDetailTitle');document.body.append(dialog);
  const regions=[];
  for(const selector of ['#driftView','#browseView']){
-  const region=document.createElement('div');region.className=`library-tools ${selector==='#driftView'?'library-tools-drift':''}`;
-  region.innerHTML=`<label>Collection <select aria-label="${selector==='#driftView'?'Drift':'Browse'} folder"><option value="all">All</option><option value="private">Private</option><option value="references">References</option></select></label>${selector==='#driftView'?'<button type="button" data-details>Image details ↗</button><span data-folder-label></span>':''}<button type="button" data-recovery hidden>Undo last action</button>`;
-  const surface=document.querySelector(selector),heading=surface?.querySelector('.browse-head');if(heading)heading.after(region);else surface?.append(region);regions.push(region);
-  region.querySelector('select').addEventListener('change',event=>{filter=event.target.value;regions.forEach(item=>item.querySelector('select').value=filter);onFilter(filter);});
+  const drift=selector==='#driftView',key=drift?'drift':'browse';
+  const region=document.createElement('div');region.className=`library-tools ${drift?'library-tools-drift':'library-tools-browse'} collapsed`;
+  const icon=drift?'···':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4"/></svg>';
+  region.innerHTML=`<button type="button" class="library-tools-toggle" aria-expanded="false" aria-label="${drift?'Collection and image options':'Choose collection'}" aria-controls="${key}LibraryOptions">${icon}</button><div id="${key}LibraryOptions" class="library-tools-content"><label>Collection <select aria-label="${drift?'Drift':'Browse'} folder"><option value="all">All</option><option value="private">Private</option><option value="references">References</option></select></label>${drift?'<button type="button" data-details>Image details ↗</button><span data-folder-label></span>':''}<button type="button" data-recovery hidden>Undo last action</button></div>`;
+  const surface=document.querySelector(selector),heading=surface?.querySelector('.browse-head');if(heading)heading.append(region);else surface?.append(region);regions.push(region);
+  const toggle=region.querySelector('.library-tools-toggle');toggle.addEventListener('click',()=>{const expanded=region.classList.toggle('collapsed')===false;toggle.setAttribute('aria-expanded',String(expanded));});
+  region.querySelector('select').addEventListener('change',event=>{filter=event.target.value;regions.forEach(item=>item.querySelector('select').value=filter);onFilter(filter);region.classList.add('collapsed');toggle.setAttribute('aria-expanded','false');});
   region.querySelector('[data-details]')?.addEventListener('click',()=>open(current()));
   region.querySelector('[data-recovery]').addEventListener('click',undo);
  }
  function showRecovery(){regions.forEach(region=>{const button=region.querySelector('[data-recovery]');button.hidden=!recovery;button.disabled=busy;});}
- function clear(){epoch++;active=null;busy=false;dialog.close();dialog.replaceChildren();}
+ function clear(){epoch++;active=null;busy=false;dialog.close();dialog.replaceChildren();for(const region of regions){region.classList.add('collapsed');region.querySelector('.library-tools-toggle')?.setAttribute('aria-expanded','false');}}
  function message(value){const output=dialog.querySelector('[role=status]');if(output)output.textContent=value;}
  function setBusy(value){busy=value;dialog.querySelectorAll('button:not([data-close]):not([data-exit])').forEach(button=>button.disabled=value);showRecovery();}
  function draw(file,url){

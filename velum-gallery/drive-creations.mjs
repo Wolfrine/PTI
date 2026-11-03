@@ -1,7 +1,7 @@
 // Read-only quality evidence. These records never enter the executable job schema.
 const contractURL=new URL('./studio-contract.mjs',import.meta.url);contractURL.search=new URL(import.meta.url).search;
 const {MODEL_IDS,MODEL_REFERENCE_LIMITS}=await import(contractURL.href);
-export const DRIVE_CREATION_LIMITS=Object.freeze({manifests:5,samples:10,records:50,jsonBytes:256*1024,imageBytes:64*1024*1024,imageEdge:16384,imagePixels:67108864});
+export const DRIVE_CREATION_LIMITS=Object.freeze({manifests:5,samples:10,records:50,jsonBytes:256*1024,imageBytes:7200000,imageEdge:3072,imagePixels:1150000});
 const encoder=new TextEncoder(),fileID=/^[A-Za-z0-9_-]{1,160}$/,sampleID=/^[A-Za-z0-9_-]{1,80}$/,hash=/^[a-f0-9]{64}$/;
 const fail=message=>{throw new Error(`Invalid Drive quality catalog: ${message}.`);};
 function object(value,label){if(!value||typeof value!=='object'||Array.isArray(value)||![Object.prototype,null].includes(Object.getPrototypeOf(value)))fail(label);return value;}
@@ -29,7 +29,7 @@ function image(value,label,{original=false}={}){
  keys(value,original?['fileId','mime','bytes','sha256','width','height']:['mime','bytes','sha256','width','height'],[],label);
  if(original)driveID(value.fileId);
  if(!(original?['image/png']:['image/png','image/jpeg']).includes(value.mime))fail(label+' MIME');
- integer(value.bytes,67,DRIVE_CREATION_LIMITS.imageBytes,label+' byte length');
+ integer(value.bytes,100,DRIVE_CREATION_LIMITS.imageBytes,label+' byte length');
  if(typeof value.sha256!=='string'||!hash.test(value.sha256))fail(label+' hash');
  integer(value.width,1,DRIVE_CREATION_LIMITS.imageEdge,label+' width');integer(value.height,1,DRIVE_CREATION_LIMITS.imageEdge,label+' height');
  if(value.width*value.height>DRIVE_CREATION_LIMITS.imagePixels)fail(label+' pixel count');
@@ -42,6 +42,7 @@ function reference(value,index){
  driveID(value.source.id,'reference source ID');string(value.source.name,160,'reference source name');
  if(Object.hasOwn(value,'inputFileId'))driveID(value.inputFileId,'reference input file ID');
  const {mime,bytes,sha256,width,height}=value;image({mime,bytes,sha256,width,height},'reference');
+ if(bytes>2097152||width>1024||height>1024||width*height>1048576)fail('conditioned reference exceeds Studio limits');
  return {...value,source:{...value.source}};
 }
 function pose(value,references){

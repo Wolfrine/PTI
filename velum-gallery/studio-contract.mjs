@@ -8,7 +8,7 @@ export const MODELS = Object.freeze([
   {id:'flux2-klein-fp8',label:'FLUX.2 Klein 4B',hint:'4 steps · quickest iteration · prompt following'},
   {id:'realvis-dynamic',label:'RealVisXL 5',hint:'28 steps · photographic finish · heavier'},
   {id:'realistic-sd15',label:'Realistic Vision 6',hint:'28 steps · lighter fallback · less detail'},
-  {id:'qwen-image-2.1',label:'Qwen-Image 2.1',hint:'40 steps · up to 10 references · patient research edits'},
+  {id:'qwen-image-2.1',label:'Qwen-Image 2.1',hint:'40 steps · up to 10 image inputs · longer renders'},
 ]);
 export const MODEL_IDS = MODELS.map(model=>model.id);
 export const QWEN_MODEL='qwen-image-2.1';

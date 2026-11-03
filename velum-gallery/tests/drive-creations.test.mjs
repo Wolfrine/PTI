@@ -12,6 +12,12 @@ function manifest(id='sample-1'){
 const parse=value=>parseDriveCreations(value,{manifestFileId:'synthetic-manifest',manifestName:'Velum-acceptance-synthetic.json'});
 const file=(index,size)=>({id:`synthetic-manifest-${index}`,name:`Velum-acceptance-synthetic-${index}.json`,modifiedTime:new Date(now+index*1000).toISOString(),...(size===undefined?{}:{size})});
 
+test('Drive catalog uses the same bounded original and conditioned-input budgets as Studio',()=>{
+ const original=manifest();original.samples[0].image.width=896;original.samples[0].image.height=1184;assert.equal(parse(original)[0].width,896);
+ for(const change of [{bytes:7200001},{width:3073},{width:1200,height:1200}]){const value=manifest();Object.assign(value.samples[0].image,change);assert.throws(()=>parse(value),/Invalid Drive quality catalog/);}
+ for(const change of [{bytes:2097153},{width:1025},{height:1025}]){const value=manifest();Object.assign(value.samples[0].references[0],change);assert.throws(()=>parse(value),/Studio limits/);}
+});
+
 test('Drive quality catalog preserves exact evidence and creates immutable non-executable records',()=>{
  const input=manifest(),sample=input.samples[0];input.compareFileId='synthetic-comparison';const [record]=parse(input);
  assert.equal(record.id,'drive-quality-sample-1');assert.equal(record.schemaVersion,1);assert.equal(record.recordType,'drive-acceptance');assert.equal(record.status,'completed');assert.equal(record.executableJob,false);assert.equal(record.originalVerified,false);

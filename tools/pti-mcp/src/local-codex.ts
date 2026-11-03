@@ -344,7 +344,13 @@ export class CodexRelay {
       maintenance={controls,lost};
     }
     const dispatch=body.dispatch?await this.dispatch(uid,body.heartbeat,active.length-maintenance.lost.length):{jobs:[],more:false};
-    return {...maintenance,...dispatch,syncDelayMs:30000};
+    // The marker listener wakes admission immediately. An idle connected worker
+    // needs only a heartbeat inside the unchanged 60-second online window.
+    // This leaves 20 seconds of nominal freshness headroom; network latency
+    // consumes that headroom. Active leases and disconnected
+    // notification transports retain the existing 30-second maintenance.
+    const quiet=body.heartbeat.dispatchReady===true&&active.length===0&&dispatch.jobs.length===0;
+    return {...maintenance,...dispatch,syncDelayMs:quiet?40000:30000};
   }
   async poll(uid:string,body:{heartbeat:z.infer<typeof heartbeatSchema>;active?:{id:string;generation:number;lease:string}|{id:string;generation:number;lease:string}[]}) {
     this.owner(uid);const modern=Array.isArray(body.active);

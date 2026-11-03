@@ -1,0 +1,28 @@
+name: Velum worker notification checks
+on:
+  push:
+    branches: [main]
+    paths: ['tools/velum-worker/**', 'velum-gallery/device-config.mjs', 'personal-harness/firestore.rules', '.github/workflows/velum-worker-checks.yml']
+  pull_request:
+    paths: ['tools/velum-worker/**', 'velum-gallery/device-config.mjs', 'personal-harness/firestore.rules', '.github/workflows/velum-worker-checks.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci --prefix tools/velum-worker --ignore-scripts --no-audit --no-fund
+      - run: npm test --prefix tools/velum-worker
+      - run: npm ci --prefix apps/one-piece --ignore-scripts --no-audit --no-fund
+      - name: Verify device-scoped listeners and revocation
+        env:
+          JAVA_TOOL_OPTIONS: -Duser.language=en
+        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-events --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs tools/velum-worker/studio2.rules.test.mjs tools/velum-worker/device-isolation.rules.test.mjs tools/velum-worker/queue-events.rules.test.mjs'

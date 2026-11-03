@@ -1,7 +1,7 @@
 import path from 'node:path';
 import {endpointPort,GTOP_MODELS,samePath} from './gtop-runner.mjs';
 
-export const VERSION = '1.3.0';
+export const VERSION = '1.3.1';
 export const FAILURES = new Set(['start_failed','model_unavailable','port_in_use','configuration_invalid','worker_start_timeout','companion_start_timeout']);
 export function validateSettings(value) {
   if (value?.workerId !== 'sachit-windows') throw Error('configuration_invalid');

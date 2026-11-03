@@ -9,12 +9,26 @@ import { CodexRelay, createCodexServer, workerPollSchema, workerSyncSchema, work
 import { morselBlinkitRouter } from './morsel-blinkit-http.js';
 
 function escape(value: string) { return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]!)); }
+export function protocolRejectionReason(error:Error) {
+  // SDK errors may contain request values. Emit only fixed categories, never
+  // error text, headers, tokens, request IDs or tool arguments.
+  const value=error.message;
+  if(value==='Parse error: Invalid JSON')return 'invalid_json';
+  if(value==='Parse error: Invalid JSON-RPC message')return 'invalid_jsonrpc';
+  if(value==='Invalid Request: Only one initialization request is allowed')return 'initialize_batch';
+  if(value.startsWith('Invalid Request: Batch must not exceed '))return 'oversized_batch';
+  if(value.startsWith('Bad Request: Unsupported protocol version: '))return 'unsupported_protocol';
+  if(value==='Bad Request: Server not initialized')return 'not_initialized';
+  if(value==='Event store not configured')return 'unsupported_resume';
+  return 'other_transport_error';
+}
 export function createHttpApp(options: {
   provider: PtiOAuthProvider;
   verifyIdentity: (idToken: string) => Promise<UserIdentity>;
   createServer: (context: { uid: string; email: string; actor: string; taskReference: string; transport: string }) => McpServer;
   firebaseConfig: Record<string, string>;
   codex?: CodexRelay;
+  onProtocolRejection?: (event:{event:'mcp_protocol_rejected';route:'local-codex';reason:string})=>void;
 }) {
   const { provider } = options;
   const app = express();
@@ -71,6 +85,7 @@ button.onclick=async()=>{button.disabled=true;try{
       const auth=req.auth!;
       if(auth.resource?.href!==resource||auth.extra?.uid!==OWNER){res.status(403).json({error:'Local Codex owner authorization required.'});return;}
       const waiting=new AbortController(),server=createCodexServer(relay,OWNER,waiting.signal),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
+      transport.onerror=error=>options.onProtocolRejection?.({event:'mcp_protocol_rejected',route:'local-codex',reason:protocolRejectionReason(error)});
       res.on('close',()=>{waiting.abort();void transport.close();void server.close();});await server.connect(transport);await transport.handleRequest(req,res,req.body);
     });
     app.all('/local-codex/mcp',(_req,res)=>{res.set('Allow','POST');res.status(405).end();});

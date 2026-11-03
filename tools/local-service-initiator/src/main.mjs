@@ -2,7 +2,7 @@ import {mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {validateSettings,Initiator,VERSION} from './core.mjs';
 import {WorkerHost,unprotect,readJson,atomicJson,pause} from './windows.mjs';
-import {OnePieceHost,ONE_PIECE_GATEWAY,onePiecePollBody} from './one-piece.mjs';
+import {OnePieceHost,OnePieceSupervisor,ONE_PIECE_GATEWAY,ONE_PIECE_CHECK_MS,onePiecePollBody} from './one-piece.mjs';
 import {GtopSupervisor,LOCAL_CHECK_MS} from './supervision.mjs';
 
 const settings=validateSettings(await readJson(process.argv[2]));
@@ -35,21 +35,37 @@ const supervisionFile=path.join(settings.stateDirectory,'gtop-supervision.json')
 const supervisor=new GtopSupervisor({host,poll:()=>initiator.tick(),read:()=>readJson(supervisionFile),write:value=>atomicJson(supervisionFile,value)});
 const onePieceHost=settings.onePieceEnabled===true?new OnePieceHost(host):null;
 const onePieceAttempt=path.join(settings.stateDirectory,'one-piece-attempt.json');
+let onePieceRemoteCalls=0;
+async function onePiecePoll(body){
+  const bearer=await workerToken();onePieceRemoteCalls++;
+  return json(ONE_PIECE_GATEWAY+'/poll',body,{Authorization:'Bearer '+bearer});
+}
 async function startOnePiece(){
   let pending,done=false;
   const timer=setInterval(()=>{
     if(done||pending)return;
-    pending=(async()=>json(ONE_PIECE_GATEWAY+'/poll',{version:VERSION,companionReady:await onePieceHost.ready()},{Authorization:'Bearer '+await workerToken()}))()
+    pending=(async()=>onePiecePoll({version:VERSION,companionReady:await onePieceHost.ready()}))()
       .catch(()=>{}).finally(()=>{pending=undefined;});
   },15000);
   try{await onePieceHost.start();}
   finally{done=true;clearInterval(timer);await pending;}
 }
+let onePieceMeasuredReady;
 const onePiece=onePieceHost?new Initiator({
-  api:async body=>json(ONE_PIECE_GATEWAY+'/poll',onePiecePollBody(body),{Authorization:'Bearer '+await workerToken()}),
-  read:()=>readJson(onePieceAttempt),write:value=>atomicJson(onePieceAttempt,value),start:startOnePiece,workerRunning:()=>onePieceHost.ready()
+  api:body=>onePiecePoll(onePiecePollBody(body)),
+  read:()=>readJson(onePieceAttempt),write:value=>atomicJson(onePieceAttempt,value),start:startOnePiece,
+  workerRunning:()=>{
+    // Consume the supervisor's fresh sample once; ACK/recovery probes must
+    // measure again after the command rather than reusing pre-start health.
+    if(onePieceMeasuredReady===undefined)return onePieceHost.ready();
+    const ready=onePieceMeasuredReady;onePieceMeasuredReady=undefined;return ready;
+  }
 }):null;
-let stopping=false,onePieceFailures=0;
+const onePieceSupervisor=onePiece?new OnePieceSupervisor({ready:()=>onePieceHost.ready(),poll:async ready=>{
+  onePieceMeasuredReady=ready;
+  try{return await onePiece.tick();}finally{onePieceMeasuredReady=undefined;}
+}}):null;
+let stopping=false;
 process.on('SIGINT',()=>stopping=true);process.on('SIGTERM',()=>stopping=true);
 async function gtopTick(){
   const status={version:VERSION,pid:process.pid,...await supervisor.tick()};
@@ -57,19 +73,18 @@ async function gtopTick(){
   await atomicJson(path.join(settings.stateDirectory,'status.json'),status);
 }
 async function onePieceTick(){
-  if(!onePiece)return;
-  let status;
-  try{const service=await onePiece.tick();onePieceFailures=0;status={version:VERSION,pid:process.pid,lastPollAt:new Date().toISOString(),state:service?.state||'unavailable',companionReady:service?.companion?.state==='ready',errorCode:null};}
-  catch(error){onePieceFailures++;status={version:VERSION,pid:process.pid,checkedAt:new Date().toISOString(),state:'unavailable',errorCode:['authentication_required','configuration_invalid'].includes(error.message)?error.message:'gateway_unavailable'};}
+  if(!onePieceSupervisor)return;
+  const status={version:VERSION,pid:process.pid,...await onePieceSupervisor.tick()};
+  status.counters.remoteCalls=onePieceRemoteCalls;
   await atomicJson(path.join(settings.stateDirectory,'one-piece-status.json'),status);
 }
-async function loop(tick,errorCount){
+async function loop(tick){
   while(!stopping){
     try{await tick();}catch{/* Local disk failure cannot start another service. */}
-    await pause(Math.min(60000,15000*Math.max(1,errorCount())));
+    await pause(ONE_PIECE_CHECK_MS);
   }
 }
 // Independent timers: either service can be starting or unavailable without
 // starving the other's heartbeat or control mailbox.
 async function supervise(){while(!stopping){try{await gtopTick();}catch{/* Fail closed on local state failure. */}await pause(LOCAL_CHECK_MS);}}
-await Promise.all([supervise(),...(onePiece?[loop(onePieceTick,()=>onePieceFailures)]:[])]);
+await Promise.all([supervise(),...(onePiece?[loop(onePieceTick)]:[])]);

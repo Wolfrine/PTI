@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {OnePieceHost,ONE_PIECE_GATEWAY,onePiecePollBody} from '../src/one-piece.mjs';
+import {OnePieceHost,OnePieceSupervisor,ONE_PIECE_GATEWAY,ONE_PIECE_CHECK_MS,ONE_PIECE_HEALTHY_POLL_MS,onePiecePollBody} from '../src/one-piece.mjs';
 import {Initiator} from '../src/core.mjs';
 
 const now=()=>Date.parse('2026-10-27T01:00:00Z');
@@ -13,6 +13,52 @@ function fixture(overrides={}){
   run:async(script,input)=>{scripts.push({script,input});return 'False';},wait:async ms=>{at+=ms;},...overrides});
  return {host,starts,requests,scripts,advance:ms=>{at+=ms;},get elapsed(){return at-now();}};
 }
+
+function supervision({ready=true}={}){
+ let at=now(),healthy=ready,polls=0,error;
+ const subject=new OnePieceSupervisor({now:()=>at,ready:async()=>healthy,poll:async()=>{
+  polls++;if(error)throw Error(error);
+  return {state:healthy?'ready':'offline',companion:{state:healthy?'ready':'offline'}};
+ }});
+ return {subject,advance:ms=>at+=ms,set healthy(value){healthy=value;},set error(value){error=value;},get polls(){return polls;}};
+}
+
+test('a quiet day checks health every 15 seconds but performs 2880 healthy mailbox polls',async()=>{
+ const f=supervision();let status;
+ for(let ms=0;ms<86400000;ms+=ONE_PIECE_CHECK_MS){status=await f.subject.tick();f.advance(ONE_PIECE_CHECK_MS);}
+ assert.equal(f.polls,86400000/ONE_PIECE_HEALTHY_POLL_MS);
+ assert.equal(status.counters.localChecks,5760);assert.equal(status.state,'ready');
+});
+
+test('stopped companions retain 15-second Start discovery and health transitions publish on the next check',async()=>{
+ const f=supervision({ready:false});await f.subject.tick();f.advance(15000);await f.subject.tick();assert.equal(f.polls,2);
+ f.healthy=true;f.advance(15000);await f.subject.tick();assert.equal(f.polls,3);
+ f.advance(15000);const quiet=await f.subject.tick();assert.equal(f.polls,3);
+ assert.equal(Date.parse(quiet.checkedAt)-Date.parse(quiet.lastPollAt),15000);
+ f.healthy=false;f.advance(1);const stopped=await f.subject.tick();assert.equal(f.polls,4);assert.equal(stopped.state,'offline');
+});
+
+test('concurrent health checks coalesce to one command path and use post-start readiness',async()=>{
+ const f=supervision({ready:false});let starts=0;
+ f.subject.poll=async()=>{starts++;return {state:'ready',companion:{state:'ready'}};};
+ const results=await Promise.all([f.subject.tick(),f.subject.tick(),f.subject.tick()]);
+ assert.equal(starts,1);assert.equal(results[0].companionReady,true);
+ assert.equal(Date.parse(results[0].nextPollAt)-Date.parse(results[0].lastPollAt),30000);
+});
+
+test('remote failures back off to 60 seconds despite health changes and recover without speculative starts',async()=>{
+ for(const error of ['authentication_required','configuration_invalid','private credential text']){
+  const f=supervision();await f.subject.tick();f.error=error;f.advance(30000);let status=await f.subject.tick();
+  assert.equal(status.state,'unavailable');assert.equal(status.errorCode,error==='private credential text'?'gateway_unavailable':error);
+  assert.equal(status.lastPollAt,new Date(now()).toISOString());
+  f.advance(15000);await f.subject.tick();assert.equal(f.polls,3);
+  f.healthy=false;f.advance(15000);await f.subject.tick();assert.equal(f.polls,3);
+  f.advance(15000);await f.subject.tick();assert.equal(f.polls,4);
+  f.advance(45000);await f.subject.tick();assert.equal(f.polls,5);
+  assert.equal(f.subject.nextPollAt-f.subject.now(),60000);
+  f.error=null;f.advance(60000);status=await f.subject.tick();assert.equal(status.state,'offline');assert.equal(status.errorCode,null);
+ }
+});
 test('only fresh actual companion health is published ready, using a fixed trusted URL',async()=>{
  const f=fixture();assert.equal(await f.host.ready(),true);assert.equal(f.requests[0].url,'https://pti-onepiece-home.duckdns.org:8443/api/health');
  assert.equal(f.requests[0].options.headers.Origin,'https://pti-app-2ab59-one-piece.web.app');assert.equal(f.requests[0].options.redirect,'error');

@@ -30,6 +30,27 @@ function fixture(){
 }
 
 describe('Local Codex listener transport',()=>{
+  it('uses forty-second idle heartbeats only with a connected listener and preserves sixty-second freshness',async()=>{
+    const f=fixture();f.heartbeat.dispatchReady=true;
+    expect(await f.sync()).toMatchObject({jobs:[],syncDelayMs:40000});
+    f.reset();
+    for(let tick=0;tick<2160;tick++){
+      f.advance(40000);expect((await f.sync()).syncDelayMs).toBe(40000);
+    }
+    expect(f.counts).toMatchObject({reads:2160,writes:2160,queueQueries:0});
+    f.advance(59999);expect(await f.relay.status(OWNER)).toMatchObject({online:true});
+    f.advance(2);expect(await f.relay.status(OWNER)).toMatchObject({online:false});
+    f.heartbeat.dispatchReady=false;
+    expect((await f.sync()).syncDelayMs).toBe(30000);
+  });
+  it('keeps thirty-second maintenance as soon as a marker wakes a new claim',async()=>{
+    const f=fixture();f.heartbeat.dispatchReady=true;await f.sync();
+    await f.relay.start(OWNER,f.args);
+    const admitted=await f.sync([],true);
+    expect(admitted.jobs).toHaveLength(1);expect(admitted.syncDelayMs).toBe(30000);
+    f.advance(31000);expect((await f.sync(admitted.jobs)).syncDelayMs).toBe(30000);
+    expect(await f.relay.status(OWNER)).toMatchObject({online:true});
+  });
   it('does no queue query during quiet health maintenance and throttles heartbeat writes to thirty seconds',async()=>{
     const f=fixture();await f.sync();expect(f.counts).toMatchObject({reads:1,queueQueries:0,writes:1});
     f.reset();f.advance(10000);await f.sync();expect(f.counts).toMatchObject({reads:1,queueQueries:0,writes:0});

@@ -16,6 +16,44 @@ export function onePiecePollBody(body){
   return result;
 }
 
+export const ONE_PIECE_CHECK_MS=15000;
+export const ONE_PIECE_HEALTHY_POLL_MS=30000;
+
+/** Health changes expedite the mailbox; failures retain bounded remote backoff. */
+export class OnePieceSupervisor {
+  constructor({ready,poll,now=()=>Date.now()}) {
+    Object.assign(this,{ready,poll,now});
+    this.nextPollAt=0;this.failures=0;this.localChecks=0;
+  }
+  tick() {
+    if(!this.inFlight)this.inFlight=this.check().finally(()=>{this.inFlight=undefined;});
+    return this.inFlight;
+  }
+  async check() {
+    let companionReady=await this.ready();this.localChecks++;
+    if(this.now()>=this.nextPollAt || (!this.failures && companionReady!==this.publishedReady)) {
+      try {
+        this.service=await this.poll(companionReady);this.failures=0;this.errorCode=null;
+        this.lastPollAt=new Date(this.now()).toISOString();
+        this.publishedReady=this.service?.companion?.state==='ready';
+        // The command path can spend 75 seconds starting the companion and
+        // returns health measured again with its acknowledgement.
+        companionReady=this.publishedReady;
+        this.nextPollAt=this.now()+(this.publishedReady?ONE_PIECE_HEALTHY_POLL_MS:ONE_PIECE_CHECK_MS);
+      } catch(error) {
+        this.failures++;this.errorCode=['authentication_required','configuration_invalid'].includes(error.message)?error.message:'gateway_unavailable';
+        this.nextPollAt=this.now()+Math.min(60000,ONE_PIECE_CHECK_MS*this.failures);
+      }
+    }
+    return {
+      checkedAt:new Date(this.now()).toISOString(),lastPollAt:this.lastPollAt||null,
+      state:this.errorCode?'unavailable':this.service?.state||'unavailable',
+      companionReady,errorCode:this.errorCode||null,nextPollAt:new Date(this.nextPollAt).toISOString(),
+      counters:{localChecks:this.localChecks},
+    };
+  }
+}
+
 // Existing H: installation is an operational dependency, never copied or upgraded
 // by this F: starter. Remote requests cannot supply any of these paths or commands.
 export class OnePieceHost {

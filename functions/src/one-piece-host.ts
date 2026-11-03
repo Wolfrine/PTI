@@ -9,6 +9,7 @@ const WORKER_PROJECT = 'gtop-app';
 const WORKER_ID = 'sachit-windows';
 const REQUEST_TTL_MS = 120_000;
 const HEARTBEAT_TTL_MS = 60_000;
+const HEARTBEAT_WRITE_MS = 30_000;
 const START_COOLDOWN_MS = 15_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ERROR_CODES = new Set(['start_failed', 'configuration_invalid', 'companion_start_timeout']);
@@ -42,7 +43,7 @@ type Poll = {
 };
 export type MailboxStore = {
     read(): Promise<Mailbox | undefined>;
-    transact<T>(update: (mailbox: Mailbox) => { mailbox: Mailbox; result: T }): Promise<T>;
+    transact<T>(update: (mailbox: Mailbox) => { mailbox: Mailbox; result: T; write?: boolean }): Promise<T>;
 };
 
 export class HostError extends Error {
@@ -118,7 +119,7 @@ export function createOnePieceController(store: MailboxStore, now = Date.now, ne
                 const at = now();
                 // Repeated clicks and transport retries must never create another launch.
                 if (mailbox.request?.clientRequestId === clientRequestId || mailbox.recentRequestIds.includes(clientRequestId)) {
-                    return { mailbox, result: { service: service(mailbox, at) } };
+                    return { mailbox, write: false, result: { service: service(mailbox, at) } };
                 }
                 if (liveRequest(mailbox, at) || (freshHeartbeat(mailbox, at) && mailbox.heartbeat?.companionReady)) {
                     mailbox.recentRequestIds = [...mailbox.recentRequestIds, clientRequestId].slice(-64);
@@ -138,21 +139,33 @@ export function createOnePieceController(store: MailboxStore, now = Date.now, ne
                 const at = now();
                 const request = mailbox.request;
                 const result = poll.lastStartResult;
+                let requestChanged = false;
                 // A late/foreign acknowledgement cannot modify any current request.
                 if (request?.state === 'pending') {
                     if (request.expiresAt <= at) {
                         request.state = 'expired'; request.errorCode = 'companion_start_timeout';
+                        requestChanged = true;
                     } else if (result?.requestId === request.id) {
                         request.state = result.state;
                         if (result.state === 'failed') request.errorCode = result.errorCode || 'start_failed';
+                        requestChanged = true;
                     }
                 }
-                mailbox.heartbeat = {
-                    at, version: poll.version, companionReady: poll.companionReady,
-                    ...(poll.companionReady ? { lastReadyAt: at } : mailbox.heartbeat?.lastReadyAt ? { lastReadyAt: mailbox.heartbeat.lastReadyAt } : {}),
-                };
+                const previous = mailbox.heartbeat;
+                const heartbeatDue = !previous || !Number.isFinite(previous.at) || previous.at > at + 5_000
+                    || at - previous.at >= HEARTBEAT_WRITE_MS || previous.version !== poll.version
+                    || previous.companionReady !== poll.companionReady;
+                // Keep the actual persisted timestamp on no-op polls. A response
+                // must not imply that the unchanged 60-second expiry was extended.
+                if (heartbeatDue) {
+                    mailbox.heartbeat = {
+                        at, version: poll.version, companionReady: poll.companionReady,
+                        ...(poll.companionReady ? { lastReadyAt: at } : previous?.lastReadyAt ? { lastReadyAt: previous.lastReadyAt } : {}),
+                    };
+                }
                 return {
                     mailbox,
+                    write: heartbeatDue || requestChanged,
                     result: {
                         service: service(mailbox, at),
                         request: liveRequest(mailbox, at) ? { id: mailbox.request!.id, action: 'start' as const, expiresAt: new Date(mailbox.request!.expiresAt).toISOString() } : null,
@@ -227,7 +240,7 @@ function productionRouter() {
             return admin.firestore().runTransaction(async transaction => {
                 const snapshot = await transaction.get(reference);
                 const changed = update(snapshot.exists ? snapshot.data() as Mailbox : emptyMailbox());
-                transaction.set(reference, { ...changed.mailbox, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+                if (changed.write !== false) transaction.set(reference, { ...changed.mailbox, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
                 return changed.result;
             });
         },

@@ -11,21 +11,78 @@ const poll = (extra = {}) => ({ version: '1.1.0', companionReady: false, ...extr
 
 function fixture() {
     let at = Date.parse('2026-10-27T12:00:00Z'), sequence = 100, state;
-    let lock = Promise.resolve();
+    let lock = Promise.resolve(), writes = 0, reads = 0;
     const store = {
-        async read() { return structuredClone(state); },
+        async read() { reads++; return structuredClone(state); },
         transact(update) {
             const result = lock.then(() => {
+                reads++;
                 const changed = update(structuredClone(state || { schemaVersion: 1, recentRequestIds: [] }));
-                state = changed.mailbox;
+                if (changed.write !== false) { state = changed.mailbox; writes++; }
                 return changed.result;
             });
             lock = result.catch(() => {});
             return result;
         },
     };
-    return { controller: createOnePieceController(store, () => at, () => id(sequence++)), advance: ms => at += ms, state: () => structuredClone(state) };
+    return { controller: createOnePieceController(store, () => at, () => id(sequence++)), advance: ms => at += ms, state: () => structuredClone(state), get writes() { return writes; }, get reads() { return reads; } };
 }
+
+test('unchanged legacy 15-second polls persist every 30 seconds and return the real persisted freshness', async () => {
+    const f = fixture();
+    const first = await f.controller.poll(poll({ companionReady: true }));
+    f.advance(15_000);
+    const skipped = await f.controller.poll(poll({ companionReady: true }));
+    assert.equal(f.writes, 1); assert.equal(f.reads, 2);
+    assert.equal(skipped.service.starter.lastSeenAt, first.service.starter.lastSeenAt);
+    assert.equal(skipped.service.companion.lastSeenAt, first.service.companion.lastSeenAt);
+    f.advance(15_000);
+    const due = await f.controller.poll(poll({ companionReady: true }));
+    assert.equal(f.writes, 2); assert.equal(f.reads, 3);
+    assert.notEqual(due.service.starter.lastSeenAt, first.service.starter.lastSeenAt);
+    f.advance(60_001);
+    assert.equal((await f.controller.status()).service.state, 'starter_offline');
+});
+
+test('readiness/version changes, matching ACKs and expiry write immediately inside the heartbeat window', async () => {
+    const f = fixture(); await f.controller.poll(poll());
+    f.advance(1_000); await f.controller.poll(poll({ companionReady: true })); assert.equal(f.writes, 2);
+    f.advance(1_000); await f.controller.poll(poll({ companionReady: true, version: '1.3.0' })); assert.equal(f.writes, 3);
+    f.advance(1_000); await f.controller.poll(poll()); assert.equal(f.writes, 4);
+    const accepted = await f.controller.start({ clientRequestId: id(1) });
+    await f.controller.poll(poll({ lastStartResult: { requestId: accepted.service.request.id, state: 'started' } }));
+    assert.equal(f.writes, 6); assert.equal(f.state().request.state, 'started');
+    await f.controller.poll(poll({ lastStartResult: { requestId: accepted.service.request.id, state: 'failed' } }));
+    assert.equal(f.writes, 6); assert.equal(f.state().request.state, 'started');
+    f.advance(15_000); await f.controller.start({ clientRequestId: id(2) });
+    f.advance(119_999); await f.controller.poll(poll());
+    const before = f.writes;
+    f.advance(1); await f.controller.poll(poll());
+    assert.equal(f.writes, before + 1); assert.equal(f.state().request.state, 'expired');
+});
+
+test('replayed Start and concurrent unchanged polls perform no redundant writes or launches', async () => {
+    const f = fixture(); await f.controller.poll(poll());
+    const accepted = await f.controller.start({ clientRequestId: id(1) });
+    const before = f.writes;
+    await Promise.all(Array.from({ length: 10 }, () => f.controller.start({ clientRequestId: id(1) })));
+    const responses = await Promise.all(Array.from({ length: 10 }, () => f.controller.poll(poll())));
+    assert.equal(f.writes, before);
+    assert.ok(responses.every(response => response.request.id === accepted.service.request.id));
+    f.advance(30_000);
+    await Promise.all(Array.from({ length: 10 }, () => f.controller.poll(poll())));
+    assert.equal(f.writes, before + 1);
+});
+
+test('heartbeat decisions capture transaction execution time after queued work', async () => {
+    const f = fixture(); await f.controller.poll(poll());
+    const first = f.controller.poll(poll()), queued = f.controller.poll(poll());
+    f.advance(30_000);
+    const results = await Promise.all([first, queued]);
+    assert.equal(f.writes, 2);
+    assert.equal(results[0].service.starter.lastSeenAt, new Date(Date.parse('2026-10-27T12:00:00Z') + 30_000).toISOString());
+    assert.equal(results[1].service.starter.lastSeenAt, results[0].service.starter.lastSeenAt);
+});
 
 test('fresh status requires measured companion health, never an accepted request', async () => {
     const f = fixture();

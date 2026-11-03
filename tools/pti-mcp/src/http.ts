@@ -17,6 +17,7 @@ const checkUser = async (uid: string, authenticatedAt: number) => {
 };
 const provider = new PtiOAuthProvider(new FirestoreAuthStore(db), origin, checkUser);
 const app = createHttpApp({ provider, createServer: createMcpServer,
+  onProtocolRejection:event=>console.warn(JSON.stringify(event)),
   codex: new CodexRelay(new FirestoreRelayStore(db)),
   verifyIdentity: async token => {
     const identity = await auth.verifyIdToken(token, true);

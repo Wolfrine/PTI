@@ -1,0 +1,12 @@
+{
+  "name": "@pti/velum-worker",
+  "version": "2.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test worker.test.mjs recovery.test.mjs reference.test.mjs thumbnail-backfill.test.mjs queue-events.test.mjs"
+  },
+  "dependencies": {
+    "firebase": "11.10.0"
+  }
+}

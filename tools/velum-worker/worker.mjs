@@ -11,6 +11,7 @@ import {WEIGHTS,runnable,encode,decode,imagePayload} from './core.mjs';
 import {downloadReferences,thumbnailPayload} from './reference-input.mjs';
 import {ThumbnailBackfill} from './thumbnail-backfill.mjs';
 import {pendingRecovery} from '../../velum-gallery/studio-recovery.mjs';
+import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -134,8 +135,11 @@ async function main(){
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
  let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false;
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',...values}));
- const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>60000||lastState!==state)){
+ const wakeup=new WorkWakeup(),sweep=new QueueSweep();
+ const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
+ const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
   await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:{referenceModel:'flux2-klein-fp8',maxReferences:2,referenceModels:['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'],referenceOutputWidth:512,referenceOutputHeight:768,recoveryControl:recoveryInstalled}});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=(item,error)=>queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});
@@ -198,19 +202,22 @@ async function main(){
    await pending;
   }});}finally{activeJob='';controller=null;}
  };
- process.on('SIGINT',()=>{stopping=true;controller?.abort();});process.on('SIGTERM',()=>{stopping=true;controller?.abort();});
+ const stop=()=>{stopping=true;controller?.abort();wakeup.wake();};
+ process.on('SIGINT',stop);process.on('SIGTERM',stop);
  try{
   installed=await installedModels();
   await local({state:'restoring-device',installed});
   let checking=false;
   heartbeat=setInterval(async()=>{
-   if(process.env.VELUM_HOST_PID){try{process.kill(Number(process.env.VELUM_HOST_PID),0);}catch{stopping=true;controller?.abort();}}
+   if(process.env.VELUM_HOST_PID){try{process.kill(Number(process.env.VELUM_HOST_PID),0);}catch{stop();}}
    if(!activeJob||checking)return;checking=true;
-   try{await approved();await publish('running');}catch(error){if(error.message==='device-not-approved'||error.message==='firebase-403')controller?.abort();}finally{checking=false;}
+   try{await approved();listen().catch(()=>{});await publish('running');}catch(error){if(error.message==='device-not-approved'||error.message==='firebase-403')controller?.abort();}finally{checking=false;}
   },15000);
   while(!stopping){
+   const notified=await wakeup.wait();if(stopping)break;
    try{
     if(!queue){const session=await restoreDevice(store);if(session.uid!==PC_DEVICE_UID)throw new Error('device-identity-mismatch');const candidate=new Queue(session,{store});await candidate.privacy();queue=candidate;}
+    await listen();
     let binding=await queue.binding();
     if(!binding){queue.session.saved={...queue.session.saved,grant:randomBytes(32).toString('hex'),grantCreatedAt:Date.now()};await store.save(queue.session.saved);await queue.write(`devices/${queue.session.uid}`,enrollment(queue.session.saved),{create:true});binding=await queue.binding();}
     if(binding.status==='pending'&&binding.expiresAt<=Date.now()){
@@ -227,26 +234,27 @@ async function main(){
        if(pendingRecovery(recovery))await queue.write('controls/worker-start',{status:'attempted',attemptedAt:Date.now()}).catch(error=>{if(error.message!=='firebase-403')throw error;});
        recoveryChecked=true;
       }
-     for(const item of await queue.jobs('running')){if(stopping)break;await run(item,true);}
-     for(const item of await queue.jobs('queued')){
-      if(stopping)break;await approved();
-      if(!runnable(item.job)){await fail(item,'expired');continue;}
-      if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
-      try{await queue.write(`jobs/${item.id}`,{status:'running',workerId:queue.session.uid,startedAt:Date.now()},{updateTime:item.updateTime});}
-      catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
-      await run(item,false);
+     if(sweep.due(notified,notifications.connected)){
+      for(const item of await queue.jobs('running')){if(stopping)break;await run(item,true);}
+      for(const item of await queue.jobs('queued')){
+       if(stopping)break;await approved();
+       if(!runnable(item.job)){await fail(item,'expired');continue;}
+       if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
+       try{await queue.write(`jobs/${item.id}`,{status:'running',workerId:queue.session.uid,startedAt:Date.now()},{updateTime:item.updateTime});}
+       catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
+       await run(item,false);
+      }
      }
-     if(!stopping)await backfill.step().catch(()=>backfill.recordError().catch(()=>{}));
+     if(!stopping){await publish('idle');await backfill.step().catch(()=>backfill.recordError().catch(()=>{}));}
      attempt=0;
     }
    }catch(error){
     await local({state:error.message==='device-not-approved'?'approval-required':'reconnecting',installed,activeJob:'',error:['device-auth-config-required','device-auth-key-restricted','device-login-required','device-identity-mismatch','private-rules-not-ready','device-auth-not-enabled-or-invalid'].includes(error.message)?error.message:'connection-unavailable'});
-    await new Promise(resolve=>setTimeout(resolve,retryDelay(attempt++)));continue;
+    await new Promise(resolve=>setTimeout(resolve,retryDelay(attempt++)));wakeup.wake();continue;
    }
-   await new Promise(resolve=>setTimeout(resolve,15000));
   }
  }finally{
-  clearInterval(heartbeat);await publish('offline').catch(()=>{});
+  clearInterval(heartbeat);await notifications.close();await publish('offline').catch(()=>{});
   if(queue)queue.session=null;await lock?.close();await unlink(path.join(STATE,'worker.lock')).catch(()=>{});
  }
 }

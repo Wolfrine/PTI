@@ -4,6 +4,7 @@ import { mcpAuthRouter, getOAuthProtectedResourceMetadataUrl } from '@modelconte
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import {JSONRPCMessageSchema,isInitializeRequest,SUPPORTED_PROTOCOL_VERSIONS} from '@modelcontextprotocol/sdk/types.js';
 import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE, type UserIdentity } from './oauth.js';
 import { CodexRelay, createCodexServer, workerPollSchema, workerSyncSchema, workerReportSchema, OWNER } from './local-codex.js';
 import { morselBlinkitRouter } from './morsel-blinkit-http.js';
@@ -28,7 +29,7 @@ export function createHttpApp(options: {
   createServer: (context: { uid: string; email: string; actor: string; taskReference: string; transport: string }) => McpServer;
   firebaseConfig: Record<string, string>;
   codex?: CodexRelay;
-  onProtocolRejection?: (event:{event:'mcp_protocol_rejected';route:'local-codex';reason:string})=>void;
+  onProtocolRejection?: (event:{event:'mcp_protocol_rejected';route:'local-codex';reason:string;stage:'preflight'|'transport'})=>void;
 }) {
   const { provider } = options;
   const app = express();
@@ -77,15 +78,41 @@ button.onclick=async()=>{button.disabled=true;try{
   if (options.codex) {
     const relay=options.codex,resource=`${provider.origin}/local-codex/mcp`;
     const metadataUrl=getOAuthProtectedResourceMetadataUrl(new URL(resource));
+    const parseCodexJson=express.json({limit:'256kb'});
     app.get('/.well-known/oauth-protected-resource/local-codex/mcp',(_req,res)=>res.json({resource,authorization_servers:[provider.origin],scopes_supported:[CODEX_SCOPE],bearer_methods_supported:['header'],resource_name:'Local Codex'}));
     app.use('/local-codex/mcp', (req,res,next)=>{
       const origin=req.get('origin');if(origin&&origin!==provider.origin&&!provider.redirectOrigins.includes(origin)){res.status(403).end();return;}next();
-    }, requireBearerAuth({verifier:provider,requiredScopes:[CODEX_SCOPE],resourceMetadataUrl:metadataUrl}));
-    app.post('/local-codex/mcp',express.json({limit:'256kb'}),async(req,res)=>{
+    },(req,res,next)=>{
+      if(req.method!=='POST'){next();return;}
+      // Defer parser errors until after auth, preserving the existing challenge
+      // and error ordering for malformed/oversized bodies and non-POST routes.
+      parseCodexJson(req,res,error=>{if(error)res.locals.codexBodyError=error;next();});
+    },(req,res,next)=>{
+      const version=req.get('mcp-protocol-version');
+      const accept=req.get('accept')||'',contentType=(req.get('content-type')||'').toLowerCase();
+      const bearer=/^Bearer [^\s]+$/i.test(req.get('authorization')||'');
+      if(req.method==='POST'&&!res.locals.codexBodyError&&bearer&&version!==undefined&&!SUPPORTED_PROTOCOL_VERSIONS.includes(version)
+        &&accept.includes('application/json')&&accept.includes('text/event-stream')&&contentType.includes('application/json')){
+        const raw=Array.isArray(req.body)?req.body:[req.body];
+        if(raw.length===0||raw.length>100){next();return;}
+        const messages=raw.map(value=>JSONRPCMessageSchema.safeParse(value));
+        // Match the SDK's non-initialize version rejection before database
+        // authentication. This path can only reject: it never grants access,
+        // runs a tool, negotiates a version or caches authorization. Initialize
+        // still reaches the SDK so it can negotiate a supported version.
+        // Oversized batches retain the SDK's earlier batch error (limit 100).
+        if(messages.every(value=>value.success)&&!messages.some(value=>value.success&&isInitializeRequest(value.data))){
+          options.onProtocolRejection?.({event:'mcp_protocol_rejected',route:'local-codex',reason:'unsupported_protocol',stage:'preflight'});
+          res.status(400).json({jsonrpc:'2.0',error:{code:-32000,message:`Bad Request: Unsupported protocol version: ${version} (supported versions: ${SUPPORTED_PROTOCOL_VERSIONS.join(', ')})`},id:null});return;
+        }
+      }
+      next();
+    },requireBearerAuth({verifier:provider,requiredScopes:[CODEX_SCOPE],resourceMetadataUrl:metadataUrl}),(_req,res,next)=>next(res.locals.codexBodyError));
+    app.post('/local-codex/mcp',async(req,res)=>{
       const auth=req.auth!;
       if(auth.resource?.href!==resource||auth.extra?.uid!==OWNER){res.status(403).json({error:'Local Codex owner authorization required.'});return;}
       const waiting=new AbortController(),server=createCodexServer(relay,OWNER,waiting.signal),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
-      transport.onerror=error=>options.onProtocolRejection?.({event:'mcp_protocol_rejected',route:'local-codex',reason:protocolRejectionReason(error)});
+      transport.onerror=error=>options.onProtocolRejection?.({event:'mcp_protocol_rejected',route:'local-codex',reason:protocolRejectionReason(error),stage:'transport'});
       res.on('close',()=>{waiting.abort();void transport.close();void server.close();});await server.connect(transport);await transport.handleRequest(req,res,req.body);
     });
     app.all('/local-codex/mcp',(_req,res)=>{res.set('Allow','POST');res.status(405).end();});

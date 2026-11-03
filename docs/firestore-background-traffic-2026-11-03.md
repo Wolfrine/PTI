@@ -46,13 +46,29 @@ restarted a production runtime.
 ## HTTP 400 investigation
 
 Existing request logs expose status/size, not the JSON-RPC rejection reason.
-Existing stderr had no matching reason. A local authorized reproduction produced
-400 for an initialize batch, then 200 initialize, 202 initialized notification,
-and 200 tool call, matching the four-request status pattern. This is a candidate,
-not proof of production cause. A fixed-category transport diagnostic records
-only event/route/reason; it never emits headers, tokens, identifiers, bodies or
-error strings. HTTP response behavior and all authorization checks are unchanged.
-Production attribution must be read after the new hosted revision becomes ready.
+The first correction deployed sanitized diagnostics as revision
+`pti-firestore-mcp-00053-mtd`. At 08:34:15 UTC it had emitted seven
+`unsupported_protocol` rejections since 08:33 UTC, establishing the production
+cause. An earlier local initialize-batch reproduction matched the status pattern
+but was not the observed production cause.
+
+The follow-up preflight rejects valid JSON-RPC non-initialize messages with an
+unsupported protocol version before reading Firestore authorization records. It
+keeps the SDK's same 400 JSON-RPC error, never executes a tool, and never accepts
+an unsupported version. Origin/Bearer-syntax/header/body/batch checks retain
+their existing behavior; initialization still negotiates through the SDK. Every
+potentially accepted request still reads its access grant and session and checks
+current user, scope, resource, owner and revocation. There is no authorization
+cache. The explicit denial-only precedence change is an unknown/revoked token
+combined with an unsupported version: it now returns 400 rather than 401, with
+no protected action or data. Missing credentials still challenge with 401.
+
+Diagnostics record only fixed event/route/reason/stage categories, never headers,
+tokens, identifiers, bodies or error strings. A preflight rejection avoids two
+authorization-document reads relative to the prior valid-token path: the old
+204/hour sample implies 408 fewer reads/hour if that request mix persists.
+This is a source/test cost model, not measured billing. A 400 response itself is
+required for unsupported versions by the [MCP transport specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#protocol-version-header).
 
 ## Expected changes, not measured billing
 
@@ -71,7 +87,7 @@ reported separately in the delivery record.
 
 ## Local verification before delivery
 
-PASS on the existing supported F-drive Node 24.22.1 runtime: hosted MCP 158 tests
+PASS on the existing supported F-drive Node 24.22.1 runtime: hosted MCP 159 tests
 and TypeScript build; Local Codex worker 51 tests and bundled build; starter 51
 tests; One Piece gateway 12 tests and functions build; Velum 34 deterministic
 tests and 17 emulator tests; Angular 107 ChromeHeadless tests and production

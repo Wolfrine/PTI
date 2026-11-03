@@ -12,6 +12,8 @@ import {downloadReferences,thumbnailPayload} from './reference-input.mjs';
 import {ThumbnailBackfill} from './thumbnail-backfill.mjs';
 import {pendingRecovery} from '../../velum-gallery/studio-recovery.mjs';
 import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
+import {engineProfile,qwenInstalled,workerCapabilities} from './engine-profile.mjs';
+import {QWEN_MODEL,validateJob} from '../../velum-gallery/studio-contract.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -19,7 +21,7 @@ const DATA='H:\\AI-ImageGen\\portrait-pilot';
 const PYTHON='F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe';
 const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const ROOT=`users/${OWNER_UID}/velumStudio/workspace`;
-const VERSION='2.2.0';
+const VERSION='2.3.0';
 const EXPECTED_BYTES={
  'z_image_turbo_nvfp4.safetensors':4509509600,'flux-2-klein-4b-fp8.safetensors':4070624520,
  'RealVisXL_V5.0_fp16.safetensors':6938065488,'Realistic_Vision_V6.0_NV_B1_fp16.safetensors':2132625894,
@@ -86,6 +88,7 @@ async function installedModels(){
   const valid=await Promise.all(files.map(async file=>{try{const info=await stat(path.join(DATA,'models',file));return info.isFile()&&info.size===EXPECTED_BYTES[path.basename(file)];}catch{return false;}}));
   if(valid.every(Boolean))installed.push(id);
  }
+ if(await qwenInstalled())installed.push(QWEN_MODEL);
  await stat(PYTHON);return installed;
 }
 async function loadThumbnail(directory,metadata){
@@ -97,14 +100,16 @@ async function loadThumbnail(directory,metadata){
 export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={}){
  // No shell, client-supplied path, ComfyUI port, network-capable model process or warmup.
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
- const logs=path.join(DATA,'velum-studio','logs');await mkdir(logs,{recursive:true});
- const parentCreated=execFileSync(PYTHON,['-B','-c',`import psutil; print(psutil.Process(${process.pid}).create_time())`],{windowsHide:true,encoding:'utf8',timeout:15000}).trim();
+ validateJob(job);
+ const profile=engineProfile(job.model);
+ const logs=path.join(profile.outputRoot,'logs');await mkdir(logs,{recursive:true});
+ const parentCreated=execFileSync(profile.python,['-B','-c',`import psutil; print(psutil.Process(${process.pid}).create_time())`],{windowsHide:true,encoding:'utf8',timeout:15000}).trim();
  return new Promise((resolve,reject)=>{
-  const child=spawn(PYTHON,['-B',path.join(HERE,'infer.py')],{cwd:HERE,windowsHide:true,shell:false,
+  const child=spawn(profile.python,['-B',profile.script],{cwd:HERE,windowsHide:true,shell:false,
    env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated},stdio:['pipe','pipe','pipe']});
   const abort=()=>child.kill();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
   let buffer='',diagnostic='',failure='inference-failed',saved=false;
-  const timer=setTimeout(()=>{child.kill();reject(new Error('resource-guard'));},1830000);
+  const timer=setTimeout(()=>{child.kill();reject(new Error('resource-guard'));},profile.parentTimeoutMs);
   child.stdout.on('data',chunk=>{
    buffer+=chunk.toString();if(buffer.length>1000000)buffer=buffer.slice(-100000);
    let end;while((end=buffer.indexOf('\n'))>=0){
@@ -140,13 +145,13 @@ async function main(){
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
  const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:{referenceModel:'flux2-klein-fp8',maxReferences:2,referenceModels:['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'],referenceOutputWidth:512,referenceOutputHeight:768,recoveryControl:recoveryInstalled}});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=(item,error)=>queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});
- const load=async id=>{
+ const load=async (id,job)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-output');
   try{
-   const output=path.join(DATA,'velum-studio',id),bytes=await readFile(path.join(output,'image.png'));
+   const output=path.join(engineProfile(job?.model).outputRoot,id),bytes=await readFile(path.join(output,'image.png'));
    const metadata=JSON.parse(await readFile(path.join(output,'result.json'),'utf8')),payload=imagePayload(bytes);
    if(payload.result.sha256!==metadata.sha256)throw new Error('invalid-output');
    return {...payload,metadata,thumbnail:await loadThumbnail(output,metadata)};
@@ -154,7 +159,7 @@ async function main(){
  };
  const upload=async(item,output)=>{
   const expected=item.job,actual=output.metadata;
-  if(['model','seed','width','height'].some(key=>actual.settings?.[key]!==expected[key])||(actual.prompt!==undefined&&actual.prompt!==expected.prompt)||(expected.schemaVersion===3&&JSON.stringify(actual.references)!==JSON.stringify(expected.references)))throw new Error('invalid-output');
+  if(['model','seed','width','height'].some(key=>actual.settings?.[key]!==expected[key])||(actual.prompt!==undefined&&actual.prompt!==expected.prompt)||([3,4].includes(expected.schemaVersion)&&JSON.stringify(actual.references)!==JSON.stringify(expected.references))||(expected.schemaVersion===4&&(actual.prompt!==expected.prompt||actual.effectivePrompt!==expected.effectivePrompt||JSON.stringify(actual.pose)!==JSON.stringify(expected.pose))))throw new Error('invalid-output');
   for(let index=0;index<output.chunks.length;index++){
    await approved();const relative=`jobs/${item.id}/chunks/${index}`;
    const existing=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
@@ -166,14 +171,14 @@ async function main(){
   const prior=await queue.request(`${ROOT}/thumbs/${item.id}`,{allow:[404]});
   if(prior.status===404)await queue.write(`thumbs/${item.id}`,thumb,{create:true});
   else if(decode({mapValue:{fields:prior.value.fields}}).sha256!==thumb.sha256)throw new Error('invalid-output');
-  await approved();await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,localPath:path.join(DATA,'velum-studio',item.id,'image.png')}});
+  await approved();await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,localPath:path.join(engineProfile(item.job.model).outputRoot,item.id,'image.png')}});
  };
  const backfill=new ThumbnailBackfill(path.join(STATE,'thumbnail-backfill.json'),{
   page:cursor=>queue.archivePage(cursor),
   hasThumbnail:async id=>(await queue.request(`${ROOT}/thumbs/${id}`,{allow:[404]})).status===200,
   load:async(id,job)=>{
    if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))return null;
-   const directory=path.join(DATA,'velum-studio',id);
+   const directory=path.join(engineProfile(job.model).outputRoot,id);
    try{
     await stat(path.join(directory,'image.png'));
     const metadata=JSON.parse(await readFile(path.join(directory,'result.json'),'utf8'));
@@ -189,16 +194,21 @@ async function main(){
  const run=async(item,resumed)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(item.id))throw new Error('invalid-job');
   activeJob=item.id;controller=new AbortController();await publish('running');
-  try{await finishClaimed(item,{resumed,load,upload,fail,approved,
+  try{await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload,fail,approved,
    canResumeInference:async()=>{
     if(!item.job.references?.length)return false;
-    try{await stat(path.join(DATA,'velum-studio',item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
+    try{await stat(path.join(engineProfile(item.job.model).outputRoot,item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
    },
-   prepare:async()=>downloadReferences(item.id,item.job,{root:path.join(DATA,'velum-studio'),approved,fetchChunk:async(reference,index)=>{
+   prepare:async()=>downloadReferences(item.id,item.job,{root:engineProfile(item.job.model).outputRoot,approved,fetchManifest:async reference=>{
+    const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}`);return decode({mapValue:{fields:response.value.fields}});
+   },fetchChunk:async(reference,index)=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}/chunks/${index}`);return decode({mapValue:{fields:response.value.fields}});
    }}),infer:async()=>{
    let pending=Promise.resolve(),lastStep=0;
-   await infer(item.id,item.job,progress=>{if(progress.step>lastStep){lastStep=progress.step;pending=pending.then(()=>queue.write(`jobs/${item.id}`,{status:'running',progress})).catch(()=>{});}},{signal:controller.signal});
+   const record=progress=>{pending=pending.then(()=>queue.write(`jobs/${item.id}`,{status:'running',progress})).catch(()=>{});};
+   await infer(item.id,item.job,progress=>{if(progress.step>lastStep){lastStep=progress.step;record(progress);}},{signal:controller.signal,onEvent:event=>{
+    if(item.job.model===QWEN_MODEL&&event.event==='stage')record({step:0,total:40,stage:event.stage});
+   }});
    await pending;
   }});}finally{activeJob='';controller=null;}
  };

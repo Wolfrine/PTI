@@ -46,14 +46,10 @@ def main():
     job, jid = request['job'], request['id']
     if not 1 <= len(jid) <= 80 or not all(c.isascii() and (c.isalnum() or c in '_-') for c in jid):
         raise ValueError('invalid-job')
+    from inference_contract import validate_request, QWEN_MODEL
+    effective_prompt = validate_request(job)
     references = job.get('references', [])
-    reference_limits = {'flux2-klein-fp8': 2, 'realvis-dynamic': 1, 'realistic-sd15': 1, 'zimage-nvfp4': 1}
-    if not isinstance(references, list) or len(references) > reference_limits.get(job['model'], 0) or (references and (job.get('schemaVersion') != 3 or job.get('inputsReady') is not True)):
-        raise ValueError('invalid-reference')
-    expected_size = (512, 768) if references else (768, 1024)
-    if (job['width'], job['height']) != expected_size or job.get('consent') is not True:
-        raise ValueError('invalid-job')
-    if not isinstance(job['prompt'], str) or not job['prompt'].strip() or len(job['prompt']) > 6000:
+    if job['model'] == QWEN_MODEL:
         raise ValueError('invalid-job')
     OUT.mkdir(parents=True, exist_ok=True)
     # An OS lock is shared by every Studio inference process, including other checkouts.
@@ -76,7 +72,7 @@ def main():
         extension = 'png' if manifest['mime'] == 'image/png' else 'jpg'
         source_images.append(read_reference(work/'inputs'/f'{index}.{extension}', manifest))
     with (work/'inference-started.json').open('x', encoding='utf-8') as marker:
-        json.dump(dict(jobId=jid, prompt=job['prompt'], seed=job['seed'], references=references), marker, ensure_ascii=False)
+        json.dump(dict(jobId=jid, prompt=job['prompt'], effectivePrompt=effective_prompt, pose=job.get('pose'), seed=job['seed'], references=references), marker, ensure_ascii=False)
     for key, relative in {'TEMP':'tmp', 'TMP':'tmp', 'TMPDIR':'tmp', 'HF_HOME':'cache/hf', 'TORCH_HOME':'cache/torch',
         'TORCH_EXTENSIONS_DIR':'cache/torch-extensions', 'TORCHINDUCTOR_CACHE_DIR':'cache/inductor',
         'TRITON_CACHE_DIR':'cache/triton', 'CUDA_CACHE_PATH':'cache/cuda', 'XDG_CACHE_HOME':'cache',
@@ -131,7 +127,7 @@ def main():
             emit(event='progress', step=value, total=total)
             time.sleep(.2)
         comfy.utils.set_progress_bar_global_hook(progress)
-        mode, prompt, seed = job['model'], job['prompt'], job['seed']
+        mode, prompt, seed = job['model'], effective_prompt, job['seed']
         width, height = job['width'], job['height']
         with torch.inference_mode():
             if mode in ('realvis-dynamic', 'realistic-sd15'):
@@ -222,7 +218,11 @@ def main():
             if references:
                 settings.update(referenceMethod='flux2-native-reference-latent' if mode=='flux2-klein-fp8' else 'vae-img2img', referenceCount=len(references), referencePixels=[dict(width=source.width, height=source.height) for source in source_images])
             meta = PngImagePlugin.PngInfo()
-            provenance = dict(prompt=prompt, settings=settings, parentJobId=job.get('parentJobId',''), references=references)
+            provenance = dict(prompt=job['prompt'], settings=settings, parentJobId=job.get('parentJobId',''), references=references)
+            if job['schemaVersion'] == 4:
+                provenance.update(effectivePrompt=effective_prompt)
+                if 'pose' in job:
+                    provenance.update(pose=job['pose'])
             meta.add_text('velum', json.dumps(provenance, ensure_ascii=False))
             file = work/'image.png'
             image.save(file, pnginfo=meta)

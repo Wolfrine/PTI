@@ -7,7 +7,7 @@ MAX_PIXELS = 1048576
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 warnings.simplefilter('error', Image.DecompressionBombWarning)
 
-def read_reference(path, manifest):
+def read_reference(path, manifest, inference_pixels=262144):
     file = Path(path)
     if file.stat().st_size != manifest['bytes'] or not 100 <= manifest['bytes'] <= 2097152:
         raise ValueError('invalid-reference')
@@ -21,7 +21,9 @@ def read_reference(path, manifest):
         image.load()
         image = ImageOps.exif_transpose(image).convert('RGB')
     # Fixed safe reference token budget; source bytes remain untouched on H.
-    scale = min(1., (262144/(image.width*image.height))**.5)
+    if inference_pixels is None:
+        return image
+    scale = min(1., (inference_pixels/(image.width*image.height))**.5)
     size = tuple(max(16, int(edge*scale)//16*16) for edge in image.size)
     return image.resize(size, Image.Resampling.LANCZOS) if image.size != size else image
 
@@ -47,8 +49,8 @@ def thumbnail(image, directory):
 
 if __name__ == '__main__':
     directory = Path(sys.argv[2]).resolve()
-    root = Path(r'H:\AI-ImageGen\portrait-pilot\velum-studio').resolve()
-    if directory.parent != root or sys.argv[1] != 'thumbnail':
+    roots = (Path(r'H:\AI-ImageGen\portrait-pilot\velum-studio').resolve(), Path(__file__).resolve().parent/'.runtime/qwen21')
+    if directory.parent not in roots or sys.argv[1] != 'thumbnail':
         raise ValueError('output-path-denied')
     with Image.open(directory/'image.png') as source:
         source.load()

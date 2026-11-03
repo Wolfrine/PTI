@@ -17,13 +17,18 @@ export function referenceBytes(manifest,chunks) {
 
 // Callers fetch only chunks under a claimed job. Complete local files are immutable
 // and reusable after interruption; partial network transfers never reach inference.
-export async function downloadReferences(id,job,{root,fetchChunk,approved=async()=>{}}) {
+export async function downloadReferences(id,job,{root,fetchChunk,fetchManifest,approved=async()=>{}}) {
  try{validateJob(job);}catch{throw new Error('invalid-reference');}
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
  if(!job.references?.length)return;
  const directory=path.join(root,id,'inputs');await mkdir(directory,{recursive:true});
  for(const reference of job.references){
   await approved();
+  if(job.schemaVersion===4){
+   if(typeof fetchManifest!=='function')throw new Error('invalid-reference');
+   const ready=await fetchManifest(reference.index);
+   if(!ready||Object.keys(ready).length!==4||['index','sha256','bytes','chunks'].some(key=>ready[key]!==reference[key]))throw new Error('invalid-reference');
+  }
   const filename=path.join(directory,`${reference.index}.${reference.mime==='image/png'?'png':'jpg'}`);
   try{
    const existing=await readFile(filename);

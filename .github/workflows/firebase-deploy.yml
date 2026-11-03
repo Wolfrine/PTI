@@ -51,7 +51,7 @@ jobs:
       - name: Verify private platform usage and Codex Firestore rules
         run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-codex-usage-tests --config firebase.one-piece-tests.json 'node tools/codex-usage-monitor/test/rules.mjs'
       - name: Verify private Velum jobs and immutable prompts
-        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-tests --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs tools/velum-worker/studio2.rules.test.mjs tools/velum-worker/device-isolation.rules.test.mjs'
+        run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-tests --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs tools/velum-worker/studio2.rules.test.mjs tools/velum-worker/device-isolation.rules.test.mjs tools/velum-worker/qwen.rules.test.mjs'
 
   deploy:
     needs: [verify_venture, verify_one_piece]
@@ -324,7 +324,7 @@ jobs:
           node --check tools/velum-worker/worker.mjs
            node --check tools/velum-worker/recovery.mjs
            node --check tools/velum-worker/recovery-control.mjs
-           node --test tools/velum-worker/worker.test.mjs tools/velum-worker/recovery.test.mjs tools/velum-worker/reference.test.mjs tools/velum-worker/thumbnail-backfill.test.mjs
+           node --test tools/velum-worker/worker.test.mjs tools/velum-worker/recovery.test.mjs tools/velum-worker/reference.test.mjs tools/velum-worker/thumbnail-backfill.test.mjs tools/velum-worker/qwen.test.mjs
           node --test velum-gallery/tests/*.test.mjs
 
       - name: Stamp Velum release version into HTML and PWA cache

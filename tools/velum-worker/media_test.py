@@ -14,6 +14,7 @@ class MediaValidation(unittest.TestCase):
             image = read_reference(file, manifest)
             self.assertLessEqual(image.width*image.height, 262144)
             self.assertEqual(image.width % 16, 0)
+            self.assertEqual(read_reference(file, manifest, inference_pixels=None).size, (1024,768))
             for change in (dict(mime='image/jpeg'), dict(width=512), dict(bytes=len(original)-1), dict(sha256='0'*64)):
                 with self.assertRaises((ValueError, KeyError)):
                     read_reference(file, {**manifest, **change})

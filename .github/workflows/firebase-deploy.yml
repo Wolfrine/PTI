@@ -319,6 +319,7 @@ jobs:
           node --check velum-gallery/interaction-upgrades.js
           node --check velum-gallery/sw.js
           node --check velum-gallery/studio.mjs
+          node --check velum-gallery/studio-compare.mjs
           node --check velum-gallery/studio-contract.mjs
           node --check velum-gallery/studio-reference-picker.mjs
           node --check velum-gallery/drive-library.mjs
@@ -385,7 +386,7 @@ jobs:
           base="https://pti-app-2ab59-velum.web.app"
           for attempt in 1 2 3 4 5 6; do
             matched=1
-            for asset in index.html sw.js app.js bootstrap.js studio.mjs studio-view.mjs studio-archive.mjs studio-reference.mjs studio-drive.mjs studio-contract.mjs studio-reference-picker.mjs drive-library.mjs drive-creations.mjs gallery-library-ui.mjs library.css device-config.mjs studio.css redesign.css drift-gestures.mjs affection.mjs heart-effects.mjs interaction-upgrades.js styles.css stats-upgrades.js; do
+            for asset in index.html sw.js app.js bootstrap.js studio.mjs studio-view.mjs studio-compare.mjs studio-archive.mjs studio-reference.mjs studio-drive.mjs studio-contract.mjs studio-reference-picker.mjs drive-library.mjs drive-creations.mjs gallery-library-ui.mjs library.css device-config.mjs studio.css redesign.css drift-gestures.mjs affection.mjs heart-effects.mjs interaction-upgrades.js styles.css stats-upgrades.js; do
               output="$RUNNER_TEMP/velum-$(basename "$asset")"
               if ! curl --fail --silent --show-error --location --max-time 20 \
                 "$base/$asset?deployment-check=$GITHUB_SHA" -o "$output" \

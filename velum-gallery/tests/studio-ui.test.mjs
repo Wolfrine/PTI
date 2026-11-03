@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import { decodeResult, formatJobStatus } from '../studio.mjs';
 import { archiveStatusMark, pendingJob } from '../studio-view.mjs';
+import {singleSourceReference} from '../studio-compare.mjs';
 import {makeRecoveryRequest,pendingRecovery,recoveryPhase} from '../studio-recovery.mjs';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aC1cAAAAASUVORK5CYII=', 'base64');
@@ -14,6 +15,21 @@ test('result preview verifies complete ordered PNG bytes and SHA-256 before disp
   const blob = await decodeResult(manifest, [...chunks].reverse());
   assert.equal(blob.type, 'image/png');
   assert.deepEqual(Buffer.from(await blob.arrayBuffer()), png);
+});
+
+test('compare only a completed, verified result with exactly one subject/model reference',()=>{
+  const subject={role:'subject',sha256:'a'.repeat(64),source:{kind:'drive',id:'source-photo'}},
+    pose={...subject,role:'pose',sha256:'b'.repeat(64)},
+    completed={id:'job',status:'completed',references:[subject]};
+  assert.equal(singleSourceReference(completed,true),subject);
+  assert.equal(singleSourceReference(completed,false),null,'unverified output is never comparable');
+  assert.equal(singleSourceReference({...completed,status:'running'},true),null);
+  assert.equal(singleSourceReference({...completed,references:[]},true),null);
+  assert.equal(singleSourceReference({...completed,references:[subject,pose]},true),null,'pose plus subject is two model inputs');
+  assert.equal(singleSourceReference({...completed,references:[pose]},true),null,'pose alone is not the source');
+  assert.equal(singleSourceReference({...completed,pose:{mode:'image',referenceIndex:0}},true),null,'pose metadata excludes ambiguous single input');
+  assert.equal(singleSourceReference({...completed,references:[{...subject,sha256:'unsafe'}]},true),null);
+  assert.equal(singleSourceReference({...completed,references:null},true),null);
 });
 
 test('incomplete, tampered, duplicate and excessive chunks cannot become a preview', async () => {

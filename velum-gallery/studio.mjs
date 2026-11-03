@@ -9,6 +9,7 @@ const {makeRecoveryRequest,pendingRecovery,RECOVERY_COOLDOWN_MS}=await localModu
 const {createReferencePicker}=await localModule('./studio-reference-picker.mjs');
 const {POSE_CATEGORIES}=await localModule('./drive-library.mjs');
 const {verifyOriginal}=await localModule('./studio-drive.mjs');
+const {createOriginalCompareController}=await localModule('./studio-compare.mjs');
 export {renderStudioShell,renderStudioState,formatJobStatus};
 
 export async function decodeResult(result,chunks){
@@ -29,14 +30,15 @@ export async function mountStudio({app,auth,drive}){
   const thumbs=new Map(),thumbMissing=new Set(),thumbQueue=[],thumbPending=new Set();
   state.referencePreviews={};state.driveJobs=[];
   const workspace=()=>['users',uid,'velumStudio','workspace'];
-  const draw=()=>{renderStudioState(root,{...state,now:Date.now()});root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
-  const detailsDraw=()=>{const panel=root.querySelector('#studioDetailsPanel'),scroll=panel.scrollTop,opened=[...panel.querySelectorAll('details[open]')].map(item=>item.querySelector('summary')?.textContent);renderCreationDetails(root,state);panel.querySelectorAll('details').forEach(item=>{if(opened.includes(item.querySelector('summary')?.textContent))item.open=true;});panel.scrollTop=scroll;};
+  let compareController=null;
+  const draw=()=>{renderStudioState(root,{...state,now:Date.now()});compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
+  const detailsDraw=()=>{const panel=root.querySelector('#studioDetailsPanel'),scroll=panel.scrollTop,opened=[...panel.querySelectorAll('details[open]')].map(item=>item.querySelector('summary')?.textContent);renderCreationDetails(root,state);panel.querySelectorAll('details').forEach(item=>{if(opened.includes(item.querySelector('summary')?.textContent))item.open=true;});panel.scrollTop=scroll;compareController?.sync();};
   const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){observer.unobserve(entry.target);queueThumb(entry.target.dataset.thumb,entry.target);}}),{root,rootMargin:'200px'}):null;
   function observeThumbs(){if(state.mode!=='creations')return;root.querySelectorAll('[data-thumb]').forEach(element=>{const id=element.dataset.thumb,record=state.archiveJobs.find(item=>item.id===id);if(historicalCreation(record)&&!creationReady(record))return;if(thumbs.has(id))paintThumb(element,thumbs.get(id));else if(!thumbMissing.has(id)){if(observer)observer.observe(element);else queueThumb(id,element);}});}
   function paintThumb(element,url){if(!element.isConnected||element.querySelector('img'))return;const image=new Image();image.src=url;image.alt='';image.loading='lazy';image.decoding='async';element.append(image);}
   function queueThumb(id,element){if(!uid||thumbPending.has(id)||thumbs.has(id)||thumbMissing.has(id))return;thumbPending.add(id);thumbQueue.push({id,element,token:epoch});drainThumbs();}
   function drainThumbs(){while(thumbActive<6&&thumbQueue.length){const item=thumbQueue.shift();thumbActive++;(async()=>{try{if(item.token!==epoch||!uid)return;const driveJob=state.driveJobs.find(job=>job.id===item.id);if(driveJob){const file=await drive.metadata(driveJob.driveOriginal.fileId);if(item.token!==epoch||!uid)return;if(file.thumbnailLink){paintThumb(item.element,file.thumbnailLink);return;}thumbMissing.add(item.id);return;}const snapshot=await getDoc(doc(db,...workspace(),'thumbs',item.id));if(!snapshot.exists()){thumbMissing.add(item.id);return;}const blob=await decodeThumbnail(snapshot.data());if(item.token!==epoch||!uid)return;const url=URL.createObjectURL(blob);thumbs.set(item.id,url);paintThumb(item.element,url);if(thumbs.size>144){const first=thumbs.keys().next().value;URL.revokeObjectURL(thumbs.get(first));thumbs.delete(first);}}catch{if(item.token===epoch)thumbMissing.add(item.id);}finally{thumbActive--;thumbPending.delete(item.id);drainThumbs();}})();}}
-  function clearResult(){if(state.resultUrl)URL.revokeObjectURL(state.resultUrl);for(const value of Object.values(state.referencePreviews||{}))URL.revokeObjectURL(value.url||value);state.referencePreviews={};state.resultUrl='';state.resultError='';state.feedback=null;state.saveMessage='';resultJob='';resultBlob=null;}
+  function clearResult(){compareController?.reset();if(state.resultUrl)URL.revokeObjectURL(state.resultUrl);for(const value of Object.values(state.referencePreviews||{}))URL.revokeObjectURL(value.url||value);state.referencePreviews={};state.resultUrl='';state.resultError='';state.feedback=null;state.saveMessage='';resultJob='';resultBlob=null;}
   function clearPose(){poseEpoch++;if(state.pose?.url)URL.revokeObjectURL(state.pose.url);state.pose=null;state.poseEnabled=false;state.poseLoading=false;state.poseError='';root.querySelector('#studioPoseEnabled').checked=false;}
   function clearReferences(){state.references.forEach(reference=>URL.revokeObjectURL(reference.url));state.references=[];state.parentJobId='';clearPose();}
   function clearPrivateSession(){referencePicker.clear();clearPose();state.driveJobs=[];state.driveLoading=false;pendingUpload=null;state.canRetryUpload=false;state.uploadProgress='';state.message='';state.saveMessage='';state.referencePick=false;root.querySelector('#studioReferenceSources').hidden=true;root.querySelector('#studioReferenceOpen').setAttribute('aria-expanded','false');drive.clear();}
@@ -70,6 +72,10 @@ export async function mountStudio({app,auth,drive}){
     if(token!==epoch||locked||state.selectedId!==job.id)return;
     state.referencePreviews[reference.sha256]=URL.createObjectURL(blob);detailsDraw();
   }
+  compareController=createOriginalCompareController(root,{
+    current:()=>({job:selectedJob(state),generatedUrl:state.resultUrl,previews:state.referencePreviews,locked:locked||!uid}),
+    loadOriginal:()=>loadSourceReference(0)
+  });
   async function poll(){
     clearTimeout(timer);if(!uid||locked||polling)return;polling=true;const token=epoch;
     try{

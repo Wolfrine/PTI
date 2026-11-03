@@ -1400,3 +1400,91 @@
     background: linear-gradient(127deg, #2b1b26 0%, #110a10 100%);
   }
 }
+
+/* Studio: quiet, touch-first comparison of a verified one-reference creation. */
+#studioView .studio-image-compare {
+  appearance: none;
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #090609;
+  color: #f4dfeb;
+  cursor: pointer;
+  text-align: inherit;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+#studioView .studio-image-compare > img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+#studioView .studio-compare-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+#studioView .studio-compare-frame > img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+#studioView .studio-compare-frame .studio-compare-source {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+  background: #090609;
+}
+#studioView .studio-compare-frame .studio-compare-source[hidden] { display: none; }
+#studioView .studio-image-compare:focus-visible {
+  outline: 2px solid #e9b8d2;
+  outline-offset: -3px;
+}
+#studioView .studio-detail-image .studio-image-compare {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+#studioView .studio-detail-image .studio-detail-output {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  max-height: 67dvh;
+  object-fit: contain;
+}
+#studioView .studio-compare-cue {
+  position: absolute;
+  inset: 12px auto auto 12px;
+  max-width: calc(100% - 24px);
+  padding: 7px 11px;
+  border: 1px solid #68455888;
+  border-radius: 20px;
+  background: #160e15d9;
+  color: #f0dce7;
+  box-shadow: 0 2px 12px #0005;
+  font: 500 10px/1.4 system-ui, sans-serif;
+  letter-spacing: .01em;
+  text-align: left;
+  pointer-events: none;
+}
+#studioView .studio-image-compare[data-comparing="original"] .studio-compare-cue {
+  border-color: #9c647fba;
+  background: #37202fe9;
+}
+@media (max-width: 719px) {
+  #studioView .studio-detail-image .studio-detail-output { max-height: 55dvh; }
+}
+@media (min-width: 1000px) {
+  #studioView .studio-detail-image .studio-detail-output { max-height: 100%; }
+}

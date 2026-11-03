@@ -1,6 +1,15 @@
 const MAX_SOURCE = 16 * 1024 * 1024;
 export const MAX_REFERENCE_BYTES = 2 * 1024 * 1024;
-export const MAX_REFERENCES = 2;
+export const MAX_REFERENCES = 10;
+
+export async function decodeReference(manifest,chunks){
+  if(!manifest||!['image/png','image/jpeg'].includes(manifest.mime)||!Number.isInteger(manifest.bytes)||manifest.bytes<100||manifest.bytes>MAX_REFERENCE_BYTES||!Number.isInteger(manifest.chunks)||manifest.chunks<1||manifest.chunks>5||!/^[a-f0-9]{64}$/.test(manifest.sha256)||chunks.length!==manifest.chunks)throw new Error('Invalid source reference manifest.');
+  const parts=[...chunks].sort((a,b)=>a.index-b.index).map((chunk,index)=>{if(chunk.index!==index||typeof chunk.data!=='string'||!chunk.data.length||chunk.data.length>600000||!/^[A-Za-z0-9+/]*={0,2}$/.test(chunk.data))throw new Error('Invalid source reference chunks.');return Uint8Array.from(atob(chunk.data),char=>char.charCodeAt(0));});
+  const bytes=new Uint8Array(parts.reduce((total,part)=>total+part.length,0));let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}
+  const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(value=>value.toString(16).padStart(2,'0')).join('');
+  const header=imageHeader(bytes);if(bytes.length!==manifest.bytes||hash!==manifest.sha256||header.mime!==manifest.mime||header.width!==manifest.width||header.height!==manifest.height)throw new Error('Source reference integrity check failed.');
+  return new Blob([bytes],{type:manifest.mime});
+}
 
 export function imageHeader(bytes) {
   if (bytes.length < 24) throw new Error('Image file is incomplete.');

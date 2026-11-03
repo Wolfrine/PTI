@@ -8,6 +8,10 @@ const { mountStudio } = await import(studioModule.href);
 const driveModule = new URL('./studio-drive.mjs', import.meta.url);
 driveModule.search = new URL(import.meta.url).search;
 const { createStudioDrive,readBoundedImage } = await import(driveModule.href);
+const libraryModule=new URL('./drive-library.mjs',import.meta.url);libraryModule.search=new URL(import.meta.url).search;
+const {libraryQuery,libraryFile}=await import(libraryModule.href);
+const libraryUiModule=new URL('./gallery-library-ui.mjs',import.meta.url);libraryUiModule.search=new URL(import.meta.url).search;
+const {mountGalleryLibrary}=await import(libraryUiModule.href);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
@@ -135,7 +139,9 @@ const studioDrive = createStudioDrive({auth,apiKey:FIREBASE_CONFIG.apiKey,appId:
     provider.addScope(scope);
     provider.setCustomParameters({include_granted_scopes:'true'});
     const result = await reauthenticateWithPopup(auth.currentUser,provider);
-    return GoogleAuthProvider.credentialFromResult(result);
+    const credential=GoogleAuthProvider.credentialFromResult(result);
+    if(scope===DRIVE_SCOPE&&credential?.accessToken){accessToken=credential.accessToken;tokenIssuedAt=Date.now();sessionStorage.setItem('velum-drive-token',accessToken);sessionStorage.setItem('velum-drive-token-at',String(tokenIssuedAt));}
+    return credential;
   }
 });
 studioDrive.setGalleryProvider({list:()=>images.filter(item=>item.kind==='image'),current:()=>currentMediaItem(),read:async (id,signal)=>{
@@ -148,6 +154,10 @@ mountStudio({ app, auth, drive:studioDrive }).catch(() => {
   if (studio) studio.textContent = 'Studio could not load. Reconnect and refresh Velum.';
 });
 window.addEventListener('velum:lock',()=>studioDrive.clear());
+const libraryControls=mountGalleryLibrary({drive:studioDrive,current:currentMediaItem,getUrl:ensureObjectUrl,
+ onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;renderMoment(next);}else{renderSerial++;window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
+ onChanged:async()=>{await syncDrive();renderBrowse();libraryControls.update();}
+});
 
 class EventStore {
   constructor() { this.db = null; this.memory = []; }
@@ -310,8 +320,8 @@ async function driveFetch(url, options = {}) {
 }
 
 async function listPrivateImages() {
-  const fields = 'nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,size,thumbnailLink,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis))';
-  const q = `'${PRIVATE_FOLDER_ID}' in parents and trashed=false`;
+  const fields = 'nextPageToken,files(id,name,mimeType,parents,createdTime,modifiedTime,size,thumbnailLink,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis))';
+  const q = libraryQuery({imagesOnly:false});
   const all = [];
   let pageToken = '';
   do {
@@ -325,7 +335,7 @@ async function listPrivateImages() {
     pageToken = data.nextPageToken || '';
   } while (pageToken);
 
-  return all.map(file => {
+  return [...new Map(all.map(file=>[file.id,file])).values()].map(file => {
     const kind = file.mimeType?.startsWith('video/')
       ? 'video'
       : file.mimeType === 'image/gif'
@@ -333,6 +343,7 @@ async function listPrivateImages() {
         : 'image';
     const mediaMeta = kind === 'video' ? file.videoMediaMetadata : file.imageMediaMetadata;
     return {
+      ...libraryFile(file),
       id: file.id,
       name: file.name,
       mimeType: file.mimeType,
@@ -353,11 +364,11 @@ async function syncDrive({ initial = false } = {}) {
   syncLabel.textContent = 'Syncing';
   if (initial && !$('#studioView').classList.contains('active')) {
     authGate.classList.add('open');
-    setAuthMessage('Opening collection', 'Reading media metadata from your Private Google Drive folder.', 'Media remains in Google Drive.');
+    setAuthMessage('Opening collection', 'Reading Private and References folder metadata.', 'Media remains in Google Drive.');
   }
   try {
     const next = await listPrivateImages();
-    if (!next.length) throw new Error('No supported images, GIFs, or videos were found in the configured Private folder, or this account cannot access it.');
+    if (!next.length) throw new Error('No supported media found in Private or References. Check folder access or add an image, then Sync.');
     images = next;
     imageMap = new Map(images.map(i => [i.id, i]));
     rememberDiscovery(images);
@@ -438,7 +449,9 @@ function currentMediaItem() { return current.ids.length ? imageById(current.ids[
 function chooseMoment() {
   // Build an exposure-aware feed; recent picks are excluded where possible.
   const recentIds = history.slice(-6).flatMap(h => h.ids);
-  const item = chooseFeedImage(images, {
+  const candidates=libraryControls.filter==='all'?images:images.filter(item=>item.folderLabel.toLowerCase()===libraryControls.filter);
+  if(!candidates.length)return null;
+  const item = chooseFeedImage(candidates, {
     getStats: id => store.stats(id),
     discovered,
     recentIds
@@ -452,6 +465,7 @@ async function renderMoment(moment, { record = true } = {}) {
   const meta = imageById(id);
   if (!meta) return;
   current = { type: 'single', ids: [id] };
+  libraryControls.update();
   const serial = ++renderSerial;
 
   window.__velumInteraction?.clearAdvance?.();
@@ -516,6 +530,7 @@ async function renderMoment(moment, { record = true } = {}) {
 }
 function pushNext() {
   const m = chooseMoment();
+  if(!m)return;
   history = history.slice(0, historyIndex + 1);
   history.push(m);
   historyIndex = history.length - 1;
@@ -630,7 +645,7 @@ function confidenceScore(s) {
 }
 function renderBrowse() {
   if (!initializedGallery) return;
-  let arr = [...images];
+  let arr = libraryControls.filter==='all'?[...images]:images.filter(item=>item.folderLabel.toLowerCase()===libraryControls.filter);
   const key = sortSelect.value;
   const stat = i => store.stats(i.id);
   if (key === 'newest') arr.sort((a,b) => b.addedAt-a.addedAt);
@@ -698,7 +713,7 @@ function renderBrowse() {
       : isGifMedia(item)
         ? '<span class="tile-badge gif">GIF</span>'
         : '';
-    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}</div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${(s.affectionDurationMs / 1000).toFixed(s.affectionDurationMs < 10000 ? 1 : 0).replace(/\.0$/, '')}s held · ${s.views} views</span></div>`;
+    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}<span class="tile-folder">${item.folderLabel||'Private'}</span></div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${(s.affectionDurationMs / 1000).toFixed(s.affectionDurationMs < 10000 ? 1 : 0).replace(/\.0$/, '')}s held · ${s.views} views</span></div>`;
     tile.onclick = () => openInDrift(item.id);
     browseGrid.append(tile);
     const previewEl = tile.querySelector('[data-id]');

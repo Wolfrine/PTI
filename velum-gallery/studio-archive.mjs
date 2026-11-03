@@ -19,13 +19,14 @@ export function visibleCreations(jobs, { filter = 'all', model = '', date = '', 
 }
 
 export function creationLocation(job, save, {remoteVerified=false,remoteError=false}={}) {
+  if(job?.recordType==='drive-acceptance')return {localPath:'',metadataPath:'',local:'Actual PC inference recorded in the private Drive manifest; PC file availability not checked',remote:remoteVerified?'Private Drive original SHA-256 verified':remoteError?'Drive original unavailable or integrity check failed':'Drive manifest loaded; original bytes await verification',drive:'Existing original on private Google Drive'};
   const complete = creationReady(job), historical = historicalCreation(job);
   const remote = complete && job.result?.chunks > 0;
-  const expectedPath=historical?job.result?.localPath||'':complete?`H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\${job.id}\\image.png`:'';
+  const expectedPath=historical?job.result?.localPath||'':complete?(job.result?.localPath||`H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\${job.id}\\image.png`):'';
   const recorded=complete&&job.result?.localPath===expectedPath;
   return {
     localPath: expectedPath,
-    metadataPath: historical ? job.provenance?.metadataPath||'' : complete ? `H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\${job.id}\\result.json` : '',
+    metadataPath: historical ? job.provenance?.metadataPath||'' : complete ? expectedPath.replace(/image\.png$/,'result.json') : '',
     local: historical ? 'Historical files verified at import · current PC availability not checked' : recorded ? 'Original and metadata reported by your PC' : complete ? 'Expected PC paths · this older record has no recorded local path' : 'No completed local original reported',
     remote: remoteVerified ? 'Private remote original verified' : remoteError ? 'Remote original unavailable or not verified' : remote ? 'Private remote copy reported · open to verify' : complete ? 'Local original only · remote preview unavailable' : 'Awaiting original',
     drive: save?.fileId ? 'Saved to Private on Google Drive' : 'Not saved to Drive'

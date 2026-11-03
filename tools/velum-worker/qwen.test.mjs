@@ -9,7 +9,7 @@ import {downloadReferences} from './reference-input.mjs';
 
 test('only Qwen selects its isolated installed interpreter, adapter, F output and longer bounded timeout',()=>{
  const qwen=engineProfile(QWEN_MODEL),legacy=engineProfile('realvis-dynamic');
- assert.match(qwen.python,/velum-qwen21-research-20261103/);assert.match(qwen.script,/infer-qwen.py$/);assert.match(qwen.outputRoot,/^[Ff]:/);
+ assert.match(qwen.python,/velum-qwen21-research-20261103/);assert.match(qwen.script,/infer-qwen.py$/);assert.match(qwen.outputRoot,/[\\/]velum-worker[\\/]\.runtime[\\/]qwen21$/);if(process.platform==='win32')assert.match(qwen.outputRoot,/^[Ff]:/);
  assert.equal(qwen.timeoutMs,7200000);assert.equal(qwen.parentTimeoutMs,7230000);
  for(const model of MODEL_IDS.filter(model=>model!==QWEN_MODEL))assert.deepEqual(engineProfile(model),legacy);
  assert.equal(legacy.timeoutMs,1800000);assert.equal(legacy.parentTimeoutMs,1830000);

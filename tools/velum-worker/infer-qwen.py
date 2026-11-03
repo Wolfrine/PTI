@@ -135,7 +135,7 @@ def main():
     if any(file.name != 'inputs' for file in work.iterdir()):
         raise ValueError('existing-job-output')
     WORK = work
-    from media import read_reference, thumbnail
+    from media import read_reference, read_qwen_output, thumbnail
     references = job['references']
     source_images = []
     for index, manifest in enumerate(references):
@@ -244,10 +244,8 @@ def main():
             file = work/'image.png'
             with file.open('xb') as output:
                 image.save(output,format='PNG',pnginfo=meta)
-            with Image.open(file) as decoded:
-                decoded.load()
-                if decoded.size != (job['width'],job['height']):
-                    raise RuntimeError('invalid-output')
+            with read_qwen_output(file,(job['width'],job['height'])):
+                pass
             thumb = thumbnail(image,work)
             result = dict(**provenance,localPath=str(file),thumbnail=thumb,stages=stages,
                 seconds=round(time.monotonic()-START,2),sha256=hashlib.sha256(file.read_bytes()).hexdigest())

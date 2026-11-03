@@ -65,7 +65,7 @@ export async function mountStudio({app,auth,drive}){
   async function loadSourceReference(index){
     const job=selectedJob(state),reference=job?.references?.[index],token=epoch;if(!reference||state.referencePreviews[reference.sha256])return;
     let blob;
-    if(job.recordType==='drive-acceptance'){const actual=await drive.readReference({id:reference.source.id});const bytes=new Uint8Array(await actual.blob.arrayBuffer()),encoded=btoa(Array.from(bytes,value=>String.fromCharCode(value)).join('')),chunks=[];for(let offset=0;offset<encoded.length;offset+=600000)chunks.push({index:chunks.length,data:encoded.slice(offset,offset+600000)});blob=await decodeReference({...reference,chunks:chunks.length},chunks);}
+    if(job.recordType==='drive-acceptance'){const actual=await drive.readReference({id:reference.inputFileId||reference.source.id});const bytes=new Uint8Array(await actual.blob.arrayBuffer()),encoded=btoa(Array.from(bytes,value=>String.fromCharCode(value)).join('')),chunks=[];for(let offset=0;offset<encoded.length;offset+=600000)chunks.push({index:chunks.length,data:encoded.slice(offset,offset+600000)});blob=await decodeReference({...reference,chunks:chunks.length},chunks);}
     else{const snapshot=await getDocs(collection(db,...workspace(),'jobs',job.id,'inputs',String(index),'chunks'));blob=await decodeReference(reference,snapshot.docs.map(item=>item.data()));}
     if(token!==epoch||locked||state.selectedId!==job.id)return;
     state.referencePreviews[reference.sha256]=URL.createObjectURL(blob);detailsDraw();

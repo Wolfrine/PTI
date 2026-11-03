@@ -53,6 +53,35 @@ test('pose is an actual final image reference with exact effective-prompt and ro
  for(const mutate of [m=>delete m.samples[0].pose,m=>m.samples[0].pose.mode='text',m=>m.samples[0].pose.fileId='wrong-source',m=>m.samples[0].pose.referenceIndex=0,m=>m.samples[0].effectivePrompt+=' rewrite',m=>m.samples[0].references.push(reference(2)),m=>m.samples[0].references[0].role='pose']){const input=posed();mutate(input);assert.throws(()=>parse(input),/Invalid Drive quality catalog/);}
 });
 
+test('conditioned pose input preserves its catalog source ID and separate immutable byte lineage',async()=>{
+ const input=manifest(),sample=input.samples[0];
+ const poseReference={...reference(1,'pose'),source:{kind:'drive',id:'synthetic-pose-original-900x1200',name:'Synthetic catalog original.png'},inputFileId:'synthetic-pose-conditioned-768x1024',width:768,height:1024,bytes:2048,sha256:'b'.repeat(64)};
+ sample.references.push(poseReference);
+ sample.pose={referenceIndex:1,catalogId:'synthetic-catalog',fileId:poseReference.source.id,category:'standard',label:'Synthetic pose',instruction:'Recorded exact pose instruction.',mode:'image'};
+ sample.effectivePrompt=sample.prompt+'\n\n'+sample.pose.instruction;
+ const [record]=parse(input),referenceRecord=record.references[1];
+ assert.equal(referenceRecord.source.id,'synthetic-pose-original-900x1200');assert.equal(record.pose.fileId,referenceRecord.source.id);
+ assert.equal(referenceRecord.inputFileId,'synthetic-pose-conditioned-768x1024');assert.equal(referenceRecord.sha256,'b'.repeat(64));assert.equal(referenceRecord.bytes,2048);assert.equal(referenceRecord.width,768);assert.equal(referenceRecord.height,1024);
+ assert.ok(Object.isFrozen(referenceRecord));assert.throws(()=>{referenceRecord.inputFileId='mutated';},TypeError);assert.throws(()=>validateJob(record));
+ assert.equal(Object.hasOwn(record.references[0],'inputFileId'),false,'legacy references preserve source-only lookup');
+ const loaded=await loadDriveCreations({listManifests:async()=>[file(1)],readManifest:async()=>JSON.stringify(input)});
+ assert.equal(loaded[0].references[1].inputFileId,referenceRecord.inputFileId);assert.equal(loaded[0].pose.fileId,referenceRecord.source.id);
+ poseReference.inputFileId='changed-after-parse';assert.equal(referenceRecord.inputFileId,'synthetic-pose-conditioned-768x1024');
+ const legacy=parse(manifest())[0];assert.equal(Object.hasOwn(legacy.references[0],'inputFileId'),false);assert.equal(legacy.references[0].source.id,'synthetic-source-0');
+});
+
+test('conditioned input IDs reject URLs, malformed IDs, output/manifest collisions and duplicate inputs',()=>{
+ for(const value of ['',null,undefined,12,'../conditioned','https://example.invalid/input.png','data:image/png;base64,AAAA','input id','x'.repeat(161)]){
+  const input=manifest();input.samples[0].references[0].inputFileId=value;assert.throws(()=>parse(input),/reference input file ID/);
+ }
+ for(const value of ['synthetic-original-sample-1','synthetic-manifest']){
+  const input=manifest();input.samples[0].references[0].inputFileId=value;assert.throws(()=>parse(input),/reference input collides/);
+ }
+ const duplicate=manifest();duplicate.samples[0].references=[{...reference(0),inputFileId:'synthetic-shared-input'},{...reference(1),inputFileId:'synthetic-shared-input'}];assert.throws(()=>parse(duplicate),/duplicate reference input/);
+ const extra=manifest();extra.samples[0].references[0].inputFileId='synthetic-conditioned';extra.samples[0].references[0].inputUrl='https://example.invalid/input.png';assert.throws(()=>parse(extra),/reference fields/);
+ const overwrittenPose=manifest();overwrittenPose.samples[0].references.push({...reference(1,'pose'),inputFileId:'synthetic-conditioned-pose'});overwrittenPose.samples[0].pose={referenceIndex:1,catalogId:'synthetic-catalog',fileId:'synthetic-conditioned-pose',category:'standard',label:'Synthetic pose',instruction:'Recorded exact pose instruction.',mode:'image'};overwrittenPose.samples[0].effectivePrompt=overwrittenPose.samples[0].prompt+'\n\n'+overwrittenPose.samples[0].pose.instruction;assert.throws(()=>parse(overwrittenPose),/pose source lineage/);
+});
+
 test('quality judgments remain bounded strings and never convert to automatic acceptance',()=>{
  const input=manifest();input.sourceType='real';input.sourceLabel='Real source metadata fixture only';input.samples[0].qualityEvaluation={status:'assessed',identity:'UNKNOWN',pose:'Visible mismatch noted by fixture reviewer',photorealism:'Lighting assessment pending',garmentChange:'Requested edit not established',anatomy:'UNKNOWN',notes:'No automatic keep decision.'};
  const [record]=parse(input);assert.deepEqual(record.qualityEvaluation,input.samples[0].qualityEvaluation);assert.equal(Object.hasOwn(record,'feedback'),false);assert.equal(Object.hasOwn(record,'accepted'),false);

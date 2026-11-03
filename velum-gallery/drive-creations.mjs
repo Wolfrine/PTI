@@ -36,10 +36,11 @@ function image(value,label,{original=false}={}){
  return {...value};
 }
 function reference(value,index){
- keys(value,['index','role','source','mime','bytes','sha256','width','height'],[],'reference fields');
+ keys(value,['index','role','source','mime','bytes','sha256','width','height'],['inputFileId'],'reference fields');
  if(value.index!==index||!['subject','pose'].includes(value.role))fail('reference order or role');
  keys(value.source,['kind','id','name'],[],'reference source');if(value.source.kind!=='drive')fail('reference source kind');
  driveID(value.source.id,'reference source ID');string(value.source.name,160,'reference source name');
+ if(Object.hasOwn(value,'inputFileId'))driveID(value.inputFileId,'reference input file ID');
  const {mime,bytes,sha256,width,height}=value;image({mime,bytes,sha256,width,height},'reference');
  return {...value,source:{...value.source}};
 }
@@ -65,9 +66,11 @@ function evaluation(value){
  *  sourceLabel,createdAt,compareFileId?,samples:[{id,createdAt,completedAt,durationSeconds,
  *  model,prompt,effectivePrompt,seed,settings,image:{fileId,mime:'image/png',bytes,
  *  sha256,width,height},references:[{index,role:'subject'|'pose',source:{kind:'drive',
- *  id,name},mime,bytes,sha256,width,height}],pose?,qualityEvaluation:{status:'UNKNOWN'|
+ *  id,name},inputFileId?,mime,bytes,sha256,width,height}],pose?,qualityEvaluation:{status:'UNKNOWN'|
  *  'assessed',identity,pose,photorealism,garmentChange,anatomy,notes}}]}
  * Hashes/sizes are expectations until the caller verifies actual original bytes.
+ * Reference integrity metadata describes inputFileId when present, otherwise
+ * source.id. source.id and pose.fileId always retain the original source identity.
  */
 export function parseDriveCreations(manifest,{manifestFileId,manifestName=''}={}){
  driveID(manifestFileId,'manifest file ID');string(manifestName,200,'manifest name',{empty:true});
@@ -90,8 +93,14 @@ export function parseDriveCreations(manifest,{manifestFileId,manifestName=''}={}
   const actualSettings=settings(sample.settings),original=image(sample.image,'original image',{original:true});
   if(originalIDs.has(original.fileId)||original.fileId===manifestFileId)fail('duplicate original or manifest ID');originalIDs.add(original.fileId);
   if(!Array.isArray(sample.references)||!sample.references.length||sample.references.length>Math.min(10,MODEL_REFERENCE_LIMITS[sample.model]||0))fail('model reference count');
-  const references=sample.references.map(reference),sourceIDs=new Set();let poseCount=0;
-  for(const ref of references){if(sourceIDs.has(ref.source.id)||ref.source.id===original.fileId)fail('duplicate source or overwritten original');sourceIDs.add(ref.source.id);if(ref.role==='pose')poseCount++;}
+  const references=sample.references.map(reference),sourceIDs=new Set(),inputIDs=new Set();let poseCount=0;
+  for(const ref of references){
+   if(sourceIDs.has(ref.source.id)||ref.source.id===original.fileId)fail('duplicate source or overwritten original');sourceIDs.add(ref.source.id);
+   const inputID=ref.inputFileId||ref.source.id;
+   if(inputID===original.fileId||inputID===manifestFileId)fail('reference input collides with output or manifest');
+   if(inputIDs.has(inputID))fail('duplicate reference input');inputIDs.add(inputID);
+   if(ref.role==='pose')poseCount++;
+  }
   if(!references.some(ref=>ref.role==='subject'))fail('subject source missing');
   const selectedPose=sample.pose===undefined?undefined:pose(sample.pose,references);
   if(poseCount!==(selectedPose?1:0))fail('pose role lineage');

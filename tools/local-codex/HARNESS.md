@@ -20,6 +20,10 @@ Same outcome uses `continue_task`. A different related outcome uses a NEW task/w
 
 Idle `notLoaded` threads resume. Module selection checks metadata only, including archived state; confirmed missing/archived/incompatible automatically selected parents may rotate with a recorded predecessor/reason. Explicit source and same-outcome threads never silently change; active threads and uncertain protocol errors stop. Context bloat uses explicit `chat_policy:rotate`, a reason and a compact supplied handoff of project evidence. There is no arbitrary context-age/turn/token cap, archive, delete or transcript copying. Registry revisions prevent old reports/continuations from repointing a rotated module. See `decisions/2026-11-02-chat-lifecycle.md`.
 
+## Caller-selected result waits (owner instruction, 2026-11-03)
+
+ChatGPT chooses each hosted `get_task.wait_seconds` from expected remaining work, recent progress and desired responsiveness. Longer supported waits fit quiet long work; shorter waits fit imminent results or human interaction. Twenty seconds is an omitted-argument compatibility fallback, not a fixed polling schedule. Respect actual connector metadata and client timeouts; verify a larger wait through that connection. Progress and human decisions return early; request timeout never limits task execution. A saved connector schema can remain stale after server/plugin publication and must be refreshed separately.
+
 ## Effectiveness loop
 
 Owner instruction, 2026-11-02: use Firestore listeners for PC work notifications and hosted ChatGPT result waits. Keep health/lease maintenance separate, avoid quiet queue queries and repeated unchanged writes, and include sanitized cumulative transport counters in the review. Request counters are not measured Firestore billing. The 0.4.3 transport decision and its regression/installed evidence are in `decisions/2026-11-02-listener-transport.md`.

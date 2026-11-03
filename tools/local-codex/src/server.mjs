@@ -6,6 +6,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { VERSION, home, config, project, digest, read, write, taskDir, task, view, health, launch, alive } from './common.mjs';
 import {history} from './codex-history.mjs';
+import {previousWorkerStillExiting} from './worker-lifetime.mjs';
 
 const worker = path.join(path.dirname(fileURLToPath(import.meta.url)), 'worker.mjs');
 const server = new McpServer({ name: 'local-codex', version: VERSION }, {
@@ -98,7 +99,7 @@ register('continue_task', 'Continue a completed or interrupted bridge-created Co
     return job;
   }
   if (!['completed', 'failed', 'interrupted'].includes(job.status)) throw new Error('Wait for completion or cancel the active turn first.');
-  if (alive(job.workerPid)) throw new Error('The previous worker is still exiting; retry shortly.');
+  if (previousWorkerStillExiting(job,alive)) throw new Error('The previous worker is still exiting; retry shortly.');
   project(job.project);
   // An exclusive lock serializes continuation requests from separate ChatGPT connections.
   const lock = path.join(directory, 'continuation.lock');

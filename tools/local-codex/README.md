@@ -30,6 +30,10 @@ Stored `notLoaded` chats can resume. Native metadata and unfinished-turn checks 
 
 The MCP schema and plugin skill expose these optional fields. Older workers reject module routing before queueing; upgrade the worker to 0.4.4 before using it. Existing tasks without module metadata keep their existing behavior. See [lifecycle decision](decisions/2026-11-02-chat-lifecycle.md).
 
+### Terminal worker PID reuse (runtime 0.4.5)
+
+A terminal task can retain a PID that Windows later assigns to an unrelated process. Continuation checks the process birth time before treating it as the previous worker still exiting. A birth strictly after the terminal timestamp proves reuse; unknown timing retains the existing wait. No unrelated process is stopped. See [the evidence and regression decision](decisions/2026-11-03-recycled-worker-pid.md).
+
 ### Listener transport (0.4.3)
 
 The PC holds one Firebase `onSnapshot` subscription on `_ptiLocalServices/local-codex/owners/{owner}/signals/dispatch`. The owner can get only this exact marker; collection queries, sibling documents, jobs and client writes remain denied. It contains only a version, random revision and timestamp. The existing encrypted Firebase session supplies a public `FirebaseServerApp` user context; no Admin credential or new sign-in is installed. The session is replaced before token expiry, with SDK reconnect handling and fresh discovery on each server reconnection.

@@ -67,6 +67,15 @@ try {
   assert.equal(turnOptions.model,'gpt-6.1-sol');assert.equal(turnOptions.effort,'xhigh');
   checks.push('new threads and turns explicitly use owner-selected model and effort');
   checks.push('inspection mode, result retrieval and duplicate-request protection');
+  // A terminal job's historical PID may now belong to an unrelated live
+  // process. Keep that process alive and prove continuation uses its lifetime.
+  if(process.platform==='win32'){
+    const terminalFile=path.join(testHome,'tasks',done.id,'task.json');
+    const historicalJob=JSON.parse(fs.readFileSync(terminalFile,'utf8'));
+    historicalJob.workerPid=process.pid;
+    historicalJob.updatedAt='2000-01-01T00:00:00.000Z';
+    fs.writeFileSync(terminalFile,JSON.stringify(historicalJob));
+  }
   let continued;
   const continueDeadline=Date.now()+8000;
   do{
@@ -76,6 +85,8 @@ try {
     await new Promise(resolve=>setTimeout(resolve,150));
   }while(Date.now()<continueDeadline);
   assert.equal(continued.threadId, '01900000-0000-7000-8000-000000000001');
+  assert.doesNotThrow(()=>process.kill(process.pid,0));
+  if(process.platform==='win32')checks.push('recycled terminal PID does not block same-thread continuation or terminate an unrelated process');
   const pending = await until(client, done.id, ['waiting_for_user']);
   assert.equal(pending.pending.length, 1);
   assert.equal((await call(client, 'respond_to_task', { task_id: done.id, request_id: 'unknown', decision: 'approve' })).error, 'No matching active request. Retrieve the task first.');

@@ -99,3 +99,80 @@ Angular retained stylesheet-budget warnings and an unresolved absolute
 `/assets/styles/pti-home.css` build warning. No UI source was changed and no new
 visual acceptance is claimed. Existing dirty shared rules/workflow files and
 untracked research-preview work were excluded from this delivery.
+
+## Native activation continuation, 3 November
+
+**Installed and verified: initiator 1.3.1, source `90d68c6`. Velum listener
+activation remains deferred.** The parent performed runtime work; one native
+gpt-6.1-sol/xhigh checker independently reviewed cutover and rollback mechanisms.
+No application code changed during this continuation.
+
+At 09:01:59 UTC the exact starter task was temporarily disabled to prevent an
+overlapping scheduled launch. Its active pointer was atomically changed from
+`releases/1.3.0-a4a2271` to the already-tested `releases/1.3.1-90d68c6`, retaining
+the existing Node runtime, settings, helper executable and companion task action.
+Only verified initiator Node PID 27780 was stopped, without tree termination.
+Its PowerShell/wscript chain fully exited before the unchanged task was enabled
+and invoked through Task Scheduler. New initiator PID 35276 published ready by
+09:02:11 UTC. No broad installer, companion restart or GTOP cutover ran.
+
+Fourteen protected process identities retained their original creation times:
+Velum host/worker, One Piece launcher/supervisor/backend, Jellyfin, Caddy, Cast
+bridge, Local Codex relay/server, GTOP worker and three Ollama processes. Exactly
+one initiator and one Velum worker remained. All five checked task definitions,
+initiator settings and the GTOP runner contract were byte/hash unchanged after
+cutover. Local Codex 0.4.4 remained online with its Firestore listener connected
+and four active tasks at the observation point.
+
+Measured bounded evidence:
+
+| Observation | Before native activation | Installed 1.3.1 |
+| --- | --- | --- |
+| Successful cloud-poll spacing | 16.00175 s mean, 4 gaps | 31.54267 s mean, 6 gaps |
+| Sampled One Piece state | All ready | All ready, no errors |
+| Persisted cloud heartbeat spacing | Prior hosted-fix evidence about 32 s | 31.3465 s mean, 2 gaps |
+
+This is a **49.27% measured reduction in poll frequency**, not a full-day billing
+measurement. One transaction get per successful poll models approximately
+225 to 114 reads/hour before retries or owner activity. Server heartbeat write
+coalescing was already deployed; this native change chiefly reduces polling
+reads. Fourteen selected-field diagnostic reads were added by the heartbeat
+probe. The last pre-cutover observed heartbeat to the first successful new poll
+was under 35 seconds, within the unchanged 60-second expiry. Initial/version
+transition writes and subsequent persisted timestamps remain truthful.
+
+The 51 starter tests and 12 gateway tests passed again, including stopped
+15-second Start discovery, stale/offline expiry, bounded reconnect, duplicate
+Start suppression, ACK recovery and exact authorization. The Home guidance
+contract passed. Actual companion health and authenticated periodic polls were
+verified. A real locked-screen Start, production offline simulation and a fresh
+viewer playback action were deliberately not triggered; these owner/device
+acceptance paths are not claimed from the deterministic tests or process checks.
+
+Velum's selected-field cloud check at 08:58 UTC found zero device-assigned queued
+or running jobs, approved binding and an idle heartbeat with no active job. That
+did **not** establish system idleness: separate Velum/Qwen research Python
+processes outside worker PID 18612 remained live. Download PID 43400 advanced
+from about 8.95 GB to 16.22 GB cumulative writes while observed; research runtime
+and critic processes also appeared. GPU samples ranged from 0-1% with memory
+increasing from 953 MiB to 2,577 MiB. These observations neither prove an active
+Studio inference nor exclude research loading/in-flight work. With no atomic
+Velum drain gate, a safe idle handoff could not be established. Its existing
+host PID 19304 and worker PID 18612 were left running; no installed listener,
+device-auth rotation, actual queue claim, production revocation or gallery
+acceptance is claimed. The tested listener source/dependencies remain prepared
+for a later genuinely idle cutover. No image/paper generation was requested.
+
+Rollback readiness: the exact previous active pointer is retained in the F-drive
+evidence directory, and the previous release, native helper and Node executable
+remain present. A rollback must disable only the starter task, stop only the
+identity-verified new initiator, drain its launcher chain, atomically restore the
+old pointer, then enable/invoke the unchanged task. No unnecessary live rollback
+was exercised. Do not remove prior native releases: live independent hosts and
+the GTOP resolver can still depend on them.
+
+Sanitized evidence and subsequent aggregate Monitoring/log counters are under
+`F:/Workspace/Codex/2026-11-03/pti-firestore-native-activation/outputs/`.
+Active Local Codex/research traffic prevents interpreting aggregate PTI changes
+as a quiet-workload causal saving. Existing unrelated dirty rules/workflow and
+research files remain outside this record's commit.

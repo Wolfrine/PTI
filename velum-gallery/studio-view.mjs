@@ -28,8 +28,19 @@ export function renderStudioShell(root) {
   <section id="studioCreations" class="studio-archive" aria-label="Creations archive" hidden><div class="studio-archive-heading"><p id="studioArchiveSummary">Your private image history.</p><div class="studio-archive-actions"><button id="studioNew" class="studio-text-button" type="button">New image +</button><details id="studioArchiveOptions" class="studio-archive-options"><summary aria-label="Filter and sort Creations">Filters <span id="studioArchiveActiveFilter">All</span></summary><div class="studio-archive-options-panel"><div class="studio-filters" role="group" aria-label="Filter creations">${['All','Kept','Saved','Drafts','Removed'].map((filter,index)=>`<button type="button" data-filter="${filter.toLowerCase()}" aria-pressed="${index===0}">${filter}</button>`).join('')}</div><div class="studio-archive-tools"><label>Model <select id="studioArchiveModel"><option value="">All models</option>${MODELS.map(model=>`<option value="${html(model.id)}">${html(model.label)}</option>`).join('')}</select></label><label>Date <input id="studioArchiveDate" type="date"/></label></div><button id="studioDriveQuality" class="studio-text-button" type="button">Refresh Drive quality-test records</button><p id="studioArchiveCoverage" class="studio-hint"></p></div></details></div></div><div id="studioArchiveGrid" class="studio-archive-grid"></div><p id="studioArchiveError" class="studio-message" role="status" hidden></p><button id="studioLoadMore" class="studio-load-more" type="button">Load more creations</button></section>
   <dialog id="studioDevicePanel" class="studio-dialog studio-small-dialog" aria-labelledby="studioDeviceHeading"><button type="button" data-close class="studio-dialog-close" aria-label="Close PC connection">×</button><span class="studio-eyebrow">Connection</span><h2 id="studioDeviceHeading">Your remote PC</h2><div id="studioWorker" class="studio-worker" role="status"><i></i><div><strong></strong><span></span></div><button id="studioRefresh" type="button" aria-label="Refresh PC status">Refresh</button></div><section class="studio-device" id="studioDevice"><div class="studio-device-title"><span id="studioDeviceBadge"></span></div><p id="studioDeviceCopy"></p><div class="studio-device-actions"><button type="button" id="studioApprove" hidden>Approve this PC</button><button type="button" id="studioRevoke" hidden>Revoke PC access</button></div><p class="studio-device-note">Windows must be awake, online and signed in. A locked session works. No repeated PC sign-in.</p></section></dialog>
   <dialog id="studioAdvancedPanel" class="studio-dialog studio-small-dialog" aria-labelledby="studioAdvancedHeading"><button type="button" data-close class="studio-dialog-close" aria-label="Close settings">×</button><span class="studio-eyebrow">Optional settings</span><h2 id="studioAdvancedHeading">Keep the details.</h2><details class="studio-pose"><summary>Pose <span>Optional · off by default</span></summary><label class="studio-pose-toggle"><input id="studioPoseEnabled" type="checkbox"/><span>Use a catalog pose</span></label><div class="studio-pose-options"><label for="studioPoseCategory">Category<select id="studioPoseCategory" class="studio-input"><option value="auto">Auto</option><option value="expressive">Expressive</option><option value="standard">Standard</option><option value="upper-body">Upper body</option><option value="two-person">Two person</option></select></label><button type="button" id="studioPoseShuffle">Shuffle</button></div><label class="studio-pose-two-person"><input id="studioPoseTwoPerson" type="checkbox"/><span>Allow two-person poses explicitly</span></label><div id="studioPosePreview" class="studio-pose-preview" aria-live="polite"></div></details><label class="studio-label" for="studioSeed">Seed <span>Blank = random</span></label><input class="studio-input" id="studioSeed" type="number" min="0" max="2147483647" step="1" inputmode="numeric" placeholder="Random"/><p class="studio-hint">Use the same seed to explore a prompt. A new request creates a new original.</p><div class="studio-setting-row"><span>Image</span><strong id="studioFormat">768 × 1024 · PNG</strong></div><p class="studio-hint">Reference dimensions follow the verified model profile. No masking, face lock or pose lock is promised.</p><p class="studio-hint">Your original prompt, any enabled pose instruction and actual settings stay with every result. No prompt enhancer.</p></dialog>
-  <dialog id="studioDetailsPanel" class="studio-dialog studio-detail-dialog" aria-labelledby="studioDetailsHeading"><button type="button" data-close class="studio-dialog-close" aria-label="Close creation details">×</button><div id="studioDetails"></div></dialog>`;
-  root.querySelectorAll('dialog').forEach(dialog=>{const tools=document.createElement('header');tools.className='studio-dialog-tools';const exit=document.createElement('button');exit.type='button';exit.dataset.action='quick-exit';exit.className='studio-dialog-exit';exit.textContent='Quick exit';tools.append(exit,dialog.querySelector('[data-close]'));dialog.prepend(tools);});
+  <dialog id="studioDetailsPanel" class="studio-dialog studio-detail-dialog" aria-label="Creation viewer" tabindex="-1"><button type="button" data-close class="studio-dialog-close" aria-label="Close creation viewer">×</button><div id="studioDetails"></div></dialog>`;
+  root.querySelectorAll('dialog').forEach(dialog=>{const tools=document.createElement('header');tools.className='studio-dialog-tools';const exit=document.createElement('button');exit.type='button';exit.dataset.action='quick-exit';exit.className='studio-dialog-exit';exit.textContent='Quick exit';if(dialog.id==='studioDetailsPanel'){const position=document.createElement('span');position.id='studioViewerPosition';position.className='studio-viewer-position';position.setAttribute('aria-live','polite');position.textContent='Creation';tools.append(position);}tools.append(exit,dialog.querySelector('[data-close]'));dialog.prepend(tools);});
+  const form=root.querySelector('#studioForm');
+  form.prepend(form.querySelector('label[for="studioPrompt"]'),form.querySelector('#studioPrompt'),form.querySelector('#studioPromptHint'));
+  root.querySelector('#studioCanvasActions [data-action="details"]').textContent='View image';
+  root.querySelector('#studioCanvasActions [data-action="save"]').textContent='Save';
+  const advanced=root.querySelector('#studioAdvancedPanel');
+  advanced.querySelector('#studioAdvancedHeading').textContent='Generation settings';
+  const settingsNotes=document.createElement('details');
+  settingsNotes.className='studio-settings-notes';
+  settingsNotes.innerHTML='<summary>About settings and references</summary>';
+  advanced.querySelectorAll('p.studio-hint').forEach(note=>settingsNotes.append(note));
+  advanced.append(settingsNotes);
   const recovery=document.createElement('section');recovery.className='studio-recovery';
   recovery.innerHTML='<button id="studioRequestRecovery" type="button">Request worker start</button><p id="studioRecoveryStatus" role="status"></p>';
   root.querySelector('#studioDevice .studio-device-note').before(recovery);
@@ -87,7 +98,7 @@ export function renderStudioState(root,state){
       if(job.status==='uploading')canvas.insertAdjacentHTML('beforeend',`<div class="studio-upload-actions">${state.canRetryUpload?`<button type="button" data-action="retry-upload" ${state.submitting||state.connected===false?'disabled':''}>Retry upload</button>`:''}<button type="button" data-action="cancel-upload" ${state.submitting||state.connected===false?'disabled':''}>Cancel upload</button></div>`);
     }
   }
-  root.querySelector('#studioCanvasActions [data-action=iterate]').disabled=historicalCreation(job);root.querySelector('#studioCanvasActions').hidden=!job;root.querySelectorAll('#studioCanvasActions [data-action="save"]').forEach(button=>{button.disabled=!creationReady(job)||!state.resultUrl||Boolean(state.saving);button.textContent=state.saving?'Saving…':state.saves?.[job?.id]?'Saved to Drive ✓':'Save to Drive ↗';});renderArchive(root,state);
+  root.querySelector('#studioCanvasActions [data-action=iterate]').disabled=historicalCreation(job);root.querySelector('#studioCanvasActions').hidden=!job;root.querySelectorAll('#studioCanvasActions [data-action="save"]').forEach(button=>{button.disabled=!creationReady(job)||!state.resultUrl||Boolean(state.saving);button.textContent=state.saving?'Saving…':state.saves?.[job?.id]?'Saved ✓':'Save';});renderArchive(root,state);
 }
 export function renderArchive(root,state){
   const jobs=visibleCreations(state.archiveJobs||[],{filter:state.archiveFilter,model:state.archiveModel,date:state.archiveDate,saves:state.saves||{},removed:state.removed||{}}),grid=root.querySelector('#studioArchiveGrid');
@@ -127,4 +138,76 @@ export function renderCreationDetails(root,state){
     details.querySelector('.studio-detail-information').prepend(panel);
     const removal=details.querySelector('.studio-removal-note');if(removal)removal.textContent='Saved privately to Drive. The original is checked before it appears. Edit it to make a new image.';
   }
+  // The full-size image is the Studio viewer. Metadata and specialist controls
+  // remain available in a secondary sheet, not competing with the photograph.
+  const media=details.querySelector('.studio-detail-image');
+  const information=details.querySelector('.studio-detail-information');
+  const stage=document.createElement('div');
+  stage.className='studio-detail-stage';
+  const controls=document.createElement('nav');
+  controls.className='studio-viewer-controls';
+  controls.setAttribute('aria-label','Creation actions');
+  controls.innerHTML='<div class="studio-viewer-identity"><strong>'+html(job.provenance?.label||label(job.model))+'</strong><span>'+html(formatJobStatus(job))+(state.viewerCount>1?' · Swipe ↔':'')+'</span></div><div class="studio-viewer-actions">'+(completed&&editModels.length?'<button type="button" data-action="edit" class="studio-viewer-edit">Edit</button>':!historicalCreation(job)?'<button type="button" data-action="iterate" class="studio-viewer-edit">Iterate</button>':'')+'<button type="button" data-action="save" '+(!completed||state.saving?'disabled':'')+'>'+(state.saving?'Saving…':state.saves?.[job.id]?'Saved ✓':'Save')+'</button><button type="button" class="studio-viewer-more" data-action="toggle-details" aria-controls="studioInformationPanel" aria-expanded="false">Details <span aria-hidden="true">⌃</span></button></div>';
+  const navigation=document.createElement('nav');
+  navigation.className='studio-viewer-navigation';
+  navigation.setAttribute('aria-label','Browse creations');
+  navigation.innerHTML='<button type="button" data-viewer-direction="prev" aria-label="Previous creation" '+(!state.viewerHasPrevious?'disabled':'')+'>‹</button><button type="button" data-viewer-direction="next" aria-label="Next creation" '+(!state.viewerHasNext?'disabled':'')+'>›</button>';
+  if(state.viewerCount>1)stage.append(media,navigation,controls);
+  else stage.append(media,controls);
+  details.prepend(stage);
+  information.id='studioInformationPanel';
+  information.setAttribute('aria-label','Creation details and feedback');
+  const sheetHead=document.createElement('div');
+  sheetHead.className='studio-sheet-head';
+  sheetHead.innerHTML='<span class="studio-sheet-grip" aria-hidden="true"></span><button type="button" data-action="close-details" aria-label="Return to full image">View image <span aria-hidden="true">↓</span></button>';
+  information.prepend(sheetHead);
+  const decisions=information.querySelector('#studioFeedback');
+  const actions=information.querySelector('.studio-detail-actions');
+  if(decisions&&actions){
+    decisions.querySelector('h3').textContent='Review';
+    const notesLabel=decisions.querySelector('label[for="studioFeedbackNote"]');
+    const notesField=decisions.querySelector('#studioFeedbackNote');
+    const saveReview=decisions.querySelector('.studio-feedback-save');
+    if(notesLabel&&notesField&&saveReview){
+      const notes=document.createElement('details');
+      notes.className='studio-feedback-notes';
+      const summary=document.createElement('summary');
+      summary.textContent='Add a note (optional)';
+      notes.append(summary,notesLabel,notesField);
+      notes.open=Boolean(state.feedback?.note);
+      saveReview.before(notes);
+      saveReview.textContent='Save review';
+    }
+    actions.before(decisions);
+  }
+  if(actions){
+    // The image stage owns quick Save/Edit; avoid a second competing copy.
+    actions.querySelector('[data-action="save"]')?.remove();
+    actions.querySelector('[data-action="edit"]:disabled')?.remove();
+    if(controls.querySelector('.studio-viewer-edit')?.dataset.action==='iterate')actions.querySelector('[data-action="iterate"]')?.remove();
+    const danger=actions.querySelector('[data-action="remove"],[data-action="restore"]');
+    const keepSave=actions.querySelector('[data-action="keep-save"]');
+    const removalNote=information.querySelector('.studio-removal-note');
+    if(danger||keepSave){
+      const manage=document.createElement('details');
+      manage.className='studio-creation-manage';
+      const title=document.createElement('summary');
+      title.textContent='Manage this creation';
+      manage.append(title);
+      if(keepSave){keepSave.textContent='Keep + save to Drive';manage.append(keepSave);}
+      if(removalNote)manage.append(removalNote);
+      if(danger){if(danger.dataset.action==='remove')danger.dataset.action='arm-remove';manage.append(danger);}
+      information.append(manage);
+    }
+    if(!actions.children.length)actions.remove();
+  }
+  // Source prompt and machine provenance remain accessible but closed until
+  // needed. They never compete with the image and the review decision.
+  information.querySelectorAll('.studio-original, .studio-location').forEach(section=>{section.open=false;});
+  const expanded=root.querySelector('#studioDetailsPanel')?.dataset.expanded==='true';
+  const desktop=typeof window.matchMedia==='function'&&window.matchMedia('(min-width: 1000px)').matches;
+  details.dataset.expanded=String(expanded);
+  information.inert=!expanded&&!desktop;
+  controls.querySelector('[data-action="toggle-details"]').setAttribute('aria-expanded',String(expanded));
+  root.querySelector('#studioViewerPosition').textContent=state.viewerPosition||'Creation';
 }

@@ -3,13 +3,14 @@ const localModule = relative => { const url=new URL(relative,import.meta.url);ur
 const {MODELS,makeJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,modelReferenceLimit}=await localModule('./studio-contract.mjs');
 const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
 const {renderStudioShell,renderStudioState,renderCreationDetails,selectedJob,pendingJob,formatJobStatus}=await localModule('./studio-view.mjs');
-const {ARCHIVE_PAGE_SIZE,archiveSource,mergeArchivePage,decodeThumbnail,creationReady,historicalCreation}=await localModule('./studio-archive.mjs');
+const {ARCHIVE_PAGE_SIZE,archiveSource,mergeArchivePage,visibleCreations,decodeThumbnail,creationReady,historicalCreation}=await localModule('./studio-archive.mjs');
 const {prepareReference,decodeReference,MAX_REFERENCES}=await localModule('./studio-reference.mjs');
 const {makeRecoveryRequest,pendingRecovery,RECOVERY_COOLDOWN_MS}=await localModule('./studio-recovery.mjs');
 const {createReferencePicker}=await localModule('./studio-reference-picker.mjs');
 const {POSE_CATEGORIES}=await localModule('./drive-library.mjs');
 const {verifyOriginal}=await localModule('./studio-drive.mjs');
 const {createOriginalCompareController}=await localModule('./studio-compare.mjs');
+const {createStudioViewerController}=await localModule('./studio-viewer.mjs');
 export {renderStudioShell,renderStudioState,formatJobStatus};
 
 export async function decodeResult(result,chunks){
@@ -26,13 +27,30 @@ export async function mountStudio({app,auth,drive}){
   const referencePicker=createReferencePicker({drive});
   const db=getFirestore(app);
    const state={signedIn:false,connected:navigator.onLine,mode:'create',worker:null,binding:null,bindingBusy:false,recovery:null,recoveryBusy:false,jobs:[],selectedId:'',resultUrl:'',feedback:null,message:'',references:[],archiveJobs:[],archiveFilter:'all',archiveModel:'',archiveDate:'',archiveHasMore:true,archiveLoading:false,archiveError:'',saves:{},feedbackMap:{},removed:{},lastRemovedId:''};
-  let uid='',epoch=0,timer=0,polling=false,resultJob='',resultBlob=null,archiveCursor=null,archiveEpoch=0,thumbActive=0,locked=false,pendingUpload=null,autoSelect=true,undoTimer=0,poseEpoch=0;
+  let uid='',epoch=0,timer=0,polling=false,resultJob='',resultBlob=null,archiveCursor=null,archiveEpoch=0,thumbActive=0,locked=false,pendingUpload=null,autoSelect=true,undoTimer=0,poseEpoch=0,viewerReturn=null;
   const thumbs=new Map(),thumbMissing=new Set(),thumbQueue=[],thumbPending=new Set();
   state.referencePreviews={};state.driveJobs=[];
   const workspace=()=>['users',uid,'velumStudio','workspace'];
   let compareController=null;
   const draw=()=>{renderStudioState(root,{...state,now:Date.now()});compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
-  const detailsDraw=()=>{const panel=root.querySelector('#studioDetailsPanel'),scroll=panel.scrollTop,opened=[...panel.querySelectorAll('details[open]')].map(item=>item.querySelector('summary')?.textContent);renderCreationDetails(root,state);panel.querySelectorAll('details').forEach(item=>{if(opened.includes(item.querySelector('summary')?.textContent))item.open=true;});panel.scrollTop=scroll;compareController?.sync();};
+  const visibleViewerJobs=()=>visibleCreations(state.archiveJobs||[],{filter:state.archiveFilter,model:state.archiveModel,date:state.archiveDate,saves:state.saves||{},removed:state.removed||{}});
+  function setViewerDetails(expanded,focus=false){
+    const panel=root.querySelector('#studioDetailsPanel'),details=root.querySelector('#studioDetails'),information=details.querySelector('.studio-detail-information');
+    panel.dataset.expanded=String(Boolean(expanded));details.dataset.expanded=panel.dataset.expanded;
+    if(information)information.inert=!expanded&&!window.matchMedia('(min-width: 1000px)').matches;
+    const toggle=details.querySelector('[data-action="toggle-details"]');if(toggle)toggle.setAttribute('aria-expanded',String(Boolean(expanded)));
+    if(focus)(expanded?information?.querySelector('[data-action="close-details"]'):toggle)?.focus();
+  }
+  const detailsDraw=()=>{
+    const panel=root.querySelector('#studioDetailsPanel'),scroll=panel.scrollTop,opened=[...panel.querySelectorAll('details[open]')].map(item=>item.querySelector('summary')?.textContent),items=visibleViewerJobs(),index=items.findIndex(job=>job.id===state.selectedId);
+    state.viewerPosition=state.mode==='creations'&&index>=0?String(index+1)+' / '+items.length+(state.archiveHasMore?'+':''):'Preview';
+    state.viewerCount=state.mode==='creations'?items.length:0;
+    state.viewerHasPrevious=index>0;
+    state.viewerHasNext=index>=0&&index<items.length-1;
+    renderCreationDetails(root,state);
+    panel.querySelectorAll('details').forEach(item=>{if(opened.includes(item.querySelector('summary')?.textContent))item.open=true;});
+    panel.scrollTop=scroll;setViewerDetails(panel.dataset.expanded==='true');compareController?.sync();
+  };
   const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){observer.unobserve(entry.target);queueThumb(entry.target.dataset.thumb,entry.target);}}),{root,rootMargin:'200px'}):null;
   function observeThumbs(){if(state.mode!=='creations')return;root.querySelectorAll('[data-thumb]').forEach(element=>{const id=element.dataset.thumb,record=state.archiveJobs.find(item=>item.id===id);if(historicalCreation(record)&&!creationReady(record))return;if(thumbs.has(id))paintThumb(element,thumbs.get(id));else if(!thumbMissing.has(id)){if(observer)observer.observe(element);else queueThumb(id,element);}});}
   function paintThumb(element,url){if(!element.isConnected||element.querySelector('img'))return;const image=new Image();image.src=url;image.alt='';image.loading='lazy';image.decoding='async';element.append(image);}
@@ -41,9 +59,9 @@ export async function mountStudio({app,auth,drive}){
   function clearResult(){compareController?.reset();if(state.resultUrl)URL.revokeObjectURL(state.resultUrl);for(const value of Object.values(state.referencePreviews||{}))URL.revokeObjectURL(value.url||value);state.referencePreviews={};state.resultUrl='';state.resultError='';state.feedback=null;state.saveMessage='';resultJob='';resultBlob=null;}
   function clearPose(){poseEpoch++;if(state.pose?.url)URL.revokeObjectURL(state.pose.url);state.pose=null;state.poseEnabled=false;state.poseLoading=false;state.poseError='';root.querySelector('#studioPoseEnabled').checked=false;}
   function clearReferences(){state.references.forEach(reference=>URL.revokeObjectURL(reference.url));state.references=[];state.parentJobId='';clearPose();}
-  function clearPrivateSession(){referencePicker.clear();clearPose();state.driveJobs=[];state.driveLoading=false;pendingUpload=null;state.canRetryUpload=false;state.uploadProgress='';state.message='';state.saveMessage='';state.referencePick=false;root.querySelector('#studioReferenceSources').hidden=true;root.querySelector('#studioReferenceOpen').setAttribute('aria-expanded','false');drive.clear();}
+  function clearPrivateSession(){viewerReturn=null;referencePicker.clear();clearPose();state.driveJobs=[];state.driveLoading=false;pendingUpload=null;state.canRetryUpload=false;state.uploadProgress='';state.message='';state.saveMessage='';state.referencePick=false;root.querySelector('#studioReferenceSources').hidden=true;root.querySelector('#studioReferenceOpen').setAttribute('aria-expanded','false');drive.clear();}
   function switchMode(mode){state.mode=mode;draw();root.scrollTop=0;if(mode==='creations'&&!state.archiveJobs.length&&!state.archiveLoading)loadArchive(true);}
-  function showDialog(id){const dialog=root.querySelector(id);if(!dialog.open)dialog.showModal();}
+  function showDialog(id){const dialog=root.querySelector(id);if(!dialog.open){dialog.showModal();if(id==='#studioDetailsPanel')dialog.focus({preventScroll:true});}}
   function closeDialogs(){root.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());}
   async function related(collectionName,ids){const values={};for(let index=0;index<ids.length;index+=30){const group=ids.slice(index,index+30);if(!group.length)continue;const snapshot=await getDocs(query(collection(db,...workspace(),collectionName),where(documentId(),'in',group)));snapshot.docs.forEach(item=>{values[item.id]=item.data();});}return values;}
   async function loadArchive(reset=false){
@@ -63,7 +81,40 @@ export async function mountStudio({app,auth,drive}){
     catch(error){if(token===epoch)state.message=error.message||'Drive quality results could not load. Reconnect and retry.';}
     finally{if(token===epoch){state.driveLoading=false;draw();}}
   }
-  async function chooseJob(id,openDetails=false){if(!uid)return;clearResult();state.selectedId=id;draw();if(openDetails){detailsDraw();showDialog('#studioDetailsPanel');}await loadResult();}
+  async function chooseJob(id,openDetails=false){
+    if(!uid||locked)return;
+    const panel=root.querySelector('#studioDetailsPanel');
+    if(openDetails&&!panel.open){
+      viewerReturn=state.mode==='creations'?{uid,epoch,selectedId:state.selectedId,blob:resultBlob,signature:resultJob,feedback:state.feedback,error:state.resultError}:null;
+      panel.dataset.expanded='false';
+    }
+    clearResult();state.selectedId=id;draw();
+    if(openDetails){detailsDraw();showDialog('#studioDetailsPanel');}
+    await loadResult();
+  }
+  function navigateViewer(direction){
+    const panel=root.querySelector('#studioDetailsPanel');
+    if(!uid||locked||!panel.open||state.mode!=='creations')return false;
+    const jobs=visibleViewerJobs(),index=jobs.findIndex(item=>item.id===state.selectedId),next=index+direction;
+    if(index<0||next<0||next>=jobs.length)return false;
+    // chooseJob clears the old verified Blob URL before the new result loads.
+    // Do not fetch archive neighbors until the user actually selects one.
+    void chooseJob(jobs[next].id,false);
+    setViewerDetails(false);
+    detailsDraw();
+    return true;
+  }
+  root.querySelector('#studioDetailsPanel').addEventListener('close',()=>{
+    setViewerDetails(false);
+    const previous=viewerReturn;viewerReturn=null;
+    if(!previous||state.mode!=='creations'||locked||!uid||previous.uid!==uid||previous.epoch!==epoch)return;
+    clearResult();
+    state.selectedId=previous.selectedId;
+    if(previous.blob&&previous.selectedId){resultBlob=previous.blob;state.resultUrl=URL.createObjectURL(previous.blob);resultJob=previous.signature;}
+    else{state.resultError=previous.error;resultJob=previous.signature;}
+    state.feedback=previous.feedback;
+    draw();
+  });
   async function loadSourceReference(index){
     const job=selectedJob(state),reference=job?.references?.[index],token=epoch;if(!reference||state.referencePreviews[reference.sha256])return;
     let blob;
@@ -75,6 +126,10 @@ export async function mountStudio({app,auth,drive}){
   compareController=createOriginalCompareController(root,{
     current:()=>({job:selectedJob(state),generatedUrl:state.resultUrl,previews:state.referencePreviews,locked:locked||!uid}),
     loadOriginal:()=>loadSourceReference(0)
+  });
+  createStudioViewerController(root,{
+    isOpen:()=>Boolean(uid&&!locked&&root.querySelector('#studioDetailsPanel').open),
+    navigate:navigateViewer
   });
   async function poll(){
     clearTimeout(timer);if(!uid||locked||polling)return;polling=true;const token=epoch;
@@ -137,7 +192,7 @@ export async function mountStudio({app,auth,drive}){
     }catch(error){if(token===epoch&&lane===poseEpoch)state.poseError=error.message||'Pose could not load. Retry or turn it off.';}
     finally{if(token===epoch&&lane===poseEpoch){state.poseLoading=false;draw();}}
   }
-  async function creationReference(id,edit=false){await chooseJob(id);const job=selectedJob(state);if(!resultBlob||!creationReady(job))throw new Error('This original is not available remotely for reference editing.');await addReference(resultBlob,{kind:job.driveOriginal?'drive':'studio',id:job.driveOriginal?.fileId||job.id,name:`Creation · ${job.seed}`},edit);if(edit){root.querySelector('#studioPrompt').value='';root.querySelector('#studioSeed').value='';}state.parentJobId=job.driveOriginal?'':job.id;closeDialogs();root.scrollTop=0;if(edit)root.querySelector('#studioPrompt').focus();}
+  async function creationReference(id,edit=false){if(state.selectedId!==id||!resultBlob)await chooseJob(id);const job=selectedJob(state);if(!resultBlob||!creationReady(job))throw new Error('This original is not available remotely for reference editing.');await addReference(resultBlob,{kind:job.driveOriginal?'drive':'studio',id:job.driveOriginal?.fileId||job.id,name:`Creation · ${job.seed}`},edit);if(edit){root.querySelector('#studioPrompt').value='';root.querySelector('#studioSeed').value='';}state.parentJobId=job.driveOriginal?'':job.id;state.mode='create';state.referencePick=false;autoSelect=false;viewerReturn=null;clearResult();state.selectedId='';closeDialogs();draw();root.scrollTop=0;root.querySelector('#studioPrompt').focus();}
   async function feedbackSave(verdict,note=''){if(!uid||!state.connected||!navigator.onLine||!['keep','iterate','reject'].includes(verdict)||note.length>2000)throw new Error('Reconnect before saving feedback.');const token=epoch,id=state.selectedId,feedback={verdict,note,updatedAt:Date.now()};await setDoc(doc(db,...workspace(),'feedback',id),feedback);if(token!==epoch||id!==state.selectedId)return;state.feedback=feedback;state.feedbackMap[id]=feedback;}
   async function removeCreation(id){
     if(state.removing)return;
@@ -160,8 +215,11 @@ export async function mountStudio({app,auth,drive}){
       state.message='Creation restored to its original date in Creations.';closeDialogs();
     }finally{state.removing=false;draw();}
   }
-  async function saveDrive(keep=false){if(!uid||locked||!resultBlob||state.saving)return;const job=selectedJob(state);if(!job||!creationReady(job))return;const token=epoch,id=job.id,blob=resultBlob,restoreDetails=root.querySelector('#studioDetailsPanel').open;closeDialogs();state.saving=true;state.saveMessage='Preparing private Drive save…';draw();try{if(keep)await feedbackSave('keep',state.feedback?.note||'');const known=await getDoc(doc(db,...workspace(),'saves',id));if(token!==epoch||locked)return;if(known.exists()){state.saves[id]=known.data();state.saveMessage='Already saved to your Private folder.';state.message=state.saveMessage;return;}const saved=await drive.save({job,blob,onProgress:progress=>{if(token===epoch){state.saveMessage=typeof progress==='number'?`Saving to Drive · ${Math.round(progress*100)}%`:String(progress?.message||'Saving to Drive…');state.message=state.saveMessage;draw();}}});if(token!==epoch||!uid||locked)return;let record={jobId:id,fileId:saved.id,name:saved.name,webViewLink:saved.webViewLink||`https://drive.google.com/file/d/${saved.id}/view`,savedAt:Date.now(),mime:'image/png',sha256:job.result.sha256,bytes:job.result.bytes,folderId:'1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA'};const target=doc(db,...workspace(),'saves',id),existing=await getDoc(target);if(existing.exists())record=existing.data();else await setDoc(target,record);if(token===epoch){state.saves[id]=record;state.saveMessage='Saved to the Private folder root. Refresh your Drive gallery to see it in Drift.';state.message=state.saveMessage;}}catch(error){if(token===epoch){state.saveMessage=error?.message||'Drive save was not confirmed. Retry when online; the original stays on your PC.';state.message=state.saveMessage;}}finally{if(token===epoch){state.saving=false;draw();if(restoreDetails&&id===state.selectedId&&!locked){detailsDraw();showDialog('#studioDetailsPanel');}}}}
+  async function saveDrive(keep=false){if(!uid||locked||!resultBlob||state.saving)return;const job=selectedJob(state);if(!job||!creationReady(job))return;const token=epoch,id=job.id,blob=resultBlob,restoreDetails=root.querySelector('#studioDetailsPanel').open;if(!restoreDetails)closeDialogs();state.saving=true;state.saveMessage='Preparing private Drive save…';draw();if(restoreDetails)detailsDraw();try{if(keep)await feedbackSave('keep',state.feedback?.note||'');const known=await getDoc(doc(db,...workspace(),'saves',id));if(token!==epoch||locked)return;if(known.exists()){state.saves[id]=known.data();state.saveMessage='Already saved to your Private folder.';state.message=state.saveMessage;return;}const saved=await drive.save({job,blob,onProgress:progress=>{if(token===epoch){state.saveMessage=typeof progress==='number'?`Saving to Drive · ${Math.round(progress*100)}%`:String(progress?.message||'Saving to Drive…');state.message=state.saveMessage;draw();}}});if(token!==epoch||!uid||locked)return;let record={jobId:id,fileId:saved.id,name:saved.name,webViewLink:saved.webViewLink||`https://drive.google.com/file/d/${saved.id}/view`,savedAt:Date.now(),mime:'image/png',sha256:job.result.sha256,bytes:job.result.bytes,folderId:'1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA'};const target=doc(db,...workspace(),'saves',id),existing=await getDoc(target);if(existing.exists())record=existing.data();else await setDoc(target,record);if(token===epoch){state.saves[id]=record;state.saveMessage='Saved to the Private folder root. Refresh your Drive gallery to see it in Drift.';state.message=state.saveMessage;}}catch(error){if(token===epoch){state.saveMessage=error?.message||'Drive save was not confirmed. Retry when online; the original stays on your PC.';state.message=state.saveMessage;}}finally{if(token===epoch){state.saving=false;draw();if(restoreDetails&&id===state.selectedId&&!locked){detailsDraw();showDialog('#studioDetailsPanel');}}}}
   root.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;try{
+    if(button.dataset.action==='toggle-details'){setViewerDetails(root.querySelector('#studioDetailsPanel').dataset.expanded!=='true',true);return;}
+    if(button.dataset.action==='close-details'){setViewerDetails(false,true);return;}
+    if(button.dataset.action==='arm-remove'){button.dataset.action='remove';button.textContent='Confirm removal';button.classList.add('studio-remove-armed');button.setAttribute('aria-label','Confirm removal from Creations');return;}
     if(button.dataset.action==='quick-exit')window.dispatchEvent(new CustomEvent('velum:quick-exit'));
     if(button.matches('[data-mode]')){state.referencePick=false;switchMode(button.dataset.mode);}
     if(button.matches('[data-close]'))button.closest('dialog').close();

@@ -1,7 +1,7 @@
-/* Velum · Editorial Atelier UI challenger, 2026-11-03.
-   Presentation only. Gallery media, gestures, Drive, PIN, worker and job contracts
-   continue to use their existing DOM IDs and listeners. Mobile Drift/Browse
-   intentionally retain the pre-Studio cinematic gallery presentation. */
+/* Velum · mobile-first layout, dark-only visual identity, 2026-11-03.
+   Final dark palette below supersedes the historic light exploration.
+   Gallery media, gestures, Drive, PIN, worker and job contracts retain their
+   original DOM IDs and listeners; Drift/Browse remain cinematic. */
 
 :root {
   --atelier-paper: #f3efe7;
@@ -1110,4 +1110,293 @@
 
 @media (prefers-reduced-motion: reduce) {
   .browse-view .tile-folder { transition: none; }
+}
+
+/* Dark-only Velum, owner correction 2026-11-03.
+   Retain the mobile-first Studio layout and the original rose-black gallery.
+   This palette overrides the earlier ivory Editorial Atelier experiment; no
+   light/auto branch or theme switch is offered. */
+:root {
+  color-scheme: dark;
+  --atelier-paper: #100b0e;
+  --atelier-white: #1b1118;
+  --atelier-rail: #160e14;
+  --atelier-ink: #f2e2eb;
+  --atelier-muted: #b799a9;
+  --atelier-border: #523647;
+  --atelier-accent: #dfb6cc;
+  --atelier-shadow: 0 12px 28px #0005;
+}
+
+/* Studio create, result, references, Creations, panels and inline controls. */
+#studioView {
+  background: var(--atelier-paper);
+  color: var(--atelier-ink);
+  color-scheme: dark;
+  scrollbar-color: #60404f transparent;
+}
+#studioView .studio-head h1,
+#studioView .studio-archive-heading h2 { color: #f3e4ed; }
+#studioView .studio-head h1 > span,
+#studioView .studio-composer-heading > span:last-child,
+#studioView .studio-label > span,
+#studioView .studio-reference-name > span,
+#studioView .studio-picker-selection-name > span,
+#studioView .studio-creation-caption > span:last-child,
+#studioView .studio-archive-options > summary > span { color: #ab899d; }
+#studioView .studio-pc {
+  border-color: #49313e;
+  background: #21151d;
+  color: #d5bdca;
+  box-shadow: none;
+}
+#studioView .studio-pc > span:last-child { color: #a88c9c; }
+#studioView .studio-pc.online { border-color: #52765b; }
+#studioView .studio-pc.online i { background: #bdd3b7; }
+#studioView .studio-pc.pending i { background: #e0ba91; }
+#studioView .studio-modes { border-color: #402938; }
+#studioView .studio-modes button { color: #ab8b9d; }
+#studioView .studio-modes button[aria-current] { color: #f3e5ee; }
+#studioView .studio-modes button[aria-current]::after { background: #dfb5ca; }
+#studioView .studio-modes button > span { color: #a48395; }
+#studioView .studio-message { color: #f4cddd; border-color: #bb88a6; background: #35202e; }
+#studioView .studio-alert #studioUndoRemove:not([hidden]) { border-color: #a47794; color: #f4d4e4; }
+
+#studioView .studio-canvas {
+  background: #090709;
+  border-color: #392531;
+  box-shadow: 0 12px 28px #0007;
+}
+#studioView .studio-empty {
+  background: radial-gradient(ellipse at 50% 35%, #291925, #140d12 66%, #0b080a);
+  color: #e4cfdc;
+}
+#studioView .studio-canvas-mark { color: #c29bb1; border-color: #705068; }
+#studioView .studio-empty h2 { color: #e7d0dd; }
+#studioView .studio-empty p { color: #b493a6; }
+#studioView .studio-progress-track { background: #432b3a; }
+#studioView .studio-progress-track i { background: #d3a1bd; }
+#studioView .studio-output { background: #090709; }
+#studioView .studio-canvas-caption { color: #f5e8ee; background: linear-gradient(transparent, #080509d9); }
+#studioView .studio-canvas-actions button {
+  border-color: #563748;
+  background: #22151e;
+  color: #e4bcd1;
+}
+#studioView .studio-canvas-actions button:last-child { color: #f0d7e4; }
+
+#studioView .studio-form {
+  border-color: #523647;
+  background: #1b1118;
+  color: #eedde7;
+  box-shadow: 0 9px 25px #0005;
+}
+#studioView .studio-composer-heading > .studio-label,
+#studioView .studio-label { color: #e7d3df; }
+#studioView .studio-input,
+#studioView .studio-prompt,
+#studioView .studio-model {
+  border-color: #5b3a4e;
+  background-color: #120b11;
+  color: #f3e5ee;
+  color-scheme: dark;
+}
+#studioView .studio-model {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23cba9be' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+#studioView .studio-input:focus { border-color: #cf9eb7; box-shadow: 0 0 0 3px #bf8fac38; }
+#studioView .studio-input::placeholder { color: #a78b9a; }
+#studioView .studio-input option { background: #20151c; color: #f0dfe9; }
+#studioView .studio-input option:disabled { color: #947686; }
+#studioView .studio-hint,
+#studioView .studio-submit-note { color: #b89aaa; }
+#studioView .studio-secondary-actions button,
+#studioView .studio-reference-sources button,
+#studioView .studio-text-button,
+#studioView .studio-load-more { color: #e0b7ce; }
+#studioView .studio-secondary-actions button span { color: #ac8a9e; }
+#studioView .studio-reference-sources { border-color: #523547; }
+#studioView .studio-reference-sources p { color: #b593a5; }
+#studioView .studio-reference {
+  border-color: #614155;
+  background: #2b1c27;
+  color: #f0dfeb;
+}
+#studioView .studio-reference-name strong { color: #ead2df; }
+#studioView .studio-reference .studio-reference-controls button { color: #e0b5cd; border-color: #704e61; }
+#studioView .studio-reference-actions > summary { color: #ebc3d8; }
+#studioView .studio-consent { color: #c4a8b8; }
+#studioView .studio-consent input { accent-color: #dfb6cc; }
+#studioView .studio-generate { background: #dfb6cc; color: #2d1a26; }
+#studioView .studio-generate:disabled { background: #3c2935; border-color: #513749; color: #b69aac; }
+#studioView .studio-generate:focus-visible,
+#studioView :is(button, a, input, select, textarea):focus-visible { outline-color: #d5a6bf; }
+
+/* Creations retains the image-first controls but is never a bright page. */
+#studioView .studio-archive-heading p,
+#studioView .studio-archive-tools label,
+#studioView .studio-archive-empty p { color: #b79baa; }
+#studioView .studio-archive-options > summary {
+  border-color: #624359;
+  background: #281a25;
+  color: #e9c4d7;
+}
+#studioView .studio-archive-options[open] > summary { background: #372334; border-color: #aa7894; }
+#studioView .studio-archive-options-panel {
+  border-color: #624258;
+  background: #1c121a;
+  box-shadow: 0 20px 65px #000b;
+}
+#studioView .studio-filters button { border-color: #644257; background: #271923; color: #d0acbf; }
+#studioView .studio-filters button[aria-pressed=true] { border-color: #dcb6ca; background: #dcb6ca; color: #291923; }
+#studioView .studio-archive-tools select,
+#studioView .studio-archive-tools input {
+  border-color: #5c3e50;
+  background: #150d13;
+  color: #f0dce7;
+  color-scheme: dark;
+}
+#studioView .studio-thumb { border-color: #3e2a35; background: #1b1218; }
+#studioView .studio-creation-caption { color: #ead0dd; }
+#studioView .studio-tile-state { background: #281923df; color: #f5e7ed; }
+#studioView .studio-archive-empty { border-color: #55384a; }
+#studioView .studio-archive-empty h3 { color: #e9d0de; }
+#studioView .studio-load-more { border-color: #704a5e; }
+
+/* Settings, details, pose, source comparison and consent dialogs. */
+#studioView .studio-dialog {
+  border-color: #69485a;
+  background: #1a1118;
+  color: #f2e1eb;
+  color-scheme: dark;
+  box-shadow: 0 26px 90px #000c;
+}
+#studioView .studio-dialog::backdrop { background: #050305d9; }
+#studioView .studio-dialog-tools,
+#studioView .studio-picker-footer { border-color: #523749; background: #241620; }
+#studioView .studio-dialog-close,
+#studioView .studio-dialog-exit,
+#studioView .studio-picker-privacy button,
+#studioView .studio-picker-close { border-color: #745065; background: #2b1b26; color: #ecc9dc; }
+#studioView .studio-dialog h2,
+#studioView .studio-picker-header h2 { color: #f3dfec; }
+#studioView .studio-eyebrow { color: #cda0b8; }
+#studioView .studio-setting-row,
+#studioView .studio-worker,
+#studioView .studio-original,
+#studioView .studio-location,
+#studioView .studio-quality-review,
+#studioView .studio-pose { border-color: #57394d; }
+#studioView .studio-setting-row span,
+#studioView .studio-worker span,
+#studioView .studio-device p,
+#studioView .studio-device-note,
+#studioView .studio-location dd,
+#studioView .studio-quality-review p { color: #b89aaa; }
+#studioView .studio-worker strong,
+#studioView .studio-original summary,
+#studioView .studio-location summary,
+#studioView .studio-quality-review summary { color: #ead1df; }
+#studioView .studio-worker button,
+#studioView .studio-device-title,
+#studioView .studio-source-comparison button { color: #e5bdd4; }
+#studioView .studio-device-actions button,
+#studioView .studio-feedback-save,
+#studioView .studio-picker-confirm { border-color: #dfb6cc; background: #dfb6cc; color: #261721; }
+#studioView .studio-device-actions #studioRevoke,
+#studioView .studio-recovery button,
+#studioView .studio-detail-actions button,
+#studioView .studio-detail-actions a,
+#studioView .studio-pose-options button { border-color: #67475b; background: #2a1b26; color: #e5bed4; }
+#studioView .studio-detail-actions [data-action=keep-save] { background: #dfb6cc; color: #291923; }
+#studioView .studio-detail-meta,
+#studioView .studio-save-progress,
+#studioView .studio-original p,
+#studioView .studio-original pre,
+#studioView .studio-location code { color: #bea2b1; }
+#studioView .studio-detail-image { background: #090609; }
+#studioView .studio-feedback h3,
+#studioView .studio-feedback legend { color: #edd6e3; }
+#studioView .studio-feedback fieldset label { border-color: #69485a; color: #e4bfd2; }
+#studioView .studio-feedback input,
+#studioView .studio-pose input { accent-color: #dfb6cc; }
+#studioView .studio-pose summary,
+#studioView .studio-pose-preview figcaption,
+#studioView .studio-pose-toggle,
+#studioView .studio-pose-two-person { color: #dfb9cc; }
+#studioView .studio-pose summary > span,
+#studioView .studio-pose-preview figcaption span { color: #ac8ea0; }
+#studioView .studio-pose-preview img,
+#studioView .studio-source-comparison img { border-color: #58394b; background: #0d090c; }
+
+/* Some picker instances are appended to body rather than nested in Studio. */
+.studio-reference-picker { color-scheme: dark; }
+#studioView .studio-reference-picker { color-scheme: dark; }
+#studioView .studio-picker-header,
+#studioView .studio-picker-preview { border-color: #563a4c; }
+#studioView .studio-picker-breadcrumb,
+#studioView .studio-picker-preview figcaption span,
+#studioView .studio-picker-preview > p,
+#studioView .studio-picker-tile-caption small { color: #b899a9; }
+#studioView .studio-picker-filters button,
+#studioView .studio-picker-more,
+#studioView .studio-picker-error button { border-color: #66475a; color: #e3bdd2; }
+#studioView .studio-picker-filters button[aria-pressed=true] { border-color: #e0b8cd; background: #e0b8cd; color: #291923; }
+#studioView .studio-picker-search { border-color: #674457; background: #100b0f; }
+#studioView .studio-picker-search input { color: #f1dfe9; }
+#studioView .studio-picker-search input::placeholder { color: #b092a1; }
+#studioView .studio-picker-tile-caption > span,
+#studioView .studio-picker-selection-name strong { color: #e5cad9; }
+#studioView .studio-picker-tile-caption > button,
+#studioView .studio-picker-selection-tools button { color: #e5b8ce; }
+#studioView .studio-picker-image,
+#studioView .studio-picker-preview figure > img { border-color: #583849; background: #0e090d; }
+#studioView .studio-picker-preview figcaption strong,
+#studioView .studio-picker-footer strong { color: #ead3e0; }
+#studioView .studio-picker-preview-empty h3 { color: #dfc1d0; }
+#studioView .studio-picker-preview-empty p,
+#studioView .studio-picker-empty p,
+#studioView .studio-picker-footer [role=status] { color: #b798aa; }
+#studioView .studio-picker-selection li { border-color: #5b3d4f; background: #2a1c26; }
+#studioView .studio-picker-selection-index { color: #d9a8c0; }
+#studioView .studio-picker-confirm:disabled { border-color: #624256; background: #3b2734; color: #b99bad; }
+
+@media (max-width: 1023px) {
+  /* Studio no longer changes the global header to ivory. */
+  .app-shell:has(#studioView.active) .topbar {
+    background: #140d13ef;
+    border-color: #362430;
+  }
+  .app-shell:has(#studioView.active) .topbar .brand { color: #f7e8ef; }
+  .app-shell:has(#studioView.active) .topbar .brand-mark { border-color: #735263; background: #2a1b25; }
+  .app-shell:has(#studioView.active) .topbar .sync-btn { border-color: #5b3b4d; background: #271821; color: #e3c3d3; }
+  .app-shell:has(#studioView.active) .topbar .icon-btn { background: #30202a; color: #e5c5d5; }
+  #studioView .studio-reference-actions > summary { border-color: #765267; background: #21151de8; box-shadow: 0 2px 8px #0005; }
+}
+
+@media (min-width: 1024px) {
+  html, body { background: #080608; }
+  .app-shell,
+  .app-shell:has(.studio-view.active) { background: #0d080c; }
+  .app-shell::before { background: #170f16; border-color: #443040; }
+  .topbar,
+  .app-shell:has(.studio-view.active) .topbar {
+    background: linear-gradient(90deg, #170f16 0 216px, #1c1119 216px);
+    border-color: #3f2a39;
+  }
+  .topbar .brand { color: #f4e4ed; }
+  .topbar .brand-mark { border-color: #775367; background: #2c1a26; color: #e0bbcf; }
+  .topbar .sync-btn { border-color: #604052; background: #281922; color: #dcbacd; }
+  .topbar .icon-btn { background: #33212d; color: #dfbdd0; }
+  .bottom-nav .nav-item { color: #af90a1; }
+  .bottom-nav .nav-item.active {
+    border-color: #ddadc5;
+    background: #32202c;
+    color: #f5e7ee;
+    box-shadow: 0 4px 12px #0004;
+  }
+  .bottom-nav .release-stamp { color: #b69aaa; }
+  #studioView .studio-canvas:not(:has(img)) .studio-empty {
+    background: linear-gradient(127deg, #2b1b26 0%, #110a10 100%);
+  }
 }

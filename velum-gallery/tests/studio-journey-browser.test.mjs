@@ -52,6 +52,7 @@ export async function getDocs(item){const p=item.path.split('/'),last=p.at(-1);
  if(last==='jobs')return {docs:mock.jobs.map(job=>snap(job.id,job))};
  return {docs:[]};
 }
+export function onSnapshot(item,options,next){let active=true;queueMicrotask(async()=>{const result=await (item.kind==='collection'?getDocs(item):getDoc(item));if(active)next({...result,metadata:{fromCache:false}});});return()=>{active=false;};}
 export async function setDoc(item,value){mock.writes.push({path:item.path,data:value});}
 export async function updateDoc(item,value){mock.writes.push({path:item.path,data:value});}
 export async function deleteDoc(item){mock.writes=mock.writes.filter(record=>record.path!==item.path);}`;

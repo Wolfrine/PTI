@@ -33,7 +33,7 @@ draw();window.ready=true;
 </script></body></html>`;
 
 async function withBrowser(operation){
-  const names=['studio-view.mjs','studio-compare.mjs','studio-contract.mjs','studio-archive.mjs','studio-recovery.mjs','device-config.mjs','styles.css','studio.css','redesign.css'];
+  const names=['studio-view.mjs','studio-progress.mjs','studio-compare.mjs','studio-contract.mjs','studio-archive.mjs','studio-recovery.mjs','device-config.mjs','styles.css','studio.css','redesign.css'];
   const files=new Map(await Promise.all(names.map(async name=>['/'+name,await readFile(new URL('../'+name,import.meta.url))])));
   const server=createServer((request,response)=>{const name=new URL(request.url,'http://local').pathname;if(name==='/'){response.writeHead(200,{'Content-Type':'text/html'});response.end(fixture);}else if(files.has(name)){response.writeHead(200,{'Content-Type':name.endsWith('.css')?'text/css':'text/javascript'});response.end(files.get(name));}else{response.writeHead(404);response.end();}});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;

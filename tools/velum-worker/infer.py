@@ -137,11 +137,13 @@ def main():
                     del vae
                     gc.collect()
                     vae = nodes.VAELoader().load_vae('vae-ft-mse-840000-ema-pruned.safetensors')[0]
+                emit(event='stage', stage='encoding-prompt')
                 positive = nodes.CLIPTextEncode().encode(clip, prompt)[0]
                 negative = nodes.CLIPTextEncode().encode(clip, '')[0]
                 steps, cfg, sampler, scheduler = 28, 5., 'dpmpp_sde', 'karras'
                 denoise = .62 if source_images else 1.
                 if source_images:
+                    emit(event='stage', stage='encoding-references')
                     from PIL import ImageOps, Image
                     import numpy as np
                     frame = ImageOps.fit(source_images[0], (width, height), method=Image.Resampling.LANCZOS)
@@ -151,12 +153,14 @@ def main():
                     emit(event='references-encoded', count=1, method='VAE-img2img')
                 else:
                     latent = nodes.EmptyLatentImage().generate(width, height, 1)[0]
+                emit(event='stage', stage='sampling')
                 samples = nodes.KSampler().sample(model, seed, steps, cfg, sampler, scheduler, positive, negative, latent, denoise=denoise)[0]
             elif mode in ('flux2-klein-fp8', 'zimage-nvfp4'):
                 import comfy.sd
                 clip = comfy.sd.load_clip(ckpt_paths=[str(DATA/'models/text_encoders/qwen_3_4b_fp8_mixed.safetensors')],
                     clip_type=comfy.sd.CLIPType.FLUX2 if mode == 'flux2-klein-fp8' else comfy.sd.CLIPType.LUMINA2,
                     embedding_directory=[], model_options={})
+                emit(event='stage', stage='encoding-prompt')
                 positive = nodes.CLIPTextEncode().encode(clip, prompt)[0]
                 mm.unload_all_models()
                 del clip
@@ -171,6 +175,7 @@ def main():
                     import comfy.samplers
                     vae = nodes.VAELoader().load_vae('flux2-vae.safetensors')[0]
                     if source_images:
+                        emit(event='stage', stage='encoding-references')
                         import numpy as np
                         for source in source_images:
                             pixels = torch.from_numpy(np.array(source).astype(np.float32)/255.).unsqueeze(0)
@@ -182,20 +187,24 @@ def main():
                         gc.collect()
                         mm.soft_empty_cache()
                         emit(event='references-encoded', count=len(source_images), method='ReferenceLatent', sizes=[list(image.size) for image in source_images])
+                    emit(event='stage', stage='loading-diffusion')
                     model = nodes.UNETLoader().load_unet('flux-2-klein-4b-fp8.safetensors', 'default')[0]
                     steps, sampler, scheduler = 4, 'euler', 'Flux2Scheduler'
                     latent = EmptyFlux2LatentImage.execute(width, height, 1)[0]
                     sigmas = Flux2Scheduler.execute(steps, width, height)[0]
+                    emit(event='stage', stage='sampling')
                     samples = SamplerCustom.execute(model, True, seed, cfg, positive, negative, comfy.samplers.sampler_object(sampler), sigmas, latent)[0]
                 else:
                     from comfy_extras.nodes_sd3 import EmptySD3LatentImage
                     from comfy_extras.nodes_model_advanced import ModelSamplingAuraFlow
+                    emit(event='stage', stage='loading-diffusion')
                     model = nodes.UNETLoader().load_unet('z_image_turbo_nvfp4.safetensors', 'default')[0]
                     model = ModelSamplingAuraFlow().patch_aura(model, 3.)[0]
                     vae = nodes.VAELoader().load_vae('ae.safetensors')[0]
                     steps, sampler, scheduler = 8, 'res_multistep', 'simple'
                     denoise = .62 if source_images else 1.
                     if source_images:
+                        emit(event='stage', stage='encoding-references')
                         from PIL import ImageOps, Image
                         import numpy as np
                         frame = ImageOps.fit(source_images[0], (width, height), method=Image.Resampling.LANCZOS)
@@ -205,11 +214,13 @@ def main():
                         emit(event='references-encoded', count=1, method='VAE-img2img')
                     else:
                         latent = EmptySD3LatentImage().generate(width, height, 1)[0]
+                    emit(event='stage', stage='sampling')
                     samples = nodes.KSampler().sample(model, seed, steps, cfg, sampler, scheduler, positive, negative, latent, denoise=denoise)[0]
             else:
                 raise ValueError('invalid-model')
             from PIL import Image, PngImagePlugin
             import numpy as np
+            emit(event='stage', stage='decoding')
             pixels = vae.decode_tiled(samples['samples'], tile_x=64, tile_y=64, overlap=16)[0].detach().cpu().numpy()
             if not np.isfinite(pixels).all():
                 raise RuntimeError('invalid-output')

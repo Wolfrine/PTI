@@ -28,6 +28,72 @@ service cloud.firestore {
     && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/devices/$(request.auth.uid)).data.status == 'approved'; }
    function model(id) { return id in ['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15','qwen-image-2.1']; }
    function instant(t) { return t is int && t > 0 && t <= request.time.toMillis() + 300000; }
+   // Current measurements only. No arbitrary telemetry, identifiers or history.
+   function studioStage(s) { return s in ['preparing','loading-model','encoding-references','encoding-prompt','loading-diffusion','sampling','decoding','publishing']; }
+   function studioDurations() {
+    let d = request.resource.data.progress.stageDurations;
+    let a = d.get('preparing',0);
+    let b = d.get('loading-model',0);
+    let c = d.get('encoding-references',0);
+    let e = d.get('encoding-prompt',0);
+    let f = d.get('loading-diffusion',0);
+    let g = d.get('sampling',0);
+    let h = d.get('decoding',0);
+    let i = d.get('publishing',0);
+    return d is map
+     && d.keys().hasOnly(['preparing','loading-model','encoding-references','encoding-prompt','loading-diffusion','sampling','decoding','publishing'])
+     && a is int && a >= 0 && a <= 604800000
+     && b is int && b >= 0 && b <= 604800000
+     && c is int && c >= 0 && c <= 604800000
+     && e is int && e >= 0 && e <= 604800000
+     && f is int && f >= 0 && f <= 604800000
+     && g is int && g >= 0 && g <= 604800000
+     && h is int && h >= 0 && h <= 604800000
+     && i is int && i >= 0 && i <= 604800000;
+   }
+   function studioResources() {
+    let r = request.resource.data.progress.resources;
+    let keys = r.keys();
+    let c = r.cpuPercent;
+    let g = r.gpuUtilPercent;
+    let t = r.gpuTempC;
+    let ru = r.ramUsedBytes;
+    let rt = r.ramTotalBytes;
+    let vu = r.vramUsedMiB;
+    let vt = r.vramTotalMiB;
+    let at = r.sampledAt;
+    return r is map && keys.size() == 8
+     && keys.hasOnly(['sampledAt','cpuPercent','ramUsedBytes','ramTotalBytes','gpuUtilPercent','vramUsedMiB','vramTotalMiB','gpuTempC'])
+     && at is int && at > 0 && at <= request.resource.data.progress.updatedAt
+     && (c == null || (c is number && c >= 0 && c <= 100))
+     && (g == null || (g is number && g >= 0 && g <= 100))
+     && (t == null || (t is number && t >= 0 && t <= 150))
+     && (rt == null || (rt is number && rt >= 0 && rt <= 17592186044416))
+     && (ru == null || (ru is number && ru >= 0 && ru <= 17592186044416))
+     && (ru == null || rt == null || ru <= rt)
+     && (vt == null || (vt is number && vt >= 0 && vt <= 16777216))
+     && (vu == null || (vu is number && vu >= 0 && vu <= 16777216))
+     && (vu == null || vt == null || vu <= vt);
+   }
+   function studioProgress() {
+    let p = request.resource.data.get('progress',{});
+    let keys = p.keys();
+    let s = p.get('step',null);
+    let t = p.get('total',null);
+    let jobAt = p.get('jobStartedAt',null);
+    let stageAt = p.get('stageStartedAt',null);
+    let updatedAt = p.get('updatedAt',null);
+    return p is map
+     && keys.hasOnly(['step','total','stage','jobStartedAt','stageStartedAt','updatedAt','stageDurations','resources'])
+     && (!('stage' in p) || studioStage(p.stage))
+     && (t == null || (t is int && t >= 0 && t <= 10000))
+     && (s == null || (s is int && s >= 0 && t is int && s <= t))
+     && (!keys.hasAny(['jobStartedAt','stageStartedAt','updatedAt','stageDurations','resources']) || (
+      keys.hasAll(['stage','jobStartedAt','stageStartedAt','updatedAt','stageDurations','resources'])
+      && jobAt is int && stageAt is int && updatedAt is int
+      && jobAt > 0 && jobAt <= stageAt && stageAt <= updatedAt && updatedAt <= request.time.toMillis() + 300000
+      && studioDurations() && studioResources()));
+   }
    function reference(r,i) { return r is map && r.keys().hasOnly(['index','mime','bytes','sha256','width','height','pixels','chunks','source','role'])
     && r.get('role','subject') in ['subject','pose'] && r.index == i && r.mime in ['image/png','image/jpeg'] && r.bytes is int && r.bytes >= 100 && r.bytes <= 2097152
     && r.sha256 is string && r.sha256.matches('[a-f0-9]{64}') && r.width is int && r.height is int
@@ -214,6 +280,13 @@ service cloud.firestore {
     // Creation validated the immutable request. Revalidating every reference on
     // each progress/completion write exhausts the 1000-expression rules budget.
     // The affected-key allowlist below keeps the entire request immutable.
+    // Validate expanded progress separately, so completion never pays for the
+    // immutable request AND metrics again within the 1000-expression ceiling.
+    allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid
+     && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data)
+     && resource.data.status == 'running' && request.resource.data.status == 'running'
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress'])
+     && studioProgress();
     allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid
      && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data) && model(resource.data.model)
      && (resource.data.schemaVersion == 2 || resource.data.inputsReady == true)
@@ -223,7 +296,8 @@ service cloud.firestore {
      && (request.resource.data.status != 'running' || (request.resource.data.workerId == request.auth.uid
       && (resource.data.status != 'queued' || resource.data.expiresAt > request.time.toMillis())))
      && request.resource.data.get('error','') in ['', 'expired','interrupted','resource-guard','inference-failed','invalid-output','output-too-large','model-unavailable','invalid-input','invalid-reference']
-     && request.resource.data.get('progress',{}).keys().hasOnly(['step','total','stage'])
+     && (request.resource.data.get('progress',{}) == resource.data.get('progress',{})
+      || (resource.data.status == 'queued' && studioProgress()))
      && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds','localPath','referenceMethod'])
      && (!('localPath' in request.resource.data.get('result',{})) || (request.resource.data.result.localPath == 'H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\' + id + '\\image.png' || (resource.data.model == 'qwen-image-2.1' && request.resource.data.result.localPath == 'F:\\Workspace\\Programs\\Independent-Products\\PTI\\tools\\velum-worker\\.runtime\\qwen21\\' + id + '\\image.png')))
      && (!('referenceMethod' in request.resource.data.get('result',{})) || request.resource.data.result.referenceMethod in ['','flux2-reference-latent','vae-img2img','qwen21-native-multireference'])

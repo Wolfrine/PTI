@@ -14,6 +14,7 @@ import {pendingRecovery} from '../../velum-gallery/studio-recovery.mjs';
 import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
 import {engineProfile,qwenInstalled,workerCapabilities} from './engine-profile.mjs';
 import {QWEN_MODEL,validateJob} from '../../velum-gallery/studio-contract.mjs';
+import {LiveProgress} from './live-progress.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -21,7 +22,7 @@ const DATA='H:\\AI-ImageGen\\portrait-pilot';
 const PYTHON='F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe';
 const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const ROOT=`users/${OWNER_UID}/velumStudio/workspace`;
-const VERSION='2.3.0';
+const VERSION='2.3.1';
 const EXPECTED_BYTES={
  'z_image_turbo_nvfp4.safetensors':4509509600,'flux-2-klein-4b-fp8.safetensors':4070624520,
  'RealVisXL_V5.0_fp16.safetensors':6938065488,'Realistic_Vision_V6.0_NV_B1_fp16.safetensors':2132625894,
@@ -143,7 +144,7 @@ async function main(){
  const lock=await acquireWorkerLock(lockPath,fileURLToPath(import.meta.url));
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
- let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false;
+ let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
@@ -151,7 +152,7 @@ async function main(){
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
   await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
- const fail=(item,error)=>queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});
+ const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-output');
   try{
@@ -164,7 +165,8 @@ async function main(){
  const upload=async(item,output)=>{
   const expected=item.job,actual=output.metadata;
   assertOutputIdentity(expected,actual);
-  await queue.write(`jobs/${item.id}`,{status:'running',progress:{step:0,total:0,stage:'publishing'}});
+  await progress.start();
+  void progress.stage('publishing');
   for(let index=0;index<output.chunks.length;index++){
    await approved();const relative=`jobs/${item.id}/chunks/${index}`;
    const existing=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
@@ -176,7 +178,8 @@ async function main(){
   const prior=await queue.request(`${ROOT}/thumbs/${item.id}`,{allow:[404]});
   if(prior.status===404)await queue.write(`thumbs/${item.id}`,thumb,{create:true});
   else if(decode({mapValue:{fields:prior.value.fields}}).sha256!==thumb.sha256)throw new Error('invalid-output');
-  await approved();await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,localPath:path.join(engineProfile(item.job.model).outputRoot,item.id,'image.png')}});
+  await approved();await progress.stop();
+  await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,localPath:path.join(engineProfile(item.job.model).outputRoot,item.id,'image.png')}});
  };
  const backfill=new ThumbnailBackfill(path.join(STATE,'thumbnail-backfill.json'),{
   page:cursor=>queue.archivePage(cursor),
@@ -199,24 +202,29 @@ async function main(){
  const run=async(item,resumed)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(item.id))throw new Error('invalid-job');
   activeJob=item.id;controller=new AbortController();await publish('running');
+  progress=new LiveProgress({jobStartedAt:item.job.startedAt,publish:async value=>{
+   const current=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});
+   if(current.status===404||!ownsClaim(item,decode({mapValue:{fields:current.value.fields}}),queue.session.uid))return false;
+   // Progress never writes a status. The claim read + update-time precondition
+   // also refuse a terminal/replaced generation racing this compact snapshot.
+   await queue.write(`jobs/${item.id}`,{progress:value},{updateTime:current.value.updateTime});
+  }});
   try{await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload,fail,approved,
    claimed:async()=>{const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});if(response.status===404)return false;return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid);},
    canResumeInference:async()=>{
     if(!item.job.references?.length)return false;
     try{await stat(path.join(engineProfile(item.job.model).outputRoot,item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
    },
-   prepare:async()=>downloadReferences(item.id,item.job,{root:engineProfile(item.job.model).outputRoot,approved,fetchManifest:async reference=>{
+   prepare:async()=>{await progress.start();return downloadReferences(item.id,item.job,{root:engineProfile(item.job.model).outputRoot,approved,fetchManifest:async reference=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}`);return decode({mapValue:{fields:response.value.fields}});
    },fetchChunk:async(reference,index)=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}/chunks/${index}`);return decode({mapValue:{fields:response.value.fields}});
-   }}),infer:async()=>{
-   let pending=Promise.resolve(),lastStep=0;
-   const record=progress=>{pending=pending.then(()=>queue.write(`jobs/${item.id}`,{status:'running',progress})).catch(()=>{});};
-   await infer(item.id,item.job,progress=>{if(progress.step>lastStep){lastStep=progress.step;record(progress);}},{signal:controller.signal,onEvent:event=>{
-    if(item.job.model===QWEN_MODEL&&event.event==='stage')record({step:0,total:40,stage:event.stage});
+   }});},infer:async()=>{
+   void progress.stage('loading-model');
+   await infer(item.id,item.job,value=>progress.counter(value),{signal:controller.signal,onEvent:event=>{
+    if(event.event==='stage')void progress.stage(event.stage);
    }});
-   await pending;
-  }});}finally{activeJob='';controller=null;await publish('idle').catch(()=>{});}
+  }});}finally{await progress.stop();progress=null;activeJob='';controller=null;await publish('idle').catch(()=>{});}
  };
  const stop=()=>{stopping=true;controller?.abort();wakeup.wake();};
  process.on('SIGINT',stop);process.on('SIGTERM',stop);

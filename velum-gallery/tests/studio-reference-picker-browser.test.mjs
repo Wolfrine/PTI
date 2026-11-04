@@ -24,7 +24,7 @@ window.showDetails=()=>{state.jobs=[{id:'synthetic-job',model:'qwen-image-2.1',s
 window.ready=true;</script></body></html>`;
 
 async function inBrowser(operation){
- const names=['studio-reference-picker.mjs','studio-view.mjs','studio-compare.mjs','studio-contract.mjs','studio-archive.mjs','studio-recovery.mjs','device-config.mjs','styles.css','studio.css'];
+ const names=['studio-reference-picker.mjs','studio-view.mjs','studio-progress.mjs','studio-compare.mjs','studio-contract.mjs','studio-archive.mjs','studio-recovery.mjs','device-config.mjs','styles.css','studio.css'];
  const files=new Map(await Promise.all(names.map(async name=>['/'+name,await readFile(new URL('../'+name,import.meta.url))])));
  const server=createServer((req,res)=>{const pathname=new URL(req.url,'http://local').pathname;if(pathname==='/'){res.writeHead(200,{'Content-Type':'text/html'});res.end(fixture);}else if(files.has(pathname)){res.writeHead(200,{'Content-Type':pathname.endsWith('.css')?'text/css':'text/javascript'});res.end(files.get(pathname));}else{res.writeHead(404);res.end();}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;

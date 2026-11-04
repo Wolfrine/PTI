@@ -1,10 +1,10 @@
 {
   "name": "@pti/velum-worker",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test worker.test.mjs recovery.test.mjs reference.test.mjs thumbnail-backfill.test.mjs queue-events.test.mjs qwen.test.mjs"
+    "test": "node --test worker.test.mjs recovery.test.mjs reference.test.mjs thumbnail-backfill.test.mjs queue-events.test.mjs qwen.test.mjs resources.test.mjs live-progress.test.mjs"
   },
   "dependencies": {
     "firebase": "11.10.0"

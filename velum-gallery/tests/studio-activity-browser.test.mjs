@@ -2,72 +2,9 @@
 // Firebase writes, queue submissions or inference.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
-import {readFile,mkdir} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {join,resolve,extname} from 'node:path';
-let chromium;
-try{({chromium}=createRequire(new URL('../../wedding-planner/package.json',import.meta.url))('playwright'));}catch{}
-const fixture=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/studio.css"><link rel="stylesheet" href="/redesign.css"></head><body><p style="margin:0;padding:8px;color:#fff;background:#59344d;font:12px sans-serif">SYNTHETIC STATE FIXTURE — no Firebase, private media or inference</p><section id="studioView" class="studio-view"></section><script type="module">
-import {mountStudio} from '/studio.mjs';
-import {PC_DEVICE_UID} from '/device-config.mjs';
-window.mutations=[];window.reads=[];
-window.fixture={worker:{deviceUid:PC_DEVICE_UID,version:'2.3.0',state:'idle',activeJob:'',updatedAt:Date.now(),installed:['flux2-klein-fp8','qwen-image-2.1'],capabilities:{referenceModels:['flux2-klein-fp8','qwen-image-2.1'],qwenMaxReferences:10,recoveryControl:true}},jobs:[],removed:[]};
-await mountStudio({app:{},auth:{},drive:{clear(){},async listReferences(){return {files:[],cursor:''};},async loadQualityCreations(){return [];}}});window.ready=true;
-</script></body></html>`;
-const firestore=`
-export const getFirestore=()=>({});
-export const doc=(base,...parts)=>({path:[base.path,...parts].filter(Boolean).join('/')});
-export const collection=doc;
-export const query=(base,...conditions)=>({...base,conditions});
-export const where=(field,op,value)=>({field,op,value});
-export const orderBy=(field,direction)=>({orderBy:field,direction});
-export const limit=value=>({limit:value});
-export const startAfter=value=>({after:value});
-export const documentId=()=>('__name__');
-const snapshot=(id,data)=>({id,exists:()=>data!==undefined,data:()=>data});
-export async function getDoc(target){
- const parts=target.path.split('/'),kind=parts.at(-2),id=parts.at(-1);reads.push({kind,id});
- const value=kind==='status'?fixture.worker:kind==='devices'?{status:'approved',deviceUid:fixture.worker.deviceUid}:kind==='jobs'?fixture.jobs.find(job=>job.id===id):undefined;
- return snapshot(id,value);
-}
-export async function getDocs(target){
- const kind=target.path.split('/').at(-1);reads.push({kind,conditions:target.conditions});
- let values=kind==='jobs'?[...fixture.jobs]:kind==='removed'?[...fixture.removed]:[];
- for(const c of target.conditions||[]){if(c.field==='status'&&c.op==='in')values=values.filter(v=>c.value.includes(v.status));if(c.limit)values=values.slice(0,c.limit);}
- const docs=values.map(value=>snapshot(value.id,value));return {docs,empty:!docs.length,size:docs.length};
-}
-const rejectWrite=(...args)=>{mutations.push(args);throw Error('Fixture must never submit a job or mutate Firestore');};
-export const setDoc=rejectWrite,updateDoc=rejectWrite,deleteDoc=rejectWrite;
-`;
-async function inBrowser(operation){
- const base=resolve(new URL('..',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1'));
- const server=createServer(async(req,res)=>{
-  const pathname=new URL(req.url,'http://local').pathname;
-  if(pathname==='/'){res.writeHead(200,{'Content-Type':'text/html'});res.end(fixture);return;}
-  const file=resolve(base,'.'+pathname);
-  if(!file.startsWith(base+'/')&&!file.startsWith(base+'\\')){res.writeHead(403);res.end();return;}
-  if(!['.mjs','.js','.css'].includes(extname(file))){res.writeHead(404);res.end();return;}
-  try{res.writeHead(200,{'Content-Type':file.endsWith('.css')?'text/css':'text/javascript'});res.end(await readFile(file));}catch{res.writeHead(404);res.end();}
- });
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
- try{
-  browser=await chromium.launch({headless:true,channel:'chrome'});
-  return await operation(browser,`http://127.0.0.1:${server.address().port}`);
- }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
-}
-async function openPage(browser,origin,viewport){
- const page=await browser.newPage({viewport});
- const errors=[];page.on('pageerror',error=>errors.push(error.message));
- await page.route('https://www.gstatic.com/firebasejs/**',async route=>{
-  const auth=route.request().url().endsWith('firebase-auth.js');
-  await route.fulfill({contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'},body:auth?`export const onAuthStateChanged=(auth,callback)=>{queueMicrotask(()=>callback({uid:'fixture-owner'}));return ()=>{};};`:firestore});
- });
- await page.goto(origin);try{await page.waitForFunction(()=>window.ready&&document.querySelector('#studioPcLabel').textContent==='PC ready',{},{timeout:10000});}catch(error){throw new Error(JSON.stringify({errors,state:await page.evaluate(()=>({ready:window.ready,label:document.querySelector('#studioPcLabel')?.textContent,message:document.querySelector('#studioMessage')?.textContent,reads:window.reads}))}),{cause:error});}
- await page.locator('#studioPrompt').fill('Synthetic UI check. Do not submit.');await page.locator('#studioConsent').check();
- return page;
-}
-async function refresh(page){await page.locator('#studioDeviceOpen').click();await page.locator('#studioRefresh').click();await page.keyboard.press('Escape');}
+import {mkdir} from 'node:fs/promises';
+import {join} from 'node:path';
+import {chromium,inBrowser,openPage,refresh} from './studio-live-browser-fixture.mjs';
 
 test('Studio new draft and Generate recover after terminal status on desktop/mobile',{skip:!chromium&&'Local Playwright unavailable'},()=>inBrowser(async(browser,origin)=>{
  for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:360,height:800}]){
@@ -101,5 +38,61 @@ test('active, removed and delivering jobs stay protected while stale heartbeat t
  await page.evaluate(()=>{fixture.worker.updatedAt=Date.now();fixture.jobs[0].status='completed';});await refresh(page);
  await page.waitForFunction(()=>document.querySelector('#studioPcLabel').textContent==='PC ready');
  assert.equal(await page.locator('#studioGenerate').isEnabled(),true);assert.deepEqual(await page.evaluate(()=>mutations),[]);
+ await page.close();
+}));
+
+test('live progress renders truthful compact states on desktop and small phones',{skip:!chromium&&'Local Playwright unavailable'},()=>inBrowser(async(browser,origin)=>{
+ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:360,height:800}]){
+  const page=await openPage(browser,origin,viewport);const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  for(const scenario of ['encoding','sampling','publishing','stale','missing']){
+   await page.evaluate(name=>setStudioFixtureState(name),scenario);
+   await page.locator('#studioLiveProgress').waitFor({state:'visible'});
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${scenario} fits ${viewport.width}`);
+   assert.equal(await page.locator('#studioGenerate').isEnabled(),false);
+   assert.equal(await page.locator('#studioResult').isVisible(),false,'active status has one visual home');
+   if(scenario==='sampling')assert.match(await page.locator('#studioLiveProgress').innerText(),/8 \/ 40 steps/);
+   if(scenario==='encoding'||scenario==='missing')assert.doesNotMatch(await page.locator('#studioLiveProgress').innerText(),/steps/);
+   if(scenario==='stale')assert.match(await page.locator('#studioLiveProgress').innerText(),/PC offline · last report/);
+   if(scenario==='missing')assert.equal(await page.locator('#studioLiveProgress dd').allTextContents().then(values=>values.every(value=>value==='—')),true);
+   if(process.env.VELUM_UI_EVIDENCE_DIR){await mkdir(process.env.VELUM_UI_EVIDENCE_DIR,{recursive:true});await page.screenshot({path:join(process.env.VELUM_UI_EVIDENCE_DIR,`studio-live-${scenario}-${viewport.width}.png`),fullPage:true});}
+  }
+  await page.evaluate(()=>setStudioFixtureState('sampling'));await page.locator('#studioLiveProgress summary').click();
+  const summary=page.locator('#studioLiveProgress summary');await summary.focus();await page.waitForTimeout(1100);
+  assert.equal(await summary.evaluate(node=>node===document.activeElement),true,'local ticks preserve disclosure focus');
+  assert.equal(await page.locator('#studioLiveProgress details').evaluate(node=>node.open),true);
+  assert.match(await page.locator('#studioLiveProgress details').innerText(),/1m 25s/);
+  if(process.env.VELUM_UI_EVIDENCE_DIR)await page.screenshot({path:join(process.env.VELUM_UI_EVIDENCE_DIR,`studio-live-stages-${viewport.width}.png`),fullPage:true});
+  assert.deepEqual(errors,[]);assert.deepEqual(await page.evaluate(()=>mutations),[]);await page.close();
+ }
+}));
+
+test('ticks and repeated refreshes create no reads; lock, hide, leave, logout and teardown detach streams',{skip:!chromium&&'Local Playwright unavailable'},()=>inBrowser(async(browser,origin)=>{
+ const page=await openPage(browser,origin,{width:390,height:844});
+ const active=()=>page.evaluate(()=>subscriptions.filter(slot=>slot.active).length);
+ await page.waitForTimeout(100);assert.equal(await active(),4);
+ if(page.clock?.install)await page.clock.install();
+ const before=await page.evaluate(()=>({reads:reads.length,starts:subscriptions.length}));
+ await page.evaluate(()=>{studio.refresh();studio.refresh();studio.refresh();});
+ if(page.clock?.fastForward)await page.clock.fastForward(65000);else await page.waitForTimeout(2200);
+ assert.deepEqual(await page.evaluate(()=>({reads:reads.length,starts:subscriptions.length})),before);
+ await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await active(),0);
+ await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>subscriptions.filter(slot=>slot.active).length===4);
+ await page.evaluate(()=>{document.querySelector('#studioView').classList.add('view');});await page.waitForFunction(()=>subscriptions.every(slot=>!slot.active));
+ await page.evaluate(()=>document.querySelector('#studioView').classList.add('active'));await page.waitForFunction(()=>subscriptions.filter(slot=>slot.active).length===4);
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('velum:lock')));assert.equal(await active(),0);
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('velum:unlock')));await page.waitForFunction(()=>subscriptions.filter(slot=>slot.active).length===4);
+ await page.evaluate(()=>fixtureAuth(null));assert.equal(await active(),0);assert.equal(await page.locator('#studioGenerate').isEnabled(),false);
+ await page.evaluate(()=>fixtureAuth({uid:'fixture-owner'}));await page.waitForFunction(()=>subscriptions.filter(slot=>slot.active).length===4);
+ await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide')));assert.equal(await active(),0);
+ await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));await page.waitForFunction(()=>subscriptions.filter(slot=>slot.active).length===4);
+ await page.evaluate(()=>studio.destroy());assert.equal(await active(),0);
+ await page.evaluate(()=>{window.dispatchEvent(new Event('online'));window.dispatchEvent(new CustomEvent('velum:unlock'));fixtureAuth({uid:'fixture-owner'});});assert.equal(await active(),0);
+ await page.evaluate(async()=>{const {mountStudio}=await import('/studio.mjs');studio=await mountStudio({app:{},auth:{},drive:{clear(){},async listReferences(){return {files:[]}},async loadQualityCreations(){return []}}});});
+ if(page.clock?.runFor)await page.clock.runFor(1);
+ await page.waitForFunction(()=>subscriptions.filter(slot=>slot.active).length===4);
+ await page.locator('#studioPrompt').fill('Remounted fixture. Do not send.');await page.locator('#studioConsent').check();
+ assert.equal(await page.locator('#studioGenerate').isEnabled(),true);
+ await page.locator('#studioCreationsTab').click();assert.equal(await page.locator('#studioCreations').isVisible(),true);
+ await page.evaluate(()=>studio.destroy());assert.equal(await active(),0);assert.deepEqual(await page.evaluate(()=>mutations),[]);
  await page.close();
 }));

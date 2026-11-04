@@ -9,7 +9,7 @@ This is an independent, non-personalized creative experiment. Use only reference
 
 ## Pick
 
-1. Use the attached `pti-velum-prompts` MCP connection. On a first contact, call `pti_apps_list`, then `pti_app_context({appId:'velum'})` if both are exposed. Its dedicated tools are `velum_prompt_pick`, `velum_prompt_rate`, and `velum_prompt_feedback`.
+1. Use the required **PTI Apps** connection attached to this plugin. On a first contact, call `pti_apps_list`, then `pti_app_context({appId:'velum'})` if both are exposed. Its dedicated tools are `velum_prompt_pick`, `velum_prompt_rate`, and `velum_prompt_feedback`. If these newly deployed tools are missing from the available PTI Apps tool list, ask the owner to refresh PTI Apps tools in ChatGPT; do not open a second MCP connection.
 2. Call `velum_prompt_pick` for every fresh concept. This is an actual server-side random draw from owner-scoped Firestore and saves a `selectionId`. Never select by hand from a cached catalog, invent a prompt ID, or substitute a preferred scenario for the selected one. The server avoids the most recently picked prompts.
 3. Preserve `selectionId`, `promptId`, `promptVersion`, exact returned `prompt`, and `title` in the current conversation. If the tool fails or is unavailable, report the actual failure, and request connection/refresh. Do not pretend a random draw succeeded.
 4. If the user asks for prompt-only, show the prompt and its ID. Do not generate or ask for an image rating.

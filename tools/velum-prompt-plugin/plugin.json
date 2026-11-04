@@ -1,12 +1,13 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "velum-scene-lab",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pick surprising sensual adult photography scenarios from the owner's Velum catalog and collect explicit image ratings for future creative experiments.",
   "author": { "name": "Wolfrine" },
   "repository": "https://github.com/Wolfrine/PTI",
   "extensions": {
     "com.openai": {
+      "apps": "./.app.json",
       "interface": {
         "displayName": "Velum Scene Lab",
         "shortDescription": "Random scenes and ratings",

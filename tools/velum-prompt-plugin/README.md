@@ -1,6 +1,6 @@
 # Velum Scene Lab — private plugin
 
-The source of this private plugin lives alongside PTI's shared MCP code. The plugin's `mcp.json` reuses the **existing** authenticated PTI Cloud Run MCP endpoint; it does not create or host a duplicate server.
+The source of this private plugin lives alongside PTI's shared MCP code. The plugin uses `.app.json` to depend on the owner's **existing ChatGPT PTI Apps** connection. It deliberately declares no `mcp.json` or local executable: this keeps it usable in ordinary ChatGPT web/mobile chats instead of marking an imported MCP package as Desktop only. The specialized tools themselves remain hosted on the existing authenticated PTI Cloud Run MCP server.
 
 Workflow:
 

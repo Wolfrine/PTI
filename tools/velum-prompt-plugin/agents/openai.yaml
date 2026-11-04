@@ -1,0 +1,6 @@
+interface:
+  display_name: Velum Scene Lab
+  short_description: Random adult scenes and ratings
+  default_prompt: Surprise me with a Velum scene and generate an image.
+policy:
+  allow_implicit_invocation: true

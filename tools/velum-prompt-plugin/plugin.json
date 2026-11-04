@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "velum-scene-lab",
+  "version": "0.1.0",
+  "description": "Pick surprising sensual adult photography scenarios from the owner's Velum catalog and collect explicit image ratings for future creative experiments.",
+  "author": { "name": "Wolfrine" },
+  "repository": "https://github.com/Wolfrine/PTI",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Velum Scene Lab",
+        "shortDescription": "Random scenes and ratings",
+        "longDescription": "A private creative experiment for Velum. Selects diverse adult photographic scenarios from an owner-scoped PTI Firestore catalog using server-side randomness and recent-repeat suppression, generates an image when requested, asks for a 1–5 image rating, and saves the owner's explicit feedback against the selected prompt version. Source reference photos remain in their original storage; the plugin never copies or uploads private media to Firestore.",
+        "developerName": "Wolfrine",
+        "category": "Creativity",
+        "capabilities": ["Interactive"],
+        "defaultPrompt": [
+          "Surprise me with a Velum scene and generate an image using my references.",
+          "Pick a random Velum prompt without generating an image.",
+          "Show my recent Velum prompt ratings."
+        ]
+      }
+    }
+  }
+}

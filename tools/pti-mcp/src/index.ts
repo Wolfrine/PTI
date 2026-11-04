@@ -11,6 +11,7 @@ import { registerPersonalTools } from "./personal.js";
 import { registerVentureTools } from "./venture.js";
 import { registerAtlasTools } from "./atlas.js";
 import { registerChatCaptureTools } from "./chat-capture.js";
+import { registerVelumPromptTools } from "./velum-prompts.js";
 import { z } from "zod";
 
 const projectId =
@@ -665,6 +666,7 @@ registerBlinkitTools(server, db, context.uid);
 registerVentureTools(server, db, context.uid);
 registerAtlasTools(server, db, context.uid, taskReference);
 registerChatCaptureTools(server, db, context.uid);
+registerVelumPromptTools(server, db, context.uid);
 return server;
 }
 

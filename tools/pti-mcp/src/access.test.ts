@@ -14,7 +14,9 @@ describe('Shared PTI account boundary', () => {
   it('discovers registered apps without misrepresenting browser/Drive data', () => {
     const apps = appCatalog('owner');
     expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'venture', 'food', 'tracker', 'atlas', 'velum']);
-    expect(apps.find(x => x.id === 'velum')?.access).toBe('external-connection-required');
+    expect(apps.find(x => x.id === 'velum')?.access).toBe('read-write-prompts-only');
+    expect(apps.find(x => x.id === 'velum')?.root).toBe('users/owner/velumPromptData/workspace');
+    expect(apps.find(x => x.id === 'velum')?.notes).toContain('browser-local');
     expect(apps.find(x => x.id === 'personal')?.root).toBe('users/owner/personalData/workspace');
     expect(apps.find(x => x.id === 'tracker')?.root).toBe('users/owner/trackerData/workspace');
     expect(apps.find(x => x.id === 'venture')?.root).toBe('users/owner/ventureData/workspace');
@@ -32,7 +34,7 @@ describe('Shared PTI account boundary', () => {
     await Promise.all([server.connect(a), client.connect(b)]);
     try {
       const names = (await client.listTools()).tools.map(x => x.name);
-      expect(names).toEqual(expect.arrayContaining(['pti_apps_list', 'pti_app_context', 'personal_context', 'personal_publish', 'sefpo_search', 'firestore_update_document', 'atlas_context', 'atlas_import_evidence', 'food_blinkit_context', 'food_blinkit_ingest', 'food_blinkit_sync']));
+      expect(names).toEqual(expect.arrayContaining(['pti_apps_list', 'pti_app_context', 'personal_context', 'personal_publish', 'sefpo_search', 'firestore_update_document', 'atlas_context', 'atlas_import_evidence', 'food_blinkit_context', 'food_blinkit_ingest', 'food_blinkit_sync', 'velum_prompt_pick', 'velum_prompt_rate', 'velum_prompt_feedback']));
       const discovery = await client.callTool({ name: 'pti_apps_list', arguments: {} });
       expect(discovery.isError).not.toBe(true);
       for (const [name, args] of [

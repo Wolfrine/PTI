@@ -1,0 +1,19 @@
+name: Velum preservation research contracts
+on:
+  push:
+    branches: [main]
+    paths: ['tools/velum-preservation/**', '.github/workflows/velum-preservation-checks.yml']
+  pull_request:
+    paths: ['tools/velum-preservation/**', '.github/workflows/velum-preservation-checks.yml']
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pure contracts and guard thresholds; no inference or cloud writes
+        run: python -B -m unittest discover -s tools/velum-preservation -p 'test_*.py' -v

@@ -44,3 +44,10 @@ For Luminary specifically, `luminary-observer/design/` is the current design-gov
 - The account-scoped hosted PTI MCP and repo-local `tools/pti-mcp/` are the current agent data paths. Verify authentication and a real read before treating a connection as available; the legacy default-site `/mcp` URL is not a verified unattended route.
 - The local usage monitor uses a private Firebase user session because no unattended MCP credential was available. Follow `tools/codex-usage-monitor/README.md`; it is an OS task with no inference. Keep its credential local under current-user DPAPI, use one reading document, and verify owner-only rules before publication.
 - Run `node tools/codex-usage-monitor/scripts/check-home-contract.mjs` to detect conflicting active dashboard guidance before delivery.
+
+## Velum standing test-media policy
+
+- **Reference inputs:** For every Velum image generation, edit, model comparison, pose test or evaluation, use only existing owner-supplied source photographs from the private Google Drive folder **Private > Reference** (also referred to by the owner as `Private > References`). Never manufacture, download, or substitute new/generated/stock reference photos for testing unless the owner explicitly requests it.
+- **Outputs:** Every newly generated test image or revision must be saved to the owner's Google Drive **Private** folder (not `Private > Reference` or `Poses`). Verify the saved destination before reporting success. Temporary local files are not sufficient.
+- Do not modify, move, overwrite, or delete source reference images. Preserve private handling and source/output provenance. If the folder cannot be accessed, stop and report the specific blocker instead of substituting another input source.
+- Apply these defaults without asking the owner to repeat them, including when handing off work to local Codex or another agent.

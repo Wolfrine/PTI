@@ -3,13 +3,45 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import { decodeResult, formatJobStatus } from '../studio.mjs';
-import { archiveStatusMark, pendingJob } from '../studio-view.mjs';
+import { archiveStatusMark, pendingJob, studioBusy, workerActivity } from '../studio-view.mjs';
+import { PC_DEVICE_UID } from '../device-config.mjs';
 import {singleSourceReference} from '../studio-compare.mjs';
 import {makeRecoveryRequest,pendingRecovery,recoveryPhase} from '../studio-recovery.mjs';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aC1cAAAAASUVORK5CYII=', 'base64');
 const manifest = { mime: 'image/png', bytes: png.length, chunks: 2, sha256: createHash('sha256').update(png).digest('hex') };
 const chunks = [{ index: 0, data: png.subarray(0, 24).toString('base64') }, { index: 1, data: png.subarray(24).toString('base64') }];
+
+test('fresh terminal job data overrides a stale generating heartbeat',()=>{
+ const now=Date.now(),worker={deviceUid:PC_DEVICE_UID,version:'2.3.0',state:'running',activeJob:'saved',updatedAt:now};
+ for(const status of ['completed','failed','cancelled','expired']){
+  const jobs=[{id:'saved',status}];
+  assert.equal(studioBusy({worker,jobs},now),false);
+  assert.equal(workerActivity(worker,jobs,now),'idle');
+ }
+});
+
+test('live inference stays busy even when removed, long-running or outside the recent page',()=>{
+ const now=Date.now(),worker={deviceUid:PC_DEVICE_UID,version:'2.3.0',state:'running',activeJob:'active',updatedAt:now};
+ const job={id:'active',workerId:PC_DEVICE_UID,status:'running',startedAt:now-3600000,expiresAt:now-1,progress:{stage:'encoding-prompt'}};
+ assert.equal(studioBusy({worker,jobs:[job],removed:{active:{removedAt:now}}},now),true);
+ assert.equal(workerActivity(worker,[job],now),'generating');
+ assert.equal(studioBusy({worker,jobs:[]},now),true);
+ assert.equal(workerActivity(worker,[],now),'unconfirmed');
+ assert.equal(workerActivity({...worker,updatedAt:now-90001},[job],now),'offline');
+});
+
+test('saved result delivery and expired input transfers are not reported as generation',()=>{
+ const now=Date.now(),worker={deviceUid:PC_DEVICE_UID,version:'2.3.0',state:'running',activeJob:'saved',updatedAt:now};
+ const job={id:'saved',status:'running',workerId:PC_DEVICE_UID,progress:{stage:'publishing',step:0,total:0}};
+ assert.equal(workerActivity(worker,[job],now),'delivering');
+ assert.equal(formatJobStatus(job),'Delivering your saved image');
+ assert.equal(studioBusy({worker,jobs:[job]},now),true);
+ for(const status of ['uploading','queued']){
+  assert.equal(pendingJob({status,expiresAt:now-1},now),false);
+  assert.equal(pendingJob({status,expiresAt:now+1},now),true);
+ }
+});
 
 test('result preview verifies complete ordered PNG bytes and SHA-256 before display', async () => {
   const blob = await decodeResult(manifest, [...chunks].reverse());

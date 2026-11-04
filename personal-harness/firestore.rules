@@ -211,7 +211,11 @@ service cloud.firestore {
     // Abandon an incomplete transfer without deleting any input bytes or originals.
     allow update: if studioOwner() && resource.data.status == 'uploading' && resource.data.schemaVersion in [3,4]
      && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
-    allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid && job(request.resource.data)
+    // Creation validated the immutable request. Revalidating every reference on
+    // each progress/completion write exhausts the 1000-expression rules budget.
+    // The affected-key allowlist below keeps the entire request immutable.
+    allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid
+     && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data) && model(resource.data.model)
      && (resource.data.schemaVersion == 2 || resource.data.inputsReady == true)
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startedAt','finishedAt','workerId','progress','result','error'])
      && ((resource.data.status == 'queued' && request.resource.data.status in ['running','failed'])

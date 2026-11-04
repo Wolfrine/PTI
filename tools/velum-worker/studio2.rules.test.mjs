@@ -16,6 +16,20 @@ const owner=()=>client(uid),device=()=>client(PC_DEVICE_UID,'anonymous');
 const path=(db,suffix)=>doc(db,`${root}/${suffix}`);
 const reference={index:0,mime:'image/png',bytes:120,sha256:'a'.repeat(64),width:512,height:512,chunks:1,source:{kind:'file',id:'',name:'Technical reference.png'}};
 const job=()=>makeJob({model:'flux2-klein-fp8',prompt:'  Preserve these exact words.\n',seed:42,consent:true,references:[reference]});
+
+test('legacy reference completion with full settings stays within the rules expression budget',async()=>{
+ const now=Date.now();
+ await env.withSecurityRulesDisabled(context=>setDoc(path(context.firestore(),`devices/${PC_DEVICE_UID}`),{status:'approved'}));
+ for(const count of [1,2]){
+  const id=`legacy-complete-${count}`,item={...job(),schemaVersion:3,references:Array.from({length:count},(_,index)=>({...reference,index})),status:'running',inputsReady:true,workerId:PC_DEVICE_UID,startedAt:now,progress:{step:8,total:8}};
+  await env.withSecurityRulesDisabled(context=>setDoc(path(context.firestore(),`jobs/${id}`),item));
+  const result={mime:'image/png',bytes:486016,chunks:2,sha256:'b'.repeat(64),seconds:220.41,localPath:`H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\${id}\\image.png`,settings:{model:item.model,seed:item.seed,width:512,height:768,steps:4,cfg:1,sampler:'euler',scheduler:'Flux2Scheduler',negativePrompt:'',denoise:1,referenceMethod:'flux2-native-reference-latent',referenceCount:count,referencePixels:Array.from({length:count},()=>({width:336,height:752}))}};
+  for(const change of [{references:[]},{prompt:'replacement'},{model:'realistic-sd15'},{seed:43},{deviceUid:'other'},{expiresAt:now+1},{inputsReady:false}])await assertFails(updateDoc(path(device(),`jobs/${id}`),{...change,status:'completed',result,finishedAt:Date.now()}));
+  await assertFails(updateDoc(path(client('other'),`jobs/${id}`),{status:'completed',result,finishedAt:Date.now()}));
+  await assertSucceeds(updateDoc(path(device(),`jobs/${id}`),{status:'completed',result,finishedAt:Date.now()}));
+  await assertFails(updateDoc(path(device(),`jobs/${id}`),{status:'running'}));
+ }
+});
 async function approve(){await env.withSecurityRulesDisabled(context=>setDoc(path(context.firestore(),`devices/${PC_DEVICE_UID}`),{status:'approved'}));}
 async function completed(){const item=makeJob({model:'flux2-klein-fp8',prompt:'original',seed:42,consent:true});const result={mime:'image/png',bytes:256,chunks:1,sha256:'b'.repeat(64),settings:{model:item.model,seed:42},seconds:1};await env.withSecurityRulesDisabled(context=>setDoc(path(context.firestore(),'jobs/result'),{...item,status:'completed',result}));return result;}
 

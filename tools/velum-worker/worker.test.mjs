@@ -4,12 +4,41 @@ import {createHash} from 'node:crypto';
 import {runnable,encode,decode,imagePayload} from './core.mjs';
 import {makeJob} from '../../velum-gallery/studio-contract.mjs';
 import {refreshSession,restoreDevice,DeviceStore,PROJECT,protect,enrollment,GRANT_TTL,nativeAuthKey} from './session.mjs';
-import {finishClaimed,retryDelay} from './lifecycle.mjs';
+import {finishClaimed,retryDelay,assertOutputIdentity,ownsClaim} from './lifecycle.mjs';
 import {lockMatches} from './worker-lock.mjs';
 import {mkdtemp,readFile,writeFile,unlink,rmdir} from 'node:fs/promises';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 const DEVICE='fixtureDeviceIdentity001';
+
+test('claim ownership includes device and start generation, not just a reused job ID',()=>{
+ const item={id:'same-id',job:{startedAt:100}},current={status:'running',deviceUid:DEVICE,workerId:DEVICE,startedAt:100};
+ assert.equal(ownsClaim(item,current,DEVICE),true);
+ for(const change of [{startedAt:101},{status:'completed'},{workerId:'other'},{deviceUid:'other'},{startedAt:undefined}])assert.equal(ownsClaim(item,{...current,...change},DEVICE),false);
+ assert.equal(ownsClaim(item,null,DEVICE),false);
+});
+
+test('saved output recovery compares map values without depending on Firestore key order',()=>{
+ const expected={schemaVersion:4,model:'qwen-image-2.1',seed:42,width:768,height:1024,prompt:'Synthetic fixture',effectivePrompt:'Synthetic fixture',references:[{index:0,sha256:'a',source:{kind:'file',id:'one'}}]};
+ const actual={settings:{model:expected.model,seed:42,width:768,height:1024},prompt:expected.prompt,effectivePrompt:expected.effectivePrompt,references:[{source:{id:'one',kind:'file'},sha256:'a',index:0}]};
+ assert.doesNotThrow(()=>assertOutputIdentity(expected,actual));
+ assert.throws(()=>assertOutputIdentity(expected,{...actual,references:[{...actual.references[0],sha256:'changed'}]}),/invalid-output/);
+ assert.throws(()=>assertOutputIdentity(expected,{...actual,effectivePrompt:'changed'}),/invalid-output/);
+});
+
+test('a terminal or replaced claim never loads, resamples or republishes an old snapshot',async()=>{
+ const forbidden=async()=>assert.fail('lost claim must remain untouched');
+ await finishClaimed({id:'terminal'},{approved:async()=>{},claimed:async()=>false,load:forbidden,infer:forbidden,upload:forbidden,fail:forbidden});
+ let checks=0;
+ await finishClaimed({id:'completed-elsewhere'},{approved:async()=>{},claimed:async()=>++checks===1,load:async()=>({saved:true}),infer:forbidden,upload:forbidden,fail:forbidden});
+ assert.equal(checks,2);
+});
+
+test('claim loss during input preparation cannot begin inference',async()=>{
+ let checks=0,prepared=false;
+ await finishClaimed({id:'deleted-before-inference'},{approved:async()=>{},claimed:async()=>++checks===1,load:async()=>null,prepare:async()=>{prepared=true;},infer:async()=>assert.fail('must not generate'),upload:async()=>assert.fail(),fail:async()=>assert.fail()});
+ assert.equal(prepared,true);assert.equal(checks,2);
+});
 const jwt=(uid=DEVICE,project=PROJECT,provider='anonymous')=>`e30.${Buffer.from(JSON.stringify({aud:project,iss:`https://securetoken.google.com/${project}`,sub:uid,firebase:{sign_in_provider:provider}})).toString('base64url')}.fixture`;
 const input={model:'flux2-klein-fp8',prompt:'  Sheer silk study\nFictional consenting adult.  ',seed:123,consent:true};
 test('native config fails closed for missing, browser or broader keys',async()=>{

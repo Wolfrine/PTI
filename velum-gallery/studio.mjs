@@ -2,10 +2,10 @@
 const localModule = relative => { const url=new URL(relative,import.meta.url);url.search=new URL(import.meta.url).search;return import(url.href); };
 const {MODELS,makeJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,modelReferenceLimit}=await localModule('./studio-contract.mjs');
 const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
-const {renderStudioShell,renderStudioState,renderCreationDetails,selectedJob,pendingJob,formatJobStatus}=await localModule('./studio-view.mjs');
+const {renderStudioShell,renderStudioState,renderCreationDetails,selectedJob,pendingJob,studioBusy,formatJobStatus}=await localModule('./studio-view.mjs');
 const {ARCHIVE_PAGE_SIZE,archiveSource,mergeArchivePage,visibleCreations,decodeThumbnail,creationReady,historicalCreation}=await localModule('./studio-archive.mjs');
 const {prepareReference,decodeReference,MAX_REFERENCES}=await localModule('./studio-reference.mjs');
-const {makeRecoveryRequest,pendingRecovery,RECOVERY_COOLDOWN_MS}=await localModule('./studio-recovery.mjs');
+const {makeRecoveryRequest,pendingRecovery,RECOVERY_COOLDOWN_MS,supportsRecovery}=await localModule('./studio-recovery.mjs');
 const {createReferencePicker}=await localModule('./studio-reference-picker.mjs');
 const {POSE_CATEGORIES}=await localModule('./drive-library.mjs');
 const {verifyOriginal}=await localModule('./studio-drive.mjs');
@@ -135,15 +135,18 @@ export async function mountStudio({app,auth,drive}){
     clearTimeout(timer);if(!uid||locked||polling)return;polling=true;const token=epoch;
     try{
       const checkRecovery=!workerOnline(state.worker)||state.recovery?.status==='requested';
-      const [status,jobs,binding,recovery]=await Promise.all([
+      const [status,jobs,binding,recovery,pending]=await Promise.all([
         getDoc(doc(db,...workspace(),'status','pc')),
         getDocs(query(collection(db,...workspace(),'jobs'),orderBy('createdAt','desc'),limit(4))),
         getDoc(doc(db,...workspace(),'devices',PC_DEVICE_UID)),
-        checkRecovery?getDoc(doc(db,...workspace(),'controls','worker-start')).catch(()=>null):Promise.resolve(null)
+        checkRecovery?getDoc(doc(db,...workspace(),'controls','worker-start')).catch(()=>null):Promise.resolve(null),
+        getDocs(query(collection(db,...workspace(),'jobs'),where('status','in',['uploading','queued','running']),limit(20)))
       ]);
       if(token!==epoch||!uid||locked)return;
       state.worker=status.exists()?status.data():null;state.binding=binding.exists()?binding.data():null;if(checkRecovery)state.recovery=recovery?.exists()?recovery.data():null;
-      state.jobs=jobs.docs.map(item=>({...item.data(),id:item.id}));state.connected=navigator.onLine;
+      state.jobs=[...new Map([...jobs.docs,...pending.docs].map(item=>[item.id,{...item.data(),id:item.id}])).values()].sort((a,b)=>b.createdAt-a.createdAt);
+      if(state.worker?.activeJob&&!state.jobs.some(job=>job.id===state.worker.activeJob)){const active=await getDoc(doc(db,...workspace(),'jobs',state.worker.activeJob));if(token!==epoch||!uid||locked)return;if(active.exists())state.jobs.push({...active.data(),id:active.id});}
+      state.connected=navigator.onLine;
       // Merge newly imported history into an already open All feed. Preserve cursor pages.
       const staged=(state.archiveJobs||[]).filter(item=>historicalCreation(item)&&!creationReady(item));
       const imports=state.jobs.filter(historicalCreation);
@@ -161,7 +164,7 @@ export async function mountStudio({app,auth,drive}){
   }
   async function requestRecovery(){
     if(!uid||locked||!state.signedIn||state.recoveryBusy||!navigator.onLine||!state.connected||!deviceApproved(state.binding))return;
-    if(state.worker?.version!=='2.2.0'||state.worker?.capabilities?.recoveryControl!==true){state.message='Remote start requires the updated Windows recovery helper on this PC.';draw();return;}
+    if(!supportsRecovery(state.worker)){state.message='Remote start requires the updated Windows recovery helper on this PC.';draw();return;}
     const now=Date.now();
     if(pendingRecovery(state.recovery,now)){state.message='A start request is already waiting for the PC.';draw();return;}
     if(state.recovery?.requestedAt>now-RECOVERY_COOLDOWN_MS){state.message='Wait one minute between recovery attempts.';draw();return;}
@@ -285,7 +288,7 @@ export async function mountStudio({app,auth,drive}){
     }catch(error){if(token===epoch){state.canRetryUpload=true;state.message=error?.message||'Reference upload interrupted. Retry the same private upload, or cancel it. No inference starts until all references are ready.';}}
     finally{if(token===epoch){state.submitting=false;state.uploadProgress='';draw();poll();}}
   }
-  root.querySelector('#studioForm').addEventListener('submit',async event=>{event.preventDefault();if(!uid||state.submitting||!navigator.onLine||!state.connected||!deviceApproved(state.binding)||state.jobs.some(job=>pendingJob(job)))return;const model=root.querySelector('#studioModel').value;if(!deviceCanQueue(state.binding,state.worker,model))return;const seedInput=root.querySelector('#studioSeed').value,seed=seedInput===''?crypto.getRandomValues(new Uint32Array(1))[0]&0x7fffffff:Number(seedInput),token=epoch;state.submitting=true;state.message='';draw();let target;
+  root.querySelector('#studioForm').addEventListener('submit',async event=>{event.preventDefault();if(!uid||state.submitting||!navigator.onLine||!state.connected||!deviceApproved(state.binding)||studioBusy(state))return;const model=root.querySelector('#studioModel').value;if(!deviceCanQueue(state.binding,state.worker,model))return;const seedInput=root.querySelector('#studioSeed').value,seed=seedInput===''?crypto.getRandomValues(new Uint32Array(1))[0]&0x7fffffff:Number(seedInput),token=epoch;state.submitting=true;state.message='';draw();let target;
     try{
       if(state.poseEnabled&&(state.poseLoading||state.poseError||!state.pose))throw new Error('Choose a valid pose, or turn the pose setting off.');
       const payloadReferences=[...state.references,...(state.poseEnabled&&state.pose?[state.pose.reference]:[])],references=payloadReferences.map((reference,index)=>({...reference.manifest,index}));

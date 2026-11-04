@@ -5,7 +5,7 @@ import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {DeviceStore,restoreDevice,refreshSession,enrollment,secureDirectory,OWNER_UID,PROJECT} from './session.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
-import {finishClaimed,retryDelay} from './lifecycle.mjs';
+import {finishClaimed,retryDelay,assertOutputIdentity,ownsClaim} from './lifecycle.mjs';
 import {acquireWorkerLock} from './worker-lock.mjs';
 import {WEIGHTS,runnable,encode,decode,imagePayload} from './core.mjs';
 import {downloadReferences,thumbnailPayload} from './reference-input.mjs';
@@ -45,7 +45,11 @@ export class Queue {
  async request(relative,{method='GET',value,anonymous=false,allow=[]}={}){
   const response=await fetch(`${BASE}/${relative}`,{method,headers:{'Content-Type':'application/json',...(anonymous?{}:{Authorization:`Bearer ${await this.token()}`})},
    body:value===undefined?undefined:JSON.stringify(value),signal:AbortSignal.timeout(20000),redirect:'error'});
-  if(!response.ok&&!allow.includes(response.status)){await response.body?.cancel();throw new Error(`firebase-${response.status}`);}
+  if(!response.ok&&!allow.includes(response.status)){
+   await response.body?.cancel();
+   const operation=relative.startsWith(`${ROOT}/jobs/`)?(relative.includes('/chunks/')?'result-chunk':'job'):relative.startsWith(`${ROOT}/thumbs/`)?'thumbnail':'worker-control';
+   throw Object.assign(new Error(`firebase-${response.status}`),{operation,method,transition:value?.fields?.status?.stringValue||''});
+  }
   const text=await response.text();return {status:response.status,value:text?JSON.parse(text):null};
  }
  async privacy(){
@@ -159,7 +163,8 @@ async function main(){
  };
  const upload=async(item,output)=>{
   const expected=item.job,actual=output.metadata;
-  if(['model','seed','width','height'].some(key=>actual.settings?.[key]!==expected[key])||(actual.prompt!==undefined&&actual.prompt!==expected.prompt)||([3,4].includes(expected.schemaVersion)&&JSON.stringify(actual.references)!==JSON.stringify(expected.references))||(expected.schemaVersion===4&&(actual.prompt!==expected.prompt||actual.effectivePrompt!==expected.effectivePrompt||JSON.stringify(actual.pose)!==JSON.stringify(expected.pose))))throw new Error('invalid-output');
+  assertOutputIdentity(expected,actual);
+  await queue.write(`jobs/${item.id}`,{status:'running',progress:{step:0,total:0,stage:'publishing'}});
   for(let index=0;index<output.chunks.length;index++){
    await approved();const relative=`jobs/${item.id}/chunks/${index}`;
    const existing=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
@@ -195,6 +200,7 @@ async function main(){
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(item.id))throw new Error('invalid-job');
   activeJob=item.id;controller=new AbortController();await publish('running');
   try{await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload,fail,approved,
+   claimed:async()=>{const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});if(response.status===404)return false;return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid);},
    canResumeInference:async()=>{
     if(!item.job.references?.length)return false;
     try{await stat(path.join(engineProfile(item.job.model).outputRoot,item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
@@ -210,7 +216,7 @@ async function main(){
     if(item.job.model===QWEN_MODEL&&event.event==='stage')record({step:0,total:40,stage:event.stage});
    }});
    await pending;
-  }});}finally{activeJob='';controller=null;}
+  }});}finally{activeJob='';controller=null;await publish('idle').catch(()=>{});}
  };
  const stop=()=>{stopping=true;controller?.abort();wakeup.wake();};
  process.on('SIGINT',stop);process.on('SIGTERM',stop);
@@ -250,7 +256,8 @@ async function main(){
        if(stopping)break;await approved();
        if(!runnable(item.job)){await fail(item,'expired');continue;}
        if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
-       try{await queue.write(`jobs/${item.id}`,{status:'running',workerId:queue.session.uid,startedAt:Date.now()},{updateTime:item.updateTime});}
+       const claim={status:'running',workerId:queue.session.uid,startedAt:Date.now()};
+       try{await queue.write(`jobs/${item.id}`,claim,{updateTime:item.updateTime});item.job={...item.job,...claim};}
        catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
        await run(item,false);
       }
@@ -259,7 +266,7 @@ async function main(){
      attempt=0;
     }
    }catch(error){
-    await local({state:error.message==='device-not-approved'?'approval-required':'reconnecting',installed,activeJob:'',error:['device-auth-config-required','device-auth-key-restricted','device-login-required','device-identity-mismatch','private-rules-not-ready','device-auth-not-enabled-or-invalid'].includes(error.message)?error.message:'connection-unavailable'});
+    await local({state:error.message==='device-not-approved'?'approval-required':'reconnecting',installed,activeJob:'',error:['device-auth-config-required','device-auth-key-restricted','device-login-required','device-identity-mismatch','private-rules-not-ready','device-auth-not-enabled-or-invalid'].includes(error.message)?error.message:'connection-unavailable',failure:{reason:/^firebase-\d{3}$/.test(error.message)?error.message:'worker-operation-failed',operation:error.operation||'local-recovery',method:error.method||'',transition:error.transition||''}});
     await new Promise(resolve=>setTimeout(resolve,retryDelay(attempt++)));wakeup.wake();continue;
    }
   }

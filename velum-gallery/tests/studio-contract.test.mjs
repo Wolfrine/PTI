@@ -2,7 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeJob,validateJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,MODEL_IDS,JOB_TTL,modelReferenceLimit,QWEN_MODEL,composeEffectivePrompt} from '../studio-contract.mjs';
 import {PC_DEVICE_UID} from '../device-config.mjs';
+import {readFile} from 'node:fs/promises';
+import {workerCapabilities} from '../../tools/velum-worker/engine-profile.mjs';
+import {supportsRecovery} from '../studio-recovery.mjs';
 const input={model:'flux2-klein-fp8',prompt:'  Fictional adult, sheer silk.\nSensual lighting.  ',seed:42,consent:true};
+
+test('current worker release stays online and permits every installed model, reference limit and recovery',async()=>{
+ const {version}=JSON.parse(await readFile(new URL('../../tools/velum-worker/package.json',import.meta.url),'utf8'));
+ const now=Date.now(),binding={deviceUid:PC_DEVICE_UID,status:'approved'};
+ const status={deviceUid:PC_DEVICE_UID,version,state:'idle',activeJob:'',updatedAt:now,installed:MODEL_IDS,capabilities:workerCapabilities(MODEL_IDS,true)};
+ assert.equal(workerOnline(status,now),true);assert.equal(supportsRecovery(status),true);
+ for(const model of MODEL_IDS){assert.equal(deviceCanQueue(binding,status,model),true,model);assert.equal(modelReferenceLimit(status,model),model===QWEN_MODEL?10:model==='flux2-klein-fp8'?2:1);}
+ const unknown={...status,version:'2.3.2'};assert.equal(workerOnline(unknown,now),false);assert.equal(supportsRecovery(unknown),false);
+ for(const model of MODEL_IDS)assert.equal(deviceCanQueue(binding,unknown,model),false);
+});
 test('raw wording and whitespace survive submission exactly',()=>{
   const job=makeJob(input,1000);
   assert.equal(job.prompt,input.prompt); assert.equal(job.seed,42); assert.equal(job.expiresAt,1000+7*24*60*60*1000);

@@ -218,13 +218,13 @@ service cloud.firestore {
      && instant(request.resource.data.updatedAt) && request.resource.data.installed is list && request.resource.data.installed.size() <= 5
      && request.resource.data.installed.hasOnly(['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15','qwen-image-2.1'])
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
-      && request.resource.data.version in ['2.0.0','2.1.0','2.2.0','2.3.0']
+      && request.resource.data.version in ['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1']
       && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight','recoveryControl','qwenMaxReferences','promptSchema','referenceLimits'])
       && request.resource.data.capabilities.referenceModel == 'flux2-klein-fp8' && request.resource.data.capabilities.maxReferences == 2
       && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768
       && (request.resource.data.version == '2.0.0' ? !('referenceModels' in request.resource.data.capabilities) :
-        ('referenceModels' in request.resource.data.capabilities && (request.resource.data.version == '2.3.0' ? (request.resource.data.capabilities.referenceModels.hasOnly(request.resource.data.installed) && request.resource.data.capabilities.qwenMaxReferences == 10 && request.resource.data.capabilities.promptSchema == 4 && request.resource.data.capabilities.referenceLimits == {'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1,'qwen-image-2.1':10}) : request.resource.data.capabilities.referenceModels == ['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'])))
-       && (request.resource.data.version in ['2.2.0','2.3.0'] ? ('recoveryControl' in request.resource.data.capabilities && request.resource.data.capabilities.recoveryControl is bool)
+        ('referenceModels' in request.resource.data.capabilities && (request.resource.data.version in ['2.3.0','2.3.1'] ? (request.resource.data.capabilities.referenceModels.hasOnly(request.resource.data.installed) && request.resource.data.capabilities.qwenMaxReferences == 10 && request.resource.data.capabilities.promptSchema == 4 && request.resource.data.capabilities.referenceLimits == {'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1,'qwen-image-2.1':10}) : request.resource.data.capabilities.referenceModels == ['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'])))
+       && (request.resource.data.version in ['2.2.0','2.3.0','2.3.1'] ? ('recoveryControl' in request.resource.data.capabilities && request.resource.data.capabilities.recoveryControl is bool)
         : !('recoveryControl' in request.resource.data.capabilities))));
     allow delete: if studioOwner();
    }

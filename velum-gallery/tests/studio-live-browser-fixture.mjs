@@ -9,7 +9,7 @@ export const fixture=`<!doctype html><html><head><meta charset="utf-8"><meta nam
 import {mountStudio} from '/studio.mjs';
 import {PC_DEVICE_UID} from '/device-config.mjs';
 window.mutations=[];window.reads=[];window.subscriptions=[];
-window.fixture={worker:{deviceUid:PC_DEVICE_UID,version:'2.3.0',state:'idle',activeJob:'',updatedAt:Date.now(),installed:['flux2-klein-fp8','qwen-image-2.1'],capabilities:{referenceModels:['flux2-klein-fp8','qwen-image-2.1'],qwenMaxReferences:10,recoveryControl:true}},jobs:[],removed:[]};
+window.fixture={worker:{deviceUid:PC_DEVICE_UID,version:'2.3.1',state:'idle',activeJob:'',updatedAt:Date.now(),installed:['flux2-klein-fp8','qwen-image-2.1'],capabilities:{referenceModels:['flux2-klein-fp8','qwen-image-2.1'],qwenMaxReferences:10,recoveryControl:true}},jobs:[],removed:[]};
 window.studio=await mountStudio({app:{},auth:{},drive:{clear(){},async listReferences(){return {files:[],cursor:''};},async loadQualityCreations(){return [];}}});window.ready=true;
 window.setStudioFixtureState=async name=>{
  const now=Date.now();fixture.worker.updatedAt=now;fixture.worker.state='running';fixture.worker.activeJob='active-'+name;

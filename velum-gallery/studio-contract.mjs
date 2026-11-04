@@ -12,12 +12,13 @@ export const MODELS = Object.freeze([
 ]);
 export const MODEL_IDS = MODELS.map(model=>model.id);
 export const QWEN_MODEL='qwen-image-2.1';
-export const WORKER_VERSIONS=Object.freeze(['2.0.0','2.1.0','2.2.0','2.3.0']);
+export const WORKER_VERSIONS=Object.freeze(['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1']);
+const QWEN_WORKER_VERSIONS=Object.freeze(['2.3.0','2.3.1']);
 export const MODEL_REFERENCE_LIMITS = Object.freeze({'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1,[QWEN_MODEL]:10});
 export function modelReferenceLimit(status,model) {
  if(!MODEL_REFERENCE_LIMITS[model])return 0;
- if(model===QWEN_MODEL)return status?.version==='2.3.0'&&status?.capabilities?.referenceModels?.includes(model)&&status?.capabilities?.qwenMaxReferences===10?10:0;
- if(['2.1.0','2.2.0','2.3.0'].includes(status?.version)&&status?.capabilities?.referenceModels?.includes(model))return MODEL_REFERENCE_LIMITS[model];
+ if(model===QWEN_MODEL)return QWEN_WORKER_VERSIONS.includes(status?.version)&&status?.capabilities?.referenceModels?.includes(model)&&status?.capabilities?.qwenMaxReferences===10?10:0;
+ if(['2.1.0','2.2.0',...QWEN_WORKER_VERSIONS].includes(status?.version)&&status?.capabilities?.referenceModels?.includes(model))return MODEL_REFERENCE_LIMITS[model];
  return status?.version==='2.0.0'&&model==='flux2-klein-fp8'&&status?.capabilities?.referenceModel===model&&status?.capabilities?.maxReferences===2?2:0;
 }
 export const JOB_TTL = 7*24*60*60*1000, MAX_CHUNKS = 16, CHUNK_SIZE = 600000;
@@ -95,7 +96,7 @@ export function devicePending(binding,now=Date.now()) {
 }
 export function deviceCanQueue(binding,status,model) {
   // The last verified installation survives a stale heartbeat. Work waits in Firestore.
- return Boolean(deviceApproved(binding) && status?.deviceUid===PC_DEVICE_UID && WORKER_VERSIONS.includes(status.version) && MODEL_IDS.includes(model) && (model!==QWEN_MODEL||status.version==='2.3.0') && status.installed?.includes(model));
+ return Boolean(deviceApproved(binding) && status?.deviceUid===PC_DEVICE_UID && WORKER_VERSIONS.includes(status.version) && MODEL_IDS.includes(model) && (model!==QWEN_MODEL||QWEN_WORKER_VERSIONS.includes(status.version)) && status.installed?.includes(model));
 }
 export function workerOnline(status,now=Date.now()) {
  return Boolean(status?.deviceUid===PC_DEVICE_UID && WORKER_VERSIONS.includes(status.version) && ['idle','running'].includes(status.state) && Number.isFinite(status.updatedAt) && now-status.updatedAt>=-30000 && now-status.updatedAt<90000);

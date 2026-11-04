@@ -143,10 +143,10 @@ jobs:
           npm install -g firebase-tools
           firebase --version
           npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
-          # Reviewed production predecessor includes the saved-result completion fix.
+          # Reviewed production predecessor includes Firestore live progress.
           # Preserve exact-hash protection against concurrent rules changes.
           # No Firestore rules are overwritten if live differs from this revision.
-          git show b8f51ed7bfcceaffa86b28dacec3ffc3f1bbff22:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
+          git show 1546a3f016ccdcd601d493b4d778e176a0f39bc4:personal-harness/firestore.rules > /tmp/pre-platform-usage.rules
           APPROVED_PREVIOUS_RULES_FILE=/tmp/pre-platform-usage.rules node personal-functions/provision.mjs
           # Fail before Hosting/publication unless real client rules isolate usage.
           node tools/codex-usage-monitor/scripts/verify-live-rules.mjs

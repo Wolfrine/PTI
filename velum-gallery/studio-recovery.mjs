@@ -2,7 +2,7 @@ import {PC_DEVICE_UID} from './device-config.mjs';
 
 export const RECOVERY_TTL_MS=10*60*1000;
 export const RECOVERY_COOLDOWN_MS=60*1000;
-export const supportsRecovery=worker=>['2.2.0','2.3.0'].includes(worker?.version)&&worker?.capabilities?.recoveryControl===true;
+export const supportsRecovery=worker=>['2.2.0','2.3.0','2.3.1'].includes(worker?.version)&&worker?.capabilities?.recoveryControl===true;
 
 export function makeRecoveryRequest(now=Date.now(),requestId=crypto.randomUUID()){
  if(!Number.isSafeInteger(now)||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId))throw new Error('Invalid recovery request');

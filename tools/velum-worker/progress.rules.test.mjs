@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {makeJob} from '../../velum-gallery/studio-contract.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
+import {workerCapabilities} from './engine-profile.mjs';
 const require=createRequire(new URL('../../apps/one-piece/package.json',import.meta.url));
 const {initializeTestEnvironment,assertSucceeds,assertFails}=require('@firebase/rules-unit-testing');
 const {doc,setDoc,getDoc,updateDoc}=require('firebase/firestore');
@@ -21,6 +22,17 @@ async function seed(){
  const job={...makeJob({model:'qwen-image-2.1',prompt:'Immutable synthetic rules request',seed:42,consent:true,references}),status:'running',inputsReady:true,workerId:PC_DEVICE_UID,startedAt:Date.now()-700000};
  await env.withSecurityRulesDisabled(async context=>{await setDoc(ref(context.firestore(),`devices/${PC_DEVICE_UID}`),{status:'approved'});await setDoc(ref(context.firestore(),'jobs/live'),job);});return job;
 }
+test('released worker heartbeat version and exact capabilities are accepted together',async()=>{
+ await seed();
+ const {version}=JSON.parse(await readFile(new URL('./package.json',import.meta.url),'utf8'));
+ const source=await readFile(new URL('./worker.mjs',import.meta.url),'utf8');
+ assert.ok(source.includes(`const VERSION='${version}';`),'runtime and package release versions agree');
+ const installed=['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15','qwen-image-2.1'];
+ const heartbeat={deviceUid:PC_DEVICE_UID,version,updatedAt:Date.now(),installed,state:'idle',activeJob:'',capabilities:workerCapabilities(installed,true)};
+ for(const state of ['idle','running','offline'])await assertSucceeds(setDoc(ref(device(),'status/pc'),{...heartbeat,state}));
+ for(const value of [{...heartbeat,version:'2.3.2'},{...heartbeat,capabilities:{...heartbeat.capabilities,qwenMaxReferences:11}},{...heartbeat,capabilities:{...heartbeat.capabilities,recoveryControl:'yes'}},{...heartbeat,capabilities:{...heartbeat.capabilities,promptSchema:5}}])await assertFails(setDoc(ref(device(),'status/pc'),value));
+ await assertFails(setDoc(ref(db(),'status/pc'),heartbeat));
+});
 test('approved worker current resources and all exact stages fit ten-reference expression budget',async()=>{
  const job=await seed(),client=device();
  for(const stage of stages)await assertSucceeds(updateDoc(ref(client,'jobs/live'),{progress:{...progress(),stage,step:stage==='sampling'?40:null,total:stage==='sampling'?40:null,stageDurations:Object.fromEntries(stages.map(s=>[s,1000]))}}));

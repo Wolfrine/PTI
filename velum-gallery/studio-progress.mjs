@@ -1,4 +1,4 @@
-export const STAGE_LABELS={preparing:'Preparing your request','loading-model':'Loading the model','encoding-references':'Preparing reference images','encoding-prompt':'Reading your instruction','loading-diffusion':'Loading the image model',sampling:'Generating your image',decoding:'Decoding your image',publishing:'Delivering your saved image'};
+export const STAGE_LABELS={preparing:'Preparing your request','loading-model':'Loading the model','encoding-references':'Preparing reference images','encoding-prompt':'Encoding references and instructions','loading-diffusion':'Preparing the first image step',sampling:'Generating your image',decoding:'Decoding your image',publishing:'Delivering your saved image'};
 const finite=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
 export function formatDuration(milliseconds){
   if(!finite(milliseconds))return '—';

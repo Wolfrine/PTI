@@ -3,9 +3,10 @@
 No server, downloads, warm model, prompt enhancer or alternative-model fallback.
 Importing this file performs no filesystem mutation, model import or inference.
 """
-import gc, hashlib, json, os, subprocess, sys, threading, time
+import gc, hashlib, json, os, sys, threading, time
 from pathlib import Path
 from inference_contract import validate_request, QWEN_MODEL
+from qwen_diagnostics import Diagnostics, SamplingProgress, collect, encoder_threads, GIB, TIMEOUT_SECONDS
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
@@ -19,13 +20,12 @@ WEIGHTS = {
     'text_encoders/qwen3vl_8b_w4a8.safetensors':6312105364,
     'vae/qwen_image_2.1_vae_bf16.safetensors':675509688,
 }
-GIB = 1024**3
-TIMEOUT_SECONDS = 7200
 STOP = threading.Event()
 START = None
 MM = None
 REASON = None
 WORK = None
+DIAGNOSTICS = None
 
 def emit(**value):
     print(json.dumps(value), flush=True)
@@ -61,6 +61,7 @@ def encode_native(node, clip, vae, prompt, images):
     return encoded[0], encoded[1], encoded[2]
 
 def configure_environment():
+    threads = str(encoder_threads(os.environ))
     for key, relative in {'TEMP':'tmp','TMP':'tmp','TMPDIR':'tmp','HF_HOME':'cache/hf',
         'TORCH_HOME':'cache/torch','TORCH_EXTENSIONS_DIR':'cache/torch-extensions',
         'TORCHINDUCTOR_CACHE_DIR':'cache/inductor','TRITON_CACHE_DIR':'cache/triton',
@@ -71,7 +72,7 @@ def configure_environment():
         os.environ[key] = str(directory)
     os.environ.update(PYTHONDONTWRITEBYTECODE='1',PYTHONNOUSERSITE='1',CUDA_CACHE_DISABLE='1',
         HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HUB_DISABLE_TELEMETRY='1',DO_NOT_TRACK='1',
-        OMP_NUM_THREADS='4',MKL_NUM_THREADS='4',OPENBLAS_NUM_THREADS='4',TOKENIZERS_PARALLELISM='false')
+        OMP_NUM_THREADS=threads,MKL_NUM_THREADS=threads,OPENBLAS_NUM_THREADS=threads,TOKENIZERS_PARALLELISM='false')
 
 def offline_guard():
     def permitted(file):
@@ -93,18 +94,12 @@ def guard():
     import psutil, _thread
     while not STOP.wait(1):
         try:
-            parent = psutil.Process(int(os.environ['VELUM_PARENT_PID']))
-            bad = parent.create_time() != float(os.environ['VELUM_PARENT_CREATED'])
-            bad |= psutil.virtual_memory().available < 5*GIB or psutil.disk_usage('H:\\').free < 20*GIB
-            bad |= psutil.disk_usage('F:\\').free < 10*GIB or time.monotonic()-START > TIMEOUT_SECONDS
-            raw = subprocess.check_output(['nvidia-smi','--query-gpu=memory.used,temperature.gpu','--format=csv,noheader,nounits'],
-                creationflags=subprocess.CREATE_NO_WINDOW,text=True,timeout=5)
-            vram, temperature = [int(value.strip()) for value in raw.strip().split(',')]
-            bad |= vram > 7500 or temperature >= 78
-            if not bad:
+            if not observe_resources():
                 continue
-        except Exception:
-            pass
+        except Exception as error:
+            # Evidence persistence/collection failures remain fail-closed. The
+            # parent retains this fixed, privacy-safe event even on disk errors.
+            emit(event='guard-diagnostic-error',exceptionType=type(error).__name__)
         REASON = 'resource-guard'
         if MM:
             MM.interrupt_current_processing(True)
@@ -113,8 +108,16 @@ def guard():
             os._exit(3)
         return
 
+def observe_resources(startup=False):
+    import psutil
+    torch = sys.modules.get('torch')
+    cuda = getattr(torch,'cuda',None)
+    cuda = cuda if callable(getattr(cuda,'is_initialized',None)) and cuda.is_initialized() else None
+    return DIAGNOSTICS.observe(collect(psutil,int(os.environ['VELUM_PARENT_PID']),
+        float(os.environ['VELUM_PARENT_CREATED']),START,cuda=cuda),startup=startup)
+
 def main():
-    global START, MM, WORK
+    global START, MM, WORK, DIAGNOSTICS
     START = time.monotonic()
     request = json.load(sys.stdin)
     job, identifier = request['job'], request['id']
@@ -135,6 +138,8 @@ def main():
     if any(file.name != 'inputs' for file in work.iterdir()):
         raise ValueError('existing-job-output')
     WORK = work
+    DIAGNOSTICS = Diagnostics(work, START, emit)
+    DIAGNOSTICS.transition('preparing')
     from media import read_reference, read_qwen_output, thumbnail
     references = job['references']
     source_images = []
@@ -147,7 +152,7 @@ def main():
     configure_environment()
     offline_guard()
     import psutil
-    if psutil.virtual_memory().available < 6*GIB or psutil.disk_usage('F:\\').free < 10*GIB:
+    if observe_resources(startup=True):
         raise RuntimeError('resource-guard')
     psutil.Process().nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
     threading.Thread(target=guard,daemon=True).start()
@@ -156,26 +161,32 @@ def main():
         '--disable-all-custom-nodes','--disable-api-nodes','--lowvram','--disable-dynamic-vram',
         '--reserve-vram','2.0','--disable-async-offload','--disable-pinned-memory','--cache-none',
         '--preview-method','none','--disable-auto-launch','--use-pytorch-cross-attention','--cpu-vae','--fp32-vae']
-    stages = []
-    def stage(name):
-        stages.append(dict(stage=name,seconds=round(time.monotonic()-START,2)))
-        emit(event='stage',**stages[-1])
+    stages = DIAGNOSTICS.stages
+    stage = DIAGNOSTICS.transition
     try:
         import comfy.options
         comfy.options.enable_args_parsing()
         import torch, numpy as np
-        torch.set_num_threads(4)
+        threads = encoder_threads(os.environ)
+        torch.set_num_threads(threads)
         torch.set_num_interop_threads(1)
         torch.cuda.set_per_process_memory_fraction(.67)
         import nodes,folder_paths,comfy.model_management as mm,comfy.utils
         from comfy_extras.nodes_qwen import TextEncodeQwenImage21,QwenImage21Cache
         MM = mm
+        DIAGNOSTICS.write('runtime-config',encoderThreads=threads,priority='BelowNormal',
+            encoderDevice='cpu',referenceCacheDevice='cpu',referenceCachePrecision='default')
         for category in ('diffusion_models','text_encoders','vae'):
             folder_paths.add_model_folder_path(category,str(ENGINE/'models'/category),is_default=True)
+        sampling_progress = SamplingProgress(DIAGNOSTICS,emit)
         def progress(value,total,preview,**kwargs):
             if REASON:
                 raise InterruptedError(REASON)
-            emit(event='progress',step=value,total=total)
+            if DIAGNOSTICS.stage in ('loading-diffusion','sampling'):
+                if not sampling_progress.started and value > 0:
+                    if observe_resources():
+                        raise RuntimeError('resource-guard')
+                sampling_progress(value,total)
         comfy.utils.set_progress_bar_global_hook(progress)
         with torch.inference_mode():
             stage('encoding-references')
@@ -183,6 +194,7 @@ def main():
             tensors = [torch.from_numpy(np.asarray(image,dtype=np.float32)/255.).unsqueeze(0) for image in source_images]
             class LazyClip:
                 inner = None
+                passes = 0
                 def tokenize(self,*args,**kwargs):
                     if self.inner is None:
                         stage('encoding-prompt')
@@ -190,7 +202,13 @@ def main():
                         assert_encoder(self.inner)
                     return self.inner.tokenize(*args,**kwargs)
                 def encode_from_tokens_scheduled(self,*args,**kwargs):
-                    return self.inner.encode_from_tokens_scheduled(*args,**kwargs)
+                    before = time.monotonic()
+                    pass_index = self.passes
+                    self.passes += 1
+                    result = self.inner.encode_from_tokens_scheduled(*args,**kwargs)
+                    DIAGNOSTICS.write('encoder-pass',passIndex=pass_index,
+                        secondsInPass=round(time.monotonic()-before,3))
+                    return result
             clip = LazyClip()
             positive,negative,latent = encode_native(TextEncodeQwenImage21,clip,vae,prompt,tensors)
             # Native edit canvas must match image1; text-only has no reference canvas.
@@ -207,11 +225,12 @@ def main():
             mm.cleanup_models()
             mm.soft_empty_cache()
             stage('loading-diffusion')
+            torch.cuda.reset_peak_memory_stats()
             model = nodes.UNETLoader().load_unet('qwen_image_2.1_int8_convrot.safetensors','default')[0]
             assert_diffusion(model)
             dtype = str(model.model.get_dtype())
             model = QwenImage21Cache.execute(model,'cpu','default')[0]
-            stage('sampling')
+            DIAGNOSTICS.write('first-step-preparation')
             samples = nodes.KSampler().sample(model,job['seed'],40,1.,'euler','simple',positive,negative,latent,denoise=1.)[0]
             mm.unload_all_models()
             del model,positive,negative,latent
@@ -233,6 +252,7 @@ def main():
                 referencePixels=[dict(width=source.width,height=source.height) for source in source_images],
                 referenceResolution=1024,encoderDevice='cpu',vaeDevice='cpu',vaePrecision='fp32',
                 referenceCacheDevice='cpu',referenceCachePrecision='default',diffusionDtype=dtype,
+                encoderThreads=threads,
                 encoderClass=encoder_class,diffusionClass='QwenImage21Transformer2DModel',
                 runtimeRevision=REVISION,timeoutSeconds=TIMEOUT_SECONDS,batchSize=1)
             provenance = dict(prompt=job['prompt'],effectivePrompt=prompt,settings=settings,
@@ -248,6 +268,7 @@ def main():
                 pass
             thumb = thumbnail(image,work)
             result = dict(**provenance,localPath=str(file),thumbnail=thumb,stages=stages,
+                resourcePeaks=DIAGNOSTICS.peaks,
                 seconds=round(time.monotonic()-START,2),sha256=hashlib.sha256(file.read_bytes()).hexdigest())
             with (work/'result.json').open('x',encoding='utf-8') as metadata:
                 json.dump(result,metadata,ensure_ascii=False)
@@ -269,7 +290,9 @@ if __name__ == '__main__':
         if WORK:
             try:
                 with (WORK/'failure.json').open('x',encoding='utf-8') as failure:
-                    json.dump(dict(error=code,traceback=traceback.format_exc()),failure)
+                    json.dump(dict(error=code,traceback=traceback.format_exc(),
+                        guard=DIAGNOSTICS.trip if DIAGNOSTICS else None,
+                        stages=DIAGNOSTICS.stages if DIAGNOSTICS else []),failure)
             except FileExistsError:
                 pass
         emit(event='failed',error=code)

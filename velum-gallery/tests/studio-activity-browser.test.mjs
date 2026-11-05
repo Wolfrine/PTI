@@ -56,6 +56,15 @@ test('live progress renders truthful compact states on desktop and small phones'
    if(scenario==='missing')assert.equal(await page.locator('#studioLiveProgress dd').allTextContents().then(values=>values.every(value=>value==='—')),true);
    if(process.env.VELUM_UI_EVIDENCE_DIR){await mkdir(process.env.VELUM_UI_EVIDENCE_DIR,{recursive:true});await page.screenshot({path:join(process.env.VELUM_UI_EVIDENCE_DIR,`studio-live-${scenario}-${viewport.width}.png`),fullPage:true});}
   }
+  await page.evaluate(async()=>{
+   await setStudioFixtureState('encoding');
+   fixture.jobs[0].progress.stage='loading-diffusion';
+   await emitStudioSnapshots();
+  });
+  assert.equal(await page.locator('#studioLiveProgress h2').innerText(),'Preparing the first image step');
+  assert.doesNotMatch(await page.locator('#studioLiveProgress').innerText(),/\d+ \/ \d+ steps/);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  if(process.env.VELUM_UI_EVIDENCE_DIR)await page.screenshot({path:join(process.env.VELUM_UI_EVIDENCE_DIR,`studio-live-first-step-${viewport.width}.png`),fullPage:true});
   await page.evaluate(()=>setStudioFixtureState('sampling'));await page.locator('#studioLiveProgress summary').click();
   const summary=page.locator('#studioLiveProgress summary');await summary.focus();await page.waitForTimeout(1100);
   assert.equal(await summary.evaluate(node=>node===document.activeElement),true,'local ticks preserve disclosure focus');

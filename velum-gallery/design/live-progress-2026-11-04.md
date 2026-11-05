@@ -1,5 +1,16 @@
 # Studio live progress and current PC resources
 
+5 November mechanical repair: retain the accepted Photographic Atelier direction.
+`encoding-prompt` now reads **Encoding references and instructions**;
+`loading-diffusion` reads **Preparing the first image step**, with sampling starting
+only after the first completed native step. Existing stage schema/listeners and
+cadence remain. Actual Chrome fixture checks at 1440x900, 390x844 and 360x800
+confirmed readable labels, no horizontal overflow and no step count during
+preparation. Parent inspected desktop/phone screenshots in
+`F:\Workspace\Codex\2026-11-05\velum-qwen-runtime\outputs`. Synthetic state only;
+no new visual-direction score, independent review or owner acceptance. Runtime
+evidence and limitations: [Qwen diagnostics](../../docs/velum-qwen-runtime-2026-11-05.md).
+
 Owner-authorized scope: existing default Firestore only; preserve private owner/device authority, generation, saved-output recovery, archive, Drive and `b8f51ed` terminal precedence. No database, service, inference setting or Python network capability was added. Main-only delivery preserves the unrelated dirty Research rules, workflow line and untracked Research files.
 
 Studio uses the full Firestore SDK with four fixed owner-scoped subscriptions: `status/pc`, the pinned device, recent jobs ordered by `createdAt` descending with limit 4, and pending status membership with limit 20. Recovery is conditional. Missing active jobs, up to four unfinished historical imports, and up to twenty displaced pending records receive deduplicated targeted watches. Terminal evidence cannot regress through another query's older snapshot. Failed streams wait for explicit refresh/reconnect; snapshot callbacks and local ticks do not create a retry timer. Logout, PIN lock, hidden document, leaving Studio, pagehide and destroy detach streams. Archive/media/feedback reads remain demand-driven.

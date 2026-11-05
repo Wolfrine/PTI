@@ -78,3 +78,12 @@ test('Studio uses full SDK streams and a local-only clock; recurring polling is 
   assert.doesNotMatch(live,/getDocs|getDoc|setInterval|setTimeout/);
   assert.match(controller,/setInterval\(\(\)=>\{syncLiveHints\(\);draw\(\);\},1000\)/);
 });
+
+test('encoding includes references and instructions; preparation is separate from real sampling counts',()=>{
+  const progress={stage:'encoding-prompt',step:null,total:null};
+  const presentation=stage=>progressPresentation({status:'running',progress:{...progress,stage}});
+  assert.equal(presentation('encoding-prompt').stage,'Encoding references and instructions');
+  assert.equal(presentation('loading-diffusion').stage,'Preparing the first image step');
+  assert.equal(presentation('loading-diffusion').count,'');
+  assert.equal(presentation('sampling').stage,'Generating your image');
+});

@@ -113,24 +113,25 @@ export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={})
   const child=spawn(profile.python,['-B',profile.script],{cwd:HERE,windowsHide:true,shell:false,
    env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated},stdio:['pipe','pipe','pipe']});
   const abort=()=>child.kill();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
-  let buffer='',diagnostic='',failure='inference-failed',saved=false;
-  const timer=setTimeout(()=>{child.kill();reject(new Error('resource-guard'));},profile.parentTimeoutMs);
+  let buffer='',diagnostic='',failure='inference-failed',saved=false,guardEvents=[];
+  const timer=setTimeout(()=>{failure='resource-guard';guardEvents.push({event:'guard-trip',failed:['parent-timeout'],timeoutMs:profile.parentTimeoutMs});child.kill();},profile.parentTimeoutMs);
   child.stdout.on('data',chunk=>{
    buffer+=chunk.toString();if(buffer.length>1000000)buffer=buffer.slice(-100000);
    let end;while((end=buffer.indexOf('\n'))>=0){
     const line=buffer.slice(0,end);buffer=buffer.slice(end+1);
     try{const event=JSON.parse(line);onEvent(event);if(event.event==='progress')onProgress({step:event.step,total:event.total});
+     if(['guard-trip','guard-diagnostic-error'].includes(event.event)&&guardEvents.length<4)guardEvents.push(event);
      if(event.event==='failed'&&event.error==='resource-guard')failure=event.error;if(event.event==='saved')saved=true;}catch{}
    }
   });
-  // Bounded diagnostics stay beside private H-drive outputs, never in cloud documents.
+  // Bounded diagnostics stay beside private outputs, never in cloud documents.
   child.stderr.on('data',chunk=>{diagnostic=(diagnostic+chunk.toString()).slice(-65536);});
   child.on('error',()=>{clearTimeout(timer);reject(new Error('inference-failed'));});
   child.on('close',async(code,exitSignal)=>{
    signal?.removeEventListener('abort',abort);
    // This disposable child owns all loaded model resources.
    clearTimeout(timer);
-   await writeFile(path.join(logs,`${id}.json`),JSON.stringify({code,signal:exitSignal,saved,diagnostic})).catch(()=>{});
+   await writeFile(path.join(logs,`${id}.json`),JSON.stringify({code,signal:exitSignal,saved,diagnostic,guardEvents})).catch(()=>{});
    code===0&&saved?resolve():reject(new Error(failure));
   });
   child.stdin.on('error',()=>{});child.stdin.end(JSON.stringify({id,job}));
@@ -148,7 +149,7 @@ async function main(){
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,qwenDiagnosticsVersion:1,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
   await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};

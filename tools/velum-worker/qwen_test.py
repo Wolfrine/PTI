@@ -1,7 +1,9 @@
 """CPU-only contract tests. Native conditioning here uses explicit fixtures;
 these tests do not establish image quality or successful GPU execution.
 """
-import copy, importlib.util, unittest
+import copy, importlib.util, unittest, sys, os
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 from inference_contract import validate_request, dimensions, QWEN_MODEL
 
@@ -21,6 +23,15 @@ def job(count=1):
         references=references,parentJobId='',inputsReady=True,width=width,height=height)
 
 class QwenContract(unittest.TestCase):
+    def test_partial_torch_import_does_not_become_a_guard_failure(self):
+        diagnostics=SimpleNamespace(observe=lambda sample,startup=False:sample)
+        with patch.dict(sys.modules,{'torch':SimpleNamespace(),'psutil':SimpleNamespace()}), \
+             patch.dict(os.environ,VELUM_PARENT_PID='123',VELUM_PARENT_CREATED='456'), \
+             patch.object(adapter,'DIAGNOSTICS',diagnostics), \
+             patch.object(adapter,'collect',return_value={'safe':True}) as collect_sample:
+            self.assertEqual(adapter.observe_resources(),{'safe':True})
+            self.assertIsNone(collect_sample.call_args.kwargs['cuda'])
+
     def test_exact_prompt_and_zero_one_ten_native_canvas_contract(self):
         for count in (0,1,10):
             request = job(count)

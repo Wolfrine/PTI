@@ -1,5 +1,25 @@
 # Velum PC worker
 
+Qwen safety evidence is local-only: each active inference writes `diagnostics.jsonl`
+beside its private F-drive output, including every safety comparison, raw RAM/GPU/
+disk observations, parent creation-time identity, query exception classes/latencies,
+process memory/page-fault counters, stage timestamps and allocator peaks. The
+first failure is closed to `guard-trip.json` before interruption; parent-watchdog
+events also remain in the existing private worker log. No prompt, reference name,
+image bytes or resource history is added to cloud telemetry. Windows swap counters
+do not establish disk paging traffic; CPU-package temperature is not available
+through these probes. Optional process/allocator diagnostic errors are recorded;
+required safety-query errors remain fail-closed.
+
+All existing thresholds, CPU encoder/FP32 VAE placement, CPU prefix cache, allocator
+fraction and offload protections remain. Four encoder threads is the default;
+`VELUM_QWEN_CPU_THREADS=6` is a bounded local experiment, not a Studio setting or
+an accepted multi-reference optimization. The two-hour child and existing parent
+timeouts remain. Studio's existing `encoding-prompt` stage now describes encoding
+both references and instructions. `loading-diffusion` covers model loading and
+first-step preparation; `sampling` starts only after the first completed sampler
+callback. Existing stage keys, listeners and the 25-second progress cadence remain.
+
 Studio accepts explicit text-to-image and reference-image requests for the installed models through the owner's existing PTI Firebase project. The phone talks outbound to Firebase; it never connects to a PC port. Drive gallery reads remain separate from an explicit browser-side Save to Drive grant. There is no prompt enhancer, hidden suffix, aesthetic correction, content-based negative prompt or automatic gallery save. The owner is the visual acceptor. Submission requires lawful, consensual adult use.
 
 ## Unattended remote operation

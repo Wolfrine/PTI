@@ -13,6 +13,7 @@ class Memory implements RelayStore {
   modules=new Map<string,ChatAffinity>();
   listeners=new Map<string,Set<{changed:(job:Job|undefined)=>void;failed:(error:Error)=>void}>>(); reads=0;
   async read(_uid:string,id:string){this.reads++;return structuredClone(this.jobs.get(id));}
+  async readMany(uid:string,ids:string[]){return Promise.all(ids.map(id=>this.read(uid,id)));}
   watch(_uid:string,id:string,changed:(job:Job|undefined)=>void,failed:(error:Error)=>void){
     const entry={changed,failed},listeners=this.listeners.get(id)||new Set();this.listeners.set(id,listeners);listeners.add(entry);
     queueMicrotask(()=>{if(listeners.has(entry))changed(structuredClone(this.jobs.get(id)));});
@@ -294,6 +295,28 @@ describe('Local Codex relay',()=>{
     await expect(f.relay.reviewData('foreign')).rejects.toThrow('authorized');
     expect(workerReportSchema.safeParse({...report,snapshot:{...report.snapshot,telemetry:{...telemetry,prompt:'PRIVATE_RAW'}}}).success).toBe(false);
   });
+  it('looks up exact review identities beyond the recent listing with the existing sanitizer and owner boundary',async()=>{
+    const f=fixture();await f.pair();const task=await f.relay.start(OWNER,{...f.args,prompt:'PRIVATE_PROMPT',title:'PRIVATE_TITLE'}),seed=f.store.jobs.get(task.id)!;
+    const ids=Array.from({length:105},(_,index)=>(index+1).toString(16).padStart(32,'0'));
+    f.store.jobs.clear();for(const [index,id] of ids.entries())f.store.jobs.set(id,{...seed,id,updatedAt:seed.updatedAt+index,status:'completed',snapshot:{status:'completed',final:'PRIVATE_FINAL'},ownerOutcome:'needs_rework',outcomeAt:seed.updatedAt,outcomeGeneration:1});
+    const list=vi.spyOn(f.store,'list').mockImplementation(async()=>[...f.store.jobs.values()].sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,100));
+    expect((await f.relay.reviewData(OWNER)).jobs.some(job=>job.id===ids[0])).toBe(false);
+    const missing='f'.repeat(32),review=await f.relay.reviewData(OWNER,{task_ids:[ids[0],missing,ids[0]]});
+    expect(review).toMatchObject({coverage:'requested-jobs',limit:null,has_more:false,requestedJobs:2,missingTaskIds:[missing],jobs:[{id:ids[0],ownerOutcome:'needs_rework'}]});
+    expect(list).toHaveBeenCalledOnce();expect(JSON.stringify(review)).not.toContain('PRIVATE_');
+    expect((await f.relay.reviewData(OWNER,{task_ids:[]})).jobs).toEqual([]);
+    await expect(f.relay.reviewData('foreign',{task_ids:[ids[0]]})).rejects.toThrow('authorized');
+    for(const input of [{task_ids:['../foreign']},{task_ids:ids},{task_ids:[ids[0]],prompt:'PRIVATE_RAW'}])await expect(f.relay.reviewData(OWNER,input)).rejects.toThrow();
+  });
+  it('uses one owner-scoped Firestore multi-get for review identities and preserves missing positions',async()=>{
+    const refs:string[]=[],getAll=vi.fn(async(...ids:string[])=>ids.map((id,index)=>({data:()=>index?undefined:{id}})));
+    const db={doc:(root:string)=>({collection:(collection:string)=>({doc:(id:string)=>{const ref=`${root}/${collection}/${id}`;refs.push(ref);return ref;}})}),getAll};
+    const store=new FirestoreRelayStore(db as never),ids=['a'.repeat(32),'b'.repeat(32)];
+    expect(await store.readMany(OWNER,ids)).toEqual([{id:`_ptiLocalServices/local-codex/owners/${OWNER}/jobs/${ids[0]}`},undefined]);
+    expect(getAll).toHaveBeenCalledOnce();expect(refs).toHaveLength(2);
+    expect(await store.readMany(OWNER,[])).toEqual([]);expect(getAll).toHaveBeenCalledOnce();
+    await expect(store.readMany('foreign',ids)).rejects.toThrow('authorized');expect(getAll).toHaveBeenCalledOnce();
+  });
   it('returns only strictly validated execution permission metadata through the normal task read',async()=>{
     const f=fixture();await f.relay.poll(OWNER,{heartbeat:f.heartbeat});
     const task=await f.relay.start(OWNER,{...f.args,mode:'edit'}),claim=(await f.relay.poll(OWNER,{heartbeat:f.heartbeat})).job!;
@@ -455,6 +478,21 @@ describe('Local Codex relay',()=>{
       await vi.waitFor(()=>expect(f.store.listeners.size).toBe(1));request.abort();
       expect((await waiting).isError).toBe(true);expect(f.store.listeners.size).toBe(0);
     }finally{await client.close();await server.close();}
+  });
+  it('forwards exact review scopes over the authenticated worker HTTP route and rejects foreign identities',async()=>{
+    const f=fixture();await f.pair();const task=await f.relay.start(OWNER,f.args);
+    const provider=new PtiOAuthProvider({get:async()=>undefined,put:async()=>{},consume:async()=>{throw Error('Unused test grant');}} as never,'https://pti.example',async()=>{});
+    const app=createHttpApp({provider,codex:f.relay,verifyIdentity:async token=>({uid:token==='owner'?OWNER:'foreign',email:'fixture@example.test',authenticatedAt:1}),firebaseConfig:{},createServer:()=>{throw Error('Unused root route');}});
+    const http=app.listen(0,'127.0.0.1');await new Promise<void>(resolve=>http.on('listening',resolve));
+    try{
+      const url=`http://127.0.0.1:${(http.address() as {port:number}).port}/local-codex/worker/review_data`;
+      const post=(body:unknown,token='owner')=>fetch(url,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+      expect(await (await post({task_ids:[task.id]})).json()).toMatchObject({coverage:'requested-jobs',jobs:[{id:task.id}]});
+      expect(await (await post({task_ids:[]})).json()).toMatchObject({coverage:'requested-jobs',jobs:[]});
+      expect(await (await post({})).json()).toMatchObject({coverage:'most-recent-100-jobs',jobs:[{id:task.id}]});
+      expect((await post({task_ids:[task.id]},'foreign')).status).toBe(400);
+      expect((await post({task_ids:['bad']})).status).toBe(400);
+    }finally{http.closeAllConnections();await new Promise<void>(resolve=>http.close(()=>resolve()));}
   });
   it('detaches the Firestore wait when an actual HTTP client disconnects',async()=>{
     const f=fixture();await f.pair();const job=await f.relay.start(OWNER,f.args);await f.pair();

@@ -32,6 +32,8 @@ The daily 10:30 Asia/Kolkata heartbeat runs the deterministic seven-day review d
 
 `record_task_outcome(task_id, generation, outcome)` records only an explicit human `accepted`, `needs_rework` or `abandoned` verdict for that completed generation. Silence, successful execution, passing tests and a deployment are not acceptance. Owner-scoped outcome history is bounded and generation-bound. The private worker review endpoint returns sanitized metadata only. Account-wide allowance is headroom, never task attribution.
 
+The collector requests exact remote task IDs mapped to local generations in its review window, in transport batches of 100 with no total lookup cap. It never substitutes the most-recent-100 listing for that scope. Missing records, unmapped local tasks and absent generation verdicts remain unknown; fetching all requested jobs does not recover unrecorded history. See `decisions/2026-11-05-scoped-review-feedback.md`.
+
 The report separates ordinary work, acceptance probes, missing coverage and observational comparisons. Initially there is no basis to claim that this harness reduces time/tokens or improves owner outcomes. Admission rejection/retry counts and full-generation token cost are not yet measured. A review with sparse or unchanged data records no change.
 
 Native Codex/account limits remain platform-managed. Omit a native thread-count override when the bridge child limit is null; never replace it with an invented large number or claim infinite native capacity. Telemetry must continue to observe descendant model selection beyond earlier cardinality bounds. Existing running workers keep their loaded policy until they complete or are explicitly continued; preserve them during release activation.

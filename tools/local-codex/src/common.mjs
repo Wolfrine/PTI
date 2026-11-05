@@ -5,7 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import {modelSelection} from './model-policy.mjs';
 import {ownerLimit,ownerDuration} from './limits.mjs';
 
-export const VERSION = '0.4.5';
+export const VERSION = '0.4.6';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');

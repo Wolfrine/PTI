@@ -12,6 +12,7 @@ export const terminal = ['completed', 'failed', 'interrupted'];
 const key = z.string().min(8).max(128);
 const text = z.string().trim().min(1).max(24000);
 const id = z.string().regex(/^[a-f0-9]{32}$/);
+const reviewRequest=z.object({task_ids:z.array(id).max(100).optional()}).strict();
 const threadId=z.string().uuid();
 const title=z.string().trim().min(1).max(100);
 const commandArgs=z.object({project:z.string().optional(),thread_id:threadId.optional(),query:z.string().max(200).optional(),archived:z.boolean().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).optional(),title:title.optional()}).strict();
@@ -47,6 +48,7 @@ function workerMetadata(value:Worker) {
 }
 export interface RelayStore {
   read(uid:string,id:string):Promise<Job|undefined>;
+  readMany(uid:string,ids:string[]):Promise<(Job|undefined)[]>;
   watch(uid:string,id:string,changed:(job:Job|undefined)=>void,failed:(error:Error)=>void):()=>void;
   worker(uid:string):Promise<Worker|undefined>;
   heartbeat(uid:string,value:Worker):Promise<void>;
@@ -61,6 +63,10 @@ export class FirestoreRelayStore implements RelayStore {
   private root(uid:string) { if(uid!==OWNER)throw Error('Account is not authorized.');return this.db.doc(`_ptiLocalServices/local-codex/owners/${uid}`); }
   async worker(uid:string) { return (await this.root(uid).get()).data() as Worker|undefined; }
   async read(uid:string,id:string) { return (await this.root(uid).collection('jobs').doc(id).get()).data() as Job|undefined; }
+  async readMany(uid:string,ids:string[]) {
+    const jobs=this.root(uid).collection('jobs');
+    return ids.length?(await this.db.getAll(...ids.map(id=>jobs.doc(id)))).map(snapshot=>snapshot.data() as Job|undefined):[];
+  }
   watch(uid:string,id:string,changed:(job:Job|undefined)=>void,failed:(error:Error)=>void) {
     return this.root(uid).collection('jobs').doc(id).onSnapshot(snapshot=>changed(snapshot.data() as Job|undefined),failed);
   }
@@ -283,9 +289,12 @@ export class CodexRelay {
       return {job,result:{task_id:job.id,generation:job.generation,ownerOutcome:job.ownerOutcome,outcomeAt:new Date(job.outcomeAt!).toISOString()}};
     });
   }
-  async reviewData(uid:string) {
-    this.owner(uid);const jobs=await this.store.list(uid);
-    return {schemaVersion:1,checkedAt:new Date(this.clock()).toISOString(),coverage:'most-recent-100-jobs',limit:100,limitReached:jobs.length>=100,jobs:jobs.map(job=>({
+  async reviewData(uid:string,input:unknown={}) {
+    this.owner(uid);const args=reviewRequest.parse(input),ids=args.task_ids?[...new Set(args.task_ids)]:null;
+    const found=ids?await this.store.readMany(uid,ids):await this.store.list(uid),jobs=found.filter((job):job is Job=>!!job);
+    const coverage=ids?{coverage:'requested-jobs',limit:null,limitReached:false,has_more:false,requestedJobs:ids.length,missingTaskIds:ids.filter((_,index)=>!found[index])}
+      :{coverage:'most-recent-100-jobs',limit:100,limitReached:jobs.length>=100};
+    return {schemaVersion:1,checkedAt:new Date(this.clock()).toISOString(),...coverage,jobs:jobs.map(job=>({
       id:job.id,project:job.project,mode:job.mode,strategy:job.strategy??null,purpose:job.purpose??null,generation:job.generation,status:this.public(job).status,
       createdAt:new Date(job.createdAt).toISOString(),updatedAt:new Date(job.updatedAt).toISOString(),ownerOutcome:job.ownerOutcome||null,outcomeAt:job.outcomeAt!==undefined?new Date(job.outcomeAt).toISOString():null,
       outcomesHistory:(job.outcomesHistory||[]).slice(-50).map(({generation,outcome,at})=>({generation,outcome,at:new Date(at).toISOString()})),

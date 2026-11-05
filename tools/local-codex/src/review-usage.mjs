@@ -46,6 +46,7 @@ export function summarizeTasks(tasks,{now=Date.now(),days=7,remoteData=null,loca
     }
   }
   const work=rows.filter(row=>row.purpose==='work'),probes=rows.filter(row=>row.purpose==='acceptance'),unclassified=rows.filter(row=>row.purpose==='unknown');
+  const remoteLocalIds=new Set((remoteData?.jobs||[]).map(job=>localTasks[job.id]).filter(Boolean));
   const counts=(source,key)=>Object.fromEntries([...new Set(source.map(row=>row[key]))].map(value=>[String(value),source.filter(row=>row[key]===value).length]));
   const candidates=[];
   const stalledApprovals=work.filter(row=>row.status==='interrupted'&&row.approvals>0&&row.questions===0&&row.waitingMs>=300000);
@@ -57,34 +58,59 @@ export function summarizeTasks(tasks,{now=Date.now(),days=7,remoteData=null,loca
   return {schemaVersion:1,generatedAt:new Date(now).toISOString(),windowDays:days,source:'owner Local Codex bridge metadata',
     coverage:{taskRecords:tasks.length,invalidRecords:invalid,observedRuns:rows.length,ordinaryRuns:work.length,acceptanceRuns:probes.length,unclassifiedRuns:unclassified.length,historicalProbeHeuristicRecords:heuristicProbes,
       ordinaryRunsWithDuration:work.filter(row=>row.durationMs!==null).length,ordinaryRunsWithResponseTokens:work.filter(row=>row.observedResponseTokens!==null).length,ordinaryRunsWithOwnerVerdict:work.filter(row=>row.ownerOutcome!=='unknown').length,
-      ownerFeedbackSynced:remoteData!==null,remoteRecentLimit:remoteData?.limit??100,remoteLimitReached:remoteData?.limitReached??null,remoteHasMore:remoteData?.has_more??null},
+      ownerFeedbackSynced:remoteData!==null,remoteRecentLimit:remoteData&&'limit' in remoteData?remoteData.limit:100,remoteLimitReached:remoteData?.limitReached??null,remoteHasMore:remoteData?.has_more??null,
+      remoteLookupCoverage:remoteData?.coverage??'unknown',remoteRequestedJobs:remoteData?.requestedJobs??null,remoteMatchedJobs:remoteData?.jobs?.length??null,remoteMissingJobs:remoteData?.missingTaskIds?.length??null,remoteBatchCount:remoteData?.batchCount??null,
+      ordinaryRunsWithRemoteMetadata:work.filter(row=>remoteLocalIds.has(row.taskId)).length},
     ordinary:{statuses:counts(work,'status'),strategies:counts(work,'strategy'),ownerOutcomes:counts(work,'ownerOutcome'),failureClasses:counts(work.filter(row=>row.failureClass),'failureClass'),
       medianDurationMs:median(work.map(row=>row.durationMs)),medianWaitingMs:median(work.map(row=>row.waitingMs)),byStrategy:Object.fromEntries(['single','auto','team'].map(strategy=>{const selected=work.filter(row=>row.strategy===strategy);return [strategy,{runs:selected.length,medianDurationMs:median(selected.map(row=>row.durationMs)),ownerAccepted:selected.filter(row=>row.ownerOutcome==='accepted').length}];}))},
     acceptance:{runs:probes.length,statuses:counts(probes,'status')},unclassified:{runs:unclassified.length,statuses:counts(unclassified,'status')},candidates,
     limitations:['Protocol completion, passing tests and owner acceptance are different signals.','Missing historical metrics are unknown, never zero.','Admission/conflict rejections, retry counts and queue latency are not yet measured by this report.','Observed token counters cover the latest reported response; they are not total task/team cost.','Account-wide allowance cannot be attributed to this bridge.','Comparisons are observational and do not establish that more agents or this harness caused improvement.','Sparse or unchanged evidence is a no-change result; no automatic promotion is justified.'],rows};
 }
 
-async function syncOwnerMetadata(){
+export function reviewTaskIds(tasks,localTasks,{days=7,now=Date.now()}={}){
+  const selected=new Set(summarizeTasks(tasks,{days,now}).rows.map(row=>row.taskId));
+  return Object.entries(localTasks).filter(([remote,local])=>/^[a-f0-9]{32}$/.test(remote)&&selected.has(local)).map(([remote])=>remote);
+}
+export async function collectReviewMetadata(taskIds,request){
+  const ids=[...new Set(taskIds)];
+  if(ids.some(id=>!/^[a-f0-9]{32}$/.test(id)))throw Error('Invalid review task identity.');
+  const jobs=[],missingTaskIds=[];let batchCount=0;
+  // This is a transport batch size, not a limit on work or review history.
+  for(let offset=0;offset<ids.length;offset+=100){
+    const batch=ids.slice(offset,offset+100),data=await request(batch),expected=new Set(batch);
+    if(data?.coverage!=='requested-jobs'||data.requestedJobs!==batch.length||!Array.isArray(data.jobs)||!Array.isArray(data.missingTaskIds))throw Error('Owner review metadata scope was not confirmed.');
+    const resolved=[...data.jobs.map(job=>job.id),...data.missingTaskIds];
+    if(resolved.length!==batch.length||new Set(resolved).size!==resolved.length||resolved.some(id=>!expected.has(id)))throw Error('Owner review metadata identities were incomplete or mismatched.');
+    jobs.push(...data.jobs);missingTaskIds.push(...data.missingTaskIds);batchCount++;
+  }
+  return {coverage:'requested-jobs',limit:null,limitReached:false,has_more:false,requestedJobs:ids.length,jobs,missingTaskIds,batchCount};
+}
+export function reviewFingerprint(report){
+  return createHash('sha256').update(JSON.stringify({windowDays:report.windowDays,rows:report.rows,coverage:report.coverage,syncError:report.syncError,transport:report.transport?Object.fromEntries(Object.entries(report.transport).filter(([key])=>!['basis','observedAt'].includes(key))):null})).digest('hex');
+}
+async function syncOwnerMetadata(taskIds){
   const {loadCredential,refresh,saveCredential}=await import('./credentials.mjs');
   const session=await refresh(await loadCredential());await saveCredential(session.refreshToken);
-  const response=await fetch('https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker/review_data',{
-    method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.idToken}`},body:'{}',signal:AbortSignal.timeout(20000)});
-  if(!response.ok){await response.body?.cancel();throw Error(`Owner review metadata unavailable (HTTP ${response.status}).`);}
-  return response.json();
+  return collectReviewMetadata(taskIds,async batch=>{
+    const response=await fetch('https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker/review_data',{
+      method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.idToken}`},body:JSON.stringify({task_ids:batch}),signal:AbortSignal.timeout(20000)});
+    if(!response.ok){await response.body?.cancel();throw Error(`Owner review metadata unavailable (HTTP ${response.status}).`);}
+    return response.json();
+  });
 }
 export async function reviewUsage({days=7,sync=false,outputDirectory=path.join(home,'harness','reviews')}={}){
   if(!fs.realpathSync.native(home).toLowerCase().startsWith('f:\\'))throw Error('Bridge review data must resolve to F:.');
   const taskRoot=path.join(home,'tasks');
   const files=fs.existsSync(taskRoot)?fs.readdirSync(taskRoot,{withFileTypes:true}).filter(entry=>entry.isDirectory()&&/^[a-f0-9]{32}$/.test(entry.name)).map(entry=>({name:entry.name,at:fs.statSync(path.join(taskRoot,entry.name)).mtimeMs})).sort((a,b)=>b.at-a.at).slice(0,5000):[];
   const tasks=files.map(entry=>{try{return read(path.join(home,'tasks',entry.name,'task.json'));}catch{return null;}}).filter(Boolean);
-  let remoteData=null,syncError=null;
-  if(sync)try{remoteData=await syncOwnerMetadata();}catch(error){syncError=error.message;}
   const state=fs.existsSync(path.join(home,'data','relay-state.json'))?read(path.join(home,'data','relay-state.json')):{};
+  let remoteData=null,syncError=null;
+  if(sync)try{remoteData=await syncOwnerMetadata(reviewTaskIds(tasks,state.localTasks||{},{days}));}catch(error){syncError=error.message;}
   const report=summarizeTasks(tasks,{days,remoteData,localTasks:state.localTasks||{}});
   report.workerVersion=VERSION;report.syncError=syncError;
   report.transport=state.transport?{...state.transport,basis:'Cumulative local relay request/event counters since transport.startedAt; not billed Firestore operations.',observedAt:new Date().toISOString()}:null;
   report.headroom={freeMemoryBytes:os.freemem(),totalMemoryBytes:os.totalmem()};
-  const fingerprint=createHash('sha256').update(JSON.stringify({windowDays:report.windowDays,rows:report.rows,feedbackSynced:report.coverage.ownerFeedbackSynced,syncError,transport:state.transport||null})).digest('hex');
+  const fingerprint=reviewFingerprint(report);
   if(!path.win32.isAbsolute(outputDirectory)||!path.win32.resolve(outputDirectory).toLowerCase().startsWith('f:\\'))throw Error('Review outputs must be on F:.');
   let existingParent=outputDirectory;
   while(!fs.existsSync(existingParent))existingParent=path.dirname(existingParent);

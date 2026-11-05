@@ -46,7 +46,7 @@ native `ensure_pin_budget` admission reserves its own RAM headroom, which does
 not enforce this worker's 5 GiB floor plus future model residency/workspace.
 The failure stack was still filling that prefix cache while copying a quantized
 MLP weight to the GPU. These source facts explain the observed first-step growth;
-the runtime retry must still verify the correction under the real workload.
+the successful runtime retries below verify the correction under these real workloads.
 
 The worker now admits CPU/default caching only when the complete estimated cache,
 model footprint, unchanged 5 GiB floor and a 2 GiB workspace planning margin fit
@@ -75,5 +75,53 @@ safe success, five-reference diagnostic are separate runtime acceptance gates.
 
 Private local evidence is under
 `F:\Workspace\Codex\2026-11-05\velum-qwen-diagnostic-a747ea\outputs`.
-Deployment, retry outcomes, Private saves and remaining gaps must be reported
-from their actual readbacks, not inferred from these tests or this source record.
+Private output links, hashes and complete numeric traces remain in that local
+report, outside Git. The following outcomes come from actual native/Studio/Drive
+readbacks, not from the numeric fixture.
+
+## Measured successful diagnostic runs
+
+Both jobs completed all 40 steps through the normal Studio listener/worker path,
+using their exact original reference bytes/order and the same neutral instruction,
+seed, model, resolution and sampling settings. They are not original recoveries.
+
+| Native measurement | Four references | Five references |
+| --- | ---: | ---: |
+| Generation including local PNG save | 2572.530 s | 3306.380 s |
+| Startup/reference preparation | 129.875 s | 224.093 s |
+| CPU reference/instruction encoding | 1847.750 s | 2346.266 s |
+| Diffusion loading through first completed step | 58.203 s | 78.859 s |
+| Remaining sampling/postprocessing before decoding | 398.812 s | 514.235 s |
+| CPU decoding and local save | 137.890 s | 142.927 s |
+| Guard observations / failed predicates | 2302 / 0 | 2954 / 0 |
+| Required or supplementary query exceptions | 0 | 0 |
+| Minimum available RAM | 12852916224 bytes | 12621737984 bytes |
+| Peak whole-GPU memory | 6108 MiB | 6378 MiB |
+| Peak GPU temperature | 73 C | 72 C |
+
+Both planners selected `off/default` recomputation. Four-reference cache planning
+required 23276892736 bytes versus 20934901760 available; five-reference planning
+required 25393967680 versus 20796616704 available. Four-reference peak process RSS
+fell to 8334462976 bytes, compared with 16134266880 bytes at the measured initial
+cache-construction failure. This is measured memory improvement and completed
+inference, not a claimed CPU-encoder or end-to-end latency speedup. Encoder threads
+remained four; fresh child processes do not establish cold OS/file-cache timings.
+
+Native PNG SHA-256/size and completed Studio result metadata matched for both.
+Each output was saved into the exact owner-private Drive `Private` folder, with
+destination, size and owner-only permission readbacks verified. Independent Drive
+content-checksum readback is unavailable through the installed metadata wrapper
+and the corresponding native Drive path; no image bytes were fetched for review.
+Original failed-job update tokens, ordered reference hashes and core parameters
+were read back unchanged. Image quality/content was not inspected or owner-approved.
+CPU package temperature is unavailable; recorded GPU/RAM/disk guards all passed.
+
+Worker, Python guard/cache/stage, gallery, rules, PTI and MCP tests/builds passed;
+runtime correction deployment and the safe idle worker restart were verified.
+Local monitoring added no Firestore polling and sampling timestamps added no
+cloud writes. Submission also exposed a generic MCP audit payload duplication:
+Velum write audits now retain operation/path/field metadata only. A one-off,
+metadata-selected repair redacted only the two earlier diagnostic jobs' audit
+payload copies and verified their redaction versions. Audit access controls,
+Studio records and source assets were preserved; no recurring reads/writes were
+added. The five-reference job was submitted after that correction deployed.

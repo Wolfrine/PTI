@@ -12,6 +12,7 @@ import { registerVentureTools } from "./venture.js";
 import { registerAtlasTools } from "./atlas.js";
 import { registerChatCaptureTools } from "./chat-capture.js";
 import { registerVelumPromptTools } from "./velum-prompts.js";
+import { redactVelumAudit } from "./velum-audit.js";
 import { z } from "zod";
 
 const projectId =
@@ -117,9 +118,7 @@ async function audit(
     taskReference,
     tool,
     target,
-    before: serialize(before),
-    after: serialize(after),
-    input: serialize(input),
+    ...serializeRecord(redactVelumAudit(target,before,after,input)),
     createdAt: FieldValue.serverTimestamp(),
   });
 }

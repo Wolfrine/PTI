@@ -141,3 +141,9 @@ jobs:
             --min-instances=0 --max-instances=2 --concurrency=40 --timeout=120 --quiet
       - name: Verify public connection and authentication boundary
         run: node tools/pti-mcp/scripts/verify-host.mjs
+      - name: Redact only this diagnostic task's legacy audit payloads
+        if: contains(github.event.head_commit.message, '[velum-audit-redaction]')
+        run: >-
+          node tools/pti-mcp/scripts/redact-velum-diagnostic-audit.mjs --apply
+          --job-id diag-clothed-4r-20261105-a747ea-1
+          --job-id diag-clothed-4r-20261105-a747ea-2

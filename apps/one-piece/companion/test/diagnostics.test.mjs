@@ -12,6 +12,9 @@ test('diagnostic allowlist strips credentials, arbitrary codes, identifiers and 
  assert.equal(JSON.stringify(event).includes('SECRET'),false);assert.equal(sanitizeDiagnostic({type:secret}),null);
  const received=[];emitDiagnostic(value=>received.push(value),{type:'cast-error',code:'cast-status-not-fresh',sessionId:'session-one',state:'PAUSED',owned:true});
  assert.equal(received[0].code,'cast-status-not-fresh');assert.equal(received[0].sessionId,'session-one');
+ for(const code of ['cast-tv-busy','cast-load-not-confirmed','cast-command-not-confirmed']){
+  assert.deepEqual(sanitizeDiagnostic({type:'cast-error',code,message:secret,url:secret}),{type:'cast-error',code});
+ }
 });
 test('diagnostic hook throws and rejected writes do not become playback failures',async()=>{
  emitDiagnostic(()=>{throw Error('private');},{type:'media-error',code:'STATIC_READ'});

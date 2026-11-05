@@ -458,20 +458,82 @@ class Worker:
             time.sleep(0.15)
         raise CastError("cast-command-not-confirmed")
 
+    def launch_receiver(self, cast, until: float, displaced: tuple | None) -> tuple:
+        if cast.status and cast.status.app_id == self.receiver_app:
+            require(self.recent_platform(cast) is not None, "cast-status-not-fresh")
+            return (cast.status.app_id, cast.status.session_id, cast.status.transport_id)
+        # MediaController permits any app sharing the media namespace. Send one
+        # admitted platform LAUNCH ourselves, so LOAD can never target Spotify or
+        # another such app. Do not change the controller's read-only launch policy.
+        response = self.wait_response(3, "launch default receiver")
+        cast.socket_client.receiver_controller.send_message(
+            {"type": "LAUNCH", "appId": self.receiver_app}, callback_function=response.callback)
+        try:
+            response.wait_response()
+        except self.request_timeout:
+            # An absent acknowledgement does not justify repeating LAUNCH. Only
+            # fresh receiver/namespace proof below may authorize the single LOAD.
+            pass
+        except self.status_failed:
+            raise CastError("cast-load-not-confirmed") from None
+        intended = None
+        while time.monotonic() < until:
+            try:
+                self.refresh(cast, media=False)
+            except (self.request_timeout, self.status_failed, *self.connection_errors):
+                time.sleep(0.15)
+                continue
+            except CastError as error:
+                if str(error) != "cast-status-not-fresh":
+                    raise
+                time.sleep(0.15)
+                continue
+            platform = self.recent_platform(cast)
+            if platform is None:
+                time.sleep(0.15)
+                continue
+            if cast.status and cast.status.app_id == self.receiver_app:
+                current = (cast.status.app_id, cast.status.session_id, cast.status.transport_id)
+                # Pin the first fresh intended session before namespace readiness.
+                # Another sender may replace it while the media channel opens.
+                require(intended is None or current == intended, "cast-ownership-lost")
+                intended = current
+                if (platform and platform.get("mediaNamespace")
+                        and getattr(cast.media_controller, "is_active", False)
+                        and platform.get("transportId") == getattr(cast.socket_client, "destination_id", None)):
+                    return intended
+            else:
+                require(intended is None, "cast-ownership-lost")
+                if cast.status and cast.status.app_id not in (None, self.backdrop):
+                    current = (cast.status.app_id, cast.status.session_id, cast.status.transport_id)
+                    # The displaced app may remain only before the first intended
+                    # receiver session. Different playback is not covered by consent.
+                    require(current == displaced, "cast-ownership-lost")
+            time.sleep(0.15)
+        raise CastError("cast-load-not-confirmed")
+
     def load(self, data: dict) -> dict:
         context, episode = self.context(data.get("context")), self.episode(data.get("episode"))
         receiver_id, cast = data.get("receiverId"), self.device(data.get("receiverId"))
         self.refresh(cast)
+        initial_platform = self.recent_platform(cast)
         previous = self.bindings.get(receiver_id)
         ours = (previous is not None and previous["context"]["uid"] == context["uid"]
                 and self.recent_admitted(cast, previous))
         require(ours or self.empty_default(cast) or data.get("takeover") is True, "cast-tv-busy")
+        displaced = (tuple(initial_platform.get(key) for key in ("appId", "receiverSession", "transportId"))
+                     if data.get("takeover") is True and initial_platform
+                     and initial_platform.get("appId") not in (None, self.backdrop, self.receiver_app) else None)
         position = data.get("positionSeconds", 0)
         require(type(position) in (int, float) and math.isfinite(position) and 0 <= position <= episode["durationSeconds"], "cast-seek")
-        binding = {"context": context, "receiverSession": None, "media": {digest(episode["mediaUrl"]): episode}, "queued": None}
+        until = time.monotonic() + 18
+        intended = self.launch_receiver(cast, until, displaced)
+        require(time.monotonic() < until, "cast-load-not-confirmed")
+        require(cast.status and (cast.status.app_id, cast.status.session_id, cast.status.transport_id) == intended,
+                "cast-ownership-lost")
+        binding = {"context": context, "receiverSession": intended[1], "media": {digest(episode["mediaUrl"]): episode}, "queued": None}
         self.bindings[receiver_id] = binding
         cast.media_controller.play_media(episode["mediaUrl"], episode["contentType"], title=f"One Piece · Episode {int(episode['episodeId'][-4:])}", stream_type="BUFFERED", current_time=position, subtitles=episode["subtitleUrl"], subtitles_lang="en", subtitle_id=1, media_info={"duration": episode["durationSeconds"]})
-        until = time.monotonic() + 18
         while time.monotonic() < until:
             platform_version = self.platform_receipts.get(receiver_id, {}).get("version", 0)
             try:
@@ -479,6 +541,8 @@ class Worker:
                 platform = self.platform_receipts.get(receiver_id, {})
                 require(platform.get("version", 0) > platform_version and time.monotonic() - platform.get("receivedAt", -10) <= 3, "cast-status-not-fresh")
                 if cast.status and cast.status.app_id == self.receiver_app:
+                    require((cast.status.app_id, cast.status.session_id, cast.status.transport_id) == intended,
+                            "cast-ownership-lost")
                     require(not platform.get("uncertain", True) and platform.get("appId") == self.receiver_app
                             and platform.get("receiverSession") == cast.status.session_id, "cast-status-not-fresh")
             except self.request_timeout:

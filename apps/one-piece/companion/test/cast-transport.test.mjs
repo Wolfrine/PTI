@@ -105,6 +105,7 @@ class Wait:
     def wait_response(self):
         if worker.timeout_next:
             worker.timeout_next=False
+            clock[0]+=getattr(worker,'timeout_cost',0)
             raise Timeout()
         if worker.failed_next or worker.failed_forever:
             worker.failed_next=False
@@ -135,8 +136,9 @@ class Media:
             else:self.receive_message(None,{'type':'MEDIA_STATUS','status':[{'mediaSessionId':self.status.media_session_id,'playerState':self.status.player_state,'media':{'contentId':self.status.content_id}}]})
     def play_media(self,*_args,**_kwargs):
         self.loads+=1
+        self.load_arguments=(_args,_kwargs)
         if self.mode=='load-rejected':raise Failed()
-        cast.status.app_id='CC1AD845';cast.status.session_id='ours'
+        assert cast.status.app_id==worker.receiver_app,'LOAD targeted a different app sharing the media namespace'
         if worker.clear_idle_on_load:worker.platform_raw=None;worker.platform_reply=False;cast.status.transport_id='transport-ours'
         if self.mode=='receiver-timeout-once':worker.timeout_next=True;self.mode='fresh'
         if self.mode in ('receiver-failed-once','receiver-failed-forever','receiver-failed-foreign'):
@@ -146,9 +148,32 @@ class Media:
     def stop(self,**_): self.stops+=1
 def fixture():
     global worker,cast
-    worker=module.Worker.__new__(module.Worker);worker.receiver_app='CC1AD845';worker.backdrop='E8C28D3C';worker.wait_response=Wait;worker.request_timeout=Timeout;worker.status_failed=Failed;worker.connection_errors=(Disconnected,);worker.timeout_next=False;worker.disconnect_mode=None;worker.failed_next=False;worker.failed_forever=False;worker.failed_foreign=False;worker.platform_raw=None;worker.platform_parser=None;worker.platform_reply=False;worker.clear_idle_on_load=False
+    worker=module.Worker.__new__(module.Worker);worker.receiver_app='CC1AD845';worker.backdrop='E8C28D3C';worker.wait_response=Wait;worker.request_timeout=Timeout;worker.status_failed=Failed;worker.connection_errors=(Disconnected,);worker.timeout_next=False;worker.disconnect_mode=None;worker.failed_next=False;worker.failed_forever=False;worker.failed_foreign=False;worker.platform_raw=None;worker.platform_parser=None;worker.platform_reply=False;worker.clear_idle_on_load=False;worker.pending_launch=None;worker.launches=[]
     worker.devices={};worker.bindings={};worker.media_receipts={};worker.media_listeners={};worker.raw_media={};worker.origins={'https://onepiece.local'}
     def receiver_update(**_):
+        if worker.pending_launch:
+            pending=worker.pending_launch;pending['queries']+=1;launch=pending['mode'];queries=pending['queries']
+            if launch=='launch-delayed' and queries>=3:
+                cast.status.app_id=worker.receiver_app;cast.status.session_id='ours'
+            elif launch=='launch-changed-app' and queries>=2:
+                cast.status.app_id='DIFFERENT_APP'
+            elif launch=='launch-changed-session' and queries>=2:
+                cast.status.session_id='different-foreign-session'
+            elif launch=='launch-changed-transport' and queries>=2:
+                cast.status.transport_id='different-foreign-transport'
+            elif launch=='launch-default-then-foreign' and queries>=2:
+                cast.status.app_id=worker.receiver_app if queries==2 else 'AndroidNativeApp'
+                cast.status.session_id='ours' if queries==2 else 'spotify'
+                media.status.player_state='BUFFERING'
+            elif launch in ('launch-delayed-ready','launch-displaced-before-ready','launch-replaced-before-ready','launch-transport-before-ready','launch-replaced-after-ready'):
+                cast.status.app_id=worker.receiver_app;cast.status.session_id='first-default';cast.status.transport_id='first-default-transport'
+                cast.socket_client.destination_id='not-ready' if queries==1 and launch!='launch-replaced-after-ready' else cast.status.transport_id
+                if queries>=2 and launch=='launch-displaced-before-ready':
+                    cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';cast.status.transport_id='transport-ours';cast.socket_client.destination_id=cast.status.transport_id
+                elif queries>=2 and launch in ('launch-replaced-before-ready','launch-replaced-after-ready'):
+                    cast.status.session_id='other-default';cast.status.transport_id='other-default-transport';cast.socket_client.destination_id=cast.status.transport_id
+                elif queries>=2 and launch=='launch-transport-before-ready':
+                    cast.status.transport_id='other-default-transport';cast.socket_client.destination_id=cast.status.transport_id
         mode=worker.disconnect_mode
         if mode:
             if mode!='reconnect-forever':worker.disconnect_mode=None
@@ -160,7 +185,17 @@ def fixture():
     def platform_receive(_message,data):
         if worker.platform_parser:cast.status=worker.platform_parser(data,'cast')
         return True
-    media=Media();receiver=SimpleNamespace(update_status=receiver_update,receive_message=platform_receive,send_message=lambda *_args,**_kwargs:None)
+    def receiver_send(data,**kwargs):
+        if data.get('type')!='LAUNCH':return
+        worker.launches.append(data);assert data=={'type':'LAUNCH','appId':worker.receiver_app}
+        if media.mode.startswith('launch-'):
+            worker.pending_launch={'mode':media.mode,'queries':0};media.mode='fresh'
+            if worker.pending_launch['mode']=='launch-rejected':worker.failed_next=True
+            if worker.pending_launch['mode']=='launch-timeout':worker.timeout_next=True;worker.timeout_cost=3
+        else:
+            cast.status.app_id=worker.receiver_app;cast.status.session_id='ours'
+        if worker.clear_idle_on_load:worker.platform_raw=None;worker.platform_reply=False;cast.status.transport_id='transport-ours'
+    media=Media();receiver=SimpleNamespace(update_status=receiver_update,receive_message=platform_receive,send_message=receiver_send)
     cast=SimpleNamespace(status=SimpleNamespace(app_id='CC1AD845',session_id='ours',transport_id='transport-ours',volume_level=.4,volume_muted=False),socket_client=SimpleNamespace(receiver_controller=receiver,is_connected=True,is_stopped=False,app_namespaces=['urn:x-cast:com.google.cast.media'],destination_id='transport-ours'),media_controller=media)
     worker.devices['fixture']=cast;worker.device=lambda _:cast;worker.observe_media('fixture',cast)
     return media
@@ -201,6 +236,57 @@ for mode in ['second-fresh','receiver-timeout-once','reconnect-once','receiver-f
     assert state['owned'] and state['state']=='PLAYING' and clock[0]-began<18
     assert worker.bindings['fixture']['receiverSession']=='ours'
     assert media.loads==1
+# A shared media namespace does not imply Default Receiver. An explicit takeover
+# launches that app once, awaits fresh platform/namespace proof, then sends LOAD
+# once with the admitted position and English subtitle selection intact.
+media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode='launch-delayed';began=clock[0]
+state=worker.load({'receiverId':'fixture','context':context,'episode':episode,'positionSeconds':600,'takeover':True})
+assert state['owned'] and state['state']=='PLAYING' and .3<=clock[0]-began<1
+assert worker.pending_launch['queries']==4 and len(worker.launches)==media.loads==1 and media.stops==0
+assert media.load_arguments[0]==(url,'video/mp4')
+assert media.load_arguments[1]['current_time']==600 and media.load_arguments[1]['subtitles']==episode['subtitleUrl']
+assert media.load_arguments[1]['subtitles_lang']=='en' and media.load_arguments[1]['subtitle_id']==1
+# A fresh intended receiver session is pinned while its app destination is still
+# opening. Only that same session/transport may become ready and receive LOAD.
+media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode='launch-delayed-ready'
+state=worker.load({'receiverId':'fixture','context':context,'episode':episode,'takeover':True})
+assert state['owned'] and worker.bindings['fixture']['receiverSession']=='first-default'
+assert len(worker.launches)==media.loads==1 and media.stops==0
+for mode in ('launch-displaced-before-ready','launch-replaced-before-ready','launch-transport-before-ready','launch-replaced-after-ready'):
+    media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode=mode
+    try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'takeover':True});raise AssertionError('Changed intended receiver accepted')
+    except module.CastError as error:assert str(error)=='cast-ownership-lost'
+    assert len(worker.launches)==1 and media.loads==(1 if mode=='launch-replaced-after-ready' else 0) and media.stops==0
+# The same busy app remains protected without explicit takeover.
+media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode='launch-delayed'
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode});raise AssertionError('Implicit takeover accepted')
+except module.CastError as error:assert str(error)=='cast-tv-busy'
+assert len(worker.launches)==media.loads==media.stops==0
+# A launch that never completes expires; it cannot grant ownership from cache.
+media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode='launch-never';began=clock[0]
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'takeover':True});raise AssertionError('Unconfirmed launch accepted')
+except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+assert 18<=clock[0]-began<18.2 and len(worker.launches)==1 and media.loads==media.stops==0
+assert not worker.bindings
+# A different app/session is not the app explicitly displaced; once our receiver
+# session appears, even the prior app cannot be treated as pending launch again.
+for mode in ('launch-changed-app','launch-changed-session','launch-changed-transport','launch-default-then-foreign'):
+    media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode=mode;began=clock[0]
+    try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'takeover':True});raise AssertionError('Changed foreign identity accepted')
+    except module.CastError as error:assert str(error)=='cast-ownership-lost'
+    assert clock[0]-began<1 and len(worker.launches)==1 and media.loads==(1 if mode=='launch-default-then-foreign' else 0) and media.stops==0
+# A rejected launch is never followed by LOAD or repeated. Missing launch ACK
+# alone also cannot authorize LOAD, but fresh later readiness may still prove it.
+media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode='launch-rejected'
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'takeover':True});raise AssertionError('Rejected launch accepted')
+except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+assert len(worker.launches)==1 and media.loads==media.stops==0
+media=fixture();cast.status.app_id='AndroidNativeApp';cast.status.session_id='spotify';media.mode='launch-timeout'
+# A lost acknowledgement with no later ready app must remain bounded and safe.
+began=clock[0]
+try:worker.load({'receiverId':'fixture','context':context,'episode':episode,'takeover':True});raise AssertionError('Unproven timed-out launch accepted')
+except module.CastError as error:assert str(error)=='cast-load-not-confirmed'
+assert 18<=clock[0]-began<18.2 and len(worker.launches)==1 and media.loads==media.stops==0
 # A full real-shaped raw status proves the exact loaded media and current session.
 valid_raw={'type':'MEDIA_STATUS','status':[{'mediaSessionId':5,'playerState':'PLAYING','currentTime':600,
     'activeTrackIds':[1],'media':{'contentId':url,'contentType':'video/mp4','duration':1500,'streamType':'BUFFERED'}}]}

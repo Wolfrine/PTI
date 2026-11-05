@@ -11,8 +11,18 @@ do not establish disk paging traffic; CPU-package temperature is not available
 through these probes. Optional process/allocator diagnostic errors are recorded;
 required safety-query errors remain fail-closed.
 
-All existing thresholds, CPU encoder/FP32 VAE placement, CPU prefix cache, allocator
-fraction and offload protections remain. Four encoder threads is the default;
+All existing thresholds, CPU encoder/FP32 VAE placement, allocator fraction and
+offload protections remain. Lossless CPU prefix caching is admitted only when
+its complete estimated size, the diffusion model footprint, the unchanged 5 GiB
+runtime RAM floor and 2 GiB workspace margin fit available RAM together. Otherwise
+the native cache `off` path recomputes the same prefix at original precision. This
+can substantially increase sampling time; no references, steps or resolution are
+reduced and no cache quantization is introduced. The selected policy and numeric
+budget are written only to the private local diagnostics; actual cache device and
+policy are recorded in normal result provenance. Real sampler callbacks also
+receive local timestamps without additional cloud writes.
+
+Four encoder threads is the default;
 `VELUM_QWEN_CPU_THREADS=6` is a bounded local experiment, not a Studio setting or
 an accepted multi-reference optimization. The two-hour child and existing parent
 timeouts remain. Studio's existing `encoding-prompt` stage now describes encoding

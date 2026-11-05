@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 
 GIB = 1024**3
 TIMEOUT_SECONDS = 7200
+STARTUP_RAM_FLOOR_BYTES = 6*GIB
+RUNTIME_RAM_FLOOR_BYTES = 5*GIB
 
 
 def evaluate(sample, startup=False):
@@ -27,7 +29,7 @@ def evaluate(sample, startup=False):
     parent = value.get('parent', {})
     checks = [check('parent-identity', parent.get('matches'), '==', True, parent.get('matches') is True)]
     for name, field, operator, limit, compare in (
-        ('ram-available', 'ramAvailableBytes', '>=', (6 if startup else 5)*GIB, lambda a,b:a>=b),
+        ('ram-available', 'ramAvailableBytes', '>=', STARTUP_RAM_FLOOR_BYTES if startup else RUNTIME_RAM_FLOOR_BYTES, lambda a,b:a>=b),
         ('disk-f-free', 'diskFreeFBytes', '>=', 10*GIB, lambda a,b:a>=b),
         ('disk-h-free', 'diskFreeHBytes', '>=', 20*GIB, lambda a,b:a>=b),
         ('elapsed', 'elapsedSeconds', '<=', TIMEOUT_SECONDS, lambda a,b:a<=b),
@@ -155,6 +157,7 @@ class SamplingProgress:
             self.diagnostics.transition('sampling')
             self.started = True
         if self.started:
+            self.diagnostics.write('sampling-step',step=step,total=total)
             self.emit(event='progress', step=step, total=total)
 
 

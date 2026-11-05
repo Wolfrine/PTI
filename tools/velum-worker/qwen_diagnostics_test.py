@@ -108,6 +108,8 @@ class GuardTests(unittest.TestCase):
             progress(2,40)
             self.assertEqual(diagnostics.stage, 'sampling')
             self.assertEqual([e['step'] for e in events if e['event']=='progress'], [1,2])
+            records=[json.loads(line) for line in (path/'diagnostics.jsonl').read_text().splitlines()]
+            self.assertEqual([r['step'] for r in records if r['event']=='sampling-step'],[1,2])
             self.assertEqual([s['stage'] for s in diagnostics.stages], ['encoding-prompt','loading-diffusion','sampling'])
             sample = safe()
             sample['observed']['gpuTempC'] = 78

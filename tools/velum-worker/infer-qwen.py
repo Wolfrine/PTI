@@ -7,6 +7,7 @@ import gc, hashlib, json, os, sys, threading, time
 from pathlib import Path
 from inference_contract import validate_request, QWEN_MODEL
 from qwen_diagnostics import Diagnostics, SamplingProgress, collect, encoder_threads, GIB, TIMEOUT_SECONDS
+from qwen_cache_policy import configure_cache
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
@@ -175,7 +176,7 @@ def main():
         from comfy_extras.nodes_qwen import TextEncodeQwenImage21,QwenImage21Cache
         MM = mm
         DIAGNOSTICS.write('runtime-config',encoderThreads=threads,priority='BelowNormal',
-            encoderDevice='cpu',referenceCacheDevice='cpu',referenceCachePrecision='default')
+            encoderDevice='cpu',referenceCachePolicy='ram-budget-v1',referenceCachePrecision='default')
         for category in ('diffusion_models','text_encoders','vae'):
             folder_paths.add_model_folder_path(category,str(ENGINE/'models'/category),is_default=True)
         sampling_progress = SamplingProgress(DIAGNOSTICS,emit)
@@ -229,7 +230,10 @@ def main():
             model = nodes.UNETLoader().load_unet('qwen_image_2.1_int8_convrot.safetensors','default')[0]
             assert_diffusion(model)
             dtype = str(model.model.get_dtype())
-            model = QwenImage21Cache.execute(model,'cpu','default')[0]
+            model,cache_plan = configure_cache(model,positive,node=QwenImage21Cache,
+                available_bytes=psutil.virtual_memory().available,
+                element_bytes=torch.empty((),dtype=model.model.get_dtype_inference()).element_size(),
+                diagnostics=DIAGNOSTICS)
             DIAGNOSTICS.write('first-step-preparation')
             samples = nodes.KSampler().sample(model,job['seed'],40,1.,'euler','simple',positive,negative,latent,denoise=1.)[0]
             mm.unload_all_models()
@@ -251,7 +255,8 @@ def main():
                 referenceMethod='qwen21-native-multireference',referenceCount=len(references),
                 referencePixels=[dict(width=source.width,height=source.height) for source in source_images],
                 referenceResolution=1024,encoderDevice='cpu',vaeDevice='cpu',vaePrecision='fp32',
-                referenceCacheDevice='cpu',referenceCachePrecision='default',diffusionDtype=dtype,
+                referenceCacheDevice=cache_plan['device'],referenceCachePrecision='default',
+                referenceCachePolicy=cache_plan['policy'],diffusionDtype=dtype,
                 encoderThreads=threads,
                 encoderClass=encoder_class,diffusionClass='QwenImage21Transformer2DModel',
                 runtimeRevision=REVISION,timeoutSeconds=TIMEOUT_SECONDS,batchSize=1)

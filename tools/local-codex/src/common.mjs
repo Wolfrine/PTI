@@ -4,8 +4,9 @@ import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import {modelSelection} from './model-policy.mjs';
 import {ownerLimit,ownerDuration} from './limits.mjs';
+import {browserContextPreflight} from './browser-context.mjs';
 
-export const VERSION = '0.4.6';
+export const VERSION = '0.4.7';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');
@@ -100,5 +101,6 @@ export function health() {
     maxConcurrentTasks:config().maxConcurrentTasks,maxSubagentsPerTask:config().maxSubagentsPerTask,maxTaskMinutes:config().maxTaskMinutes,
     authMode,
     transport: 'stdio', networkListener: false, signIn: 'Uses the current Windows user Codex sign-in; verified when a task starts.',
-    webMobile: 'Available through the authenticated PTI job relay when this worker is online.' };
+    webMobile: 'Available through the authenticated PTI job relay when this worker is online.',
+    browserContext: browserContextPreflight() };
 }

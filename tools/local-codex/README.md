@@ -20,6 +20,16 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 
 ## Authorization and evidence
 
+### Browser context preflight (runtime 0.4.7)
+
+The bridge starts an independent `codex app-server --stdio`. Its Full Access setting, subscription sign-in and Firestore connectivity do not establish browser control. Before inference, each worker checks only whether its own child environment has both app-session browser prerequisites. Missing or incomplete context is `unavailable`; both present is still `unverified`, never ready or accepted. No pipe/identity values are retained or returned. The sanitized result appears in local task `browserContext` and the internal worker `bridge_status`; this does not add fields to the hosted status protocol.
+
+New threads and every resume/continuation receive current trusted browser instructions before the turn. With unavailable context, skip browser initialization and host retries, report any required browser step promptly, and continue independently possible coding/CLI work. With unverified context, only an available official tool's normal entry point can establish access; a host or policy failure ends that browser step without retrying. There is no prompt-keyword rejection, automatic app-owned session routing, identity/pipe recovery, URL-policy bypass or raw Playwright/CDP fallback.
+
+For browser work, open a chat in the ChatGPT desktop app on this PC and invoke `@Chrome`. From mobile, select this connected host through Codex (Remote in older apps), with Computer Use enabled and the Chrome extension installed on the host. Keep Windows awake and unlocked. Follow the official [browser guidance](https://learn.chatgpt.com/docs/browser) and [remote connection setup](https://learn.chatgpt.com/docs/remote-connections). This entry point does not repair the separately reported native Windows URL-policy failure, and actual browser control still needs verification there.
+
+Activate 0.4.7 with the existing `install.ps1` only after tests/build and when **all** relay claims are idle. The active worker keeps its loaded release/instructions; source delivery alone does not activate this preflight. See the [bounded repair decision](decisions/2026-11-06-browser-context.md).
+
 ### Module chat lifecycle (0.4.4)
 
 `module_key` names an explicit stable functional module, such as `local-codex`. Related outcomes use the same module key with different `work_key` values: they get NEW task/authorization records and reuse the module's idle native parent in the same physical project/checkout. Same outcome uses `continue_task`. `resume_codex_thread` can explicitly adopt a selected existing parent into a module. Caller source identity is stored separately from router selection and learned native identity; work-key retries no longer mistake a learned thread for a different caller source.

@@ -6,17 +6,44 @@ import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 const root=fileURLToPath(new URL('../',import.meta.url));
-async function run({flags=[],strategy='team',prior,resume,mode='inspect',maxSubagentsPerTask=null,chatRouting,affinityFallback=false}={}){
+async function run({flags=[],strategy='team',prior,resume,mode='inspect',maxSubagentsPerTask=null,chatRouting,affinityFallback=false,browserEnvironment={},prompt='complete'}={}){
   const home=prior?.home||resume?.home||path.join(root,'test-data','harness-'+randomUUID()),scratch=path.join(home,'scratch');fs.mkdirSync(scratch,{recursive:true});
   fs.writeFileSync(path.join(home,'config.json'),JSON.stringify({codexPath:process.execPath,codexArgs:[path.join(root,'test/fixture-runtime.mjs'),...flags],projects:{fixture:{path:scratch}},maxTaskMinutes:null,maxSubagentsPerTask}));
   const id=prior?.job.id||randomUUID().replaceAll('-',''),directory=path.join(home,'tasks',id);fs.mkdirSync(directory,{recursive:true});
   const job=prior?{...prior.job,prompt:'complete',status:'queued',final:null,error:null,history:[...prior.job.history,{key:randomUUID(),inputHash:'fixture'}]}:{id,project:'fixture',cwd:fs.realpathSync.native(scratch),mode,strategy,purpose:'acceptance',prompt:'complete',status:'queued',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),threadId:resume?.job.threadId||null,turnId:null,messages:[],pending:[],history:[]};
   if(chatRouting){job.chatRouting=chatRouting;job.affinityFallback=affinityFallback;}
+  job.prompt=prompt;
   fs.writeFileSync(path.join(directory,'task.json'),JSON.stringify(job));
-  const child=spawn(process.execPath,[path.join(root,'src/worker.mjs'),id],{cwd:home,env:{...process.env,LOCAL_CODEX_BRIDGE_HOME:home},windowsHide:true,stdio:'ignore'});
+  const env={...process.env,LOCAL_CODEX_BRIDGE_HOME:home};
+  delete env.BROWSER_USE_ACCESS_PIPE_PATH;delete env.BROWSER_USE_ACCESS_VERIFYING_IDENTITY;
+  Object.assign(env,browserEnvironment);
+  const child=spawn(process.execPath,[path.join(root,'src/worker.mjs'),id],{cwd:home,env,windowsHide:true,stdio:'ignore'});
   await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{if(process.platform==='win32')spawnSync('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});else child.kill();reject(Error('Fixture worker timed out.'));},15000);child.on('exit',()=>{clearTimeout(timer);resolve();});child.on('error',error=>{clearTimeout(timer);reject(error);});});
   return {home,job:JSON.parse(fs.readFileSync(path.join(directory,'task.json'),'utf8'))};
 }
+
+test('browser preflight reaches new and resumed threads before inference while coding and current prompts stay usable',{skip:process.platform!=='win32'},async()=>{
+  const coding=await run({strategy:'single',mode:'edit',prompt:'Fix browser-context.mjs using CLI only'});
+  assert.equal(coding.job.status,'completed');assert.equal(coding.job.browserContext.status,'unavailable');
+  assert.equal(coding.job.browserContext.reason,'missing-app-session-context');
+  assert(Number.isFinite(Date.parse(coding.job.browserContext.checkedAt)));
+  const options=JSON.parse(fs.readFileSync(path.join(coding.home,'scratch/fixture-options.json'),'utf8'));
+  assert.match(options.developerInstructions,/Do not initialize browser tools/);
+  assert.match(options.developerInstructions,/Continue independently possible coding, CLI/);
+  const turn=JSON.parse(fs.readFileSync(path.join(coding.home,'scratch/fixture-turn-options.json'),'utf8'));
+  assert.equal(turn.input[0].text,'Fix browser-context.mjs using CLI only');
+  const present=await run({prior:coding,strategy:'single',mode:'edit',browserEnvironment:{BROWSER_USE_ACCESS_PIPE_PATH:'SYNTHETIC_PIPE',BROWSER_USE_ACCESS_VERIFYING_IDENTITY:'SYNTHETIC_IDENTITY'},prompt:'Use @Chrome to inspect the page'});
+  assert.equal(present.job.status,'completed');assert.equal(present.job.browserContext.status,'unverified');
+  assert.equal(present.job.browserContext.verified,false);assert.equal(present.job.threadId,coding.job.threadId);
+  const injected=JSON.parse(fs.readFileSync(path.join(present.home,'scratch/fixture-instructions.json'),'utf8'));
+  assert.match(injected.items[0].content[0].text,/browser access is unverified/);
+  assert.match(injected.items[0].content[0].text,/stop that browser step without retrying/);
+  const missingAgain=await run({prior:present,strategy:'single',mode:'edit',prompt:'Use @Chrome to inspect the page'});
+  assert.equal(missingAgain.job.status,'completed');assert.equal(missingAgain.job.browserContext.status,'unavailable');
+  const refreshed=JSON.parse(fs.readFileSync(path.join(missingAgain.home,'scratch/fixture-instructions.json'),'utf8'));
+  assert.match(refreshed.items[0].content[0].text,/Do not initialize browser tools/);
+  assert(!JSON.stringify({job:present.job,injected}).includes('SYNTHETIC_'));
+});
 test('worker tracks child telemetry without child answer contamination and preserves distinct continuation runs',{skip:process.platform!=='win32'},async()=>{
   const first=await run({flags:['--telemetry']});assert.equal(first.job.status,'completed');assert.equal(first.job.final,'fixture completed');assert(!JSON.stringify(first.job.messages).includes('PRIVATE_CHILD_ANSWER'));assert(!JSON.stringify(first.job.telemetry).includes('PRIVATE_'));assert.equal(first.job.telemetry.commands,1);assert.equal(first.job.telemetry.childrenSeen,1);assert.equal(first.job.telemetry.children[0].selectionVerified,true);assert.equal(first.job.telemetry.children[0].executionVerified,null);assert.equal(first.job.telemetry.usageCoverage,'partial-team');assert.equal(first.job.telemetry.generation,1);
   const second=await run({flags:['--telemetry'],prior:first});assert.equal(second.job.status,'completed');assert.equal(second.job.runs.length,2);assert.deepEqual(second.job.runs.map(r=>r.generation),[1,2]);assert.notEqual(second.job.runs[0].runId,second.job.runs[1].runId);assert(second.job.runs.every(r=>r.finishedAt&&r.durationMs>=0));

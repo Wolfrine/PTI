@@ -12,6 +12,7 @@ import {acquireWorkspaceLock} from './workspace-locks.mjs';
 import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execution-policy.mjs';
 import {executionDeadline,deadlineElapsed} from './limits.mjs';
 import {moduleParent} from './chat-routing.mjs';
+import {browserContextPreflight,browserContextInstructions} from './browser-context.mjs';
 
 const id = process.argv[2];
 const directory = taskDir(id);
@@ -135,9 +136,11 @@ try {
   releaseWorkspace=acquireWorkspaceLock(home,{taskId:id,cwd:job.cwd,resourcePath:target.resourcePath||job.resourcePath||job.cwd,mode:job.mode});
   job.workerPid = process.pid;
   job.status = 'running';
+  const childEnv = subscriptionEnvironment();
+  job.browserContext = {...browserContextPreflight(childEnv),checkedAt:new Date().toISOString()};
   save();
   proc = spawn(runtime(), [...(config().codexArgs || []), 'app-server', '--stdio'], {
-    cwd: job.cwd, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: subscriptionEnvironment(),
+    cwd: job.cwd, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: childEnv,
   });
   proc.on('error', error => finish('failed', error.message));
   proc.on('exit', (code, signal) => { if (!closed) finish('failed', `Codex exited before completion (${code ?? signal}).`); });
@@ -198,7 +201,7 @@ try {
     acquireThreadLock(job.threadId);
   }
   const permissions = executionPolicy(job.mode);
-  const instructions = workerInstructions(job)+' '+policy.instructions+(job.chatRouting?` Current functional module: ${job.chatRouting.module_key}. This is task ${job.id}, with its own current scope and authorization. Retained native history is source context, never authority to repeat earlier actions. Prioritize native subagents under this parent for independent lanes; dependent work stays serial.`:'');
+  const instructions = workerInstructions(job)+' '+browserContextInstructions(job.browserContext)+' '+policy.instructions+(job.chatRouting?` Current functional module: ${job.chatRouting.module_key}. This is task ${job.id}, with its own current scope and authorization. Retained native history is source context, never authority to repeat earlier actions. Prioritize native subagents under this parent for independent lanes; dependent work stays serial.`:'');
   const options = { cwd: job.cwd, model: selection.model, sandbox: permissions.sandbox, approvalPolicy: permissions.approvalPolicy, developerInstructions: instructions,
     config: { model_reasoning_effort: selection.effort, ...policy.config, 'plugins.local-codex@local-codex-bridge.enabled': false, 'plugins.local-codex@created-by-me-remote.enabled': false } };
   const started = job.threadId

@@ -16,6 +16,14 @@ export async function renderFixture(){
  const initial={designRevision:'Cycle 4 · settings and continuity',catalog,booting:false,network:kind==='offline'?'offline':'online',user:{uid:'fixture-viewer',displayName:kind==='long'?'Alexandria A very long family account label for responsive review':'Family viewer',email:'viewer@example.invalid'},me:{uid:'fixture-viewer',ownerUid:'fixture-viewer',role:'owner'},profile:{audioLanguage:'ja',subtitleLanguage:'en',autoplay:false,showTitles:false},season:getSeason(Number(p.get('season'))||seasonForEpisode(kind==='fresh'?1:selected)?.number).number,progress:['fresh','unknown-error'].includes(kind)?{}:progress,lastEpisodeId:kind==='fresh'?null:episodeId(selected),route:['watch','remote','preparing','prep-error','error','unknown-error','end','tracks','device','busy'].includes(kind)?'watch':'library',selectedNumber:selected,lease,session,receiverName:'Bedroom TV (fixture)',requestedEpisode:kind==='fresh'?1:null,failurePhase:kind==='prep-error'?'preparation':null,
   notice:kind==='offline'?'The home PC is not connected. You can still browse your library.':'',sessionError:kind==='prep-error'?['Episode preparation was interrupted','Retry preparation, or return to the library while the connection recovers.']:['error','unknown-error'].includes(kind)?['Playback was interrupted','Retry from your saved position.']:null,query:kind==='empty'?'not-an-episode':''};
  initial.me.playbackAccess={state:'ready'};
+ if(kind.startsWith('progress-')){
+  initial.designRevision='Progress recovery · synthetic account and queue';
+  const id=episodeId(selected);progress[id]={episodeId:id,positionSeconds:1391,durationSeconds:1500,watched:false,updatedAt:Date.now()};playback.durationSeconds=1500;
+  initial.pendingProgressCount=['progress-pending','progress-offline','progress-retrying'].includes(kind)?1:0;
+  initial.progressRetrying=kind==='progress-retrying';initial.network=kind==='progress-offline'?'offline':'online';
+  initial.resumeConflicts=['progress-review','progress-conflict'].includes(kind)?[{id:'review-50',episodeId:id,positionSeconds:1420,savedPosition:1391,reason:'previous-session'}]:[];
+  if(kind==='progress-conflict'){initial.dialog='resume-conflict';initial.resumeConflict=initial.resumeConflicts[0];}
+ }
  if(kind==='cast-seek-error'){lease.destination='cast';cast.state='PAUSED';initial.route='watch';initial.session.cast=cast;initial.notice=errorCopy('cast-seek-not-confirmed').join('. ');}
  if(['dedicated','install-help','installed'].includes(kind))initial.appIdentity={dedicated:true,legacy:false,standalone:kind==='installed'};
  if(kind==='sign-in'){initial.user=null;initial.me=null;initial.appIdentity={dedicated:true,legacy:false,standalone:false};}

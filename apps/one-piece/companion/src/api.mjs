@@ -310,7 +310,10 @@ export class CompanionApi {
    if(action==='events'){
     const current=this.media.snapshot(id);if(!current?.playback||canonicalEpisodeId(current.episodeNumber)!==input.episodeId)throw new AccessError('episode-changed',409);
     const result=await this.progress.record(actor.uid,id,input,{durationSeconds:current.playback.durationSeconds});
-    await this.media.reportProgress(id,{episodeNumber:current.episodeNumber,positionSeconds:result.progress.positionSeconds,isPaused:input.reason==='pause',playbackRate:1});
+    // The durable PC journal is the progress ACK. Auxiliary engine reporting
+    // cannot withhold that ACK, and an exact retry must not replay its side effect.
+    if(!result.duplicate)void Promise.resolve().then(()=>this.media.reportProgress(id,{episodeNumber:current.episodeNumber,positionSeconds:result.progress.positionSeconds,isPaused:input.reason==='pause',playbackRate:1}))
+     .catch(error=>emitDiagnostic(this.onDiagnostic,{type:'media-error',sessionId:id,code:error?.code}));
     void this.cloud()?.sync(actor.uid,{force:input.reason!=='heartbeat'});json(res,200,{...result,lease:publicLease((await this.progress.snapshot(actor.uid)).lease)});return;
    }
    if(action==='episode'){

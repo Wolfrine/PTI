@@ -220,6 +220,34 @@ test('progress API uses inspected duration and acknowledges intentional rewind w
  assert.equal((await send(3,950,lease.authorityEpoch+1)).status,409);
 });
 
+test('durable progress ACK does not wait for auxiliary engine reporting or repeat it on an exact retry',async t=>{
+ const {api,request,progress,media}=await fixture(t),diagnostics=[];api.onDiagnostic=event=>diagnostics.push(event);
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),lease=created.lease;
+ let rejectReport,calls=0,timer;
+ media.reportProgress=()=>{calls++;return new Promise((_resolve,reject)=>{rejectReport=reject;});};
+ const event={episodeId:'one-piece-0001',generation:lease.generation,authorityEpoch:lease.authorityEpoch,revision:1,positionSeconds:1391,reason:'pause'};
+ const send=()=>request(`/api/sessions/${lease.sessionId}/events`,{method:'POST',input:event});
+ try{
+  const response=await Promise.race([send(),new Promise((_resolve,reject)=>{timer=setTimeout(()=>reject(new Error('Durable ACK waited for the engine report')),2000);})]);
+  clearTimeout(timer);assert.equal(response.status,200);const result=await response.json();assert.equal(result.duplicate,false);assert.equal(result.progress.positionSeconds,1391);assert.equal(result.lease.revision,1);
+  assert.equal((await progress.snapshot('viewer')).progress[event.episodeId].positionSeconds,1391);assert.equal((await progress.pending('viewer'))[event.episodeId].revision,1);
+  rejectReport(new AccessError('ENGINE_OFFLINE',503));await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(diagnostics,[{type:'media-error',sessionId:lease.sessionId,code:'ENGINE_OFFLINE'}]);
+  const retry=await send();assert.equal(retry.status,200);assert.equal((await retry.json()).duplicate,true);assert.equal(calls,1);
+ }finally{clearTimeout(timer);rejectReport?.(new Error('fixture report released'));}
+});
+
+test('auxiliary progress reporting errors expose only sanitized diagnostics after a durable ACK',async t=>{
+ const {api,request,progress,media}=await fixture(t),diagnostics=[];api.onDiagnostic=event=>diagnostics.push(event);
+ const created=await(await request('/api/sessions',{method:'POST',input:{episodeId:'one-piece-0001',deviceId:'device-one'}})).json(),lease=created.lease;
+ const privateMarker='https://private.invalid/media?token=fixture-secret';
+ media.reportProgress=()=>{const error=new Error(privateMarker);error.code=privateMarker;throw error;};
+ const response=await request(`/api/sessions/${lease.sessionId}/events`,{method:'POST',input:{episodeId:'one-piece-0001',generation:lease.generation,authorityEpoch:lease.authorityEpoch,revision:1,positionSeconds:120,reason:'seek'}});
+ assert.equal(response.status,200);const result=await response.json();assert.equal(result.progress.positionSeconds,120);assert.equal((await progress.snapshot('viewer')).lease.revision,1);
+ await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(diagnostics,[{type:'media-error',sessionId:lease.sessionId,code:'internal-error'}]);
+ assert.equal(JSON.stringify({result,diagnostics}).includes(privateMarker),false);
+});
+
 test('destination handoff prepares the receiver profile before loading and returns to local copy with actual position',async t=>{
  const {api,request,media}=await fixture(t),changes=[];
  const change=media.switchEpisode;media.switchEpisode=async(...args)=>{changes.push(args[2]);return change(...args);};

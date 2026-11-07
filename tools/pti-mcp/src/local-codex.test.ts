@@ -142,7 +142,7 @@ describe('module parent lifecycle',()=>{
     const f=moduleFixture();await f.pair();const server=createCodexServer(f.relay,OWNER),client=new Client({name:'module-schema',version:'1'});
     const [a,b]=InMemoryTransport.createLinkedPair();await Promise.all([server.connect(a),client.connect(b)]);
     try{
-      const listing=await client.listTools();expect(listing.tools).toHaveLength(13);
+      const listing=await client.listTools();expect(listing.tools).toHaveLength(18);
       const start=listing.tools.find(tool=>tool.name==='start_task')!;expect(start.inputSchema.properties).toHaveProperty('module_key');expect(start.inputSchema.required||[]).not.toContain('module_key');
       expect(start.inputSchema.properties).toHaveProperty('rotation_reason');
       const result=await client.callTool({name:'start_task',arguments:{...f.args,module_key:'local-codex'}});expect(result.isError).not.toBe(true);
@@ -330,7 +330,7 @@ describe('Local Codex relay',()=>{
   it('reports configured model preference and retains the confirmed turn model and effort',async()=>{
     const f=fixture();const heartbeat=heartbeatSchema.parse({...f.heartbeat,version:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     await f.relay.poll(OWNER,{heartbeat});
-    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.4',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
+    expect(await f.relay.status(OWNER)).toMatchObject({version:'0.4.5',workerVersion:'0.3.3',model:'gpt-6.1-sol',reasoning_effort:'xhigh'});
     const task=await f.relay.start(OWNER,f.args),claim=(await f.relay.poll(OWNER,{heartbeat})).job!;
     const report=workerReportSchema.parse({id:claim.id,generation:claim.generation,lease:claim.lease,snapshot:{status:'completed',model:'gpt-6.1-sol',reasoning_effort:'xhigh',final:'Fixture result'}});
     await f.relay.report(OWNER,report);

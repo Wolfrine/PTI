@@ -11,6 +11,7 @@ import {reportChangedSnapshot} from './progress.mjs';
 import {claims,mergeClaims,withoutClaim,retryableLocal} from './relay-state.mjs';
 import {listenForDispatch} from './notifications.mjs';
 import {eventWakeup,watchTask} from './transport-events.mjs';
+import {browserContextReport} from './browser-context.mjs';
 
 const base='https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker';
 fs.mkdirSync(path.join(home,'data'),{recursive:true});
@@ -128,7 +129,7 @@ try{
       if(retryAt>Date.now()){await events.wait(deadline()-Date.now());continue;}
       if(await authMode()!=='chatgpt')throw Error('ChatGPT subscription sign-in required.');
       const selection=modelSelection(config()),settings=config();
-      const heartbeat={model:selection.model,reasoning_effort:selection.effort,instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,dispatchReady:listenerConnected,
+      const heartbeat={browser_context:browserContextReport(),model:selection.model,reasoning_effort:selection.effort,instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,dispatchReady:listenerConnected,
         maxConcurrentTasks:settings.maxConcurrentTasks,maxSubagentsPerTask:settings.maxSubagentsPerTask,maxTaskMinutes:settings.maxTaskMinutes,
         projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',resourcePath:'F:/unavailable',available:false};}})};
       // Refresh the protected user token through the existing native auth path.

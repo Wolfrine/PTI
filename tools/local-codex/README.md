@@ -1,6 +1,6 @@
 # Local Codex from normal ChatGPT chats
 
-The private Local Codex plugin calls `/local-codex/mcp` on PTI's existing Cloud Run service. Thirteen work/history/outcome tools delegate work to an outbound Windows worker. The discussion stays in the normal ChatGPT conversation, including on web/mobile clients that support the connected plugin.
+The private Local Codex plugin calls `/local-codex/mcp` on PTI's existing Cloud Run service. Eighteen work/history/outcome/capability/QA tools serve the owner through the existing authenticated connection. The discussion stays in the normal ChatGPT conversation, including on web/mobile clients that support the connected plugin.
 
 The worker launches the installed Codex CLI's app-server using the Windows user's **ChatGPT subscription sign-in**. It rejects API-key authentication and removes model API credential/endpoint overrides from child environments. Codex credentials never leave the PC. PTI Firebase OAuth authorizes the relay; a separate current-user DPAPI credential authorizes the worker. This is not an OpenAI inference API integration.
 
@@ -19,6 +19,12 @@ The PC must be awake, online and signed into ChatGPT. Submission requires a hear
 For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti-signin` can reuse this Windows user's already encrypted PTI usage-monitor owner sign-in. It verifies the Firebase account/project and current Codex ChatGPT auth, refreshes through Firebase, then protects a separate credential under the relay's own DPAPI entropy. It does not change the monitor's files. This option shares the existing Firebase login's revocation lifecycle; use Google pairing for an independent login. No Codex model credential is copied.
 
 ## Authorization and evidence
+
+### Interactive QA broker (host 0.4.5, worker 0.4.8)
+
+`get_capabilities` and `bridge_status.capabilities` distinguish Desktop/browser handoff, unverified speaker playback, and unsupported audio capture/analysis. `request_interactive_qa` persists an owner-scoped request for an exact project/revision/URL/build/objectives/device. `get_interactive_qa`, `list_interactive_qa`, and `update_interactive_qa` expose handoff, external-run reservation, receipt and complete/fail/expire/release lifecycle. No verified programmatic Desktop-session provider is supported; no browser is launched. Old workers remain compatible with unknown preflight telemetry. An official Desktop operator can report observations and captured artifact references, with explicit attestation and unverified provenance. A report is not independent QA or owner acceptance. See the [broker contract and operator steps](decisions/2026-11-07-interactive-qa-broker.md).
+
+Hosted support must deploy before worker 0.4.8 activation. Install only while all existing claims are idle; never restart the delivering task or Ragnarok work. Source/build version, hosted deployment, installed worker and plugin publication are separate states.
 
 ### Browser context preflight (runtime 0.4.7)
 

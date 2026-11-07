@@ -17,6 +17,12 @@ export function browserContextPreflight(env = process.env) {
   };
 }
 
+// Fixed wire contract. Never send the child environment or a caller-supplied grant.
+export function browserContextReport(env = process.env) {
+  const {executionContext,status,reason,verified}=browserContextPreflight(env);
+  return {executionContext,status,reason,verified};
+}
+
 export function browserContextInstructions(context) {
   const access = context.status === 'unavailable'
     ? 'App-owned browser authorization context is missing or incomplete. Official browser/Computer Use access is unavailable in this worker. Do not initialize browser tools, probe the browser host or retry "host unavailable" here.'

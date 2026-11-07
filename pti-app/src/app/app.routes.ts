@@ -23,6 +23,12 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
+        path: 'new-resource-usage/:source',
+        title: 'Resource usage · PTI',
+        loadComponent: () => import('./components/new-resource-usage/new-resource-usage.component').then(m => m.NewResourceUsageComponent),
+        canActivate: [AuthGuard],
+    },
+    {
         path: 'domains',
         component: ManageDomainsComponent,
         canActivate: [AuthGuard],

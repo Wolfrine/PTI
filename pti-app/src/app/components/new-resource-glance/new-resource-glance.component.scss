@@ -1,0 +1,49 @@
+:host{display:block;margin-top:30px;color:#342c27;font-family:Arial,"Helvetica Neue",sans-serif}
+*{box-sizing:border-box}p,h2{margin:0}
+.pulse-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:11px}
+.pulse-kicker{font-size:10px;font-weight:750;letter-spacing:.18em;color:#896c5e;margin-bottom:5px}
+.pulse-heading h2{font:700 23px/1.16 Georgia,serif;letter-spacing:-.04em;color:#28231f}
+.usage-link{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;color:#a84e44;text-decoration:none;font-size:12px;font-weight:750;padding:7px 2px;border-radius:4px}.usage-link mat-icon{font-size:16px;width:16px;height:16px}
+.usage-link:hover{text-decoration:underline;text-underline-offset:3px}
+.pulse-deck{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #e5dfd6;border-radius:15px;background:#fffdfa;box-shadow:0 4px 13px rgba(59,45,33,.025);overflow:hidden}
+.pulse-instrument{min-width:0;display:flex;flex-direction:column;gap:7px;padding:13px 15px 11px;text-decoration:none;color:inherit;transition:background .14s ease;outline-offset:-3px}
+.pulse-instrument+.pulse-instrument{border-left:1px solid #eae4dc}
+.pulse-instrument:hover{background:#fbf6ef}
+.pulse-instrument:focus-visible,.usage-link:focus-visible{outline:2px solid #d46d5d}
+.instrument-top{display:flex;align-items:center;gap:7px;min-width:0}
+.source-icon{display:grid;place-items:center;flex:none;width:23px;height:23px;border-radius:7px;background:#fceee8;color:#c36b57}.source-icon mat-icon{font-size:15px;width:15px;height:15px}
+.github .source-icon{background:#eef2f5;color:#597184}.firebase .source-icon{background:#fff1df;color:#af7d3e}
+.source-name{font-size:12px;color:#39312d;font-weight:760}
+.source-status{margin-left:auto;color:#53745b;font-size:10px;line-height:1.2;white-space:nowrap;font-weight:650}.source-status.needs-attention{color:#a27039}
+.open-icon{color:#9e9287;font-size:15px;width:15px;height:15px;flex:none}
+.instrument-main{display:flex;align-items:baseline;gap:8px;min-width:0;flex-wrap:wrap}
+.signal{font-size:27px;line-height:1.1;letter-spacing:-.05em;color:#2f2924;font-weight:750;white-space:nowrap;font-variant-numeric:tabular-nums}.signal>span{font-size:13px;font-weight:650;letter-spacing:-.02em;margin-left:4px;color:#5e5148}.signal.unavailable{font-size:14px;letter-spacing:0;color:#86776c}
+.signal-caption{font-size:10px;line-height:1.3;color:#82746a;overflow-wrap:anywhere}
+.instrument-foot{display:flex;align-items:center;gap:8px;margin-top:auto;min-width:0}
+.instrument-foot small{font-size:10px;line-height:1.35;color:#75695f;overflow-wrap:anywhere}
+.signal-track{height:4px;border-radius:20px;background:#ede7df;min-width:34px;width:64px;overflow:hidden;flex:none}.signal-track span{display:block;height:100%;background:#da7863;border-radius:20px}.firebase .signal-track span{background:#dba45a}
+.signal-track.is-unknown{background:repeating-linear-gradient(135deg,#ece6df,#ece6df 3px,#ded7cf 3px,#ded7cf 6px)}.signal-track.is-unknown>span{display:none}
+.github-failure{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:650;color:#9e6951;white-space:nowrap}.github-failure mat-icon{width:13px;height:13px;font-size:13px}
+.pulse-provenance{font-size:10px;line-height:1.4;color:#83756c;margin-top:6px;overflow-wrap:anywhere}
+@media(max-width:760px){
+  :host{margin-top:24px}
+  .pulse-heading{margin-bottom:7px}
+  .pulse-heading h2{font-size:21px}
+  .pulse-deck{grid-template-columns:1fr;border-radius:12px}
+  .pulse-instrument{padding:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);grid-template-rows:auto auto;gap:4px 10px;min-height:71px;align-items:center}
+  .pulse-instrument+.pulse-instrument{border-left:0;border-top:1px solid #eae4dc}
+  .instrument-top{grid-column:1;grid-row:1;gap:5px}
+  .source-icon{height:22px;width:22px}
+  .source-name{font-size:12px}
+  .source-status{margin-left:0;font-size:9px}
+  .open-icon{display:none}
+  .instrument-main{grid-column:2;grid-row:1;justify-content:flex-end;gap:4px;text-align:right}
+  .signal{font-size:20px}.signal>span{font-size:11px}.signal.unavailable{font-size:13px}
+  .signal-caption{font-size:9px;line-height:1.15}
+  .instrument-foot{grid-column:1/-1;grid-row:2;display:flex;gap:7px;min-width:0;justify-content:space-between}
+  .instrument-foot small{font-size:10px;text-align:right}
+  .signal-track{width:54px}
+  .pulse-provenance{font-size:9px;margin-top:5px}
+}
+@media(max-width:370px){.signal-caption{display:none}.source-status{font-size:9px}.pulse-instrument{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.instrument-foot small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.pulse-instrument{transition:none}}

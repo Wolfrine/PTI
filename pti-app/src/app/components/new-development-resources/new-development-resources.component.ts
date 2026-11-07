@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { NewCodexUsageComponent } from '../new-codex-usage/new-codex-usage.component';
 import { PlatformUsageReading, PlatformUsageService, PlatformUsageState } from '../../services/platform-usage.service';
@@ -14,6 +14,8 @@ const FREE_TIER_LIMITS = { reads: 50_000, writes: 20_000, deletes: 20_000 } as c
   styleUrl: './new-development-resources.component.scss',
 })
 export class NewDevelopmentResourcesComponent implements OnInit, OnDestroy {
+  @Input() source: 'all' | 'github' | 'firebase' = 'all';
+  @Input() showHeading = true;
   state: PlatformUsageState = { status: 'loading', reading: null, fromCache: false };
   private subscription?: Subscription;
 

@@ -10,6 +10,7 @@
 .resources-status.is-warning,.source-status.is-warning,.repo-state.is-warning{color:#96642a;background:#fdf3e4;border-color:#f6e8d2}
 .resources-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}.codex-resource{min-width:0;margin-top:0}
 .source-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px;min-width:0}
+.source-stack.is-single{grid-template-columns:minmax(0,1fr)}
 .source-card{min-width:0;border:1px solid #e8e1d8;background:#fffdfa;border-radius:12px;padding:16px 17px 0}
 .source-header{display:flex;align-items:center;gap:9px;min-width:0}
 .source-icon{height:29px;width:29px;display:grid;place-items:center;border-radius:8px;flex:none}.source-icon svg{display:block;width:17px;height:17px}

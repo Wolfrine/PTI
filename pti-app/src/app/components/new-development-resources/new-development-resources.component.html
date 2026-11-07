@@ -1,5 +1,5 @@
-<section class="resources-area" aria-labelledby="development-resources-title">
-  <header class="resources-heading">
+<section class="resources-area" [attr.aria-labelledby]="showHeading ? 'development-resources-title' : null" [attr.aria-label]="!showHeading ? 'Source details' : null">
+  <header class="resources-heading" *ngIf="showHeading">
     <div>
       <p class="resources-kicker">BEHIND YOUR WORK</p>
       <h2 id="development-resources-title">Development resources</h2>
@@ -9,10 +9,10 @@
   </header>
 
   <div class="resources-layout">
-    <app-new-codex-usage class="codex-resource"></app-new-codex-usage>
+    <app-new-codex-usage class="codex-resource" *ngIf="source === 'all'"></app-new-codex-usage>
 
-    <div class="source-stack">
-      <article class="source-card" aria-labelledby="github-resource-title">
+    <div class="source-stack" [class.is-single]="source !== 'all'">
+      <article class="source-card" aria-labelledby="github-resource-title" *ngIf="source !== 'firebase'">
         <header class="source-header">
           <span class="source-icon github-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8v8m0-6h6a6 6 0 0 1 6 6v-5"/><circle cx="6" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="7" r="2.2"/></svg></span>
           <div class="source-title"><h3 id="github-resource-title">GitHub</h3><small>Repositories &amp; Actions billing</small></div>
@@ -71,7 +71,7 @@
         </ng-template>
       </article>
 
-      <article class="source-card firebase-card" aria-labelledby="firebase-resource-title">
+      <article class="source-card firebase-card" aria-labelledby="firebase-resource-title" *ngIf="source !== 'github'">
         <header class="source-header">
           <span class="source-icon firebase-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="7" ry="2.7"/><path d="M5 5v14c0 4 14 4 14 0V5M5 12c0 4 14 4 14 0"/></svg></span>
           <div class="source-title"><h3 id="firebase-resource-title">Firebase</h3><small>Firestore free-tier headroom</small></div>

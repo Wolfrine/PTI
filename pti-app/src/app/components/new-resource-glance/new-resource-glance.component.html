@@ -1,0 +1,27 @@
+<section class="resource-pulse" aria-labelledby="resource-pulse-heading">
+  <header class="pulse-heading">
+    <div class="heading-copy"><p class="pulse-kicker">BEHIND YOUR WORK</p><h2 id="resource-pulse-heading">Resource pulse</h2></div>
+    <a class="usage-link" [routerLink]="['/new-resource-usage', 'codex']">Explore usage <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+  </header>
+
+  <div class="pulse-deck" aria-label="Development resource summaries">
+    <a class="pulse-instrument codex" [routerLink]="['/new-resource-usage', 'codex']" aria-label="View Codex usage details">
+      <div class="instrument-top"><span class="source-icon" aria-hidden="true"><mat-icon>auto_awesome</mat-icon></span><strong class="source-name">Codex</strong><span class="source-status" [class.needs-attention]="codexStatusWarning">{{ codexStatus }}</span><mat-icon class="open-icon" aria-hidden="true">north_east</mat-icon></div>
+      <div class="instrument-main"><strong class="signal" *ngIf="codexWindow as window; else noCodex">{{ window.remainingPercent | number:'1.0-0' }}<span>% left</span></strong><ng-template #noCodex><strong class="signal unavailable">Unavailable</strong></ng-template><span class="signal-caption">{{ codexWindow ? 'Allowance remaining' : 'Allowance status' }}</span></div>
+      <div class="instrument-foot"><div class="signal-track" [class.is-unknown]="!codexWindow" role="progressbar" aria-label="Codex allowance used" [attr.aria-valuenow]="codexWindow ? codexUsedPercent : null" [attr.aria-valuetext]="codexWindow ? (codexWindow.usedPercent | number:'1.0-1') + '% used' : 'Unavailable'" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="codexUsedPercent"></span></div><small>{{ codexContext }}</small></div>
+    </a>
+
+    <a class="pulse-instrument github" [routerLink]="['/new-resource-usage', 'github']" aria-label="View GitHub activity details">
+      <div class="instrument-top"><span class="source-icon" aria-hidden="true"><mat-icon>account_tree</mat-icon></span><strong class="source-name">GitHub</strong><span class="source-status" [class.needs-attention]="githubStatusWarning">{{ githubStatus }}</span><mat-icon class="open-icon" aria-hidden="true">north_east</mat-icon></div>
+      <div class="instrument-main"><strong class="signal" *ngIf="githubRuns !== null; else noGithub">{{ githubRuns | number:'1.0-0' }}<span>runs</span></strong><ng-template #noGithub><strong class="signal unavailable">Unavailable</strong></ng-template><span class="signal-caption">{{ githubRepoWide ? 'Reported · last 24h' : 'PTI workflows · last 24h' }}</span></div>
+      <div class="instrument-foot"><span class="github-failure"><mat-icon aria-hidden="true">error_outline</mat-icon>{{ githubFailures === null ? 'Failures unavailable' : (githubFailures | number:'1.0-0') + ' failed' }}</span><small>{{ githubCoverage }}</small></div>
+    </a>
+
+    <a class="pulse-instrument firebase" [routerLink]="['/new-resource-usage', 'firebase']" aria-label="View Firebase database usage details">
+      <div class="instrument-top"><span class="source-icon" aria-hidden="true"><mat-icon>dns</mat-icon></span><strong class="source-name">Firebase</strong><span class="source-status" [class.needs-attention]="firebaseStatusWarning">{{ firebaseStatus }}</span><mat-icon class="open-icon" aria-hidden="true">north_east</mat-icon></div>
+      <div class="instrument-main"><strong class="signal" *ngIf="firebasePeak as peak; else noFirebase">{{ peak.percent | number:'1.0-1' }}<span>% used</span></strong><ng-template #noFirebase><strong class="signal unavailable">Unavailable</strong></ng-template><span class="signal-caption">Highest observed daily free-tier quota use</span></div>
+      <div class="instrument-foot"><div class="signal-track" [class.is-unknown]="!firebasePeak" role="progressbar" aria-label="Highest observed daily eligible database quota use" [attr.aria-valuenow]="firebasePeak ? (firebasePeak.percent > 100 ? 100 : firebasePeak.percent) : null" [attr.aria-valuetext]="firebasePeak ? (firebasePeak.percent | number:'1.0-1') + '% used' : 'Unavailable'" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="firebasePeak ? (firebasePeak.percent > 100 ? 100 : firebasePeak.percent) : 0"></span></div><small class="firebase-context">{{ firebasePeakContext }}</small></div>
+    </a>
+  </div>
+  <p class="pulse-provenance">{{ githubCoverage }} <span aria-hidden="true">·</span> {{ firebaseReporting }} <span aria-hidden="true">·</span> Figures show reported sources only</p>
+</section>

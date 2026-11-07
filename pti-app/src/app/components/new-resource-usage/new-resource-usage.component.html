@@ -1,0 +1,16 @@
+<main class="resource-detail">
+  <header class="detail-topbar"><a routerLink="/home" class="brand" aria-label="PTI Home"><span class="brand-mark"><img src="/icons/pti-mark.svg" alt="" width="23" height="23"></span><strong>PTI</strong></a><span class="crumb">YOUR SPACE <span aria-hidden="true">/</span> RESOURCES</span><a routerLink="/home" class="home-link"><mat-icon aria-hidden="true">arrow_back</mat-icon> Back Home</a></header>
+  <div class="detail-content">
+    <div class="intro"><p class="eyebrow">DEVELOPMENT RESOURCES</p><h1>{{ heading }}</h1><p>{{ description }}</p></div>
+    <nav class="source-tabs" aria-label="Resource usage sources">
+      <a routerLink="/new-resource-usage/codex" routerLinkActive="selected" [attr.aria-current]="source === 'codex' ? 'page' : null"><mat-icon aria-hidden="true">auto_awesome</mat-icon> Codex</a>
+      <a routerLink="/new-resource-usage/github" routerLinkActive="selected" [attr.aria-current]="source === 'github' ? 'page' : null"><mat-icon aria-hidden="true">account_tree</mat-icon> GitHub</a>
+      <a routerLink="/new-resource-usage/firebase" routerLinkActive="selected" [attr.aria-current]="source === 'firebase' ? 'page' : null"><mat-icon aria-hidden="true">dns</mat-icon> Firebase</a>
+    </nav>
+    <section class="provider-body" [attr.aria-label]="heading">
+      <app-new-codex-usage *ngIf="source === 'codex'"></app-new-codex-usage>
+      <app-new-development-resources *ngIf="source !== 'codex'" [source]="platformSource" [showHeading]="false"></app-new-development-resources>
+    </section>
+    <footer class="detail-footer"><a routerLink="/home"><mat-icon aria-hidden="true">arrow_back</mat-icon> Home dashboard</a><span>Private to your PTI account</span></footer>
+  </div>
+</main>

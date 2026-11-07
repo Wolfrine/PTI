@@ -49,6 +49,7 @@ export class NewHomeComponent implements OnInit {
     { id: 'atlas', name: 'Civilization Atlas', shortName: 'Atlas', description: 'What humanity knows and where we are in it', icon: 'travel_explore', category: 'Knowledge', tone: 'teal', href: '/atlas' },
     { id: 'wedding', name: 'Wedding Planner', shortName: 'Wedding', description: 'Mahima & Mayank’s wedding workspace', icon: 'favorite_border', category: 'Personal', tone: 'rose', href: 'https://mahima-mayank.web.app/', external: true },
     { id: 'one-piece', name: 'One Piece', shortName: 'One Piece', description: 'Japanese audio, English subtitles and family viewing', icon: 'movie', category: 'Entertainment', tone: 'blue', href: 'https://pti-app-2ab59-one-piece.web.app/', external: true },
+    { id: 'taleweald', name: 'Taleweald', shortName: 'Taleweald', description: 'Guild Dispatch · follow the living world and its development', icon: 'forest', category: 'Entertainment', tone: 'teal', href: 'https://taleweald.firebaseapp.com/ops/', external: true },
     { id: 'noveliaa', name: 'Noveliaa', shortName: 'Noveliaa', description: 'An author-led space for writing, collaboration and reading', icon: 'edit_note', category: 'Creative', tone: 'violet', href: 'https://noveliaa.web.app/', external: true },
     { id: 'gtop', name: 'GTOP', shortName: 'GTOP', description: 'Practice and assessments for Growth Tutorials', icon: 'school', category: 'Knowledge', tone: 'mint', href: 'https://gtop-app.web.app/', external: true },
     { id: 'gt-hub', name: 'Growth Tutorials Hub', shortName: 'GT Hub', description: 'Coordinate classes, learners and coaching', icon: 'groups', category: 'Productivity', tone: 'blue', href: 'https://hub-growthtutorials.web.app/', external: true },
@@ -58,6 +59,7 @@ export class NewHomeComponent implements OnInit {
   readonly categories: readonly ('All' | AppCategory)[] = ['All', 'Productivity', 'Personal', 'Ideas', 'Knowledge', 'Creative', 'Entertainment'];
   readonly projects = [
     { name: 'PTI Design', description: 'Dashboard concepts and design reviews', icon: 'palette', href: 'https://github.com/Wolfrine/PTI/tree/main/pti-app/design' },
+    { name: 'Taleweald Source', description: 'Living-world game · playable release in progress', icon: 'sports_esports', href: 'https://github.com/Wolfrine/Taleweald' },
     { name: 'StoryForge', description: 'Storyworld PWA · visual review pending', icon: 'auto_stories', href: 'https://github.com/Wolfrine/StoryForge' },
     { name: 'Orynth', description: 'Student study-tracker project', icon: 'school', href: 'https://github.com/Wolfrine/Orynth' },
     { name: 'Novel Encyclopedia', description: 'Reference and knowledge for fictional worlds', icon: 'library_books', href: 'https://github.com/Wolfrine/Novel-Encyclopedia' },

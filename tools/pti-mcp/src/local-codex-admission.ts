@@ -1,9 +1,10 @@
+import {assertAdmissionOpen,type Maintenance} from './local-codex-maintenance.js';
 export type Reservation = {
   id:string;generation:number;project:string;mode:'inspect'|'edit';resourcePath:string|null;threadId?:string;affinityId?:string;
   status:'queued'|'running'|'waiting_for_user';until:number;
 };
 export type SchedulerPatch = {reservations:Reservation[];activeTask?:string|null};
-type Host = {version:string;maxConcurrentTasks?:number|null;activeTask?:string|null;at:number;reservations?:Reservation[]};
+type Host = {version:string;maxConcurrentTasks?:number|null;activeTask?:string|null;at:number;reservations?:Reservation[];maintenance?:Maintenance|null};
 export function concurrentWorker(host:Pick<Host,'version'>) {
   const [major,minor]=host.version.split('.').map(Number);
   return major>0||minor>=4;
@@ -30,6 +31,7 @@ export function reservations(host:Host,now:number) {
   return result;
 }
 export function admission(host:Host,next:Reservation,now:number):SchedulerPatch {
+  assertAdmissionOpen(host);
   const current=reservations(host,now).filter(slot=>!(slot.id===next.id&&slot.generation===next.generation));
   const threadConflict=next.threadId?current.find(slot=>slot.threadId===next.threadId):undefined;
   const moduleConflict=next.affinityId?current.find(slot=>slot.affinityId===next.affinityId):undefined;

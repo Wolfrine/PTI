@@ -1,7 +1,14 @@
-param([switch]$NoSchedule)
+param([switch]$NoSchedule,[string]$MaintenanceManifest,[string]$ManifestSHA256)
 $ErrorActionPreference = 'Stop'
 $installRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\LocalCodexBridge')
 if ((Test-Path -LiteralPath $installRoot) -and ((Get-Item -LiteralPath $installRoot).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Install root must not be a junction.' }
+if ($MaintenanceManifest) {
+  & (Join-Path $PSScriptRoot 'maintenance-once.ps1') -Manifest $MaintenanceManifest -ManifestSHA256 $ManifestSHA256
+  exit $LASTEXITCODE
+}
+if (Test-Path -LiteralPath (Join-Path $installRoot 'active.json')) {
+  throw 'Existing installations require the maintenance drain + external one-shot path. See tools/local-codex/docs/maintenance-upgrade.md. Do not restart a live task or use an idle snapshot as a lock.'
+}
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 $taskName = 'PTI Local Codex Relay'
 $previousTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue

@@ -48,3 +48,7 @@ For a repeated, supported problem or explicit durable owner instruction, promote
 The inspected pre-harness baseline had 29 task records: 24 completed, four interrupted and one failed. Eleven had continuation history; nine looked like tests/acceptance by historical labels. Those counts are execution states, not owner satisfaction. No old record had distinct execution timing or token counters, and effort was absent on 24 records. The account monitor was healthy; its totals cannot be allocated to this bridge.
 
 Release acceptance requires fixture fault/concurrency tests plus live overlapping parent tasks, isolated cancellation, same-thread continuation and a bounded native child/synthesis. Scheduler registration/read-back and a real metadata review are separate checks. These establish operation, not long-term effectiveness. Source decisions and release evidence are kept in the F-drive harness outputs; future reviews live under the installed bridge's `harness/reviews` directory.
+
+## Installed worker maintenance
+
+Use `docs/maintenance-upgrade.md` for every existing-worker release/self-update. Acquire the hosted transaction fence and schedule the pinned external one-shot; let the delivering task finish. Do not substitute an idle snapshot, self-restart or another advisory-only deferral. New admission/claims stay blocked through actual exit, seven-file verification and fresh heartbeat acceptance or rollback. A crashed installer requires the staged external recovery path; never delete its fence to resume uncertain state.

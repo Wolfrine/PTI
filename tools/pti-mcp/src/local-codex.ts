@@ -8,6 +8,7 @@ import {admission,capacity,concurrentWorker,uncappedWorker,reservations,changedR
 import {affinityIdentity,affinityWorker,type ChatAffinity,type ChatRouting} from './local-codex-affinity.js';
 import {browserContextSchema,interactiveCapabilities,HOST_VERSION} from './local-codex-capabilities.js';
 import {FirestoreInteractiveQaStore,InteractiveQaBroker,qaRequestSchema,qaUpdateSchema,qaListSchema,type InteractiveQaStore} from './local-codex-interactive.js';
+import {admissionBlocked,type Maintenance} from './local-codex-maintenance.js';
 
 export const OWNER = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 export const terminal = ['completed', 'failed', 'interrupted'];
@@ -23,7 +24,7 @@ const moduleKey=z.string().regex(/^[a-z0-9][a-z0-9._/-]{0,127}$/).describe('Stab
 type Start={project:string;prompt:string;mode:'inspect'|'edit';request_key:string;title?:string;work_key?:string;thread_id?:string;strategy?:'auto'|'single'|'team';purpose?:'work'|'acceptance';module_key?:string;chat_policy?:'reuse'|'rotate';rotation_reason?:'context-bloat'|'incompatible'|'invalid';handoff?:string};
 const project = z.object({key:z.string().regex(/^[a-z0-9-]{1,64}$/),name:z.string().max(100),path:z.string().regex(/^F:[\\/]/i).max(2048),resourcePath:z.string().regex(/^F:[\\/]/i).max(2048).optional(),available:z.boolean()}).strict();
 export const heartbeatSchema = z.object({instanceId:z.string().uuid(),authMode:z.literal('chatgpt'),dispatchReady:z.boolean().optional(),version:z.string().max(40),model:z.string().max(100).optional(),reasoning_effort:z.string().max(20).optional(),maxConcurrentTasks:z.number().int().min(1).nullable().optional(),maxSubagentsPerTask:z.number().int().min(0).nullable().optional(),maxTaskMinutes:z.number().positive().nullable().optional(),projects:z.array(project).max(30),browser_context:browserContextSchema.optional()}).strict();
-export type Worker = z.infer<typeof heartbeatSchema> & {at:number;activeTask?:string|null;reservations?:Reservation[]};
+export type Worker = z.infer<typeof heartbeatSchema> & {at:number;activeTask?:string|null;reservations?:Reservation[];maintenance?:Maintenance|null;lastMaintenance?:Record<string,unknown>};
 export type Job = {
   id:string;project:string;mode:'inspect'|'edit';prompt:string;inputHash:string;generation:number;status:string;
   createdAt:number;updatedAt:number;expiresAt:number;history:{key:string;inputHash:string}[];
@@ -45,8 +46,9 @@ export function dispatchIntentChanged(before:Job|undefined,after:Job) {
     ||!isDeepStrictEqual(before?.responses||[],after.responses||[]);
 }
 function workerMetadata(value:Worker) {
-  const {reservations:_private,...metadata}=value;
-  return {...metadata,maxConcurrentTasks:capacity(value),maxSubagentsPerTask:concurrentWorker(value)?value.maxSubagentsPerTask??(uncappedWorker(value)?null:0):0};
+  const {reservations:_private,maintenance:_serverGate,lastMaintenance:_serverReceipt,...metadata}=value;
+  delete (metadata as Record<string,unknown>).maintenanceProtocolAt;
+  return {...metadata,maintenanceProtocol:1,maxConcurrentTasks:capacity(value),maxSubagentsPerTask:concurrentWorker(value)?value.maxSubagentsPerTask??(uncappedWorker(value)?null:0):0};
 }
 export interface RelayStore {
   interactive?:InteractiveQaStore;
@@ -75,7 +77,7 @@ export class FirestoreRelayStore implements RelayStore {
     return this.root(uid).collection('jobs').doc(id).onSnapshot(snapshot=>changed(snapshot.data() as Job|undefined),failed);
   }
   async heartbeat(uid:string,value:Worker) {
-    await this.root(uid).set(workerMetadata(value),{merge:true});
+    await this.root(uid).set({...workerMetadata(value),maintenanceProtocolAt:value.at},{merge:true});
   }
   async maintain(uid:string,value:Worker,active:ActiveClaim[]) {
     const root=this.root(uid),refs=active.map(claim=>root.collection('jobs').doc(claim.id));
@@ -95,7 +97,7 @@ export class FirestoreRelayStore implements RelayStore {
       const {at:_nextAt,...nextMetadata}=workerMetadata(value),{at:_previousAt,...priorMetadata}=previous?workerMetadata(previous):{at:0};
       const heartbeatDue=!previous||value.at-previous.at>=30000||!isDeepStrictEqual(nextMetadata,priorMetadata);
       const schedulerChanged=!isDeepStrictEqual(previous?.reservations||[],host.reservations||[])||previous?.activeTask!==host.activeTask;
-      if(heartbeatDue||schedulerChanged)tx.set(root,{...(heartbeatDue?workerMetadata(value):{}),reservations:host.reservations||[],...(host.activeTask!==undefined?{activeTask:host.activeTask}:{})},{merge:true});
+      if(heartbeatDue||schedulerChanged)tx.set(root,{...(heartbeatDue?{...workerMetadata(value),maintenanceProtocolAt:value.at}:{}),reservations:host.reservations||[],...(host.activeTask!==undefined?{activeTask:host.activeTask}:{})},{merge:true});
       return {controls,lost};
     });
   }
@@ -153,10 +155,10 @@ export class CodexRelay {
   async status(uid:string) {
     this.owner(uid);const worker=await this.store.worker(uid),online=!!worker&&worker.dispatchReady!==false&&this.clock()-worker.at<=60000;
     const active=worker&&online?reservations(worker,this.clock()):[],limit=worker?capacity(worker):1,available=limit===null?null:Math.max(0,limit-active.length);
-    return {version:HOST_VERSION,capabilities:interactiveCapabilities(worker,this.clock()),workerVersion:worker?.version||null,model:worker?.model||null,reasoning_effort:worker?.reasoning_effort||null,online,
+    return {version:HOST_VERSION,maintenance:worker?.maintenance||null,lastMaintenance:worker?.lastMaintenance||null,capabilities:interactiveCapabilities(worker,this.clock()),workerVersion:worker?.version||null,model:worker?.model||null,reasoning_effort:worker?.reasoning_effort||null,online,
       busy:online&&limit!==null&&active.length>=limit,activeTask:active.find(slot=>slot.status!=='queued')?.id||null,
       activeTasks:active.map(({id,project,mode,resourcePath,threadId,status})=>({id,project,mode,resourcePath,...(threadId?{thread_id:threadId}:{}),status})),
-      capacity:limit,capacityLimited:limit!==null,usedSlots:active.length,availableSlots:online?available:0,canAcceptMore:online&&(available===null||available>0),
+      capacity:limit,capacityLimited:limit!==null,usedSlots:active.length,availableSlots:online?available:0,canAcceptMore:online&&!admissionBlocked(worker)&&(available===null||available>0),
       maxSubagentsPerTask:worker?.maxSubagentsPerTask??(worker&&uncappedWorker(worker)?null:0),maxTaskMinutes:worker?.maxTaskMinutes??null,limitPolicy:worker&&uncappedWorker(worker)?'owner-only':'legacy-worker',authMode:worker?.authMode||'unavailable',lastSeenAt:worker?new Date(worker.at).toISOString():null,transport:'private-pti-relay',openaiApiKeyRequired:false};
   }
   async projects(uid:string) { this.owner(uid);return {projects:this.ready(await this.store.worker(uid)).projects}; }
@@ -321,6 +323,7 @@ export class CodexRelay {
     return this.store.update(uid,jobId,(job,worker)=>{
         if(!job)throw Error('Unknown task.');
         if(job.status!=='queued')return {job,result:null};
+        if(admissionBlocked(worker))return {job,result:null};
         if(job.expiresAt<this.clock()){job.status='failed';job.snapshot={error:'Request expired before claim.'};return {job,result:null,scheduler:changedReservation(worker,job,this.clock())};}
         const host=this.ready(worker);
         if(job.affinityId&&!affinityWorker(host.version)){job.status='failed';job.snapshot={error:'Module routing requires worker 0.4.4; no inference was started.'};return {job,result:null,scheduler:changedReservation(worker,job,this.clock())};}

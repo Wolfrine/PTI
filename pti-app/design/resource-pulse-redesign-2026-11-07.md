@@ -1,6 +1,6 @@
 # PTI Home — compact Resource Pulse
 
-Status: **implementation candidate**, pending independent rendered critique, parent QA, and owner visual acceptance. This replaces only the oversized usage section of the owner-selected warm-light Home; it does not redesign the rest of Home.
+Status: **Resource Pulse direction positively reviewed by owner** (7 November 2026: “This is good”); the subsequent full-width meter refinement awaits owner visual acceptance. The original compact panel was deployed and checked on desktop. This replaces only the oversized usage section of the owner-selected warm-light Home; it does not redesign the rest of Home.
 
 ## Intent, evidence and alternatives
 
@@ -27,4 +27,8 @@ The current `/home` directly renders the full Codex panel plus account-wide GitH
 
 ## Verification handoff
 
-Local Angular build, actual authenticated desktop/mobile screenshots and independent reviewer judgments are parent-owned release gates. This document does not claim owner acceptance or deployment. Existing full detail pages remain intentionally scrollable; only Home is compacted.
+Local Angular build, actual authenticated desktop/mobile screenshots and independent reviewer judgments are parent-owned release gates. Existing full detail pages remain intentionally scrollable; only Home is compacted.
+
+## Owner-requested meter refinement — 7 November 2026
+
+The owner observed that the 54–64px progress tracks felt too small, particularly on mobile. Retain the three-source panel and detail-page navigation, but place Codex/Firebase usage tracks as full-card-width, 6px recessed rails below one-line context labels. Gentle coral/amber fills match existing source colors; unavailable readings remain visually unknown. Keep GitHub barless because runs are a count rather than a known quota. Source-only independent review found width improved and metric truth unchanged; a rendered mobile verdict remains open.

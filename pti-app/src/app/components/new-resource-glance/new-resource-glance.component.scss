@@ -21,7 +21,11 @@
 .signal-caption{font-size:11px;line-height:1.3;color:#82746a;overflow-wrap:anywhere}
 .instrument-foot{display:flex;align-items:center;gap:8px;margin-top:auto;min-width:0}
 .instrument-foot small{font-size:11px;line-height:1.35;color:#75695f;overflow-wrap:anywhere}
-.signal-track{height:4px;border-radius:20px;background:#ede7df;min-width:34px;width:64px;overflow:hidden;flex:none}.signal-track span{display:block;height:100%;background:#da7863;border-radius:20px}.firebase .signal-track span{background:#dba45a}
+.instrument-foot.has-meter{flex-direction:column;align-items:stretch;gap:7px}
+.instrument-foot.has-meter small{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.signal-track{width:100%;height:6px;border-radius:999px;background:#eee6de;box-shadow:inset 0 1px 2px rgba(74,54,40,.10),inset 0 0 0 1px rgba(83,64,48,.045);overflow:hidden;flex:none}
+.signal-track span{display:block;height:100%;background:linear-gradient(90deg,#c96154,#e69a80);border-radius:inherit;box-shadow:0 0 8px rgba(207,101,82,.16);transition:width .25s ease}
+.firebase .signal-track span{background:linear-gradient(90deg,#be8646,#e8b569);box-shadow:0 0 8px rgba(191,139,62,.14)}
 .signal-track.is-unknown{background:repeating-linear-gradient(135deg,#ece6df,#ece6df 3px,#ded7cf 3px,#ded7cf 6px)}.signal-track.is-unknown>span{display:none}
 .github-failure{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:650;color:#9e6951;white-space:nowrap}.github-failure mat-icon{width:13px;height:13px;font-size:13px}
 .pulse-provenance{font-size:10px;line-height:1.4;color:#83756c;margin-top:6px;overflow-wrap:anywhere}
@@ -42,8 +46,10 @@
   .signal-caption{font-size:10px;line-height:1.15}
   .instrument-foot{grid-column:1/-1;grid-row:2;display:flex;gap:7px;min-width:0;justify-content:space-between}
   .instrument-foot small{font-size:10px;text-align:right}
-  .signal-track{width:54px}
+  .instrument-foot.has-meter{gap:5px}
+  .instrument-foot.has-meter small{text-align:left}
+  .signal-track{height:6px}
   .pulse-provenance{font-size:9px;margin-top:5px}
 }
 @media(max-width:370px){.pulse-instrument{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
-@media(prefers-reduced-motion:reduce){.pulse-instrument{transition:none}}
+@media(prefers-reduced-motion:reduce){.pulse-instrument,.signal-track span{transition:none}}

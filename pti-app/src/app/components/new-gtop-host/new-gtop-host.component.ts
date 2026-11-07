@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
 import { GtopHostReading, GtopHostService } from '../../services/gtop-host.service';
 
@@ -15,7 +16,7 @@ export function hostPresentation(reading: GtopHostReading) {
 }
 
 @Component({
-  selector: 'app-new-gtop-host', standalone: true, imports: [CommonModule],
+  selector: 'app-new-gtop-host', standalone: true, imports: [CommonModule, MatIconModule],
   templateUrl: './new-gtop-host.component.html', styleUrl: './new-gtop-host.component.scss',
 })
 export class NewGtopHostComponent implements OnInit, OnDestroy {

@@ -1,1 +1,17 @@
 :host { display:block; }
+
+.companion-section{margin-top:15px;container-type:inline-size}
+.companion-kicker{margin:0 0 7px 1px;color:#896c5e;font:750 10px/1.2 Arial,"Helvetica Neue",sans-serif;letter-spacing:.15em}
+.companion-deck{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #e5dfd6;border-radius:14px;background:#fffdfa;box-shadow:0 4px 13px rgba(59,45,33,.025);overflow:hidden}
+.companion-deck>app-new-gtop-host:empty,.companion-deck>app-new-one-piece-host:empty{display:none}
+.companion-deck>app-new-gtop-host:not(:empty)+app-new-one-piece-host:not(:empty){border-left:1px solid #eae4dc}
+.companion-section:not(:has(.companion-deck>app-new-gtop-host:not(:empty),.companion-deck>app-new-one-piece-host:not(:empty))){display:none}
+@container(max-width:700px){
+  .companion-deck{grid-template-columns:1fr}
+  .companion-deck>app-new-gtop-host:not(:empty)+app-new-one-piece-host:not(:empty){border-left:0;border-top:1px solid #eae4dc}
+}
+@media(max-width:760px){
+  .companion-section{margin-top:13px}
+  .companion-deck{grid-template-columns:1fr;border-radius:12px}
+  .companion-deck>app-new-gtop-host:not(:empty)+app-new-one-piece-host:not(:empty){border-left:0;border-top:1px solid #eae4dc}
+}

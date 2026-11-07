@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
 import { OnePieceHostReading, OnePieceHostService } from '../../services/one-piece-host.service';
 
@@ -15,7 +16,7 @@ export function onePieceHostPresentation(reading: OnePieceHostReading) {
 }
 
 @Component({
-  selector: 'app-new-one-piece-host', standalone: true, imports: [CommonModule],
+  selector: 'app-new-one-piece-host', standalone: true, imports: [CommonModule, MatIconModule],
   templateUrl: './new-one-piece-host.component.html', styleUrl: './new-one-piece-host.component.scss',
 })
 export class NewOnePieceHostComponent implements OnInit, OnDestroy {

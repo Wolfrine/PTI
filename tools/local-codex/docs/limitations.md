@@ -2,7 +2,7 @@
 
 Audit date: 8 November 2026. Scope: installed Windows configuration, worker/relay source, hosted Local Codex admission and protocol source, plugin guidance, relevant desktop configuration, and actual native-chat/browser operation. This is a control inventory, not a claim that every failure condition was deliberately triggered.
 
-Latest implementation: worker 0.4.12 / host 0.4.9 / plugin 0.4.14 add `continue_desktop_chat`. Earlier statements below that the relay has no automatic launcher describe the previous releases; see the automatic handoff section at the end for its implementation and verification.
+Current verified release: worker 0.4.12 / host 0.4.9 / plugin 0.4.14. The existing ChatGPT conversation invoked `continue_desktop_chat`, the existing Co-Director chat controlled Chrome, and its completed result returned through relay history. Earlier statements below that the relay has no automatic launcher describe previous releases; see the final section for current end-to-end evidence.
 
 ## Confirmed working and changes delivered
 
@@ -107,7 +107,7 @@ Windows native screenshot capture separately returned a capture timeout on this 
 |---|---|
 | Interactive QA broker | Recordkeeping only; no session launcher. One foreground reservation, 90-second lease, default 24-hour request expiry. Explicit idle release, operator attestations, and exact run identity. HTTPS or loopback HTTP without credentials/query/fragment; up to 30 objectives, observations and artifacts; up to 50 listed requests. These are not prerequisites for ordinary official Chrome control. |
 | PTI Owner Chrome | Disabled. If explicitly restored: only `http://localhost:4173` and `https://taleweald.firebaseapp.com`; exact task/PID/generation/tab/site owner consent; foreground-only; 5/15/30-minute owner grants; no arbitrary JavaScript, cookies, browser/OS shortcuts or audio capture. MCP command wait 31 seconds; Native Messaging frame maximum 8,000,000 bytes; coordinates 0–10,000; text 1,000 characters; objectives 1,500; up to 5 touch points; viewport 240–2560 by 240–1600. None apply to the successful official Chrome route. |
-| Legacy local plugin | Disabled in global config; outdated polling/capability guidance is inactive. Current published plugin is 0.4.13. |
+| Legacy local plugin | Disabled in global config; outdated polling/capability guidance is inactive. Current published plugin is 0.4.14. |
 
 Sources: `../pti-mcp/src/local-codex-interactive.ts`, `chrome/mcp.mjs`, `chrome/runtime.mjs`, `chrome/native-host.mjs`, global Codex config.
 
@@ -151,3 +151,15 @@ Hosted `continue_desktop_chat` takes the exact existing native thread ID, its ca
 The handoff operation is a dispatch receipt, not a model-task lifetime wrapper. Use `read_codex_thread` for its exact turn and completed final result. Native work, approvals and cancellation remain app-owned after dispatch; canceling the dispatch operation is not a native-turn stop command. The text-only history export still omits screenshot bytes. A separate history reader may label an unfinished app-owned turn interrupted until completion is persisted; handoff receipts report live status unobserved instead of asserting that interruption.
 
 Practical evidence before release: the CLI queue started turn `01a1ba32-7831-76c3-8de1-b73c8063b012` in Co-Director chat `01a1b7c7-885c-7053-999c-40be33901ca8`, which used official Chrome and saved `taleweald-cli-queue-chrome.jpg`. The implemented dispatcher then started completed turn `01a1ba39-2ef5-7c60-8ea2-4d18b6009c13`, again clicked Supervisors and Milestones and saved `taleweald-automatic-handoff-chrome.jpg`. Retrying the identical dispatch returned that same turn without another model run. Evidence and receipts are under `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/`. Hosted publication, installed activation and mobile-conversation verification are recorded separately when observed.
+
+## Released mobile/web plugin to existing desktop chat: verified
+
+On 8 November 2026, worker 0.4.12 activated through maintenance receipt `f00929c4-5356-449e-9b4a-bbd852752b56`, with all seven installed artifacts matched, a fresh connected listener and external-process verification. Host 0.4.9 deployed from `5d5a24f952d2fc8065a7a64aab189de19f2ddfb9`; workflow `42463191883` completed all four jobs successfully, including deployed authentication/resource-boundary checks. Plugin 0.4.14 was published under the existing identity as release `pluginrel_6af0316de45481919a7357df6efea46a`.
+
+The saved ChatGPT connection initially retained the old 18 tools. Its official **Refresh tools** action exposed all 19, including `continue_desktop_chat`; account, permissions, App ID and plugin identity were preserved. This refresh is now part of the maintenance release instructions.
+
+Existing ChatGPT conversation `6aefa39d-a20c-83ee-8200-6f8550413041` invoked the new tool with catalog project `ragnarok`, existing module parent `01a1b7c7-885c-7053-999c-40be33901ca8` and request key `taleweald-mobile-handoff-20261108-final`. Its handoff operation `948bbe46aa826d29e3f74c9e917c4438` started native turn `01a1ba4b-5756-74f0-ba34-ebaff5a74864`; that turn completed in 22.5 seconds. The real Chrome tool reused tab `1189487672` at `https://taleweald.firebaseapp.com/ops/`, clicked Supervisors and observed **Supervisor command**, then clicked Milestones and observed **Milestone ledger**. The supervising chat independently inspected the saved 74,697-byte screenshot: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/taleweald-mobile-plugin-handoff.jpg`, SHA256 `E4C225008FAAF5C5C7C99B6054AB85A6085340375C468F6B11D714E291DA6344`.
+
+The same ChatGPT conversation retrieved the completed native turn through history operation `dd235bddc80b76a2fc70fc988c4279b2`, after its first read saw unfinished work. The conversation's visible activity confirms both the plugin-origin dispatch and result retrieval. This verifies the ordinary mobile/web plugin route, not a physical phone screen/touch interaction. Screenshot bytes remain local/native; no claim is made about phone image rendering, gameplay, audio or owner acceptance. No new chat, PTI Owner Chrome grant, additional model API, scheduler or game-source change was introduced.
+
+Structured evidence: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/taleweald-mobile-plugin-handoff-verification.json`. Existing required pipeline checks were preserved; stale tool/version/capability expectations were aligned with the release. No new test cases were added.

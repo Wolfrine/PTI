@@ -44,6 +44,14 @@ The earlier 0.4.8 release used the successful one-time scheduler adapter; its ve
 
 ## Compatibility and prior RCA
 
+### Releases that change ChatGPT tools
+
+Worker activation, hosted deployment, plugin publication and the saved ChatGPT connection metadata are separate delivery steps. For a tool/schema change, finish the deployed host checks, publish changed skills under the existing plugin identity, then open that plugin's **Manage → Local Codex Connection → Refresh tools** control. Verify the actual advertised inventory before dispatching from an existing conversation. Do not recreate the connection, change its permissions or create a chat just to refresh metadata.
+
+On 8 November 2026 the existing connection still advertised 18 tools after host 0.4.9 and plugin 0.4.14 were live. Refresh tools changed it to 19, including `continue_desktop_chat`, while retaining the same account, App ID and permissions. A release is not end-to-end verified until the existing ChatGPT conversation invokes the tool, the existing native chat performs the requested action and the completed result is retrieved. A published skill alone does not update a cached tool catalog. Evidence: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/local-codex-refreshed-tools.jpg`.
+
+For these releases, update all existing registered-tool and version expectations in `src/local-codex.test.ts`, `src/oauth.test.ts` and `scripts/verify-host.mjs` together. Preserve the authentication/resource-boundary checks. Native permission authorization may be `null` when an automatic route is available because the destination chat performs those checks; this must not be asserted as a fixed relay denial.
+
 Plugin 0.4.8, hosted MCP 0.4.6 and worker 0.4.9 are separately versioned and compatible: this adapter changes no MCP tool/schema/App binding. **No separate plugin publication is needed** for activation or internal task-scoped Chrome routing. Published skill wording that says “schedule” describes the older adapter; this runbook's current command is `detach`. Do not create/publish another plugin from the worker.
 
 The first two 0.4.8 attempts delivered a build without the shared fence/external executor; each follow-up acquired the claim that made self-restart unsafe. That engineering fix independently activated 0.4.8. The 0.4.9 delivery then deferred under a no-schedules directive. This detached adapter preserves the proven transaction/install/rollback path while removing the scheduler dependency and periodic checks. Future self-updates must arm the actual executor and finish their claim, rather than return another advisory-only deferral.

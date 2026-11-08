@@ -15,7 +15,7 @@ Drain/health observations use Firestore owner/jobs listeners, local file notific
 ## Release steps
 
 1. Inspect `main`, dirty files, active/queued claims, installed pointer and prior receipt. Preserve unrelated work. Use minimal syntax/build checks and actual runtime observations. No generated tests, fixtures, Playwright/e2e scaffolding, full suites or CI test churn without fresh explicit instruction. Do not weaken required protections.
-2. Build the actual worker locally if needed. For worker 0.4.9 the target is the existing seven-file build; Chrome provider 0.1.1 is already installed separately. Verify routing by initializing the real Codex app-server with this task's exact `ownerChromeConfiguration` and discovering `pti_chrome` tools. Do not create a new native thread/model turn or pretend discovery is a Chrome capture. Save the observed report on F:.
+2. Build the actual worker locally if needed. The target is the existing seven-file build. For 0.4.10, PTI Owner Chrome is disabled by default: verify its configuration returns no MCP injection. Verify the repaired invocation scope by continuing an existing bridge chat, letting its writer exit, then using the same chat through the desktop app for real Chrome control. Do not create a chat merely for verification. Save actual evidence on F:.
 3. Commit/push on `main`. No hosted redeploy is needed when the host protocol/schema is unchanged. For this local release use CI skip rather than synthetic suites; never dispatch/rerun Actions just to wait.
 4. Stage a new immutable directory under the owner-private installation and an explicit future observation deadline. This bounds the updater, not model execution. Example (replace timestamp with a real future deadline):
 

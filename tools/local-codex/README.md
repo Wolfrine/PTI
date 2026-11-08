@@ -24,7 +24,9 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 
 ## Authorization and evidence
 
-### Independent owner Chrome (worker 0.4.9)
+### Browser control (worker 0.4.10)
+
+Use the existing desktop-owned project/module chat and its official Chrome tools. Standalone preflight restrictions apply only to that bridge invocation; a later app-owned continuation checks its own official tools normally. PTI Owner Chrome is disabled by default and is not required.
 
 The optional [PTI Owner Chrome provider](docs/owner-chrome.md) uses Google's `chrome.debugger` + Native Messaging APIs with visible owner consent for one exact task/tab/site. Task-scoped `pti_chrome` MCP tools provide real local viewport screenshots, canvas pointer/touch, keyboard, navigation and bounded visible-state reads. The official ChatGPT preflight is unchanged. Installation is not authorization: Chrome must load the extension and the owner must approve the task/site. No raw debugging socket, arbitrary evaluation, credential copying or audio capture. Hosted official Desktop status and the independent native Chrome status are separate. See the provider runbook for installation, evidence, limits and rollback.
 
@@ -40,7 +42,7 @@ The bridge starts an independent `codex app-server --stdio`. Its Full Access set
 
 New threads and every resume/continuation receive current trusted browser instructions before the turn. With unavailable context, skip browser initialization and host retries, report any required browser step promptly, and continue independently possible coding/CLI work. With unverified context, only an available official tool's normal entry point can establish access; a host or policy failure ends that browser step without retrying. There is no prompt-keyword rejection, automatic app-owned session routing, identity/pipe recovery, URL-policy bypass or raw Playwright/CDP fallback.
 
-For browser work, open a chat in the ChatGPT desktop app on this PC and invoke `@Chrome`. From mobile, select this connected host through Codex (Remote in older apps), with Computer Use enabled and the Chrome extension installed on the host. Keep Windows awake and unlocked. Follow the official [browser guidance](https://learn.chatgpt.com/docs/browser) and [remote connection setup](https://learn.chatgpt.com/docs/remote-connections). This entry point does not repair the separately reported native Windows URL-policy failure, and actual browser control still needs verification there.
+For browser work, continue the existing project/module chat in the ChatGPT desktop app on this PC and invoke `@Chrome`. From mobile, select this connected host through Codex (Remote in older apps), with Computer Use enabled and the Chrome extension installed on the host. Keep Windows awake and unlocked. Follow the official [browser guidance](https://learn.chatgpt.com/docs/browser) and [remote connection setup](https://learn.chatgpt.com/docs/remote-connections). This entry point does not repair the separately reported native Windows URL-policy failure, and actual browser control still needs verification there.
 
 Activate worker upgrades through the [maintenance drain + external one-shot](docs/maintenance-upgrade.md), which waits for **all** protected work to finish and verifies the new heartbeat. The active worker keeps its loaded release/instructions; source delivery alone does not activate it. The [bounded preflight repair decision](decisions/2026-11-06-browser-context.md) is historical evidence, not an alternative upgrade procedure.
 

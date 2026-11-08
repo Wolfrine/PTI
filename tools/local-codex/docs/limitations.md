@@ -116,3 +116,12 @@ The durable module catalog now exposes existing exact module keys/current native
 Some already-loaded historical chats can still retain the old developer instructions until refreshed through their normal owner/runtime. The verified same-chat continuation was refreshed correctly. New bridge turns receive the installed policy; a writer-held historical chat must not be force-taken-over merely to update its history. No claim is made that every dormant historical chat was individually exercised.
 
 Retained rules above are now visible and attributable. The bridge adds no active task/subagent/nesting/duration ceiling, no additional model API, no mandatory PTI Chrome grant, and no blanket prohibition against a bridge-origin chat running through the desktop app. Native Codex usage/context/capability limits remain platform-managed; this audit does not invent or promise their numeric limits.
+
+
+## Hosted-report correction after the mobile chat discrepancy
+
+The existing ChatGPT chat `Resume T03 production leadership` read hosted 0.4.7 flags and the bridge-only generation result, then reported direct Chrome was not activated. The flags were fixed relay values, not an observation of that chat or the PC's app-owned browser. Its Co-Director native chat still had an older 0.4.8-era turn, separate from the verified browser-repair chat.
+
+Hosted 0.4.8 labels capability scope at both report and capability level, explicitly marks the caller session unobserved, removes mandatory manual-consent/QA wording, and labels task results as bridge-generation-only. Plugin 0.4.13 instructs callers to inspect actual tool inventory and latest native history before drawing conclusions. Existing false authorization flags remain truthful for the relay; no authorization is fabricated.
+
+The successful earlier browser verification was initiated by the desktop app. This does not prove that an ordinary mobile plugin chat exposes `send_message_to_thread` or can initiate that same route. Publishing a plugin does not add a missing app-native activation API. Automatic mobile-origin activation remains unverified/unimplemented by this relay; current desktop control is verified. No extra model API, new native chat, game change or simulated browser result is introduced by this correction.

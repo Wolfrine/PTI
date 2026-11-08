@@ -14,7 +14,7 @@
   },
   "requires_local_executor": false,
   "name": "local-codex",
-  "version": "0.4.12",
+  "version": "0.4.13",
   "description": "Delegate local project inspection and authorized file edits to Codex on Sachit's Windows PC.",
   "author": {
     "name": "Sachit Tewary",

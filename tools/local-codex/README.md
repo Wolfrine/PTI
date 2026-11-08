@@ -52,7 +52,7 @@ The existing owner-only server namespace contains durable `modules/{hash}` point
 
 Stored `notLoaded` chats can resume. Native metadata and unfinished-turn checks protect selection. An automatically selected missing/deleted, archived or incompatible thread can be replaced with an audited reason; an explicit source or task continuation cannot silently switch. Transient or ambiguous failures stop. Explicit `chat_policy:rotate` requires `module_key`, `rotation_reason` (`context-bloat`, `incompatible`, `invalid`) and a compact `handoff` of project facts/evidence; it does not archive/delete the former chat or copy a transcript. No context-size/age/count threshold is imposed. Previous tasks and their authorizations remain intact.
 
-The MCP schema and plugin skill expose these optional fields. Older workers reject module routing before queueing; upgrade the worker to 0.4.4 before using it. Existing tasks without module metadata keep their existing behavior. See [lifecycle decision](decisions/2026-11-02-chat-lifecycle.md).
+The hosted `list_projects` response includes each project's durable module catalog (exact key, current parent ID and last task ID). Select from it before creating a module; recent-task listings alone can omit older parents. The catalog is metadata-only, owner-scoped and filtered by the same physical project/checkout identity as admission. Reading it does not alter reservations or routing. The MCP schema and plugin skill expose these optional fields. Older workers reject module routing before queueing; upgrade the worker to 0.4.4 before using it. Existing tasks without module metadata keep their existing behavior. See [lifecycle decision](decisions/2026-11-02-chat-lifecycle.md).
 
 ### Terminal worker PID reuse (runtime 0.4.5)
 
@@ -94,7 +94,7 @@ For active work, ChatGPT chooses `get_task.wait_seconds` per call from expected 
 
 Use a selected native `thread_id` with `resume_codex_thread` only for current human-requested work in an explicit allowlisted project and mode. Resume applies that directory and current guidance, retaining the native transcript in a new task/authorization record. Active bridge threads are rejected and thread locks serialize bridge resumes. New threads receive short `[Project] Outcome` titles.
 
-`organize_codex_thread` renames, archives or restores a selected idle chat through supported app-server methods. No deletion or bulk archive is exposed. This does not change saved desktop sidebar project membership: the installed CLI exposes no such mutation. A selected repository supplies harness context; it is not a sidebar move. Existing chats, history, config and private connection identity are preserved.
+`organize_codex_thread` renames, archives or restores a selected idle chat through supported app-server methods. No deletion or bulk archive is exposed. This does not change saved desktop sidebar project membership: the installed CLI exposes no such mutation. The desktop app's supported `move_thread_to_project` tool can assign existing chats when owner-authorized; read membership back after moving. A selected repository supplies harness context; it is not a sidebar move. Existing chats, history, config and private connection identity are preserved.
 
 Verify continuation, history and chat routing against the actual authorized work and saved chat. The disposable acceptance drivers were retired on 2026-11-08; their source and historical results remain in Git. Do not create synthetic chats, temporary OAuth grants or deliberate service outages for routine verification.
 

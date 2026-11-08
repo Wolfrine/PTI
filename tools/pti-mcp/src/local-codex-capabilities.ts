@@ -7,7 +7,7 @@ export const browserContextSchema=z.object({
   reason:z.enum(['missing-app-session-context','incomplete-app-session-context','app-session-context-unverified']),
   verified:z.literal(false),
 }).strict();
-export const HOST_VERSION='0.4.6';
+export const HOST_VERSION='0.4.7';
 export const desktopHandoff='Open ChatGPT desktop on this PC with @Chrome or @Browser for the exact QA URL, or @Computer for native interaction. From mobile, open Codex (Remote in older apps) paired to this same host. Enable Computer Use and the Chrome extension as applicable; keep Windows awake and unlocked. Obtain owner consent there, inspect the actual artifact, then report the run and captured evidence through update_interactive_qa. Never copy browser pipes/identities or bypass a URL-policy denial.';
 
 export function interactiveCapabilities(worker:{version:string;at:number;dispatchReady?:boolean;browser_context?:z.infer<typeof browserContextSchema>}|undefined,now:number) {

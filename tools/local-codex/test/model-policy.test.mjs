@@ -14,7 +14,7 @@ test('catalog pagination checks exact model and advertised effort without choosi
   assert.deepEqual(cursors, [null, 'next']);
 });
 test('missing model, unsupported effort, and catalog failures ask owner with no fallback', async () => {
-  for (const rpc of [async () => ({data: [], nextCursor: null}), async () => ({data: [{...model, supportedReasoningEfforts: [{reasoningEffort: 'medium'}]}]}), async () => ({data: [{...model, upgrade: 'newer-model'}]}), async () => {throw Error('offline');}]) {
+  for (const rpc of [async () => ({data: [], nextCursor: null}), async () => ({data: [{...model, supportedReasoningEfforts: [{reasoningEffort: 'medium'}]}]}), async () => {throw Error('offline');}]) {
     await assert.rejects(requireModel(rpc, selection), /Ask the owner.*no fallback/);
   }
 });

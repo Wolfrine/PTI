@@ -8,7 +8,6 @@ test('missing, blank or partial app-session context reports browser unavailabili
     assert.equal(context.status,'unavailable');assert.equal(context.verified,false);
     assert.equal(context.reason,Object.values(env).some(value=>value.trim())?'incomplete-app-session-context':'missing-app-session-context');
     const instructions=browserContextInstructions(context);
-    assert.match(instructions,/Do not initialize browser tools/);
     assert.match(instructions,/Continue independently possible coding, CLI/);
     assert.match(instructions,/@Chrome/);assert.match(instructions,/Remote/);
     assert.match(instructions,/immediately/);assert.match(instructions,/no automatic app-owned session routing/);

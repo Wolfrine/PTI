@@ -24,7 +24,7 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 
 ## Authorization and evidence
 
-### Browser control (worker 0.4.10)
+### Browser control (worker 0.4.11)
 
 Use the existing desktop-owned project/module chat and its official Chrome tools. Standalone preflight restrictions apply only to that bridge invocation; a later app-owned continuation checks its own official tools normally. PTI Owner Chrome is disabled by default and is not required.
 
@@ -40,7 +40,7 @@ Hosted support must deploy before worker 0.4.8 activation. Install only while al
 
 The bridge starts an independent `codex app-server --stdio`. Its Full Access setting, subscription sign-in and Firestore connectivity do not establish browser control. Before inference, each worker checks only whether its own child environment has both app-session browser prerequisites. Missing or incomplete context is `unavailable`; both present is still `unverified`, never ready or accepted. No pipe/identity values are retained or returned. The sanitized result appears in local task `browserContext` and the internal worker `bridge_status`; this does not add fields to the hosted status protocol.
 
-New threads and every resume/continuation receive current trusted browser instructions before the turn. With unavailable context, skip browser initialization and host retries, report any required browser step promptly, and continue independently possible coding/CLI work. With unverified context, only an available official tool's normal entry point can establish access; a host or policy failure ends that browser step without retrying. There is no prompt-keyword rejection, automatic app-owned session routing, identity/pipe recovery, URL-policy bypass or raw Playwright/CDP fallback.
+New threads and every resume/continuation receive current trusted browser instructions before the turn. Missing environment metadata is diagnostic only and cannot prohibit an available official tool. Use that tool's normal permission checks; an actual denial or host failure ends that step. Continue independently possible coding/CLI work. With unverified context, only an available official tool's normal entry point can establish access; a host or policy failure ends that browser step without retrying. There is no prompt-keyword rejection, automatic app-owned session routing, identity/pipe recovery, URL-policy bypass or raw Playwright/CDP fallback.
 
 For browser work, continue the existing project/module chat in the ChatGPT desktop app on this PC and invoke `@Chrome`. From mobile, select this connected host through Codex (Remote in older apps), with Computer Use enabled and the Chrome extension installed on the host. Keep Windows awake and unlocked. Follow the official [browser guidance](https://learn.chatgpt.com/docs/browser) and [remote connection setup](https://learn.chatgpt.com/docs/remote-connections). This entry point does not repair the separately reported native Windows URL-policy failure, and actual browser control still needs verification there.
 

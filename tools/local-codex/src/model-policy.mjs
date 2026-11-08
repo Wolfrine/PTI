@@ -21,9 +21,6 @@ export async function requireModel(rpc, selection) {
     catch { throw choiceRequired('The signed-in Codex model catalog could not be verified.'); }
     const model = result.data?.find(item => item.model === selection.model);
     if (model) {
-      if (model.upgrade && model.upgrade !== selection.model) {
-        throw choiceRequired(`The catalog recommends upgrading ${selection.model}; confirm the desired model and intelligence level.`);
-      }
       if (!model.supportedReasoningEfforts?.some(item => item.reasoningEffort === selection.effort)) {
         throw choiceRequired(`${selection.model} does not advertise reasoning effort ${selection.effort}.`);
       }

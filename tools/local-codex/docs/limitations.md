@@ -105,7 +105,7 @@ Windows native screenshot capture separately returned a capture timeout on this 
 |---|---|
 | Interactive QA broker | Recordkeeping only; no session launcher. One foreground reservation, 90-second lease, default 24-hour request expiry. Explicit idle release, operator attestations, and exact run identity. HTTPS or loopback HTTP without credentials/query/fragment; up to 30 objectives, observations and artifacts; up to 50 listed requests. These are not prerequisites for ordinary official Chrome control. |
 | PTI Owner Chrome | Disabled. If explicitly restored: only `http://localhost:4173` and `https://taleweald.firebaseapp.com`; exact task/PID/generation/tab/site owner consent; foreground-only; 5/15/30-minute owner grants; no arbitrary JavaScript, cookies, browser/OS shortcuts or audio capture. MCP command wait 31 seconds; Native Messaging frame maximum 8,000,000 bytes; coordinates 0–10,000; text 1,000 characters; objectives 1,500; up to 5 touch points; viewport 240–2560 by 240–1600. None apply to the successful official Chrome route. |
-| Legacy local plugin | Disabled in global config; outdated polling/capability guidance is inactive. Current published plugin is 0.4.12. |
+| Legacy local plugin | Disabled in global config; outdated polling/capability guidance is inactive. Current published plugin is 0.4.13. |
 
 Sources: `../pti-mcp/src/local-codex-interactive.ts`, `chrome/mcp.mjs`, `chrome/runtime.mjs`, `chrome/native-host.mjs`, global Codex config.
 
@@ -123,5 +123,7 @@ Retained rules above are now visible and attributable. The bridge adds no active
 The existing ChatGPT chat `Resume T03 production leadership` read hosted 0.4.7 flags and the bridge-only generation result, then reported direct Chrome was not activated. The flags were fixed relay values, not an observation of that chat or the PC's app-owned browser. Its Co-Director native chat still had an older 0.4.8-era turn, separate from the verified browser-repair chat.
 
 Hosted 0.4.8 labels capability scope at both report and capability level, explicitly marks the caller session unobserved, removes mandatory manual-consent/QA wording, and labels task results as bridge-generation-only. Plugin 0.4.13 instructs callers to inspect actual tool inventory and latest native history before drawing conclusions. Existing false authorization flags remain truthful for the relay; no authorization is fabricated.
+
+Deployment run `42458671130` completed successfully for commit `eea1952`. Live `bridge_status` returned host 0.4.8, worker 0.4.11 online, the explicit relay scope and caller-session unknown values. Live `get_task` returned the new bridge-generation scope and native-history notice. The same relay history tool available to the mobile chat retrieved the later successful desktop turn without creating a chat or model run.
 
 The successful earlier browser verification was initiated by the desktop app. This does not prove that an ordinary mobile plugin chat exposes `send_message_to_thread` or can initiate that same route. Publishing a plugin does not add a missing app-native activation API. Automatic mobile-origin activation remains unverified/unimplemented by this relay; current desktop control is verified. No extra model API, new native chat, game change or simulated browser result is introduced by this correction.

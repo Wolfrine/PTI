@@ -32,13 +32,15 @@ export function statusFor(identity) {
   const connected=!!connection&&alive(connection.pid)&&Date.now()-connection.at<10000;
   try{session=read(path.join(ipc,'session.json'));}catch{}
   const active=connected&&session?.taskId===identity.id&&session?.workerPid===identity.pid&&session?.generation===identity.generation&&session.expiresAt>Date.now();
+  const lastSeenAt=Number.isFinite(connection?.at)?new Date(connection.at).toISOString():null;
   return {provider,officialChatGptDesktop:false,state:active?'active':connected?'requires_handoff':'unavailable',authorized:active,
-    reason:active?'chrome-debugger-attached-by-owner':connected?'owner-tab-and-task-approval-required':'extension-not-connected',
+    reason:active?'chrome-debugger-attached-by-owner':connected?'owner-tab-and-task-approval-required':'native-connection-idle-or-unavailable',
+    connection:{connected,lastSeenAt,idleDisconnectExpected:true,diagnosis:connected?'Native host is responding.':'The extension connects when its toolbar popup opens and deliberately disconnects while idle. A missing heartbeat alone does not prove an installation fault; status checks cannot reconnect it.'},
     authorizationProofKind:active?'chrome-action-user-gesture-and-debugger-attachment':'none',
     route:'task-scoped MCP pti_chrome through current-user Native Messaging',
     session:active?{runId:session.runId,tabId:session.tabId,origin:session.origin,expiresAt:session.expiresAt}:null,
     limits:{origins:['http://localhost:4173','https://taleweald.firebaseapp.com'],foregroundOnly:true,audioCapture:'unsupported',audioAnalysis:'unsupported',speakerPlayback:'unverified',arbitraryJavascript:false,cookies:false},
-    observedAt:new Date().toISOString(),nextStep:'In your intended Chrome profile, load the installed extension if needed, open the requested page, click PTI Owner Chrome, select this exact task and approve that tab/site. Keep the tab foreground.'};
+    observedAt:new Date().toISOString(),nextStep:active?'Use the approved foreground tab; release it when finished.':connected?'Select this exact task in PTI Owner Chrome and approve the requested tab/site. Keep the tab foreground.':'Open the requested page through the available authorized browser controller, then open the installed PTI Owner Chrome toolbar popup. Diagnose any error shown there before suggesting reinstallation. Report the missing connection once and continue independent work; repeat status only after a relevant setup or connection change.'};
 }
 export function saveArtifact(identity,requestId,kind,bytes,metadata) {
   const target=path.join(directory,'evidence',identity.id);fs.mkdirSync(target,{recursive:true});

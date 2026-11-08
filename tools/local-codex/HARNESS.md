@@ -25,6 +25,10 @@ Idle `notLoaded` threads resume. Module selection checks metadata only, includin
 
 ## Caller-selected result waits (owner instruction, 2026-11-03)
 
+An `already has an active writer` error is native chat ownership, not evidence that the model or relay is offline. An idle last turn does not release a desktop-owned chat. Use its owning desktop context or a supported release; only explicitly rotate with a recorded handoff after checking that work will not race. Do not repeat the same failed resume, remove native locks, or kill an unrelated owner. On 2026-11-08 this explained seven of nine failed work runs in the seven-day review.
+
+PTI Owner Chrome connects when its toolbar popup opens and intentionally disconnects while idle. An absent heartbeat is not an installation diagnosis. Status reads do not open the popup, establish consent or repair Windows capture. Report an unchanged gate once, continue independent work, and recheck after a relevant change. Use the official browser controller directly in desktop chats where it is available. See `decisions/2026-11-08-local-codex-simplification.md` for observed boundaries and recovery.
+
 ChatGPT chooses each hosted `get_task.wait_seconds` from expected remaining work, recent progress and desired responsiveness. Longer supported waits fit quiet long work; shorter waits fit imminent results or human interaction. Twenty seconds is an omitted-argument compatibility fallback, not a fixed polling schedule. Respect actual connector metadata and client timeouts; verify a larger wait through that connection. Progress and human decisions return early; request timeout never limits task execution. A saved connector schema can remain stale after server/plugin publication and must be refreshed separately.
 
 ## Effectiveness loop

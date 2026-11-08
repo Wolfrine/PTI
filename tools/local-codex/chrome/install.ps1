@@ -5,7 +5,7 @@ $root='F:\Workspace\Support\LocalCodexBridge\chrome'
 if (([IO.Path]::GetFullPath($source)) -notlike 'F:\*') { throw 'Provider source must be on F:.' }
 $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 $owner=$identity.User
-$version='0.1.1'
+$version='0.1.2'
 $release=Join-Path $root ('releases\'+$version)
 foreach($name in @('native-host.mjs','mcp.mjs')){if(-not(Test-Path -LiteralPath (Join-Path $source ('dist\'+$name)))){throw 'Build the provider before installation.'}}
 if (Test-Path -LiteralPath (Join-Path $root 'ipc\native.lock')) {
@@ -49,6 +49,6 @@ foreach($view in @([Microsoft.Win32.RegistryView]::Registry32,[Microsoft.Win32.R
   $base=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,$view);$key=$base.CreateSubKey($registryPath)
   $key.SetValue('',$nativeManifest,[Microsoft.Win32.RegistryValueKind]::String);$key.Dispose();$base.Dispose()
 }
-$receipt=@{installedAt=(Get-Date).ToUniversalTime().ToString('o');version=$version;nativeHostRegistered=$true;extensionLoaded=$false;chromeObserved=$false;extensionId=$extensionId;extensionDirectory=(Join-Path $release 'extension');ownerSid=$owner.Value;acl='current owner + SYSTEM only';registryScope='HKCU only';files=$hashes;nextStep='In the intended Chrome profile: chrome://extensions > Developer mode > Load unpacked > select extensionDirectory. Then approve the exact pending task from the toolbar popup on the intended site.'}
+$receipt=@{installedAt=(Get-Date).ToUniversalTime().ToString('o');version=$version;nativeHostRegistered=$true;extensionLoaded=$null;chromeObserved=$false;extensionId=$extensionId;extensionDirectory=(Join-Path $release 'extension');ownerSid=$owner.Value;acl='current owner + SYSTEM only';registryScope='HKCU only';files=$hashes;nextStep='If PTI Owner Chrome is already loaded, open its toolbar popup on the requested site and select the exact pending task. Backend 0.1.2 keeps the same extension 0.1.1 files and does not require reloading it. Only if absent, load extensionDirectory through Chrome. Installation alone does not verify page control.'}
 Write-Json (Join-Path $root 'install-receipt.json') $receipt
 [pscustomobject]$receipt | Select-Object version,nativeHostRegistered,extensionLoaded,extensionId,extensionDirectory,nextStep | ConvertTo-Json

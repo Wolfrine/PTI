@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+const providerRoot='F:\\Workspace\\Support\\LocalCodexBridge\\chrome';
+export function ownerChromeConfiguration(job,workerPid,nodePath) {
+  const pointer=path.join(providerRoot,'active.json');if(!fs.existsSync(pointer))return {args:[],instructions:'The independent PTI Owner Chrome provider is not installed. Official ChatGPT browser preflight remains unchanged.'};
+  const active=JSON.parse(fs.readFileSync(pointer,'utf8'));
+  if(active.schemaVersion!==1||path.dirname(active.mcp)!==active.release||!active.release.startsWith(providerRoot+'\\releases\\')||!fs.existsSync(active.mcp))throw Error('Invalid independent Chrome provider installation.');
+  const args=['-c','mcp_servers.pti_chrome.command='+JSON.stringify(nodePath),'-c','mcp_servers.pti_chrome.args='+JSON.stringify([active.mcp,'--task',job.id,'--worker-pid',String(workerPid),'--generation',String(job.relayGeneration||0)]),'-c','mcp_servers.pti_chrome.enabled=true','-c','mcp_servers.pti_chrome.tool_timeout_sec=40'];
+  return {args,instructions:'Independent Chrome provider: this task also has the task-scoped pti_chrome MCP tools, separate from official ChatGPT Desktop Computer Use. The unchanged official browser preflight above governs app-owned ChatGPT tools; it neither authorizes nor forbids this separate owner-authorized provider. Call chrome_status, then chrome_request_session with the exact allowed URL/objectives. Only an owner toolbar action selecting this exact task/tab/site can attach chrome.debugger. If unavailable, report the specific extension/task consent step. Do not initialize official browser tools, use raw CDP/Playwright, copy identities or credentials, or claim audio capture. Use actual chrome_screenshot images and chrome_state observations as evidence, preserve their receipt paths, and distinguish observed gameplay from command delivery. The owner must keep the approved tab foreground. Release the session at the end.'};
+}

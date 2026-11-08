@@ -48,7 +48,9 @@ For a repeated, supported problem or explicit durable owner instruction, promote
 
 The inspected pre-harness baseline had 29 task records: 24 completed, four interrupted and one failed. Eleven had continuation history; nine looked like tests/acceptance by historical labels. Those counts are execution states, not owner satisfaction. No old record had distinct execution timing or token counters, and effort was absent on 24 records. The account monitor was healthy; its totals cannot be allocated to this bridge.
 
-Release acceptance requires fixture fault/concurrency tests plus live overlapping parent tasks, isolated cancellation, same-thread continuation and a bounded native child/synthesis. Scheduler registration/read-back and a real metadata review are separate checks. These establish operation, not long-term effectiveness. Source decisions and release evidence are kept in the F-drive harness outputs; future reviews live under the installed bridge's `harness/reviews` directory.
+Release acceptance uses actual authorized runtime operations, scheduler invocation/read-back and live metadata observations appropriate to the change. The owner superseded the historical fixture/synthetic test requirement on 2026-11-08. These observations establish operation, not long-term effectiveness. Source decisions and release evidence are kept in the F-drive harness outputs; future reviews live under the installed bridge's `harness/reviews` directory.
+
+Independent owner Chrome follows `docs/owner-chrome.md`: task-scoped MCP, owner-only Native Messaging IPC and explicit Chrome task/tab/site approval. It never authorizes the official ChatGPT browser context or changes its preflight. Missing extension/consent stays unavailable; captures and gameplay observations remain distinct from installation/build proof.
 
 ## Installed worker maintenance
 

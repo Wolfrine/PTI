@@ -13,4 +13,5 @@ const notices=[];for(const name of [...packages].sort()){
   notices.push(`${name} ${metadata.version} (${metadata.license})\n\n${fs.readFileSync(file,'utf8')}`);
 }
 fs.writeFileSync('dist/THIRD-PARTY-NOTICES.txt',notices.join('\n\n---\n\n'));
+await build({entryPoints:['chrome/native-host.mjs','chrome/mcp.mjs'],outdir:'chrome/dist',outExtension:{'.js':'.mjs'},bundle:true,platform:'node',format:'esm',target:'node20',banner:{js:"import {createRequire as __createRequire} from 'node:module'; const require=__createRequire(import.meta.url);"}});
 console.log('Built local Codex runtime.');

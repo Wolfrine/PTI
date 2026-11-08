@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "PTI Owner Chrome",
+  "version": "0.1.1",
+  "minimum_chrome_version": "125",
+  "description": "Explicit task/tab/site consent for this owner’s independent local Codex Chrome provider.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApPz8UNrHZhXcNpwbxd31LfJQ8+aG+edxx5UvS3O6Apo5WwSVwgzzx+of3XisBaNPlLtGh9zgufh9LPvO2ksY473C+LfT7jN2PJ7sW7UwNKtoyrHLKJp2iqnmQqF601EXOmFNbnd+GVsbzBh+hYJIKDjUm+OGJQ4qCcD9oS79k2DRVerMUmWSg/iY8cDC+TIiRgtOaGjQmUoprBcjILisIjOMaM5Uw25AGYXVJVaD1VttGJgspIOpn3N51FFSPf/XsnXtZgy2bAXnYChuyFcnckuiOz/pyvANGOoScngoUvBiFYS5oDJYlXsmYBnNSUTQZYucQQqttiebkDHaiwrrUwIDAQAB",
+  "permissions": [
+    "activeTab",
+    "debugger",
+    "nativeMessaging",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PTI Owner Chrome"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}

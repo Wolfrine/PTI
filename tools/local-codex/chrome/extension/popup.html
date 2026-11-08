@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PTI Owner Chrome</title><link rel="stylesheet" href="popup.css"></head><body>
+<h1>PTI Owner Chrome</h1><p>This connects one local Codex task to this tab. Chrome shows its debugger banner while access is active.</p>
+<p id="status" role="status">Reading local task requests…</p>
+<label for="task">Requested task</label><select id="task"><option value="">No active requests</option></select><pre id="details"></pre>
+<label for="duration">Allow this tab and site for</label><select id="duration"><option value="5">5 minutes</option><option value="15" selected>15 minutes</option><option value="30">30 minutes</option></select>
+<label class="consent"><input id="exclusive" type="checkbox"> I have released other automated desktop/browser operators.</label>
+<button id="approve" disabled>Allow selected task on this tab</button><button id="release">Release Chrome access</button><button id="refresh">Refresh requests</button>
+<p class="note">Only localhost:4173 and Taleweald are eligible. Keep the approved tab foreground. No cookies, password access or audio capture. This is independent of ChatGPT Desktop Computer Use.</p>
+<script src="popup.js" type="module"></script></body></html>

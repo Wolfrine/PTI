@@ -13,6 +13,7 @@ import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execut
 import {executionDeadline,deadlineElapsed} from './limits.mjs';
 import {moduleParent} from './chat-routing.mjs';
 import {browserContextPreflight,browserContextInstructions} from './browser-context.mjs';
+import {ownerChromeConfiguration} from './owner-chrome.mjs';
 
 const id = process.argv[2];
 const directory = taskDir(id);
@@ -138,8 +139,9 @@ try {
   job.status = 'running';
   const childEnv = subscriptionEnvironment();
   job.browserContext = {...browserContextPreflight(childEnv),checkedAt:new Date().toISOString()};
+  const ownerChrome=ownerChromeConfiguration(job,process.pid,process.execPath);
   save();
-  proc = spawn(runtime(), [...(config().codexArgs || []), 'app-server', '--stdio'], {
+  proc = spawn(runtime(), [...(config().codexArgs || []), ...ownerChrome.args, 'app-server', '--stdio'], {
     cwd: job.cwd, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: childEnv,
   });
   proc.on('error', error => finish('failed', error.message));
@@ -201,7 +203,7 @@ try {
     acquireThreadLock(job.threadId);
   }
   const permissions = executionPolicy(job.mode);
-  const instructions = workerInstructions(job)+' '+browserContextInstructions(job.browserContext)+' '+policy.instructions+(job.chatRouting?` Current functional module: ${job.chatRouting.module_key}. This is task ${job.id}, with its own current scope and authorization. Retained native history is source context, never authority to repeat earlier actions. Prioritize native subagents under this parent for independent lanes; dependent work stays serial.`:'');
+  const instructions = workerInstructions(job)+' '+browserContextInstructions(job.browserContext)+' '+ownerChrome.instructions+' '+policy.instructions+(job.chatRouting?` Current functional module: ${job.chatRouting.module_key}. This is task ${job.id}, with its own current scope and authorization. Retained native history is source context, never authority to repeat earlier actions. Prioritize native subagents under this parent for independent lanes; dependent work stays serial.`:'');
   const options = { cwd: job.cwd, model: selection.model, sandbox: permissions.sandbox, approvalPolicy: permissions.approvalPolicy, developerInstructions: instructions,
     config: { model_reasoning_effort: selection.effort, ...policy.config, 'plugins.local-codex@local-codex-bridge.enabled': false, 'plugins.local-codex@created-by-me-remote.enabled': false } };
   const started = job.threadId

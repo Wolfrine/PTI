@@ -24,6 +24,8 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 
 ## Authorization and evidence
 
+The [complete limits and dependencies inventory](docs/limitations.md) records active owner policies, bridge-specific restrictions, exact transport/history bounds and platform limitations. Do not introduce new execution restrictions without the owner's explicit instruction.
+
 ### Browser control (worker 0.4.11)
 
 Use the existing desktop-owned project/module chat and its official Chrome tools. Standalone preflight restrictions apply only to that bridge invocation; a later app-owned continuation checks its own official tools normally. PTI Owner Chrome is disabled by default and is not required.

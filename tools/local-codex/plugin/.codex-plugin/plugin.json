@@ -1,4 +1,5 @@
 {
+  "apps": "./.app.json",
   "interface": {
     "capabilities": [
       "Read",
@@ -14,7 +15,6 @@
   "requires_local_executor": false,
   "name": "local-codex",
   "version": "0.4.8",
-  "apps": "./.app.json",
   "description": "Delegate local project inspection and authorized file edits to Codex on Sachit's Windows PC.",
   "author": {
     "name": "Sachit Tewary",

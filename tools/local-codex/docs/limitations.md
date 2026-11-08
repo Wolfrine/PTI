@@ -2,6 +2,8 @@
 
 Audit date: 8 November 2026. Scope: installed Windows configuration, worker/relay source, hosted Local Codex admission and protocol source, plugin guidance, relevant desktop configuration, and actual native-chat/browser operation. This is a control inventory, not a claim that every failure condition was deliberately triggered.
 
+Latest implementation: worker 0.4.12 / host 0.4.9 / plugin 0.4.14 add `continue_desktop_chat`. Earlier statements below that the relay has no automatic launcher describe the previous releases; see the automatic handoff section at the end for its implementation and verification.
+
 ## Confirmed working and changes delivered
 
 - Existing native chat `01a1b6f2-9121-7412-b874-370f30fe57da` completed bridge generation 5, then ran through the desktop app in turn `01a1b9f4-c353-7e72-88ff-9d6446c8dac2`. The official Chrome tool operated the authenticated Taleweald tab, clicked Supervisors and Milestones, and saved a screenshot. No replacement chat or PTI Chrome consent was needed.
@@ -139,3 +141,13 @@ Native Remote settings showed the paired device `Android 14 LE2101` and “Last 
 Official installed `codex doctor --json` confirmed the desktop app-server handshake, provider HTTP and WebSocket connectivity. It identified `features.remote_connections = true` in the global config as ignored and unrecognized. That obsolete line was removed; a subsequent `doctor --json --network-only` reported all four checks, including config load, as OK. Native Remote pairing was not changed. Optional MCP environment warnings, endpoint-protection exclusion uncertainty and historical rollout-index differences remain separate diagnostics; no app database or protection settings were altered.
 
 Structured evidence: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/taleweald-existing-chat-verification.json`. This was practical runtime verification, not a synthetic suite, gameplay check, audio check or owner acceptance. Existing bridge tests remain referenced by the hosted deployment workflow; no required protections were removed or run for this documentation update.
+
+## Automatic handoff through the existing desktop chat
+
+The missing route is implemented with the documented official `codex queue --thread <existing-id> --message <text>` command and `codex://threads/<existing-id>` link. The desktop app consumes the durable queue and owns the native turn, including its existing Chrome tools. No private app socket, browser identity, additional model API, new chat, persistent helper or recurring automation is used.
+
+Hosted `continue_desktop_chat` takes the exact existing native thread ID, its catalog project, authorized prompt and stable request key. Admission checks existing bridge activity; the local dispatcher verifies the chat directory, selected model/provider/effort, pending queue and checkout lock before dispatch. The app retains its native permissions. A durable receipt and per-request marker recover uncertain retries without silently sending the prompt twice. The operation reports `started` only after the matching user message appears in a native turn. It observes startup for 12 seconds and removes its own still-pending message if no start is observed; this does not cap native work duration.
+
+The handoff operation is a dispatch receipt, not a model-task lifetime wrapper. Use `read_codex_thread` for its exact turn and completed final result. Native work, approvals and cancellation remain app-owned after dispatch; canceling the dispatch operation is not a native-turn stop command. The text-only history export still omits screenshot bytes. A separate history reader may label an unfinished app-owned turn interrupted until completion is persisted; handoff receipts report live status unobserved instead of asserting that interruption.
+
+Practical evidence before release: the CLI queue started turn `01a1ba32-7831-76c3-8de1-b73c8063b012` in Co-Director chat `01a1b7c7-885c-7053-999c-40be33901ca8`, which used official Chrome and saved `taleweald-cli-queue-chrome.jpg`. The implemented dispatcher then started completed turn `01a1ba39-2ef5-7c60-8ea2-4d18b6009c13`, again clicked Supervisors and Milestones and saved `taleweald-automatic-handoff-chrome.jpg`. Retrying the identical dispatch returned that same turn without another model run. Evidence and receipts are under `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/`. Hosted publication, installed activation and mobile-conversation verification are recorded separately when observed.

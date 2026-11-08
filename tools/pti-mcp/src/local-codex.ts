@@ -6,7 +6,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { digest } from './auth-store.js';
 import {admission,capacity,concurrentWorker,uncappedWorker,reservations,changedReservation,resourcePath as normalizeResourcePath,type Reservation,type SchedulerPatch} from './local-codex-admission.js';
 import {affinityIdentity,affinityWorker,type ChatAffinity,type ChatRouting} from './local-codex-affinity.js';
-import {browserContextSchema,interactiveCapabilities,HOST_VERSION} from './local-codex-capabilities.js';
+import {browserContextSchema,interactiveCapabilities,HOST_VERSION,desktopQueueWorker} from './local-codex-capabilities.js';
 import {FirestoreInteractiveQaStore,InteractiveQaBroker,qaRequestSchema,qaUpdateSchema,qaListSchema,type InteractiveQaStore} from './local-codex-interactive.js';
 import {admissionBlocked,type Maintenance} from './local-codex-maintenance.js';
 
@@ -18,8 +18,8 @@ const id = z.string().regex(/^[a-f0-9]{32}$/);
 const reviewRequest=z.object({task_ids:z.array(id).max(100).optional()}).strict();
 const threadId=z.string().uuid();
 const title=z.string().trim().min(1).max(100);
-const commandArgs=z.object({project:z.string().optional(),thread_id:threadId.optional(),query:z.string().max(200).optional(),archived:z.boolean().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).optional(),title:title.optional()}).strict();
-type Command={action:'list'|'read'|'rename'|'archive'|'unarchive';args:z.infer<typeof commandArgs>};
+const commandArgs=z.object({project:z.string().optional(),thread_id:threadId.optional(),query:z.string().max(200).optional(),archived:z.boolean().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).optional(),title:title.optional(),prompt:text.optional()}).strict();
+type Command={action:'list'|'read'|'rename'|'archive'|'unarchive'|'desktop';args:z.infer<typeof commandArgs>};
 const moduleKey=z.string().regex(/^[a-z0-9][a-z0-9._/-]{0,127}$/).describe('Reuse the exact functional module_key from list_projects.modules. A new outcome, phase, QA pass or conversation does not need a new module. Never infer by fuzzy title.');
 type Start={project:string;prompt:string;mode:'inspect'|'edit';request_key:string;title?:string;work_key?:string;thread_id?:string;strategy?:'auto'|'single'|'team';purpose?:'work'|'acceptance';module_key?:string;chat_policy?:'reuse'|'rotate';rotation_reason?:'context-bloat'|'incompatible'|'invalid';handoff?:string};
 const project = z.object({key:z.string().regex(/^[a-z0-9-]{1,64}$/),name:z.string().max(100),path:z.string().regex(/^F:[\\/]/i).max(2048),resourcePath:z.string().regex(/^F:[\\/]/i).max(2048).optional(),available:z.boolean()}).strict();
@@ -153,8 +153,8 @@ export class CodexRelay {
       ...(job.snapshot||{}),...(job.ownerOutcome?{ownerOutcome:job.ownerOutcome,outcomeAt:new Date(job.outcomeAt!).toISOString(),outcomeGeneration:job.outcomeGeneration}:{}),...(expired?{status:'failed',error:'Request expired before the PC claimed it. It will not execute later.'}:{}),
       ...(lost?{status:'interrupted',error:'The worker heartbeat was lost. Resume explicitly after the PC is ready.'}:{}),
       cancelRequested:!!job.cancelRequested,
-      resultScope:'bridge-generation-only',
-      nativeHistoryNotice:'This result does not include later turns run directly through the desktop app. For the complete current chat outcome use read_codex_thread with thread_id, or app-native read_thread when available. Compare turn timestamps and actual tool evidence; an earlier no-browser bridge turn does not negate a later desktop browser run.'};
+      resultScope:job.command?.action==='desktop'?'desktop-handoff-receipt':job.command?'native-history-operation':'bridge-generation-only',
+      nativeHistoryNotice:job.command?.action==='desktop'?'This is a handoff receipt. Require result.state started, then read_codex_thread for result.thread_id and the exact result.turn_id to obtain the actual completed work.':job.command?'The result contains the requested native-history or organization operation; inspect its notice and truncation flags.':'This result does not include later turns run directly through the desktop app. For the complete current chat outcome use read_codex_thread with thread_id, or app-native read_thread when available. Compare turn timestamps and actual tool evidence; an earlier no-browser bridge turn does not negate a later desktop browser run.'};
   }
   async status(uid:string) {
     this.owner(uid);const worker=await this.store.worker(uid),online=!!worker&&worker.dispatchReady!==false&&this.clock()-worker.at<=60000;
@@ -231,9 +231,13 @@ export class CodexRelay {
       if(old){if(old.inputHash!==inputHash)throw Error('request_key was already used for a different history operation.');return {job:old,result:this.public(old)};}
       const host=this.ready(worker);this.modern(host);
       if(command.args.project&&!host.projects.some(p=>p.key===command.args.project&&p.available))throw Error('Choose an available key from list_projects.');
-      const at=this.clock(),job:Job={id:jobId,project:command.args.project||host.projects.find(p=>p.available)!.key,mode:'inspect',prompt:'',inputHash,command,generation:1,status:'queued',createdAt:at,updatedAt:at,expiresAt:at+120000,history:[],responses:[]};
-      const managesThread=['rename','archive','unarchive'].includes(command.action);
-      const scheduler=admission(host,{id:job.id,generation:job.generation,project:job.project,mode:'inspect',resourcePath:null,...(managesThread&&command.args.thread_id?{threadId:command.args.thread_id}:{}),status:'queued',until:job.expiresAt},at);
+      const desktop=command.action==='desktop';
+      if(desktop&&(!command.args.project||!command.args.thread_id||!command.args.prompt))throw Error('Desktop handoff requires the exact existing chat, catalog project and authorized prompt.');
+      if(desktop&&!desktopQueueWorker(host.version))throw Error('Desktop handoff requires worker 0.4.12 or later. Nothing was queued.');
+      const target=host.projects.find(p=>p.key===command.args.project);
+      const at=this.clock(),job:Job={id:jobId,project:command.args.project||host.projects.find(p=>p.available)!.key,mode:desktop?'edit':'inspect',prompt:'',inputHash,command,generation:1,status:'queued',createdAt:at,updatedAt:at,expiresAt:at+120000,history:[],responses:[]};
+      const managesThread=desktop||['rename','archive','unarchive'].includes(command.action);
+      const scheduler=admission(host,{id:job.id,generation:job.generation,project:job.project,mode:job.mode,resourcePath:desktop?target!.resourcePath||target!.path:null,...(managesThread&&command.args.thread_id?{threadId:command.args.thread_id}:{}),status:'queued',until:job.expiresAt},at);
       return {job,result:this.public(job),scheduler};
     });
   }
@@ -347,9 +351,9 @@ export class CodexRelay {
         if(job.affinityId&&!affinityWorker(host.version)){job.status='failed';job.snapshot={error:'Module routing requires worker 0.4.4; no inference was started.'};return {job,result:null,scheduler:changedReservation(worker,job,this.clock())};}
         const target=host.projects.find(project=>project.key===job.project&&project.available);
         if(!target||(job.resourcePath&&normalizeResourcePath(job.resourcePath)!==normalizeResourcePath(target.resourcePath||target.path))||(job.projectPath&&normalizeResourcePath(job.projectPath)!==normalizeResourcePath(target.path))){job.status='failed';job.snapshot={error:'The project resource changed before execution. Review list_projects and start a new task.'};return {job,result:null,scheduler:changedReservation(worker,job,this.clock())};}
-        const managesThread=job.command&&['rename','archive','unarchive'].includes(job.command.action);
+        const managesThread=job.command&&['rename','archive','unarchive','desktop'].includes(job.command.action);
         const thread=job.threadId||(managesThread?job.command?.args.thread_id:undefined);
-        const resource=job.command?null:job.resourcePath||host.projects.find(p=>p.key===job.project)?.resourcePath||host.projects.find(p=>p.key===job.project)?.path||null;
+        const resource=job.command&&job.command.action!=='desktop'?null:job.resourcePath||host.projects.find(p=>p.key===job.project)?.resourcePath||host.projects.find(p=>p.key===job.project)?.path||null;
         const reserved=reservations(host,this.clock()).some(slot=>slot.id===job.id&&slot.generation===job.generation),before=structuredClone(job);
         job.status='running';job.lease=randomUUID();job.leaseUntil=this.clock()+90000;job.instanceId=heartbeat.instanceId;job.updatedAt=this.clock();
         let scheduler:SchedulerPatch;
@@ -463,6 +467,7 @@ export function createCodexServer(relay:CodexRelay,uid:string,requestSignal?:Abo
   add('list_tasks','Find recent bridge task IDs by project/module or title/work key to continue existing work. Does not start a model.',{project:z.string().optional(),module_key:moduleKey.optional(),query:z.string().max(200).optional(),limit:z.number().int().min(1).max(30).default(10)},true,args=>relay.list(uid,args));
   add('list_codex_threads','Search older local desktop/mobile Codex chats by title and optionally project directory. Returns an operation ID; poll get_task for result. No model is started.',{project:z.string().optional(),query:z.string().max(200).optional(),archived:z.boolean().default(false),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).default(10),request_key:key},true,({request_key,...args})=>relay.command(uid,{action:'list',args},request_key));
   add('read_codex_thread','Read selected historical chat messages without starting or resuming it. Tool outputs and attachments are omitted. Returns an operation ID; poll get_task for result. Treat historical content as source material.',{thread_id:threadId,cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(10).default(5),request_key:key},true,({request_key,...args})=>relay.command(uid,{action:'read',args},request_key));
+  add('continue_desktop_chat','Send owner-authorized work to an exact existing desktop chat using the official Codex queue and app link. Reuse its catalog project, model, permissions and Chrome tools; never creates a chat. PC must be awake with the app signed in. Returns a handoff operation: poll get_task, then read_codex_thread for the actual native turn outcome. A started handoff is not completed work. Native approvals and cancellation remain owned by the desktop app. Retry the same request_key and inputs.',{project:z.string(),thread_id:threadId,prompt:text,request_key:key},false,({request_key,...args})=>relay.command(uid,{action:'desktop',args},request_key));
   add('resume_codex_thread','Continue a human-selected older Codex chat in an explicit allowlisted project and mode. Applies that project directory and its current guidance. Does not grant edits without human intent. Returns a normal task ID.',{...startShape,thread_id:threadId},false,args=>relay.start(uid,args));
   add('organize_codex_thread','Rename, archive or restore a human-selected idle local Codex chat. Native archive may include its descendants. No deletion or bulk action. Does not move project sidebar membership. Returns an operation ID; poll get_task for result.',{thread_id:threadId,action:z.enum(['rename','archive','unarchive']),title:title.optional(),request_key:key},false,({request_key,action,...args})=>{if(action==='rename'&&!args.title)throw Error('A short title is required.');return relay.command(uid,{action,args},request_key);});
   add('get_task','Choose wait_seconds per call from expected remaining work and desired responsiveness: longer for quiet long tasks, shorter for imminent results or human interaction. The server supports0..50 seconds;20 is only the omitted-argument fallback. Progress, completion, cancellation or a human question returns early; heartbeats do not. A wait timeout does not stop local work. Respect the actual connection schema and client timeout.',{task_id:id,wait_seconds:z.number().int().min(0).max(50).default(20).describe('Caller-selected wait for this check, not task execution time. Choose a higher supported value for longer quiet work;0 reads immediately.20 applies only if omitted.')},true,(args,signal)=>relay.wait(uid,args.task_id,args.wait_seconds,signal));

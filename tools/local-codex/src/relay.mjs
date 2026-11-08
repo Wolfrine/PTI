@@ -87,7 +87,8 @@ async function service(job,controls){
       const receipt=path.join(home,'data',`history-${job.id}.json`);
       if(controls?.cancel)await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'interrupted'}});
       else{
-        const result=fs.existsSync(receipt)?read(receipt):await local('codex_history',job.command);
+        const command=job.command.action==='desktop'?{...job.command,args:{...job.command.args,request_id:job.id}}:job.command;
+        const result=fs.existsSync(receipt)?read(receipt):await local('codex_history',command);
         if(!fs.existsSync(receipt))write(receipt,result);
         await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'completed',result}});
       }

@@ -6,7 +6,7 @@ import {modelSelection} from './model-policy.mjs';
 import {ownerLimit,ownerDuration} from './limits.mjs';
 import {browserContextPreflight} from './browser-context.mjs';
 
-export const VERSION = '0.4.11';
+export const VERSION = '0.4.12';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');

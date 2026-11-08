@@ -1,5 +1,8 @@
 param([Parameter(Mandatory=$true)][string]$Manifest,[Parameter(Mandatory=$true)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$ManifestSHA256)
 $ErrorActionPreference='Stop'
+# Desktop/PowerShell 7 can pass an incompatible PSModulePath to Windows PowerShell.
+# Use this process's built-in modules; do not change the user's environment.
+$env:PSModulePath=Join-Path $PSHOME 'Modules'
 $manifestPath=[IO.Path]::GetFullPath($Manifest)
 if(-not $manifestPath.StartsWith('F:\',[StringComparison]::OrdinalIgnoreCase)){throw 'Maintenance manifest must be on F:.'}
 if((Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash -ne $ManifestSHA256){throw 'Pinned manifest hash changed.'}
@@ -23,6 +26,7 @@ $environment=@{
   USERPROFILE=[Environment]::GetFolderPath('UserProfile')
   APPDATA=[Environment]::GetFolderPath('ApplicationData')
   LOCALAPPDATA=[Environment]::GetFolderPath('LocalApplicationData')
+  PSModulePath=(Join-Path $PSHOME 'Modules')
   TEMP=$temporary;TMP=$temporary
   Path=((Join-Path $env:SystemRoot 'System32')+';'+(Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0')+';'+(Split-Path -Parent $value.nodePath)+';'+(Split-Path -Parent $value.gitPath))
 }

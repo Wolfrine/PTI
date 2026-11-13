@@ -270,6 +270,8 @@ function setAtmosphericDepth(visibilityKm, aqi) {
   frame.style.setProperty('--visibility-strength', visibility.toFixed(3));
   frame.style.setProperty('--visibility-blur', `${(visibility * 6).toFixed(1)}px`);
   frame.style.setProperty('--aqi-strength', pollution.toFixed(3));
+  frame.style.setProperty('--aqi-saturation', (1 - pollution * .43).toFixed(3));
+  frame.style.setProperty('--aqi-contrast', (1 - pollution * .12).toFixed(3));
 }
 
 function renderReadouts(live) {

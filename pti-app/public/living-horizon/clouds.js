@@ -18,6 +18,7 @@ function palette(phase, weather) {
     : ['#a8bed2', '#768fa8', '#455b72', '#e4eff5'];
   if (weather === 'storm') return ['#c4ced0', '#8d9da2', '#435a68', '#e4e1d2'];
   if (weather === 'rain') return ['#e0e4dd', '#aebdc0', '#667e88', '#fcf3db'];
+  if (weather === 'overcast') return ['#ecece8', '#b8c4c7', '#738a94', '#f1f0e8'];
   if (phase === 'dawn') return ['#fff7e3', '#e8c9c4', '#aeabb5', '#fff8e2'];
   if (phase === 'dusk') return ['#ffeed8', '#e6b8b2', '#b1a5b3', '#fff1d2'];
   return ['#fffefa', '#e8f0ec', '#aec4d3', '#fffdf0'];
@@ -199,12 +200,31 @@ export function createCloudSystem(canvas, frame) {
     const raining=current.weather==='rain'||current.weather==='storm';
     const dense=current.weather==='overcast'||raining;
     const base=cover/100;
+    if(current.weather==='overcast'){
+      // Overcast is a continuous stratiform ceiling, not a collection of
+      // disconnected round cumulus stickers. Its softly undulating lower edge
+      // sits behind the transparent landscape, with painterly tonal bands.
+      const night=current.phase==='night';
+      const ceiling=context.createLinearGradient(0,0,0,height*.52);
+      ceiling.addColorStop(0,night?'rgba(61,75,87,.88)':'rgba(108,125,135,.88)');
+      ceiling.addColorStop(.55,night?'rgba(79,94,104,.75)':'rgba(163,179,185,.82)');
+      ceiling.addColorStop(1,night?'rgba(101,116,128,0)':'rgba(205,209,204,0)');
+      context.globalAlpha=clamp(.42+base*.57,0,1);
+      context.fillStyle=ceiling;
+      context.beginPath();context.moveTo(0,0);context.lineTo(width,0);
+      for(let x=width;x>=0;x-=22){
+        const wave=Math.sin(x/123+elapsed*.000025)*7+Math.sin(x/47+.8)*3;
+        context.lineTo(x,height*.34+wave);
+      }
+      context.closePath();context.fill();context.globalAlpha=1;
+    }
     const intensity=dense ? .54 : .20;
     const allowed=CLOUD_COUNT*(intensity+base*(1-intensity));
     const cloudSpan=width+340;
     const windMultiplier=.25+clamp(current.wind,0,80)/26;
     const darkness=raining ? 1 : current.weather==='fog' ? .62 : 1;
     for(const spec of specs){
+      if(current.weather==='overcast' && spec.layer===1)continue;
       const revealed=clamp(allowed-(spec.index*.92),0,1);
       if(revealed<=0)continue;
       const sprite=getSprite(spec);
@@ -213,7 +233,7 @@ export function createCloudSystem(canvas, frame) {
       const x=((spec.x*cloudSpan+elapsed*spec.speed*windMultiplier)%cloudSpan+cloudSpan)%cloudSpan-170;
       const y=height*spec.y-(spec.layer===2 ? 3 : 0);
       const amount=(spec.layer===0 ? .40 : spec.layer===1 ? .76 : .86);
-      context.globalAlpha=clamp((.18+base*.95)*amount*spec.opacity*revealed*darkness,0,.95);
+      context.globalAlpha=clamp((.18+base*.95)*amount*spec.opacity*revealed*darkness*(current.weather==='overcast'?.58:1),0,.95);
       context.drawImage(sprite,x,y,spriteWidth,spriteHeight);
       if(x+spriteWidth>width+3)context.drawImage(sprite,x-cloudSpan,y,spriteWidth,spriteHeight);
       if(x<0 && x+spriteWidth<15)context.drawImage(sprite,x+cloudSpan,y,spriteWidth,spriteHeight);

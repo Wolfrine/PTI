@@ -4,6 +4,19 @@
   --visibility-strength:0;
   --visibility-blur:0px;
   --aqi-strength:0;
+  --aqi-saturation:1;
+  --aqi-contrast:1;
+}
+/* A blanket of cloud changes the quality of daylight as well as the cloud
+   shapes. This reads through the foreground artwork without repainting it. */
+.horizon-frame[data-weather="overcast"] .horizon-sky{
+  filter:saturate(.53) brightness(.83);
+}
+.horizon-frame[data-weather="overcast"] .daily-art{
+  filter:var(--art-filter) brightness(.88) saturate(.79);
+}
+.horizon-frame[data-weather="cloudy"] .horizon-sky{
+  filter:saturate(.86) brightness(.96);
 }
 
 /* Visibility erases detail in distant hills first. The near foreground stays
@@ -34,9 +47,11 @@
   pointer-events:none;
   opacity:var(--aqi-strength);
   background:
-    radial-gradient(ellipse 62% 45% at 57% 54%,rgba(148,106,69,.38),transparent 92%),
-    linear-gradient(180deg,rgba(112,103,91,.07),rgba(146,119,83,.34) 37%,rgba(168,122,78,.63) 67%,rgba(166,137,101,.12) 95%);
+    radial-gradient(ellipse 83% 51% at 57% 49%,rgba(147,119,96,.63),transparent 94%),
+    linear-gradient(180deg,rgba(117,104,93,.17),rgba(144,119,96,.52) 37%,rgba(161,120,86,.76) 67%,rgba(153,129,105,.20) 95%);
   mix-blend-mode:multiply;
+  -webkit-backdrop-filter:saturate(var(--aqi-saturation)) contrast(var(--aqi-contrast));
+  backdrop-filter:saturate(var(--aqi-saturation)) contrast(var(--aqi-contrast));
   transition:opacity 1.1s ease;
 }
 .pollution-haze::before{

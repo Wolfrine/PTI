@@ -37,6 +37,7 @@ const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
 export class NewHomeComponent implements OnInit {
   @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
   @ViewChild('appDirectory') appDirectory?: ElementRef<HTMLElement>;
+  @ViewChild('livingHorizonFrame') livingHorizonFrame?: ElementRef<HTMLIFrameElement>;
 
   // Curated launcher entries only. Private tools are intentionally excluded from all surfaces.
   readonly apps: readonly HubApp[] = [
@@ -71,6 +72,7 @@ export class NewHomeComponent implements OnInit {
   searchQuery = '';
   selectedCategory: 'All' | AppCategory = 'All';
   editingPins = false;
+  horizonHeight = 420;
   pinnedIds: string[] = [...PINNED_DEFAULTS];
   recentIds: string[] = [];
 
@@ -126,6 +128,19 @@ export class NewHomeComponent implements OnInit {
     if (((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') || (event.key === '/' && !editing)) {
       event.preventDefault();
       this.focusSearch();
+    }
+  }
+
+  @HostListener('window:message', ['$event'])
+  onHorizonResize(event: MessageEvent): void {
+    if (!isPlatformBrowser(this.platformId) || event.origin !== window.location.origin ||
+      event.source !== this.livingHorizonFrame?.nativeElement.contentWindow) return;
+    const payload = event.data;
+    if (!payload || payload.source !== 'pti-living-horizon' || payload.event !== 'resize' ||
+      !Number.isFinite(payload.height)) return;
+    const height = Math.ceil(payload.height);
+    if (height >= 210 && height <= 1800 && Math.abs(height - this.horizonHeight) > 1) {
+      this.horizonHeight = height;
     }
   }
 

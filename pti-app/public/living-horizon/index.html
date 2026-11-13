@@ -6,12 +6,15 @@
   <meta name="theme-color" content="#fbf9f5">
   <meta name="description" content="An isolated public-safe concept preview for PTI's living, time- and weather-responsive horizon.">
   <title>PTI — Living Horizon Preview</title>
+  <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('horizon-embed')</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css?v=living-v4">
   <link rel="stylesheet" href="./atmosphere.css?v=living-v4">
   <link rel="stylesheet" href="./clouds.css?v=living-v4">
+  <link rel="stylesheet" href="./rain-effects.css?v=living-v5">
+  <link rel="stylesheet" href="./embed.css?v=living-v5">
 </head>
 <body>
   <main class="app-shell">
@@ -56,7 +59,7 @@
             <div class="horizon-caption">
               <span class="hero-kicker" id="hero-kicker">A WINDOW TO TODAY</span>
               <div class="horizon-title-line"><h1 id="hero-location">Navi Mumbai</h1><span class="hero-temperature" id="hero-temperature">--°</span></div>
-              <div class="hero-conditions"><span class="hero-subtitle" id="hero-description">Finding today's atmosphere...</span><span class="hero-aqi" id="hero-aqi" hidden><span class="hero-aqi-label">US AQI</span><strong id="hero-aqi-value">—</strong></span><time class="hero-observation-time" id="hero-observation-time" hidden></time></div>
+              <div class="hero-conditions"><span class="hero-subtitle" id="hero-description">Finding today's atmosphere...</span><time class="hero-observation-time" id="hero-observation-time" hidden></time></div>
             </div>
             <div class="horizon-status" id="horizon-status"><span class="status-dot"></span><span id="status-label">Connecting</span></div>
           </div>
@@ -76,7 +79,6 @@
           </div>
           <div class="atmospheric-readouts" aria-label="Environmental readings">
             <span id="visibility-readout" hidden></span>
-            <span id="air-readout" hidden></span>
             <span id="moon-readout" hidden></span>
             <span id="geography-readout" hidden></span>
           </div>
@@ -106,9 +108,9 @@
                 </fieldset>
                 <fieldset class="studio-group"><legend><span>03</span> Air & visibility</legend>
                   <label class="studio-label" for="sim-visibility">Visibility <output id="sim-visibility-value" for="sim-visibility">10 km</output></label><input id="sim-visibility" data-sim="visibility" type="range" min="0.5" max="30" step="0.5" value="10"><div class="studio-ends"><span>Thick haze</span><span>Clear horizon</span></div>
-                  <label class="studio-label" for="sim-aqi">US AQI <output id="sim-aqi-value" for="sim-aqi">100</output></label><input id="sim-aqi" data-sim="aqi" type="range" min="0" max="500" step="5" value="100"><div class="studio-ends"><span>Good</span><span>Hazardous</span></div>
+                  <label class="studio-label" for="sim-pollution">Artistic smog <output id="sim-pollution-value" for="sim-pollution">0%</output></label><input id="sim-pollution" data-sim="pollution" type="range" min="0" max="100" step="1" value="0"><div class="studio-ends"><span>Clear air</span><span>Heavy smog</span></div>
                   <label class="studio-label" for="sim-temperature">Temperature <output id="sim-temperature-value" for="sim-temperature">28°C</output></label><input id="sim-temperature" data-sim="temperature" type="range" min="-10" max="50" step="1" value="28">
-                  <p class="studio-context">Visibility and AQI change separate haze layers; values are simulated, not a sensor forecast.</p>
+                  <p class="studio-context">Visibility reflects reported meteorological conditions; the smog slider is purely artistic, not an air-quality reading.</p>
                 </fieldset>
                 <fieldset class="studio-group"><legend><span>04</span> Landscape matrix</legend>
                   <div class="studio-select-pair"><label class="studio-label" for="sim-settlement">Settlement<select id="sim-settlement" data-sim="settlement"><option value="city">City</option><option value="town">Town</option><option value="village">Village</option><option value="wilderness">Wilderness</option></select></label><label class="studio-label" for="sim-relief">Relief<select id="sim-relief" data-sim="relief"><option value="plain">Plain</option><option value="hills">Hills</option><option value="mountains">Mountains</option></select></label></div>

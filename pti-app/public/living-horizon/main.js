@@ -1,17 +1,15 @@
 // Public-safe visual prototype. No authentication, account data or personal metrics.
-// Live weather + modelled air quality: Open-Meteo. Opted-in position is coarse.
+// Live weather: Open-Meteo. Opted-in position is coarse; smog simulation is artistic.
 import {
   ARTWORKS, classifyLandscape, dailyArtworkIndex, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
 } from './environment.js';
 import { createCloudSystem } from './clouds.js';
+import { createRainSystem } from './rain-effects.js';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
-const AIR_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 const CURRENT_FIELDS = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,wind_speed_10m,visibility,is_day';
 const CACHE_KEY = 'pti.living-horizon.coarse-weather.v2';
-const AIR_CACHE_KEY = 'pti.living-horizon.coarse-air.v1';
 const CACHE_AGE_MS = 15 * 60 * 1000;
-const AIR_AGE_MS = 60 * 60 * 1000;
 const COARSE_LOCATION = { name: 'Navi Mumbai', latitude: 19.05, longitude: 73.02 };
 const PRESETS = {
   dawn: { event: 'sunrise', weather: 'cloudy', cloud: 48, rain: 0 },
@@ -25,8 +23,6 @@ const locationLabel = document.querySelector('#hero-location');
 const temperatureLabel = document.querySelector('#hero-temperature');
 const descriptionLabel = document.querySelector('#hero-description');
 const heroObservationTime = document.querySelector('#hero-observation-time');
-const heroAqi = document.querySelector('#hero-aqi');
-const heroAqiValue = document.querySelector('#hero-aqi-value');
 const heroKicker = document.querySelector('#hero-kicker');
 const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
@@ -34,7 +30,6 @@ const sourceLine = document.querySelector('#source-line');
 const artwork = document.querySelector('#artwork');
 const artButton = document.querySelector('#next-art');
 const artCount = document.querySelector('#art-count');
-const airReadout = document.querySelector('#air-readout');
 const visibilityReadout = document.querySelector('#visibility-readout');
 const moonReadout = document.querySelector('#moon-readout');
 const geographyReadout = document.querySelector('#geography-readout');
@@ -43,18 +38,16 @@ const sunDisc = document.querySelector('.sun');
 const modeButtons = [...document.querySelectorAll('[data-mode]')];
 const useLocation = document.querySelector('#use-location');
 const cloudSystem = createCloudSystem(document.querySelector('#cloud-canvas'), frame);
+const rainSystem = createRainSystem(document.querySelector('#weather-canvas'), frame);
 const studio = document.querySelector('#scene-lab');
 const studioInputs = [...document.querySelectorAll('[data-sim]')];
 const studioSummary = document.querySelector('#sim-summary');
 const studioGeographyNote = document.querySelector('#sim-geography-note');
 let liveWeather = null;
 let liveLocation = COARSE_LOCATION.name;
-let airQuality = null;
 let activeMode = 'live';
 let liveAttempt = 0;
-let airAttempt = 0;
 let lastObservationFetch = 0;
-let lastAirFetch = 0;
 let currentArea = { latitude: COARSE_LOCATION.latitude, longitude: COARSE_LOCATION.longitude, cache: true, label: COARSE_LOCATION.name };
 let placeProfile = classifyLandscape(COARSE_LOCATION.name);
 let artIndex = -1;
@@ -125,7 +118,7 @@ function createSimulation() {
     cloud: clamp(numeric(weather.cloud_cover, 45), 0, 100), rain: clamp(rainfall, 0, 20),
     wind: clamp(numeric(weather.wind_speed_10m, 12), 0, 80),
     visibility: clamp(numeric(weather.visibility, 10000) / 1000, .5, 30),
-    aqi: clamp(numeric(airQuality?.current?.us_aqi, 100), 0, 500),
+    pollution: 0, // Studio-only artistic control; not a measured air-quality index.
     temperature: clamp(numeric(weather.temperature_2m, 28), -10, 50),
     realMoon: true, moon: Math.round((moon?.illumination.phase || 0) * 100),
     settlement: placeProfile.settlement && placeProfile.settlement !== 'unknown' ? placeProfile.settlement : 'city',
@@ -157,7 +150,7 @@ function conditions(code, cloudCover, precipitation) {
   if (code === 2 || cloudCover >= 42) return { weather: 'cloudy', text: 'Partly cloudy' };
   return { weather: 'clear', text: 'Clear skies' };
 }
-function updateScene({ phase, weather, description, temperature, location, state, note, date = new Date(), moonOverride = null, celestial = null, observedTime = '', cloudCover = 20, wind = 12 }) {
+function updateScene({ phase, weather, description, temperature, location, state, note, date = new Date(), moonOverride = null, celestial = null, observedTime = '', cloudCover = 20, wind = 12, rainfall = 0 }) {
   frame.dataset.phase = phase;
   frame.dataset.weather = weather;
   locationLabel.textContent = location;
@@ -174,7 +167,8 @@ function updateScene({ phase, weather, description, temperature, location, state
   else if (state === 'offline') setStatus('Offline · sample', 'sample');
   else setStatus('Scene preview', 'sample');
   sourceLine.textContent = note;
-  configureRain(weather === 'rain' || weather === 'storm', weather === 'storm');
+  rainSystem.update({active:(weather === 'rain'||weather === 'storm')&&rainfall>0,
+    storm:weather === 'storm', intensity:rainfall, wind, phase});
   if (state === 'live' || state === 'simulation') renderCelestials(date, moonOverride, state === 'live', celestial);
   else {
     frame.dataset.sunVisible = String(phase !== 'night');
@@ -247,31 +241,15 @@ function renderCelestials(date = new Date(), phaseOverride = null, live = true, 
   moonReadout.title = moonDisc.title;
 }
 
-function showHeroAqi(value, simulated = false) {
-  const valid = typeof value === 'number' && Number.isFinite(value) && value >= 0;
-  heroAqi.hidden = !valid;
-  if (!valid) return;
-  const aqi = Math.round(value);
-  const levels = ['good', 'moderate', 'sensitive', 'unhealthy', 'very-unhealthy', 'hazardous'];
-  const names = ['Good', 'Moderate', 'Unhealthy for sensitive groups', 'Unhealthy', 'Very unhealthy', 'Hazardous'];
-  const tier = aqi <= 50 ? 0 : aqi <= 100 ? 1 : aqi <= 150 ? 2 : aqi <= 200 ? 3 : aqi <= 300 ? 4 : 5;
-  heroAqi.dataset.level = levels[tier];
-  heroAqi.dataset.simulated = String(simulated);
-  heroAqiValue.textContent = String(aqi);
-  heroAqi.title = simulated ? `Simulated US AQI ${aqi} · ${names[tier]}`
-    : `Regional CAMS global model (~45 km grid), US AQI ${aqi} · ${names[tier]}. Not a nearby station measurement or India's official AQI.`;
-  heroAqi.setAttribute('aria-label', heroAqi.title);
-}
-
-function setAtmosphericDepth(visibilityKm, aqi) {
+function setAtmosphericDepth(visibilityKm, artisticSmog = 0) {
   const visibility = Number.isFinite(visibilityKm)
     ? Math.pow(clamp((15 - visibilityKm) / 14.5, 0, 1), 1.25) : 0;
-  const pollution = Number.isFinite(aqi) ? clamp((aqi - 35) / 345, 0, 1) : 0;
+  const pollution = Number.isFinite(artisticSmog) ? clamp(artisticSmog / 100, 0, 1) : 0;
   frame.style.setProperty('--visibility-strength', visibility.toFixed(3));
   frame.style.setProperty('--visibility-blur', `${(visibility * 6).toFixed(1)}px`);
-  frame.style.setProperty('--aqi-strength', pollution.toFixed(3));
-  frame.style.setProperty('--aqi-saturation', (1 - pollution * .43).toFixed(3));
-  frame.style.setProperty('--aqi-contrast', (1 - pollution * .12).toFixed(3));
+  frame.style.setProperty('--pollution-strength', pollution.toFixed(3));
+  frame.style.setProperty('--pollution-saturation', (1 - pollution * .43).toFixed(3));
+  frame.style.setProperty('--pollution-contrast', (1 - pollution * .12).toFixed(3));
 }
 
 function renderReadouts(live) {
@@ -283,12 +261,7 @@ function renderReadouts(live) {
     const km = visibilityMeters / 1000;
     visibilityReadout.textContent = 'Visibility ' + (km >= 10 ? km.toFixed(0) : km.toFixed(1)) + ' km';
   }
-  const rawAqi = airQuality?.current?.us_aqi;
-  const usAqi = Number(rawAqi);
-  const hasAir = live && typeof rawAqi === 'number' && Number.isFinite(usAqi) && usAqi >= 0;
-  airReadout.hidden = true; // The primary AQI value now lives beside sky conditions.
-  showHeroAqi(hasAir ? usAqi : null);
-  setAtmosphericDepth(hasVisibility ? visibilityMeters / 1000 : null, hasAir ? usAqi : null);
+  setAtmosphericDepth(hasVisibility ? visibilityMeters / 1000 : null);
   moonReadout.hidden = !live;
   geographyReadout.hidden = true;
 }
@@ -306,7 +279,7 @@ function syncStudio() {
   document.querySelector('#sim-rain-value').textContent = Number(simulation.rain).toFixed(1) + ' mm/h';
   document.querySelector('#sim-wind-value').textContent = simulation.wind + ' km/h';
   document.querySelector('#sim-visibility-value').textContent = Number(simulation.visibility).toFixed(1) + ' km';
-  document.querySelector('#sim-aqi-value').textContent = String(simulation.aqi);
+  document.querySelector('#sim-pollution-value').textContent = simulation.pollution + '%';
   document.querySelector('#sim-temperature-value').textContent = simulation.temperature + '°C';
   const currentArt = ARTWORKS[simulation.art - 1] || ARTWORKS[0];
   document.querySelector('#sim-art-value').textContent = currentArt.name;
@@ -342,19 +315,13 @@ function renderSimulation() {
   const description = `${simulation.weather[0].toUpperCase() + simulation.weather.slice(1)} · ${simulation.cloud}% cloud · ${simulation.rain} mm/h rain`;
   updateScene({ phase, weather: simulation.weather, location: currentArea.label || COARSE_LOCATION.name,
     temperature: simulation.temperature, description, date, moonOverride: manualPhase, celestial: solar,
-    observedTime:displayTime(simulation.minutes), cloudCover:simulation.cloud, wind:simulation.wind,
+    observedTime:displayTime(simulation.minutes), cloudCover:simulation.cloud, wind:simulation.wind, rainfall:simulation.rain,
     state: 'simulation', note: `Simulation · ${simulation.date} ${displayTime(simulation.minutes)} ${timezone} · landscape choice is an interpretation.` });
   frame.style.setProperty('--cloud-opacity', String(clamp(.06 + simulation.cloud / 115, .04, .96).toFixed(2)));
   frame.style.setProperty('--cloud-duration', `${clamp(145 - simulation.wind * 2.4, 40, 145).toFixed(0)}s`);
-  setAtmosphericDepth(simulation.visibility, simulation.aqi);
-  showHeroAqi(simulation.aqi, true);
-  configureRain((simulation.weather === 'rain' || simulation.weather === 'storm') && simulation.rain > 0,
-    simulation.weather === 'storm');
-  frame.style.setProperty('--rain-sheet-opacity', simulation.rain <= 0 ? '0'
-    : clamp(.12 + simulation.rain / 30, .12, .72).toFixed(2));
+  setAtmosphericDepth(simulation.visibility, simulation.pollution);
   visibilityReadout.hidden = false;
   visibilityReadout.textContent = `Visibility ${Number(simulation.visibility).toFixed(1)} km · simulated`;
-  airReadout.hidden = true;
   moonReadout.hidden = false;
   geographyReadout.hidden = false;
   geographyReadout.textContent = [simulation.settlement, simulation.relief, simulation.water, simulation.vegetation]
@@ -387,14 +354,11 @@ function renderMode() {
     const phase = phaseFromSun(solar?.sun);
     const hhmm = String(current.time || '').split('T')[1]?.slice(0, 5);
     updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: text, observedTime:hhmm,
-      cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), state: 'live', celestial: solar,
+      cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), rainfall, state: 'live', celestial: solar,
       note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
-    sourceLine.textContent = 'Open-Meteo weather · US AQI from regional CAMS global model (~45 km grid) · ' +
+    sourceLine.textContent = 'Open-Meteo weather · ' +
       (placeProfile.artworkGeographyMatch ? 'coastal-foothill art' : 'regional artwork not yet mapped') + '.';
-    if (weather === 'rain' || weather === 'storm') {
-      frame.style.setProperty('--rain-sheet-opacity', Math.min(.64, Math.max(.34, .34 + rainfall / 12)).toFixed(2));
-    }
     if (Number.isFinite(clouds)) frame.style.setProperty('--cloud-opacity', String(Math.min(.96, .10 + clouds / 124).toFixed(2)));
     const wind = Number(current.wind_speed_10m);
     if (Number.isFinite(wind)) frame.style.setProperty('--cloud-duration', `${Math.max(65, Math.min(145, 145 - wind * 2.4))}s`);
@@ -521,56 +485,6 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
   }
 }
 
-function readAirCache() {
-  try {
-    const value = JSON.parse(localStorage.getItem(AIR_CACHE_KEY) || 'null');
-    return value && Date.now() - value.at < AIR_AGE_MS && value.data?.current ? value : null;
-  } catch { return null; }
-}
-
-async function fetchAirQuality(latitude, longitude, cache = false) {
-  const attempt = ++airAttempt;
-  lastAirFetch = Date.now();
-  if (cache) {
-    const stored = readAirCache();
-    if (stored) {
-      airQuality = stored.data;
-      lastAirFetch = stored.at;
-      if (activeMode === 'live') renderReadouts(true);
-      return;
-    }
-  }
-  try {
-    const url = new URL(AIR_URL);
-    url.searchParams.set('latitude', String(latitude));
-    url.searchParams.set('longitude', String(longitude));
-    url.searchParams.set('current', 'us_aqi,pm2_5,pm10');
-    url.searchParams.set('timezone', 'auto');
-    url.searchParams.set('forecast_days', '1');
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 8000);
-    let response;
-    try { response = await fetch(url, { signal: controller.signal, cache: 'no-store' }); }
-    finally { window.clearTimeout(timeout); }
-    if (!response.ok) throw new Error('Air quality HTTP ' + response.status);
-    const result = await response.json();
-    if (!result?.current || typeof result.current.us_aqi !== 'number') throw new Error('AQI missing');
-    if (attempt !== airAttempt) return;
-    airQuality = result;
-    lastAirFetch = Date.now();
-    if (cache) {
-      try { localStorage.setItem(AIR_CACHE_KEY, JSON.stringify({ at: Date.now(), data: result })); }
-      catch { /* Cache is optional. */ }
-    }
-    if (activeMode === 'live') renderReadouts(true);
-  } catch (error) {
-    if (attempt !== airAttempt) return;
-    airQuality = null;
-    if (activeMode === 'live') renderReadouts(true);
-    console.info('Living Horizon: modelled air quality unavailable.', error?.message || error);
-  }
-}
-
 async function resolveCoarsePlace(latitude, longitude) {
   // Only called after explicit user location permission; no continuous reverse-geocode.
   try {
@@ -611,55 +525,12 @@ function seededStars() {
   }
 }
 
-// Frame-budgeted rain animation. CSS supplies an always-visible static rain layer
-// for reduced-motion mode and browsers that suspend requestAnimationFrame.
-const canvas = document.querySelector('#weather-canvas');
-const ctx = canvas.getContext('2d');
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-let drops = [], rainActive = false, thunder = false, inView = true, raf = 0, lastFrame = 0, width = 0, height = 0;
-function sizeCanvas() {
-  const bounds = frame.getBoundingClientRect();
-  width = bounds.width; height = bounds.height;
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
-  canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
-  ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
-  drops = Array.from({ length: Math.max(60, Math.floor(width / 5.5)) }, (_, i) => ({
-    x: ((i * 137.7) % width), y: ((i * 71.3) % height),
-    speed: 2.2 + (i % 7) * .27, len: 11 + i % 15,
-  }));
-}
-function drawRain(time) {
-  raf = 0;
-  if (!rainActive || !inView || reducedMotion.matches || !ctx) return;
-  if (time - lastFrame < 32) { raf = requestAnimationFrame(drawRain); return; }
-  lastFrame = time;
-  ctx.clearRect(0, 0, width, height);
-  ctx.strokeStyle = thunder ? 'rgba(224,242,253,.70)' : 'rgba(238,251,255,.57)';
-  ctx.lineWidth = thunder ? 1.3 : 1.05;
-  ctx.beginPath();
-  for (const drop of drops) {
-    ctx.moveTo(drop.x, drop.y);
-    ctx.lineTo(drop.x - 5, drop.y + drop.len);
-    drop.x -= 1.2; drop.y += drop.speed * 2.7;
-    if (drop.y > height + 18) { drop.y = -25; drop.x = Math.random() * width; }
-    if (drop.x < -10) drop.x = width + 5;
-  }
-  ctx.stroke();
-  raf = requestAnimationFrame(drawRain);
-}
-function configureRain(active, storm = false) {
-  rainActive = active; thunder = storm;
-  frame.style.setProperty('--rain-sheet-opacity', !active ? '0' : storm ? '.61' : '.35');
-  ctx?.clearRect(0, 0, width, height);
-  if (!raf && active && inView && !reducedMotion.matches) raf = requestAnimationFrame(drawRain);
-  if (!active && raf) { cancelAnimationFrame(raf); raf = 0; }
-}
 function setup() {
   seededStars();
-  sizeCanvas();
-  new ResizeObserver(sizeCanvas).observe(frame);
-  new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; frame.classList.toggle('out-of-view', !inView); configureRain(rainActive, thunder); }).observe(frame);
-  reducedMotion.addEventListener?.('change', () => configureRain(rainActive, thunder));
+  // Sky art and rain each own their resize, motion and visibility lifecycle.
+  new IntersectionObserver(([entry]) => {
+    frame.classList.toggle('out-of-view', !entry.isIntersecting);
+  }).observe(frame);
   modeButtons.forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
   studio.addEventListener('toggle', () => {
     if (studio.open && !simulation) { simulation = createSimulation(); syncStudio(); }
@@ -682,16 +553,12 @@ function setup() {
   if (PRESETS[initialMode]) setMode(initialMode);
   else renderMode();
   void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
-  void fetchAirQuality(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, true);
   // Refresh only while the live scene is visible, at most once per 15 minutes.
   window.setInterval(() => {
     if (document.hidden || activeMode !== 'live') return;
     if (liveWeather) renderMode();
     if (Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
       void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
-    }
-    if (Date.now() - lastAirFetch >= AIR_AGE_MS) {
-      void fetchAirQuality(currentArea.latitude, currentArea.longitude, currentArea.cache);
     }
   }, 60000);
   document.addEventListener('visibilitychange', () => {
@@ -700,13 +567,10 @@ function setup() {
     if (Date.now() - lastObservationFetch > CACHE_AGE_MS) {
       void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
     }
-    if (Date.now() - lastAirFetch > AIR_AGE_MS) {
-      void fetchAirQuality(currentArea.latitude, currentArea.longitude, currentArea.cache);
-    }
   });
   useLocation.addEventListener('click', () => {
     if (!navigator.geolocation) { sourceLine.textContent = 'Location access is unavailable. Using the coarse Navi Mumbai area.'; return; }
-    sourceLine.textContent = 'Permission requested · approximate area is sent to weather, air and place providers.';
+    sourceLine.textContent = 'Permission requested · approximate area is sent to weather and place providers.';
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         // Two decimals (~1 km) are enough for a visual atmosphere and avoid
@@ -716,18 +580,15 @@ function setup() {
         // Discard the old area before changing its label so Navi Mumbai's
         // previous weather never appears under the newly selected place.
         ++liveAttempt;
-        ++airAttempt;
         liveWeather = null;
         currentArea = { latitude, longitude, cache: false, label: 'Your area' };
         liveLocation = 'Your area';
         placeProfile = classifyLandscape('Your area');
-        airQuality = null;
         artIndex = -1;
         lastObservationFetch = Date.now();
         setMode('live');
         setStatus('Connecting', 'fetching');
         void fetchWeather(latitude, longitude, { cache: false, label: 'Your area' });
-        void fetchAirQuality(latitude, longitude, false);
         void resolveCoarsePlace(latitude, longitude);
       },
       () => { sourceLine.textContent = 'Location not shared · using the coarse Navi Mumbai weather view.'; },
@@ -738,5 +599,17 @@ function setup() {
     const term = String(event.target.value || '').trim().toLowerCase();
     document.querySelectorAll('.pinned-card').forEach(card => { card.hidden = !card.textContent.toLowerCase().includes(term); });
   });
+  if (document.documentElement.classList.contains('horizon-embed') && window.parent !== window) {
+    // The real Angular Home owns the surrounding launcher. Keep this public-safe
+    // scene's height fitted to its controls, including the expanded studio.
+    const content = document.querySelector('.living-section');
+    const reportHeight = () => {
+      const height = Math.ceil(content.getBoundingClientRect().height + 2);
+      window.parent.postMessage({ source: 'pti-living-horizon', event: 'resize', height }, window.location.origin);
+    };
+    new ResizeObserver(reportHeight).observe(content);
+    window.addEventListener('load', reportHeight);
+    reportHeight();
+  }
 }
 setup();

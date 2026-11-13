@@ -1,6 +1,13 @@
 # PTI Living Horizon v2 — daily art, actual sky
 
-Status: isolated `/living-horizon/index.html` preview. The authenticated `/home` hero remains unchanged until the owner accepts the visual/behavioral result.
+Status: owner approved promotion to the authenticated `/home` launcher on 13 November 2026. The accepted standalone concept remains available at `/living-horizon/index.html`; the release must still be verified against real Hosting before marked complete.
+
+## 13 November 2026 — owner-approved Home integration (v5)
+
+- Replace only the obsolete static Welcome hero on `/home` with a seamless, same-origin Living Horizon scene. Preserve authentic pinned/recent apps, search, usage readings, companion status, routing and Google login. An embedded scene isolates painterly assets/style/animation from private Angular account components; `ResizeObserver` reports its height to the parent so the simulation studio expands without a nested scrollbar. Mobile receives the actual scene rather than the old hidden Welcome card.
+- Owner rejected **displaying regional US AQI**. Remove the public number, categories, labelled studio slider, CAMS fetch, hourly cache/refresh, and API attribution; leave measured local AQI absent until a source with acceptable geographic precision and provenance exists. A distinct **Artistic smog** 0–100% studio slider remains an explicitly hypothetical visual treatment. Meteorological visibility retains its real weather source.
+- Rain engine v5 introduces three depth layers, wind slant, strength response, near-horizon moisture and optional mapped-water ripples. Static rain is retained under reduced-motion. The canvas animation is capped near 30 fps and stops when not needed.
+- Promotion requires a production Angular build, source fingerprint, independent critic and actual `/home` visual/functional QA. Owner approval applies to the direction, not any unverified new bug.
 
 ## Experience
 

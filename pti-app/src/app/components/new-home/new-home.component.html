@@ -18,20 +18,11 @@
     </header>
 
     <div class="hub-content">
-      <div class="mobile-greeting">
-        <div class="mobile-greeting-copy"><p class="eyebrow">YOUR PERSONAL ECOSYSTEM</p><h2>Ready to explore?</h2></div>
-        <img class="mobile-greeting-art" src="/assets/images/pti-home-journal.webp" alt="" width="120" height="84" decoding="async">
-      </div>
-      <section class="welcome-card" aria-labelledby="welcome-title">
-        <div class="welcome-copy">
-          <p class="eyebrow">WELCOME TO PTI</p>
-          <h1 id="welcome-title">Your Personal <em>Operating System.</em></h1>
-          <p class="welcome-description">All your tools. One home. A more intentional you.</p>
-          <div class="welcome-actions">
-            <button type="button" class="primary-button" (click)="openDirectory()">Explore all apps <mat-icon>arrow_forward</mat-icon></button>
-          </div>
-        </div>
-        <div class="welcome-photo"><img src="/assets/images/pti-home-journal.webp" alt="Sunlit journal and writing desk overlooking distant hills" fetchpriority="high"></div>
+      <section class="living-horizon-home" aria-label="Living horizon and atmospheric controls">
+        <iframe #livingHorizonFrame class="living-horizon-iframe"
+          src="/living-horizon/index.html?embed=1" [style.height.px]="horizonHeight"
+          title="Living Horizon: live skies, landscape and atmospheric simulation"
+          allow="geolocation" loading="eager"></iframe>
       </section>
 
       <section class="hub-section pinned-section" aria-labelledby="pinned-heading">

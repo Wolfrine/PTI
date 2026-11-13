@@ -1,0 +1,24 @@
+/* One embedded sky on the authenticated PTI Home. All sample launcher chrome,
+   sample resource tiles and fake pinned apps belong only to the standalone
+   showcase and never appear inside the real Home. */
+html.horizon-embed{scroll-behavior:auto;background:transparent;overflow:hidden}
+html.horizon-embed body{min-width:0;overflow:hidden;background:transparent}
+html.horizon-embed .app-shell{display:block;min-height:0;margin:0}
+html.horizon-embed .sidebar,
+html.horizon-embed .topbar,
+html.horizon-embed .mobile-nav,
+html.horizon-embed .hub-section,
+html.horizon-embed .pulse-section,
+html.horizon-embed .companions,
+html.horizon-embed .footer{display:none!important}
+html.horizon-embed .workspace{min-width:0;max-width:none}
+html.horizon-embed .content{width:100%;min-width:0;max-width:none;margin:0;padding:0}
+html.horizon-embed .living-section{margin:0;padding:0}
+html.horizon-embed .scene-lab{margin-bottom:1px}
+html.horizon-embed .horizon-frame{box-shadow:0 9px 26px rgba(65,52,39,.085)}
+@media(max-width:760px){
+  html.horizon-embed .content{padding:0}
+  html.horizon-embed .horizon-toolbar{gap:8px}
+  html.horizon-embed .mode-buttons{flex-wrap:wrap}
+  html.horizon-embed .horizon-frame{height:clamp(194px,56vw,228px)}
+}

@@ -1,0 +1,39 @@
+/* Spatial rain: layered transparent strokes against the horizon painting.
+   The existing CSS rain-sheet remains as a restrained still fallback. */
+.horizon-rain-mist {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--rain-mist-opacity, 0);
+  background:
+    radial-gradient(ellipse 76% 24% at 51% 51%, #cbd9d5a8 2%, #b7cbc567 47%, transparent 100%),
+    radial-gradient(ellipse 64% 19% at 65% 73%, #e9efea77 0%, transparent 100%),
+    linear-gradient(180deg, transparent 10%, #b7c5c522 47%, #d6ddd230 75%, transparent 96%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 2%, black 25%, black 76%, transparent 97%);
+  mask-image: linear-gradient(180deg, transparent 2%, black 25%, black 76%, transparent 97%);
+  transition: opacity 600ms ease;
+}
+.horizon-frame[data-phase="night"] .horizon-rain-mist {
+  filter: brightness(.68) saturate(.70);
+}
+.horizon-frame[data-weather="storm"] .horizon-rain-mist {
+  filter: brightness(.83) saturate(.79);
+}
+.horizon-frame.has-rain-system #weather-canvas {
+  opacity: 1;
+  filter: none;
+  transition: none;
+}
+.horizon-frame.has-rain-system .rain-sheet {
+  opacity: calc(var(--rain-sheet-opacity, 0) * .38);
+  filter: blur(1.2px);
+  animation-duration: 1.1s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .horizon-rain-mist { transition: none; }
+  .horizon-frame.has-rain-system .rain-sheet {
+    animation: none;
+    opacity: var(--rain-sheet-opacity, 0);
+  }
+}

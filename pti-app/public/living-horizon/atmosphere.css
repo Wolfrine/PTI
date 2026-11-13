@@ -3,9 +3,9 @@
 .horizon-frame{
   --visibility-strength:0;
   --visibility-blur:0px;
-  --aqi-strength:0;
-  --aqi-saturation:1;
-  --aqi-contrast:1;
+  --pollution-strength:0;
+  --pollution-saturation:1;
+  --pollution-contrast:1;
 }
 /* A blanket of cloud changes the quality of daylight as well as the cloud
    shapes. This reads through the foreground artwork without repainting it. */
@@ -45,13 +45,13 @@
   z-index:6;
   inset:0;
   pointer-events:none;
-  opacity:var(--aqi-strength);
+  opacity:var(--pollution-strength);
   background:
     radial-gradient(ellipse 83% 51% at 57% 49%,rgba(147,119,96,.63),transparent 94%),
     linear-gradient(180deg,rgba(117,104,93,.17),rgba(144,119,96,.52) 37%,rgba(161,120,86,.76) 67%,rgba(153,129,105,.20) 95%);
   mix-blend-mode:multiply;
-  -webkit-backdrop-filter:saturate(var(--aqi-saturation)) contrast(var(--aqi-contrast));
-  backdrop-filter:saturate(var(--aqi-saturation)) contrast(var(--aqi-contrast));
+  -webkit-backdrop-filter:saturate(var(--pollution-saturation)) contrast(var(--pollution-contrast));
+  backdrop-filter:saturate(var(--pollution-saturation)) contrast(var(--pollution-contrast));
   transition:opacity 1.1s ease;
 }
 .pollution-haze::before{
@@ -66,32 +66,14 @@
   background:linear-gradient(180deg,rgba(93,83,87,.16),rgba(115,97,89,.48) 65%,rgba(106,93,88,.18));
 }
 
-/* Put the number where the eye already reads the sky conditions. Preserve the
-   painterly photograph as the dominant object, not an oversized data chip. */
+/* Sky condition and unobtrusive observation time sit on the painted foreground. */
 .hero-conditions{display:flex;align-items:center;flex-wrap:wrap;column-gap:8px;row-gap:5px;margin-top:8px}
 .hero-conditions .hero-subtitle{display:inline;margin:0;font-size:11px;line-height:1.4}
-.hero-aqi{
-  display:inline-flex;align-items:center;gap:5px;min-height:23px;padding:3px 8px;
-  border:1px solid rgba(255,255,255,.65);border-radius:24px;
-  background:rgba(237,250,228,.93);color:#3e673d;
-  text-shadow:none;white-space:nowrap;
-  box-shadow:0 3px 11px #1c251a24;
-}
-.hero-aqi-label{font-size:8px;font-weight:800;letter-spacing:.035em;opacity:.87}
-.hero-aqi strong{font-size:12px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.hero-aqi[data-level="moderate"]{background:#fff1c9f0;color:#80601f}
-.hero-aqi[data-level="sensitive"]{background:#ffe1b5f0;color:#98501f}
-.hero-aqi[data-level="unhealthy"]{background:#ffd1c9f0;color:#a23629}
-.hero-aqi[data-level="very-unhealthy"]{background:#ecd2f3f0;color:#763886}
-.hero-aqi[data-level="hazardous"]{background:#efcbd5f0;color:#85273a}
-.hero-aqi[data-simulated="true"]{border-style:dashed}
 .hero-observation-time{font-size:8px;line-height:1.3;font-weight:500;letter-spacing:.02em;color:#fffcf5af;text-shadow:0 1px 9px #11261a9f;white-space:nowrap}
 
 @media(max-width:760px){
   .hero-conditions{margin-top:6px;column-gap:6px;row-gap:4px}
   .hero-conditions .hero-subtitle{font-size:10px}
-  .hero-aqi{min-height:21px;padding:3px 6px;gap:4px}
-  .hero-aqi-label{font-size:7px}.hero-aqi strong{font-size:11px}
   .hero-observation-time{font-size:7px}
 }
 @media(prefers-reduced-motion:reduce){

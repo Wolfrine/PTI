@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NewResourceGlanceComponent } from '../new-resource-glance/new-resource-glance.component';
@@ -34,11 +34,10 @@ const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
   templateUrl: './new-home.component.html',
   styleUrl: './new-home.component.scss',
 })
-export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
+export class NewHomeComponent implements OnInit {
   @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
   @ViewChild('appDirectory') appDirectory?: ElementRef<HTMLElement>;
   @ViewChild('livingHorizonFrame') livingHorizonFrame?: ElementRef<HTMLIFrameElement>;
-  @ViewChild('homeTopbar') homeTopbar?: ElementRef<HTMLElement>;
 
   // Curated launcher entries only. Private tools are intentionally excluded from all surfaces.
   readonly apps: readonly HubApp[] = [
@@ -73,7 +72,7 @@ export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   searchQuery = '';
   selectedCategory: 'All' | AppCategory = 'All';
   editingPins = false;
-  horizonHeight = 244;
+  horizonHeight = 420;
   pinnedIds: string[] = [...PINNED_DEFAULTS];
   recentIds: string[] = [];
 
@@ -86,19 +85,6 @@ export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     // Purge stale launch history/pins for entries removed from this curated directory.
     this.writeIds(PIN_STORAGE_KEY, this.pinnedIds);
     this.writeIds(RECENT_STORAGE_KEY, this.recentIds);
-  }
-
-  ngAfterViewInit(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    // A scroll may belong to the document or an inner Angular app shell.
-    // Capture-phase observation sees both without depending on window.scrollY.
-    document.addEventListener('scroll', this.onCapturedScroll, { capture: true, passive: true });
-  }
-
-  ngOnDestroy(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    document.removeEventListener('scroll', this.onCapturedScroll, true);
-    if (this.horizonDepthFrame !== null) window.cancelAnimationFrame(this.horizonDepthFrame);
   }
 
   get pinnedApps(): HubApp[] {
@@ -150,73 +136,12 @@ export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId) || event.origin !== window.location.origin ||
       event.source !== this.livingHorizonFrame?.nativeElement.contentWindow) return;
     const payload = event.data;
-    if (!payload || payload.source !== 'pti-living-horizon') return;
-    if (payload.event === 'palette') {
-      if (['dawn', 'day', 'dusk', 'night'].includes(payload.phase)) {
-        this.homeTopbar?.nativeElement.setAttribute('data-sky-phase', payload.phase);
-      }
-      if (['clear', 'cloudy', 'overcast', 'rain', 'storm', 'fog'].includes(payload.weather)) {
-        this.homeTopbar?.nativeElement.setAttribute('data-sky-weather', payload.weather);
-      }
-      if (typeof payload.skyTop === 'string' && /^#[0-9a-fA-F]{6}$/.test(payload.skyTop)) {
-        this.homeTopbar?.nativeElement.parentElement?.style.setProperty('--horizon-sky-top', payload.skyTop);
-      }
-      if (typeof payload.skySeam === 'string' && /^#[0-9a-fA-F]{6}$/.test(payload.skySeam)) {
-        this.homeTopbar?.nativeElement.parentElement?.style.setProperty('--horizon-sky-seam', payload.skySeam);
-      }
-      return;
-    }
-    if (payload.event !== 'resize' || !Number.isFinite(payload.height)) return;
+    if (!payload || payload.source !== 'pti-living-horizon' || payload.event !== 'resize' ||
+      !Number.isFinite(payload.height)) return;
     const height = Math.ceil(payload.height);
-    if (height >= 170 && height <= 400 && Math.abs(height - this.horizonHeight) > 1) {
+    if (height >= 210 && height <= 1800 && Math.abs(height - this.horizonHeight) > 1) {
       this.horizonHeight = height;
     }
-  }
-
-  onHorizonLoad(): void {
-    this.syncHorizonDepth();
-  }
-
-  @HostListener('window:scroll')
-  onViewportChange(): void {
-    if (!isPlatformBrowser(this.platformId) || this.horizonDepthPending) return;
-    this.horizonDepthPending = true;
-    this.horizonDepthFrame = window.requestAnimationFrame(() => {
-      this.horizonDepthPending = false;
-      this.horizonDepthFrame = null;
-      this.syncHorizonDepth();
-    });
-  }
-
-  @HostListener('window:resize')
-  onHorizonViewportResize(): void {
-    this.onViewportChange();
-  }
-
-  private horizonDepthPending = false;
-  private horizonDepthFrame: number | null = null;
-  private readonly onCapturedScroll = (): void => this.onViewportChange();
-
-  private syncHorizonDepth(): void {
-    const horizon = this.livingHorizonFrame?.nativeElement;
-    if (!horizon?.contentWindow || !isPlatformBrowser(this.platformId)) return;
-    const bounds = horizon.getBoundingClientRect();
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // The top of the artwork begins exactly below the header. As the page
-    // scrolls the header remains sticky; this difference measures actual
-    // travel even when Angular uses a nested scroll host or restores scroll.
-    const headerBottom = this.homeTopbar?.nativeElement.getBoundingClientRect().bottom ?? 0;
-    const visibleTravel = Math.max(0, headerBottom - bounds.top);
-    // Stay translucent over the scenery; become a settled sky-coloured glass
-    // surface only during the panorama's final 75px beneath the header.
-    const skyRemaining = bounds.bottom - headerBottom;
-    const settle = reducedMotion ? Number(skyRemaining <= 0)
-      : Math.max(0, Math.min(1, 1 - skyRemaining / 75));
-    this.homeTopbar?.nativeElement.style.setProperty('--header-settle', settle.toFixed(3));
-    if (bounds.bottom < 0 || bounds.top > window.innerHeight) return;
-    const smallScreen = window.matchMedia('(max-width: 760px)').matches;
-    const offset = reducedMotion ? 0 : Math.min(smallScreen ? 55 : 110, visibleTravel * (smallScreen ? .27 : .49));
-    horizon.contentWindow.postMessage({ source: 'pti-home', event: 'parallax', offset }, window.location.origin);
   }
 
   launch(event: MouseEvent, app: HubApp): void {

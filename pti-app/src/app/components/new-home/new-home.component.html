@@ -10,28 +10,21 @@
   </aside>
 
   <div class="hub-workspace">
-    <header #homeTopbar class="hub-topbar" data-sky-phase="day">
+    <header class="hub-topbar">
       <span class="mobile-brand" aria-label="PTI"><span class="brand-mark" aria-hidden="true"><img src="/icons/pti-mark.svg" width="24" height="24" alt=""></span><strong>PTI</strong></span>
       <span class="topbar-location">YOUR SPACE <span>/</span> HOME</span>
       <label class="global-search"><mat-icon aria-hidden="true">search</mat-icon><input #searchBox type="search" [value]="searchQuery" (input)="searchQuery = $any($event.target).value; selectedCategory = 'All'" placeholder="Search your apps, tools, projects..." aria-label="Search PTI applications" autocomplete="off"><kbd>⌘ K</kbd></label>
       <span class="topbar-avatar" aria-label="Personal workspace"><mat-icon>person_outline</mat-icon></span>
     </header>
 
-    <!-- A sky-coloured continuation lives behind the sticky header. Keeping
-         this spacer the header's exact height leaves the scenery unobscured
-         on arrival, while the header may glass over it during scrolling. -->
-    <div class="horizon-header-sky" aria-hidden="true"></div>
-
-    <section class="living-horizon-home" aria-label="Current local sky and weather">
-      <iframe #livingHorizonFrame class="living-horizon-iframe"
-        src="/living-horizon/index.html?embed=1" [style.height.px]="horizonHeight"
-        title="Current local sky, time, and weather"
-        (load)="onHorizonLoad()"
-        allow="geolocation" loading="eager"></iframe>
-    </section>
-
     <div class="hub-content">
-      <app-new-resource-glance></app-new-resource-glance>
+      <section class="living-horizon-home" aria-label="Living horizon and atmospheric controls">
+        <iframe #livingHorizonFrame class="living-horizon-iframe"
+          src="/living-horizon/index.html?embed=1" [style.height.px]="horizonHeight"
+          title="Living Horizon: live skies, landscape and atmospheric simulation"
+          allow="geolocation" loading="eager"></iframe>
+      </section>
+
       <section class="hub-section pinned-section" aria-labelledby="pinned-heading">
         <div class="section-heading"><div><p class="section-kicker">AT YOUR FINGERTIPS</p><h2 id="pinned-heading"><mat-icon>push_pin</mat-icon> Pinned Apps</h2></div><button class="text-button" type="button" (click)="editingPins = !editingPins" [attr.aria-pressed]="editingPins">{{ editingPins ? 'Done' : 'Customize' }} <mat-icon>{{ editingPins ? 'check' : 'tune' }}</mat-icon></button></div>
         <div class="pinned-grid" *ngIf="pinnedApps.length; else noPinned">
@@ -46,6 +39,7 @@
         <ng-template #noPinned><p class="empty-hint">No pinned apps yet. Use Customize or the stars in All Apps to add favorites.</p></ng-template>
       </section>
 
+      <app-new-resource-glance></app-new-resource-glance>
       <section class="companion-section" aria-label="Local companions">
         <p class="companion-kicker">LOCAL COMPANIONS</p>
         <div class="companion-deck">

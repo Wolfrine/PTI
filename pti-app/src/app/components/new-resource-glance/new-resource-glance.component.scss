@@ -1,4 +1,4 @@
-:host{display:block;margin-top:30px;color:#342c27;font-family:Arial,"Helvetica Neue",sans-serif}
+:host{display:block;margin-top:16px;color:#342c27;font-family:Arial,"Helvetica Neue",sans-serif}
 *{box-sizing:border-box}p,h2{margin:0}
 .pulse-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:11px}
 .pulse-kicker{font-size:10px;font-weight:750;letter-spacing:.18em;color:#896c5e;margin-bottom:5px}
@@ -30,7 +30,7 @@
 .github-failure{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:650;color:#9e6951;white-space:nowrap}.github-failure mat-icon{width:13px;height:13px;font-size:13px}
 .pulse-provenance{font-size:10px;line-height:1.4;color:#83756c;margin-top:6px;overflow-wrap:anywhere}
 @media(max-width:760px){
-  :host{margin-top:24px}
+  :host{margin-top:13px}
   .pulse-heading{margin-bottom:7px}
   .pulse-heading h2{font-size:21px}
   .pulse-deck{grid-template-columns:1fr;border-radius:12px}

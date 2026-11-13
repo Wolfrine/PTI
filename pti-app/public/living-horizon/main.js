@@ -29,6 +29,7 @@ const heroObservationTime = document.querySelector('#hero-observation-time');
 const heroKicker = document.querySelector('#hero-kicker');
 const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
+const localClock = document.querySelector('#local-clock');
 const sourceLine = document.querySelector('#source-line');
 const artwork = document.querySelector('#artwork');
 const artButton = document.querySelector('#next-art');
@@ -51,6 +52,7 @@ let liveLocation = COARSE_LOCATION.name;
 let activeMode = 'live';
 let liveAttempt = 0;
 let lastObservationFetch = 0;
+let lastSuccessfulSync = 0;
 let currentArea = { latitude: COARSE_LOCATION.latitude, longitude: COARSE_LOCATION.longitude, cache: true, label: COARSE_LOCATION.name };
 let placeProfile = classifyLandscape(COARSE_LOCATION.name);
 let artIndex = -1;
@@ -138,6 +140,32 @@ function setStatus(label, type = 'sample') {
   statusNode.dataset.type = type;
 }
 
+// The current clock is independent of forecast issue time. The unobtrusive
+// sync indicator reports a successful fetch, never a failed retry attempt.
+function updateClockAndFreshness() {
+  const now = new Date();
+  const timezone = environmentTimeZone();
+  let localTime;
+  try {
+    localTime = new Intl.DateTimeFormat('en-GB', {
+      timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).format(now);
+  } catch { localTime = displayTime(now.getHours() * 60 + now.getMinutes()); }
+  localClock.textContent = localTime;
+  localClock.dateTime = `${localDayKey(now, timezone)}T${localTime}`;
+  localClock.title = `Current local time · ${timezone}`;
+
+  if (activeMode !== 'live' || !liveWeather?.current || !lastSuccessfulSync) return;
+  const age = Math.max(0, now.getTime() - lastSuccessfulSync);
+  const minutes = Math.floor(age / 60000);
+  const ageText = minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h`;
+  setStatus(`↻ ${ageText}`, age > 60 * 60000 ? 'sample' : 'live');
+  const fetchedAt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(new Date(lastSuccessfulSync));
+  statusNode.title = `Weather last retrieved at ${fetchedAt} local time${minutes >= 60 ? ' · may be outdated' : ''}`;
+}
+
 function localMinutes(timezone) {
   try {
     const segments = new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
@@ -166,10 +194,12 @@ function updateScene({ phase, weather, description, temperature, location, state
     : state === 'simulation' ? 'Selected local simulation time' : '';
   heroKicker.textContent = state === 'live' ? 'THE SKY, RIGHT NOW'
     : state === 'simulation' ? 'LIVING HORIZON · SIMULATION' : 'LIVING HORIZON · VISUAL STUDY';
-  if (state === 'live') setStatus('Live weather', 'live');
-  else if (state === 'simulation') setStatus('Simulated · not live', 'sample');
-  else if (state === 'offline') setStatus('Offline · sample', 'sample');
+  if (state === 'live') setStatus('↻', 'live');
+  else if (state === 'simulation') setStatus('Preview', 'sample');
+  else if (state === 'offline') setStatus('Weather unavailable', 'sample');
   else setStatus('Scene preview', 'sample');
+  statusNode.title = '';
+  updateClockAndFreshness();
   sourceLine.textContent = note;
   rainSystem.update({active:(weather === 'rain'||weather === 'storm')&&rainfall>0,
     storm:weather === 'storm', intensity:rainfall, wind, phase});
@@ -497,7 +527,7 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
   lastObservationFetch = Date.now();
   if (cache) {
     const stored = readCache();
-    if (stored) { liveWeather = stored.data; lastObservationFetch = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); return; }
+    if (stored) { liveWeather = stored.data; lastObservationFetch = stored.at; lastSuccessfulSync = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); return; }
   }
   if (activeMode === 'live') setStatus('Connecting', 'fetching');
   try {
@@ -520,6 +550,7 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
     liveWeather = data;
     liveLocation = label === 'Your area' && liveLocation !== 'Your area' ? liveLocation : label;
     lastObservationFetch = Date.now();
+    lastSuccessfulSync = lastObservationFetch;
     if (cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data })); } catch { /* Storage is optional. */ } }
     if (activeMode === 'live') renderMode();
   } catch (error) {
@@ -619,6 +650,7 @@ function setup() {
   window.setInterval(() => {
     if (document.hidden || activeMode !== 'live') return;
     if (liveWeather) renderMode();
+    else updateClockAndFreshness();
     if (Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
       void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
     }
@@ -643,6 +675,7 @@ function setup() {
         // previous weather never appears under the newly selected place.
         ++liveAttempt;
         liveWeather = null;
+        lastSuccessfulSync = 0;
         currentArea = { latitude, longitude, cache: false, label: 'Your area' };
         liveLocation = 'Your area';
         placeProfile = classifyLandscape('Your area');
@@ -662,8 +695,21 @@ function setup() {
     document.querySelectorAll('.pinned-card').forEach(card => { card.hidden = !card.textContent.toLowerCase().includes(term); });
   });
   if (document.documentElement.classList.contains('horizon-embed') && window.parent !== window) {
-    // The real Angular Home owns the surrounding launcher. Keep this public-safe
-    // scene's height fitted to its controls, including the expanded studio.
+    // Rehome only the location-consent button. Standalone preview controls
+    // remain in their familiar place, while Home keeps a tiny location icon.
+    statusNode.appendChild(useLocation);
+    // The parent owns page scrolling; only painted depth layers respond.
+    window.addEventListener('message', event => {
+      if (event.origin !== window.location.origin || event.source !== window.parent ||
+          event.data?.source !== 'pti-home' || event.data?.event !== 'parallax') return;
+      const requested = Number(event.data.offset);
+      if (!Number.isFinite(requested)) return;
+      const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : clamp(requested, 0, 14);
+      frame.style.setProperty('--horizon-art-shift', `${depth}px`);
+      frame.style.setProperty('--horizon-cloud-shift', `${Math.round(depth * .6)}px`);
+      frame.style.setProperty('--horizon-sky-shift', `${Math.round(depth * .3)}px`);
+    });
+    // The real Angular Home owns surrounding content; fit only this calm strip.
     const content = document.querySelector('.living-section');
     const reportHeight = () => {
       const height = Math.ceil(content.getBoundingClientRect().height + 2);

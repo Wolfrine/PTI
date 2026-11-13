@@ -10,11 +10,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=horizon-r7-20261113">
-  <link rel="stylesheet" href="./atmosphere.css?v=horizon-r7-20261113">
+  <link rel="stylesheet" href="./styles.css?v=horizon-r8-20261113">
+  <link rel="stylesheet" href="./atmosphere.css?v=horizon-r8-20261113">
   <link rel="stylesheet" href="./clouds.css?v=horizon-r7-20261113">
   <link rel="stylesheet" href="./rain-effects.css?v=horizon-r7-20261113">
-  <link rel="stylesheet" href="./embed.css?v=horizon-r7-20261113">
+  <link rel="stylesheet" href="./embed.css?v=horizon-r8-20261113">
 </head>
 <body>
   <main class="app-shell">
@@ -61,7 +61,10 @@
               <div class="horizon-title-line"><h1 id="hero-location">Navi Mumbai</h1><span class="hero-temperature" id="hero-temperature">--°</span></div>
               <div class="hero-conditions"><span class="hero-subtitle" id="hero-description">Finding today's atmosphere...</span><time class="hero-observation-time" id="hero-observation-time" hidden></time></div>
             </div>
-            <div class="horizon-status" id="horizon-status"><span class="status-dot"></span><span id="status-label">Connecting</span></div>
+            <div class="horizon-status" id="horizon-status" data-type="fetching">
+              <time class="horizon-clock" id="local-clock" aria-label="Current local time">--:--</time>
+              <span class="horizon-sync"><span class="status-dot" aria-hidden="true"></span><span id="status-label">Connecting</span></span>
+            </div>
           </div>
 
           <div class="horizon-toolbar">
@@ -74,7 +77,7 @@
             </div>
             <div class="horizon-actions">
               <button type="button" class="art-button" id="next-art" title="Explore another artistic landscape">✧ Art <span id="art-count">1/6</span></button>
-              <button type="button" class="location-button" id="use-location" title="With permission, use an approximately 1 km area for weather and broad landscape classification. Precise GPS is not saved."><span class="location-icon" aria-hidden="true">⌖</span> My area</button>
+              <button type="button" class="location-button" id="use-location" aria-label="Use my approximate area for local weather" title="With permission, use an approximately 1 km area for weather and broad landscape classification. Precise GPS is not saved."><span class="location-icon" aria-hidden="true">⌖</span><span class="location-label">My area</span></button>
             </div>
           </div>
           <div class="atmospheric-readouts" aria-label="Environmental readings">
@@ -161,6 +164,6 @@
     <nav class="mobile-nav" aria-label="Preview mobile navigation"><a href="#top" class="active"><span aria-hidden="true">⌂</span>Home</a><a href="#pinned"><span aria-hidden="true">▦</span>Apps</a><a href="#pulse"><span aria-hidden="true">⌕</span>Search</a></nav>
   </main>
   <script src="./vendor/suncalc.js?v=1.9.0"></script>
-  <script type="module" src="./main.js?v=horizon-r7-20261113"></script>
+  <script type="module" src="./main.js?v=horizon-r8-20261113"></script>
 </body>
 </html>

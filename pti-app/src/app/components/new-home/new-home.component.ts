@@ -72,7 +72,7 @@ export class NewHomeComponent implements OnInit {
   searchQuery = '';
   selectedCategory: 'All' | AppCategory = 'All';
   editingPins = false;
-  horizonHeight = 420;
+  horizonHeight = 244;
   pinnedIds: string[] = [...PINNED_DEFAULTS];
   recentIds: string[] = [];
 
@@ -139,9 +139,34 @@ export class NewHomeComponent implements OnInit {
     if (!payload || payload.source !== 'pti-living-horizon' || payload.event !== 'resize' ||
       !Number.isFinite(payload.height)) return;
     const height = Math.ceil(payload.height);
-    if (height >= 210 && height <= 1800 && Math.abs(height - this.horizonHeight) > 1) {
+    if (height >= 170 && height <= 400 && Math.abs(height - this.horizonHeight) > 1) {
       this.horizonHeight = height;
     }
+  }
+
+  onHorizonLoad(): void { this.syncHorizonDepth(); }
+
+  @HostListener('window:scroll')
+  @HostListener('window:resize')
+  onViewportChange(): void {
+    if (!isPlatformBrowser(this.platformId) || this.horizonDepthPending) return;
+    this.horizonDepthPending = true;
+    window.requestAnimationFrame(() => {
+      this.horizonDepthPending = false;
+      this.syncHorizonDepth();
+    });
+  }
+
+  private horizonDepthPending = false;
+
+  private syncHorizonDepth(): void {
+    const horizon = this.livingHorizonFrame?.nativeElement;
+    if (!horizon?.contentWindow || !isPlatformBrowser(this.platformId)) return;
+    const bounds = horizon.getBoundingClientRect();
+    if (bounds.bottom < 0 || bounds.top > window.innerHeight) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const offset = reducedMotion ? 0 : Math.max(0, Math.min(14, window.scrollY * .07));
+    horizon.contentWindow.postMessage({ source: 'pti-home', event: 'parallax', offset }, window.location.origin);
   }
 
   launch(event: MouseEvent, app: HubApp): void {

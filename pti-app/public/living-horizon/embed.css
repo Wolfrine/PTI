@@ -1,6 +1,5 @@
-/* One embedded sky on the authenticated PTI Home. All sample launcher chrome,
-   sample resource tiles and fake pinned apps belong only to the standalone
-   showcase and never appear inside the real Home. */
+/* Home treats the sky as an ambient strip; the separate public study keeps
+   all weather presets, art selection and simulation controls. */
 html.horizon-embed{scroll-behavior:auto;background:transparent;overflow:hidden}
 html.horizon-embed body{min-width:0;overflow:hidden;background:transparent}
 html.horizon-embed .app-shell{display:block;min-height:0;margin:0}
@@ -10,15 +9,66 @@ html.horizon-embed .mobile-nav,
 html.horizon-embed .hub-section,
 html.horizon-embed .pulse-section,
 html.horizon-embed .companions,
-html.horizon-embed .footer{display:none!important}
+html.horizon-embed .footer,
+html.horizon-embed .horizon-toolbar,
+html.horizon-embed .scene-lab{display:none!important}
 html.horizon-embed .workspace{min-width:0;max-width:none}
 html.horizon-embed .content{width:100%;min-width:0;max-width:none;margin:0;padding:0}
-html.horizon-embed .living-section{margin:0;padding:0}
-html.horizon-embed .scene-lab{margin-bottom:1px}
-html.horizon-embed .horizon-frame{box-shadow:0 9px 26px rgba(65,52,39,.085)}
+html.horizon-embed .living-section{margin:0;padding:0;background:#fbfaf8}
+html.horizon-embed .horizon-frame{height:224px;border:0;border-radius:0;box-shadow:none}
+html.horizon-embed .horizon-caption{left:clamp(18px,3.8vw,46px);bottom:26px}
+html.horizon-embed .hero-kicker,
+html.horizon-embed .hero-observation-time{display:none!important}
+html.horizon-embed .horizon-title-line h1{font-size:clamp(25px,2.5vw,35px)}
+html.horizon-embed .hero-temperature{font-size:clamp(20px,2.2vw,28px)}
+html.horizon-embed .hero-conditions{margin-top:5px}
+html.horizon-embed .horizon-vignette{opacity:.68}
+
+/* Local clock gets the visual weight; successful weather retrieval gets only
+   a tiny age indicator. The area consent action stays available. */
+html.horizon-embed .horizon-status{
+  right:clamp(18px,3.8vw,46px);top:21px;display:grid;
+  grid-template-columns:auto 30px;grid-template-rows:auto auto;
+  align-items:center;justify-items:end;column-gap:11px;row-gap:5px;
+  padding:0;background:transparent;border:0;border-radius:0;
+  color:#fffef7;box-shadow:none;backdrop-filter:none;
+  text-shadow:0 1px 11px rgba(22,36,35,.8),0 1px 2px rgba(12,28,24,.42);
+}
+html.horizon-embed .horizon-clock{grid-area:1/1;display:block;font:500 24px/1 "DM Sans",sans-serif;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+html.horizon-embed .horizon-sync{grid-area:2/1;display:inline-flex;align-items:center;justify-content:flex-end;gap:6px;font:600 9px/1.2 "DM Sans",sans-serif;letter-spacing:.025em;color:#fffef3da}
+html.horizon-embed .status-dot{height:5px;width:5px;box-shadow:0 0 0 2px #7abd9540}
+html.horizon-embed .location-button{grid-area:1/2/3/3;display:grid;place-items:center;align-self:start;width:29px;height:29px;padding:0;border-radius:50%;border:1px solid #ffffff5c;background:#263c3940;color:#fffbef;box-shadow:0 1px 9px #14241b24;backdrop-filter:blur(5px);opacity:.78;cursor:pointer}
+html.horizon-embed .location-button:hover,html.horizon-embed .location-button:focus-visible{opacity:1;background:#293b3aa6;outline-offset:3px}
+html.horizon-embed .location-icon{font-size:21px;line-height:1;margin:0;color:inherit}
+html.horizon-embed .location-label{display:none}
+
+/* Light provenance and observational facts, outside the painted foreground. */
+html.horizon-embed .atmospheric-readouts{min-height:15px;padding:3px clamp(18px,3.8vw,46px) 0;color:#756f68;font-size:9px;line-height:1.3}
+html.horizon-embed .source-line{min-height:11px;margin:0;padding:1px clamp(18px,3.8vw,46px) 4px;color:#968a7e;font-size:8px;line-height:1.3}
+
+/* Small optical depth: the illustration moves, never the text or sun/moon. */
+html.horizon-embed .horizon-sky{transform:translate3d(0,var(--horizon-sky-shift,0px),0) scale(1.06);transform-origin:center}
+html.horizon-embed .daily-art{transform:translate3d(0,var(--horizon-art-shift,0px),0) scale(1.07);transform-origin:center 57%}
+html.horizon-embed .cloudbank,html.horizon-embed .horizon-clouds{transform:translate3d(0,var(--horizon-cloud-shift,0px),0) scale(1.04);transform-origin:center}
 @media(max-width:760px){
   html.horizon-embed .content{padding:0}
-  html.horizon-embed .horizon-toolbar{gap:8px}
-  html.horizon-embed .mode-buttons{flex-wrap:wrap}
-  html.horizon-embed .horizon-frame{height:clamp(194px,56vw,228px)}
+  html.horizon-embed .horizon-frame{height:194px}
+  html.horizon-embed .horizon-caption{left:17px;bottom:24px;max-width:calc(100% - 122px)}
+  html.horizon-embed .horizon-title-line{gap:8px;flex-wrap:wrap;row-gap:2px;white-space:normal}
+  html.horizon-embed .horizon-title-line h1{font-size:26px}
+  html.horizon-embed .hero-temperature{font-size:21px}
+  html.horizon-embed .hero-conditions .hero-subtitle{font-size:10px}
+  html.horizon-embed .horizon-status{right:14px;top:15px;column-gap:8px}
+  html.horizon-embed .horizon-clock{font-size:21px}
+  html.horizon-embed .atmospheric-readouts{padding-left:17px;padding-right:17px;font-size:8px}
+  html.horizon-embed .source-line{padding-left:17px;padding-right:17px}
+}
+@media(max-width:350px){
+  html.horizon-embed .horizon-frame{height:181px}
+  html.horizon-embed .horizon-caption{bottom:20px}
+  html.horizon-embed .horizon-title-line h1{font-size:23px}
+}
+@media(prefers-reduced-motion:reduce){
+  html.horizon-embed .horizon-sky,html.horizon-embed .daily-art,
+  html.horizon-embed .cloudbank,html.horizon-embed .horizon-clouds{transform:none!important}
 }

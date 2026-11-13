@@ -13,9 +13,9 @@ function randomSource(seed) {
 }
 
 const DEPTHS = [
-  { name: 'distant', share: .51, velocity: 165, length: 9, width: .48, opacity: .25 },
-  { name: 'middle', share: .32, velocity: 290, length: 19, width: .82, opacity: .44 },
-  { name: 'near', share: .17, velocity: 430, length: 32, width: 1.13, opacity: .64 },
+  { name: 'distant', share: .52, velocity: 170, length: 13, width: .78, opacity: .42 },
+  { name: 'middle', share: .32, velocity: 295, length: 26, width: 1.05, opacity: .62 },
+  { name: 'near', share: .16, velocity: 455, length: 41, width: 1.45, opacity: .86 },
 ];
 
 /**
@@ -68,8 +68,8 @@ export function createRainSystem(canvas, frame) {
     canvas.height = Math.round(height * scale);
     context.setTransform(scale, 0, 0, scale, 0, 0);
     const random = randomSource(0x71a1a31);
-    // Upper bound is deliberately compact for a TV/dashboard left open all day.
-    const total = Math.round(clamp(width * .31, 75, 400));
+    // Enough spatial detail to read as rainfall even on a wide TV; cap work.
+    const total = Math.round(clamp(width * .42, 115, 560));
     groups = DEPTHS.map((depth) => {
       const length = Math.round(total * depth.share);
       const particles = Array.from({ length }, () => ({
@@ -111,9 +111,9 @@ export function createRainSystem(canvas, frame) {
     context.save();
     context.lineCap = 'round';
     context.lineWidth = group.width * (storm ? 1.12 : 1);
-    context.strokeStyle = group.name === 'distant' ? '#b5d4d9'
-      : group.name === 'middle' ? '#e6f1f0' : '#f6fcf8';
-    if (night) context.strokeStyle = group.name === 'distant' ? '#8aa9bb' : '#dfebf7';
+    context.strokeStyle = group.name === 'distant' ? '#7c9fa8'
+      : group.name === 'middle' ? '#d6e9ec' : '#f6fcf8';
+    if (night) context.strokeStyle = group.name === 'distant' ? '#9ab8ca' : '#e4f0fa';
     if (group.name === 'near') {
       context.shadowColor = night ? '#9aafc3a0' : '#e7f5f4b2';
       context.shadowBlur = storm ? 2.8 : 1.8;
@@ -122,7 +122,7 @@ export function createRainSystem(canvas, frame) {
       const particle = group.particles[i];
       const length = group.length * particle.stroke * lengthScale;
       const shimmer = .82 + .18 * Math.sin(elapsed * .002 + i * 7.3);
-      context.globalAlpha = clamp(group.opacity * (.34 + power * .76) * shimmer, .02, .86);
+      context.globalAlpha = clamp(group.opacity * (.42 + power * .78) * shimmer, .03, .92);
       context.beginPath();
       context.moveTo(particle.x, particle.y);
       context.lineTo(particle.x - length * slant, particle.y + length);
@@ -230,8 +230,8 @@ export function createRainSystem(canvas, frame) {
         wind: clamp(Number.isFinite(wind) ? wind : state.wind, 0, 80),
       };
       const power = state.active ? density() : 0;
-      frame.style.setProperty('--rain-mist-opacity', (power * (state.storm ? .69 : .43)).toFixed(3));
-      frame.style.setProperty('--rain-sheet-opacity', (!power ? 0 : Math.min(.38, .07 + power * .26)).toFixed(3));
+      frame.style.setProperty('--rain-mist-opacity', (power * (state.storm ? .76 : .51)).toFixed(3));
+      frame.style.setProperty('--rain-sheet-opacity', (!power ? 0 : Math.min(.56, .12 + power * .43)).toFixed(3));
       schedule();
     },
     destroy() {

@@ -318,8 +318,9 @@ function syncStudio() {
     simulation.moon = Math.round(illumination.phase * 100);
     document.querySelector('#sim-moon').value = String(simulation.moon);
   }
-  studioSummary.textContent = activeMode === 'live' ? 'Open simulation studio'
-    : `${simulation.date} · ${displayTime(simulation.minutes)} · ${simulation.weather}`;
+  studioSummary.textContent = studio.open ? 'Close studio'
+    : activeMode === 'live' ? 'Open simulation studio'
+      : `${simulation.date} · ${displayTime(simulation.minutes)} · ${simulation.weather}`;
 }
 
 function renderSimulation() {
@@ -578,7 +579,8 @@ function setup() {
   }).observe(frame);
   modeButtons.forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
   studio.addEventListener('toggle', () => {
-    if (studio.open && !simulation) { simulation = createSimulation(); syncStudio(); }
+    if (studio.open && !simulation) simulation = createSimulation();
+    syncStudio();
   });
   studioInputs.forEach(input => input.addEventListener(input.type === 'range' ? 'input' : 'change', () => setCustomSimulation(input)));
   document.querySelector('#sim-reset-live').addEventListener('click', () => {

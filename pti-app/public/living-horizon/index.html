@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf9f5">
+  <meta name="description" content="An isolated public-safe concept preview for PTI's living, time- and weather-responsive horizon.">
+  <title>PTI — Living Horizon Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar" aria-label="Preview navigation">
+      <a href="#top" class="brand brand-desktop"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><strong>PTI</strong></a>
+      <nav class="side-menu" aria-label="Main menu">
+        <a href="#top" class="side-link active"><span aria-hidden="true">⌂</span> Home</a>
+        <a href="#pinned" class="side-link"><span aria-hidden="true">▦</span> All apps</a>
+        <a href="#pulse" class="side-link"><span aria-hidden="true">⌕</span> Search</a>
+      </nav>
+      <p class="side-signature"><span aria-hidden="true">✣</span> All your worlds.<br>One calm place.</p>
+    </aside>
+
+    <div class="workspace" id="top">
+      <header class="topbar">
+        <a href="#top" class="brand brand-mobile"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><strong>PTI</strong></a>
+        <span class="breadcrumb">YOUR SPACE <b>/</b> HOME</span>
+        <label class="search"><span class="search-glass" aria-hidden="true"></span><input id="app-search" type="search" placeholder="Search your apps, tools, projects..." aria-label="Search sample apps"><kbd>⌘ K</kbd></label>
+        <span class="avatar" aria-label="Personal workspace"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c.4-4.1 2.5-6 6.5-6s6.1 1.9 6.5 6"/></svg></span>
+      </header>
+
+      <div class="content">
+        <section class="living-section" aria-label="Living horizon weather preview">
+          <div class="horizon-frame" id="horizon-frame" data-phase="day" data-weather="clear">
+            <div class="horizon-sky"></div>
+            <div class="sun-halo"></div>
+            <div class="sun" aria-hidden="true"></div>
+            <div class="moon-halo"></div>
+            <div class="moon" aria-hidden="true"></div>
+            <div class="starfield" id="starfield" aria-hidden="true"></div>
+            <div class="cloud-haze"></div>
+            <img class="cloudbank" src="../assets/images/living-horizon-cloudbank.webp" alt="" aria-hidden="true" decoding="async">
+            <img class="landscape" src="../assets/images/living-horizon-foreground.webp" alt="" aria-hidden="true" fetchpriority="high">
+            <div class="valley-mist"></div>
+            <canvas id="weather-canvas" aria-hidden="true"></canvas>
+            <div class="horizon-vignette"></div>
+
+            <div class="horizon-caption">
+              <span class="hero-kicker" id="hero-kicker">A WINDOW TO TODAY</span>
+              <div class="horizon-title-line"><h1 id="hero-location">Navi Mumbai</h1><span class="hero-temperature" id="hero-temperature">--°</span></div>
+              <p class="hero-subtitle" id="hero-description">Finding today's atmosphere...</p>
+            </div>
+            <div class="horizon-status" id="horizon-status"><span class="status-dot"></span><span id="status-label">Connecting</span></div>
+          </div>
+
+          <div class="horizon-toolbar">
+            <div class="mode-buttons" role="group" aria-label="Preview atmospheric conditions">
+              <button type="button" data-mode="live" class="selected" aria-pressed="true">Live</button>
+              <button type="button" data-mode="dawn" aria-pressed="false">Dawn</button>
+              <button type="button" data-mode="day" aria-pressed="false">Day</button>
+              <button type="button" data-mode="rain" aria-pressed="false">Rain</button>
+              <button type="button" data-mode="night" aria-pressed="false">Night</button>
+            </div>
+            <button type="button" class="location-button" id="use-location" title="With your permission, send your coordinates to Open-Meteo to retrieve local conditions."><span class="location-icon" aria-hidden="true">⌖</span> Use my location</button>
+          </div>
+          <p class="source-line" id="source-line" aria-live="polite">Live weather uses approximate Navi Mumbai coordinates. The environment is an artistic interpretation.</p>
+        </section>
+
+        <section class="hub-section" id="pinned" aria-labelledby="pinned-title">
+          <div class="section-topline"><span>AT YOUR FINGERTIPS</span><span class="section-side-action">Customize <span aria-hidden="true">☷</span></span></div>
+          <h2 id="pinned-title"><span class="section-icon" aria-hidden="true">⌑</span> Pinned Apps</h2>
+          <div class="pinned-grid" id="pinned-grid">
+            <article class="pinned-card"><span class="app-icon mint" aria-hidden="true">✓</span><b>Tracker</b><small>Productivity</small></article>
+            <article class="pinned-card"><span class="app-icon gold" aria-hidden="true">✧</span><b>Morsel</b><small>Personal</small></article>
+            <article class="pinned-card"><span class="app-icon blue" aria-hidden="true">⌁</span><b>Venture</b><small>Ideas</small></article>
+            <article class="pinned-card"><span class="app-icon violet" aria-hidden="true">◈</span><b>Noveliaa</b><small>Creative</small></article>
+            <article class="pinned-card"><span class="app-icon teal" aria-hidden="true">♧</span><b>Taleweald</b><small>Entertainment</small></article>
+            <article class="pinned-card"><span class="app-icon clay" aria-hidden="true">▥</span><b>Operations</b><small>Productivity</small></article>
+          </div>
+        </section>
+
+        <section class="pulse-section" id="pulse" aria-labelledby="pulse-title">
+          <div class="section-topline"><span>RESOURCE PULSE</span><span>LAYOUT STUDY · NO ACCOUNT DATA</span></div>
+          <div class="pulse-box">
+            <div class="pulse-heading"><h2 id="pulse-title">A quiet overview</h2><span class="pulse-indicator"><span></span> Preview</span></div>
+            <div class="pulse-stats">
+              <div class="pulse-stat"><div><strong>Codex allowance</strong><b>—</b></div><div class="meter"><span style="--fill:0%;--bar:#df786a"></span></div><small>Private reading</small></div>
+              <div class="pulse-stat"><div><strong>Firestore</strong><b>—</b></div><div class="meter"><span style="--fill:0%;--bar:#80ad99"></span></div><small>Private reading</small></div>
+              <div class="pulse-stat"><div><strong>Local systems</strong><b>—</b></div><div class="meter"><span style="--fill:0%;--bar:#d9b56d"></span></div><small>Private status</small></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="companions" aria-label="Illustrative local companion status">
+          <div class="section-topline"><span>LOCAL COMPANIONS</span><span>UI PREVIEW</span></div>
+          <div class="companion-row"><div><span class="companion-light muted"></span><strong>GT Papers</strong><small>Status not loaded</small></div><div><span class="companion-light muted"></span><strong>One Piece</strong><small>Status not loaded</small></div></div>
+        </section>
+
+        <footer class="footer"><span>PTI · Your personal ecosystem</span><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo</a></footer>
+      </div>
+    </div>
+
+    <nav class="mobile-nav" aria-label="Preview mobile navigation"><a href="#top" class="active"><span aria-hidden="true">⌂</span>Home</a><a href="#pinned"><span aria-hidden="true">▦</span>Apps</a><a href="#pulse"><span aria-hidden="true">⌕</span>Search</a></nav>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

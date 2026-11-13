@@ -33,7 +33,7 @@
 /* Living Horizon v2: the art changes daily, but the sun, moon and air live in
    their own layers. Each landscape has a real alpha sky cutout. */
 [hidden]{display:none!important}
-.horizon-frame{--moon-x:71%;--moon-y:25%;--visibility-haze:.04;--air-haze:0;--rain-strength:.85}
+.horizon-frame{--moon-x:71%;--moon-y:25%;--visibility-haze:.04;--air-haze:0;--rain-sheet-opacity:0}
 .daily-art{
   object-position:var(--art-position,50% 85%);
   filter:var(--art-filter);
@@ -98,13 +98,13 @@
     linear-gradient(105deg,transparent 44%,#d4e9f26d 45%,transparent 46%);
   background-size:26px 67px,39px 89px;
   background-position:0 0,11px 28px;
-  opacity:var(--rain-opacity);
-  animation:rain-sheet-fall .82s linear infinite;
+  opacity:var(--rain-sheet-opacity);
+  animation:rain-sheet-fall .82s linear infinite paused;
   filter:drop-shadow(0 0 1px #c5e3ff55);
   transition:opacity .5s ease;
 }
 .horizon-frame[data-weather="rain"] .rain-sheet,
-.horizon-frame[data-weather="storm"] .rain-sheet{mix-blend-mode:screen}
+.horizon-frame[data-weather="storm"] .rain-sheet{mix-blend-mode:screen;animation-play-state:running}
 @keyframes rain-sheet-fall{from{transform:translateY(-25px)}to{transform:translateY(42px)}}
 .horizon-frame.out-of-view .rain-sheet,.horizon-frame.out-of-view .cloud-haze{animation-play-state:paused}
 .horizon-actions{display:flex;align-items:center;gap:6px}
@@ -131,5 +131,5 @@
   .atmospheric-readouts{min-height:17px}
 }
 @media(prefers-reduced-motion:reduce){
-  .rain-sheet{animation:none;opacity:var(--rain-opacity)}
+  .rain-sheet{animation:none;opacity:var(--rain-sheet-opacity)}
 }

@@ -192,7 +192,9 @@ export function paintMoon(canvas, phase) {
       pixels.data[offset] = Math.round((62 + 181 * lit + lunarTexture) * edge);
       pixels.data[offset + 1] = Math.round((77 + 166 * lit + lunarTexture) * edge);
       pixels.data[offset + 2] = Math.round((92 + 146 * lit + lunarTexture) * edge);
-      pixels.data[offset + 3] = Math.round(255 * edge);
+      // An unlit moon should almost disappear into the sky, rather than
+      // rendering as a conspicuous charcoal circle in broad daylight.
+      pixels.data[offset + 3] = Math.round((4 + 251 * lit) * edge);
     }
   }
   context.putImageData(pixels, 0, 0);

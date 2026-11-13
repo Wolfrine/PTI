@@ -194,15 +194,13 @@ function renderMode() {
     );
     const phase = phaseFromSun(solar?.sun);
     const hhmm = String(current.time || '').split('T')[1]?.slice(0, 5);
-    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: `${text}${hhmm ? ` · observed ${hhmm}` : ''}`, state: 'live', note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
-    // Open-Meteo current conditions are model analyses, not a station observation.
-    descriptionLabel.textContent = text + (hhmm ? ' · model ' + hhmm : '');
+    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: text + (hhmm ? ' · model ' + hhmm : ''), state: 'live', note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
     sourceLine.textContent = 'Open-Meteo weather · CAMS / Open-Meteo modelled air · ' +
       (placeProfile.artworkGeographyMatch ? 'coastal-foothill art' : 'regional artwork not yet mapped') + '.';
     if (weather === 'rain' || weather === 'storm') {
-      frame.style.setProperty('--rain-strength', Math.min(1, Math.max(.62, .65 + rainfall / 8)).toFixed(2));
-    } else frame.style.removeProperty('--rain-strength');
+      frame.style.setProperty('--rain-sheet-opacity', Math.min(.64, Math.max(.34, .34 + rainfall / 12)).toFixed(2));
+    }
     if (Number.isFinite(clouds)) frame.style.setProperty('--cloud-opacity', String(Math.min(.96, .10 + clouds / 124).toFixed(2)));
     const wind = Number(current.wind_speed_10m);
     if (Number.isFinite(wind)) frame.style.setProperty('--cloud-duration', `${Math.max(65, Math.min(145, 145 - wind * 2.4))}s`);
@@ -374,9 +372,9 @@ function sizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
   canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
   ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
-  drops = Array.from({ length: Math.max(110, Math.floor(width / 2.7)) }, (_, i) => ({
+  drops = Array.from({ length: Math.max(60, Math.floor(width / 5.5)) }, (_, i) => ({
     x: ((i * 137.7) % width), y: ((i * 71.3) % height),
-    speed: 2.2 + (i % 7) * .27, len: 13 + i % 19,
+    speed: 2.2 + (i % 7) * .27, len: 11 + i % 15,
   }));
 }
 function drawRain(time) {
@@ -385,8 +383,8 @@ function drawRain(time) {
   if (time - lastFrame < 32) { raf = requestAnimationFrame(drawRain); return; }
   lastFrame = time;
   ctx.clearRect(0, 0, width, height);
-  ctx.strokeStyle = thunder ? 'rgba(224,242,253,.80)' : 'rgba(238,251,255,.74)';
-  ctx.lineWidth = thunder ? 1.5 : 1.3;
+  ctx.strokeStyle = thunder ? 'rgba(224,242,253,.70)' : 'rgba(238,251,255,.57)';
+  ctx.lineWidth = thunder ? 1.3 : 1.05;
   ctx.beginPath();
   for (const drop of drops) {
     ctx.moveTo(drop.x, drop.y);
@@ -400,6 +398,7 @@ function drawRain(time) {
 }
 function configureRain(active, storm = false) {
   rainActive = active; thunder = storm;
+  frame.style.setProperty('--rain-sheet-opacity', !active ? '0' : storm ? '.61' : '.35');
   ctx?.clearRect(0, 0, width, height);
   if (!raf && active && inView && !reducedMotion.matches) raf = requestAnimationFrame(drawRain);
   if (!active && raf) { cancelAnimationFrame(raf); raf = 0; }

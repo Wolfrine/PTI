@@ -3,7 +3,7 @@
 import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
-} from './environment.js?v=horizon-r7-20261113';
+} from './environment.js?v=horizon-r13-20261114';
 import {
   REGION_PACKS, resolveLandscapeProfile, pickRegionPack, eligibleArtwork,
 } from './landscape-regions.js?v=horizon-r7-20261113';
@@ -67,6 +67,33 @@ let simulation = null;
 let landscapeResolveAttempt = 0;
 
 const clamp = (n, minimum, maximum) => Math.max(minimum, Math.min(maximum, n));
+// Keep the entire painted silhouette in the shallow Home panorama. Every
+// source has a large *transparent* sky above its landscape: scaling against
+// the first painted row (rather than the full 16:9 canvas) preserves detail
+// without forcing a cover crop. The procedural sky continues on either side.
+function fitEmbeddedArtwork() {
+  if (!document.documentElement.classList.contains('horizon-embed') ||
+      !artwork.naturalWidth || !artwork.naturalHeight) return;
+  const choice = ARTWORKS[artIndex] || ARTWORKS[0];
+  const panelWidth = frame.clientWidth;
+  const panelHeight = frame.clientHeight;
+  if (!panelWidth || !panelHeight) return;
+  const mobile = window.matchMedia('(max-width: 760px)').matches;
+  const visibleStart = clamp(choice.visibleStart || 0, 0, artwork.naturalHeight - 1);
+  const visibleHeight = artwork.naturalHeight - visibleStart;
+  const sideMargin = mobile ? 6 : 24;
+  const topBreathingRoom = mobile ? 10 : 14;
+  const scale = Math.min(
+    (panelHeight - topBreathingRoom) / visibleHeight,
+    (panelWidth - sideMargin * 2) / artwork.naturalWidth,
+  );
+  const paintedWidth = artwork.naturalWidth * scale;
+  const paintedHeight = artwork.naturalHeight * scale;
+  const left = (panelWidth - paintedWidth) * (mobile ? .5 : .96);
+  frame.style.setProperty('--art-draw-width', `${paintedWidth.toFixed(2)}px`);
+  frame.style.setProperty('--art-draw-height', `${paintedHeight.toFixed(2)}px`);
+  frame.style.setProperty('--art-draw-left', `${left.toFixed(2)}px`);
+}
 const displayTime = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 
 // Convert a wall-clock time in the selected place's IANA time zone into an
@@ -278,6 +305,7 @@ function updateDailyArt() {
   artIndex = selected;
   const choice = ARTWORKS[selected];
   artwork.src = '../assets/images/living-horizon/' + choice.file;
+  if (artwork.complete) fitEmbeddedArtwork();
   frame.dataset.art = choice.id;
   frame.style.setProperty('--art-position', choice.desktop);
   frame.style.setProperty('--art-mobile-position', choice.mobile);
@@ -673,6 +701,9 @@ function seededStars() {
 
 function setup() {
   seededStars();
+  artwork.addEventListener('load', fitEmbeddedArtwork);
+  new ResizeObserver(fitEmbeddedArtwork).observe(frame);
+  fitEmbeddedArtwork();
   // Sky art and rain each own their resize, motion and visibility lifecycle.
   new IntersectionObserver(([entry]) => {
     frame.classList.toggle('out-of-view', !entry.isIntersecting);
@@ -772,21 +803,13 @@ function setup() {
           event.data?.source !== 'pti-home' || event.data?.event !== 'parallax') return;
       const requested = Number(event.data.offset);
       if (!Number.isFinite(requested)) return;
-      // Pan within the original image's natural cover overflow. This moves
-      // scenery slower than the page without zooming it or exposing blank edges.
-      const smallScreen = window.matchMedia('(max-width: 760px)').matches;
-      const artAnchor = Number.parseFloat(getComputedStyle(frame).getPropertyValue(smallScreen ? '--art-mobile-y' : '--art-y')) / 100;
-      const naturalWidth = artwork.naturalWidth;
-      const naturalHeight = artwork.naturalHeight;
-      const coverHeight = naturalWidth && naturalHeight
-        ? naturalHeight * Math.max(frame.clientWidth / naturalWidth, frame.clientHeight / naturalHeight)
-        : frame.clientHeight;
-      const availablePan = Math.max(0, (coverHeight - frame.clientHeight) * clamp(Number.isFinite(artAnchor) ? artAnchor : .75, 0, 1) - 1);
+      // The unzoomed art moves down slightly relative to the scrolling page:
+      // a genuine slower parallax layer, separate from clouds and sky.
       const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ? 0 : Math.min(clamp(requested, 0, 110), availablePan);
+        ? 0 : Math.min(clamp(requested, 0, 110) * .24, 27);
       frame.style.setProperty('--horizon-art-shift', `${depth}px`);
-      frame.style.setProperty('--horizon-cloud-shift', `${Math.round(depth * .6)}px`);
-      frame.style.setProperty('--horizon-sky-shift', `${Math.round(depth * .3)}px`);
+      frame.style.setProperty('--horizon-cloud-shift', `${Math.round(requested * .36)}px`);
+      frame.style.setProperty('--horizon-sky-shift', `${Math.round(requested * .18)}px`);
     });
     // The real Angular Home owns surrounding content; fit only this calm strip.
     const content = document.querySelector('.living-section');

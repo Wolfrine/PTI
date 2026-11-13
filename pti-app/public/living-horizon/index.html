@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=01ee312">
+  <link rel="stylesheet" href="./styles.css?v=living-v2">
 </head>
 <body>
   <main class="app-shell">
@@ -38,12 +38,14 @@
             <div class="sun-halo"></div>
             <div class="sun" aria-hidden="true"></div>
             <div class="moon-halo"></div>
-            <div class="moon" aria-hidden="true"></div>
+            <canvas class="moon" id="moon-disc" aria-hidden="true"></canvas>
             <div class="starfield" id="starfield" aria-hidden="true"></div>
             <div class="cloud-haze"></div>
             <img class="cloudbank" src="../assets/images/living-horizon-cloudbank.webp" alt="" aria-hidden="true" decoding="async">
-            <img class="landscape" src="../assets/images/living-horizon-foreground.webp" alt="" aria-hidden="true" fetchpriority="high">
+            <img class="landscape daily-art" id="artwork" src="../assets/images/living-horizon/horizon-gouache.webp" alt="" aria-hidden="true" fetchpriority="high">
             <div class="valley-mist"></div>
+            <div class="distance-haze" aria-hidden="true"></div>
+            <div class="rain-sheet" aria-hidden="true"></div>
             <canvas id="weather-canvas" aria-hidden="true"></canvas>
             <div class="horizon-vignette"></div>
 
@@ -63,7 +65,15 @@
               <button type="button" data-mode="rain" aria-pressed="false">Rain</button>
               <button type="button" data-mode="night" aria-pressed="false">Night</button>
             </div>
-            <button type="button" class="location-button" id="use-location" title="With your permission, send your coordinates to Open-Meteo to retrieve local conditions."><span class="location-icon" aria-hidden="true">⌖</span> Use my location</button>
+            <div class="horizon-actions">
+              <button type="button" class="art-button" id="next-art" title="Explore another artistic landscape">✧ Art <span id="art-count">1/6</span></button>
+              <button type="button" class="location-button" id="use-location" title="With permission, use an approximately 1 km area for Open-Meteo weather/air and OpenStreetMap place name. Precise GPS is not saved."><span class="location-icon" aria-hidden="true">⌖</span> My area</button>
+            </div>
+          </div>
+          <div class="atmospheric-readouts" aria-label="Environmental readings">
+            <span id="visibility-readout" hidden></span>
+            <span id="air-readout" hidden></span>
+            <span id="moon-readout" hidden></span>
           </div>
           <p class="source-line" id="source-line" aria-live="polite">Live weather uses approximate Navi Mumbai coordinates. The environment is an artistic interpretation.</p>
         </section>
@@ -98,12 +108,13 @@
           <div class="companion-row"><div><span class="companion-light muted"></span><strong>GT Papers</strong><small>Status not loaded</small></div><div><span class="companion-light muted"></span><strong>One Piece</strong><small>Status not loaded</small></div></div>
         </section>
 
-        <footer class="footer"><span>PTI · Your personal ecosystem</span><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo</a></footer>
+        <footer class="footer"><span>PTI · Your personal ecosystem</span><span><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo weather</a> · <a href="https://atmosphere.copernicus.eu/" target="_blank" rel="noopener noreferrer">CAMS air quality</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a></span></footer>
       </div>
     </div>
 
     <nav class="mobile-nav" aria-label="Preview mobile navigation"><a href="#top" class="active"><span aria-hidden="true">⌂</span>Home</a><a href="#pinned"><span aria-hidden="true">▦</span>Apps</a><a href="#pulse"><span aria-hidden="true">⌕</span>Search</a></nav>
   </main>
-  <script type="module" src="./main.js?v=01ee312"></script>
+  <script src="./vendor/suncalc.js?v=1.9.0"></script>
+  <script type="module" src="./main.js?v=living-v2"></script>
 </body>
 </html>

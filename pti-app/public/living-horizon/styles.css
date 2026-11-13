@@ -29,3 +29,107 @@
 @media(max-width:760px){.app-shell{display:block}.sidebar,.breadcrumb{display:none}.topbar{display:grid;grid-template-columns:1fr auto;grid-template-rows:33px 38px;height:111px;padding:11px 16px 13px;gap:7px 9px}.brand-mobile{display:flex;grid-area:1/1/2/2}.brand-mobile strong{font-size:25px}.avatar{grid-area:1/2/2/3;justify-self:end}.search{grid-area:2/1/3/3;max-width:none;height:37px}.search kbd{display:none}.content{padding:14px 15px 86px}.horizon-frame{height:clamp(190px,51vw,216px);border-radius:16px}.sun{width:36px;height:36px}.sun-halo{width:170px;height:170px}.landscape{object-position:center bottom}.cloudbank{object-position:center 38%}.horizon-caption{left:18px;bottom:16px;max-width:calc(100% - 95px)}.hero-kicker{font-size:8px;letter-spacing:.16em;margin-bottom:4px}.horizon-title-line{gap:11px}.horizon-title-line h1{font-size:29px}.hero-temperature{font-size:25px}.hero-subtitle{font-size:10px;max-width:235px;margin-top:6px}.horizon-status{right:11px;top:10px;padding:6px 9px;font-size:9px}.horizon-toolbar{padding:9px 1px 4px;gap:3px;flex-wrap:wrap}.mode-buttons{gap:2px}.mode-buttons button{font-size:10px;padding:6px 9px}.location-button{font-size:9px;padding:6px 9px}.source-line{font-size:9px}.hub-section{padding-top:24px}.hub-section h2{font-size:22px;margin-bottom:12px}.pinned-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.pinned-card{min-height:96px}.app-icon{height:34px;width:34px;font-size:20px}.pulse-section{padding-top:26px}.pulse-box{padding:16px 14px}.pulse-heading{margin-bottom:15px}.pulse-heading h2{font-size:20px}.pulse-stats{gap:11px}.pulse-stat strong{font-size:10px}.pulse-stat b{font-size:11px}.pulse-stat small{font-size:9px}.meter{margin:8px 0 6px}.companions{padding-top:22px}.companion-row{grid-template-columns:1fr}.companion-row>div{min-height:51px;padding:13px}.companion-row>div+div{border-left:0;border-top:1px solid #ece5dd}.footer{padding:25px 3px;flex-wrap:wrap}.mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(3,1fr);align-items:center;left:0;right:0;bottom:0;height:67px;padding:4px max(14px,env(safe-area-inset-right)) calc(3px + env(safe-area-inset-bottom));z-index:20;background:#fffdfbf2;backdrop-filter:blur(14px);border-top:1px solid #e7e0d8;box-shadow:0 -5px 18px #51412c0a}.mobile-nav a{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:10px;color:#8c8177}.mobile-nav a span{font-size:24px;line-height:24px}.mobile-nav a.active{color:#d56557;font-weight:700}}
 @media(max-width:350px){.content{padding-left:11px;padding-right:11px}.horizon-frame{height:186px}.horizon-title-line h1{font-size:26px}.hero-temperature{font-size:22px}.hero-subtitle{font-size:9px}.mode-buttons button{padding:6px 8px}.location-button{font-size:8px}.pinned-card{min-height:88px}.pulse-stats{gap:7px}.pulse-stat>div:first-child{display:block}.pulse-stat b{display:block;margin-top:4px}.pulse-box{padding:14px 11px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition-duration:.01ms!important}}
+
+/* Living Horizon v2: the art changes daily, but the sun, moon and air live in
+   their own layers. Each landscape has a real alpha sky cutout. */
+[hidden]{display:none!important}
+.horizon-frame{--moon-x:71%;--moon-y:25%;--visibility-haze:.04;--air-haze:0;--rain-strength:.85}
+.daily-art{
+  object-position:var(--art-position,50% 85%);
+  filter:var(--art-filter);
+  image-rendering:auto;
+}
+.horizon-frame[data-art="ink"] .daily-art{filter:var(--art-filter) saturate(.95)}
+.horizon-frame[data-art="screenprint"] .daily-art{filter:var(--art-filter) saturate(1.13)}
+.horizon-frame[data-art="vellum"] .daily-art{filter:var(--art-filter) brightness(1.04)}
+.horizon-vignette{opacity:.63}
+.cloudbank{display:none}
+.cloud-haze{
+  z-index:3;opacity:var(--cloud-opacity);
+  background:
+    radial-gradient(ellipse 26% 15% at 17% 22%,#fafafaad 10%,transparent 90%),
+    radial-gradient(ellipse 33% 14% at 56% 38%,#f6f8f3c9 9%,transparent 92%),
+    radial-gradient(ellipse 20% 10% at 87% 22%,#f3f5f5cc 8%,transparent 96%),
+    radial-gradient(ellipse 35% 14% at 34% 50%,#ffffff6e 8%,transparent 94%);
+  filter:blur(15px);mix-blend-mode:screen;animation:cloud-drift 105s ease-in-out infinite alternate;
+  transition:opacity 1.4s ease;
+}
+.horizon-frame[data-phase="night"] .cloud-haze{filter:blur(20px) brightness(.50)}
+.horizon-frame[data-weather="storm"] .cloud-haze{filter:blur(13px) brightness(.60)}
+.horizon-frame[data-weather="overcast"] .cloud-haze{filter:blur(15px) brightness(.79)}
+.moon,.moon-halo{left:var(--moon-x);top:var(--moon-y)}
+.moon{width:34px;height:34px;background:transparent;box-shadow:none;border-radius:50%;filter:drop-shadow(0 0 11px #e4efff91)}
+.moon-halo{background:radial-gradient(circle,#f0f4ff49 0 15%,#dce7ff12 45%,transparent 78%)}
+.horizon-frame[data-sun-visible="false"] .sun,
+.horizon-frame[data-sun-visible="false"] .sun-halo,
+.horizon-frame[data-moon-visible="false"] .moon,
+.horizon-frame[data-moon-visible="false"] .moon-halo{opacity:0}
+.horizon-frame[data-sun-visible="true"] .sun{opacity:.95}
+.horizon-frame[data-sun-visible="true"] .sun-halo{opacity:.71}
+.horizon-frame[data-moon-visible="true"] .moon{opacity:.95}
+.horizon-frame[data-moon-visible="true"] .moon-halo{opacity:.62}
+.horizon-frame[data-weather="overcast"] .sun,
+.horizon-frame[data-weather="rain"] .sun,
+.horizon-frame[data-weather="storm"] .sun,
+.horizon-frame[data-weather="fog"] .sun,
+.horizon-frame[data-weather="overcast"] .sun-halo,
+.horizon-frame[data-weather="rain"] .sun-halo,
+.horizon-frame[data-weather="storm"] .sun-halo,
+.horizon-frame[data-weather="fog"] .sun-halo{opacity:0}
+.horizon-frame[data-weather="overcast"] .moon,
+.horizon-frame[data-weather="rain"] .moon,
+.horizon-frame[data-weather="storm"] .moon,
+.horizon-frame[data-weather="fog"] .moon,
+.horizon-frame[data-weather="overcast"] .moon-halo,
+.horizon-frame[data-weather="rain"] .moon-halo,
+.horizon-frame[data-weather="storm"] .moon-halo,
+.horizon-frame[data-weather="fog"] .moon-halo{opacity:.05}
+.distance-haze{
+  position:absolute;z-index:5;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,transparent 28%,#e9e2dcb5 61%,#d4dfd655 81%,transparent 99%);
+  opacity:clamp(0,calc(var(--visibility-haze) + var(--air-haze)),.84);
+  transition:opacity 1.8s ease;
+}
+.horizon-frame[data-phase="night"] .distance-haze{background:linear-gradient(180deg,transparent 25%,#8192a25c 65%,transparent 95%)}
+.rain-sheet{
+  position:absolute;inset:-100px 0 0;z-index:7;pointer-events:none;
+  background-image:
+    linear-gradient(103deg,transparent 43%,#e1f5ffbc 44%,#e1f5ffbb 45%,transparent 46%),
+    linear-gradient(105deg,transparent 44%,#d4e9f26d 45%,transparent 46%);
+  background-size:26px 67px,39px 89px;
+  background-position:0 0,11px 28px;
+  opacity:var(--rain-opacity);
+  animation:rain-sheet-fall .82s linear infinite;
+  filter:drop-shadow(0 0 1px #c5e3ff55);
+  transition:opacity .5s ease;
+}
+.horizon-frame[data-weather="rain"] .rain-sheet,
+.horizon-frame[data-weather="storm"] .rain-sheet{mix-blend-mode:screen}
+@keyframes rain-sheet-fall{from{transform:translateY(-25px)}to{transform:translateY(42px)}}
+.horizon-frame.out-of-view .rain-sheet,.horizon-frame.out-of-view .cloud-haze{animation-play-state:paused}
+.horizon-actions{display:flex;align-items:center;gap:6px}
+.art-button{white-space:nowrap;border:1px solid #e4ddd3;background:#fffaf4;color:#936a64;border-radius:20px;padding:7px 11px;font-size:10px;font-weight:700}
+.art-button:hover{background:#fff0e7;border-color:#e9c2b2}
+.art-button span{color:#ac8e80;font-size:9px;margin-left:4px}
+.atmospheric-readouts{min-height:19px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 5px 0;font-size:10px;color:#776a5f}
+.atmospheric-readouts span{display:inline-flex;align-items:center;gap:4px}
+.atmospheric-readouts span+span:before{content:"·";padding-right:3px;color:#b3a498}
+.source-line{margin-top:0}
+@media(max-width:760px){
+  .daily-art{object-position:var(--art-mobile-position,50% 75%)}
+  .horizon-toolbar{column-gap:5px}
+  .horizon-actions{margin-left:auto;gap:4px}
+  .art-button{font-size:9px;padding:6px 8px}
+  .art-button span{font-size:8px}
+  .atmospheric-readouts{font-size:9px;gap:6px;padding-top:3px}
+  .moon{width:29px;height:29px}
+  .horizon-vignette{opacity:.71}
+}
+@media(max-width:390px){
+  .horizon-toolbar{row-gap:4px}
+  .horizon-actions{width:100%;justify-content:flex-end}
+  .atmospheric-readouts{min-height:17px}
+}
+@media(prefers-reduced-motion:reduce){
+  .rain-sheet{animation:none;opacity:var(--rain-opacity)}
+}

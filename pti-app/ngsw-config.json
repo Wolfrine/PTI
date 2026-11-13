@@ -6,6 +6,8 @@
     "!/**/*.*",
     "!/**/*__*",
     "!/**/*__*/**",
+    "!/living-horizon",
+    "!/living-horizon/**",
     "!/one-piece",
     "!/one-piece/**"
   ],

@@ -130,6 +130,9 @@ function setMode(mode) {
   url.searchParams.set('mode', mode);
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   renderMode();
+  if (mode === 'live' && Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
+    void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
+  }
 }
 
 function readCache() {
@@ -141,6 +144,8 @@ function readCache() {
 async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name } = {}) {
   const myAttempt = ++liveAttempt;
   currentArea = { latitude, longitude, cache, label };
+  // Throttle retries as well as successful refreshes when the feed is unavailable.
+  lastObservationFetch = Date.now();
   if (cache) {
     const stored = readCache();
     if (stored) { liveWeather = stored.data; lastObservationFetch = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); return; }
@@ -230,15 +235,21 @@ function setup() {
   seededStars();
   sizeCanvas();
   new ResizeObserver(sizeCanvas).observe(frame);
-  new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; configureRain(rainActive, thunder); }).observe(frame);
+  new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; frame.classList.toggle('out-of-view', !inView); configureRain(rainActive, thunder); }).observe(frame);
   reducedMotion.addEventListener?.('change', () => configureRain(rainActive, thunder));
   modeButtons.forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
   const initialMode = new URL(window.location.href).searchParams.get('mode');
   activeMode = initialMode === 'live' || PRESETS[initialMode] ? initialMode : 'live';
   renderMode();
   void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
-  // This is only a client-side clock tick. Weather is not polled in the background.
-  window.setInterval(() => { if (!document.hidden && activeMode === 'live' && liveWeather) renderMode(); }, 60000);
+  // Refresh only while the live scene is visible, at most once per 15 minutes.
+  window.setInterval(() => {
+    if (document.hidden || activeMode !== 'live') return;
+    if (liveWeather) renderMode();
+    if (Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
+      void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
+    }
+  }, 60000);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden || activeMode !== 'live') return;
     renderMode();

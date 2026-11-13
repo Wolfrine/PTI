@@ -69,4 +69,6 @@ An expandable **Explore combinations** studio is added to the same isolated prev
 - JavaScript syntax and `git diff --check`: passed locally.
 - Angular production build: passed locally. Existing SCSS size-budget and missing `/assets/styles/pti-home.css` warnings remain unrelated to this static preview.
 - The production build copied the four changed `public/living-horizon` files byte-for-byte.
-- Actual deployed desktop/mobile interaction and artistic acceptance remain separate release gates; passing the build does not establish those outcomes.
+- The deployed desktop interface was independently inspected on 13 November: time/night, rainfall, manual lunar phase, landscape warnings, original-art rotation, and Return to Live all passed. The expanded studio keeps the original warm hero visually dominant. Tiny utility typography and the disclosure's "Open" text while expanded are minor polish opportunities.
+- A narrow/mobile viewport could not be exercised in the available browser and remains unverified. Owner aesthetic acceptance is still pending.
+- `bf10f9c6cb2da0a42d0a8ee84016b4be4e951d57` deployed to PTI `hosting:default` as Firebase version `4a8f649cc9261d31`: served v3 index and JS/CSS/environment hashes verified, `/home` returned HTTP 200, 19 dirty PC files and 13 sibling compatibility files remained intact. GitHub Actions was skipped.

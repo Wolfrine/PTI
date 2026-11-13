@@ -1,6 +1,15 @@
 # PTI Living Horizon v2 — daily art, actual sky
 
-Status: owner approved promotion to the authenticated `/home` launcher on 13 November 2026. The accepted standalone concept remains available at `/living-horizon/index.html`; the release must still be verified against real Hosting before marked complete.
+Status: owner approved promotion to the authenticated `/home` launcher on 13 November 2026. The accepted standalone concept remains available at `/living-horizon/index.html`; live browser inspection of authenticated Home remains a release QA gate.
+
+## 13 November 2026 — active v5 Home and regional artwork contract
+
+- The `/home` welcome hero is now the same-origin Living Horizon embed; real launcher apps, search, account readings, local companions and authentication remain under Angular Home. The expanded studio posts measured content height to the parent with an origin- and source-validated resize listener.
+- **No US AQI source, number, pill, provider request or live approximation remains.** Older v3/v4 AQI descriptions retained later in this document are historical, superseded design notes. Only observed weather visibility is displayed; **Artistic smog** is a simulation-only percentage, explicitly not air quality.
+- Rain uses an independent three-depth painterly canvas system with wind slant, mist and a bounded frame rate. Optional water ripples are postponed until each foreground painting has a verified responsive water-mask mapping.
+- The landscape catalogue now contains **14 transparent paintings in five style packs**: six coastal-foothill treatments and two each of Himalayan highland, river plain, Western Ghats forest hills and tropical Konkan coast.
+- `landscape-regions.js` selects a broad, *illustrative* regional pack from an opted-in, rounded location using a nine-point Open-Meteo elevation sample plus nearby OpenStreetMap features. Missing or ambiguous geographic evidence falls back honestly; no painting claims a GPS-accurate view. DEM/OSM provider timeouts are bounded, with session-only coarse cache.
+- The daily shuffle stays within the selected region, avoids adjacent repeats; manual studio matrix changes (settlement, relief, water, vegetation) choose the closest represented painting and state how many of four categories match. Live art cycling stays within the area pack.
 
 ## 13 November 2026 — owner-approved Home integration (v5)
 

@@ -74,7 +74,7 @@
             </div>
             <div class="horizon-actions">
               <button type="button" class="art-button" id="next-art" title="Explore another artistic landscape">✧ Art <span id="art-count">1/6</span></button>
-              <button type="button" class="location-button" id="use-location" title="With permission, use an approximately 1 km area for Open-Meteo weather/air and OpenStreetMap place name. Precise GPS is not saved."><span class="location-icon" aria-hidden="true">⌖</span> My area</button>
+              <button type="button" class="location-button" id="use-location" title="With permission, use an approximately 1 km area for weather and broad landscape classification. Precise GPS is not saved."><span class="location-icon" aria-hidden="true">⌖</span> My area</button>
             </div>
           </div>
           <div class="atmospheric-readouts" aria-label="Environmental readings">
@@ -115,8 +115,8 @@
                 <fieldset class="studio-group"><legend><span>04</span> Landscape matrix</legend>
                   <div class="studio-select-pair"><label class="studio-label" for="sim-settlement">Settlement<select id="sim-settlement" data-sim="settlement"><option value="city">City</option><option value="town">Town</option><option value="village">Village</option><option value="wilderness">Wilderness</option></select></label><label class="studio-label" for="sim-relief">Relief<select id="sim-relief" data-sim="relief"><option value="plain">Plain</option><option value="hills">Hills</option><option value="mountains">Mountains</option></select></label></div>
                   <div class="studio-select-pair"><label class="studio-label" for="sim-water">Water<select id="sim-water" data-sim="water"><option value="coast">Coast</option><option value="river">River</option><option value="lake">Lake</option><option value="none">None</option></select></label><label class="studio-label" for="sim-vegetation">Vegetation<select id="sim-vegetation" data-sim="vegetation"><option value="urban">Urban</option><option value="grassland">Grassland</option><option value="forest">Forest</option><option value="arid">Arid</option></select></label></div>
-                  <label class="studio-label" for="sim-art">Art treatment <output id="sim-art-value" for="sim-art">Atelier gouache</output></label><input id="sim-art" data-sim="art" type="range" min="1" max="6" step="1" value="1">
-                  <p class="studio-context" id="sim-geography-note">The six original paintings depict a coastal-foothill art pack. Other combinations are catalogued, but their matching artwork has not been created yet.</p>
+                  <label class="studio-label" for="sim-art">Art treatment <output id="sim-art-value" for="sim-art">Atelier gouache</output></label><input id="sim-art" data-sim="art" type="range" min="1" max="14" step="1" value="1">
+                  <p class="studio-context" id="sim-geography-note">Regional paintings are artistic interpretations. The selected combination is compared with the available landscape packs.</p>
                 </fieldset>
               </div>
               <p class="scene-lab-footnote">Sun and moon positions are computed for the selected date, time and current approximate area. A manually changed lunar phase is an artistic override; moon position remains astronomical.</p>

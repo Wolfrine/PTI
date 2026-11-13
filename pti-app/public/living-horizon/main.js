@@ -1,9 +1,12 @@
 // Public-safe visual prototype. No authentication, account data or personal metrics.
 // Live weather: Open-Meteo. Opted-in position is coarse; smog simulation is artistic.
 import {
-  ARTWORKS, classifyLandscape, dailyArtworkIndex, localDayKey, celestialState,
+  ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
 } from './environment.js';
+import {
+  resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
+} from './landscape-regions.js';
 import { createCloudSystem } from './clouds.js';
 import { createRainSystem } from './rain-effects.js';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -55,6 +58,7 @@ let artOverride = null;
 let artOverrideDay = null;
 let renderedDay = '';
 let simulation = null;
+let landscapeResolveAttempt = 0;
 
 const clamp = (n, minimum, maximum) => Math.max(minimum, Math.min(maximum, n));
 const displayTime = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -195,8 +199,10 @@ function updateDailyArt() {
     artOverride = null;
     artOverrideDay = null;
   }
+  const pack = pickRegionPack(placeProfile);
+  const pool = eligibleArtwork(placeProfile);
   const selected = artOverrideDay === today && artOverride !== null ? artOverride
-    : dailyArtworkIndex(new Date(), timezone, placeProfile.region);
+    : regionalArtworkIndex(new Date(), timezone, placeProfile);
   if (selected === artIndex) return;
   artIndex = selected;
   const choice = ARTWORKS[selected];
@@ -204,9 +210,22 @@ function updateDailyArt() {
   frame.dataset.art = choice.id;
   frame.style.setProperty('--art-position', choice.desktop);
   frame.style.setProperty('--art-mobile-position', choice.mobile);
-  artCount.textContent = String(selected + 1) + '/' + ARTWORKS.length;
-  artButton.title = 'Today: ' + choice.name + ' · click to explore another artwork';
+  const place = pool.findIndex(candidate => candidate.index === selected);
+  artCount.textContent = place >= 0 ? `${place + 1}/${pool.length}` : `${selected + 1}/${ARTWORKS.length}`;
+  artButton.title = `${choice.name} · ${pack.title}${pack.matched ? ' area study' : ' illustration'} · click to explore another artwork`;
   artButton.setAttribute('aria-label', artButton.title);
+}
+
+const LANDSCAPE_AXES = ['settlement', 'relief', 'water', 'vegetation'];
+function artworkFit(art, scenario) {
+  return LANDSCAPE_AXES.filter(axis => art?.[axis]?.includes(scenario[axis])).length;
+}
+function bestScenarioArt(scenario) {
+  const scores = ARTWORKS.map((art, index) => ({ index, score: artworkFit(art, scenario) }));
+  const best = Math.max(...scores.map(item => item.score));
+  const current = clamp(scenario.art - 1, 0, ARTWORKS.length - 1);
+  if (scores[current].score === best) return current;
+  return scores.find(item => item.score === best)?.index ?? 0;
 }
 
 function renderCelestials(date = new Date(), phaseOverride = null, live = true, celestial = null) {
@@ -283,12 +302,11 @@ function syncStudio() {
   document.querySelector('#sim-temperature-value').textContent = simulation.temperature + '°C';
   const currentArt = ARTWORKS[simulation.art - 1] || ARTWORKS[0];
   document.querySelector('#sim-art-value').textContent = currentArt.name;
-  const matchesSettlement = currentArt.settlement.includes(simulation.settlement);
-  const matchesRelief = currentArt.terrain.includes(simulation.relief);
-  const matchesWater = simulation.water === 'none' || currentArt.terrain.includes(simulation.water);
-  studioGeographyNote.textContent = matchesSettlement && matchesRelief && matchesWater
-    ? 'Coastal-foothill artwork is a stylistic approximation. Vegetation and exact terrain are not mapped yet.'
-    : 'Matching regional artwork is unavailable. The existing coastal-foothill painting stays visible as an interpretive study.';
+  const matchCount = artworkFit(currentArt, simulation);
+  const unmatched = LANDSCAPE_AXES.filter(axis => !currentArt[axis]?.includes(simulation[axis]));
+  studioGeographyNote.textContent = matchCount === 4
+    ? `${currentArt.name} · ${currentArt.pack.replaceAll('-', ' ')}. All four selected landscape categories are represented artistically.`
+    : `${currentArt.name} reflects ${matchCount}/4 categories. ${unmatched.join(', ')} ${unmatched.length === 1 ? 'is' : 'are'} not represented by this painting; explore another combination or art treatment.`;
   const selected = zonedDate(simulation.date, simulation.minutes, environmentTimeZone());
   const illumination = window.SunCalc?.getMoonIllumination(selected);
   const phase = simulation.realMoon && illumination ? illumination.phase : simulation.moon / 100;
@@ -357,8 +375,13 @@ function renderMode() {
       cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), rainfall, state: 'live', celestial: solar,
       note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
-    sourceLine.textContent = 'Open-Meteo weather · ' +
-      (placeProfile.artworkGeographyMatch ? 'coastal-foothill art' : 'regional artwork not yet mapped') + '.';
+    const pack = pickRegionPack(placeProfile);
+    const source = placeProfile?.evidence?.relief && placeProfile?.evidence?.surface
+      ? ' · terrain informed by Open-Meteo elevation and OpenStreetMap'
+      : placeProfile?.evidence?.relief ? ' · broad relief from Open-Meteo elevation'
+      : placeProfile?.evidence?.surface ? ' · local features from OpenStreetMap' : '';
+    sourceLine.textContent = `Open-Meteo weather · ${pack.title} ${pack.matched ? 'regional study' : 'illustration'}${source}.`;
+    sourceLine.title = `${pack.reason}. Regional paintings represent broad landscape types, not exact views from your location.`;
     if (Number.isFinite(clouds)) frame.style.setProperty('--cloud-opacity', String(Math.min(.96, .10 + clouds / 124).toFixed(2)));
     const wind = Number(current.wind_speed_10m);
     if (Number.isFinite(wind)) frame.style.setProperty('--cloud-duration', `${Math.max(65, Math.min(145, 145 - wind * 2.4))}s`);
@@ -372,6 +395,11 @@ function renderMode() {
 }
 function setMode(mode) {
   if (mode !== 'live' && !PRESETS[mode]) return;
+  if (mode === 'live' && activeMode !== 'live') {
+    artOverride = null;
+    artOverrideDay = null;
+    artIndex = -1;
+  }
   if (mode !== 'live') {
     if (!simulation || activeMode === 'live') simulation = createSimulation();
     const preset = PRESETS[mode];
@@ -431,6 +459,11 @@ function setCustomSimulation(input) {
     artOverride = clamp(simulation.art - 1, 0, ARTWORKS.length - 1);
     artOverrideDay = localDayKey(new Date(), environmentTimeZone());
     updateDailyArt();
+  } else if (LANDSCAPE_AXES.includes(key)) {
+    simulation.art = bestScenarioArt(simulation) + 1;
+    artOverride = simulation.art - 1;
+    artOverrideDay = localDayKey(new Date(), environmentTimeZone());
+    updateDailyArt();
   }
   activeMode = 'custom';
   const url = new URL(window.location.href);
@@ -486,7 +519,11 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
 }
 
 async function resolveCoarsePlace(latitude, longitude) {
-  // Only called after explicit user location permission; no continuous reverse-geocode.
+  // Only called after explicit user location permission. Providers see already
+  // rounded ~1 km coordinates; results remain in memory and can fail independently.
+  const resolution = ++landscapeResolveAttempt;
+  let address = {};
+  let name = 'Your area';
   try {
     const url = new URL('https://nominatim.openstreetmap.org/reverse');
     url.searchParams.set('format', 'jsonv2');
@@ -499,16 +536,24 @@ async function resolveCoarsePlace(latitude, longitude) {
     let response;
     try { response = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } }); }
     finally { window.clearTimeout(timeout); }
-    if (!response.ok) return;
-    const data = await response.json();
-    const address = data?.address || {};
-    const name = address.city || address.town || address.village || address.county || 'Your area';
-    liveLocation = String(name).slice(0, 45);
-    placeProfile = classifyLandscape(name, address, liveWeather?.elevation);
-    currentArea.label = liveLocation;
-    artIndex = -1;
-    if (activeMode === 'live') renderMode();
-  } catch { /* The area label and landscape may remain generic. */ }
+    if (response.ok) {
+      const data = await response.json();
+      address = data?.address || {};
+      name = address.city || address.town || address.village || address.county || 'Your area';
+    }
+  } catch { /* Place-name lookup is optional; still try broad terrain evidence. */ }
+  if (resolution !== landscapeResolveAttempt || currentArea.latitude !== latitude || currentArea.longitude !== longitude) return;
+  liveLocation = String(name).slice(0, 45);
+  currentArea.label = liveLocation;
+  try {
+    const sourced = await resolveLandscapeProfile({ latitude, longitude, name, address });
+    if (resolution !== landscapeResolveAttempt || currentArea.latitude !== latitude || currentArea.longitude !== longitude) return;
+    placeProfile = sourced;
+  } catch {
+    placeProfile = classifyLandscape(name, address);
+  }
+  artIndex = -1;
+  if (activeMode === 'live') renderMode();
 }
 
 function seededStars() {
@@ -543,7 +588,11 @@ function setup() {
     setMode('live');
   });
   artButton.addEventListener('click', () => {
-    artOverride = (artIndex + 1) % ARTWORKS.length;
+    const candidates = activeMode === 'live'
+      ? eligibleArtwork(placeProfile).map(entry => entry.index)
+      : ARTWORKS.map((_, index) => index);
+    const position = candidates.indexOf(artIndex);
+    artOverride = candidates[(position + 1) % candidates.length] ?? 0;
     artOverrideDay = localDayKey(new Date(), environmentTimeZone());
     updateDailyArt();
     if (simulation) { simulation.art = artIndex + 1; syncStudio(); }

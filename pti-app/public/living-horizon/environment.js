@@ -2,12 +2,22 @@
 // Astronomy is calculated on-device with pinned, BSD-licensed SunCalc v1.9.0.
 
 export const ARTWORKS = Object.freeze([
-  { id: 'gouache', name: 'Atelier gouache', file: 'horizon-gouache.webp', settlement: ['city', 'town'], terrain: ['hills', 'coast'], desktop: '50% 87%', mobile: '50% 75%' },
-  { id: 'modernist', name: 'Modernist terrace', file: 'horizon-modernist.webp', settlement: ['city'], terrain: ['hills', 'coast'], desktop: '50% 88%', mobile: '50% 75%' },
-  { id: 'ink', name: 'Ink and mineral wash', file: 'horizon-ink.webp', settlement: ['city', 'town'], terrain: ['hills', 'coast', 'river'], desktop: '50% 86%', mobile: '50% 76%' },
-  { id: 'paper', name: 'Cut-paper relief', file: 'horizon-paper.webp', settlement: ['city', 'town'], terrain: ['hills', 'coast', 'river'], desktop: '50% 88%', mobile: '50% 78%' },
-  { id: 'screenprint', name: 'Coral screenprint', file: 'horizon-screenprint.webp', settlement: ['city'], terrain: ['hills', 'coast'], desktop: '50% 84%', mobile: '50% 73%' },
-  { id: 'vellum', name: 'Luminous vellum', file: 'horizon-vellum.webp', settlement: ['village', 'town', 'city'], terrain: ['hills', 'coast', 'river'], desktop: '50% 85%', mobile: '50% 75%' },
+  { id: 'gouache', name: 'Atelier gouache', pack: 'coastal-foothill', file: 'horizon-gouache.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast'], desktop: '50% 87%', mobile: '50% 75%' },
+  { id: 'modernist', name: 'Modernist terrace', pack: 'coastal-foothill', file: 'horizon-modernist.webp', settlement: ['city'], relief: ['hills'], water: ['none'], vegetation: ['urban'], terrain: ['hills', 'coast'], desktop: '50% 88%', mobile: '50% 75%' },
+  { id: 'ink', name: 'Ink and mineral wash', pack: 'coastal-foothill', file: 'horizon-ink.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast', 'river'], vegetation: ['urban', 'forest'], terrain: ['hills', 'coast', 'river'], desktop: '50% 86%', mobile: '50% 76%' },
+  { id: 'paper', name: 'Cut-paper relief', pack: 'coastal-foothill', file: 'horizon-paper.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast', 'river'], vegetation: ['urban'], terrain: ['hills', 'coast', 'river'], desktop: '50% 88%', mobile: '50% 78%' },
+  { id: 'screenprint', name: 'Coral screenprint', pack: 'coastal-foothill', file: 'horizon-screenprint.webp', settlement: ['city'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast'], desktop: '50% 84%', mobile: '50% 73%' },
+  { id: 'vellum', name: 'Luminous vellum', pack: 'coastal-foothill', file: 'horizon-vellum.webp', settlement: ['village', 'town', 'city'], relief: ['hills'], water: ['river', 'coast'], vegetation: ['forest', 'grassland'], terrain: ['hills', 'coast', 'river'], desktop: '50% 85%', mobile: '50% 75%' },
+  // New representative geographic art packs; two original styles per pack.
+  // These are illustrations of landscape types, never photographic claims of a GPS position.
+  { id: 'himalaya-botanical', name: 'Himalayan botanical wash', pack: 'himalayan-highland', file: 'horizon-himalaya-botanical.webp', settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['lake', 'river'], vegetation: ['forest'], terrain: ['mountains', 'river', 'forest'], desktop: '50% 84%', mobile: '50% 73%' },
+  { id: 'himalaya-woodblock', name: 'Himalayan woodblock', pack: 'himalayan-highland', file: 'horizon-himalaya-woodblock.webp', settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['river'], vegetation: ['forest'], terrain: ['mountains', 'river', 'forest'], desktop: '50% 85%', mobile: '50% 73%' },
+  { id: 'riverplain-screenprint', name: 'River plain screenprint', pack: 'river-plain', file: 'horizon-riverplain-screenprint.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain'], water: ['river'], vegetation: ['grassland'], terrain: ['plain', 'river', 'grassland'], desktop: '50% 85%', mobile: '50% 73%' },
+  { id: 'riverplain-vellum', name: 'River plain vellum', pack: 'river-plain', file: 'horizon-riverplain-vellum.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain'], water: ['river'], vegetation: ['grassland'], terrain: ['plain', 'river', 'grassland'], desktop: '50% 86%', mobile: '50% 74%' },
+  { id: 'ghats-paper', name: 'Western Ghats paper wash', pack: 'western-ghats', file: 'horizon-ghats-paper.webp', settlement: ['village', 'town', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'], desktop: '50% 85%', mobile: '50% 73%' },
+  { id: 'ghats-woodblock', name: 'Western Ghats woodblock', pack: 'western-ghats', file: 'horizon-ghats-woodblock.webp', settlement: ['village', 'town', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'], desktop: '50% 85%', mobile: '50% 73%' },
+  { id: 'konkan-watercolor', name: 'Konkan coastal watercolor', pack: 'tropical-coast', file: 'horizon-konkan-watercolor.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], desktop: '50% 85%', mobile: '50% 72%' },
+  { id: 'konkan-poster', name: 'Konkan coastal poster', pack: 'tropical-coast', file: 'horizon-konkan-poster.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], desktop: '50% 85%', mobile: '50% 72%' },
 ]);
 
 export const LANDSCAPE_DIMENSIONS = Object.freeze({
@@ -60,7 +70,10 @@ function shuffledBag(seed, count) {
 export function dailyArtworkIndex(date, timezone, region = 'navi-mumbai') {
   const p = dateParts(date, timezone);
   const day = Math.floor(Date.UTC(p.year, p.month - 1, p.day) / MS_PER_DAY);
-  const count = ARTWORKS.length;
+  // This legacy selector is intentionally restricted to the original regional
+  // pack; geography-aware screens should use regionalArtworkIndex() from
+  // landscape-regions.js, which also filters newly added artworks by place.
+  const count = ARTWORKS.filter(art => art.pack === 'coastal-foothill').length;
   const block = Math.floor(day / count);
   const slot = ((day % count) + count) % count;
   const order = shuffledBag(hashText(region + ':' + block), count);

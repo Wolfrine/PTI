@@ -67,6 +67,11 @@ html.horizon-embed .daily-art{
   width:100%;height:100%;
   object-position:var(--art-x,50%) calc(var(--art-y,85%) + var(--horizon-art-shift,0px));
   transform:none;
+  /* Desktop panorama framing retains its foreground, but can crop the image's
+     original transparent sky. Dissolve the upper edge into the real scene sky
+     instead of letting the cropped mountain silhouette strike the header. */
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0px,#0004 17px,#000b 47px,#000 78px);
+  mask-image:linear-gradient(to bottom,transparent 0px,#0004 17px,#000b 47px,#000 78px);
 }
 html.horizon-embed .cloud-haze{
   inset:-72px 0;
@@ -75,7 +80,12 @@ html.horizon-embed .cloud-haze{
 }
 html.horizon-embed .horizon-clouds{transform:translate3d(0,var(--horizon-cloud-shift,0px),0) scale(1.4);transform-origin:center}
 @media(max-width:760px){
-  html.horizon-embed .daily-art{object-position:var(--art-mobile-x,50%) calc(var(--art-mobile-y,75%) + var(--horizon-art-shift,0px))}
+  html.horizon-embed .daily-art{
+    object-position:var(--art-mobile-x,50%) calc(var(--art-mobile-y,75%) + var(--horizon-art-shift,0px));
+    /* The narrower framing already exposes the original open sky. */
+    -webkit-mask-image:linear-gradient(to bottom,transparent 0px,#000 14px);
+    mask-image:linear-gradient(to bottom,transparent 0px,#000 14px);
+  }
   html.horizon-embed .content{padding:0}
   html.horizon-embed .horizon-frame{height:194px}
   html.horizon-embed .horizon-caption{left:17px;bottom:24px;max-width:calc(100% - 122px)}

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=living-v2">
+  <link rel="stylesheet" href="./styles.css?v=living-v3">
 </head>
 <body>
   <main class="app-shell">
@@ -74,8 +74,48 @@
             <span id="visibility-readout" hidden></span>
             <span id="air-readout" hidden></span>
             <span id="moon-readout" hidden></span>
+            <span id="geography-readout" hidden></span>
           </div>
           <p class="source-line" id="source-line" aria-live="polite">Live weather uses approximate Navi Mumbai coordinates. The environment is an artistic interpretation.</p>
+          <details class="scene-lab" id="scene-lab">
+            <summary>
+              <span class="scene-lab-icon" aria-hidden="true">✳</span>
+              <span class="scene-lab-title"><strong>Explore combinations</strong><small>Time, sky, air, moon & landscape</small></span>
+              <span class="scene-lab-summary" id="sim-summary">Open simulation studio</span>
+              <span class="scene-lab-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="scene-lab-content">
+              <div class="scene-lab-intro"><div><span class="studio-tag">SIMULATION · NOT LIVE DATA</span><p>Shape the atmosphere while the original artwork stays in view. Nothing here changes your saved location or weather feed.</p></div><button type="button" id="sim-reset-live" class="studio-reset">↺ Return to Live</button></div>
+              <div class="scene-lab-grid">
+                <fieldset class="studio-group"><legend><span>01</span> Time & moon</legend>
+                  <label class="studio-label" for="sim-date">Local date</label><input id="sim-date" data-sim="date" type="date">
+                  <label class="studio-label" for="sim-time">Local time <output id="sim-time-value" for="sim-time">12:00</output></label><input id="sim-time" data-sim="minutes" type="range" min="0" max="1435" step="5" value="720"><div class="studio-ends"><span>00:00</span><span>23:55</span></div>
+                  <div class="studio-checkline"><label for="sim-actual-moon">Astronomical moon phase</label><input id="sim-actual-moon" data-sim="realMoon" type="checkbox" checked></div>
+                  <label class="studio-label" for="sim-moon">Lunar cycle <output id="sim-moon-value" for="sim-moon">Calculated</output></label><input id="sim-moon" data-sim="moon" type="range" min="0" max="100" step="1" value="50" disabled><div class="studio-ends"><span>New</span><span>Full at 50%</span><span>New</span></div>
+                  <div class="studio-moon-line"><canvas id="sim-moon-preview" role="img" aria-label="Moon phase preview"></canvas><small>Moon appears in the sky only while above the horizon.</small></div>
+                </fieldset>
+                <fieldset class="studio-group"><legend><span>02</span> Weather & light</legend>
+                  <label class="studio-label" for="sim-weather">Weather type</label><select id="sim-weather" data-sim="weather"><option value="clear">Clear</option><option value="cloudy">Partly cloudy</option><option value="overcast">Overcast</option><option value="rain">Rain</option><option value="fog">Fog</option><option value="storm">Thunderstorm</option></select>
+                  <label class="studio-label" for="sim-cloud">Cloud cover <output id="sim-cloud-value" for="sim-cloud">50%</output></label><input id="sim-cloud" data-sim="cloud" type="range" min="0" max="100" step="1" value="50">
+                  <label class="studio-label" for="sim-rain">Rainfall <output id="sim-rain-value" for="sim-rain">0 mm/h</output></label><input id="sim-rain" data-sim="rain" type="range" min="0" max="20" step="0.5" value="0">
+                  <label class="studio-label" for="sim-wind">Wind <output id="sim-wind-value" for="sim-wind">12 km/h</output></label><input id="sim-wind" data-sim="wind" type="range" min="0" max="80" step="1" value="12">
+                </fieldset>
+                <fieldset class="studio-group"><legend><span>03</span> Air & visibility</legend>
+                  <label class="studio-label" for="sim-visibility">Visibility <output id="sim-visibility-value" for="sim-visibility">10 km</output></label><input id="sim-visibility" data-sim="visibility" type="range" min="0.5" max="30" step="0.5" value="10"><div class="studio-ends"><span>Thick haze</span><span>Clear horizon</span></div>
+                  <label class="studio-label" for="sim-aqi">US AQI <output id="sim-aqi-value" for="sim-aqi">100</output></label><input id="sim-aqi" data-sim="aqi" type="range" min="0" max="500" step="5" value="100"><div class="studio-ends"><span>Good</span><span>Hazardous</span></div>
+                  <label class="studio-label" for="sim-temperature">Temperature <output id="sim-temperature-value" for="sim-temperature">28°C</output></label><input id="sim-temperature" data-sim="temperature" type="range" min="-10" max="50" step="1" value="28">
+                  <p class="studio-context">Visibility and AQI change separate haze layers; values are simulated, not a sensor forecast.</p>
+                </fieldset>
+                <fieldset class="studio-group"><legend><span>04</span> Landscape matrix</legend>
+                  <div class="studio-select-pair"><label class="studio-label" for="sim-settlement">Settlement<select id="sim-settlement" data-sim="settlement"><option value="city">City</option><option value="town">Town</option><option value="village">Village</option><option value="wilderness">Wilderness</option></select></label><label class="studio-label" for="sim-relief">Relief<select id="sim-relief" data-sim="relief"><option value="plain">Plain</option><option value="hills">Hills</option><option value="mountains">Mountains</option></select></label></div>
+                  <div class="studio-select-pair"><label class="studio-label" for="sim-water">Water<select id="sim-water" data-sim="water"><option value="coast">Coast</option><option value="river">River</option><option value="lake">Lake</option><option value="none">None</option></select></label><label class="studio-label" for="sim-vegetation">Vegetation<select id="sim-vegetation" data-sim="vegetation"><option value="urban">Urban</option><option value="grassland">Grassland</option><option value="forest">Forest</option><option value="arid">Arid</option></select></label></div>
+                  <label class="studio-label" for="sim-art">Art treatment <output id="sim-art-value" for="sim-art">Atelier gouache</output></label><input id="sim-art" data-sim="art" type="range" min="1" max="6" step="1" value="1">
+                  <p class="studio-context" id="sim-geography-note">The six original paintings depict a coastal-foothill art pack. Other combinations are catalogued, but their matching artwork has not been created yet.</p>
+                </fieldset>
+              </div>
+              <p class="scene-lab-footnote">Sun and moon positions are computed for the selected date, time and current approximate area. A manually changed lunar phase is an artistic override; moon position remains astronomical.</p>
+            </div>
+          </details>
         </section>
 
         <section class="hub-section" id="pinned" aria-labelledby="pinned-title">
@@ -115,6 +155,6 @@
     <nav class="mobile-nav" aria-label="Preview mobile navigation"><a href="#top" class="active"><span aria-hidden="true">⌂</span>Home</a><a href="#pinned"><span aria-hidden="true">▦</span>Apps</a><a href="#pulse"><span aria-hidden="true">⌕</span>Search</a></nav>
   </main>
   <script src="./vendor/suncalc.js?v=1.9.0"></script>
-  <script type="module" src="./main.js?v=living-v2"></script>
+  <script type="module" src="./main.js?v=living-v3"></script>
 </body>
 </html>

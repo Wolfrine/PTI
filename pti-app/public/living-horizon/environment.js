@@ -20,6 +20,7 @@ export const LANDSCAPE_DIMENSIONS = Object.freeze({
 const MS_PER_DAY = 86400000;
 const PI = Math.PI;
 const clamp = (n, low, high) => Math.min(high, Math.max(low, n));
+const lunarEventCache = new Map(); // Bounded, date-and-location-specific event cache.
 
 export function dateParts(date, timezone) {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -84,7 +85,9 @@ export function classifyLandscape(name, address = {}, elevation = null) {
     : navi || hills || (Number.isFinite(elevation) && elevation >= 350) ? 'hills' : 'plain';
   // A name and altitude do not establish the existence of nearby coastline or rivers.
   const water = navi || mumbai || goa ? 'coast' : 'unmapped';
-  const vegetation = mountains ? 'forest' : 'unmapped';
+  // Place names and elevation cannot establish land cover. Keep this unknown
+  // until a sourced vegetation/landcover layer is available.
+  const vegetation = 'unmapped';
   const mapped = navi || mumbai || goa || hills || mountains;
   return {
     region: navi ? 'navi-mumbai' : mumbai ? 'mumbai' : goa ? 'goa' : mountains ? 'himalayan-foothills' : hills ? 'deccan-hills' : 'unmapped',
@@ -122,6 +125,8 @@ export function moonPhaseName(phase) {
 // Scan true lunar altitude over the location's calendar day for rise/set crossings.
 // This handles timezones including half-hour offsets without relying on browser TZ.
 function lunarEvents(astro, date, latitude, longitude, timezone, utcOffsetSeconds = 0) {
+  const cacheKey = [localDayKey(date, timezone), latitude.toFixed(3), longitude.toFixed(3), utcOffsetSeconds].join(':');
+  if (lunarEventCache.has(cacheKey)) return lunarEventCache.get(cacheKey);
   const d = dateParts(date, timezone);
   const beginning = Date.UTC(d.year, d.month - 1, d.day) - utcOffsetSeconds * 1000;
   const getAlt = time => astro.getMoonPosition(new Date(time), latitude, longitude).altitude;
@@ -143,6 +148,8 @@ function lunarEvents(astro, date, latitude, longitude, timezone, utcOffsetSecond
     }
     previous = altitude;
   }
+  lunarEventCache.set(cacheKey, events);
+  if (lunarEventCache.size > 16) lunarEventCache.delete(lunarEventCache.keys().next().value);
   return events;
 }
 

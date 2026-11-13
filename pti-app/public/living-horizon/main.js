@@ -2,7 +2,7 @@
 // Live weather + modelled air quality: Open-Meteo. Opted-in position is coarse.
 import {
   ARTWORKS, classifyLandscape, dailyArtworkIndex, localDayKey, celestialState,
-  phaseFromSun, formatLocalTime, paintMoon,
+  phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
 } from './environment.js';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 const AIR_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
@@ -13,10 +13,10 @@ const CACHE_AGE_MS = 15 * 60 * 1000;
 const AIR_AGE_MS = 60 * 60 * 1000;
 const COARSE_LOCATION = { name: 'Navi Mumbai', latitude: 19.05, longitude: 73.02 };
 const PRESETS = {
-  dawn: { phase: 'dawn', weather: 'cloudy', description: 'First light over the hills · visual study' },
-  day: { phase: 'day', weather: 'clear', description: 'Open sky over the valley · visual study' },
-  rain: { phase: 'day', weather: 'rain', description: 'Monsoon moving through · visual study' },
-  night: { phase: 'night', weather: 'clear', description: 'A quiet moonlit horizon · visual study' },
+  dawn: { event: 'sunrise', weather: 'cloudy', cloud: 48, rain: 0 },
+  day: { event: 'solarNoon', weather: 'clear', cloud: 8, rain: 0 },
+  rain: { event: 'solarNoon', weather: 'rain', cloud: 91, rain: 8 },
+  night: { event: 'night', weather: 'clear', cloud: 8, rain: 0 },
 };
 
 const frame = document.querySelector('#horizon-frame');
@@ -33,10 +33,15 @@ const artCount = document.querySelector('#art-count');
 const airReadout = document.querySelector('#air-readout');
 const visibilityReadout = document.querySelector('#visibility-readout');
 const moonReadout = document.querySelector('#moon-readout');
+const geographyReadout = document.querySelector('#geography-readout');
 const moonDisc = document.querySelector('#moon-disc');
 const sunDisc = document.querySelector('.sun');
 const modeButtons = [...document.querySelectorAll('[data-mode]')];
 const useLocation = document.querySelector('#use-location');
+const studio = document.querySelector('#scene-lab');
+const studioInputs = [...document.querySelectorAll('[data-sim]')];
+const studioSummary = document.querySelector('#sim-summary');
+const studioGeographyNote = document.querySelector('#sim-geography-note');
 let liveWeather = null;
 let liveLocation = COARSE_LOCATION.name;
 let airQuality = null;
@@ -51,6 +56,80 @@ let artIndex = -1;
 let artOverride = null;
 let artOverrideDay = null;
 let renderedDay = '';
+let simulation = null;
+
+const clamp = (n, minimum, maximum) => Math.max(minimum, Math.min(maximum, n));
+const displayTime = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+// Convert a wall-clock time in the selected place's IANA time zone into an
+// instant. This deliberately does not use the viewing device's time zone.
+function zonedDate(dayKey, minutes, timezone) {
+  const [year, month, day] = dayKey.split('-').map(Number);
+  if (!year || !month || !day) return new Date();
+  const target = Date.UTC(year, month - 1, day, Math.floor(minutes / 60), minutes % 60);
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  });
+  let instant = target;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const parts = formatter.formatToParts(new Date(instant));
+    const value = type => Number(parts.find(part => part.type === type)?.value || 0);
+    const wall = Date.UTC(value('year'), value('month') - 1, value('day'), value('hour'), value('minute'));
+    const delta = wall - target;
+    instant -= delta;
+    if (!delta) break;
+  }
+  return new Date(instant);
+}
+
+function localTimeAsMinutes(date, timezone) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date);
+  const field = type => Number(parts.find(part => part.type === type)?.value || 0);
+  return field('hour') * 60 + field('minute');
+}
+
+function offsetSecondsAt(date, timezone) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date);
+  const field = type => Number(parts.find(part => part.type === type)?.value || 0);
+  const wall = Date.UTC(field('year'), field('month') - 1, field('day'), field('hour'), field('minute'), field('second'));
+  return Math.round((wall - date.getTime()) / 1000);
+}
+
+function localDayOffset(date, timezone) {
+  const midnight = zonedDate(localDayKey(date, timezone), 0, timezone);
+  return offsetSecondsAt(midnight, timezone);
+}
+
+function createSimulation() {
+  const timezone = environmentTimeZone();
+  const now = new Date();
+  const weather = liveWeather?.current || {};
+  const numeric = (value, fallback) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+  const rainfall = Math.max(Number(weather.rain) || 0, Number(weather.showers) || 0, Number(weather.precipitation) || 0);
+  const derivedWeather = conditions(Number(weather.weather_code), Number(weather.cloud_cover), rainfall).weather;
+  const moon = celestialState(now, currentArea.latitude, currentArea.longitude, timezone, localDayOffset(now, timezone));
+  return {
+    date: localDayKey(now, timezone), minutes: Math.floor(localMinutes(timezone) / 5) * 5,
+    weather: liveWeather?.current ? derivedWeather : 'cloudy',
+    cloud: clamp(numeric(weather.cloud_cover, 45), 0, 100), rain: clamp(rainfall, 0, 20),
+    wind: clamp(numeric(weather.wind_speed_10m, 12), 0, 80),
+    visibility: clamp(numeric(weather.visibility, 10000) / 1000, .5, 30),
+    aqi: clamp(numeric(airQuality?.current?.us_aqi, 100), 0, 500),
+    temperature: clamp(numeric(weather.temperature_2m, 28), -10, 50),
+    realMoon: true, moon: Math.round((moon?.illumination.phase || 0) * 100),
+    settlement: placeProfile.settlement && placeProfile.settlement !== 'unknown' ? placeProfile.settlement : 'city',
+    relief: placeProfile.relief || 'hills',
+    water: placeProfile.water && placeProfile.water !== 'unmapped' ? placeProfile.water : 'coast',
+    vegetation: placeProfile.vegetation && placeProfile.vegetation !== 'unmapped' ? placeProfile.vegetation : 'urban',
+    art: artIndex >= 0 ? artIndex + 1 : 1,
+  };
+}
 
 function setStatus(label, type = 'sample') {
   statusLabel.textContent = label;
@@ -73,19 +152,21 @@ function conditions(code, cloudCover, precipitation) {
   if (code === 2 || cloudCover >= 42) return { weather: 'cloudy', text: 'Partly cloudy' };
   return { weather: 'clear', text: 'Clear skies' };
 }
-function updateScene({ phase, weather, description, temperature, location, state, note }) {
+function updateScene({ phase, weather, description, temperature, location, state, note, date = new Date(), moonOverride = null, celestial = null }) {
   frame.dataset.phase = phase;
   frame.dataset.weather = weather;
   locationLabel.textContent = location;
   temperatureLabel.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : '';
   descriptionLabel.textContent = description;
-  heroKicker.textContent = state === 'live' ? 'THE SKY, RIGHT NOW' : 'LIVING HORIZON · VISUAL STUDY';
+  heroKicker.textContent = state === 'live' ? 'THE SKY, RIGHT NOW'
+    : state === 'simulation' ? 'LIVING HORIZON · SIMULATION' : 'LIVING HORIZON · VISUAL STUDY';
   if (state === 'live') setStatus('Live weather', 'live');
+  else if (state === 'simulation') setStatus('Simulated · not live', 'sample');
   else if (state === 'offline') setStatus('Offline · sample', 'sample');
   else setStatus('Scene preview', 'sample');
   sourceLine.textContent = note;
   configureRain(weather === 'rain' || weather === 'storm', weather === 'storm');
-  if (state === 'live') renderCelestials();
+  if (state === 'live' || state === 'simulation') renderCelestials(date, moonOverride, state === 'live', celestial);
   else {
     frame.dataset.sunVisible = String(phase !== 'night');
     frame.dataset.moonVisible = String(phase === 'night');
@@ -123,27 +204,35 @@ function updateDailyArt() {
   artButton.setAttribute('aria-label', artButton.title);
 }
 
-function renderCelestials() {
-  const position = celestialState(
-    new Date(), currentArea.latitude, currentArea.longitude, environmentTimeZone(),
-    Number(liveWeather?.utc_offset_seconds) || 19800,
+function renderCelestials(date = new Date(), phaseOverride = null, live = true, celestial = null) {
+  const position = celestial || celestialState(
+    date, currentArea.latitude, currentArea.longitude, environmentTimeZone(),
+    localDayOffset(date, environmentTimeZone()),
   );
   if (!position) return;
   const { sun, moon, illumination, events, phaseName } = position;
+  const phase = phaseOverride === null ? illumination.phase : phaseOverride;
+  const fraction = phaseOverride === null ? illumination.fraction : (1 - Math.cos(2 * Math.PI * phase)) / 2;
+  const name = phaseOverride === null ? phaseName : moonPhaseName(phase);
   frame.dataset.sunVisible = String(sun.visible);
-  frame.dataset.moonVisible = String(moon.visible && illumination.fraction > .025);
+  frame.dataset.moonVisible = String(moon.visible && fraction > .025);
   frame.style.setProperty('--sun-x', sun.x.toFixed(2) + '%');
   frame.style.setProperty('--sun-y', sun.y.toFixed(2) + '%');
   frame.style.setProperty('--moon-x', moon.x.toFixed(2) + '%');
   frame.style.setProperty('--moon-y', moon.y.toFixed(2) + '%');
-  const sunrise = String(liveWeather?.daily?.sunrise?.[0] || '').split('T')[1] || '—';
-  const sunset = String(liveWeather?.daily?.sunset?.[0] || '').split('T')[1] || '—';
+  const sunTimes = window.SunCalc?.getTimes(date, currentArea.latitude, currentArea.longitude);
+  const asTime = event => event instanceof Date && Number.isFinite(event.getTime())
+    ? formatLocalTime(event, environmentTimeZone()) : '—';
+  const sunrise = live ? String(liveWeather?.daily?.sunrise?.[0] || '').split('T')[1] || asTime(sunTimes?.sunrise)
+    : asTime(sunTimes?.sunrise);
+  const sunset = live ? String(liveWeather?.daily?.sunset?.[0] || '').split('T')[1] || asTime(sunTimes?.sunset)
+    : asTime(sunTimes?.sunset);
   sunDisc.title = 'Sun altitude ' + Math.round(sun.altitude) + '° · rise ' + sunrise + ' · set ' + sunset;
-  paintMoon(moonDisc, illumination.phase);
+  paintMoon(moonDisc, phase);
   const rise = events.rise ? ' · rises ' + formatLocalTime(events.rise, environmentTimeZone()) : '';
   const set = events.set ? ' · sets ' + formatLocalTime(events.set, environmentTimeZone()) : '';
-  moonDisc.title = phaseName + ' · ' + Math.round(illumination.fraction * 100) + '% lit' + rise + set;
-  moonReadout.textContent = phaseName + ' ' + Math.round(illumination.fraction * 100) + '%';
+  moonDisc.title = name + ' · ' + Math.round(fraction * 100) + '% lit' + rise + set + (phaseOverride === null ? '' : ' · manual phase override');
+  moonReadout.textContent = name + ' ' + Math.round(fraction * 100) + '%' + (phaseOverride === null ? '' : ' · manual');
   moonReadout.title = moonDisc.title;
 }
 
@@ -168,6 +257,77 @@ function renderReadouts(live) {
     frame.style.setProperty('--air-haze', Math.max(0, Math.min(.24, (usAqi - 100) / 700)).toFixed(2));
   } else frame.style.setProperty('--air-haze', '0');
   moonReadout.hidden = !live;
+  geographyReadout.hidden = true;
+}
+
+function syncStudio() {
+  if (!simulation) return;
+  for (const input of studioInputs) {
+    const key = input.dataset.sim;
+    if (input.type === 'checkbox') input.checked = Boolean(simulation[key]);
+    else input.value = String(simulation[key]);
+  }
+  document.querySelector('#sim-moon').disabled = simulation.realMoon;
+  document.querySelector('#sim-time-value').textContent = displayTime(simulation.minutes);
+  document.querySelector('#sim-cloud-value').textContent = simulation.cloud + '%';
+  document.querySelector('#sim-rain-value').textContent = Number(simulation.rain).toFixed(1) + ' mm/h';
+  document.querySelector('#sim-wind-value').textContent = simulation.wind + ' km/h';
+  document.querySelector('#sim-visibility-value').textContent = Number(simulation.visibility).toFixed(1) + ' km';
+  document.querySelector('#sim-aqi-value').textContent = String(simulation.aqi);
+  document.querySelector('#sim-temperature-value').textContent = simulation.temperature + '°C';
+  const currentArt = ARTWORKS[simulation.art - 1] || ARTWORKS[0];
+  document.querySelector('#sim-art-value').textContent = currentArt.name;
+  const matchesSettlement = currentArt.settlement.includes(simulation.settlement);
+  const matchesRelief = currentArt.terrain.includes(simulation.relief);
+  const matchesWater = simulation.water === 'none' || currentArt.terrain.includes(simulation.water);
+  studioGeographyNote.textContent = matchesSettlement && matchesRelief && matchesWater
+    ? 'Coastal-foothill artwork is a stylistic approximation. Vegetation and exact terrain are not mapped yet.'
+    : 'Matching regional artwork is unavailable. The existing coastal-foothill painting stays visible as an interpretive study.';
+  const selected = zonedDate(simulation.date, simulation.minutes, environmentTimeZone());
+  const illumination = window.SunCalc?.getMoonIllumination(selected);
+  const phase = simulation.realMoon && illumination ? illumination.phase : simulation.moon / 100;
+  document.querySelector('#sim-moon-value').textContent = (simulation.realMoon ? 'Calculated · ' : 'Manual · ') + moonPhaseName(phase);
+  const previewMoon = document.querySelector('#sim-moon-preview');
+  paintMoon(previewMoon, phase);
+  previewMoon.setAttribute('aria-label', `Moon phase preview: ${moonPhaseName(phase)}`);
+  if (simulation.realMoon && illumination) {
+    simulation.moon = Math.round(illumination.phase * 100);
+    document.querySelector('#sim-moon').value = String(simulation.moon);
+  }
+  studioSummary.textContent = activeMode === 'live' ? 'Open simulation studio'
+    : `${simulation.date} · ${displayTime(simulation.minutes)} · ${simulation.weather}`;
+}
+
+function renderSimulation() {
+  if (!simulation) simulation = createSimulation();
+  const timezone = environmentTimeZone();
+  const date = zonedDate(simulation.date, simulation.minutes, timezone);
+  const solar = celestialState(date, currentArea.latitude, currentArea.longitude, timezone,
+    localDayOffset(date, timezone));
+  const phase = phaseFromSun(solar?.sun);
+  const manualPhase = simulation.realMoon ? null : simulation.moon / 100;
+  const description = `${simulation.weather[0].toUpperCase() + simulation.weather.slice(1)} · ${simulation.cloud}% cloud · ${simulation.rain} mm/h rain`;
+  updateScene({ phase, weather: simulation.weather, location: currentArea.label || COARSE_LOCATION.name,
+    temperature: simulation.temperature, description, date, moonOverride: manualPhase, celestial: solar,
+    state: 'simulation', note: `Simulation · ${simulation.date} ${displayTime(simulation.minutes)} ${timezone} · landscape choice is an interpretation.` });
+  frame.style.setProperty('--cloud-opacity', String(clamp(.06 + simulation.cloud / 115, .04, .96).toFixed(2)));
+  frame.style.setProperty('--cloud-duration', `${clamp(145 - simulation.wind * 2.4, 40, 145).toFixed(0)}s`);
+  frame.style.setProperty('--visibility-haze', clamp((11 - simulation.visibility) / 13.5, 0, .74).toFixed(2));
+  frame.style.setProperty('--air-haze', clamp((simulation.aqi - 100) / 700, 0, .24).toFixed(2));
+  configureRain((simulation.weather === 'rain' || simulation.weather === 'storm') && simulation.rain > 0,
+    simulation.weather === 'storm');
+  frame.style.setProperty('--rain-sheet-opacity', simulation.rain <= 0 ? '0'
+    : clamp(.12 + simulation.rain / 30, .12, .72).toFixed(2));
+  visibilityReadout.hidden = false;
+  visibilityReadout.textContent = `Visibility ${Number(simulation.visibility).toFixed(1)} km · simulated`;
+  airReadout.hidden = false;
+  airReadout.textContent = `US AQI ${simulation.aqi} · simulated`;
+  airReadout.title = 'User-selected scenario value; not a measured or modelled air quality observation';
+  moonReadout.hidden = false;
+  geographyReadout.hidden = false;
+  geographyReadout.textContent = [simulation.settlement, simulation.relief, simulation.water, simulation.vegetation]
+    .map(value => value[0].toUpperCase() + value.slice(1)).join(' · ') + ' · hypothetical';
+  syncStudio();
 }
 
 function renderMode() {
@@ -178,23 +338,23 @@ function renderMode() {
     button.setAttribute('aria-pressed', String(selected));
   });
   if (activeMode !== 'live') {
-    frame.style.removeProperty('--cloud-opacity');
-    frame.style.removeProperty('--cloud-duration');
-    const preset = PRESETS[activeMode];
-    updateScene({ ...preset, location: COARSE_LOCATION.name, temperature: null, state: 'preview', note: 'Visual study only · selectable atmospheres are not live readings.' });
+    renderSimulation();
     return;
   }
+  studioSummary.textContent = 'Open simulation studio';
+  frame.style.removeProperty('--cloud-opacity');
+  frame.style.removeProperty('--cloud-duration');
   if (liveWeather?.current) {
     const current = liveWeather.current;
     const rainfall = Math.max(Number(current.rain) || 0, Number(current.showers) || 0, Number(current.precipitation) || 0);
     const { weather, text } = conditions(Number(current.weather_code), Number(current.cloud_cover), rainfall);
     const solar = celestialState(
       new Date(), currentArea.latitude, currentArea.longitude, environmentTimeZone(),
-      Number(liveWeather.utc_offset_seconds) || 19800,
+      localDayOffset(new Date(), environmentTimeZone()),
     );
     const phase = phaseFromSun(solar?.sun);
     const hhmm = String(current.time || '').split('T')[1]?.slice(0, 5);
-    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: text + (hhmm ? ' · model ' + hhmm : ''), state: 'live', note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
+    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: text + (hhmm ? ' · model ' + hhmm : ''), state: 'live', celestial: solar, note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
     sourceLine.textContent = 'Open-Meteo weather · CAMS / Open-Meteo modelled air · ' +
       (placeProfile.artworkGeographyMatch ? 'coastal-foothill art' : 'regional artwork not yet mapped') + '.';
@@ -214,14 +374,71 @@ function renderMode() {
 }
 function setMode(mode) {
   if (mode !== 'live' && !PRESETS[mode]) return;
+  if (mode !== 'live') {
+    if (!simulation || activeMode === 'live') simulation = createSimulation();
+    const preset = PRESETS[mode];
+    const timezone = environmentTimeZone();
+    const noon = zonedDate(simulation.date, 720, timezone);
+    const times = window.SunCalc?.getTimes(noon, currentArea.latitude, currentArea.longitude);
+    const event = preset.event === 'night' ? times?.sunset : times?.[preset.event];
+    const suggestedTime = event instanceof Date && Number.isFinite(event.getTime())
+      ? localTimeAsMinutes(event, timezone) + (preset.event === 'night' ? 130 : preset.event === 'sunrise' ? 7 : 0)
+      : { dawn: 390, day: 780, rain: 780, night: 1320 }[mode];
+    simulation.minutes = Math.round(clamp(suggestedTime, 0, 1435) / 5) * 5;
+    simulation.weather = preset.weather;
+    simulation.cloud = preset.cloud;
+    simulation.rain = preset.rain;
+  } else simulation = createSimulation();
   activeMode = mode;
   const url = new URL(window.location.href);
   url.searchParams.set('mode', mode);
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   renderMode();
+  if (mode === 'live') {
+    simulation.art = artIndex + 1;
+    syncStudio();
+  }
   if (mode === 'live' && Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
     void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
   }
+}
+
+function setCustomSimulation(input) {
+  if (!simulation || activeMode === 'live') simulation = createSimulation();
+  const key = input.dataset.sim;
+  if (input.type === 'checkbox') simulation[key] = input.checked;
+  else if (input.type === 'range') simulation[key] = Number(input.value);
+  else if (input.value) simulation[key] = input.value;
+  // Keep weather category and its physical intensity sliders coherent. Every
+  // rainfall movement now has an observable effect on the painted scene.
+  if (key === 'rain') {
+    if (simulation.rain > 0 && !['rain', 'storm'].includes(simulation.weather)) {
+      simulation.weather = 'rain';
+      simulation.cloud = Math.max(60, simulation.cloud);
+    } else if (simulation.rain === 0 && ['rain', 'storm'].includes(simulation.weather)) {
+      simulation.weather = simulation.cloud >= 82 ? 'overcast' : simulation.cloud >= 42 ? 'cloudy' : 'clear';
+    }
+  }
+  if (key === 'weather') {
+    const cloudByWeather = { clear: 8, cloudy: 55, overcast: 94, rain: 86, fog: 82, storm: 98 };
+    simulation.cloud = cloudByWeather[simulation.weather];
+    if (simulation.weather === 'rain' && simulation.rain === 0) simulation.rain = 4;
+    else if (simulation.weather === 'storm' && simulation.rain === 0) simulation.rain = 12;
+    else if (!['rain', 'storm'].includes(simulation.weather)) simulation.rain = 0;
+  }
+  if (key === 'cloud' && ['clear', 'cloudy', 'overcast'].includes(simulation.weather)) {
+    simulation.weather = simulation.cloud >= 82 ? 'overcast' : simulation.cloud >= 42 ? 'cloudy' : 'clear';
+  }
+  if (key === 'art') {
+    artOverride = clamp(simulation.art - 1, 0, ARTWORKS.length - 1);
+    artOverrideDay = localDayKey(new Date(), environmentTimeZone());
+    updateDailyArt();
+  }
+  activeMode = 'custom';
+  const url = new URL(window.location.href);
+  url.searchParams.delete('mode'); // A scenario is intentionally not persisted in a shareable URL.
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  renderMode();
 }
 
 function readCache() {
@@ -410,14 +627,26 @@ function setup() {
   new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; frame.classList.toggle('out-of-view', !inView); configureRain(rainActive, thunder); }).observe(frame);
   reducedMotion.addEventListener?.('change', () => configureRain(rainActive, thunder));
   modeButtons.forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
+  studio.addEventListener('toggle', () => {
+    if (studio.open && !simulation) { simulation = createSimulation(); syncStudio(); }
+  });
+  studioInputs.forEach(input => input.addEventListener(input.type === 'range' ? 'input' : 'change', () => setCustomSimulation(input)));
+  document.querySelector('#sim-reset-live').addEventListener('click', () => {
+    artOverride = null;
+    artOverrideDay = null;
+    artIndex = -1;
+    setMode('live');
+  });
   artButton.addEventListener('click', () => {
     artOverride = (artIndex + 1) % ARTWORKS.length;
     artOverrideDay = localDayKey(new Date(), environmentTimeZone());
     updateDailyArt();
+    if (simulation) { simulation.art = artIndex + 1; syncStudio(); }
   });
   const initialMode = new URL(window.location.href).searchParams.get('mode');
-  activeMode = initialMode === 'live' || PRESETS[initialMode] ? initialMode : 'live';
-  renderMode();
+  activeMode = 'live';
+  if (PRESETS[initialMode]) setMode(initialMode);
+  else renderMode();
   void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
   void fetchAirQuality(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, true);
   // Refresh only while the live scene is visible, at most once per 15 minutes.
@@ -450,12 +679,19 @@ function setup() {
         // sending or saving the precise GPS result.
         const latitude = Math.round(coords.latitude * 100) / 100;
         const longitude = Math.round(coords.longitude * 100) / 100;
+        // Discard the old area before changing its label so Navi Mumbai's
+        // previous weather never appears under the newly selected place.
+        ++liveAttempt;
+        ++airAttempt;
+        liveWeather = null;
+        currentArea = { latitude, longitude, cache: false, label: 'Your area' };
         liveLocation = 'Your area';
         placeProfile = classifyLandscape('Your area');
         airQuality = null;
         artIndex = -1;
         lastObservationFetch = Date.now();
         setMode('live');
+        setStatus('Connecting', 'fetching');
         void fetchWeather(latitude, longitude, { cache: false, label: 'Your area' });
         void fetchAirQuality(latitude, longitude, false);
         void resolveCoarsePlace(latitude, longitude);

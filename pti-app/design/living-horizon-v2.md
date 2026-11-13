@@ -50,3 +50,23 @@ For future region packs, first define evidence for physical geography (coast, hi
 - Extend the artist-curated regional library beyond the initial coastal-foothill pack and incorporate geographic evidence for terrain/landcover selection.
 - Independent visual acceptance of the *deployed* phone/desktop renders; refine individual artwork positioning, haze contrast, and rain if necessary.
 - Integrate the approved compact component with the actual authenticated PTI dashboard, preserving its existing resource pulse, local companions and app navigation.
+
+## 13 November 2026 — environment explorer and accuracy audit
+
+An expandable **Explore combinations** studio is added to the same isolated preview, without replacing authenticated `/home`. The default view remains collapsed. Date and time, calculated or manually overridden moon phase, weather category, cloud percentage, rainfall intensity, wind, visibility, US AQI, temperature and original art style are adjustable. Settlement, relief, water and vegetation selectors explore the classification matrix and clearly label combinations without matching artwork. Quick Dawn, Day, Rain and Night buttons now set real astronomical times for the selected approximate area; Return to Live removes the simulation and restores incoming provider readings. A selected scenario is intentionally not saved as real weather or persisted to the URL.
+
+### Accuracy and provenance boundaries
+
+1. **Location:** default coordinates represent the broad Navi Mumbai area (`19.05, 73.02`). Only clicking **My area** requests browser permission; successful coordinates are rounded to two decimals before provider calls. Browser geolocation accuracy is device-dependent, and rounding does not improve the original fix. No precise coordinate or private user data is persisted by this preview.
+2. **Weather:** [Open-Meteo Forecast API](https://open-meteo.com/en/docs) supplies modelled current conditions (temperature, weather code, cloud cover, precipitation, wind and visibility), plus same-location local sunrise/sunset and IANA time zone. The browser refreshes its model result no more than every 15 minutes while the live page is visible. "Live" means latest available model conditions, not a local sensor.
+3. **Air:** [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) provides a Copernicus CAMS-backed **US AQI** forecast/model estimate with one-hour caching. This differs from India's official AQI and can differ materially from nearby monitors.
+4. **Astronomy:** vendored [SunCalc](https://github.com/mourner/suncalc) computes sun/moon altitudes, azimuths and lunar illumination from coordinates and the selected instant. In the live view, the device clock and provider time zone determine that instant. Moonrise/set are found from local-day altitude crossings; dates in the explorer use the selected IANA time-zone offset, including seasonal offsets. The decorative panorama maps these directions to an east–south–west **illustration**, not a compass-aligned azimuth projection. Open-Meteo's sunrise/sunset in Live are shown for comparison; simulated-day times are computed by SunCalc.
+5. **Geography:** place labels come from one opted-in [Nominatim](https://nominatim.org/) reverse-geocoding lookup. Existing place-name/elevation heuristics cannot verify land cover or waterways; vegetation is now left unmapped unless supported. No synthetic matrix setting is presented as a measured property. The six original images remain a Navi Mumbai coastal-foothill interpretation.
+6. **Failure modes:** weather failures show a labelled offline visual study. Missing AQI/visibility values are hidden rather than represented as zero; simulation values carry explicit "simulated" qualifiers. After location changes, previous area's weather and air readings are cleared before presenting the new area.
+
+### Release verification
+
+- JavaScript syntax and `git diff --check`: passed locally.
+- Angular production build: passed locally. Existing SCSS size-budget and missing `/assets/styles/pti-home.css` warnings remain unrelated to this static preview.
+- The production build copied the four changed `public/living-horizon` files byte-for-byte.
+- Actual deployed desktop/mobile interaction and artistic acceptance remain separate release gates; passing the build does not establish those outcomes.

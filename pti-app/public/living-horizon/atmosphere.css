@@ -1,0 +1,84 @@
+/* Living Horizon: meteorological visibility and particulate pollution are two
+   different phenomena. Keep them in separate painted depth layers. */
+.horizon-frame{
+  --visibility-strength:0;
+  --visibility-blur:0px;
+  --aqi-strength:0;
+}
+
+/* Visibility erases detail in distant hills first. The near foreground stays
+   legible even when the visual range is very short. */
+.distance-haze{
+  z-index:5;
+  inset:0;
+  background:
+    radial-gradient(ellipse 83% 41% at 52% 51%,rgba(249,252,250,.90) 2%,rgba(242,250,246,.74) 40%,transparent 100%),
+    linear-gradient(180deg,transparent 12%,rgba(240,248,246,.38) 34%,rgba(238,247,241,.88) 63%,rgba(246,250,240,.62) 79%,transparent 98%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 4%,#000 27%,#000 74%,transparent 96%);
+  mask-image:linear-gradient(180deg,transparent 4%,#000 27%,#000 74%,transparent 96%);
+  -webkit-backdrop-filter:blur(var(--visibility-blur));
+  backdrop-filter:blur(var(--visibility-blur));
+  opacity:var(--visibility-strength);
+  transition:opacity 1.1s ease,backdrop-filter 1.1s ease;
+}
+.horizon-frame[data-phase="night"] .distance-haze{
+  background:linear-gradient(180deg,transparent 9%,rgba(132,153,170,.49) 38%,rgba(156,173,173,.83) 67%,transparent 97%);
+}
+
+/* Air pollution has an amber-grey, subtly granular veil rather than the clean
+   pearly fog above. This is aesthetic interpretation, not pollutant mapping. */
+.pollution-haze{
+  position:absolute;
+  z-index:6;
+  inset:0;
+  pointer-events:none;
+  opacity:var(--aqi-strength);
+  background:
+    radial-gradient(ellipse 62% 45% at 57% 54%,rgba(148,106,69,.38),transparent 92%),
+    linear-gradient(180deg,rgba(112,103,91,.07),rgba(146,119,83,.34) 37%,rgba(168,122,78,.63) 67%,rgba(166,137,101,.12) 95%);
+  mix-blend-mode:multiply;
+  transition:opacity 1.1s ease;
+}
+.pollution-haze::before{
+  content:"";
+  position:absolute;
+  inset:17% 0 11%;
+  background:repeating-radial-gradient(circle at 34% 47%,rgba(124,98,74,.16) 0 1px,transparent 2px 12px);
+  filter:blur(3px);
+  opacity:.42;
+}
+.horizon-frame[data-phase="night"] .pollution-haze{
+  background:linear-gradient(180deg,rgba(93,83,87,.16),rgba(115,97,89,.48) 65%,rgba(106,93,88,.18));
+}
+
+/* Put the number where the eye already reads the sky conditions. Preserve the
+   painterly photograph as the dominant object, not an oversized data chip. */
+.hero-conditions{display:flex;align-items:center;flex-wrap:wrap;column-gap:8px;row-gap:5px;margin-top:8px}
+.hero-conditions .hero-subtitle{display:inline;margin:0;font-size:11px;line-height:1.4}
+.hero-aqi{
+  display:inline-flex;align-items:center;gap:5px;min-height:23px;padding:3px 8px;
+  border:1px solid rgba(255,255,255,.65);border-radius:24px;
+  background:rgba(237,250,228,.93);color:#3e673d;
+  text-shadow:none;white-space:nowrap;
+  box-shadow:0 3px 11px #1c251a24;
+}
+.hero-aqi-label{font-size:8px;font-weight:800;letter-spacing:.035em;opacity:.87}
+.hero-aqi strong{font-size:12px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.hero-aqi[data-level="moderate"]{background:#fff1c9f0;color:#80601f}
+.hero-aqi[data-level="sensitive"]{background:#ffe1b5f0;color:#98501f}
+.hero-aqi[data-level="unhealthy"]{background:#ffd1c9f0;color:#a23629}
+.hero-aqi[data-level="very-unhealthy"]{background:#ecd2f3f0;color:#763886}
+.hero-aqi[data-level="hazardous"]{background:#efcbd5f0;color:#85273a}
+.hero-aqi[data-simulated="true"]{border-style:dashed}
+.hero-observation-time{font-size:8px;line-height:1.3;font-weight:500;letter-spacing:.02em;color:#fffcf5af;text-shadow:0 1px 9px #11261a9f;white-space:nowrap}
+
+@media(max-width:760px){
+  .hero-conditions{margin-top:6px;column-gap:6px;row-gap:4px}
+  .hero-conditions .hero-subtitle{font-size:10px}
+  .hero-aqi{min-height:21px;padding:3px 6px;gap:4px}
+  .hero-aqi-label{font-size:7px}.hero-aqi strong{font-size:11px}
+  .hero-observation-time{font-size:7px}
+}
+@media(prefers-reduced-motion:reduce){
+  .distance-haze,.pollution-haze{transition:none}
+}

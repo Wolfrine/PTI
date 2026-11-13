@@ -4,6 +4,7 @@ import {
   ARTWORKS, classifyLandscape, dailyArtworkIndex, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
 } from './environment.js';
+import { createCloudSystem } from './clouds.js';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 const AIR_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 const CURRENT_FIELDS = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,wind_speed_10m,visibility,is_day';
@@ -23,6 +24,9 @@ const frame = document.querySelector('#horizon-frame');
 const locationLabel = document.querySelector('#hero-location');
 const temperatureLabel = document.querySelector('#hero-temperature');
 const descriptionLabel = document.querySelector('#hero-description');
+const heroObservationTime = document.querySelector('#hero-observation-time');
+const heroAqi = document.querySelector('#hero-aqi');
+const heroAqiValue = document.querySelector('#hero-aqi-value');
 const heroKicker = document.querySelector('#hero-kicker');
 const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
@@ -38,6 +42,7 @@ const moonDisc = document.querySelector('#moon-disc');
 const sunDisc = document.querySelector('.sun');
 const modeButtons = [...document.querySelectorAll('[data-mode]')];
 const useLocation = document.querySelector('#use-location');
+const cloudSystem = createCloudSystem(document.querySelector('#cloud-canvas'), frame);
 const studio = document.querySelector('#scene-lab');
 const studioInputs = [...document.querySelectorAll('[data-sim]')];
 const studioSummary = document.querySelector('#sim-summary');
@@ -152,12 +157,16 @@ function conditions(code, cloudCover, precipitation) {
   if (code === 2 || cloudCover >= 42) return { weather: 'cloudy', text: 'Partly cloudy' };
   return { weather: 'clear', text: 'Clear skies' };
 }
-function updateScene({ phase, weather, description, temperature, location, state, note, date = new Date(), moonOverride = null, celestial = null }) {
+function updateScene({ phase, weather, description, temperature, location, state, note, date = new Date(), moonOverride = null, celestial = null, observedTime = '', cloudCover = 20, wind = 12 }) {
   frame.dataset.phase = phase;
   frame.dataset.weather = weather;
   locationLabel.textContent = location;
   temperatureLabel.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : '';
   descriptionLabel.textContent = description;
+  heroObservationTime.hidden = !observedTime;
+  heroObservationTime.textContent = observedTime;
+  heroObservationTime.title = state === 'live' ? 'Open-Meteo current weather timestamp in local time'
+    : state === 'simulation' ? 'Selected local simulation time' : '';
   heroKicker.textContent = state === 'live' ? 'THE SKY, RIGHT NOW'
     : state === 'simulation' ? 'LIVING HORIZON · SIMULATION' : 'LIVING HORIZON · VISUAL STUDY';
   if (state === 'live') setStatus('Live weather', 'live');
@@ -177,6 +186,8 @@ function updateScene({ phase, weather, description, temperature, location, state
     moonDisc.title = 'Illustrative moon · atmosphere preview';
     paintMoon(moonDisc, .5);
   }
+  cloudSystem.update({ weather, phase, cover:cloudCover, wind,
+    sunX:celestial?.sun?.x ?? 50, sunY:celestial?.sun?.y ?? 35 });
   renderReadouts(state === 'live');
 }
 
@@ -236,6 +247,31 @@ function renderCelestials(date = new Date(), phaseOverride = null, live = true, 
   moonReadout.title = moonDisc.title;
 }
 
+function showHeroAqi(value, simulated = false) {
+  const valid = typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  heroAqi.hidden = !valid;
+  if (!valid) return;
+  const aqi = Math.round(value);
+  const levels = ['good', 'moderate', 'sensitive', 'unhealthy', 'very-unhealthy', 'hazardous'];
+  const names = ['Good', 'Moderate', 'Unhealthy for sensitive groups', 'Unhealthy', 'Very unhealthy', 'Hazardous'];
+  const tier = aqi <= 50 ? 0 : aqi <= 100 ? 1 : aqi <= 150 ? 2 : aqi <= 200 ? 3 : aqi <= 300 ? 4 : 5;
+  heroAqi.dataset.level = levels[tier];
+  heroAqi.dataset.simulated = String(simulated);
+  heroAqiValue.textContent = String(aqi);
+  heroAqi.title = simulated ? `Simulated US AQI ${aqi} · ${names[tier]}`
+    : `Regional CAMS global model (~45 km grid), US AQI ${aqi} · ${names[tier]}. Not a nearby station measurement or India's official AQI.`;
+  heroAqi.setAttribute('aria-label', heroAqi.title);
+}
+
+function setAtmosphericDepth(visibilityKm, aqi) {
+  const visibility = Number.isFinite(visibilityKm)
+    ? Math.pow(clamp((15 - visibilityKm) / 14.5, 0, 1), 1.25) : 0;
+  const pollution = Number.isFinite(aqi) ? clamp((aqi - 35) / 345, 0, 1) : 0;
+  frame.style.setProperty('--visibility-strength', visibility.toFixed(3));
+  frame.style.setProperty('--visibility-blur', `${(visibility * 6).toFixed(1)}px`);
+  frame.style.setProperty('--aqi-strength', pollution.toFixed(3));
+}
+
 function renderReadouts(live) {
   const rawVisibility = liveWeather?.current?.visibility;
   const visibilityMeters = Number(rawVisibility);
@@ -244,18 +280,13 @@ function renderReadouts(live) {
   if (hasVisibility) {
     const km = visibilityMeters / 1000;
     visibilityReadout.textContent = 'Visibility ' + (km >= 10 ? km.toFixed(0) : km.toFixed(1)) + ' km';
-    const visibleHaze = Math.max(0, Math.min(.74, (11000 - visibilityMeters) / 13500));
-    frame.style.setProperty('--visibility-haze', visibleHaze.toFixed(2));
-  } else frame.style.setProperty('--visibility-haze', '0.04');
+  }
   const rawAqi = airQuality?.current?.us_aqi;
   const usAqi = Number(rawAqi);
   const hasAir = live && typeof rawAqi === 'number' && Number.isFinite(usAqi) && usAqi >= 0;
-  airReadout.hidden = !hasAir;
-  if (hasAir) {
-    airReadout.textContent = 'US AQI ' + Math.round(usAqi);
-    airReadout.title = 'Modelled US AQI · Copernicus CAMS via Open-Meteo (not an observed Indian AQI reading)';
-    frame.style.setProperty('--air-haze', Math.max(0, Math.min(.24, (usAqi - 100) / 700)).toFixed(2));
-  } else frame.style.setProperty('--air-haze', '0');
+  airReadout.hidden = true; // The primary AQI value now lives beside sky conditions.
+  showHeroAqi(hasAir ? usAqi : null);
+  setAtmosphericDepth(hasVisibility ? visibilityMeters / 1000 : null, hasAir ? usAqi : null);
   moonReadout.hidden = !live;
   geographyReadout.hidden = true;
 }
@@ -309,20 +340,19 @@ function renderSimulation() {
   const description = `${simulation.weather[0].toUpperCase() + simulation.weather.slice(1)} · ${simulation.cloud}% cloud · ${simulation.rain} mm/h rain`;
   updateScene({ phase, weather: simulation.weather, location: currentArea.label || COARSE_LOCATION.name,
     temperature: simulation.temperature, description, date, moonOverride: manualPhase, celestial: solar,
+    observedTime:displayTime(simulation.minutes), cloudCover:simulation.cloud, wind:simulation.wind,
     state: 'simulation', note: `Simulation · ${simulation.date} ${displayTime(simulation.minutes)} ${timezone} · landscape choice is an interpretation.` });
   frame.style.setProperty('--cloud-opacity', String(clamp(.06 + simulation.cloud / 115, .04, .96).toFixed(2)));
   frame.style.setProperty('--cloud-duration', `${clamp(145 - simulation.wind * 2.4, 40, 145).toFixed(0)}s`);
-  frame.style.setProperty('--visibility-haze', clamp((11 - simulation.visibility) / 13.5, 0, .74).toFixed(2));
-  frame.style.setProperty('--air-haze', clamp((simulation.aqi - 100) / 700, 0, .24).toFixed(2));
+  setAtmosphericDepth(simulation.visibility, simulation.aqi);
+  showHeroAqi(simulation.aqi, true);
   configureRain((simulation.weather === 'rain' || simulation.weather === 'storm') && simulation.rain > 0,
     simulation.weather === 'storm');
   frame.style.setProperty('--rain-sheet-opacity', simulation.rain <= 0 ? '0'
     : clamp(.12 + simulation.rain / 30, .12, .72).toFixed(2));
   visibilityReadout.hidden = false;
   visibilityReadout.textContent = `Visibility ${Number(simulation.visibility).toFixed(1)} km · simulated`;
-  airReadout.hidden = false;
-  airReadout.textContent = `US AQI ${simulation.aqi} · simulated`;
-  airReadout.title = 'User-selected scenario value; not a measured or modelled air quality observation';
+  airReadout.hidden = true;
   moonReadout.hidden = false;
   geographyReadout.hidden = false;
   geographyReadout.textContent = [simulation.settlement, simulation.relief, simulation.water, simulation.vegetation]
@@ -354,9 +384,11 @@ function renderMode() {
     );
     const phase = phaseFromSun(solar?.sun);
     const hhmm = String(current.time || '').split('T')[1]?.slice(0, 5);
-    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: text + (hhmm ? ' · model ' + hhmm : ''), state: 'live', celestial: solar, note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
+    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: text, observedTime:hhmm,
+      cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), state: 'live', celestial: solar,
+      note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
-    sourceLine.textContent = 'Open-Meteo weather · CAMS / Open-Meteo modelled air · ' +
+    sourceLine.textContent = 'Open-Meteo weather · US AQI from regional CAMS global model (~45 km grid) · ' +
       (placeProfile.artworkGeographyMatch ? 'coastal-foothill art' : 'regional artwork not yet mapped') + '.';
     if (weather === 'rain' || weather === 'storm') {
       frame.style.setProperty('--rain-sheet-opacity', Math.min(.64, Math.max(.34, .34 + rainfall / 12)).toFixed(2));

@@ -72,3 +72,25 @@ An expandable **Explore combinations** studio is added to the same isolated prev
 - The deployed desktop interface was independently inspected on 13 November: time/night, rainfall, manual lunar phase, landscape warnings, original-art rotation, and Return to Live all passed. The expanded studio keeps the original warm hero visually dominant. Tiny utility typography and the disclosure's "Open" text while expanded are minor polish opportunities.
 - A narrow/mobile viewport could not be exercised in the available browser and remains unverified. Owner aesthetic acceptance is still pending.
 - `bf10f9c6cb2da0a42d0a8ee84016b4be4e951d57` deployed to PTI `hosting:default` as Firebase version `4a8f649cc9261d31`: served v3 index and JS/CSS/environment hashes verified, `/home` returned HTTP 200, 19 dirty PC files and 13 sibling compatibility files remained intact. GitHub Actions was skipped.
+
+## 13 November 2026 — v4 atmospheric depth and AQI prominence
+
+Owner feedback: existing cloud motion is too subtle and flat; extreme visibility and AQI differences are weak and nearly identical. The sky description should show AQI prominently next to its condition, with no word "model" and a very small local observation time. Regional landscape categorization is the **next** round, not a reason to replace the six currently admired original paintings.
+
+### This bounded visual implementation
+
+- A standalone `clouds.js` canvas renderer builds deterministic illustrated cumulus, wisps and low storm banks, caches their pigment-like textures, and varies coverage, direction of light, wind speed, color and layer movement with live or simulated weather. Pause when offscreen, hidden or motion-reduced.
+- `atmosphere.css` separates **visibility** (neutral/cool near-horizon loss of distant contrast and detail) from **air pollution** (warm-grey aerosol color veil). Strong hypothetical extremes are visually distinguishable. Both visualizations are interpretive, not physical reconstructions or health instruments.
+- The primary sky-caption line now displays **US AQI with a categorical tint** beside the weather description; its observed weather time is subdued. The tiny secondary environmental row no longer duplicates the AQI number. Scenario values are labelled simulated; original Live readings return on reset.
+- The actual PTI `/home` authenticated dashboard is untouched. The v4 candidate remains in the isolated `/living-horizon` preview until owner feedback and source-backed geographic artwork are ready.
+
+### Area-specific air-quality source decision
+
+The present [Open-Meteo CAMS global](https://open-meteo.com/en/docs/air-quality-api) output has approximately **45 km spatial resolution** over India: a query made with rounded GPS coordinates is *location-conditioned but regional*, not a block-, street- or neighbourhood-level observation. Keep the UI explicitly labelled **regional US AQI estimate**, never “local measured AQI”.
+
+Potential next integrations need a real source-quality gate:
+
+1. [CPCB real-time station data via India's Open Government Data platform](https://www.data.gov.in/catalog/real-time-air-quality-index) provides hourly *station-based Indian AQI*. Registered API-key access is required ([OGD help](https://www.data.gov.in/help)); select the nearest reporting station by coordinates and show its name, distance, observation time and stale/unavailable state. Station data are not the user's exact location, and station availability/freshness must be verified.
+2. [Google Air Quality](https://developers.google.com/maps/documentation/air-quality/current-conditions) supports location estimates at up to 500 m resolution and India's `ind_cpcb` scale, but an enabled billing account and API key are required; apply quotas and cost limits before adoption.
+
+No credential or billed API was configured during this pass; the deployed regional CAMS feed remains the fallback. Do not infer local pollution from the user-selected artwork matrix. Future landscape region packs require independent landcover, relief and water data and acceptance of representative art.

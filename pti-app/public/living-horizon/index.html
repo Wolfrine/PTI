@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=living-v3">
+  <link rel="stylesheet" href="./styles.css?v=living-v4">
+  <link rel="stylesheet" href="./atmosphere.css?v=living-v4">
+  <link rel="stylesheet" href="./clouds.css?v=living-v4">
 </head>
 <body>
   <main class="app-shell">
@@ -42,9 +44,11 @@
             <div class="starfield" id="starfield" aria-hidden="true"></div>
             <div class="cloud-haze"></div>
             <img class="cloudbank" src="../assets/images/living-horizon-cloudbank.webp" alt="" aria-hidden="true" decoding="async">
+            <canvas class="horizon-clouds" id="cloud-canvas" aria-hidden="true"></canvas>
             <img class="landscape daily-art" id="artwork" src="../assets/images/living-horizon/horizon-gouache.webp" alt="" aria-hidden="true" fetchpriority="high">
             <div class="valley-mist"></div>
             <div class="distance-haze" aria-hidden="true"></div>
+            <div class="pollution-haze" aria-hidden="true"></div>
             <div class="rain-sheet" aria-hidden="true"></div>
             <canvas id="weather-canvas" aria-hidden="true"></canvas>
             <div class="horizon-vignette"></div>
@@ -52,7 +56,7 @@
             <div class="horizon-caption">
               <span class="hero-kicker" id="hero-kicker">A WINDOW TO TODAY</span>
               <div class="horizon-title-line"><h1 id="hero-location">Navi Mumbai</h1><span class="hero-temperature" id="hero-temperature">--°</span></div>
-              <p class="hero-subtitle" id="hero-description">Finding today's atmosphere...</p>
+              <div class="hero-conditions"><span class="hero-subtitle" id="hero-description">Finding today's atmosphere...</span><span class="hero-aqi" id="hero-aqi" hidden><span class="hero-aqi-label">US AQI</span><strong id="hero-aqi-value">—</strong></span><time class="hero-observation-time" id="hero-observation-time" hidden></time></div>
             </div>
             <div class="horizon-status" id="horizon-status"><span class="status-dot"></span><span id="status-label">Connecting</span></div>
           </div>
@@ -155,6 +159,6 @@
     <nav class="mobile-nav" aria-label="Preview mobile navigation"><a href="#top" class="active"><span aria-hidden="true">⌂</span>Home</a><a href="#pinned"><span aria-hidden="true">▦</span>Apps</a><a href="#pulse"><span aria-hidden="true">⌕</span>Search</a></nav>
   </main>
   <script src="./vendor/suncalc.js?v=1.9.0"></script>
-  <script type="module" src="./main.js?v=living-v3"></script>
+  <script type="module" src="./main.js?v=living-v4"></script>
 </body>
 </html>

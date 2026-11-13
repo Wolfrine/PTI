@@ -3,12 +3,12 @@
 import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
-} from './environment.js';
+} from './environment.js?v=horizon-r7-20261113';
 import {
   resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
-} from './landscape-regions.js';
-import { createCloudSystem } from './clouds.js';
-import { createRainSystem } from './rain-effects.js';
+} from './landscape-regions.js?v=horizon-r7-20261113';
+import { createCloudSystem } from './clouds.js?v=horizon-r7-20261113';
+import { createRainSystem } from './rain-effects.js?v=horizon-r7-20261113';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 const CURRENT_FIELDS = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,wind_speed_10m,visibility,is_day';
 const CACHE_KEY = 'pti.living-horizon.coarse-weather.v2';

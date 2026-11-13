@@ -65,6 +65,12 @@
           ]
         },
         {
+          "source": "/living-horizon/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+          ]
+        },
+        {
           "source": "/living-horizon/index.html",
           "headers": [
             { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }

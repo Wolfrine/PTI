@@ -5,7 +5,7 @@
 // https://operations.osmfoundation.org/policies/nominatim/ .
 // No credential, exact GPS, Firebase, persisted location or scheduled polling.
 
-import { ARTWORKS, classifyLandscape, dateParts } from './environment.js';
+import { ARTWORKS, classifyLandscape, dateParts } from './environment.js?v=horizon-r7-20261113';
 
 export const REGION_PACKS = Object.freeze({
   'coastal-foothill': { title: 'Coastal foothills', geography: 'Original Navi Mumbai interpretation' },

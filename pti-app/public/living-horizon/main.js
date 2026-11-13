@@ -5,7 +5,7 @@ import {
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
 } from './environment.js?v=horizon-r7-20261113';
 import {
-  resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
+  REGION_PACKS, resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
 } from './landscape-regions.js?v=horizon-r7-20261113';
 import { createCloudSystem } from './clouds.js?v=horizon-r7-20261113';
 import { createRainSystem } from './rain-effects.js?v=horizon-r7-20261113';
@@ -212,7 +212,10 @@ function updateDailyArt() {
   frame.style.setProperty('--art-mobile-position', choice.mobile);
   const place = pool.findIndex(candidate => candidate.index === selected);
   artCount.textContent = place >= 0 ? `${place + 1}/${pool.length}` : `${selected + 1}/${ARTWORKS.length}`;
-  artButton.title = `${choice.name} · ${pack.title}${pack.matched ? ' area study' : ' illustration'} · click to explore another artwork`;
+  const artPackName = REGION_PACKS[choice.pack]?.title || choice.pack;
+  const relationship = choice.pack !== pack.id ? 'manual artistic study'
+    : pack.matched ? 'area study' : 'illustration';
+  artButton.title = `${choice.name} · ${artPackName} ${relationship} · click to explore another artwork`;
   artButton.setAttribute('aria-label', artButton.title);
 }
 
@@ -350,6 +353,11 @@ function renderSimulation() {
 
 function renderMode() {
   updateDailyArt();
+  if (activeMode !== 'live' && simulation && artOverride === null) {
+    // Quick presets initially construct their controls before daily art is
+    // resolved. Keep the studio art slider aligned with the visible painting.
+    simulation.art = artIndex + 1;
+  }
   modeButtons.forEach(button => {
     const selected = button.dataset.mode === activeMode;
     button.classList.toggle('selected', selected);

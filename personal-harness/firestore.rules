@@ -16,7 +16,7 @@ service cloud.firestore {
   }
   match /users/{uid} {
    allow read, write: if interactiveUser();
-    match /{collection}/{document=**} { allow read, write: if collection != 'atlasData' && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'resourceUsage' && collection != 'velumStudio' && interactiveUser(); }
+    match /{collection}/{document=**} { allow read, write: if collection != 'atlasData' && collection != 'intelligenceData' && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'resourceUsage' && collection != 'velumStudio' && interactiveUser(); }
   }
   // Private Studio drafts, reference inputs, thumbnails and explicit Drive save receipts.
   match /users/{uid}/velumStudio/workspace {
@@ -718,6 +718,41 @@ service cloud.firestore {
    }
   }
 
+  // PTI Intelligence: incoming owner captures are immutable except for owner
+  // triage state. Future research findings and worker output are server-only.
+  match /users/{uid}/intelligenceData/workspace {
+   function validCaptureIdentifier(id) { return id is string && id.matches('cap_[a-f0-9]{32}'); }
+   function validCapture(d,id) {
+    return d.keys().hasAll(['schemaVersion','id','sourceUrl','canonicalUrl','dedupeKey','platform','sourceKind','title','sharedText','note','projectHint','status','duplicateOf','createdAt','updatedAt','revision'])
+     && d.keys().hasOnly(['schemaVersion','id','sourceUrl','canonicalUrl','dedupeKey','platform','sourceKind','title','sharedText','note','projectHint','status','duplicateOf','createdAt','updatedAt','revision'])
+     && d.schemaVersion == 1 && validCaptureIdentifier(id) && d.id == id
+     && d.sourceUrl is string && d.sourceUrl.size() <= 2048 && (d.sourceUrl == '' || d.sourceUrl.matches('https://.+'))
+     && d.canonicalUrl is string && d.canonicalUrl.size() <= 2048 && (d.canonicalUrl == '' || d.canonicalUrl.matches('https://.+'))
+     && d.dedupeKey is string && d.dedupeKey.matches('[a-f0-9]{64}')
+     && d.platform in ['instagram','youtube','x','web'] && d.sourceKind in ['manual','share']
+     && d.title is string && d.title.size() <= 240 && d.sharedText is string && d.sharedText.size() <= 4000
+     && d.note is string && d.note.size() <= 2000 && d.projectHint is string && d.projectHint.size() <= 160
+     && (d.sourceUrl != '' || d.sharedText != '' || d.note != '')
+     && d.status in ['received','organized','archived']
+     && d.duplicateOf is string && (d.duplicateOf == '' || validCaptureIdentifier(d.duplicateOf))
+     && d.createdAt is int && d.createdAt > 0 && d.createdAt <= request.time.toMillis() + 300000
+     && d.updatedAt is int && d.updatedAt >= d.createdAt && d.updatedAt <= request.time.toMillis() + 300000
+     && d.revision is int && d.revision > 0 && d.revision <= 9007199254740991;
+   }
+   allow read, write: if false;
+   match /captures/{captureId} {
+    allow read: if owner(uid);
+    allow create: if owner(uid) && validCapture(request.resource.data,captureId)
+     && request.resource.data.status == 'received' && request.resource.data.revision == 1
+     && request.resource.data.updatedAt == request.resource.data.createdAt;
+    allow update: if owner(uid) && validCapture(request.resource.data,captureId)
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt','revision'])
+     && request.resource.data.revision == resource.data.revision + 1
+     && request.resource.data.updatedAt >= resource.data.updatedAt;
+    allow delete: if false;
+   }
+   match /{collection}/{document=**} { allow read, write: if false; }
+  }
   // Civilization Atlas: private evidence is agent-created and immutable. Human
   // progress, reviews and source consent require atomic, append-only history.
   match /users/{uid}/atlasData/workspace {

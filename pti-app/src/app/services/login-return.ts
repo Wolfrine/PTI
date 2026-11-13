@@ -15,7 +15,7 @@ export function safeLoginReturn(raw: string | null | undefined): LoginReturn {
   if (pathname.startsWith('//') || pathname.split('/').some(part => part === '.' || part === '..') || /%2f|%5c/i.test(raw.split(/[?#]/, 1)[0])) return fallback;
   const sibling = /^\/one-piece(?:\/[^?#]*)?$/.test(pathname);
   if (/^\/(?:dashboard|new-dashboard|codex-command(?:\/projects\/[^/?#]+)?)\/?$/.test(pathname)) return fallback;
-  const angular = /^\/(?:home|domains(?:\/[^/?#]+)?|activities)\/?$/.test(pathname);
+  const angular = /^\/(?:home|intelligence|domains(?:\/[^/?#]+)?|activities)\/?$/.test(pathname);
   if (!sibling && !angular) return fallback;
   return { path: raw, fullPage: sibling };
 }

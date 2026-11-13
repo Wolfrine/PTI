@@ -6,6 +6,15 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "share_target": {
+    "action": "/intelligence/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "background_color": "#fbfaf8",
   "theme_color": "#fbfaf8",
   "icons": [

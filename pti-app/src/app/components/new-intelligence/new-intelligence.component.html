@@ -1,0 +1,108 @@
+<div class="intelligence-shell">
+  <header class="page-top">
+    <a routerLink="/home" class="home-link" aria-label="Back to PTI Home">← PTI Home</a>
+    <span class="edition">PRIVATE · YOUR INTELLIGENCE</span>
+  </header>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">YOUR READING TRAY</p>
+      <h1>Keep what sparks an idea.</h1>
+      <p>Collect a source now. Organize and research it when you are ready.</p>
+    </div>
+  </div>
+
+  <main class="intelligence-grid">
+    <section class="capture-panel" aria-labelledby="capture-heading">
+      <div class="section-heading compact">
+        <h2 id="capture-heading">Quick capture</h2>
+        <span>01 / COLLECT</span>
+      </div>
+      <p *ngIf="fromShare" class="share-notice">From Android Share · review before saving</p>
+      <form (ngSubmit)="save()" novalidate>
+        <label for="capture-url">Source link</label>
+        <input id="capture-url" name="sourceUrl" type="url" inputmode="url" autocomplete="url" [(ngModel)]="sourceUrl" placeholder="Paste a Reel, video or post URL">
+
+        <label for="capture-note">Why it caught your attention</label>
+        <textarea id="capture-note" name="note" [(ngModel)]="note" rows="3" maxlength="2000" placeholder="A thought, question or instruction…"></textarea>
+
+        <details class="extra-context" [open]="fromShare">
+          <summary>More context <span>Optional</span></summary>
+          <label for="capture-project">Related project or topic</label>
+          <input id="capture-project" name="projectHint" [(ngModel)]="projectHint" maxlength="160" placeholder="e.g. Taleweald, robotics, AI">
+          <label for="capture-title">Shared title</label>
+          <input id="capture-title" name="title" [(ngModel)]="title" maxlength="240" placeholder="A short title">
+          <label for="capture-text">Shared text</label>
+          <textarea id="capture-text" name="sharedText" [(ngModel)]="sharedText" rows="3" maxlength="4000" placeholder="Original message or caption"></textarea>
+        </details>
+
+        <button class="save-button" type="submit" [disabled]="service.saving()">
+          {{ service.saving() ? 'Saving capture…' : 'Save capture' }} <span aria-hidden="true">↗</span>
+        </button>
+      </form>
+      <p class="privacy-note">Stored in your PTI account. Research and publishing require separate review.</p>
+    </section>
+
+    <section class="inbox-panel" aria-labelledby="inbox-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">02 / RETURN TO</p>
+          <h2 id="inbox-heading">Your inbox <span>{{ service.captures().length }}</span></h2>
+        </div>
+        <button class="quiet-button" type="button" (click)="service.refresh()" [disabled]="service.loading()">Refresh</button>
+      </div>
+      <div class="inbox-controls">
+        <nav class="filter-strip" aria-label="Filter captures">
+          <button *ngFor="let choice of filters" type="button" [class.active]="filter() === choice.id" (click)="filter.set(choice.id)" [attr.aria-pressed]="filter() === choice.id">{{ choice.label }}</button>
+        </nav>
+        <label class="search-label"><span class="sr-only">Search captures</span>
+          <input type="search" name="captureSearch" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Find a saved idea…">
+        </label>
+      </div>
+
+      <p *ngIf="notice" class="feedback success" role="status">{{ notice }}</p>
+      <p *ngIf="captureError" class="feedback error" role="alert">{{ captureError }}</p>
+      <p *ngIf="service.error()" class="feedback error" role="alert">{{ service.error() }}</p>
+      <p *ngIf="service.loading()" class="inbox-state" role="status">Loading your private sources…</p>
+      <p *ngIf="!service.loading() && !service.error() && !filtered().length" class="inbox-state">
+        {{ service.captures().length ? 'No sources match this view.' : 'A good discovery deserves a home. Your first capture will appear here.' }}
+      </p>
+
+      <ul class="capture-list" *ngIf="!service.loading() && filtered().length">
+        <li *ngFor="let item of filtered()">
+          <button class="capture-row" type="button" (click)="show(item)">
+            <span class="platform-mark" [attr.data-platform]="item.platform">{{ platform(item) }}</span>
+            <span class="capture-copy">
+              <span class="source-line"><span>{{ source(item) }}</span><span aria-hidden="true">·</span><time>{{ date(item.createdAt) }}</time></span>
+              <strong>{{ heading(item) }}</strong>
+              <span class="capture-excerpt">{{ excerpt(item) }}</span>
+              <span class="capture-hints" *ngIf="item.projectHint || item.duplicateOf">
+                <span *ngIf="item.projectHint">{{ item.projectHint }}</span><span *ngIf="item.duplicateOf">Previously captured</span>
+              </span>
+            </span>
+            <span class="row-edge"><span class="status" [attr.data-status]="item.status">{{ status(item) }}</span><span aria-hidden="true">›</span></span>
+          </button>
+        </li>
+      </ul>
+      <p class="result-foot" *ngIf="service.hasMore()">Showing the 80 most recent captures. Older history will be available with pagination.</p>
+    </section>
+  </main>
+
+  <dialog #detailDialog class="detail-dialog" (close)="selected.set(null)" aria-labelledby="detail-heading">
+    <ng-container *ngIf="selected() as item">
+      <div class="dialog-top"><span class="eyebrow">SOURCE DETAILS</span><button type="button" class="close-button" (click)="close()" aria-label="Close details">×</button></div>
+      <h2 id="detail-heading">{{ heading(item) }}</h2>
+      <p class="detail-source">{{ source(item) }} · {{ date(item.createdAt) }} · {{ status(item) }}</p>
+      <div class="detail-fields" *ngIf="item.note"><h3>Your note</h3><p>{{ item.note }}</p></div>
+      <div class="detail-fields" *ngIf="item.sharedText"><h3>Shared text</h3><p>{{ item.sharedText }}</p></div>
+      <div class="detail-fields" *ngIf="item.projectHint"><h3>Project or topic</h3><p>{{ item.projectHint }}</p></div>
+      <p *ngIf="item.duplicateOf" class="linked-note">This source was also captured earlier. Its original record is preserved.</p>
+      <div class="dialog-actions">
+        <a *ngIf="item.sourceUrl" [href]="item.sourceUrl" target="_blank" rel="noopener noreferrer" class="source-button">Open source ↗</a>
+        <button *ngIf="item.status !== 'organized'" type="button" (click)="update(item, 'organized')" [disabled]="service.saving()">Mark organized</button>
+        <button *ngIf="item.status !== 'archived'" type="button" (click)="update(item, 'archived')" [disabled]="service.saving()">Archive</button>
+        <button *ngIf="item.status !== 'received'" type="button" (click)="update(item, 'received')" [disabled]="service.saving()">Return to new</button>
+      </div>
+    </ng-container>
+  </dialog>
+</div>

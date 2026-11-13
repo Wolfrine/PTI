@@ -1,0 +1,17 @@
+// Globally scoped because the dialog is a top-layer element; the parent
+// .intelligence-shell prefix prevents styles from changing sibling PTI modules.
+.intelligence-shell {
+  .detail-dialog { position: fixed; width: min(520px, calc(100vw - 30px)); max-height: min(85svh, 800px); margin: auto; padding: clamp(22px, 4vw, 34px); border: 1px solid #e9ded5; border-radius: 17px; background: #fffdfa; color: #2d2723; box-shadow: 0 24px 90px rgba(30, 21, 15, .2); overflow: auto; }
+  .detail-dialog::backdrop { background: rgba(35, 27, 22, .53); backdrop-filter: blur(3px); }
+  .dialog-top { display: flex; justify-content: space-between; align-items: center; }
+  .close-button { width: 33px; height: 33px; border: 1px solid #e5dcd3; border-radius: 50%; background: #fff; color: #796c60; font-size: 24px; line-height: 1; }
+  .detail-dialog h2 { margin: 18px 0 10px; font: 400 30px/1.15 Georgia, serif; overflow-wrap: anywhere; }
+  .detail-source { margin: 0 0 25px; color: #95877b; font-size: 11px; }
+  .detail-fields { padding: 15px 0; border-top: 1px solid #eee7e0; }
+  .detail-fields h3 { margin: 0 0 8px; color: #9d6858; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+  .detail-fields p { margin: 0; color: #4f4740; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .linked-note { color: #85766a; font-size: 11px; }
+  .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 22px; margin-top: 12px; border-top: 1px solid #eae0d7; }
+  .dialog-actions :is(a, button) { padding: 10px 12px; border: 1px solid #ded3c9; border-radius: 8px; background: #fff; color: #6a5549; font-size: 11px; font-weight: 700; text-decoration: none; }
+  .dialog-actions .source-button { background: #e95c4c; border-color: #e95c4c; color: white; }
+}

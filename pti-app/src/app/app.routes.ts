@@ -23,6 +23,17 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
+        path: 'intelligence/share',
+        title: 'Capture · PTI Intelligence',
+        loadComponent: () => import('./components/new-intelligence/new-intelligence-share.component').then(m => m.NewIntelligenceShareComponent),
+    },
+    {
+        path: 'intelligence',
+        title: 'Intelligence Inbox · PTI',
+        loadComponent: () => import('./components/new-intelligence/new-intelligence.component').then(m => m.NewIntelligenceComponent),
+        canActivate: [AuthGuard],
+    },
+    {
         path: 'new-resource-usage/:source',
         title: 'Resource usage · PTI',
         loadComponent: () => import('./components/new-resource-usage/new-resource-usage.component').then(m => m.NewResourceUsageComponent),

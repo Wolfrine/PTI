@@ -12,6 +12,7 @@ Status: owner approved promotion to the authenticated `/home` launcher on 13 Nov
 - `landscape-regions.js` selects a broad, *illustrative* regional pack from an opted-in, rounded location using a nine-point Open-Meteo elevation sample plus nearby OpenStreetMap features. Missing or ambiguous geographic evidence falls back honestly; no painting claims a GPS-accurate view. DEM/OSM provider timeouts are bounded, with session-only coarse cache.
 - The daily shuffle stays within the selected region, avoids adjacent repeats; manual studio matrix changes (settlement, relief, water, vegetation) choose the closest represented painting and state how many of four categories match. Live art cycling stays within the area pack.
 - All Horizon CSS and JavaScript module imports use a revisioned URL, and Hosting revalidates `/living-horizon/**`; otherwise a new deployment can mix cached old scene logic with the new artwork manifest.
+- The opted-in area label and OSM land-feature results credit **© OpenStreetMap contributors** visibly even in the Home embed; sourced terrain credits Copernicus DEM alongside Open-Meteo weather. Public Nominatim calls are user-triggered only, never a polling loop.
 
 ## 13 November 2026 — owner-approved Home integration (v5)
 

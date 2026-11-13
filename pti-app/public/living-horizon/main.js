@@ -378,10 +378,13 @@ function renderMode() {
     const clouds = Number(current.cloud_cover);
     const pack = pickRegionPack(placeProfile);
     const source = placeProfile?.evidence?.relief && placeProfile?.evidence?.surface
-      ? ' · terrain informed by Open-Meteo elevation and OpenStreetMap'
-      : placeProfile?.evidence?.relief ? ' · broad relief from Open-Meteo elevation'
-      : placeProfile?.evidence?.surface ? ' · local features from OpenStreetMap' : '';
-    sourceLine.textContent = `Open-Meteo weather · ${pack.title} ${pack.matched ? 'regional study' : 'illustration'}${source}.`;
+      ? ' · Copernicus DEM elevation and OpenStreetMap features'
+      : placeProfile?.evidence?.relief ? ' · Copernicus DEM terrain'
+      : placeProfile?.evidence?.surface ? ' · mapped features' : '';
+    // Place names and mapped land features come from OpenStreetMap after an
+    // explicit location action; visible attribution is retained in Home embed.
+    const osmCredit = currentArea.cache ? '' : ' · © OpenStreetMap contributors';
+    sourceLine.textContent = `Open-Meteo weather · ${pack.title} ${pack.matched ? 'regional study' : 'illustration'}${source}${osmCredit}.`;
     sourceLine.title = `${pack.reason}. Regional paintings represent broad landscape types, not exact views from your location.`;
     if (Number.isFinite(clouds)) frame.style.setProperty('--cloud-opacity', String(Math.min(.96, .10 + clouds / 124).toFixed(2)));
     const wind = Number(current.wind_speed_10m);

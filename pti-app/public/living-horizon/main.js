@@ -29,10 +29,18 @@ const heroObservationTime = document.querySelector('#hero-observation-time');
 const heroKicker = document.querySelector('#hero-kicker');
 const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
+const isHomeEmbed = document.documentElement.classList.contains('horizon-embed');
+const homeClockButton = document.querySelector('#home-weather-clock');
+const homeClock = document.querySelector('#home-local-time');
+const homeRefreshStatus = document.querySelector('#home-refresh-status');
+const homeWeatherCredits = document.querySelector('.home-weather-credits');
+const homeWeatherCredit = document.querySelector('#home-weather-credit');
+const homeMapCredit = document.querySelector('#home-map-credit');
 const sourceLine = document.querySelector('#source-line');
 const artwork = document.querySelector('#artwork');
 const artButton = document.querySelector('#next-art');
 const artCount = document.querySelector('#art-count');
+const atmosphericReadouts = document.querySelector('.atmospheric-readouts');
 const visibilityReadout = document.querySelector('#visibility-readout');
 const moonReadout = document.querySelector('#moon-readout');
 const geographyReadout = document.querySelector('#geography-readout');
@@ -59,6 +67,7 @@ let artOverrideDay = null;
 let renderedDay = '';
 let simulation = null;
 let landscapeResolveAttempt = 0;
+let homeRefreshing = false;
 
 const clamp = (n, minimum, maximum) => Math.max(minimum, Math.min(maximum, n));
 const displayTime = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -138,6 +147,20 @@ function setStatus(label, type = 'sample') {
   statusNode.dataset.type = type;
 }
 
+function updateHomeClock() {
+  const localTime = formatLocalTime(new Date(), environmentTimeZone());
+  homeClock.dateTime = localTime;
+  homeClock.textContent = localTime;
+  homeClockButton.setAttribute('aria-label', `${localTime} in ${liveLocation}. Change artwork and refresh weather for your area`);
+  homeClockButton.title = 'Change artwork and refresh weather for your area';
+  homeClockButton.hidden = false;
+}
+
+function tickHomeClock() {
+  if (!document.hidden) updateHomeClock();
+  window.setTimeout(tickHomeClock, 60000 - Date.now() % 60000);
+}
+
 function localMinutes(timezone) {
   try {
     const segments = new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
@@ -168,12 +191,18 @@ function updateScene({ phase, weather, description, temperature, location, state
     : state === 'simulation' ? 'LIVING HORIZON · SIMULATION' : 'LIVING HORIZON · VISUAL STUDY';
   if (state === 'live') setStatus('Live weather', 'live');
   else if (state === 'simulation') setStatus('Simulated · not live', 'sample');
-  else if (state === 'offline') setStatus('Offline · sample', 'sample');
+  else if (state === 'offline') setStatus(isHomeEmbed ? 'Weather unavailable' : 'Offline · sample', 'sample');
   else setStatus('Scene preview', 'sample');
+  if (isHomeEmbed) {
+    homeWeatherCredit.hidden = state !== 'live';
+    homeMapCredit.hidden = currentArea.cache || (liveLocation === 'Your area' && !placeProfile.evidence?.surface);
+    homeWeatherCredits.hidden = homeWeatherCredit.hidden && homeMapCredit.hidden;
+    updateHomeClock();
+  }
   sourceLine.textContent = note;
   rainSystem.update({active:(weather === 'rain'||weather === 'storm')&&rainfall>0,
     storm:weather === 'storm', intensity:rainfall, wind, phase});
-  if (state === 'live' || state === 'simulation') renderCelestials(date, moonOverride, state === 'live', celestial);
+  if (state === 'live' || state === 'simulation' || isHomeEmbed) renderCelestials(date, moonOverride, state === 'live', celestial);
   else {
     frame.dataset.sunVisible = String(phase !== 'night');
     frame.dataset.moonVisible = String(phase === 'night');
@@ -217,6 +246,17 @@ function updateDailyArt() {
     : pack.matched ? 'area study' : 'illustration';
   artButton.title = `${choice.name} · ${artPackName} ${relationship} · click to explore another artwork`;
   artButton.setAttribute('aria-label', artButton.title);
+}
+
+function advanceArtwork() {
+  const candidates = activeMode === 'live'
+    ? eligibleArtwork(placeProfile).map(entry => entry.index)
+    : ARTWORKS.map((_, index) => index);
+  const position = candidates.indexOf(artIndex);
+  artOverride = candidates[(position + 1) % candidates.length] ?? 0;
+  artOverrideDay = localDayKey(new Date(), environmentTimeZone());
+  updateDailyArt();
+  if (simulation) { simulation.art = artIndex + 1; syncStudio(); }
 }
 
 const LANDSCAPE_AXES = ['settlement', 'relief', 'water', 'vegetation'];
@@ -284,8 +324,9 @@ function renderReadouts(live) {
     visibilityReadout.textContent = 'Visibility ' + (km >= 10 ? km.toFixed(0) : km.toFixed(1)) + ' km';
   }
   setAtmosphericDepth(hasVisibility ? visibilityMeters / 1000 : null);
-  moonReadout.hidden = !live;
+  moonReadout.hidden = !(live || isHomeEmbed) || !moonReadout.textContent;
   geographyReadout.hidden = true;
+  if (isHomeEmbed) atmosphericReadouts.hidden = visibilityReadout.hidden && moonReadout.hidden;
 }
 
 function syncStudio() {
@@ -401,9 +442,11 @@ function renderMode() {
   }
   frame.style.removeProperty('--cloud-opacity');
   frame.style.removeProperty('--cloud-duration');
-  const hour = Math.floor(localMinutes('Asia/Kolkata') / 60);
+  const hour = Math.floor(localMinutes(environmentTimeZone()) / 60);
   const phase = hour < 5 || hour > 19 ? 'night' : hour < 8 ? 'dawn' : hour > 17 ? 'dusk' : 'day';
-  updateScene({ phase, weather: 'cloudy', location: COARSE_LOCATION.name, temperature: null, description: 'Weather feed unavailable · visual study', state: 'offline', note: 'Offline · sample atmosphere shown. No current weather reading available.' });
+  updateScene({ phase, weather: 'cloudy', location: isHomeEmbed ? liveLocation : COARSE_LOCATION.name, temperature: null,
+    description: isHomeEmbed ? (homeRefreshing ? 'Updating weather…' : 'Weather unavailable') : 'Weather feed unavailable · visual study',
+    state: 'offline', note: 'Offline · sample atmosphere shown. No current weather reading available.' });
 }
 function setMode(mode) {
   if (mode !== 'live' && !PRESETS[mode]) return;
@@ -490,14 +533,14 @@ function readCache() {
     return value && Date.now() - value.at < CACHE_AGE_MS && value.data?.current ? value : null;
   } catch { return null; }
 }
-async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name } = {}) {
+async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name, force = false } = {}) {
   const myAttempt = ++liveAttempt;
   currentArea = { latitude, longitude, cache, label };
   // Throttle retries as well as successful refreshes when the feed is unavailable.
   lastObservationFetch = Date.now();
-  if (cache) {
+  if (cache && !force) {
     const stored = readCache();
-    if (stored) { liveWeather = stored.data; lastObservationFetch = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); return; }
+    if (stored) { liveWeather = stored.data; lastObservationFetch = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); return true; }
   }
   if (activeMode === 'live') setStatus('Connecting', 'fetching');
   try {
@@ -518,15 +561,17 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
     if (!data?.current || typeof data.current.temperature_2m !== 'number') throw new Error('Incomplete current conditions');
     if (myAttempt !== liveAttempt) return;
     liveWeather = data;
-    liveLocation = label === 'Your area' && liveLocation !== 'Your area' ? liveLocation : label;
+    liveLocation = currentArea.label;
     lastObservationFetch = Date.now();
     if (cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data })); } catch { /* Storage is optional. */ } }
     if (activeMode === 'live') renderMode();
+    return true;
   } catch (error) {
     if (myAttempt !== liveAttempt) return;
     liveWeather = null;
     if (activeMode === 'live') renderMode();
     console.info('Living Horizon: current weather unavailable; using clearly labelled visual study.', error?.message || error);
+    return false;
   }
 }
 
@@ -557,15 +602,79 @@ async function resolveCoarsePlace(latitude, longitude) {
   if (resolution !== landscapeResolveAttempt || currentArea.latitude !== latitude || currentArea.longitude !== longitude) return;
   liveLocation = String(name).slice(0, 45);
   currentArea.label = liveLocation;
+  let profile;
   try {
-    const sourced = await resolveLandscapeProfile({ latitude, longitude, name, address });
-    if (resolution !== landscapeResolveAttempt || currentArea.latitude !== latitude || currentArea.longitude !== longitude) return;
-    placeProfile = sourced;
+    profile = await resolveLandscapeProfile({ latitude, longitude, name, address });
   } catch {
-    placeProfile = classifyLandscape(name, address);
+    profile = classifyLandscape(name, address);
   }
+  if (resolution !== landscapeResolveAttempt || currentArea.latitude !== latitude || currentArea.longitude !== longitude) return;
+  if (isHomeEmbed && artOverride !== null && ARTWORKS[artOverride]?.pack !== pickRegionPack(profile).id) {
+    artOverride = null;
+    artOverrideDay = null;
+  }
+  placeProfile = profile;
   artIndex = -1;
   if (activeMode === 'live') renderMode();
+}
+
+function getCoarsePosition(maximumAge) {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    try {
+      navigator.geolocation.getCurrentPosition(({ coords }) => {
+        // Round to an approximately 1 km area before calling any provider.
+        resolve({
+          latitude: Math.round(coords.latitude * 100) / 100,
+          longitude: Math.round(coords.longitude * 100) / 100,
+        });
+      }, () => resolve(null), { enableHighAccuracy: false, maximumAge, timeout: 10000 });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+function changeArea({ latitude, longitude }) {
+  ++liveAttempt;
+  liveWeather = null;
+  liveLocation = 'Your area';
+  currentArea = { latitude, longitude, cache: false, label: liveLocation };
+  placeProfile = classifyLandscape(liveLocation);
+  if (isHomeEmbed && artOverride !== null && ARTWORKS[artOverride]?.pack !== pickRegionPack(placeProfile).id) {
+    artOverride = null;
+    artOverrideDay = null;
+  }
+}
+
+async function refreshHomeWeather() {
+  if (homeRefreshing) return;
+  homeRefreshing = true;
+  homeClockButton.setAttribute('aria-busy', 'true');
+  homeClockButton.setAttribute('aria-disabled', 'true');
+  homeRefreshStatus.textContent = 'Updating weather and artwork.';
+  try {
+    advanceArtwork();
+    const location = await getCoarsePosition(0);
+    const areaChanged = location && (location.latitude !== currentArea.latitude || location.longitude !== currentArea.longitude);
+    if (areaChanged) {
+      changeArea(location);
+      renderMode();
+    }
+    const { latitude, longitude } = currentArea;
+    const [weatherUpdated] = await Promise.all([
+      fetchWeather(latitude, longitude, { ...currentArea, force: true }),
+      location && !currentArea.cache && liveLocation === 'Your area' ? resolveCoarsePlace(latitude, longitude) : undefined,
+    ]);
+    homeRefreshStatus.textContent = weatherUpdated
+      ? location ? `Weather updated for ${liveLocation}.` : `Location unavailable. Weather updated for ${liveLocation}.`
+      : `Weather unavailable for ${liveLocation}.`;
+  } finally {
+    homeRefreshing = false;
+    homeClockButton.setAttribute('aria-busy', 'false');
+    homeClockButton.removeAttribute('aria-disabled');
+    if (!liveWeather) renderMode();
+  }
 }
 
 function seededStars() {
@@ -600,76 +709,55 @@ function setup() {
     artIndex = -1;
     setMode('live');
   });
-  artButton.addEventListener('click', () => {
-    const candidates = activeMode === 'live'
-      ? eligibleArtwork(placeProfile).map(entry => entry.index)
-      : ARTWORKS.map((_, index) => index);
-    const position = candidates.indexOf(artIndex);
-    artOverride = candidates[(position + 1) % candidates.length] ?? 0;
-    artOverrideDay = localDayKey(new Date(), environmentTimeZone());
-    updateDailyArt();
-    if (simulation) { simulation.art = artIndex + 1; syncStudio(); }
-  });
+  artButton.addEventListener('click', advanceArtwork);
+  if (isHomeEmbed) {
+    document.querySelector('.horizon-caption').append(atmosphericReadouts);
+    homeClockButton.addEventListener('click', refreshHomeWeather);
+  }
   const initialMode = new URL(window.location.href).searchParams.get('mode');
   activeMode = 'live';
-  if (PRESETS[initialMode]) setMode(initialMode);
+  if (!isHomeEmbed && PRESETS[initialMode]) setMode(initialMode);
   else renderMode();
+  if (isHomeEmbed) tickHomeClock();
   void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
   // Refresh only while the live scene is visible, at most once per 15 minutes.
   window.setInterval(() => {
-    if (document.hidden || activeMode !== 'live') return;
+    if (document.hidden || activeMode !== 'live' || homeRefreshing) return;
     if (liveWeather) renderMode();
     if (Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
       void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
     }
   }, 60000);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden || activeMode !== 'live') return;
+    if (document.hidden || activeMode !== 'live' || homeRefreshing) return;
     renderMode();
     if (Date.now() - lastObservationFetch > CACHE_AGE_MS) {
       void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
     }
   });
-  useLocation.addEventListener('click', () => {
+  useLocation.addEventListener('click', async () => {
     if (!navigator.geolocation) { sourceLine.textContent = 'Location access is unavailable. Using the coarse Navi Mumbai area.'; return; }
     sourceLine.textContent = 'Permission requested · approximate area is sent to weather and place providers.';
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        // Two decimals (~1 km) are enough for a visual atmosphere and avoid
-        // sending or saving the precise GPS result.
-        const latitude = Math.round(coords.latitude * 100) / 100;
-        const longitude = Math.round(coords.longitude * 100) / 100;
-        // Discard the old area before changing its label so Navi Mumbai's
-        // previous weather never appears under the newly selected place.
-        ++liveAttempt;
-        liveWeather = null;
-        currentArea = { latitude, longitude, cache: false, label: 'Your area' };
-        liveLocation = 'Your area';
-        placeProfile = classifyLandscape('Your area');
-        artIndex = -1;
-        lastObservationFetch = Date.now();
-        setMode('live');
-        setStatus('Connecting', 'fetching');
-        void fetchWeather(latitude, longitude, { cache: false, label: 'Your area' });
-        void resolveCoarsePlace(latitude, longitude);
-      },
-      () => { sourceLine.textContent = 'Location not shared · using the coarse Navi Mumbai weather view.'; },
-      { enableHighAccuracy: false, maximumAge: 600000, timeout: 10000 },
-    );
+    const location = await getCoarsePosition(600000);
+    if (!location) { sourceLine.textContent = `Location not shared · using the ${liveLocation} weather view.`; return; }
+    changeArea(location);
+    artIndex = -1;
+    lastObservationFetch = Date.now();
+    setMode('live');
+    void fetchWeather(location.latitude, location.longitude, currentArea);
+    void resolveCoarsePlace(location.latitude, location.longitude);
   });
   document.querySelector('#app-search').addEventListener('input', event => {
     const term = String(event.target.value || '').trim().toLowerCase();
     document.querySelectorAll('.pinned-card').forEach(card => { card.hidden = !card.textContent.toLowerCase().includes(term); });
   });
-  if (document.documentElement.classList.contains('horizon-embed') && window.parent !== window) {
-    // The real Angular Home owns the surrounding launcher. Keep this public-safe
-    // scene's height fitted to its controls, including the expanded studio.
-    const content = document.querySelector('.living-section');
+  if (isHomeEmbed && window.parent !== window) {
+    // Match the existing responsive frame so Home never reserves space for studio controls.
     const reportHeight = () => {
-      const height = Math.ceil(content.getBoundingClientRect().height + 2);
+      const height = Math.ceil(frame.getBoundingClientRect().height + 2);
       window.parent.postMessage({ source: 'pti-living-horizon', event: 'resize', height }, window.location.origin);
     };
-    new ResizeObserver(reportHeight).observe(content);
+    new ResizeObserver(reportHeight).observe(frame);
     window.addEventListener('load', reportHeight);
     reportHeight();
   }

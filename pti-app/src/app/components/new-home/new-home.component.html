@@ -18,13 +18,13 @@
     </header>
 
     <div class="hub-content">
-      <section class="living-horizon-home" aria-label="Living horizon and atmospheric controls">
+      <section class="living-horizon-home" aria-label="Current local sky and weather">
         <iframe #livingHorizonFrame class="living-horizon-iframe"
-          src="/living-horizon/index.html?embed=1" [style.height.px]="horizonHeight"
-          title="Living Horizon: live skies, landscape and atmospheric simulation"
-          allow="geolocation" loading="eager"></iframe>
+          src="/living-horizon/index.html?embed=1&amp;v=home-weather-r2" [style.height.px]="horizonHeight"
+          title="Living Horizon: current time and weather" allow="geolocation" loading="eager"></iframe>
       </section>
 
+      <app-new-resource-glance></app-new-resource-glance>
       <section class="hub-section pinned-section" aria-labelledby="pinned-heading">
         <div class="section-heading"><div><p class="section-kicker">AT YOUR FINGERTIPS</p><h2 id="pinned-heading"><mat-icon>push_pin</mat-icon> Pinned Apps</h2></div><button class="text-button" type="button" (click)="editingPins = !editingPins" [attr.aria-pressed]="editingPins">{{ editingPins ? 'Done' : 'Customize' }} <mat-icon>{{ editingPins ? 'check' : 'tune' }}</mat-icon></button></div>
         <div class="pinned-grid" *ngIf="pinnedApps.length; else noPinned">
@@ -39,7 +39,6 @@
         <ng-template #noPinned><p class="empty-hint">No pinned apps yet. Use Customize or the stars in All Apps to add favorites.</p></ng-template>
       </section>
 
-      <app-new-resource-glance></app-new-resource-glance>
       <section class="companion-section" aria-label="Local companions">
         <p class="companion-kicker">LOCAL COMPANIONS</p>
         <div class="companion-deck">

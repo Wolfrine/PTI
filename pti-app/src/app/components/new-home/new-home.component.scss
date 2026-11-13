@@ -1,9 +1,8 @@
 :host { display:block; }
 
-/* The actual authenticated launcher hosts one public-safe illustrated sky.
-   The frame has no separate app navigation and grows with its simulation desk. */
 .living-horizon-home{width:100%;min-width:0}
-.living-horizon-iframe{display:block;width:100%;height:420px;min-height:210px;max-width:100%;border:0;background:transparent;overflow:hidden}
+.living-horizon-iframe{display:block;width:100%;height:262px;min-height:196px;max-width:100%;border:0;background:transparent;overflow:hidden}
+.living-horizon-home+app-new-resource-glance{margin-top:22px}
 
 .companion-section{margin-top:15px;container-type:inline-size}
 .companion-kicker{margin:0 0 7px 1px;color:#896c5e;font:750 10px/1.2 Arial,"Helvetica Neue",sans-serif;letter-spacing:.15em}
@@ -16,6 +15,7 @@
   .companion-deck>app-new-gtop-host:not(:empty)+app-new-one-piece-host:not(:empty){border-left:0;border-top:1px solid #eae4dc}
 }
 @media(max-width:760px){
+  .living-horizon-home+app-new-resource-glance{margin-top:18px}
   .companion-section{margin-top:13px}
   .companion-deck{grid-template-columns:1fr;border-radius:12px}
   .companion-deck>app-new-gtop-host:not(:empty)+app-new-one-piece-host:not(:empty){border-left:0;border-top:1px solid #eae4dc}

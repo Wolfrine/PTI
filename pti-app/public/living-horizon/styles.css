@@ -115,6 +115,14 @@
 .atmospheric-readouts span{display:inline-flex;align-items:center;gap:4px}
 .atmospheric-readouts span+span:before{content:"·";padding-right:3px;color:#b3a498}
 .source-line{margin-top:0}
+/* Observations belong with the weather description, at lower visual priority. */
+.hero-metrics{display:flex;flex-wrap:wrap;align-items:center;gap:0;margin-top:5px;color:#fffdf1dd;font-size:10px;line-height:1.5;font-weight:500}
+.hero-metrics #visibility-readout:not([hidden]) + #moon-readout:not([hidden])::before{content:"·";padding:0 6px;color:#fff9edbd}
+.horizon-refresh{appearance:none;-webkit-appearance:none;border:0;background:transparent;color:inherit;cursor:pointer;line-height:1;padding:1px 2px;margin:0;font:600 13px/1 "DM Sans",sans-serif;opacity:.83;transition:opacity .18s,transform .25s}
+.horizon-refresh:hover,.horizon-refresh:focus-visible{opacity:1;transform:rotate(35deg)}
+.horizon-refresh:focus-visible{outline:1px solid currentColor;outline-offset:2px;border-radius:4px}
+.horizon-refresh[disabled]{opacity:.55;cursor:wait}
+.horizon-credit{position:absolute;z-index:9;bottom:10px;right:16px;font:500 8px/1.2 "DM Sans",sans-serif;letter-spacing:.01em;color:#fffef4;opacity:.60;text-shadow:0 1px 5px #162824aa;pointer-events:none}
 @media(max-width:760px){
   .daily-art{object-position:var(--art-mobile-position,50% 75%)}
   .horizon-toolbar{column-gap:5px}

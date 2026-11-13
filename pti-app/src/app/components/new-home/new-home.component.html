@@ -10,7 +10,7 @@
   </aside>
 
   <div class="hub-workspace">
-    <header class="hub-topbar">
+    <header #homeTopbar class="hub-topbar" data-sky-phase="day">
       <span class="mobile-brand" aria-label="PTI"><span class="brand-mark" aria-hidden="true"><img src="/icons/pti-mark.svg" width="24" height="24" alt=""></span><strong>PTI</strong></span>
       <span class="topbar-location">YOUR SPACE <span>/</span> HOME</span>
       <label class="global-search"><mat-icon aria-hidden="true">search</mat-icon><input #searchBox type="search" [value]="searchQuery" (input)="searchQuery = $any($event.target).value; selectedCategory = 'All'" placeholder="Search your apps, tools, projects..." aria-label="Search PTI applications" autocomplete="off"><kbd>⌘ K</kbd></label>

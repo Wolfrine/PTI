@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NewResourceGlanceComponent } from '../new-resource-glance/new-resource-glance.component';
@@ -34,10 +34,11 @@ const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
   templateUrl: './new-home.component.html',
   styleUrl: './new-home.component.scss',
 })
-export class NewHomeComponent implements OnInit {
+export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
   @ViewChild('appDirectory') appDirectory?: ElementRef<HTMLElement>;
   @ViewChild('livingHorizonFrame') livingHorizonFrame?: ElementRef<HTMLIFrameElement>;
+  @ViewChild('homeTopbar') homeTopbar?: ElementRef<HTMLElement>;
 
   // Curated launcher entries only. Private tools are intentionally excluded from all surfaces.
   readonly apps: readonly HubApp[] = [
@@ -85,6 +86,19 @@ export class NewHomeComponent implements OnInit {
     // Purge stale launch history/pins for entries removed from this curated directory.
     this.writeIds(PIN_STORAGE_KEY, this.pinnedIds);
     this.writeIds(RECENT_STORAGE_KEY, this.recentIds);
+  }
+
+  ngAfterViewInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    // A scroll may belong to the document or an inner Angular app shell.
+    // Capture-phase observation sees both without depending on window.scrollY.
+    document.addEventListener('scroll', this.onCapturedScroll, { capture: true, passive: true });
+  }
+
+  ngOnDestroy(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    document.removeEventListener('scroll', this.onCapturedScroll, true);
+    if (this.horizonDepthFrame !== null) window.cancelAnimationFrame(this.horizonDepthFrame);
   }
 
   get pinnedApps(): HubApp[] {
@@ -136,36 +150,67 @@ export class NewHomeComponent implements OnInit {
     if (!isPlatformBrowser(this.platformId) || event.origin !== window.location.origin ||
       event.source !== this.livingHorizonFrame?.nativeElement.contentWindow) return;
     const payload = event.data;
-    if (!payload || payload.source !== 'pti-living-horizon' || payload.event !== 'resize' ||
-      !Number.isFinite(payload.height)) return;
+    if (!payload || payload.source !== 'pti-living-horizon') return;
+    if (payload.event === 'palette') {
+      if (['dawn', 'day', 'dusk', 'night'].includes(payload.phase)) {
+        this.homeTopbar?.nativeElement.setAttribute('data-sky-phase', payload.phase);
+      }
+      if (['clear', 'cloudy', 'overcast', 'rain', 'storm', 'fog'].includes(payload.weather)) {
+        this.homeTopbar?.nativeElement.setAttribute('data-sky-weather', payload.weather);
+      }
+      return;
+    }
+    if (payload.event !== 'resize' || !Number.isFinite(payload.height)) return;
     const height = Math.ceil(payload.height);
     if (height >= 170 && height <= 400 && Math.abs(height - this.horizonHeight) > 1) {
       this.horizonHeight = height;
     }
   }
 
-  onHorizonLoad(): void { this.syncHorizonDepth(); }
+  onHorizonLoad(): void {
+    this.horizonBaselineTop = null;
+    this.syncHorizonDepth();
+  }
 
   @HostListener('window:scroll')
-  @HostListener('window:resize')
   onViewportChange(): void {
     if (!isPlatformBrowser(this.platformId) || this.horizonDepthPending) return;
     this.horizonDepthPending = true;
-    window.requestAnimationFrame(() => {
+    this.horizonDepthFrame = window.requestAnimationFrame(() => {
       this.horizonDepthPending = false;
+      this.horizonDepthFrame = null;
       this.syncHorizonDepth();
     });
   }
 
+  @HostListener('window:resize')
+  onHorizonViewportResize(): void {
+    this.horizonBaselineTop = null;
+    this.onViewportChange();
+  }
+
   private horizonDepthPending = false;
+  private horizonDepthFrame: number | null = null;
+  private horizonBaselineTop: number | null = null;
+  private readonly onCapturedScroll = (): void => this.onViewportChange();
 
   private syncHorizonDepth(): void {
     const horizon = this.livingHorizonFrame?.nativeElement;
     if (!horizon?.contentWindow || !isPlatformBrowser(this.platformId)) return;
     const bounds = horizon.getBoundingClientRect();
-    if (bounds.bottom < 0 || bounds.top > window.innerHeight) return;
+    if (this.horizonBaselineTop === null) this.horizonBaselineTop = bounds.top;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const offset = reducedMotion ? 0 : Math.max(0, Math.min(14, window.scrollY * .07));
+    const visibleTravel = this.horizonBaselineTop - bounds.top;
+    // The navigation is already sticky. Blend it into the sky while the sky
+    // is visible, then settle into a legible day/night glass surface even
+    // after the iframe has entirely left the viewport.
+    const headerBottom = this.homeTopbar?.nativeElement.getBoundingClientRect().bottom ?? 0;
+    const skyRemaining = bounds.bottom - headerBottom;
+    const settle = reducedMotion ? Number(skyRemaining <= 0)
+      : Math.max(0, Math.min(1, 1 - skyRemaining / Math.max(140, bounds.height * .82)));
+    this.homeTopbar?.nativeElement.style.setProperty('--header-settle', settle.toFixed(3));
+    if (bounds.bottom < 0 || bounds.top > window.innerHeight) return;
+    const offset = reducedMotion ? 0 : Math.max(0, Math.min(20, visibleTravel * .12));
     horizon.contentWindow.postMessage({ source: 'pti-home', event: 'parallax', offset }, window.location.origin);
   }
 

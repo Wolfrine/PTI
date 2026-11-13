@@ -5,7 +5,7 @@ import {
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
 } from './environment.js?v=horizon-r7-20261113';
 import {
-  REGION_PACKS, resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
+  REGION_PACKS, resolveLandscapeProfile, pickRegionPack, eligibleArtwork,
 } from './landscape-regions.js?v=horizon-r7-20261113';
 import { createCloudSystem } from './clouds.js?v=horizon-r7-20261113';
 import { createRainSystem } from './rain-effects.js?v=horizon-r7-20261113';
@@ -29,7 +29,9 @@ const heroObservationTime = document.querySelector('#hero-observation-time');
 const heroKicker = document.querySelector('#hero-kicker');
 const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
+const refreshButton = document.querySelector('#refresh-horizon');
 const localClock = document.querySelector('#local-clock');
+const horizonCredit = document.querySelector('#horizon-credit');
 const sourceLine = document.querySelector('#source-line');
 const artwork = document.querySelector('#artwork');
 const artButton = document.querySelector('#next-art');
@@ -59,6 +61,8 @@ let artIndex = -1;
 let artOverride = null;
 let artOverrideDay = null;
 let renderedDay = '';
+let sessionArtIndex = null;
+let artPoolSignature = '';
 let simulation = null;
 let landscapeResolveAttempt = 0;
 
@@ -159,11 +163,7 @@ function updateClockAndFreshness() {
   const age = Math.max(0, now.getTime() - lastSuccessfulSync);
   const minutes = Math.floor(age / 60000);
   const ageText = minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h`;
-  setStatus(`↻ ${ageText}`, age > 60 * 60000 ? 'sample' : 'live');
-  const fetchedAt = new Intl.DateTimeFormat('en-GB', {
-    timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).format(new Date(lastSuccessfulSync));
-  statusNode.title = `Weather last retrieved at ${fetchedAt} local time${minutes >= 60 ? ' · may be outdated' : ''}`;
+  setStatus(ageText, age > 60 * 60000 ? 'sample' : 'live');
 }
 
 function localMinutes(timezone) {
@@ -185,6 +185,11 @@ function conditions(code, cloudCover, precipitation) {
 function updateScene({ phase, weather, description, temperature, location, state, note, date = new Date(), moonOverride = null, celestial = null, observedTime = '', cloudCover = 20, wind = 12, rainfall = 0 }) {
   frame.dataset.phase = phase;
   frame.dataset.weather = weather;
+  if (document.documentElement.classList.contains('horizon-embed') && window.parent !== window) {
+    // A small, same-origin palette contract keeps the sticky Home navigation
+    // synchronized with this scene's real astronomical day phase.
+    window.parent.postMessage({ source: 'pti-living-horizon', event: 'palette', phase, weather }, window.location.origin);
+  }
   locationLabel.textContent = location;
   temperatureLabel.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : '';
   descriptionLabel.textContent = description;
@@ -194,13 +199,13 @@ function updateScene({ phase, weather, description, temperature, location, state
     : state === 'simulation' ? 'Selected local simulation time' : '';
   heroKicker.textContent = state === 'live' ? 'THE SKY, RIGHT NOW'
     : state === 'simulation' ? 'LIVING HORIZON · SIMULATION' : 'LIVING HORIZON · VISUAL STUDY';
-  if (state === 'live') setStatus('↻', 'live');
+  if (state === 'live') setStatus('', 'live');
   else if (state === 'simulation') setStatus('Preview', 'sample');
   else if (state === 'offline') setStatus('Weather unavailable', 'sample');
   else setStatus('Scene preview', 'sample');
-  statusNode.title = '';
   updateClockAndFreshness();
   sourceLine.textContent = note;
+  horizonCredit.hidden = state !== 'live';
   rainSystem.update({active:(weather === 'rain'||weather === 'storm')&&rainfall>0,
     storm:weather === 'storm', intensity:rainfall, wind, phase});
   if (state === 'live' || state === 'simulation') renderCelestials(date, moonOverride, state === 'live', celestial);
@@ -228,11 +233,20 @@ function updateDailyArt() {
     renderedDay = today;
     artOverride = null;
     artOverrideDay = null;
+    sessionArtIndex = null;
   }
   const pack = pickRegionPack(placeProfile);
   const pool = eligibleArtwork(placeProfile);
+  const poolSignature = pool.map(item => item.index).join(',');
+  if (poolSignature !== artPoolSignature) {
+    artPoolSignature = poolSignature;
+    sessionArtIndex = null;
+  }
+  if (sessionArtIndex === null) {
+    sessionArtIndex = pool[Math.floor(Math.random() * pool.length)]?.index ?? 0;
+  }
   const selected = artOverrideDay === today && artOverride !== null ? artOverride
-    : regionalArtworkIndex(new Date(), timezone, placeProfile);
+    : sessionArtIndex;
   if (selected === artIndex) return;
   artIndex = selected;
   const choice = ARTWORKS[selected];
@@ -247,6 +261,16 @@ function updateDailyArt() {
     : pack.matched ? 'area study' : 'illustration';
   artButton.title = `${choice.name} · ${artPackName} ${relationship} · click to explore another artwork`;
   artButton.setAttribute('aria-label', artButton.title);
+}
+
+function randomizeArtwork() {
+  const candidates = eligibleArtwork(placeProfile).map(item => item.index);
+  const alternatives = candidates.filter(index => index !== artIndex);
+  const choices = alternatives.length ? alternatives : candidates;
+  sessionArtIndex = choices[Math.floor(Math.random() * choices.length)] ?? artIndex;
+  artOverride = null;
+  artOverrideDay = null;
+  updateDailyArt();
 }
 
 const LANDSCAPE_AXES = ['settlement', 'relief', 'water', 'vegetation'];
@@ -424,6 +448,7 @@ function renderMode() {
     const osmCredit = currentArea.cache ? '' : ' · © OpenStreetMap contributors';
     sourceLine.textContent = `Open-Meteo weather · ${pack.title} ${pack.matched ? 'regional study' : 'illustration'}${source}${osmCredit}.`;
     sourceLine.title = `${pack.reason}. Regional paintings represent broad landscape types, not exact views from your location.`;
+    horizonCredit.textContent = `Open-Meteo${placeProfile?.evidence?.relief ? ' · Copernicus' : ''}${!currentArea.cache || placeProfile?.evidence?.surface ? ' · © OpenStreetMap contributors' : ''}`;
     if (Number.isFinite(clouds)) frame.style.setProperty('--cloud-opacity', String(Math.min(.96, .10 + clouds / 124).toFixed(2)));
     const wind = Number(current.wind_speed_10m);
     if (Number.isFinite(wind)) frame.style.setProperty('--cloud-duration', `${Math.max(65, Math.min(145, 145 - wind * 2.4))}s`);
@@ -520,12 +545,12 @@ function readCache() {
     return value && Date.now() - value.at < CACHE_AGE_MS && value.data?.current ? value : null;
   } catch { return null; }
 }
-async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name } = {}) {
+async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name, force = false } = {}) {
   const myAttempt = ++liveAttempt;
   currentArea = { latitude, longitude, cache, label };
   // Throttle retries as well as successful refreshes when the feed is unavailable.
   lastObservationFetch = Date.now();
-  if (cache) {
+  if (cache && !force) {
     const stored = readCache();
     if (stored) { liveWeather = stored.data; lastObservationFetch = stored.at; lastSuccessfulSync = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); return; }
   }
@@ -641,6 +666,15 @@ function setup() {
     updateDailyArt();
     if (simulation) { simulation.art = artIndex + 1; syncStudio(); }
   });
+  refreshButton.addEventListener('click', () => {
+    // The visual change is immediate; an explicit refresh also bypasses the
+    // 15-minute weather cache without changing the location permission model.
+    randomizeArtwork();
+    if (refreshButton.disabled || activeMode !== 'live') return;
+    refreshButton.disabled = true;
+    void fetchWeather(currentArea.latitude, currentArea.longitude, { ...currentArea, force: true })
+      .finally(() => { refreshButton.disabled = false; });
+  });
   const initialMode = new URL(window.location.href).searchParams.get('mode');
   activeMode = 'live';
   if (PRESETS[initialMode]) setMode(initialMode);
@@ -680,6 +714,7 @@ function setup() {
         liveLocation = 'Your area';
         placeProfile = classifyLandscape('Your area');
         artIndex = -1;
+        sessionArtIndex = null;
         lastObservationFetch = Date.now();
         setMode('live');
         setStatus('Connecting', 'fetching');
@@ -704,7 +739,7 @@ function setup() {
           event.data?.source !== 'pti-home' || event.data?.event !== 'parallax') return;
       const requested = Number(event.data.offset);
       if (!Number.isFinite(requested)) return;
-      const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : clamp(requested, 0, 14);
+      const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : clamp(requested, 0, 20);
       frame.style.setProperty('--horizon-art-shift', `${depth}px`);
       frame.style.setProperty('--horizon-cloud-shift', `${Math.round(depth * .6)}px`);
       frame.style.setProperty('--horizon-sky-shift', `${Math.round(depth * .3)}px`);

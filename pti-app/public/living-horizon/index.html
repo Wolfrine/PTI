@@ -10,11 +10,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=horizon-r8-20261113">
+  <link rel="stylesheet" href="./styles.css?v=horizon-r9-20261113">
   <link rel="stylesheet" href="./atmosphere.css?v=horizon-r8-20261113">
   <link rel="stylesheet" href="./clouds.css?v=horizon-r7-20261113">
   <link rel="stylesheet" href="./rain-effects.css?v=horizon-r7-20261113">
-  <link rel="stylesheet" href="./embed.css?v=horizon-r8-20261113">
+  <link rel="stylesheet" href="./embed.css?v=horizon-r9-20261113">
 </head>
 <body>
   <main class="app-shell">
@@ -60,11 +60,16 @@
               <span class="hero-kicker" id="hero-kicker">A WINDOW TO TODAY</span>
               <div class="horizon-title-line"><h1 id="hero-location">Navi Mumbai</h1><span class="hero-temperature" id="hero-temperature">--°</span></div>
               <div class="hero-conditions"><span class="hero-subtitle" id="hero-description">Finding today's atmosphere...</span><time class="hero-observation-time" id="hero-observation-time" hidden></time></div>
+              <div class="hero-metrics" aria-label="Visibility and moon phase">
+                <span id="visibility-readout" hidden></span>
+                <span id="moon-readout" hidden></span>
+              </div>
             </div>
             <div class="horizon-status" id="horizon-status" data-type="fetching">
               <time class="horizon-clock" id="local-clock" aria-label="Current local time">--:--</time>
-              <span class="horizon-sync"><span class="status-dot" aria-hidden="true"></span><span id="status-label">Connecting</span></span>
+              <span class="horizon-sync"><span class="status-dot" aria-hidden="true"></span><button class="horizon-refresh" id="refresh-horizon" type="button" aria-label="Refresh weather and change artwork"><span aria-hidden="true">↻</span></button><span id="status-label">Connecting</span></span>
             </div>
+            <span class="horizon-credit" id="horizon-credit">Open-Meteo</span>
           </div>
 
           <div class="horizon-toolbar">
@@ -81,8 +86,6 @@
             </div>
           </div>
           <div class="atmospheric-readouts" aria-label="Environmental readings">
-            <span id="visibility-readout" hidden></span>
-            <span id="moon-readout" hidden></span>
             <span id="geography-readout" hidden></span>
           </div>
           <p class="source-line" id="source-line" aria-live="polite">Live weather uses approximate Navi Mumbai coordinates. The environment is an artistic interpretation.</p>
@@ -164,6 +167,6 @@
     <nav class="mobile-nav" aria-label="Preview mobile navigation"><a href="#top" class="active"><span aria-hidden="true">⌂</span>Home</a><a href="#pinned"><span aria-hidden="true">▦</span>Apps</a><a href="#pulse"><span aria-hidden="true">⌕</span>Search</a></nav>
   </main>
   <script src="./vendor/suncalc.js?v=1.9.0"></script>
-  <script type="module" src="./main.js?v=horizon-r8-20261113"></script>
+  <script type="module" src="./main.js?v=horizon-r9-20261113"></script>
 </body>
 </html>

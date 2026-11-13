@@ -49,12 +49,28 @@ html.horizon-embed .location-label{display:none}
 html.horizon-embed .atmospheric-readouts,html.horizon-embed .source-line{display:none!important}
 html.horizon-embed .horizon-credit{font-size:8px;bottom:9px;right:clamp(18px,3.8vw,46px);opacity:.55}
 
-/* Deliberate depth: the panorama, cloud layer and sky travel differently;
-   overscan prevents edge exposure, while the information stays anchored. */
-html.horizon-embed .horizon-sky{transform:translate3d(0,var(--horizon-sky-shift,0px),0) scale(1.15);transform-origin:center}
-html.horizon-embed .daily-art{transform:translate3d(0,var(--horizon-art-shift,0px),0) scale(1.26);transform-origin:center 57%}
-html.horizon-embed .cloudbank,html.horizon-embed .horizon-clouds{transform:translate3d(0,var(--horizon-cloud-shift,0px),0) scale(1.20);transform-origin:center}
+/* Actual parallax: the page may travel ~220px while the image travels only
+   ~110px. Extra vertical image coverage avoids blank edges without zooming
+   the original 16:9 landscape into a cropped-up postcard. */
+html.horizon-embed .horizon-sky{
+  inset:-48px 0;
+  transform:translate3d(0,var(--horizon-sky-shift,0px),0);
+  will-change:transform;
+}
+html.horizon-embed .daily-art{
+  inset:-110px 0 auto;
+  height:calc(100% + 220px);
+  transform:translate3d(0,var(--horizon-art-shift,0px),0);
+  will-change:transform;
+}
+html.horizon-embed .cloud-haze{
+  inset:-72px 0;
+  translate:0 var(--horizon-cloud-shift,0px);
+  will-change:translate;
+}
+html.horizon-embed .horizon-clouds{transform:translate3d(0,var(--horizon-cloud-shift,0px),0) scale(1.4);transform-origin:center}
 @media(max-width:760px){
+  html.horizon-embed .daily-art{top:-62px;height:calc(100% + 124px)}
   html.horizon-embed .content{padding:0}
   html.horizon-embed .horizon-frame{height:194px}
   html.horizon-embed .horizon-caption{left:17px;bottom:24px;max-width:calc(100% - 122px)}

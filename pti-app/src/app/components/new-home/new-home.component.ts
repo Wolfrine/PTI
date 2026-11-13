@@ -158,6 +158,9 @@ export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (['clear', 'cloudy', 'overcast', 'rain', 'storm', 'fog'].includes(payload.weather)) {
         this.homeTopbar?.nativeElement.setAttribute('data-sky-weather', payload.weather);
       }
+      if (typeof payload.skyTop === 'string' && /^#[0-9a-fA-F]{6}$/.test(payload.skyTop)) {
+        this.homeTopbar?.nativeElement.parentElement?.style.setProperty('--horizon-sky-top', payload.skyTop);
+      }
       return;
     }
     if (payload.event !== 'resize' || !Number.isFinite(payload.height)) return;
@@ -168,7 +171,6 @@ export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onHorizonLoad(): void {
-    this.horizonBaselineTop = null;
     this.syncHorizonDepth();
   }
 
@@ -185,32 +187,32 @@ export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('window:resize')
   onHorizonViewportResize(): void {
-    this.horizonBaselineTop = null;
     this.onViewportChange();
   }
 
   private horizonDepthPending = false;
   private horizonDepthFrame: number | null = null;
-  private horizonBaselineTop: number | null = null;
   private readonly onCapturedScroll = (): void => this.onViewportChange();
 
   private syncHorizonDepth(): void {
     const horizon = this.livingHorizonFrame?.nativeElement;
     if (!horizon?.contentWindow || !isPlatformBrowser(this.platformId)) return;
     const bounds = horizon.getBoundingClientRect();
-    if (this.horizonBaselineTop === null) this.horizonBaselineTop = bounds.top;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const visibleTravel = this.horizonBaselineTop - bounds.top;
-    // The navigation is already sticky. Blend it into the sky while the sky
-    // is visible, then settle into a legible day/night glass surface even
-    // after the iframe has entirely left the viewport.
+    // The top of the artwork begins exactly below the header. As the page
+    // scrolls the header remains sticky; this difference measures actual
+    // travel even when Angular uses a nested scroll host or restores scroll.
     const headerBottom = this.homeTopbar?.nativeElement.getBoundingClientRect().bottom ?? 0;
+    const visibleTravel = Math.max(0, headerBottom - bounds.top);
+    // Stay translucent over the scenery; become a settled sky-coloured glass
+    // surface only during the panorama's final 75px beneath the header.
     const skyRemaining = bounds.bottom - headerBottom;
     const settle = reducedMotion ? Number(skyRemaining <= 0)
-      : Math.max(0, Math.min(1, 1 - skyRemaining / Math.max(140, bounds.height * .82)));
+      : Math.max(0, Math.min(1, 1 - skyRemaining / 75));
     this.homeTopbar?.nativeElement.style.setProperty('--header-settle', settle.toFixed(3));
     if (bounds.bottom < 0 || bounds.top > window.innerHeight) return;
-    const offset = reducedMotion ? 0 : Math.max(0, Math.min(20, visibleTravel * .12));
+    const smallScreen = window.matchMedia('(max-width: 760px)').matches;
+    const offset = reducedMotion ? 0 : Math.min(smallScreen ? 55 : 110, visibleTravel * (smallScreen ? .27 : .49));
     horizon.contentWindow.postMessage({ source: 'pti-home', event: 'parallax', offset }, window.location.origin);
   }
 

@@ -186,9 +186,17 @@ function updateScene({ phase, weather, description, temperature, location, state
   frame.dataset.phase = phase;
   frame.dataset.weather = weather;
   if (document.documentElement.classList.contains('horizon-embed') && window.parent !== window) {
-    // A small, same-origin palette contract keeps the sticky Home navigation
-    // synchronized with this scene's real astronomical day phase.
-    window.parent.postMessage({ source: 'pti-living-horizon', event: 'palette', phase, weather }, window.location.origin);
+    // The parent paints a same-height continuation *behind* its header. Send
+    // the actual CSS sky tone instead of maintaining a second colour table.
+    const rawTop = getComputedStyle(frame).getPropertyValue('--sky-top').trim();
+    let skyTop = rawTop;
+    if (/^#[\da-fA-F]{6}$/.test(rawTop) && (weather === 'rain' || weather === 'storm')) {
+      // These conditions apply brightness(.69) saturate(.77) to the sky layer.
+      const rgb = [1, 3, 5].map(index => parseInt(rawTop.slice(index, index + 2), 16) * .69);
+      const gray = rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
+      skyTop = '#' + rgb.map(channel => Math.round(clamp(gray + (channel - gray) * .77, 0, 255)).toString(16).padStart(2, '0')).join('');
+    }
+    window.parent.postMessage({ source: 'pti-living-horizon', event: 'palette', phase, weather, skyTop }, window.location.origin);
   }
   locationLabel.textContent = location;
   temperatureLabel.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : '';
@@ -739,7 +747,9 @@ function setup() {
           event.data?.source !== 'pti-home' || event.data?.event !== 'parallax') return;
       const requested = Number(event.data.offset);
       if (!Number.isFinite(requested)) return;
-      const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : clamp(requested, 0, 20);
+      // A +100px art shift against -200px page travel means the panorama's
+      // visible pixels have moved only -100px: real parallax, not decoration.
+      const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : clamp(requested, 0, 110);
       frame.style.setProperty('--horizon-art-shift', `${depth}px`);
       frame.style.setProperty('--horizon-cloud-shift', `${Math.round(depth * .6)}px`);
       frame.style.setProperty('--horizon-sky-shift', `${Math.round(depth * .3)}px`);

@@ -17,6 +17,11 @@
       <span class="topbar-avatar" aria-label="Personal workspace"><mat-icon>person_outline</mat-icon></span>
     </header>
 
+    <!-- A sky-coloured continuation lives behind the sticky header. Keeping
+         this spacer the header's exact height leaves the scenery unobscured
+         on arrival, while the header may glass over it during scrolling. -->
+    <div class="horizon-header-sky" aria-hidden="true"></div>
+
     <section class="living-horizon-home" aria-label="Current local sky and weather">
       <iframe #livingHorizonFrame class="living-horizon-iframe"
         src="/living-horizon/index.html?embed=1" [style.height.px]="horizonHeight"

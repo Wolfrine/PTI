@@ -1,5 +1,18 @@
 :host { display:block; }
 
+/* The header shares a painted sky continuation with the actual weather scene.
+   Its negative flow margin places it over this SAME-HEIGHT spacer, not the
+   scenery. This is 77px on desktop and 112px for the two-row mobile header. */
+.pti-home .hub-workspace{
+  --horizon-header-height:77px;
+  --horizon-sky-top:#6daece;
+}
+.pti-home .horizon-header-sky{
+  height:var(--horizon-header-height);
+  background:var(--horizon-sky-top);
+  transition:background-color .6s ease;
+}
+
 /* The horizon belongs to the page itself, not to its card grid. Only the
    scenery moves with scroll; the controls and weather text remain stationary. */
 .living-horizon-home{position:relative;isolation:isolate;width:100%;min-width:0;margin:0;overflow:hidden;background:#d4e0dc}
@@ -9,20 +22,22 @@
 /* Chromatic glass: the existing sticky navigation is the sky's upper edge
    until the panorama passes behind it, then it becomes a legible surface. */
 .pti-home .hub-workspace .hub-topbar{
-  --header-ambient-top:#a5ccda;
-  --header-ambient-edge:#6daece;
   --header-ink:#263f47;
   --header-muted:#365660;
-  --header-rest:#fffdf9f2;
+  --header-rest:color-mix(in srgb,var(--horizon-sky-top) 88%,#f6faf8);
   --header-stroke:#4e737725;
   --header-search:#fffef7b8;
   --header-search-border:#f9fff5bb;
   --header-avatar:#fff9f3aa;
   --header-settle:0;
   position:sticky;top:0;z-index:12;isolation:isolate;
+  height:var(--horizon-header-height);
+  margin-bottom:calc(-1 * var(--horizon-header-height));
   border-bottom:1px solid transparent;
   color:var(--header-ink);
-  background:linear-gradient(180deg,var(--header-ambient-top),var(--header-ambient-edge));
+  /* At rest, only 20% sky tint: the continuation below remains visible. */
+  background:color-mix(in srgb,var(--horizon-sky-top) 20%,transparent);
+  backdrop-filter:blur(8px) saturate(1.08);
   box-shadow:none;
 }
 .pti-home .hub-topbar::before{
@@ -51,38 +66,38 @@
   color:var(--header-ink);background:var(--header-avatar);
   border-color:var(--header-search-border);
 }
-.pti-home .hub-topbar[data-sky-phase="dawn"]{
-  --header-ambient-top:#485977;--header-ambient-edge:#334568;
+.pti-home .hub-workspace .hub-topbar[data-sky-phase="dawn"]{
   --header-ink:#fff9ed;--header-muted:#f7dcbf;
-  --header-rest:#29394fef;--header-stroke:#f5e9e52b;
+  --header-rest:color-mix(in srgb,var(--horizon-sky-top) 92%,#18243d);--header-stroke:#f5e9e52b;
   --header-search:#20334b92;--header-search-border:#ffffff44;
   --header-avatar:#20334b82;
 }
-.pti-home .hub-topbar[data-sky-phase="dusk"]{
-  --header-ambient-top:#4f4566;--header-ambient-edge:#393453;
+.pti-home .hub-workspace .hub-topbar[data-sky-phase="dusk"]{
   --header-ink:#fff8f0;--header-muted:#f0d4c7;
-  --header-rest:#292a40f0;--header-stroke:#fff4f331;
+  --header-rest:color-mix(in srgb,var(--horizon-sky-top) 92%,#222238);--header-stroke:#fff4f331;
   --header-search:#23283f8a;--header-search-border:#fff7f044;
   --header-avatar:#30314a88;
 }
-.pti-home .hub-topbar[data-sky-phase="night"]{
-  --header-ambient-top:#142940;--header-ambient-edge:#091b34;
+.pti-home .hub-workspace .hub-topbar[data-sky-phase="night"]{
   --header-ink:#f3f7f3;--header-muted:#c9d9df;
-  --header-rest:#17283af2;--header-stroke:#dcebf72a;
+  --header-rest:color-mix(in srgb,var(--horizon-sky-top) 93%,#14253e);--header-stroke:#dcebf72a;
   --header-search:#1b364b88;--header-search-border:#dcebf73c;
   --header-avatar:#1e384a8f;
 }
 /* Rain dims the painted sky. Continue that cloud-shadow onto the header,
    while keeping the search and navigation in a legible high-contrast tint. */
-.pti-home .hub-topbar[data-sky-phase="day"]:is([data-sky-weather="rain"],[data-sky-weather="storm"]){
-  --header-ambient-top:#678d9b;--header-ambient-edge:#527b8d;
+.pti-home .hub-workspace .hub-topbar[data-sky-phase="day"]:is([data-sky-weather="rain"],[data-sky-weather="storm"]){
   --header-ink:#fffdf5;--header-muted:#dde9ed;
-  --header-rest:#294450f1;--header-stroke:#f3f8f43b;
+  --header-rest:color-mix(in srgb,var(--horizon-sky-top) 90%,#233a48);--header-stroke:#f3f8f43b;
   --header-search:#1e455b88;--header-search-border:#f9fff64a;
   --header-avatar:#1a42558a;
 }
 @media(prefers-reduced-motion:reduce){
   .pti-home .hub-topbar::before{transition:none}
+  .pti-home .horizon-header-sky{transition:none}
+}
+@media(max-width:760px){
+  .pti-home .hub-workspace{--horizon-header-height:112px}
 }
 
 .companion-section{margin-top:15px;container-type:inline-size}

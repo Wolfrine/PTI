@@ -182,21 +182,40 @@ function conditions(code, cloudCover, precipitation) {
   if (code === 2 || cloudCover >= 42) return { weather: 'cloudy', text: 'Partly cloudy' };
   return { weather: 'clear', text: 'Clear skies' };
 }
+function skyRGB(hex) {
+  return /^#[\da-fA-F]{6}$/.test(hex)
+    ? [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16)) : null;
+}
+function rgbHex(channels) {
+  return '#' + channels.map(value => Math.round(clamp(value, 0, 255)).toString(16).padStart(2, '0')).join('');
+}
+function filteredSky(hex, weather) {
+  const rgb = skyRGB(hex);
+  if (!rgb || (weather !== 'rain' && weather !== 'storm')) return hex;
+  // Match the brightness(.69) saturate(.77) filter on the embedded sky layer.
+  const dimmed = rgb.map(value => value * .69);
+  const gray = dimmed[0] * .2126 + dimmed[1] * .7152 + dimmed[2] * .0722;
+  return rgbHex(dimmed.map(value => gray + (value - gray) * .77));
+}
+function blendSky(top, middle, progress) {
+  const a = skyRGB(top);
+  const b = skyRGB(middle);
+  return a && b ? rgbHex(a.map((value, index) => value + (b[index] - value) * progress)) : top;
+}
 function updateScene({ phase, weather, description, temperature, location, state, note, date = new Date(), moonOverride = null, celestial = null, observedTime = '', cloudCover = 20, wind = 12, rainfall = 0 }) {
   frame.dataset.phase = phase;
   frame.dataset.weather = weather;
   if (document.documentElement.classList.contains('horizon-embed') && window.parent !== window) {
-    // The parent paints a same-height continuation *behind* its header. Send
-    // the actual CSS sky tone instead of maintaining a second colour table.
+    // Continue the *visible* sky gradient through the header. The embedded
+    // sky starts 48px above this frame, so its visible first pixel is not
+    // --sky-top: it has already advanced toward --sky-mid by that distance.
     const rawTop = getComputedStyle(frame).getPropertyValue('--sky-top').trim();
-    let skyTop = rawTop;
-    if (/^#[\da-fA-F]{6}$/.test(rawTop) && (weather === 'rain' || weather === 'storm')) {
-      // These conditions apply brightness(.69) saturate(.77) to the sky layer.
-      const rgb = [1, 3, 5].map(index => parseInt(rawTop.slice(index, index + 2), 16) * .69);
-      const gray = rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
-      skyTop = '#' + rgb.map(channel => Math.round(clamp(gray + (channel - gray) * .77, 0, 255)).toString(16).padStart(2, '0')).join('');
-    }
-    window.parent.postMessage({ source: 'pti-living-horizon', event: 'palette', phase, weather, skyTop }, window.location.origin);
+    const rawMid = getComputedStyle(frame).getPropertyValue('--sky-mid').trim();
+    const skyTop = filteredSky(rawTop, weather);
+    const skyMid = filteredSky(rawMid, weather);
+    const gradientStop = (frame.clientHeight + 96) * .47;
+    const skySeam = blendSky(skyTop, skyMid, clamp(48 / gradientStop, 0, 1));
+    window.parent.postMessage({ source: 'pti-living-horizon', event: 'palette', phase, weather, skyTop, skySeam }, window.location.origin);
   }
   locationLabel.textContent = location;
   temperatureLabel.textContent = Number.isFinite(temperature) ? `${Math.round(temperature)}°` : '';
@@ -262,6 +281,12 @@ function updateDailyArt() {
   frame.dataset.art = choice.id;
   frame.style.setProperty('--art-position', choice.desktop);
   frame.style.setProperty('--art-mobile-position', choice.mobile);
+  const [desktopX, desktopY] = choice.desktop.split(/\s+/);
+  const [mobileX, mobileY] = choice.mobile.split(/\s+/);
+  frame.style.setProperty('--art-x', desktopX);
+  frame.style.setProperty('--art-y', desktopY);
+  frame.style.setProperty('--art-mobile-x', mobileX);
+  frame.style.setProperty('--art-mobile-y', mobileY);
   const place = pool.findIndex(candidate => candidate.index === selected);
   artCount.textContent = place >= 0 ? `${place + 1}/${pool.length}` : `${selected + 1}/${ARTWORKS.length}`;
   const artPackName = REGION_PACKS[choice.pack]?.title || choice.pack;
@@ -747,9 +772,18 @@ function setup() {
           event.data?.source !== 'pti-home' || event.data?.event !== 'parallax') return;
       const requested = Number(event.data.offset);
       if (!Number.isFinite(requested)) return;
-      // A +100px art shift against -200px page travel means the panorama's
-      // visible pixels have moved only -100px: real parallax, not decoration.
-      const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : clamp(requested, 0, 110);
+      // Pan within the original image's natural cover overflow. This moves
+      // scenery slower than the page without zooming it or exposing blank edges.
+      const smallScreen = window.matchMedia('(max-width: 760px)').matches;
+      const artAnchor = Number.parseFloat(getComputedStyle(frame).getPropertyValue(smallScreen ? '--art-mobile-y' : '--art-y')) / 100;
+      const naturalWidth = artwork.naturalWidth;
+      const naturalHeight = artwork.naturalHeight;
+      const coverHeight = naturalWidth && naturalHeight
+        ? naturalHeight * Math.max(frame.clientWidth / naturalWidth, frame.clientHeight / naturalHeight)
+        : frame.clientHeight;
+      const availablePan = Math.max(0, (coverHeight - frame.clientHeight) * clamp(Number.isFinite(artAnchor) ? artAnchor : .75, 0, 1) - 1);
+      const depth = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 0 : Math.min(clamp(requested, 0, 110), availablePan);
       frame.style.setProperty('--horizon-art-shift', `${depth}px`);
       frame.style.setProperty('--horizon-cloud-shift', `${Math.round(depth * .6)}px`);
       frame.style.setProperty('--horizon-sky-shift', `${Math.round(depth * .3)}px`);

@@ -24,7 +24,12 @@ html.horizon-embed .hero-temperature{font-size:clamp(20px,2.2vw,28px)}
 html.horizon-embed .hero-conditions{margin-top:5px}
 html.horizon-embed .hero-metrics{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-top:4px;font:500 10px/1.4 "DM Sans",sans-serif;letter-spacing:.005em;color:#fffdf1e3;text-shadow:0 1px 8px #162b2688}
 html.horizon-embed .hero-metrics #visibility-readout:not([hidden]) + #moon-readout:not([hidden])::before{content:"·";padding:0 6px;color:#fff9edbd}
-html.horizon-embed .horizon-vignette{opacity:.68}
+/* Keep contrast behind the bottom captions without darkening the sky at y=0:
+   the standalone vignette's horizontal tint used to create a visible seam. */
+html.horizon-embed .horizon-vignette{
+  opacity:.68;
+  background:linear-gradient(0deg,#131d1bba 0%,#111e1670 16%,transparent 52%);
+}
 
 /* Local clock gets the visual weight; successful weather retrieval gets only
    a tiny age indicator. The area consent action stays available. */
@@ -49,19 +54,19 @@ html.horizon-embed .location-label{display:none}
 html.horizon-embed .atmospheric-readouts,html.horizon-embed .source-line{display:none!important}
 html.horizon-embed .horizon-credit{font-size:8px;bottom:9px;right:clamp(18px,3.8vw,46px);opacity:.55}
 
-/* Actual parallax: the page may travel ~220px while the image travels only
-   ~110px. Extra vertical image coverage avoids blank edges without zooming
-   the original 16:9 landscape into a cropped-up postcard. */
+/* The sky and atmosphere have overscan for depth. Artwork does not: stretching
+   its image box was forcing cover to enlarge/crop the original illustration.
+   Pan within the natural cover overflow instead, keeping its native framing. */
 html.horizon-embed .horizon-sky{
   inset:-48px 0;
   transform:translate3d(0,var(--horizon-sky-shift,0px),0);
   will-change:transform;
 }
 html.horizon-embed .daily-art{
-  inset:-110px 0 auto;
-  height:calc(100% + 220px);
-  transform:translate3d(0,var(--horizon-art-shift,0px),0);
-  will-change:transform;
+  inset:0;
+  width:100%;height:100%;
+  object-position:var(--art-x,50%) calc(var(--art-y,85%) + var(--horizon-art-shift,0px));
+  transform:none;
 }
 html.horizon-embed .cloud-haze{
   inset:-72px 0;
@@ -70,7 +75,7 @@ html.horizon-embed .cloud-haze{
 }
 html.horizon-embed .horizon-clouds{transform:translate3d(0,var(--horizon-cloud-shift,0px),0) scale(1.4);transform-origin:center}
 @media(max-width:760px){
-  html.horizon-embed .daily-art{top:-62px;height:calc(100% + 124px)}
+  html.horizon-embed .daily-art{object-position:var(--art-mobile-x,50%) calc(var(--art-mobile-y,75%) + var(--horizon-art-shift,0px))}
   html.horizon-embed .content{padding:0}
   html.horizon-embed .horizon-frame{height:194px}
   html.horizon-embed .horizon-caption{left:17px;bottom:24px;max-width:calc(100% - 122px)}

@@ -6,11 +6,16 @@
 .pti-home .hub-workspace{
   --horizon-header-height:77px;
   --horizon-sky-top:#6daece;
+  --horizon-sky-seam:#82bacf;
 }
 .pti-home .horizon-header-sky{
   height:var(--horizon-header-height);
-  background:var(--horizon-sky-top);
-  transition:background-color .6s ease;
+  /* Continue the iframe sky's first 48px rather than placing a flat colour
+     against a partially advanced gradient. The header overlays this spacer. */
+  background:linear-gradient(to bottom,
+    var(--horizon-sky-top) 0%,
+    var(--horizon-sky-top) calc(100% - 48px),
+    var(--horizon-sky-seam) 100%);
 }
 
 /* The horizon belongs to the page itself, not to its card grid. Only the
@@ -35,9 +40,10 @@
   margin-bottom:calc(-1 * var(--horizon-header-height));
   border-bottom:1px solid transparent;
   color:var(--header-ink);
-  /* At rest, only 20% sky tint: the continuation below remains visible. */
-  background:color-mix(in srgb,var(--horizon-sky-top) 20%,transparent);
-  backdrop-filter:blur(8px) saturate(1.08);
+  /* Zero paint at the top: even a 20%-opaque layer introduced a dark band.
+     The scrolled ::before layer still supplies the settled glass treatment. */
+  background:transparent;
+  backdrop-filter:none;
   box-shadow:none;
 }
 .pti-home .hub-topbar::before{

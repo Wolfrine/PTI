@@ -161,6 +161,9 @@ export class NewHomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (typeof payload.skyTop === 'string' && /^#[0-9a-fA-F]{6}$/.test(payload.skyTop)) {
         this.homeTopbar?.nativeElement.parentElement?.style.setProperty('--horizon-sky-top', payload.skyTop);
       }
+      if (typeof payload.skySeam === 'string' && /^#[0-9a-fA-F]{6}$/.test(payload.skySeam)) {
+        this.homeTopbar?.nativeElement.parentElement?.style.setProperty('--horizon-sky-seam', payload.skySeam);
+      }
       return;
     }
     if (payload.event !== 'resize' || !Number.isFinite(payload.height)) return;

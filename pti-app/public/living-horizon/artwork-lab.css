@@ -1,0 +1,61 @@
+/* Focused candidate gallery in the existing Living Horizon experiment page.
+   Absent from Home (?embed=1), ambient mode, and the normal preview. */
+.art-lab-heading,.art-lab-panel{display:none}
+.art-lab-entry{display:inline-flex;align-items:center;gap:7px;border:1px solid #e1ccbd;border-radius:20px;background:#fff5ee;color:#a55347;padding:7px 11px;white-space:nowrap;font-size:10px;font-weight:700}
+.art-lab-entry:hover{background:#ffebe0}
+.art-lab-entry span{border-radius:30px;padding:2px 5px;background:#f2d8ca;color:#97574c;font-size:8px;text-transform:uppercase;letter-spacing:.03em}
+html.horizon-art-lab{background:#fbf9f5}
+html.horizon-art-lab .app-shell{display:block}
+html.horizon-art-lab .sidebar,html.horizon-art-lab .search,html.horizon-art-lab .avatar,
+html.horizon-art-lab .hub-section,html.horizon-art-lab .pulse-section,html.horizon-art-lab .companions,
+html.horizon-art-lab .footer,html.horizon-art-lab .mobile-nav,html.horizon-art-lab .horizon-outlook,
+html.horizon-art-lab .art-lab-entry,html.horizon-art-lab .ambient-link{display:none!important}
+html.horizon-art-lab .topbar{height:65px;padding:0 clamp(18px,3vw,40px);display:flex;justify-content:space-between;gap:15px}
+html.horizon-art-lab .brand-mobile{display:inline-flex}
+html.horizon-art-lab .breadcrumb{display:block;font-size:10px;margin-left:auto}
+html.horizon-art-lab .content{max-width:1380px;padding:22px clamp(16px,3vw,40px) 40px}
+html.horizon-art-lab .art-lab-heading{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:0 1px 18px}
+.art-lab-eyebrow{font-size:9px;font-weight:800;color:#bc7565;letter-spacing:.16em}
+.art-lab-heading h2{margin:4px 0 0;font-family:"DM Serif Display",Georgia,serif;font-size:30px;line-height:1.1;font-weight:400;letter-spacing:-.035em;color:#302923}
+.art-lab-back{font-size:11px;font-weight:700;color:#9c6c63;border:1px solid #e7ded6;background:#fffcf9;border-radius:20px;padding:9px 14px;white-space:nowrap}
+.art-lab-back:hover{background:#fff1eb}
+html.horizon-art-lab .horizon-frame{height:clamp(305px,29vw,385px);border-radius:19px}
+html.horizon-art-lab .horizon-toolbar{padding:13px 2px 5px}
+html.horizon-art-lab .art-lab-panel{display:block;margin:14px 1px 0}
+.art-lab-panel-heading{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:13px}
+.art-lab-panel-heading h3{font-family:"DM Serif Display",Georgia,serif;font-size:22px;font-weight:400;letter-spacing:-.025em;margin:3px 0 0;color:#312b26}
+.art-lab-panel-actions{display:flex;align-items:center;gap:12px;font-size:11px;color:#a39082;font-weight:700;white-space:nowrap}
+.art-lab-panel-actions button{background:#fffdfa;border:1px solid #e4dbd2;border-radius:18px;color:#8b665f;font-size:10px;font-weight:700;padding:8px 11px}
+.art-lab-panel-actions button:hover{background:#fdf1e9}
+.art-lab-panel-actions button.is-selected{background:#334c43;color:white;border-color:#334c43}
+.art-lab-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:11px}
+.art-lab-option{display:flex;flex-direction:column;text-align:left;min-width:0;padding:5px;border-radius:13px;background:#fffefa;border:1.5px solid #e9e1da;box-shadow:0 2px 7px #46332306;transition:border-color .18s,box-shadow .18s,transform .18s}
+.art-lab-option:hover{border-color:#d2afa1;box-shadow:0 4px 15px #6c473514;transform:translateY(-1px)}
+.art-lab-option:focus-visible{outline:3px solid #bd6153;outline-offset:3px}
+.art-lab-option[aria-pressed="true"]{border-color:#c56e60;box-shadow:0 0 0 2px #e9ab9d66,0 4px 12px #965a4920}
+.art-lab-option-preview{display:block;position:relative;overflow:hidden;width:100%;aspect-ratio:1.9;border-radius:9px;background:linear-gradient(180deg,#6ba8c9 0%,#bad7d9 58%,#f3dabb 100%)}
+.art-lab-option-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom}
+.art-lab-option-text{display:flex;align-items:start;gap:7px;min-height:35px;padding:9px 5px 4px;color:#584e48;font-size:10px;font-weight:700;line-height:1.35}
+.art-lab-option-text b{font-size:9px;line-height:1.5;color:#bf766a;font-weight:800}
+.art-lab-option[aria-pressed="true"] .art-lab-option-text{color:#a95449}
+html.horizon-art-lab .scene-lab{margin-top:17px}
+@media(max-width:1050px){.art-lab-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:700px){
+  html.horizon-art-lab .topbar{height:54px;padding:0 16px}
+  html.horizon-art-lab .topbar .brand-mobile strong{font-size:23px}
+  html.horizon-art-lab .breadcrumb{font-size:8px;letter-spacing:.1em}
+  html.horizon-art-lab .content{padding:18px 14px 36px}
+  html.horizon-art-lab .art-lab-heading{align-items:center;margin-bottom:15px}
+  .art-lab-heading h2{font-size:24px}
+  .art-lab-back{font-size:9px;padding:8px 9px}
+  html.horizon-art-lab .horizon-frame{height:clamp(230px,63vw,280px)}
+  html.horizon-art-lab .horizon-toolbar{gap:8px;flex-wrap:wrap}
+  .art-lab-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .art-lab-option-text{font-size:9px;padding:7px 3px 3px;min-height:37px}
+  .art-lab-option-text b{font-size:8px}
+  .art-lab-panel-heading h3{font-size:20px}
+  .art-lab-panel-actions{gap:6px;font-size:9px}
+  .art-lab-panel-actions button{font-size:9px;padding:7px 8px}
+}
+@media(max-width:390px){.art-lab-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.art-lab-panel-heading{align-items:center}.art-lab-panel-heading h3{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.art-lab-option{transition:none}}

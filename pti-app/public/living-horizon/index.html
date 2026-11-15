@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#fbf9f5">
   <meta name="description" content="An isolated public-safe concept preview for PTI's living, time- and weather-responsive horizon.">
   <title>PTI — Living Horizon Preview</title>
-  <script>const horizonView=new URLSearchParams(location.search);if(horizonView.get('embed')==='1')document.documentElement.classList.add('horizon-embed');else if(horizonView.get('ambient')==='1')document.documentElement.classList.add('horizon-ambient')</script>
+  <script>const horizonView=new URLSearchParams(location.search);if(horizonView.get('embed')==='1')document.documentElement.classList.add('horizon-embed');else if(horizonView.get('ambient')==='1')document.documentElement.classList.add('horizon-ambient');else if(horizonView.get('art-lab')==='1')document.documentElement.classList.add('horizon-art-lab')</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./clouds.css?v=horizon-r9-20261115">
   <link rel="stylesheet" href="./rain-effects.css?v=horizon-r9-20261115">
   <link rel="stylesheet" href="./embed.css?v=horizon-r9-20261115">
+  <link rel="stylesheet" href="./artwork-lab.css?v=art-lab-1-20261115">
 </head>
 <body>
   <main class="app-shell">
@@ -37,6 +38,10 @@
       </header>
 
       <div class="content">
+        <div class="art-lab-heading">
+          <div><span class="art-lab-eyebrow">LIVING HORIZON · VISUAL EXPERIMENT</span><h2>Artwork studies</h2></div>
+          <a class="art-lab-back" href="./index.html">← Back to preview</a>
+        </div>
         <section class="living-section" aria-label="Living horizon weather preview">
           <div class="horizon-frame" id="horizon-frame" data-phase="day" data-weather="clear" data-sun-visible="false" data-moon-visible="false">
             <div class="horizon-sky"></div>
@@ -82,11 +87,19 @@
               <button type="button" data-mode="night" aria-pressed="false">Night</button>
             </div>
             <div class="horizon-actions">
+              <a class="art-lab-entry" href="./index.html?art-lab=1">✦ Artwork lab <span>12 new</span></a>
               <a class="ambient-link" href="./index.html?ambient=1" title="Display the living horizon full-screen on your TV or monitor">◫ Display view</a>
               <button type="button" class="art-button" id="next-art" title="Explore another artistic landscape">✧ Art <span id="art-count">1/6</span></button>
               <button type="button" class="location-button" id="use-location" title="With permission, use an approximately 1 km area for weather and broad landscape classification. Precise GPS is not saved."><span class="location-icon" aria-hidden="true">⌖</span> My area</button>
             </div>
           </div>
+          <section class="art-lab-panel" id="art-lab-panel" aria-labelledby="art-lab-title">
+            <div class="art-lab-panel-heading">
+              <div><span class="art-lab-eyebrow">SELECT A FOREGROUND</span><h3 id="art-lab-title">Twelve new landscapes</h3></div>
+              <div class="art-lab-panel-actions"><span id="art-lab-selection" aria-live="polite">09 / 12</span><button type="button" id="art-lab-original">↶ Original artwork</button></div>
+            </div>
+            <div class="art-lab-grid" id="art-lab-grid" role="group" aria-label="Choose a landscape to preview against the live sky"></div>
+          </section>
           <div class="atmospheric-readouts" aria-label="Environmental readings">
             <span id="visibility-readout" hidden></span>
             <span id="moon-readout" hidden></span>
@@ -175,6 +188,6 @@
     <nav class="mobile-nav" aria-label="Preview mobile navigation"><a href="#top" class="active"><span aria-hidden="true">⌂</span>Home</a><a href="#pinned"><span aria-hidden="true">▦</span>Apps</a><a href="#pulse"><span aria-hidden="true">⌕</span>Search</a></nav>
   </main>
   <script src="./vendor/suncalc.js?v=1.9.0"></script>
-  <script type="module" src="./main.js?v=horizon-r9-20261115"></script>
+  <script type="module" src="./main.js?v=art-lab-1-20261115"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@ import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName, celestialAppearance,
 } from './environment.js?v=horizon-r8-20261115';
+import { EXPERIMENTAL_ARTWORKS } from './artwork-experiments.js?v=art-lab-1-20261115';
 import {
   REGION_PACKS, resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
 } from './landscape-regions.js?v=horizon-r7-20261113';
@@ -32,6 +33,7 @@ const heroKicker = document.querySelector('#hero-kicker');
 const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
 const isHomeEmbed = document.documentElement.classList.contains('horizon-embed');
+const isArtworkLab = document.documentElement.classList.contains('horizon-art-lab');
 const homeClockButton = document.querySelector('#home-weather-clock');
 const homeClock = document.querySelector('#home-local-time');
 const homeRefreshStatus = document.querySelector('#home-refresh-status');
@@ -46,6 +48,9 @@ const sourceLine = document.querySelector('#source-line');
 const artwork = document.querySelector('#artwork');
 const artButton = document.querySelector('#next-art');
 const artCount = document.querySelector('#art-count');
+const artLabGrid = document.querySelector('#art-lab-grid');
+const artLabOriginal = document.querySelector('#art-lab-original');
+const artLabSelection = document.querySelector('#art-lab-selection');
 const atmosphericReadouts = document.querySelector('.atmospheric-readouts');
 const visibilityReadout = document.querySelector('#visibility-readout');
 const moonReadout = document.querySelector('#moon-readout');
@@ -70,6 +75,7 @@ let lastObservationFetch = 0;
 let currentArea = { latitude: COARSE_LOCATION.latitude, longitude: COARSE_LOCATION.longitude, cache: true, label: COARSE_LOCATION.name };
 let placeProfile = classifyLandscape(COARSE_LOCATION.name);
 let artIndex = -1;
+let experimentalArtIndex = -1;
 let artOverride = null;
 let artOverrideDay = null;
 let renderedDay = '';
@@ -240,8 +246,13 @@ function environmentTimeZone() { return liveWeather?.timezone || 'Asia/Kolkata';
 // independent of each source painting's skyline and the viewport's aspect.
 // Isolated decorative trees still rise naturally into the sky. No scaling or
 // distortion is applied to any artwork.
+function displayedArtwork() {
+  return isArtworkLab && experimentalArtIndex >= 0
+    ? EXPERIMENTAL_ARTWORKS[experimentalArtIndex] : ARTWORKS[artIndex];
+}
+
 function positionArtwork() {
-  const art = ARTWORKS[artIndex];
+  const art = displayedArtwork();
   const width = frame.clientWidth;
   const height = frame.clientHeight;
   if (!art || !width || !height || !artwork.naturalWidth || !artwork.naturalHeight) return;
@@ -257,7 +268,7 @@ function positionArtwork() {
 }
 
 function updateArtworkSource() {
-  const art = ARTWORKS[artIndex];
+  const art = displayedArtwork();
   if (!art) return;
   // Compact cards use a purpose-composed panoramic painting. Portrait/TV
   // scenes retain the complete original 16:9 art and its foreground details.
@@ -266,7 +277,7 @@ function updateArtworkSource() {
   if (artwork.dataset.file !== file) {
     artwork.dataset.file = file;
     artwork.dataset.wide = String(wide);
-    artwork.src = '../assets/images/living-horizon/' + file;
+    artwork.src = '../assets/images/living-horizon/' + (art.experimental ? 'experiments/' : '') + file;
   }
   positionArtwork();
 }
@@ -285,6 +296,9 @@ function updateDailyArt() {
     : regionalArtworkIndex(new Date(), timezone, placeProfile);
   if (selected === artIndex) return;
   artIndex = selected;
+  // Candidate previews override only the visible art. The regional selector
+  // still updates in the background, so exiting the lab restores today's art.
+  if (isArtworkLab && experimentalArtIndex >= 0) return;
   const choice = ARTWORKS[selected];
   frame.dataset.art = choice.id;
   updateArtworkSource();
@@ -297,7 +311,78 @@ function updateDailyArt() {
   artButton.setAttribute('aria-label', artButton.title);
 }
 
+function selectExperimentalArtwork(index, updateURL = true) {
+  if (!isArtworkLab) return;
+  experimentalArtIndex = index >= 0 && index < EXPERIMENTAL_ARTWORKS.length ? index : -1;
+  const art = displayedArtwork();
+  if (!art) return;
+  frame.dataset.art = art.experimental ? `experiment-${art.id}` : art.id;
+  updateArtworkSource();
+  if (art.experimental) {
+    artCount.textContent = `${experimentalArtIndex + 1}/${EXPERIMENTAL_ARTWORKS.length}`;
+    artButton.title = `${art.name} · candidate study · click for the next experimental landscape`;
+    artLabSelection.textContent = `${art.id} / ${EXPERIMENTAL_ARTWORKS.length}`;
+  } else {
+    const pool = eligibleArtwork(placeProfile);
+    const position = pool.findIndex(candidate => candidate.index === artIndex);
+    artCount.textContent = position >= 0 ? `${position + 1}/${pool.length}` : `${artIndex + 1}/${ARTWORKS.length}`;
+    artButton.title = `${art.name} · approved regional artwork`;
+    artLabSelection.textContent = 'Original';
+  }
+  artButton.setAttribute('aria-label', artButton.title);
+  artLabOriginal.classList.toggle('is-selected', experimentalArtIndex < 0);
+  artLabOriginal.setAttribute('aria-pressed', String(experimentalArtIndex < 0));
+  for (const button of artLabGrid.querySelectorAll('[data-experiment]')) {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.experiment) === experimentalArtIndex));
+  }
+  if (updateURL) {
+    const url = new URL(window.location.href);
+    if (experimentalArtIndex >= 0) url.searchParams.set('art', art.id);
+    else url.searchParams.delete('art');
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+}
+
+function setupArtworkLab() {
+  if (!isArtworkLab) return;
+  document.querySelector('.breadcrumb').textContent = 'LIVING HORIZON / ARTWORK LAB';
+  for (const [index, art] of EXPERIMENTAL_ARTWORKS.entries()) {
+    const button = document.createElement('button');
+    button.className = 'art-lab-option';
+    button.type = 'button';
+    button.dataset.experiment = String(index);
+    button.setAttribute('aria-label', `Preview ${art.id}: ${art.name}`);
+    button.setAttribute('aria-pressed', 'false');
+    const preview = document.createElement('span');
+    preview.className = 'art-lab-option-preview';
+    const image = document.createElement('img');
+    image.src = `../assets/images/living-horizon/experiments/${art.file}`;
+    image.alt = '';
+    image.loading = index < 6 ? 'eager' : 'lazy';
+    image.decoding = 'async';
+    preview.appendChild(image);
+    const label = document.createElement('span');
+    label.className = 'art-lab-option-text';
+    const count = document.createElement('b');
+    count.textContent = art.id;
+    const name = document.createElement('span');
+    name.textContent = art.name;
+    label.append(count, name);
+    button.append(preview, label);
+    button.addEventListener('click', () => selectExperimentalArtwork(index));
+    artLabGrid.appendChild(button);
+  }
+  artLabOriginal.addEventListener('click', () => selectExperimentalArtwork(-1));
+  const requested = new URL(window.location.href).searchParams.get('art');
+  const initial = requested === 'original' ? -1 : Math.max(0, EXPERIMENTAL_ARTWORKS.findIndex(art => art.id === requested));
+  selectExperimentalArtwork(requested === null ? 8 : initial, false);
+}
+
 function advanceArtwork() {
+  if (isArtworkLab && experimentalArtIndex >= 0) {
+    selectExperimentalArtwork((experimentalArtIndex + 1) % EXPERIMENTAL_ARTWORKS.length);
+    return;
+  }
   const candidates = activeMode === 'live'
     ? eligibleArtwork(placeProfile).map(entry => entry.index)
     : ARTWORKS.map((_, index) => index);
@@ -399,10 +484,13 @@ function syncStudio() {
   document.querySelector('#sim-pollution-value').textContent = simulation.pollution + '%';
   document.querySelector('#sim-temperature-value').textContent = simulation.temperature + '°C';
   const currentArt = ARTWORKS[simulation.art - 1] || ARTWORKS[0];
-  document.querySelector('#sim-art-value').textContent = currentArt.name;
+  const candidate = displayedArtwork()?.experimental ? displayedArtwork() : null;
+  document.querySelector('#sim-art-value').textContent = candidate ? `${candidate.name} · study` : currentArt.name;
   const matchCount = artworkFit(currentArt, simulation);
   const unmatched = LANDSCAPE_AXES.filter(axis => !currentArt[axis]?.includes(simulation[axis]));
-  studioGeographyNote.textContent = matchCount === 4
+  studioGeographyNote.textContent = candidate
+    ? `${candidate.name} is a visual study. Regional matching still uses the original approved artwork collection.`
+    : matchCount === 4
     ? `${currentArt.name} · ${currentArt.pack.replaceAll('-', ' ')}. All four selected landscape categories are represented artistically.`
     : `${currentArt.name} reflects ${matchCount}/4 categories. ${unmatched.join(', ')} ${unmatched.length === 1 ? 'is' : 'are'} not represented by this painting; explore another combination or art treatment.`;
   const selected = zonedDate(simulation.date, simulation.minutes, environmentTimeZone());
@@ -616,6 +704,9 @@ function renderForecast() {
 function setCustomSimulation(input) {
   if (!simulation || activeMode === 'live') simulation = createSimulation();
   const key = input.dataset.sim;
+  if (isArtworkLab && (key === 'art' || LANDSCAPE_AXES.includes(key)) && experimentalArtIndex >= 0) {
+    selectExperimentalArtwork(-1);
+  }
   if (input.type === 'checkbox') simulation[key] = input.checked;
   else if (input.type === 'range') simulation[key] = Number(input.value);
   else if (input.value) simulation[key] = input.value;
@@ -848,6 +939,7 @@ function setup() {
   });
   studioInputs.forEach(input => input.addEventListener(input.type === 'range' ? 'input' : 'change', () => setCustomSimulation(input)));
   document.querySelector('#sim-reset-live').addEventListener('click', () => {
+    if (isArtworkLab) selectExperimentalArtwork(-1);
     artOverride = null;
     artOverrideDay = null;
     artIndex = -1;
@@ -862,6 +954,7 @@ function setup() {
   activeMode = 'live';
   if (!isHomeEmbed && PRESETS[initialMode]) setMode(initialMode);
   else renderMode();
+  setupArtworkLab();
   if (isHomeEmbed || isAmbient) tickHomeClock();
   void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
   // Refresh only while the live scene is visible, at most once per 15 minutes.

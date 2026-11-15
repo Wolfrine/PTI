@@ -2,22 +2,22 @@
 // Astronomy is calculated on-device with pinned, BSD-licensed SunCalc v1.9.0.
 
 export const ARTWORKS = Object.freeze([
-  { id: 'gouache', name: 'Atelier gouache', pack: 'coastal-foothill', file: 'horizon-gouache.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast'], desktop: '50% 87%', mobile: '50% 75%' },
-  { id: 'modernist', name: 'Modernist terrace', pack: 'coastal-foothill', file: 'horizon-modernist.webp', settlement: ['city'], relief: ['hills'], water: ['none'], vegetation: ['urban'], terrain: ['hills', 'coast'], desktop: '50% 88%', mobile: '50% 75%' },
-  { id: 'ink', name: 'Ink and mineral wash', pack: 'coastal-foothill', file: 'horizon-ink.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast', 'river'], vegetation: ['urban', 'forest'], terrain: ['hills', 'coast', 'river'], desktop: '50% 86%', mobile: '50% 76%' },
-  { id: 'paper', name: 'Cut-paper relief', pack: 'coastal-foothill', file: 'horizon-paper.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast', 'river'], vegetation: ['urban'], terrain: ['hills', 'coast', 'river'], desktop: '50% 88%', mobile: '50% 78%' },
-  { id: 'screenprint', name: 'Coral screenprint', pack: 'coastal-foothill', file: 'horizon-screenprint.webp', settlement: ['city'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast'], desktop: '50% 84%', mobile: '50% 73%' },
-  { id: 'vellum', name: 'Luminous vellum', pack: 'coastal-foothill', file: 'horizon-vellum.webp', settlement: ['village', 'town', 'city'], relief: ['hills'], water: ['river', 'coast'], vegetation: ['forest', 'grassland'], terrain: ['hills', 'coast', 'river'], desktop: '50% 85%', mobile: '50% 75%' },
+  { id: 'gouache', name: 'Atelier gouache', pack: 'coastal-foothill', file: 'horizon-gouache.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast'], ridgeY: .744 },
+  { id: 'modernist', name: 'Modernist terrace', pack: 'coastal-foothill', file: 'horizon-modernist.webp', wideFile: 'horizon-modernist-wide.webp', wideRidgeY: .763, settlement: ['city'], relief: ['hills'], water: ['none'], vegetation: ['urban'], terrain: ['hills', 'coast'], ridgeY: .756 },
+  { id: 'ink', name: 'Ink and mineral wash', pack: 'coastal-foothill', file: 'horizon-ink.webp', wideFile: 'horizon-ink-wide.webp', wideRidgeY: .769, settlement: ['city', 'town'], relief: ['hills'], water: ['coast', 'river'], vegetation: ['urban', 'forest'], terrain: ['hills', 'coast', 'river'], ridgeY: .678 },
+  { id: 'paper', name: 'Cut-paper relief', pack: 'coastal-foothill', file: 'horizon-paper.webp', wideFile: 'horizon-paper-wide.webp', wideRidgeY: .731, settlement: ['city', 'town'], relief: ['hills'], water: ['coast', 'river'], vegetation: ['urban'], terrain: ['hills', 'coast', 'river'], ridgeY: .544 },
+  { id: 'screenprint', name: 'Coral screenprint', pack: 'coastal-foothill', file: 'horizon-screenprint.webp', wideFile: 'horizon-screenprint-wide.webp', wideRidgeY: .695, settlement: ['city'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast'], ridgeY: .578 },
+  { id: 'vellum', name: 'Luminous vellum', pack: 'coastal-foothill', file: 'horizon-vellum.webp', wideFile: 'horizon-vellum-wide.webp', wideRidgeY: .671, settlement: ['village', 'town', 'city'], relief: ['hills'], water: ['river', 'coast'], vegetation: ['forest', 'grassland'], terrain: ['hills', 'coast', 'river'], ridgeY: .522 },
   // New representative geographic art packs; two original styles per pack.
   // These are illustrations of landscape types, never photographic claims of a GPS position.
-  { id: 'himalaya-botanical', name: 'Himalayan botanical wash', pack: 'himalayan-highland', file: 'horizon-himalaya-botanical.webp', settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['lake', 'river'], vegetation: ['forest'], terrain: ['mountains', 'river', 'forest'], desktop: '50% 84%', mobile: '50% 73%' },
-  { id: 'himalaya-woodblock', name: 'Himalayan woodblock', pack: 'himalayan-highland', file: 'horizon-himalaya-woodblock.webp', settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['river'], vegetation: ['forest'], terrain: ['mountains', 'river', 'forest'], desktop: '50% 85%', mobile: '50% 73%' },
-  { id: 'riverplain-screenprint', name: 'River plain screenprint', pack: 'river-plain', file: 'horizon-riverplain-screenprint.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain'], water: ['river'], vegetation: ['grassland'], terrain: ['plain', 'river', 'grassland'], desktop: '50% 85%', mobile: '50% 73%' },
-  { id: 'riverplain-vellum', name: 'River plain vellum', pack: 'river-plain', file: 'horizon-riverplain-vellum.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain'], water: ['river'], vegetation: ['grassland'], terrain: ['plain', 'river', 'grassland'], desktop: '50% 86%', mobile: '50% 74%' },
-  { id: 'ghats-paper', name: 'Western Ghats paper wash', pack: 'western-ghats', file: 'horizon-ghats-paper.webp', settlement: ['village', 'town', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'], desktop: '50% 85%', mobile: '50% 73%' },
-  { id: 'ghats-woodblock', name: 'Western Ghats woodblock', pack: 'western-ghats', file: 'horizon-ghats-woodblock.webp', settlement: ['village', 'town', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'], desktop: '50% 85%', mobile: '50% 73%' },
-  { id: 'konkan-watercolor', name: 'Konkan coastal watercolor', pack: 'tropical-coast', file: 'horizon-konkan-watercolor.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], desktop: '50% 85%', mobile: '50% 72%' },
-  { id: 'konkan-poster', name: 'Konkan coastal poster', pack: 'tropical-coast', file: 'horizon-konkan-poster.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], desktop: '50% 85%', mobile: '50% 72%' },
+  { id: 'himalaya-botanical', name: 'Himalayan botanical wash', pack: 'himalayan-highland', file: 'horizon-himalaya-botanical.webp', wideFile: 'horizon-himalaya-botanical-wide.webp', wideRidgeY: .706, settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['lake', 'river'], vegetation: ['forest'], terrain: ['mountains', 'river', 'forest'], ridgeY: .533 },
+  { id: 'himalaya-woodblock', name: 'Himalayan woodblock', pack: 'himalayan-highland', file: 'horizon-himalaya-woodblock.webp', wideFile: 'horizon-himalaya-woodblock-wide.webp', wideRidgeY: .677, settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['river'], vegetation: ['forest'], terrain: ['mountains', 'river', 'forest'], ridgeY: .444 },
+  { id: 'riverplain-screenprint', name: 'River plain screenprint', pack: 'river-plain', file: 'horizon-riverplain-screenprint.webp', wideFile: 'horizon-riverplain-screenprint-wide.webp', wideRidgeY: .779, settlement: ['village', 'town', 'wilderness'], relief: ['plain'], water: ['river'], vegetation: ['grassland'], terrain: ['plain', 'river', 'grassland'], ridgeY: .511 },
+  { id: 'riverplain-vellum', name: 'River plain vellum', pack: 'river-plain', file: 'horizon-riverplain-vellum.webp', wideFile: 'horizon-riverplain-vellum-wide.webp', wideRidgeY: .727, settlement: ['village', 'town', 'wilderness'], relief: ['plain'], water: ['river'], vegetation: ['grassland'], terrain: ['plain', 'river', 'grassland'], ridgeY: .556 },
+  { id: 'ghats-paper', name: 'Western Ghats paper wash', pack: 'western-ghats', file: 'horizon-ghats-paper.webp', wideFile: 'horizon-ghats-paper-wide.webp', wideRidgeY: .745, settlement: ['village', 'town', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'], ridgeY: .522 },
+  { id: 'ghats-woodblock', name: 'Western Ghats woodblock', pack: 'western-ghats', file: 'horizon-ghats-woodblock.webp', wideFile: 'horizon-ghats-woodblock-wide.webp', wideRidgeY: .727, settlement: ['village', 'town', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'], ridgeY: .500 },
+  { id: 'konkan-watercolor', name: 'Konkan coastal watercolor', pack: 'tropical-coast', file: 'horizon-konkan-watercolor.webp', wideFile: 'horizon-konkan-watercolor-wide.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], ridgeY: .478, wideRidgeY: .707 },
+  { id: 'konkan-poster', name: 'Konkan coastal poster', pack: 'tropical-coast', file: 'horizon-konkan-poster.webp', wideFile: 'horizon-konkan-poster-wide.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], ridgeY: .489, wideRidgeY: .666 },
 ]);
 
 export const LANDSCAPE_DIMENSIONS = Object.freeze({
@@ -187,15 +187,43 @@ export function formatLocalTime(date, timezone) {
   return new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
 }
 
-// Small sphere shading accurately represents new, waxing, full, waning phases.
+// The Sun should remain the dominant disc. The illuminated Moon is legible at
+// night but recedes naturally in a bright sky instead of competing with it.
+// These are visual weights, not measurements of lunar surface luminance.
+export function celestialAppearance(sun, moon, illumination) {
+  const sunAltitude = Number.isFinite(sun?.altitude) ? sun.altitude : -90;
+  const fraction = Number.isFinite(illumination?.fraction) ? illumination.fraction : 0;
+  const sunVisible = Boolean(sun?.visible);
+  const moonVisible = Boolean(moon?.visible) && fraction > .025;
+  // Atmospheric dawn already reduces lunar contrast. When both discs are in
+  // the visible sky, the Moon stays notably quieter even at the solar horizon.
+  const twilight = clamp((sunAltitude + 6) / 6, 0, 1);
+  const fullDay = clamp(sunAltitude / 12, 0, 1);
+  const soften = t => t * t * (3 - 2 * t);
+  const moonOpacity = moonVisible ? .9 - .55 * soften(twilight) - .20 * soften(fullDay) : 0;
+  return {
+    sunVisible,
+    moonVisible,
+    moonOpacity,
+    moonHaloOpacity: moonVisible ? moonOpacity * .47 : 0,
+    // A roughly 2:1 apparent diameter makes the Sun read as the principal
+    // light source in this illustrative panorama, not as angular-size data.
+    sunDiameter: 52,
+    moonDiameter: 26,
+  };
+}
+
+// Paint only the illuminated lunar surface. A fully transparent unlit half
+// avoids the charcoal circle/rim seen when the dark hemisphere is painted.
+// High-resolution antialiasing keeps the terminator smooth at 26 CSS pixels.
 export function paintMoon(canvas, phase) {
   if (!canvas) return;
   const context = canvas.getContext('2d');
   if (!context) return;
-  const size = 80;
+  const size = 160;
   canvas.width = canvas.height = size;
   const pixels = context.createImageData(size, size);
-  const angle = 2 * PI * phase;
+  const angle = 2 * PI * (((Number(phase) || 0) % 1 + 1) % 1);
   const lightX = Math.sin(angle);
   const lightZ = -Math.cos(angle);
   for (let y = 0; y < size; y++) {
@@ -205,16 +233,18 @@ export function paintMoon(canvas, phase) {
       const radius2 = px * px + py * py;
       if (radius2 >= 1) continue;
       const z = Math.sqrt(1 - radius2);
-      const lit = clamp((px * lightX + z * lightZ) * 14 + .5, 0, 1);
-      const edge = clamp((1 - Math.sqrt(radius2)) * 23, 0, 1);
+      const incident = px * lightX + z * lightZ;
+      const lit = clamp((incident + .018) / .042, 0, 1);
+      const limb = clamp((1 - Math.sqrt(radius2)) * 100, 0, 1);
       const offset = (y * size + x) * 4;
-      const lunarTexture = Math.sin(x * 1.4 + y * .7) * 3;
-      pixels.data[offset] = Math.round((62 + 181 * lit + lunarTexture) * edge);
-      pixels.data[offset + 1] = Math.round((77 + 166 * lit + lunarTexture) * edge);
-      pixels.data[offset + 2] = Math.round((92 + 146 * lit + lunarTexture) * edge);
-      // An unlit moon should almost disappear into the sky, rather than
-      // rendering as a conspicuous charcoal circle in broad daylight.
-      pixels.data[offset + 3] = Math.round((4 + 251 * lit) * edge);
+      // Very low-contrast mineral variation suggests surface texture without
+      // producing craters that resemble artifacts at dashboard scale.
+      const grain = Math.sin(x * .19 + y * .12) * Math.sin(x * .051 - y * .093) * 5;
+      const brightness = .91 + .09 * Math.max(0, z);
+      pixels.data[offset] = Math.round(clamp((247 + grain) * brightness, 0, 255));
+      pixels.data[offset + 1] = Math.round(clamp((247 + grain) * brightness, 0, 255));
+      pixels.data[offset + 2] = Math.round(clamp((240 + grain) * brightness, 0, 255));
+      pixels.data[offset + 3] = Math.round(253 * limb * lit);
     }
   }
   context.putImageData(pixels, 0, 0);

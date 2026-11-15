@@ -157,6 +157,14 @@ export function createCloudSystem(canvas, frame) {
   if(!canvas || !frame) return {update(){},destroy(){}};
   const context=canvas.getContext('2d',{alpha:true});
   if(!context) return {update(){},destroy(){}};
+  // A restrained shadow belongs on the hills, not on the sky. This stays a
+  // composited CSS layer above the transparent artwork; no extra paint loop.
+  const hillShadows=document.createElement('div');
+  hillShadows.className='horizon-cloud-shadows';
+  hillShadows.setAttribute('aria-hidden','true');
+  const artwork=frame.querySelector('.daily-art');
+  if(artwork)artwork.after(hillShadows);
+  else frame.append(hillShadows);
   const specs=cloudSpecs();
   const sprites=new Map();
   let width=0,height=0,pxRatio=1;
@@ -164,7 +172,7 @@ export function createCloudSystem(canvas, frame) {
   let running=true,visible=true,lastFrame=0,elapsed=0,raf=0;
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
   const io=typeof IntersectionObserver==='function'
-    ?new IntersectionObserver(([entry])=>{visible=entry.isIntersecting; if(visible) start();}, {threshold:.02})
+    ?new IntersectionObserver(([entry])=>{visible=entry.isIntersecting; if(visible) start(); else hillShadows.style.animationPlayState='paused';}, {threshold:.02})
     :null;
   io?.observe(frame);
   const resize=typeof ResizeObserver==='function'
@@ -253,9 +261,10 @@ export function createCloudSystem(canvas, frame) {
     window.cancelAnimationFrame(raf);
     raf=0;lastFrame=0;
     draw();
+    hillShadows.style.animationPlayState=visible&&!document.hidden&&!reduced.matches?'running':'paused';
     if(visible && !reduced.matches && !document.hidden)raf=window.requestAnimationFrame(animate);
   }
-  function onVisibility(){if(!document.hidden)start();}
+  function onVisibility(){if(!document.hidden)start(); else hillShadows.style.animationPlayState='paused';}
   function onMotion(){start();}
   document.addEventListener('visibilitychange',onVisibility);
   reduced.addEventListener?.('change',onMotion);
@@ -270,6 +279,11 @@ export function createCloudSystem(canvas, frame) {
       if(next.weather!==current.weather||next.phase!==current.phase||
         (next.sunX<50)!==(current.sunX<50)||Math.floor(next.sunY/20)!==Math.floor(current.sunY/20))sprites.clear();
       current=next;
+      const exposedSun=!['night'].includes(next.phase)&&!['rain','storm','overcast','fog'].includes(next.weather);
+      const light=clamp((88-next.sunY)/75,.20,1);
+      const shade=exposedSun?clamp((next.cover-14)/85,0,1)*.21*light:0;
+      frame.style.setProperty('--land-shadow-opacity',shade.toFixed(3));
+      frame.style.setProperty('--land-shadow-duration',`${Math.round(clamp(170-next.wind*1.4,55,170))}s`);
       start();
     },
     destroy(){
@@ -277,6 +291,9 @@ export function createCloudSystem(canvas, frame) {
       document.removeEventListener('visibilitychange',onVisibility);
       reduced.removeEventListener?.('change',onMotion);
       io?.disconnect();resize?.disconnect();sprites.clear();
+      hillShadows.remove();
+      frame.style.removeProperty('--land-shadow-opacity');
+      frame.style.removeProperty('--land-shadow-duration');
     },
   };
 }

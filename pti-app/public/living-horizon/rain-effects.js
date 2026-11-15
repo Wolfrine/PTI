@@ -12,10 +12,12 @@ function randomSource(seed) {
   };
 }
 
+// Short strokes at several distances read as falling water. Long, uniformly
+// bright white lines made the former heavy-rain scene resemble an overlay.
 const DEPTHS = [
-  { name: 'distant', share: .52, velocity: 170, length: 13, width: .78, opacity: .42 },
-  { name: 'middle', share: .32, velocity: 295, length: 26, width: 1.05, opacity: .62 },
-  { name: 'near', share: .16, velocity: 455, length: 41, width: 1.45, opacity: .86 },
+  { name: 'distant', share: .53, velocity: 150, length: 5, width: .55, opacity: .28 },
+  { name: 'middle', share: .34, velocity: 275, length: 11, width: .80, opacity: .48 },
+  { name: 'near', share: .13, velocity: 420, length: 22, width: 1.12, opacity: .67 },
 ];
 
 /**
@@ -35,9 +37,21 @@ export function createRainSystem(canvas, frame) {
   if (!context) return { update() {}, destroy() {} };
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Rain behind the transparent landscape gives distant showers actual scene
+  // depth. Only middle/near drops cross the painted foreground.
+  const backdrop = document.createElement('canvas');
+  backdrop.className = 'horizon-rain-distance';
+  backdrop.setAttribute('aria-hidden', 'true');
+  const artwork = frame.querySelector('.daily-art');
+  frame.insertBefore(backdrop, artwork || canvas);
+  const backdropContext = backdrop.getContext('2d', { alpha: true });
+  const sheen = document.createElement('div');
+  sheen.className = 'horizon-wet-sheen';
+  sheen.setAttribute('aria-hidden', 'true');
   const mist = document.createElement('div');
   mist.className = 'horizon-rain-mist';
   mist.setAttribute('aria-hidden', 'true');
+  frame.insertBefore(sheen, canvas);
   frame.insertBefore(mist, canvas);
   frame.classList.add('has-rain-system');
 
@@ -67,16 +81,21 @@ export function createRainSystem(canvas, frame) {
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);
     context.setTransform(scale, 0, 0, scale, 0, 0);
+    if (backdropContext) {
+      backdrop.width = canvas.width;
+      backdrop.height = canvas.height;
+      backdropContext.setTransform(scale, 0, 0, scale, 0, 0);
+    }
     const random = randomSource(0x71a1a31);
-    // Enough spatial detail to read as rainfall even on a wide TV; cap work.
-    const total = Math.round(clamp(width * .42, 115, 560));
+    // Denser shorter drops replace fewer high-contrast slashes; cap work on TV.
+    const total = Math.round(clamp(width * .52, 135, 650));
     groups = DEPTHS.map((depth) => {
       const length = Math.round(total * depth.share);
       const particles = Array.from({ length }, () => ({
         x: random() * (width + 70) - 35,
         y: random() * (height + 80) - 40,
         variance: .76 + random() * .59,
-        stroke: .76 + random() * .41,
+        stroke: .46 + random() * .89,
         drift: .7 + random() * .55,
       }));
       return { ...depth, particles };
@@ -101,34 +120,30 @@ export function createRainSystem(canvas, frame) {
     }
   }
 
-  function paintBand(group, power) {
+  function paintBand(group, power, target = context) {
     const night = state.phase === 'night';
     const storm = state.storm;
-    const slant = .10 + clamp(state.wind, 0, 80) * .0096;
-    const lengthScale = .70 + power * .50;
+    const slant = .06 + clamp(state.wind, 0, 80) * .011;
+    // Rainfall changes density much more than the visual length of a streak.
+    const lengthScale = .87 + power * .16;
     const activeCount = Math.round(group.particles.length * (.23 + power * .77));
 
-    context.save();
-    context.lineCap = 'round';
-    context.lineWidth = group.width * (storm ? 1.12 : 1);
-    context.strokeStyle = group.name === 'distant' ? '#7c9fa8'
-      : group.name === 'middle' ? '#d6e9ec' : '#f6fcf8';
-    if (night) context.strokeStyle = group.name === 'distant' ? '#9ab8ca' : '#e4f0fa';
-    if (group.name === 'near') {
-      context.shadowColor = night ? '#9aafc3a0' : '#e7f5f4b2';
-      context.shadowBlur = storm ? 2.8 : 1.8;
-    }
+    target.save();
+    target.lineCap = 'round';
+    target.lineWidth = group.width * (storm ? 1.07 : 1);
+    target.strokeStyle = group.name === 'distant' ? '#869ca2'
+      : group.name === 'middle' ? '#b6cdd3' : '#dae7e6';
+    if (night) target.strokeStyle = group.name === 'distant' ? '#899bac' : '#c0d1dc';
     for (let i = 0; i < activeCount; i++) {
       const particle = group.particles[i];
       const length = group.length * particle.stroke * lengthScale;
-      const shimmer = .82 + .18 * Math.sin(elapsed * .002 + i * 7.3);
-      context.globalAlpha = clamp(group.opacity * (.42 + power * .78) * shimmer, .03, .92);
-      context.beginPath();
-      context.moveTo(particle.x, particle.y);
-      context.lineTo(particle.x - length * slant, particle.y + length);
-      context.stroke();
+      target.globalAlpha = clamp(group.opacity * (.45 + power * .75) * particle.drift, .025, .84);
+      target.beginPath();
+      target.moveTo(particle.x, particle.y);
+      target.lineTo(particle.x - length * slant, particle.y + length);
+      target.stroke();
     }
-    context.restore();
+    target.restore();
   }
 
   function paintWaterRipples(power) {
@@ -159,19 +174,21 @@ export function createRainSystem(canvas, frame) {
 
   function draw() {
     context.clearRect(0, 0, width, height);
+    backdropContext?.clearRect(0, 0, width, height);
     if (!state.active || state.intensity <= 0) return;
     const power = density();
     // The distant veil is a nearly imperceptible tint, not a tinted rectangle.
     // It communicates moisture in the air behind bright foreground streaks.
-    const curtain = context.createLinearGradient(0, height * .15, 0, height * .88);
+    const distant = backdropContext || context;
+    const curtain = distant.createLinearGradient(0, height * .15, 0, height * .88);
     curtain.addColorStop(0, 'rgba(190,211,213,0)');
     curtain.addColorStop(.42, 'rgba(190,211,213,.060)');
     curtain.addColorStop(1, 'rgba(211,222,217,0)');
-    context.fillStyle = curtain;
-    context.globalAlpha = state.storm ? power : power * .66;
-    context.fillRect(0, 0, width, height);
-    context.globalAlpha = 1;
-    for (const group of groups) paintBand(group, power);
+    distant.fillStyle = curtain;
+    distant.globalAlpha = state.storm ? power * .65 : power * .40;
+    distant.fillRect(0, 0, width, height);
+    distant.globalAlpha = 1;
+    for (const group of groups) paintBand(group, power, group.name === 'distant' ? distant : context);
     paintWaterRipples(power);
   }
 
@@ -230,8 +247,9 @@ export function createRainSystem(canvas, frame) {
         wind: clamp(Number.isFinite(wind) ? wind : state.wind, 0, 80),
       };
       const power = state.active ? density() : 0;
-      frame.style.setProperty('--rain-mist-opacity', (power * (state.storm ? .76 : .51)).toFixed(3));
-      frame.style.setProperty('--rain-sheet-opacity', (!power ? 0 : Math.min(.56, .12 + power * .43)).toFixed(3));
+      frame.style.setProperty('--rain-mist-opacity', (power * (state.storm ? .61 : .41)).toFixed(3));
+      frame.style.setProperty('--rain-sheet-opacity', (!power ? 0 : Math.min(.38, .06 + power * .31)).toFixed(3));
+      frame.style.setProperty('--wet-sheen-opacity', (power * (state.storm ? .27 : .19)).toFixed(3));
       schedule();
     },
     destroy() {
@@ -241,10 +259,13 @@ export function createRainSystem(canvas, frame) {
       resize?.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
       reducedMotion.removeEventListener?.('change', onMotion);
+      backdrop.remove();
+      sheen.remove();
       mist.remove();
       frame.classList.remove('has-rain-system');
       frame.style.removeProperty('--rain-mist-opacity');
       frame.style.removeProperty('--rain-sheet-opacity');
+      frame.style.removeProperty('--wet-sheen-opacity');
       context.clearRect(0, 0, width, height);
     },
   };

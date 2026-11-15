@@ -80,11 +80,26 @@ export class NewHomeComponent implements OnInit {
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.updateHorizonHeight();
     this.pinnedIds = this.readIds(PIN_STORAGE_KEY, PINNED_DEFAULTS);
     this.recentIds = this.readIds(RECENT_STORAGE_KEY, []);
     // Purge stale launch history/pins for entries removed from this curated directory.
     this.writeIds(PIN_STORAGE_KEY, this.pinnedIds);
     this.writeIds(RECENT_STORAGE_KEY, this.recentIds);
+  }
+
+  // A more spacious scenic card on large displays; retain the compact
+  // weather-to-Resource-Pulse rhythm on laptops and phones.
+  private preferredHorizonHeight(): number {
+    if (typeof window === 'undefined' || window.innerWidth < 1120 || window.innerHeight < 780) return 262;
+    return Math.min(374, Math.max(262, Math.round(window.innerHeight * .34)));
+  }
+
+  @HostListener('window:resize')
+  updateHorizonHeight(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const desired = this.preferredHorizonHeight();
+    if (desired > 262 || window.innerWidth > 760) this.horizonHeight = desired;
   }
 
   get pinnedApps(): HubApp[] {
@@ -139,8 +154,11 @@ export class NewHomeComponent implements OnInit {
     if (!payload || payload.source !== 'pti-living-horizon' || payload.event !== 'resize' ||
       !Number.isFinite(payload.height)) return;
     const height = Math.ceil(payload.height);
-    if (height >= 196 && height <= 262 && height !== this.horizonHeight) {
-      this.horizonHeight = height;
+    // In a desktop iframe the scenic frame deliberately fills its viewport.
+    // On mobile its compact, artwork-proportioned height remains authoritative.
+    if (height >= 186 && height <= 380 && height !== this.horizonHeight) {
+      const isNarrowFrame = (this.livingHorizonFrame?.nativeElement.clientWidth ?? window.innerWidth) <= 760;
+      this.horizonHeight = isNarrowFrame ? height : this.preferredHorizonHeight();
     }
   }
 

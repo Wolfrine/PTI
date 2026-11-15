@@ -20,7 +20,7 @@ html.horizon-embed .hero-observation-time{display:none!important}
 html.horizon-embed .workspace{min-width:0;max-width:none}
 html.horizon-embed .content{width:100%;min-width:0;max-width:none;margin:0;padding:0}
 html.horizon-embed .living-section{margin:0;padding:0}
-html.horizon-embed .horizon-frame{box-shadow:0 9px 26px rgba(65,52,39,.085)}
+html.horizon-embed .horizon-frame{height:calc(100dvh - 2px);box-shadow:0 9px 26px rgba(65,52,39,.085)}
 .home-refresh-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 html.horizon-embed .home-weather-clock{min-height:44px;background:#fbfef6e8;cursor:pointer;font-size:14px;font-variant-numeric:tabular-nums}
 html.horizon-embed .home-weather-clock:hover{background:#fbfef6}

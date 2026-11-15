@@ -2,17 +2,19 @@
 // Live weather: Open-Meteo. Opted-in position is coarse; smog simulation is artistic.
 import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
-  phaseFromSun, formatLocalTime, paintMoon, moonPhaseName,
-} from './environment.js?v=horizon-r7-20261113';
+  phaseFromSun, formatLocalTime, paintMoon, moonPhaseName, celestialAppearance,
+} from './environment.js?v=horizon-r8-20261115';
 import {
   REGION_PACKS, resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
 } from './landscape-regions.js?v=horizon-r7-20261113';
-import { createCloudSystem } from './clouds.js?v=horizon-r7-20261113';
-import { createRainSystem } from './rain-effects.js?v=horizon-r7-20261113';
+import { createCloudSystem } from './clouds.js?v=horizon-r8-20261115';
+import { createRainSystem } from './rain-effects.js?v=horizon-r8-20261115';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 const CURRENT_FIELDS = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,wind_speed_10m,visibility,is_day';
-const CACHE_KEY = 'pti.living-horizon.coarse-weather.v2';
+const HOURLY_FIELDS = 'temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,wind_speed_10m,visibility';
+const CACHE_KEY = 'pti.living-horizon.coarse-weather.v3';
 const CACHE_AGE_MS = 15 * 60 * 1000;
+const LAST_OBSERVATION_AGE_MS = 6 * 60 * 60 * 1000;
 const COARSE_LOCATION = { name: 'Navi Mumbai', latitude: 19.05, longitude: 73.02 };
 const PRESETS = {
   dawn: { event: 'sunrise', weather: 'cloudy', cloud: 48, rain: 0 },
@@ -36,6 +38,10 @@ const homeRefreshStatus = document.querySelector('#home-refresh-status');
 const homeWeatherCredits = document.querySelector('.home-weather-credits');
 const homeWeatherCredit = document.querySelector('#home-weather-credit');
 const homeMapCredit = document.querySelector('#home-map-credit');
+const isAmbient = document.documentElement.classList.contains('horizon-ambient');
+const forecastOutlook = document.querySelector('#forecast-outlook');
+const forecastHours = document.querySelector('#forecast-hours');
+const forecastSource = document.querySelector('#forecast-source');
 const sourceLine = document.querySelector('#source-line');
 const artwork = document.querySelector('#artwork');
 const artButton = document.querySelector('#next-art');
@@ -55,6 +61,8 @@ const studioInputs = [...document.querySelectorAll('[data-sim]')];
 const studioSummary = document.querySelector('#sim-summary');
 const studioGeographyNote = document.querySelector('#sim-geography-note');
 let liveWeather = null;
+let liveWeatherStale = false;
+let lastValidObservationAt = 0;
 let liveLocation = COARSE_LOCATION.name;
 let activeMode = 'live';
 let liveAttempt = 0;
@@ -68,6 +76,7 @@ let renderedDay = '';
 let simulation = null;
 let landscapeResolveAttempt = 0;
 let homeRefreshing = false;
+let selectedForecastIndex = null;
 
 const clamp = (n, minimum, maximum) => Math.max(minimum, Math.min(maximum, n));
 const displayTime = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -186,15 +195,20 @@ function updateScene({ phase, weather, description, temperature, location, state
   heroObservationTime.hidden = !observedTime;
   heroObservationTime.textContent = observedTime;
   heroObservationTime.title = state === 'live' ? 'Open-Meteo current weather timestamp in local time'
+    : state === 'stale' ? 'Earlier Open-Meteo observation; current weather could not be refreshed'
     : state === 'simulation' ? 'Selected local simulation time' : '';
   heroKicker.textContent = state === 'live' ? 'THE SKY, RIGHT NOW'
+    : state === 'stale' ? 'LAST OBSERVED SKY'
+    : state === 'forecast' ? 'FORECAST · HOURS AHEAD'
     : state === 'simulation' ? 'LIVING HORIZON · SIMULATION' : 'LIVING HORIZON · VISUAL STUDY';
   if (state === 'live') setStatus('Live weather', 'live');
+  else if (state === 'stale') setStatus('Earlier observation', 'sample');
+  else if (state === 'forecast') setStatus('Model forecast', 'sample');
   else if (state === 'simulation') setStatus('Simulated · not live', 'sample');
   else if (state === 'offline') setStatus(isHomeEmbed ? 'Weather unavailable' : 'Offline · sample', 'sample');
   else setStatus('Scene preview', 'sample');
-  if (isHomeEmbed) {
-    homeWeatherCredit.hidden = state !== 'live';
+  if (isHomeEmbed || isAmbient) {
+    homeWeatherCredit.hidden = state !== 'live' && state !== 'stale';
     homeMapCredit.hidden = currentArea.cache || (liveLocation === 'Your area' && !placeProfile.evidence?.surface);
     homeWeatherCredits.hidden = homeWeatherCredit.hidden && homeMapCredit.hidden;
     updateHomeClock();
@@ -202,7 +216,9 @@ function updateScene({ phase, weather, description, temperature, location, state
   sourceLine.textContent = note;
   rainSystem.update({active:(weather === 'rain'||weather === 'storm')&&rainfall>0,
     storm:weather === 'storm', intensity:rainfall, wind, phase});
-  if (state === 'live' || state === 'simulation' || isHomeEmbed) renderCelestials(date, moonOverride, state === 'live', celestial);
+  if (['live', 'stale', 'forecast', 'simulation', 'offline'].includes(state) || isHomeEmbed || isAmbient) {
+    renderCelestials(date, moonOverride, state === 'live' || state === 'stale', celestial);
+  }
   else {
     frame.dataset.sunVisible = String(phase !== 'night');
     frame.dataset.moonVisible = String(phase === 'night');
@@ -215,10 +231,45 @@ function updateScene({ phase, weather, description, temperature, location, state
   }
   cloudSystem.update({ weather, phase, cover:cloudCover, wind,
     sunX:celestial?.sun?.x ?? 50, sunY:celestial?.sun?.y ?? 35 });
-  renderReadouts(state === 'live');
+  renderReadouts(state === 'live' || state === 'stale');
 }
 
 function environmentTimeZone() { return liveWeather?.timezone || 'Asia/Kolkata'; }
+
+// Keep the continuous hillside in the bottom 35% of the visible composition,
+// independent of each source painting's skyline and the viewport's aspect.
+// Isolated decorative trees still rise naturally into the sky. No scaling or
+// distortion is applied to any artwork.
+function positionArtwork() {
+  const art = ARTWORKS[artIndex];
+  const width = frame.clientWidth;
+  const height = frame.clientHeight;
+  if (!art || !width || !height || !artwork.naturalWidth || !artwork.naturalHeight) return;
+  const renderedHeight = Math.max(height, width * artwork.naturalHeight / artwork.naturalWidth);
+  const overflow = Math.max(0, renderedHeight - height);
+  const ridgeY = artwork.dataset.wide === 'true' ? art.wideRidgeY : art.ridgeY;
+  const ridge = (ridgeY || art.ridgeY) * renderedHeight;
+  const target = height * .65;
+  const position = overflow > 1 ? clamp((ridge - target) / overflow, 0, 1) : 0;
+  const shift = Math.max(0, target - (ridge - position * overflow));
+  artwork.style.setProperty('--art-fit-y', `${(position * 100).toFixed(2)}%`);
+  artwork.style.setProperty('--art-shift-y', `${shift.toFixed(1)}px`);
+}
+
+function updateArtworkSource() {
+  const art = ARTWORKS[artIndex];
+  if (!art) return;
+  // Compact cards use a purpose-composed panoramic painting. Portrait/TV
+  // scenes retain the complete original 16:9 art and its foreground details.
+  const wide = Boolean(art.wideFile) && frame.clientWidth / Math.max(1, frame.clientHeight) > 2.7;
+  const file = wide ? art.wideFile : art.file;
+  if (artwork.dataset.file !== file) {
+    artwork.dataset.file = file;
+    artwork.dataset.wide = String(wide);
+    artwork.src = '../assets/images/living-horizon/' + file;
+  }
+  positionArtwork();
+}
 
 function updateDailyArt() {
   const timezone = environmentTimeZone();
@@ -235,10 +286,8 @@ function updateDailyArt() {
   if (selected === artIndex) return;
   artIndex = selected;
   const choice = ARTWORKS[selected];
-  artwork.src = '../assets/images/living-horizon/' + choice.file;
   frame.dataset.art = choice.id;
-  frame.style.setProperty('--art-position', choice.desktop);
-  frame.style.setProperty('--art-mobile-position', choice.mobile);
+  updateArtworkSource();
   const place = pool.findIndex(candidate => candidate.index === selected);
   artCount.textContent = place >= 0 ? `${place + 1}/${pool.length}` : `${selected + 1}/${ARTWORKS.length}`;
   const artPackName = REGION_PACKS[choice.pack]?.title || choice.pack;
@@ -281,8 +330,13 @@ function renderCelestials(date = new Date(), phaseOverride = null, live = true, 
   const phase = phaseOverride === null ? illumination.phase : phaseOverride;
   const fraction = phaseOverride === null ? illumination.fraction : (1 - Math.cos(2 * Math.PI * phase)) / 2;
   const name = phaseOverride === null ? phaseName : moonPhaseName(phase);
-  frame.dataset.sunVisible = String(sun.visible);
-  frame.dataset.moonVisible = String(moon.visible && fraction > .025);
+  const appearance = celestialAppearance(sun, moon, { fraction });
+  frame.dataset.sunVisible = String(appearance.sunVisible);
+  frame.dataset.moonVisible = String(appearance.moonVisible);
+  frame.style.setProperty('--moon-opacity', appearance.moonOpacity.toFixed(3));
+  frame.style.setProperty('--moon-halo-opacity', appearance.moonHaloOpacity.toFixed(3));
+  frame.style.setProperty('--sun-diameter', `${appearance.sunDiameter}px`);
+  frame.style.setProperty('--moon-diameter', `${appearance.moonDiameter}px`);
   frame.style.setProperty('--sun-x', sun.x.toFixed(2) + '%');
   frame.style.setProperty('--sun-y', sun.y.toFixed(2) + '%');
   frame.style.setProperty('--moon-x', moon.x.toFixed(2) + '%');
@@ -375,16 +429,18 @@ function renderSimulation() {
     localDayOffset(date, timezone));
   const phase = phaseFromSun(solar?.sun);
   const manualPhase = simulation.realMoon ? null : simulation.moon / 100;
-  const description = `${simulation.weather[0].toUpperCase() + simulation.weather.slice(1)} · ${simulation.cloud}% cloud · ${simulation.rain} mm/h rain`;
+  const isForecast = activeMode === 'forecast';
+  const description = isForecast ? conditions(Number(liveWeather?.hourly?.weather_code?.[selectedForecastIndex]), simulation.cloud, simulation.rain).text
+    : `${simulation.weather[0].toUpperCase() + simulation.weather.slice(1)} · ${simulation.cloud}% cloud · ${simulation.rain} mm/h rain`;
   updateScene({ phase, weather: simulation.weather, location: currentArea.label || COARSE_LOCATION.name,
     temperature: simulation.temperature, description, date, moonOverride: manualPhase, celestial: solar,
     observedTime:displayTime(simulation.minutes), cloudCover:simulation.cloud, wind:simulation.wind, rainfall:simulation.rain,
-    state: 'simulation', note: `Simulation · ${simulation.date} ${displayTime(simulation.minutes)} ${timezone} · landscape choice is an interpretation.` });
+    state: isForecast ? 'forecast' : 'simulation', note: `${isForecast ? 'Open-Meteo hourly model forecast' : 'Simulation'} · ${simulation.date} ${displayTime(simulation.minutes)} ${timezone} · landscape choice is an interpretation.` });
   frame.style.setProperty('--cloud-opacity', String(clamp(.06 + simulation.cloud / 115, .04, .96).toFixed(2)));
   frame.style.setProperty('--cloud-duration', `${clamp(145 - simulation.wind * 2.4, 40, 145).toFixed(0)}s`);
   setAtmosphericDepth(simulation.visibility, simulation.pollution);
   visibilityReadout.hidden = false;
-  visibilityReadout.textContent = `Visibility ${Number(simulation.visibility).toFixed(1)} km · simulated`;
+  visibilityReadout.textContent = `Visibility ${Number(simulation.visibility).toFixed(1)} km · ${isForecast ? 'forecast' : 'simulated'}`;
   moonReadout.hidden = false;
   geographyReadout.hidden = false;
   geographyReadout.textContent = [simulation.settlement, simulation.relief, simulation.water, simulation.vegetation]
@@ -394,6 +450,9 @@ function renderSimulation() {
 
 function renderMode() {
   updateDailyArt();
+  for (const button of forecastHours.querySelectorAll('button[data-forecast-index]')) {
+    button.setAttribute('aria-pressed', String(activeMode === 'forecast' && Number(button.dataset.forecastIndex) === selectedForecastIndex));
+  }
   if (activeMode !== 'live' && simulation && artOverride === null) {
     // Quick presets initially construct their controls before daily art is
     // resolved. Keep the studio art slider aligned with the visible painting.
@@ -421,8 +480,8 @@ function renderMode() {
     );
     const phase = phaseFromSun(solar?.sun);
     const hhmm = String(current.time || '').split('T')[1]?.slice(0, 5);
-    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: text, observedTime:hhmm,
-      cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), rainfall, state: 'live', celestial: solar,
+    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: liveWeatherStale ? `${text} · earlier reading` : text, observedTime:hhmm,
+      cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), rainfall, state: liveWeatherStale ? 'stale' : 'live', celestial: solar,
       note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
     const pack = pickRegionPack(placeProfile);
@@ -433,7 +492,7 @@ function renderMode() {
     // Place names and mapped land features come from OpenStreetMap after an
     // explicit location action; visible attribution is retained in Home embed.
     const osmCredit = currentArea.cache ? '' : ' · © OpenStreetMap contributors';
-    sourceLine.textContent = `Open-Meteo weather · ${pack.title} ${pack.matched ? 'regional study' : 'illustration'}${source}${osmCredit}.`;
+    sourceLine.textContent = `${liveWeatherStale ? 'Last available' : 'Current'} Open-Meteo weather · ${pack.title} ${pack.matched ? 'regional study' : 'illustration'}${source}${osmCredit}.`;
     sourceLine.title = `${pack.reason}. Regional paintings represent broad landscape types, not exact views from your location.`;
     if (Number.isFinite(clouds)) frame.style.setProperty('--cloud-opacity', String(Math.min(.96, .10 + clouds / 124).toFixed(2)));
     const wind = Number(current.wind_speed_10m);
@@ -442,9 +501,10 @@ function renderMode() {
   }
   frame.style.removeProperty('--cloud-opacity');
   frame.style.removeProperty('--cloud-duration');
-  const hour = Math.floor(localMinutes(environmentTimeZone()) / 60);
-  const phase = hour < 5 || hour > 19 ? 'night' : hour < 8 ? 'dawn' : hour > 17 ? 'dusk' : 'day';
-  updateScene({ phase, weather: 'cloudy', location: isHomeEmbed ? liveLocation : COARSE_LOCATION.name, temperature: null,
+  const now = new Date();
+  const solar = celestialState(now, currentArea.latitude, currentArea.longitude, environmentTimeZone(), localDayOffset(now, environmentTimeZone()));
+  const phase = phaseFromSun(solar?.sun);
+  updateScene({ phase, weather: 'cloudy', celestial:solar, location: isHomeEmbed || isAmbient ? liveLocation : COARSE_LOCATION.name, temperature: null,
     description: isHomeEmbed ? (homeRefreshing ? 'Updating weather…' : 'Weather unavailable') : 'Weather feed unavailable · visual study',
     state: 'offline', note: 'Offline · sample atmosphere shown. No current weather reading available.' });
 }
@@ -471,6 +531,7 @@ function setMode(mode) {
     simulation.rain = preset.rain;
   } else simulation = createSimulation();
   activeMode = mode;
+  if (mode === 'live') selectedForecastIndex = null;
   const url = new URL(window.location.href);
   url.searchParams.set('mode', mode);
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
@@ -482,6 +543,74 @@ function setMode(mode) {
   if (mode === 'live' && Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
     void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
   }
+}
+
+function previewForecast(index) {
+  const hourly = liveWeather?.hourly;
+  const timestamp = hourly?.time?.[index];
+  if (typeof timestamp !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(timestamp)) return;
+  if (!simulation || activeMode === 'live') simulation = createSimulation();
+  const rainfall = Math.max(0, Number(hourly.precipitation?.[index]) || 0);
+  const cloud = clamp(Number(hourly.cloud_cover?.[index]) || 0, 0, 100);
+  simulation.date = timestamp.slice(0, 10);
+  simulation.minutes = Number(timestamp.slice(11, 13)) * 60 + Number(timestamp.slice(14, 16));
+  simulation.cloud = cloud;
+  simulation.rain = rainfall;
+  simulation.weather = conditions(Number(hourly.weather_code?.[index]), cloud, rainfall).weather;
+  simulation.temperature = Number(hourly.temperature_2m?.[index]);
+  simulation.wind = Number(hourly.wind_speed_10m?.[index]) || 0;
+  simulation.visibility = clamp((Number(hourly.visibility?.[index]) || 12000) / 1000, .5, 30);
+  simulation.pollution = 0;
+  simulation.realMoon = true;
+  selectedForecastIndex = index;
+  activeMode = 'forecast';
+  const url = new URL(window.location.href);
+  url.searchParams.delete('mode');
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  renderMode();
+}
+
+function renderForecast() {
+  if (isHomeEmbed || isAmbient) return;
+  const hourly = liveWeather?.hourly;
+  if (!Array.isArray(hourly?.time) || !Array.isArray(hourly?.temperature_2m)) {
+    forecastOutlook.hidden = true;
+    forecastHours.replaceChildren();
+    return;
+  }
+  const observation = String(liveWeather.current?.time || '');
+  const tz = environmentTimeZone();
+  const today = localDayKey(new Date(), tz);
+  const localNow = `${today}T${displayTime(localMinutes(tz))}`;
+  const first = hourly.time.findIndex(time => typeof time === 'string' && time > observation && time > localNow);
+  const indices = first < 0 ? [] : Array.from({ length: Math.min(8, hourly.time.length - first) }, (_, n) => first + n);
+  forecastOutlook.hidden = indices.length === 0;
+  forecastSource.textContent = (liveWeatherStale ? 'Earlier model run' : 'Open-Meteo hourly model forecast') + ' · select an hour to preview';
+  const symbols = { clear:'☀', cloudy:'◒', overcast:'☁', rain:'☂', storm:'ϟ', fog:'≋' };
+  const buttons = indices.map(index => {
+    const timestamp = hourly.time[index];
+    const category = conditions(Number(hourly.weather_code?.[index]), Number(hourly.cloud_cover?.[index]), Number(hourly.precipitation?.[index])).weather;
+    const probability = hourly.precipitation_probability?.[index];
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'forecast-hour';
+    button.dataset.forecastIndex = String(index);
+    button.setAttribute('aria-pressed', String(activeMode === 'forecast' && selectedForecastIndex === index));
+    const label = timestamp.slice(11, 16);
+    const tomorrow = timestamp.slice(0, 10) !== observation.slice(0, 10);
+    const glyph = category === 'clear' && (Number(label.slice(0, 2)) < 6 || Number(label.slice(0, 2)) >= 19) ? '☾' : symbols[category] || '◒';
+    const parts = [
+      ['hour-label', tomorrow ? `+1d ${label}` : label],
+      ['hour-symbol', glyph],
+      ['hour-temp', Number.isFinite(hourly.temperature_2m?.[index]) ? `${Math.round(hourly.temperature_2m[index])}°` : '—'],
+      ['hour-rain', Number.isFinite(probability) ? `${Math.round(probability)}% rain` : category],
+    ];
+    for (const [className, value] of parts) { const span = document.createElement('span'); span.className = className; span.textContent = value; button.append(span); }
+    button.title = `${timestamp.replace('T', ' ')} ${environmentTimeZone()} · ${category} · hourly forecast`;
+    button.addEventListener('click', () => previewForecast(index));
+    return button;
+  });
+  forecastHours.replaceChildren(...buttons);
 }
 
 function setCustomSimulation(input) {
@@ -527,10 +656,11 @@ function setCustomSimulation(input) {
   renderMode();
 }
 
-function readCache() {
+function readCache(maxAge = CACHE_AGE_MS) {
   try {
     const value = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    return value && Date.now() - value.at < CACHE_AGE_MS && value.data?.current ? value : null;
+    return value && Number.isFinite(value.at) && Date.now() - value.at >= 0
+      && Date.now() - value.at < maxAge && value.data?.current ? value : null;
   } catch { return null; }
 }
 async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name, force = false } = {}) {
@@ -540,7 +670,7 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
   lastObservationFetch = Date.now();
   if (cache && !force) {
     const stored = readCache();
-    if (stored) { liveWeather = stored.data; lastObservationFetch = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); return true; }
+    if (stored) { liveWeather = stored.data; liveWeatherStale = false; lastValidObservationAt = stored.at; lastObservationFetch = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); renderForecast(); return true; }
   }
   if (activeMode === 'live') setStatus('Connecting', 'fetching');
   try {
@@ -548,9 +678,10 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
     url.searchParams.set('latitude', String(latitude));
     url.searchParams.set('longitude', String(longitude));
     url.searchParams.set('current', CURRENT_FIELDS);
+    url.searchParams.set('hourly', HOURLY_FIELDS);
     url.searchParams.set('daily', 'sunrise,sunset');
     url.searchParams.set('timezone', 'auto');
-    url.searchParams.set('forecast_days', '1');
+    url.searchParams.set('forecast_days', '2');
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 9000);
     let response;
@@ -561,15 +692,24 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
     if (!data?.current || typeof data.current.temperature_2m !== 'number') throw new Error('Incomplete current conditions');
     if (myAttempt !== liveAttempt) return;
     liveWeather = data;
+    liveWeatherStale = false;
+    lastValidObservationAt = Date.now();
     liveLocation = currentArea.label;
     lastObservationFetch = Date.now();
     if (cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data })); } catch { /* Storage is optional. */ } }
     if (activeMode === 'live') renderMode();
+    renderForecast();
     return true;
   } catch (error) {
     if (myAttempt !== liveAttempt) return;
-    liveWeather = null;
+    // Preserve an honest, explicitly earlier observation instead of replacing
+    // it with a fictitious current reading during a network interruption.
+    const lastKnown = cache ? readCache(LAST_OBSERVATION_AGE_MS) : null;
+    if (!liveWeather && lastKnown) { liveWeather = lastKnown.data; lastValidObservationAt = lastKnown.at; liveLocation = label; }
+    if (liveWeather && (!lastValidObservationAt || Date.now() - lastValidObservationAt >= LAST_OBSERVATION_AGE_MS)) liveWeather = null;
+    liveWeatherStale = Boolean(liveWeather?.current);
     if (activeMode === 'live') renderMode();
+    renderForecast();
     console.info('Living Horizon: current weather unavailable; using clearly labelled visual study.', error?.message || error);
     return false;
   }
@@ -638,6 +778,8 @@ function getCoarsePosition(maximumAge) {
 function changeArea({ latitude, longitude }) {
   ++liveAttempt;
   liveWeather = null;
+  liveWeatherStale = false;
+  lastValidObservationAt = 0;
   liveLocation = 'Your area';
   currentArea = { latitude, longitude, cache: false, label: liveLocation };
   placeProfile = classifyLandscape(liveLocation);
@@ -693,6 +835,8 @@ function seededStars() {
 
 function setup() {
   seededStars();
+  artwork.addEventListener('load', positionArtwork);
+  new ResizeObserver(updateArtworkSource).observe(frame);
   // Sky art and rain each own their resize, motion and visibility lifecycle.
   new IntersectionObserver(([entry]) => {
     frame.classList.toggle('out-of-view', !entry.isIntersecting);
@@ -710,7 +854,7 @@ function setup() {
     setMode('live');
   });
   artButton.addEventListener('click', advanceArtwork);
-  if (isHomeEmbed) {
+  if (isHomeEmbed || isAmbient) {
     document.querySelector('.horizon-caption').append(atmosphericReadouts);
     homeClockButton.addEventListener('click', refreshHomeWeather);
   }
@@ -718,18 +862,18 @@ function setup() {
   activeMode = 'live';
   if (!isHomeEmbed && PRESETS[initialMode]) setMode(initialMode);
   else renderMode();
-  if (isHomeEmbed) tickHomeClock();
+  if (isHomeEmbed || isAmbient) tickHomeClock();
   void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
   // Refresh only while the live scene is visible, at most once per 15 minutes.
   window.setInterval(() => {
-    if (document.hidden || activeMode !== 'live' || homeRefreshing) return;
+    if (document.hidden || frame.classList.contains('out-of-view') || activeMode !== 'live' || homeRefreshing) return;
     if (liveWeather) renderMode();
     if (Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
       void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
     }
   }, 60000);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden || activeMode !== 'live' || homeRefreshing) return;
+    if (document.hidden || frame.classList.contains('out-of-view') || activeMode !== 'live' || homeRefreshing) return;
     renderMode();
     if (Date.now() - lastObservationFetch > CACHE_AGE_MS) {
       void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);

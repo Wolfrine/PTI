@@ -35,7 +35,8 @@
 [hidden]{display:none!important}
 .horizon-frame{--moon-x:71%;--moon-y:25%;--visibility-haze:.04;--air-haze:0;--rain-sheet-opacity:0}
 .daily-art{
-  object-position:var(--art-position,50% 85%);
+  object-position:50% var(--art-fit-y,85%);
+  transform:translateY(var(--art-shift-y,0px));
   filter:var(--art-filter);
   image-rendering:auto;
 }
@@ -58,7 +59,8 @@
 .horizon-frame[data-weather="storm"] .cloud-haze{filter:blur(13px) brightness(.60)}
 .horizon-frame[data-weather="overcast"] .cloud-haze{filter:blur(15px) brightness(.79)}
 .moon,.moon-halo{left:var(--moon-x);top:var(--moon-y)}
-.moon{width:34px;height:34px;background:transparent;box-shadow:none;border-radius:50%;filter:drop-shadow(0 0 11px #e4efff91)}
+.moon{width:var(--moon-diameter,26px);height:var(--moon-diameter,26px);background:transparent;box-shadow:none;border-radius:50%;filter:drop-shadow(0 0 5px #eef5ff63)}
+.sun{width:var(--sun-diameter,52px);height:var(--sun-diameter,52px)}
 .moon-halo{background:radial-gradient(circle,#f0f4ff49 0 15%,#dce7ff12 45%,transparent 78%)}
 .horizon-frame[data-sun-visible="false"] .sun,
 .horizon-frame[data-sun-visible="false"] .sun-halo,
@@ -66,8 +68,8 @@
 .horizon-frame[data-moon-visible="false"] .moon-halo{opacity:0}
 .horizon-frame[data-sun-visible="true"] .sun{opacity:.95}
 .horizon-frame[data-sun-visible="true"] .sun-halo{opacity:.71}
-.horizon-frame[data-moon-visible="true"] .moon{opacity:.95}
-.horizon-frame[data-moon-visible="true"] .moon-halo{opacity:.62}
+.horizon-frame[data-moon-visible="true"] .moon{opacity:var(--moon-opacity,.9)}
+.horizon-frame[data-moon-visible="true"] .moon-halo{opacity:var(--moon-halo-opacity,.4)}
 .horizon-frame[data-weather="overcast"] .sun,
 .horizon-frame[data-weather="rain"] .sun,
 .horizon-frame[data-weather="storm"] .sun,
@@ -84,6 +86,8 @@
 .horizon-frame[data-weather="rain"] .moon-halo,
 .horizon-frame[data-weather="storm"] .moon-halo,
 .horizon-frame[data-weather="fog"] .moon-halo{opacity:.05}
+.horizon-frame[data-moon-visible="false"][data-weather] .moon,
+.horizon-frame[data-moon-visible="false"][data-weather] .moon-halo{opacity:0}
 .distance-haze{
   position:absolute;z-index:5;inset:0;pointer-events:none;
   background:linear-gradient(180deg,transparent 28%,#e9e2dcb5 61%,#d4dfd655 81%,transparent 99%);
@@ -116,13 +120,14 @@
 .atmospheric-readouts span+span:before{content:"·";padding-right:3px;color:#b3a498}
 .source-line{margin-top:0}
 @media(max-width:760px){
-  .daily-art{object-position:var(--art-mobile-position,50% 75%)}
+  .daily-art{object-position:50% var(--art-fit-y,75%)}
   .horizon-toolbar{column-gap:5px}
   .horizon-actions{margin-left:auto;gap:4px}
   .art-button{font-size:9px;padding:6px 8px}
   .art-button span{font-size:8px}
   .atmospheric-readouts{font-size:9px;gap:6px;padding-top:3px}
-  .moon{width:29px;height:29px}
+  .sun{width:43px;height:43px}
+  .moon{width:22px;height:22px}
   .horizon-vignette{opacity:.71}
 }
 @media(max-width:390px){
@@ -191,3 +196,48 @@
   .scene-lab-intro p{font-size:10px}
   .studio-reset{margin-top:11px}
 }
+
+/* An optional hourly outlook belongs to the standalone weather view; it never
+   interrupts Home's approved weather -> Resource Pulse sequence. */
+.ambient-link{border:1px solid #e4ddd3;background:#fffaf4;border-radius:20px;padding:7px 11px;color:#936a64;font-size:10px;font-weight:700;white-space:nowrap}
+.ambient-link:hover{background:#fff0e7;border-color:#e9c2b2}
+.horizon-outlook{margin:13px 1px 10px;border:1px solid #e7ddd1;border-radius:15px;background:#fffefa;padding:13px 16px 14px}
+.outlook-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:11px}
+.outlook-heading strong{font-size:9px;letter-spacing:.16em;color:#9b7d70}
+.outlook-heading span{font-size:10px;color:#9d9084}
+.outlook-hours{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px}
+.forecast-hour{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;padding:11px 5px 10px;border:1px solid #eee7de;border-radius:12px;background:#fcf8f3;color:#665b52;transition:background .18s,border-color .18s;white-space:nowrap}
+.forecast-hour:hover,.forecast-hour[aria-pressed="true"]{background:#f5ece4;border-color:#d7b6a2}
+.forecast-hour .hour-label{font-size:10px;font-weight:700}.forecast-hour .hour-symbol{font-size:23px;line-height:1;color:#9c8ca0}.forecast-hour .hour-temp{font:18px "DM Serif Display",Georgia,serif;color:#393734}.forecast-hour .hour-rain{font-size:9px;color:#9c8b80}
+@media(max-width:760px){
+  .ambient-link{font-size:9px;padding:6px 8px}
+  .horizon-outlook{margin-top:12px;padding:12px}
+  .outlook-hours{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+  .forecast-hour{flex:0 0 78px;scroll-snap-align:start}
+  .outlook-heading{align-items:baseline}.outlook-heading span{font-size:9px}
+}
+
+/* Public, login-free ambient URL for a TV or a continuously running display. */
+/* Keep the painted landscape readable after sunset without lifting the night sky. */
+.horizon-frame[data-phase="night"]{--art-filter:brightness(.46) saturate(.78) hue-rotate(8deg)}
+.horizon-frame[data-phase="night"] .horizon-vignette{opacity:.75}
+
+html.horizon-ambient,html.horizon-ambient body{margin:0;width:100%;min-width:0;min-height:100%;overflow:hidden;background:#121f30}
+html.horizon-ambient .app-shell{display:block;min-height:100dvh}
+html.horizon-ambient .sidebar,html.horizon-ambient .topbar,html.horizon-ambient .mobile-nav,
+html.horizon-ambient .horizon-toolbar,html.horizon-ambient .source-line,html.horizon-ambient .scene-lab,
+html.horizon-ambient .horizon-outlook,html.horizon-ambient .hub-section,html.horizon-ambient .pulse-section,
+html.horizon-ambient .companions,html.horizon-ambient .footer,html.horizon-ambient #horizon-status,
+html.horizon-ambient .hero-observation-time{display:none!important}
+html.horizon-ambient .workspace,html.horizon-ambient .content,html.horizon-ambient .living-section{width:100%;max-width:none;margin:0;padding:0}
+html.horizon-ambient .horizon-frame{height:100dvh;border:0;border-radius:0;box-shadow:none}
+html.horizon-ambient .horizon-caption{left:clamp(30px,5vw,94px);bottom:clamp(46px,8vh,118px);max-width:70%}
+html.horizon-ambient .hero-kicker{font-size:clamp(10px,1vw,16px);letter-spacing:.23em}
+html.horizon-ambient .horizon-title-line h1{font-size:clamp(40px,5vw,94px)}
+html.horizon-ambient .hero-temperature{font-size:clamp(32px,3.5vw,64px)}
+html.horizon-ambient .hero-subtitle{font-size:clamp(13px,1.35vw,21px)}
+html.horizon-ambient .atmospheric-readouts{margin-top:13px;padding:0;color:#fffdf3e6;font-size:clamp(11px,1.1vw,17px)}
+html.horizon-ambient .home-weather-clock{z-index:10;min-height:42px;display:flex;align-items:center;gap:6px;right:clamp(20px,3vw,54px);top:clamp(20px,3vw,50px);background:#fffdf4c9;font-variant-numeric:tabular-nums}
+html.horizon-ambient .home-weather-credits{position:absolute;z-index:9;right:24px;bottom:16px;font-size:10px;display:flex;gap:9px;color:#fff;text-shadow:0 1px 4px #112b22}
+html.horizon-ambient .home-weather-credits a{color:inherit}
+@media(max-width:760px){html.horizon-ambient .horizon-frame{height:100dvh;border-radius:0}html.horizon-ambient .horizon-caption{left:22px;bottom:45px;max-width:calc(100% - 44px)}html.horizon-ambient .horizon-title-line h1{font-size:clamp(28px,8vw,50px)}html.horizon-ambient .hero-temperature{font-size:clamp(24px,7vw,40px)}}

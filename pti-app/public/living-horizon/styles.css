@@ -212,7 +212,8 @@
 @media(max-width:760px){
   .ambient-link{font-size:9px;padding:6px 8px}
   .horizon-outlook{margin-top:12px;padding:12px}
-  .outlook-hours{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+  .outlook-hours{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none}
+  .outlook-hours::-webkit-scrollbar{display:none}
   .forecast-hour{flex:0 0 78px;scroll-snap-align:start}
   .outlook-heading{align-items:baseline}.outlook-heading span{font-size:9px}
 }

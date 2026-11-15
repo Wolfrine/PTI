@@ -1,5 +1,5 @@
-// Unapproved Living Horizon foreground studies. Intentionally separate from
-// ARTWORKS and regionalArtworkIndex: none can enter the Home rotation.
+// The original 12 artwork studies remain selectable in the experiment lab.
+// They are also registered as approved geographic interpretations in ARTWORKS.
 export const EXPERIMENTAL_ARTWORKS = Object.freeze([
   { id: '01', name: 'Watercolor Lake', file: '01_watercolor_alpine.webp', ridgeY: .76, theme: 'Highland lake', experimental: true },
   { id: '02', name: 'Impressionist Meadow', file: '02_impressionist_meadow.webp', ridgeY: .74, theme: 'Countryside', experimental: true },

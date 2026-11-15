@@ -3,11 +3,12 @@
 import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName, celestialAppearance,
-} from './environment.js?v=horizon-r8-20261115';
-import { EXPERIMENTAL_ARTWORKS } from './artwork-experiments.js?v=art-lab-1-20261115';
+} from './environment.js?v=artwork-promotion-20261116';
+import { EXPERIMENTAL_ARTWORKS } from './artwork-experiments.js?v=artwork-promotion-20261116';
 import {
-  REGION_PACKS, resolveLandscapeProfile, pickRegionPack, eligibleArtwork, regionalArtworkIndex,
-} from './landscape-regions.js?v=horizon-r7-20261113';
+  REGION_PACKS, resolveLandscapeProfile, pickRegionPack, artworkMatchesPack,
+  eligibleArtwork, regionalArtworkIndex,
+} from './landscape-regions.js?v=artwork-promotion-20261116';
 import { createCloudSystem } from './clouds.js?v=horizon-r8-20261115';
 import { createRainSystem } from './rain-effects.js?v=horizon-r8-20261115';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -305,7 +306,7 @@ function updateDailyArt() {
   const place = pool.findIndex(candidate => candidate.index === selected);
   artCount.textContent = place >= 0 ? `${place + 1}/${pool.length}` : `${selected + 1}/${ARTWORKS.length}`;
   const artPackName = REGION_PACKS[choice.pack]?.title || choice.pack;
-  const relationship = choice.pack !== pack.id ? 'manual artistic study'
+  const relationship = !artworkMatchesPack(choice, pack.id) ? 'manual artistic study'
     : pack.matched ? 'area study' : 'illustration';
   artButton.title = `${choice.name} · ${artPackName} ${relationship} · click to explore another artwork`;
   artButton.setAttribute('aria-label', artButton.title);
@@ -320,7 +321,7 @@ function selectExperimentalArtwork(index, updateURL = true) {
   updateArtworkSource();
   if (art.experimental) {
     artCount.textContent = `${experimentalArtIndex + 1}/${EXPERIMENTAL_ARTWORKS.length}`;
-    artButton.title = `${art.name} · candidate study · click for the next experimental landscape`;
+    artButton.title = `${art.name} · artwork study · click for the next landscape`;
     artLabSelection.textContent = `${art.id} / ${EXPERIMENTAL_ARTWORKS.length}`;
   } else {
     const pool = eligibleArtwork(placeProfile);
@@ -489,7 +490,7 @@ function syncStudio() {
   const matchCount = artworkFit(currentArt, simulation);
   const unmatched = LANDSCAPE_AXES.filter(axis => !currentArt[axis]?.includes(simulation[axis]));
   studioGeographyNote.textContent = candidate
-    ? `${candidate.name} is a visual study. Regional matching still uses the original approved artwork collection.`
+    ? `${candidate.name} is a visual study. Regional matching uses the full approved artwork collection.`
     : matchCount === 4
     ? `${currentArt.name} · ${currentArt.pack.replaceAll('-', ' ')}. All four selected landscape categories are represented artistically.`
     : `${currentArt.name} reflects ${matchCount}/4 categories. ${unmatched.join(', ')} ${unmatched.length === 1 ? 'is' : 'are'} not represented by this painting; explore another combination or art treatment.`;
@@ -840,7 +841,7 @@ async function resolveCoarsePlace(latitude, longitude) {
     profile = classifyLandscape(name, address);
   }
   if (resolution !== landscapeResolveAttempt || currentArea.latitude !== latitude || currentArea.longitude !== longitude) return;
-  if (isHomeEmbed && artOverride !== null && ARTWORKS[artOverride]?.pack !== pickRegionPack(profile).id) {
+  if (isHomeEmbed && artOverride !== null && !artworkMatchesPack(ARTWORKS[artOverride], pickRegionPack(profile).id)) {
     artOverride = null;
     artOverrideDay = null;
   }
@@ -874,7 +875,7 @@ function changeArea({ latitude, longitude }) {
   liveLocation = 'Your area';
   currentArea = { latitude, longitude, cache: false, label: liveLocation };
   placeProfile = classifyLandscape(liveLocation);
-  if (isHomeEmbed && artOverride !== null && ARTWORKS[artOverride]?.pack !== pickRegionPack(placeProfile).id) {
+  if (isHomeEmbed && artOverride !== null && !artworkMatchesPack(ARTWORKS[artOverride], pickRegionPack(placeProfile).id)) {
     artOverride = null;
     artOverrideDay = null;
   }
@@ -926,6 +927,7 @@ function seededStars() {
 
 function setup() {
   seededStars();
+  document.querySelector('#sim-art').max = String(ARTWORKS.length);
   artwork.addEventListener('load', positionArtwork);
   new ResizeObserver(updateArtworkSource).observe(frame);
   // Sky art and rain each own their resize, motion and visibility lifecycle.

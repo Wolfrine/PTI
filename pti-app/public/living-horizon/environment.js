@@ -1,5 +1,28 @@
 // Living Horizon environment model. No private account data or Firestore dependencies.
 // Astronomy is calculated on-device with pinned, BSD-licensed SunCalc v1.9.0.
+import { EXPERIMENTAL_ARTWORKS } from './artwork-experiments.js?v=artwork-promotion-20261116';
+
+// Previously reviewed foreground studies are now part of the geographic
+// catalogue. The lab keeps its own selection UI and original image metadata;
+// production entries add only the geographic interpretation.
+const PROMOTED_ARTWORK_META = Object.freeze({
+  '01': { id: 'watercolor-lake', pack: 'himalayan-highland', settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['lake'], vegetation: ['forest'], terrain: ['mountains', 'lake', 'forest'] },
+  '02': { id: 'impressionist-meadow', pack: 'river-plain', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['none'], vegetation: ['grassland'], terrain: ['plain', 'grassland'] },
+  '03': { id: 'storybook-woodland', pack: 'western-ghats', settlement: ['village', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'] },
+  '04': { id: 'coastal-city', pack: 'coastal-foothill', compatiblePacks: ['tropical-coast'], settlement: ['city', 'town'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast', 'urban'] },
+  '05': { id: 'konkan-coast-study', pack: 'tropical-coast', compatiblePacks: ['coastal-foothill'], settlement: ['town', 'village', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'hills'] },
+  '06': { id: 'monsoon-paddies', pack: 'western-ghats', compatiblePacks: ['coastal-foothill'], settlement: ['village', 'town'], relief: ['hills'], water: ['river'], vegetation: ['grassland', 'forest'], terrain: ['hills', 'river', 'grassland'] },
+  '07': { id: 'woodblock-marsh', pack: 'river-plain', compatiblePacks: ['coastal-foothill'], settlement: ['village', 'wilderness'], relief: ['plain'], water: ['river', 'coast'], vegetation: ['grassland'], terrain: ['plain', 'river', 'coast'] },
+  '08': { id: 'paper-estuary', pack: 'river-plain', compatiblePacks: ['tropical-coast', 'coastal-foothill'], settlement: ['village', 'town', 'wilderness'], relief: ['plain'], water: ['coast', 'river'], vegetation: ['grassland', 'forest'], terrain: ['coast', 'river', 'plain'] },
+  '09': { id: 'art-nouveau-river', pack: 'river-plain', compatiblePacks: ['coastal-foothill'], settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['river', 'lake'], vegetation: ['grassland'], terrain: ['plain', 'river', 'grassland'] },
+  '10': { id: 'enchanted-forest', pack: 'western-ghats', settlement: ['village', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'river', 'forest'] },
+  '11': { id: 'sandstone-canyon', pack: 'arid-land', settlement: ['wilderness'], relief: ['hills', 'mountains'], water: ['none'], vegetation: ['arid'], terrain: ['hills', 'arid'] },
+  '12': { id: 'snow-valley', pack: 'himalayan-highland', settlement: ['village', 'wilderness'], relief: ['mountains'], water: ['river'], vegetation: ['forest'], terrain: ['mountains', 'river', 'forest'] },
+});
+
+const promotedArtworks = EXPERIMENTAL_ARTWORKS.map(({ id, name, file, ridgeY }) => ({
+  name, file: `experiments/${file}`, ridgeY, ...PROMOTED_ARTWORK_META[id],
+}));
 
 export const ARTWORKS = Object.freeze([
   { id: 'gouache', name: 'Atelier gouache', pack: 'coastal-foothill', file: 'horizon-gouache.webp', settlement: ['city', 'town'], relief: ['hills'], water: ['coast'], vegetation: ['urban'], terrain: ['hills', 'coast'], ridgeY: .744 },
@@ -18,6 +41,7 @@ export const ARTWORKS = Object.freeze([
   { id: 'ghats-woodblock', name: 'Western Ghats woodblock', pack: 'western-ghats', file: 'horizon-ghats-woodblock.webp', wideFile: 'horizon-ghats-woodblock-wide.webp', wideRidgeY: .727, settlement: ['village', 'town', 'wilderness'], relief: ['hills'], water: ['river'], vegetation: ['forest'], terrain: ['hills', 'forest', 'river'], ridgeY: .500 },
   { id: 'konkan-watercolor', name: 'Konkan coastal watercolor', pack: 'tropical-coast', file: 'horizon-konkan-watercolor.webp', wideFile: 'horizon-konkan-watercolor-wide.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], ridgeY: .478, wideRidgeY: .707 },
   { id: 'konkan-poster', name: 'Konkan coastal poster', pack: 'tropical-coast', file: 'horizon-konkan-poster.webp', wideFile: 'horizon-konkan-poster-wide.webp', settlement: ['village', 'town', 'wilderness'], relief: ['plain', 'hills'], water: ['coast'], vegetation: ['forest'], terrain: ['coast', 'forest', 'plain'], ridgeY: .489, wideRidgeY: .666 },
+  ...promotedArtworks,
 ]);
 
 export const LANDSCAPE_DIMENSIONS = Object.freeze({
@@ -73,7 +97,9 @@ export function dailyArtworkIndex(date, timezone, region = 'navi-mumbai') {
   // This legacy selector is intentionally restricted to the original regional
   // pack; geography-aware screens should use regionalArtworkIndex() from
   // landscape-regions.js, which also filters newly added artworks by place.
-  const count = ARTWORKS.filter(art => art.pack === 'coastal-foothill').length;
+  // Preserve this legacy selector's original six-image index range even as
+  // newer paintings join the coastal-foothill pack.
+  const count = ARTWORKS.filter(art => art.pack === 'coastal-foothill' && !art.file.startsWith('experiments/')).length;
   const block = Math.floor(day / count);
   const slot = ((day % count) + count) % count;
   const order = shuffledBag(hashText(region + ':' + block), count);

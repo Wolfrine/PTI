@@ -5,7 +5,7 @@
 // https://operations.osmfoundation.org/policies/nominatim/ .
 // No credential, exact GPS, Firebase, persisted location or scheduled polling.
 
-import { ARTWORKS, classifyLandscape, dateParts } from './environment.js?v=horizon-r7-20261113';
+import { ARTWORKS, classifyLandscape, dateParts } from './environment.js?v=artwork-promotion-20261116';
 
 export const REGION_PACKS = Object.freeze({
   'coastal-foothill': { title: 'Coastal foothills', geography: 'Original Navi Mumbai interpretation' },
@@ -13,6 +13,7 @@ export const REGION_PACKS = Object.freeze({
   'river-plain': { title: 'River plains', geography: 'Representative village, agricultural plain and meandering river' },
   'western-ghats': { title: 'Forest hills', geography: 'Representative Western Ghats forest, falls and rugged hills' },
   'tropical-coast': { title: 'Tropical coast', geography: 'Representative Konkan seashore and vegetation' },
+  'arid-land': { title: 'Drylands', geography: 'Representative dry plateau and sandstone canyon' },
 });
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000;
@@ -161,7 +162,7 @@ export async function resolveLandscapeProfile({ latitude, longitude, name = '', 
   return evidenceSummary(name, address, terrain.relief?.centerMeters, terrain.surface, terrain.relief);
 }
 
-// Conservative, bounded visual matching: 5 approved packs, never claim exact
+// Conservative, bounded visual matching: six geographic packs, never claim exact
 // neighbourhood scenery. Missing geographic evidence returns illustrative art.
 export function pickRegionPack(profile = {}) {
   const area = String(profile.areaDescription || profile.name || profile.region || '');
@@ -188,6 +189,9 @@ export function pickRegionPack(profile = {}) {
   } else if (water === 'river' && waterSourced && terrainSourced && relief === 'plain' && ['village', 'town'].includes(profile.settlement)) {
     id = 'river-plain'; matched = true;
     rationale = 'Mapped river near a low-relief settled plain';
+  } else if (vegetation === 'arid' && profile.evidence?.surface) {
+    id = 'arid-land';
+    rationale = 'Representative drylands based on nearby mapped scrubland, not a confirmed canyon';
   } else if (['hills', 'mountains'].includes(relief) && vegetation === 'forest') {
     id = 'western-ghats';
     rationale = 'Representative green forest hills, not a confirmed Western Ghats location';
@@ -204,10 +208,14 @@ export function pickRegionPack(profile = {}) {
   };
 }
 
+export function artworkMatchesPack(artwork, packId) {
+  return Boolean(artwork && (artwork.pack === packId || artwork.compatiblePacks?.includes(packId)));
+}
+
 export function eligibleArtwork(profile = {}) {
   const pack = pickRegionPack(profile);
   return ARTWORKS.map((artwork, index) => ({ ...artwork, index }))
-    .filter(artwork => artwork.pack === pack.id);
+    .filter(artwork => artworkMatchesPack(artwork, pack.id));
 }
 
 function textHash(value) {

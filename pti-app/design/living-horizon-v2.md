@@ -2,6 +2,13 @@
 
 Status: owner approved promotion to the authenticated `/home` launcher on 13 November 2026. The accepted standalone concept remains available at `/living-horizon/index.html`; live browser inspection of authenticated Home remains a release QA gate.
 
+## 16 November 2026 — owner-approved 12-artwork promotion
+
+- The current catalogue grows from 14 to **26 transparent foreground paintings**, with the original 14 retained. The 12 new scenes come from the visually reviewed [artwork lab](/living-horizon/index.html?art-lab=1), using the same live sky, astronomy, weather and foreground positioning mechanism.
+- Daily rotation and Home clock cycling still select **location-compatible landscapes**. Six new scenes (04 Coastal City, 05 Konkan Coast, 06 Monsoon Paddies, 07 Woodblock Marsh, 08 Sculpted Paper Estuary, 09 Art Nouveau River) join the Navi Mumbai coastal-foothill pool. The other new paintings join their primary Himalayan, river-plain, Western Ghats, tropical-coast or arid-land archetypes.
+- Compatibility between representative packs is explicit rather than a claim of actual local scenery: 04 also fits tropical coast; 08 fits river plain, tropical coast and Navi coastal foothills. A sixth **drylands** pack is eligible only with supporting mapped arid/scrub evidence. Multi-art packs avoid adjacent repeats; the drylands pack currently has one painting and will repeat until expanded.
+- The simulation art slider reaches all 26; the 12-artwork lab remains independently available. Earlier dated counts and quality notes below describe their historical revisions.
+
 ## 13 November 2026 — active v5 Home and regional artwork contract
 
 - The `/home` welcome hero is now the same-origin Living Horizon embed; real launcher apps, search, account readings, local companions and authentication remain under Angular Home. The expanded studio posts measured content height to the parent with an origin- and source-validated resize listener.
@@ -23,8 +30,8 @@ Status: owner approved promotion to the authenticated `/home` launcher on 13 Nov
 
 ## Experience
 
-- Every calendar day in the **location's time zone** selects a new landscape style. Six original artistically distinct scenes rotate in a seeded shuffled bag; no repeat on adjacent days, including across bag boundaries.
-- The compact **Art** action cycles the six styles instantly. Its manual override lasts until the next local calendar day. There is no paid or server-side image generation on page load.
+- Every calendar day in the **location's time zone** selects a new style from its compatible regional artwork pool. The seeded shuffled bag avoids adjacent-day repeats, including across bag boundaries.
+- The compact **Art** action cycles the location-compatible styles instantly. Its manual override lasts until the next local calendar day. There is no paid or server-side image generation on page load.
 - The artwork is a transparent foreground, while gradients, sunlight, moonlight, clouds, rain, stars, haze and scene color are separately composed. Environmental accuracy and artistic treatment are therefore independent.
 - Day/dawn/dusk/night are derived from computed sun altitude. The rain/storm effects use visible canvas drops and a CSS sheet that remains visible when reduced-motion is enabled.
 - Phone first: compact strip, minimal text, fast WebP foregrounds, pause animation when offscreen. The six initial landscapes together are about 820 KB.

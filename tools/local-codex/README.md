@@ -1,6 +1,6 @@
 # Local Codex from normal ChatGPT chats
 
-The private Local Codex plugin calls `/local-codex/mcp` on PTI's existing Cloud Run service. Eighteen work/history/outcome/capability/QA tools serve the owner through the existing authenticated connection. The discussion stays in the normal ChatGPT conversation, including on web/mobile clients that support the connected plugin.
+The private Local Codex plugin calls `/local-codex/mcp` on PTI's existing Cloud Run service. Nineteen work/history/outcome/capability/QA tools serve the owner through the existing authenticated connection. The discussion stays in the normal ChatGPT conversation, including on web/mobile clients that support the connected plugin.
 
 The worker launches the installed Codex CLI's app-server using the Windows user's **ChatGPT subscription sign-in**. It rejects API-key authentication and removes model API credential/endpoint overrides from child environments. Codex credentials never leave the PC. PTI Firebase OAuth authorizes the relay; a separate current-user DPAPI credential authorizes the worker. This is not an OpenAI inference API integration.
 
@@ -25,6 +25,12 @@ For explicitly authorized remote setup, `node dist/pair-existing.mjs --reuse-pti
 ## Authorization and evidence
 
 The [complete limits and dependencies inventory](docs/limitations.md) records active owner policies, bridge-specific restrictions, exact transport/history bounds and platform limitations. Do not introduce new execution restrictions without the owner's explicit instruction.
+
+### Remote native-writer recovery (worker 0.4.13)
+
+An edit that fails on native ownership before any turn or tool call starts can recover through the same chat's supported desktop queue, retaining its hosted task/generation, request identity and exact model/effort. Inspect jobs never automatically switch permission contexts. Pending input survives the bounded startup check and waits behind the native owner. The relay observes the exact marker/turn through native completion, returns bounded progress/final text through `get_task`, and retains the reservation until terminal observation. Historical receipts can be reconciled with `read_codex_thread`; their original hosted audit snapshots are not rewritten.
+
+`cancel_task` removes only this operation's pending queue entry. Once consumed, a separate reader cannot interrupt the desktop-owned turn: it reports `stop.state: unavailable` and continues observing. On this PC the documented daemon/proxy control route failed with socket error 10050. The honest fallback is the same durable queue and normal native completion, with an explicit unresolved state if the owner stalls; no lock deletion, process kill, duplicate submission, rotation or mandatory owner desktop action. See [the evidence and recovery decision](decisions/2026-11-16-native-writer-recovery.md).
 
 ### Browser control (worker 0.4.11)
 

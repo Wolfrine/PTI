@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
-import {home,config,project,read,write,alive,subscriptionEnvironment,VERSION,taskDir} from './common.mjs';
+import {home,config,project,read,write,alive,digest,subscriptionEnvironment,VERSION,taskDir} from './common.mjs';
 import {loadCredential,saveCredential,refresh,firebaseAuthConfig,OWNER} from './credentials.mjs';
 import {modelSelection} from './model-policy.mjs';
 import {reportChangedSnapshot} from './progress.mjs';
@@ -80,15 +80,41 @@ async function cancelOwned(job){
     if(fs.existsSync(file)&&!['completed','failed','interrupted'].includes(read(file).status))write(path.join(directory,'cancel.json'),{requestedAt:new Date().toISOString()});
   }
 }
+async function serviceDesktop(job,controls,args){
+  let result;
+  try{result=await local('codex_history',{action:'desktop',args:{...args,request_id:job.id,...(controls?.cancel?{cancel:true}:{})}});}
+  catch(error){
+    const file=path.join(home,'data',`desktop-${job.id}.json`),prior=fs.existsSync(file)?read(file):null;
+    const expected=digest(JSON.stringify({thread:args.thread_id,project:args.project,prompt:args.prompt}));
+    if(!prior||prior.inputHash!==expected)throw error;
+    // A reader/transport failure after durable delivery is not proof that
+    // app-owned work failed or stopped. Retain its lease and exact identity.
+    result={...prior,...(!['completed','failed','interrupted'].includes(prior.work_state)?{work_state:'unknown'}:{}),observation_error:error.message.slice(0,250)};
+  }
+  const state=result.work_state;
+  const status=['completed','failed','interrupted'].includes(state)?state:
+    result.state==='cancelled'?'interrupted':result.state==='not-started'?'failed':'running';
+  const value={status,result:{...result,...(job.desktopRecovery?{recovery:job.desktopRecovery}:{})}};
+  if(await reportChangedSnapshot(job,value,snapshot=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot})))persist();
+  else metrics.suppressedReports++;
+  if(status!=='running')remove(job);
+}
 async function service(job,controls){
   if(controls?.generation!==undefined&&controls.generation!==job.generation)throw Error('Mismatched relay controls.');
   try{
+    if(job.desktopRecovery){
+      await serviceDesktop(job,controls,{project:job.project,thread_id:job.desktopRecovery.thread_id,prompt:job.prompt});
+      return;
+    }
     if(job.command){
+      if(job.command.action==='desktop'){
+        await serviceDesktop(job,controls,job.command.args);
+        return;
+      }
       const receipt=path.join(home,'data',`history-${job.id}.json`);
       if(controls?.cancel)await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'interrupted'}});
       else{
-        const command=job.command.action==='desktop'?{...job.command,args:{...job.command.args,request_id:job.id}}:job.command;
-        const result=fs.existsSync(receipt)?read(receipt):await local('codex_history',command);
+        const result=fs.existsSync(receipt)?read(receipt):await local('codex_history',job.command);
         if(!fs.existsSync(receipt))write(receipt,result);
         await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'completed',result}});
       }
@@ -110,6 +136,20 @@ async function service(job,controls){
       (job.handledResponses||=[]).push(answer.request_id);persist();
     }
     const current=await local('get_task',{task_id:job.localId,wait_seconds:0});
+    // Only an edit whose native resume failed before starting any turn may
+    // recover through the same chat's ordinary queue. Inspect keeps its sandbox.
+    if(current.status==='failed'&&job.mode==='edit'&&!controls?.cancel&&current.threadId&&!current.turnId&&
+      /already has an active writer|Native ownership is unresolved|The selected native chat is active|The module parent is active/.test(current.error||'')&&current.telemetry?.commands===0&&current.telemetry?.toolCalls===0){
+      if(alive(current.workerPid)){
+        const waiting={status:'running',result:{operation:'native-writer-recovery',state:'waiting-for-failed-worker-exit',thread_id:current.threadId,failed_local_task:job.localId}};
+        if(await reportChangedSnapshot(job,waiting,snapshot=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot})))persist();
+        return;
+      }
+      job.desktopRecovery={route:'existing-desktop-queue',thread_id:current.threadId,failed_local_task:job.localId,reason:'native-writer-held-before-turn'};
+      persist();
+      await serviceDesktop(job,controls,{project:job.project,thread_id:current.threadId,prompt:job.prompt});
+      return;
+    }
     if(await reportChangedSnapshot(job,snapshot(current),value=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:value})))persist();else metrics.suppressedReports++;
     if(['completed','failed','interrupted'].includes(current.status))remove(job);
   }catch(error){

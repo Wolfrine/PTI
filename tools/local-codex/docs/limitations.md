@@ -2,7 +2,7 @@
 
 Audit date: 8 November 2026. Scope: installed Windows configuration, worker/relay source, hosted Local Codex admission and protocol source, plugin guidance, relevant desktop configuration, and actual native-chat/browser operation. This is a control inventory, not a claim that every failure condition was deliberately triggered.
 
-Current verified release: worker 0.4.12 / host 0.4.9 / plugin 0.4.14. The existing ChatGPT conversation invoked `continue_desktop_chat`, the existing Co-Director chat controlled Chrome, and its completed result returned through relay history. Earlier statements below that the relay has no automatic launcher describe previous releases; see the final section for current end-to-end evidence.
+Baseline when this repair began on 16 November: worker 0.4.12 / host 0.4.9 / published plugin 0.4.17. Plugin 0.4.18 is now published with unchanged App binding; worker 0.4.13 source/build adds remote ownership recovery and terminal reconciliation, with activation pending this delivering claim's exit. The 8 November existing ChatGPT conversation invoked `continue_desktop_chat`, the existing Co-Director chat controlled Chrome, and its completed result returned through relay history. That is historical browser evidence. Source/build, publication and installed activation remain separate. See [the current repair evidence and limitations](../decisions/2026-11-16-native-writer-recovery.md). Earlier statements below that the relay has no automatic launcher describe previous releases.
 
 ## Confirmed working and changes delivered
 
@@ -40,7 +40,7 @@ Sources: `src/common.mjs`, `src/worker.mjs`, `src/credentials.mjs`, `src/relay.m
 | Inspect/edit modes | Inspect is read-only; edit is Full Access; both use approval `never` | Current authorization boundary. A continuation cannot change its project or broaden inspect to edit. A new task record can reuse the same module chat. |
 | Project catalog | Only configured, existing physical F-drive project keys are accepted | Bridge routing allowlist plus owner F-drive rule. Now 9 entries including Taleweald. Hosted heartbeat schema still permits at most 30 entries. |
 | Repository concurrency | An edit locks the whole physical Git checkout against other bridge readers/writers; independent reads can coexist | Bridge-added conservative coordination, coarser than file-level locking. Different module names do not bypass it. Parent subagents can divide files inside one task. |
-| Native chat writer | One active writer per chat; unfinished turns and desktop-held writers cannot be taken over | Native Codex ownership plus bridge checks. A completed turn can still be loaded by the desktop. Use its owning app; do not delete locks. |
+| Native chat writer | One active writer per chat; unfinished turns and desktop-held writers cannot be taken over | Native Codex ownership plus bridge checks. A completed turn can still be loaded. Worker 0.4.13 uses the same normal desktop queue for eligible pre-turn edit failures; no lock deletion or manual owner desktop requirement. Native stop remains unavailable when supported app control cannot connect. |
 | Module identity | One active parent per physical project/module; distinct related outcomes reuse it | Owner reuse requirement. No automatic age/turn/token-based rotation. Missing/archived/incompatible automatic selections can rotate; explicit selections do not silently change. |
 | Request identity | A request/work key cannot be reused for different inputs or source identity | Duplicate-execution protection, not a work limit. |
 | Recursive relay calls | Workers cannot submit back into their own relay | Bridge policy prevents recursive jobs. Native subagents remain available. |
@@ -57,7 +57,7 @@ Sources: `src/limits.mjs`, `src/harness-policy.mjs`, `src/model-policy.mjs`, `sr
 | Heartbeat freshness | Hosted worker is offline after 60 seconds without a fresh heartbeat | New work is rejected rather than silently queued while the PC is unavailable. |
 | Unclaimed request | Expires after 120 seconds | Limits dispatch waiting, not execution duration. |
 | Active lease | 90 seconds, renewed while connected | Lost generation/lease cannot keep reporting as current. |
-| Connection-loss interruption | Local relay requests cancellation after more than 45 seconds without a successful relay request | This is a bridge-added operational restriction, not a Codex limit. Protects unattended work when coordination/control is lost; can interrupt otherwise healthy local work during an outage. Retained explicitly in this audit. |
+| Connection-loss interruption | Local relay requests cancellation after more than 45 seconds without a successful relay request | Bridge restriction, not a Codex limit. Can interrupt standalone work during an outage. It cannot stop an app-owned desktop turn through an independent reader; that work may continue after the lease/ChatGPT call ends. |
 | Network request | Relay HTTP 20 seconds; Firebase token refresh 15 seconds | Request failure/retry does not itself impose a total task-duration ceiling. |
 | Retry delay | Exponential 1 second up to 30 seconds | Transport recovery, not extra model inference. |
 | Health cadence | Normally 30 seconds; quiet connected idle state 40 seconds | Uses listeners for dispatch, not periodic empty job queries. |

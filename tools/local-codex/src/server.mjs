@@ -68,7 +68,7 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
 register('codex_history','Internal history, organization and explicitly authorized existing-chat desktop handoff for the authenticated relay. Only action desktop queues native work.',{
   action:z.enum(['list','read','rename','archive','unarchive','desktop']),
   args:z.object({project:z.string().optional(),thread_id:z.string().uuid().optional(),query:z.string().max(200).optional(),
-    archived:z.boolean().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).optional(),title:z.string().trim().min(1).max(100).optional(),prompt:prompt.optional(),request_id:id.optional()}).strict(),
+    archived:z.boolean().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).optional(),title:z.string().trim().min(1).max(100).optional(),prompt:prompt.optional(),request_id:id.optional(),cancel:z.boolean().optional()}).strict(),
 },false,async ({action,args})=>{
   if(action!=='list'&&!args.thread_id)throw Error('A selected thread ID is required.');
   if(action==='rename'&&!args.title)throw Error('A short title is required.');

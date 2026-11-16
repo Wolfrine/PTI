@@ -156,7 +156,19 @@ mountStudio({ app, auth, drive:studioDrive }).catch(() => {
 window.addEventListener('velum:lock',()=>studioDrive.clear());
 const libraryControls=mountGalleryLibrary({drive:studioDrive,current:currentMediaItem,getUrl:ensureObjectUrl,
  onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;renderMoment(next);}else{renderSerial++;window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
- onChanged:async()=>{await syncDrive();renderBrowse();libraryControls.update();}
+ onChanged:async({kind,file,id})=>{
+   // A verified Drive PATCH is authoritative. Keep the Browse state in sync
+   // immediately; a second full Drive fetch must not turn success into failure.
+   if(kind==='trash')images=images.filter(item=>item.id!==id);
+   else if(file){
+     const old=imageMap.get(id);
+     if(old)images=images.map(item=>item.id===id?{...item,...file}:item);
+     else if(kind==='restore')await syncDrive();
+   }
+   imageMap=new Map(images.map(item=>[item.id,item]));
+   if(initializedGallery)renderBrowse();
+   libraryControls.update();
+ }
 });
 
 class EventStore {
@@ -704,8 +716,12 @@ function renderBrowse() {
 
   arr.forEach(item => {
     const s = stat(item);
-    const tile = document.createElement('button');
+    const tile = document.createElement('article');
     tile.className = `tile tile-${item.kind || 'image'}`;
+    const opener = document.createElement('button');
+    opener.type = 'button';
+    opener.className = 'tile-open';
+    opener.setAttribute('aria-label', `View ${item.name || 'image'} in Drift`);
     const ratio = item.width && item.height ? Math.max(.72, Math.min(1.65, item.height / item.width)) : 1.22;
     const preview = `<img class="tile-media" data-id="${item.id}" alt="">`;
     const badge = isVideoMedia(item)
@@ -713,8 +729,26 @@ function renderBrowse() {
       : isGifMedia(item)
         ? '<span class="tile-badge gif">GIF</span>'
         : '';
-    tile.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}<span class="tile-folder">${item.folderLabel||'Private'}</span></div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${(s.affectionDurationMs / 1000).toFixed(s.affectionDurationMs < 10000 ? 1 : 0).replace(/\.0$/, '')}s held · ${s.views} views</span></div>`;
-    tile.onclick = () => openInDrift(item.id);
+    opener.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}<span class="tile-folder">${item.folderLabel||'Private'}</span></div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${(s.affectionDurationMs / 1000).toFixed(s.affectionDurationMs < 10000 ? 1 : 0).replace(/\.0$/, '')}s held · ${s.views} views</span></div>`;
+    opener.onclick = () => openInDrift(item.id);
+    tile.append(opener);
+    if(item.mimeType?.startsWith('image/')&&['Private','References'].includes(item.folderLabel)){
+      const destination=item.folderLabel==='References'?'Private':'References';
+      const move=document.createElement('button');
+      move.type='button';move.className='tile-quick-move';
+      move.setAttribute('aria-label',`Move ${item.name || 'image'} to ${destination}`);
+      move.title=`Move to ${destination}`;
+      move.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h6l2 2H21v9.5H3z"/><path d="m12 14 3-3m0 0h-3m3 0v3"/></svg><span>${destination==='References'?'Refs':'Private'}</span>`;
+      move.disabled=libraryControls.busy;
+      move.onclick=async event=>{
+        event.preventDefault();event.stopPropagation();
+        move.classList.add('is-pending');move.setAttribute('aria-busy','true');
+        try{await libraryControls.move(item,{focusUndo:event.detail===0});}finally{
+          move.classList.remove('is-pending');move.removeAttribute('aria-busy');
+        }
+      };
+      tile.append(move);
+    }
     browseGrid.append(tile);
     const previewEl = tile.querySelector('[data-id]');
     if (previewEl) browseObserver.observe(previewEl);
@@ -810,3 +844,4 @@ onAuthStateChanged(auth, async user => {
   }
   await syncDrive({ initial: true });
 });
+

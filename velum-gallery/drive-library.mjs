@@ -47,7 +47,7 @@ export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFold
   const params=new URLSearchParams({addParents:destination,removeParents:source,fields:'id,name,parents,trashed'});
   const moved=await json(await writeRequest(`${API}/files/${id(file.id)}?${params}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'}),'Move was not confirmed');
   if(moved.id!==file.id||moved.trashed||!moved.parents?.includes(destination)||moved.parents?.includes(source))throw new Error('Move response did not match. Sync to recover the actual location.');
-  return {file:libraryFile({...file,...moved}),recovery:{kind:'move',id:file.id,name:file.name,from:source,to:destination,at:Date.now()}};
+   return {file:libraryFile({...file,...moved}),recovery:{kind:'move',id:file.id,name:file.name,mimeType:file.mimeType,from:source,to:destination,at:Date.now()}};
  }
  async function trash(file){
   const actual=await manageable(file);
@@ -57,7 +57,7 @@ export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFold
   return {kind:'trash',id:file.id,name:file.name,folderId:libraryFile(actual).folderId,at:Date.now()};
  }
  async function undo(record){
-  if(record?.kind==='move')return move({id:id(record.id),name:record.name},record.from);
+   if(record?.kind==='move')return move({id:id(record.id),name:record.name,mimeType:record.mimeType,folderId:record.to},record.from);
   if(record?.kind!=='trash')throw new Error('No recoverable action selected.');
   const restored=await json(await writeRequest(`${API}/files/${id(record.id)}?fields=id,name,parents,trashed`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:false})}),'Restore was not confirmed');
   if(restored.trashed!==false)throw new Error('Restore response did not match. Open Drive Trash to recover it.');
@@ -82,3 +82,4 @@ export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFold
  }
  return {listReferences,metadata,move,trash,undo,choosePose};
 }
+

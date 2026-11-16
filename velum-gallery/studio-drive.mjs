@@ -131,13 +131,13 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
   async function authorize(){
     owner();if(token&&Date.now()<expiresAt)return;
     const generation=epoch;token='';expiresAt=0;
-    if(await inspect(getReadAccess(),generation))return;
-    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
+    // Start the Google popup during the user's move/save click. A remote
+    // tokeninfo round-trip first can exhaust mobile browser user activation.
     const credential=await requestAccess(DRIVE_FILE_SCOPE);
     owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
-    if(!await inspect(credential?.accessToken,generation))throw new Error('Google did not grant Drive file access. No image was uploaded.');
+    if(!await inspect(credential?.accessToken,generation))throw new Error('Google did not grant Drive file access. No file was changed.');
   }
-  async function request(url,options={}){owner();const generation=epoch;if(!token||Date.now()>=expiresAt)throw new Error('Drive access expired. Tap Save again to reconnect on this device.');const response=await fetchImpl(url,{...options,headers:{...options.headers,Authorization:`Bearer ${token}`}});owner();if(generation!==epoch)throw new Error('Studio locked.');if(response.status===401){token='';expiresAt=0;throw new Error('Drive access expired. Tap Save again to reconnect on this device.');}return response;}
+  async function request(url,options={}){owner();const generation=epoch;if(!token||Date.now()>=expiresAt)throw new Error('Drive access expired. Retry this action to reconnect on this device.');const response=await fetchImpl(url,{...options,headers:{...options.headers,Authorization:`Bearer ${token}`}});owner();if(generation!==epoch)throw new Error('Studio locked.');if(response.status===401){token='';expiresAt=0;throw new Error('Drive access expired. Retry this action to reconnect on this device.');}return response;}
   async function authorizeRead(){
     owner();if(readToken&&Date.now()<readExpiresAt)return;
     const generation=epoch;
@@ -163,12 +163,12 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
     try{const response=await fetchImpl(url,{...options,signal:controller.signal,headers:{...options.headers,Authorization:`Bearer ${readToken}`}});owner();if(generation!==epoch)throw new Error('Studio locked.');if(response.status===401){readToken='';readExpiresAt=0;throw new Error('Drive read access expired. Reconnect and retry.');}return response;}
     finally{controllers.delete(controller);options.signal?.removeEventListener('abort',cancel);}
   }
-  async function pick(folder,folderId=PRIVATE_FOLDER_ID,title=''){
+  async function pick(folder,folderId=PRIVATE_FOLDER_ID,title='',mimeType='image/png,image/jpeg'){
     const generation=epoch;await loadPicker();owner();if(generation!==epoch)throw new Error('Studio locked.');
     return new Promise((resolve,reject)=>{
       const view=new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true);
       if(folder)view.setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder');
-      else view.setMimeTypes('image/png,image/jpeg').setParent(folderId);
+       else view.setMimeTypes(mimeType).setParent(folderId);
       const picker=new google.picker.PickerBuilder().setAppId(appId).setDeveloperKey(apiKey).setOAuthToken(token).setOrigin(location.origin).setTitle(title||(folder?'Select the existing Private folder':'Choose an image reference')).addView(view).setCallback(data=>{
         if(data.action===google.picker.Action.CANCEL){pickers.delete(picker);picker.dispose();reject(new Error('Drive selection cancelled.'));}
         if(data.action===google.picker.Action.PICKED){const selected=data.docs?.[0];pickers.delete(picker);picker.dispose();resolve(selected);}
@@ -183,14 +183,14 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
     const approved=await writable();if(generation!==epoch)throw new Error('Studio locked.');if(approved)return;
     const selected=await pick(true,folderId,`Select the existing ${folderId===PRIVATE_FOLDER_ID?'Private':'References'} folder`);
     if(selected?.id!==folderId)throw new Error('Choose the existing destination folder. No duplicate folder was created.');
-    if(!await writable())throw new Error('The existing Private folder has not been granted writable access. Check the phone-side Picker grant. No broader Drive scope was requested.');
+     if(!await writable())throw new Error(`The existing ${folderId===PRIVATE_FOLDER_ID?'Private':'References'} folder has not been granted writable access. Check the Google Picker selection.`);
   }
   async function grantFile(file){
     await authorize();const generation=epoch;
     const url=`${API}/files/${encodeURIComponent(file.id)}?fields=id,name,parents,trashed,ownedByMe,isAppAuthorized,capabilities(canMoveItemWithinDrive,canTrash)`;
     const inspectFile=async()=>{const response=await request(url);if([403,404].includes(response.status))return null;if(!response.ok)throw new Error('Could not verify file permissions.');return response.json();};
     let actual=await inspectFile();
-    if(!actual?.isAppAuthorized){const selected=await pick(false,file.folderId||PRIVATE_FOLDER_ID,`Allow Velum to manage this file: ${file.name||file.id}`);if(selected?.id!==file.id)throw new Error('Select the exact image shown in Details. Nothing was moved or trashed.');actual=await inspectFile();}
+     if(!actual?.isAppAuthorized){const selected=await pick(false,file.folderId||PRIVATE_FOLDER_ID,`Allow Velum to manage this file: ${file.name||file.id}`,file.mimeType?.startsWith('image/')?file.mimeType:'image/png,image/jpeg');if(selected?.id!==file.id)throw new Error('Select the exact image you chose. Nothing was moved or trashed.');actual=await inspectFile();}
     if(generation!==epoch)throw new Error('Studio locked.');
     if(!actual?.isAppAuthorized)throw new Error('Google has not granted access to this file. Nothing was changed.');
     return actual;
@@ -239,3 +239,4 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
     clear(){epoch++;for(const controller of controllers)controller.abort();controllers.clear();for(const[picker,reject]of pickers){picker.dispose();reject(new Error('Studio locked.'));}pickers.clear();token='';expiresAt=0;readToken='';readExpiresAt=0;try{for(let index=storage.length-1;index>=0;index--){const key=storage.key(index);if(key?.startsWith(PREFIX))storage.removeItem(key);}}catch{}}
   };
 }
+

@@ -1,4 +1,4 @@
-// Observation-backed source comparison for the Living Horizon experiment only.
+// Observation-backed sources shared by Living Horizon and its accuracy lab.
 // No GPS, account information or API keys are persisted or sent to PTI storage.
 // Open-Meteo supplies gridded models; METAR is a nearby airport observation.
 
@@ -174,6 +174,20 @@ async function fetchStation(station, latitude, longitude, signal, now) {
     metarCache.set(station.icao, { at: Date.now(), body });
   }
   return parseMetar(body, station, latitude, longitude, now);
+}
+
+/** Return fresh, distance-qualified airport readings without extra model/API calls. */
+export async function fetchNearbyObservation({ latitude, longitude, signal } = {}) {
+  if (!validLocation(latitude, longitude)) throw new TypeError('Valid latitude/longitude required');
+  const now = new Date();
+  const eligible = STATIONS.filter(station =>
+    distanceKm(latitude, longitude, station.latitude, station.longitude) <= MAX_STATION_DISTANCE_KM);
+  const results = await Promise.allSettled(eligible.map(station =>
+    fetchStation(station, latitude, longitude, signal, now)));
+  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  const stations = results.filter(result => result.status === 'fulfilled' && result.value)
+    .map(result => result.value).sort((a, b) => a.distanceKm - b.distanceKm);
+  return { observation: stations[0] || null, stations };
 }
 
 /**

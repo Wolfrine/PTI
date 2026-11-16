@@ -1,9 +1,9 @@
 // Public-safe visual prototype. No authentication, account data or personal metrics.
-// Live weather: Open-Meteo. Opted-in position is coarse; smog simulation is artistic.
+// Live weather: Open-Meteo forecast with fresh nearby METAR air observations.
 import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName, celestialAppearance,
-} from './environment.js?v=artwork-promotion-20261116';
+} from './environment.js?v=weather-home-accuracy-20261116';
 import { EXPERIMENTAL_ARTWORKS } from './artwork-experiments.js?v=artwork-promotion-20261116';
 import {
   REGION_PACKS, resolveLandscapeProfile, pickRegionPack, artworkMatchesPack,
@@ -11,13 +11,14 @@ import {
 } from './landscape-regions.js?v=artwork-promotion-20261116';
 import { createCloudSystem } from './clouds.js?v=horizon-r8-20261115';
 import { createRainSystem } from './rain-effects.js?v=horizon-r8-20261115';
+import { fetchNearbyObservation } from './weather-sources.js?v=weather-home-accuracy-20261116';
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 const CURRENT_FIELDS = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,wind_speed_10m,visibility,is_day';
 const HOURLY_FIELDS = 'temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,wind_speed_10m,visibility';
 const CACHE_KEY = 'pti.living-horizon.coarse-weather.v3';
 const CACHE_AGE_MS = 15 * 60 * 1000;
 const LAST_OBSERVATION_AGE_MS = 6 * 60 * 60 * 1000;
-const COARSE_LOCATION = { name: 'Navi Mumbai', latitude: 19.05, longitude: 73.02 };
+const COARSE_LOCATION = { name: 'Navi Mumbai area', latitude: 19.05, longitude: 73.02 };
 const PRESETS = {
   dawn: { event: 'sunrise', weather: 'cloudy', cloud: 48, rain: 0 },
   day: { event: 'solarNoon', weather: 'clear', cloud: 8, rain: 0 },
@@ -35,14 +36,18 @@ const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
 const isHomeEmbed = document.documentElement.classList.contains('horizon-embed');
 const isArtworkLab = document.documentElement.classList.contains('horizon-art-lab');
-// Only the experiment may preview nearby METAR observations. Home keeps its
-// previously accepted behaviour until the comparison has been reviewed.
+// The experiment retains its own model/observation toggle. Home uses a fresh
+// nearby observation automatically, without presenting it as device-measured.
 let weatherLabObservation = null;
+let homeNearbyObservation = null;
+let deviceLocationAccuracy = null;
+let deviceLocationRequest = 0;
 const homeClockButton = document.querySelector('#home-weather-clock');
 const homeClock = document.querySelector('#home-local-time');
 const homeRefreshStatus = document.querySelector('#home-refresh-status');
 const homeWeatherCredits = document.querySelector('.home-weather-credits');
 const homeWeatherCredit = document.querySelector('#home-weather-credit');
+const homeMetarCredit = document.querySelector('#home-metar-credit');
 const homeMapCredit = document.querySelector('#home-map-credit');
 const isAmbient = document.documentElement.classList.contains('horizon-ambient');
 const forecastOutlook = document.querySelector('#forecast-outlook');
@@ -171,8 +176,15 @@ function updateHomeClock() {
   homeClock.dateTime = localTime;
   homeClock.textContent = localTime;
   homeClockButton.setAttribute('aria-label', `${localTime} in ${liveLocation}. Change artwork and refresh weather for your area`);
-  homeClockButton.title = 'Change artwork and refresh weather for your area';
+  homeClockButton.title = `Refresh local weather and artwork${deviceLocationAccuracy === null ? ' · tap to locate device' : ` · device fix ±${Math.round(deviceLocationAccuracy)} m`}`;
   homeClockButton.hidden = false;
+}
+
+function activeNearbyObservation() {
+  const observed = isArtworkLab ? weatherLabObservation : isHomeEmbed || isAmbient ? homeNearbyObservation : null;
+  if (!observed?.observedAt) return null;
+  const age = (Date.now() - Date.parse(observed.observedAt)) / 60000;
+  return age >= -5 && age <= 90 ? observed : null;
 }
 
 function tickHomeClock() {
@@ -218,9 +230,17 @@ function updateScene({ phase, weather, description, temperature, location, state
   else if (state === 'offline') setStatus(isHomeEmbed ? 'Weather unavailable' : 'Offline · sample', 'sample');
   else setStatus('Scene preview', 'sample');
   if (isHomeEmbed || isAmbient) {
-    homeWeatherCredit.hidden = state !== 'live' && state !== 'stale';
+    homeWeatherCredit.hidden = (state !== 'live' && state !== 'stale') || !liveWeather?.current;
+    const nearby = activeNearbyObservation();
+    homeMetarCredit.hidden = !nearby;
+    if (nearby) {
+      const ageMinutes = Math.round((Date.now() - Date.parse(nearby.observedAt)) / 60000);
+      homeMetarCredit.textContent = `METAR ${nearby.station} · ${Math.round(nearby.distanceKm)}km · ${ageMinutes}m`;
+      homeMetarCredit.href = `https://metars.eu/api/metars/${nearby.station}/decoded`;
+      homeMetarCredit.title = `${nearby.stationName} · ${nearby.distanceKm.toFixed(1)} km away · ${ageMinutes} min old`;
+    }
     homeMapCredit.hidden = currentArea.cache || (liveLocation === 'Your area' && !placeProfile.evidence?.surface);
-    homeWeatherCredits.hidden = homeWeatherCredit.hidden && homeMapCredit.hidden;
+    homeWeatherCredits.hidden = homeWeatherCredit.hidden && homeMapCredit.hidden && homeMetarCredit.hidden;
     updateHomeClock();
   }
   sourceLine.textContent = note;
@@ -458,15 +478,23 @@ function setAtmosphericDepth(visibilityKm, artisticSmog = 0) {
 }
 
 function renderReadouts(live) {
+  const observed = live ? activeNearbyObservation() : null;
   const rawVisibility = liveWeather?.current?.visibility;
   const visibilityMeters = Number(rawVisibility);
   const hasVisibility = live && typeof rawVisibility === 'number' && Number.isFinite(visibilityMeters) && visibilityMeters >= 0;
-  visibilityReadout.hidden = !hasVisibility;
-  if (hasVisibility) {
+  visibilityReadout.hidden = !hasVisibility && !Number.isFinite(observed?.visibilityKm);
+  if (observed && Number.isFinite(observed.visibilityKm)) {
+    visibilityReadout.textContent = `Nearby vis. ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
+    visibilityReadout.title = `Measured at ${observed.stationName}, ${observed.distanceKm.toFixed(1)} km away, ${Math.round(observed.ageMinutes)} min before retrieval`;
+    const smoke = observed.phenomena?.some(word => /smoke/i.test(word));
+    const haze = observed.phenomena?.some(word => /haze|dust/i.test(word));
+    setAtmosphericDepth(observed.visibilityKm, smoke ? 28 : haze ? 16 : 0);
+  } else if (hasVisibility) {
     const km = visibilityMeters / 1000;
-    visibilityReadout.textContent = 'Visibility ' + (km >= 10 ? km.toFixed(0) : km.toFixed(1)) + ' km';
-  }
-  setAtmosphericDepth(hasVisibility ? visibilityMeters / 1000 : null);
+    visibilityReadout.textContent = (isHomeEmbed || isAmbient ? 'Est. vis. ' : 'Visibility ') + (km >= 10 ? km.toFixed(0) : km.toFixed(1)) + ' km';
+    visibilityReadout.title = 'Open-Meteo gridded model estimate, not a local measurement';
+    setAtmosphericDepth(km);
+  } else setAtmosphericDepth(null);
   moonReadout.hidden = !(live || isHomeEmbed) || !moonReadout.textContent;
   geographyReadout.hidden = true;
   if (isHomeEmbed) atmosphericReadouts.hidden = visibilityReadout.hidden && moonReadout.hidden;
@@ -566,7 +594,7 @@ function renderMode() {
     const current = liveWeather.current;
     const rainfall = Math.max(Number(current.rain) || 0, Number(current.showers) || 0, Number(current.precipitation) || 0);
     const { weather, text } = conditions(Number(current.weather_code), Number(current.cloud_cover), rainfall);
-    const observed = isArtworkLab ? weatherLabObservation : null;
+    const observed = activeNearbyObservation();
     const obscuration = Array.isArray(observed?.phenomena) ? observed.phenomena.join(' · ') : '';
     const solar = celestialState(
       new Date(), currentArea.latitude, currentArea.longitude, environmentTimeZone(),
@@ -578,11 +606,12 @@ function renderMode() {
     const observedTime = stationDate && Number.isFinite(stationDate.getTime())
       ? formatLocalTime(stationDate, environmentTimeZone()) : hhmm;
     const skyText = text === 'Clear skies' ? 'Clear sky' : text;
-    const description = observed ? `${obscuration || 'Nearby airport air'} · ${skyText} (model)`
-      : liveWeatherStale ? `${text} · earlier reading` : text;
+    const description = observed ? (isArtworkLab ? `${obscuration || 'Nearby airport air'} · ${skyText} (model)`
+      : `${obscuration || (observed.visibilityKm < 8 ? 'Reduced visibility' : skyText)} nearby`)
+      : liveWeatherStale ? `${text} · earlier model` : (isHomeEmbed || isAmbient) ? `${text} · model estimate` : text;
     updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description, observedTime:observed ? observedTime : hhmm,
       cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), rainfall, state: liveWeatherStale ? 'stale' : 'live', celestial: solar,
-      note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
+      note: `Weather by Open-Meteo · ${currentArea.cache ? 'regional estimate' : 'consented device area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
     const pack = pickRegionPack(placeProfile);
     const source = placeProfile?.evidence?.relief && placeProfile?.evidence?.surface
@@ -598,17 +627,19 @@ function renderMode() {
     const wind = Number(current.wind_speed_10m);
     if (Number.isFinite(wind)) frame.style.setProperty('--cloud-duration', `${Math.max(65, Math.min(145, 145 - wind * 2.4))}s`);
     if (observed && Number.isFinite(observed.visibilityKm)) {
-      // A METAR measures conditions at a nearby airport, not at the device.
-      // Use the observation only for the experiment's air-transparency preview.
+      // The airport observation controls apparent air transparency, while the
+      // model still controls temperature/clouds. Neither is a street sensor.
       const smoke = observed.phenomena?.some(word => /smoke/i.test(word));
       const haze = observed.phenomena?.some(word => /haze|dust/i.test(word));
       setAtmosphericDepth(observed.visibilityKm, smoke ? 28 : haze ? 16 : 0);
       visibilityReadout.hidden = false;
-      visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
-      heroKicker.textContent = 'MODEL SKY · OBSERVED AIR';
+      if (isArtworkLab) visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
+      heroKicker.textContent = 'NEARBY AIR · MODEL SKY';
       heroObservationTime.title = `${observed.stationName} (${observed.station}), ${observed.distanceKm.toFixed(1)} km away · ${observed.observedAt}`;
       setStatus(`Observed · ${observed.station}`, 'sample');
-      sourceLine.textContent = `Nearby ${observed.station} · ${observed.distanceKm.toFixed(1)} km away · visibility and ${obscuration || 'air conditions'} measured; temperature, cloud and artwork still modelled/illustrative.`;
+      sourceLine.textContent = `Nearby ${observed.station} · ${observed.distanceKm.toFixed(1)} km away · visibility and ${obscuration || 'air conditions'} measured; temperature and clouds modelled; artwork illustrative.`;
+    } else if (isHomeEmbed || isAmbient) {
+      heroKicker.textContent = currentArea.cache ? 'REGIONAL SKY · MODEL ESTIMATE' : 'LOCAL SKY · MODEL ESTIMATE';
     }
     return;
   }
@@ -617,7 +648,7 @@ function renderMode() {
   const now = new Date();
   const solar = celestialState(now, currentArea.latitude, currentArea.longitude, environmentTimeZone(), localDayOffset(now, environmentTimeZone()));
   const phase = phaseFromSun(solar?.sun);
-  const observed = isArtworkLab ? weatherLabObservation : null;
+  const observed = activeNearbyObservation();
   if (observed && Number.isFinite(observed.visibilityKm)) {
     const obscuration = Array.isArray(observed.phenomena) ? observed.phenomena.join(' · ') : 'air conditions';
     const stationDate = new Date(observed.observedAt);
@@ -627,7 +658,7 @@ function renderMode() {
       state: 'live', note: `Measured at ${observed.stationName}, ${observed.distanceKm.toFixed(1)} km away. No forecast model available.` });
     setAtmosphericDepth(observed.visibilityKm);
     visibilityReadout.hidden = false;
-    visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
+    if (isArtworkLab) visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
     heroKicker.textContent = 'OBSERVED AIR · SKY UNAVAILABLE';
     setStatus(`Observed · ${observed.station}`, 'sample');
     return;
@@ -797,6 +828,19 @@ function readCache(maxAge = CACHE_AGE_MS) {
 async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name, force = false } = {}) {
   const myAttempt = ++liveAttempt;
   currentArea = { latitude, longitude, cache, label };
+  if (isHomeEmbed || isAmbient) {
+    // Airport readings refresh independently: a broken station feed must never
+    // prevent the temperature, sunrise or cloud forecast from loading.
+    void fetchNearbyObservation({ latitude, longitude }).then(({ observation }) => {
+      if (myAttempt !== liveAttempt) return;
+      homeNearbyObservation = observation;
+      if (activeMode === 'live') renderMode();
+    }).catch(() => {
+      if (myAttempt !== liveAttempt) return;
+      homeNearbyObservation = null;
+      if (activeMode === 'live') renderMode();
+    });
+  }
   // Throttle retries as well as successful refreshes when the feed is unavailable.
   lastObservationFetch = Date.now();
   if (cache && !force) {
@@ -847,8 +891,8 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
 }
 
 async function resolveCoarsePlace(latitude, longitude) {
-  // Only called after explicit user location permission. Providers see already
-  // rounded ~1 km coordinates; results remain in memory and can fail independently.
+  // Only called after explicit/granted user location permission. Providers see
+  // approximately 100 m-rounded coordinates, never saved in PTI storage.
   const resolution = ++landscapeResolveAttempt;
   let address = {};
   let name = 'Your area';
@@ -857,7 +901,7 @@ async function resolveCoarsePlace(latitude, longitude) {
     url.searchParams.set('format', 'jsonv2');
     url.searchParams.set('lat', String(latitude));
     url.searchParams.set('lon', String(longitude));
-    url.searchParams.set('zoom', '10');
+    url.searchParams.set('zoom', '14');
     url.searchParams.set('addressdetails', '1');
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 7000);
@@ -867,7 +911,14 @@ async function resolveCoarsePlace(latitude, longitude) {
     if (response.ok) {
       const data = await response.json();
       address = data?.address || {};
-      name = address.city || address.town || address.village || address.county || 'Your area';
+      const locality = address.neighbourhood || address.suburb || address.quarter || address.city_district
+        || address.village || address.town || address.city || address.county;
+      const parent = address.city || address.town || address.county;
+      // Network-assisted GPS can be off by kilometres. Do not claim a precise
+      // neighbourhood when the browser itself reports a poor accuracy radius.
+      name = deviceLocationAccuracy === null || deviceLocationAccuracy > 1500
+        ? `${parent || locality || 'Your area'} (approx.)`
+        : locality && parent && locality !== parent ? `${locality}, ${parent}` : locality || 'Your area';
     }
   } catch { /* Place-name lookup is optional; still try broad terrain evidence. */ }
   if (resolution !== landscapeResolveAttempt || currentArea.latitude !== latitude || currentArea.longitude !== longitude) return;
@@ -894,12 +945,13 @@ function getCoarsePosition(maximumAge) {
     if (!navigator.geolocation) { resolve(null); return; }
     try {
       navigator.geolocation.getCurrentPosition(({ coords }) => {
-        // Round to an approximately 1 km area before calling any provider.
+        // Round to ~100 m for neighbourhood identification; never store GPS.
         resolve({
-          latitude: Math.round(coords.latitude * 100) / 100,
-          longitude: Math.round(coords.longitude * 100) / 100,
+          latitude: Math.round(coords.latitude * 1000) / 1000,
+          longitude: Math.round(coords.longitude * 1000) / 1000,
+          accuracyMeters: Number.isFinite(coords.accuracy) ? coords.accuracy : null,
         });
-      }, () => resolve(null), { enableHighAccuracy: false, maximumAge, timeout: 10000 });
+      }, () => resolve(null), { enableHighAccuracy: true, maximumAge, timeout: 13000 });
     } catch {
       resolve(null);
     }
@@ -910,6 +962,7 @@ function changeArea({ latitude, longitude }) {
   ++liveAttempt;
   liveWeather = null;
   liveWeatherStale = false;
+  homeNearbyObservation = null;
   lastValidObservationAt = 0;
   liveLocation = 'Your area';
   currentArea = { latitude, longitude, cache: false, label: liveLocation };
@@ -922,6 +975,7 @@ function changeArea({ latitude, longitude }) {
 
 async function refreshHomeWeather() {
   if (homeRefreshing) return;
+  ++deviceLocationRequest;
   homeRefreshing = true;
   homeClockButton.setAttribute('aria-busy', 'true');
   homeClockButton.setAttribute('aria-disabled', 'true');
@@ -930,14 +984,16 @@ async function refreshHomeWeather() {
     advanceArtwork();
     const location = await getCoarsePosition(0);
     const areaChanged = location && (location.latitude !== currentArea.latitude || location.longitude !== currentArea.longitude);
-    if (areaChanged) {
+    if (areaChanged || location && currentArea.cache) {
       changeArea(location);
       renderMode();
     }
+    if (location) deviceLocationAccuracy = location.accuracyMeters;
     const { latitude, longitude } = currentArea;
     const [weatherUpdated] = await Promise.all([
       fetchWeather(latitude, longitude, { ...currentArea, force: true }),
-      location && !currentArea.cache && liveLocation === 'Your area' ? resolveCoarsePlace(latitude, longitude) : undefined,
+      location && (areaChanged || liveLocation === 'Your area' || currentArea.cache)
+        ? resolveCoarsePlace(latitude, longitude) : undefined,
     ]);
     homeRefreshStatus.textContent = weatherUpdated
       ? location ? `Weather updated for ${liveLocation}.` : `Location unavailable. Weather updated for ${liveLocation}.`
@@ -948,6 +1004,27 @@ async function refreshHomeWeather() {
     homeClockButton.removeAttribute('aria-disabled');
     if (!liveWeather) renderMode();
   }
+}
+
+async function restoreGrantedArea() {
+  // A previously granted browser permission is reusable without reprompting;
+  // first-time location access is still initiated only by the user's tap.
+  if (!navigator.permissions?.query || !navigator.geolocation) return;
+  const request = deviceLocationRequest;
+  try {
+    const permission = await navigator.permissions.query({ name: 'geolocation' });
+    if (permission.state !== 'granted' || homeRefreshing || request !== deviceLocationRequest) return;
+    const location = await getCoarsePosition(60000);
+    if (!location || homeRefreshing || request !== deviceLocationRequest) return;
+    const changed = location.latitude !== currentArea.latitude || location.longitude !== currentArea.longitude;
+    if (changed || currentArea.cache) changeArea(location);
+    deviceLocationAccuracy = location.accuracyMeters;
+    const { latitude, longitude } = currentArea;
+    await Promise.all([
+      fetchWeather(latitude, longitude, { ...currentArea, force: true }),
+      resolveCoarsePlace(latitude, longitude),
+    ]);
+  } catch { /* Browsers without a working permissions API retain regional view. */ }
 }
 
 function seededStars() {
@@ -1027,6 +1104,7 @@ function setup() {
   }
   if (isHomeEmbed || isAmbient) tickHomeClock();
   if (!isArtworkLab) void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
+  if (isHomeEmbed || isAmbient) void restoreGrantedArea();
   // Refresh only while the live scene is visible, at most once per 15 minutes.
   window.setInterval(() => {
     if (document.hidden || frame.classList.contains('out-of-view') || activeMode !== 'live' || homeRefreshing) return;
@@ -1044,7 +1122,7 @@ function setup() {
   });
   useLocation.addEventListener('click', async () => {
     if (!navigator.geolocation) { sourceLine.textContent = 'Location access is unavailable. Using the coarse Navi Mumbai area.'; return; }
-    sourceLine.textContent = 'Permission requested · approximate area is sent to weather and place providers.';
+    sourceLine.textContent = 'Permission requested · approximately 100 m area is sent to weather and place providers.';
     const location = await getCoarsePosition(600000);
     if (!location) { sourceLine.textContent = `Location not shared · using the ${liveLocation} weather view.`; return; }
     changeArea(location);

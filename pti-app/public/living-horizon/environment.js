@@ -151,13 +151,15 @@ export function skyPoint(position) {
 
 export function moonPhaseName(phase) {
   const p = ((phase % 1) + 1) % 1;
-  if (p < .04 || p >= .96) return 'New moon';
-  if (p < .21) return 'Waxing crescent';
-  if (p < .29) return 'First quarter';
-  if (p < .46) return 'Waxing gibbous';
-  if (p < .54) return 'Full moon';
-  if (p < .71) return 'Waning gibbous';
-  if (p < .79) return 'Last quarter';
+  // Phase labels should not call a 41%-lit waxing moon "first quarter":
+  // quarter/full names apply only near the corresponding lunar instant.
+  if (p < .015 || p >= .985) return 'New moon';
+  if (p < .245) return 'Waxing crescent';
+  if (p < .255) return 'First quarter';
+  if (p < .495) return 'Waxing gibbous';
+  if (p < .505) return 'Full moon';
+  if (p < .745) return 'Waning gibbous';
+  if (p < .755) return 'Last quarter';
   return 'Waning crescent';
 }
 

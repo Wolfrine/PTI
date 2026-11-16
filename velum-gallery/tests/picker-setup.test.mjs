@@ -123,11 +123,12 @@ test('archive index read or create 403 warns clearly after required Picker check
   }
 });
 
-test('CI runs the required setup without continue-on-error before Velum Hosting publication',()=>{
+test('CI verifies Velum before an isolated Hosting-only publication',()=>{
   const workflow=readFileSync(new URL('../../.github/workflows/firebase-deploy.yml',import.meta.url),'utf8');
   const job=workflow.slice(workflow.indexOf('  deploy_velum:'),workflow.indexOf('  deploy_luminary:'));
-  const setup=job.match(/      - name: Verify required Velum Auth, Drive and Picker setup\r?\n[\s\S]*?(?=      - name:)/)?.[0];
-  assert.ok(setup);assert.doesNotMatch(setup,/continue-on-error/);
-  assert.match(setup,/node velum-gallery\/scripts\/configure-firebase-auth.mjs/);
-  assert.ok(job.indexOf(setup)<job.indexOf('      - name: Create and deploy Velum secondary Hosting site'));
+  assert.match(job,/needs: verify_one_piece/);
+  assert.match(job,/node --test velum-gallery\/tests\/\*\.test\.mjs/);
+  assert.match(job,/firebase deploy --project "\$FIREBASE_PROJECT_ID" --only hosting:velum --non-interactive/);
+  assert.doesNotMatch(job,/continue-on-error:\s*true|configure-firebase-auth\.mjs|hosting:sites:create|firestore:rules/);
+  assert.ok(job.indexOf('      - name: Verify Velum mobile UX and feed')<job.indexOf('      - name: Deploy existing Velum Hosting site only'));
 });

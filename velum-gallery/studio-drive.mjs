@@ -128,11 +128,14 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
     owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
     token=candidate;expiresAt=Date.now()+Math.min(seconds-60,50*60)*1000;return true;
   }
-  async function authorize(){
+  async function authorize({promptFirst=false}={}){
     owner();if(token&&Date.now()<expiresAt)return;
     const generation=epoch;token='';expiresAt=0;
-    // Start the Google popup during the user's move/save click. A remote
-    // tokeninfo round-trip first can exhaust mobile browser user activation.
+    // Studio Save may reuse a verified, previously granted combined token.
+    // File management instead opens consent during the original mobile tap:
+    // a tokeninfo request here can expire the browser's popup activation.
+    if(!promptFirst&&await inspect(getReadAccess(),generation))return;
+    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
     const credential=await requestAccess(DRIVE_FILE_SCOPE);
     owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
     if(!await inspect(credential?.accessToken,generation))throw new Error('Google did not grant Drive file access. No file was changed.');
@@ -186,7 +189,7 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
      if(!await writable())throw new Error(`The existing ${folderId===PRIVATE_FOLDER_ID?'Private':'References'} folder has not been granted writable access. Check the Google Picker selection.`);
   }
   async function grantFile(file){
-    await authorize();const generation=epoch;
+    await authorize({promptFirst:true});const generation=epoch;
     const url=`${API}/files/${encodeURIComponent(file.id)}?fields=id,name,parents,trashed,ownedByMe,isAppAuthorized,capabilities(canMoveItemWithinDrive,canTrash)`;
     const inspectFile=async()=>{const response=await request(url);if([403,404].includes(response.status))return null;if(!response.ok)throw new Error('Could not verify file permissions.');return response.json();};
     let actual=await inspectFile();

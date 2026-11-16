@@ -9,7 +9,10 @@ test('Drift remains the single full-image viewer; Browse opens Drift directly',(
   const html=source('index.html');
   const app=source('app.js');
   assert.doesNotMatch(html,/id="focusOverlay"|id="focusBtn"/);
-  assert.match(app,/tile\.onclick = \(\) => openInDrift\(item\.id\)/);
+  assert.match(app,/opener\.onclick = \(\) => openInDrift\(item\.id\)/);
+  assert.match(app,/tile\.append\(opener\)/);
+  assert.match(app,/move\.onclick=async event=>/);
+  assert.match(app,/libraryControls\.move\(item,\{focusUndo:/);
   assert.match(app,/createDriftGestures\(/);
 });
 test('image stays fully contained over the same-image blurred backdrop',()=>{

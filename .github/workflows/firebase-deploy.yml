@@ -294,8 +294,13 @@ jobs:
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:mcp --non-interactive
 
   deploy_velum:
-    needs: deploy
+    # Velum is a separate Hosting target. Keep its verified release independent
+    # of the PTI deployment's protected Firestore rules-provisioning guard.
+    needs: verify_one_piece
     runs-on: ubuntu-latest
+    concurrency:
+      group: velum-hosting-${{ github.ref }}
+      cancel-in-progress: false
 
     steps:
       - name: Checkout Repository
@@ -343,19 +348,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify required Velum Auth, Drive and Picker setup
-        env:
-          FIREBASE_PROJECT_ID: pti-app-2ab59
-          VELUM_SITE_ID: pti-app-2ab59-velum
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          set -euo pipefail
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          npm install --no-save google-auth-library
-          node velum-gallery/scripts/configure-firebase-auth.mjs
-
-      - name: Create and deploy Velum secondary Hosting site
+      - name: Deploy existing Velum Hosting site only
         env:
           FIREBASE_PROJECT_ID: pti-app-2ab59
           VELUM_SITE_ID: pti-app-2ab59-velum
@@ -371,11 +364,9 @@ jobs:
           npm install -g firebase-tools
           firebase --version
 
-          if firebase hosting:sites:get "$VELUM_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
-            echo "Hosting site $VELUM_SITE_ID already exists."
-          else
-            echo "Creating Hosting site $VELUM_SITE_ID..."
-            firebase hosting:sites:create "$VELUM_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          if ! firebase hosting:sites:get "$VELUM_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            echo "::error::Expected Velum Hosting site $VELUM_SITE_ID is unavailable."
+            exit 1
           fi
 
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting:velum --non-interactive
@@ -647,3 +638,4 @@ jobs:
             }
             await github.rest.git.deleteRef({ ...repo, ref });
             core.info('Removed the temporary Venture preview branch after verified deployment.');
+

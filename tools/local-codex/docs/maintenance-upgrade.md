@@ -12,6 +12,8 @@ The current path is a **detached owner one-shot, not a scheduled job or polling 
 
 Drain/health observations use Firestore owner/jobs listeners, local file notifications and Windows process-handle `WaitForExit`, with one finite maintenance deadline and separate finite health deadlines. No periodic status-query timer. Existing work is never killed on timeout. The existing **PTI Local Codex Relay** lifecycle task is reused only after drain; no new recurring or one-shot scheduler entry is added.
 
+The detached launch reconciles protected claimed jobs whose bridge lease has already expired, transactionally under its matching unsealed drain. `get_task` already exposes these as interrupted; the controller persists that bridge state with generation/previous-lease audit and an explicit unknown native outcome. It does not interrupt native work, change generations or expire valid queued work. Concurrent lease renewal conflicts/retries the transaction; fresh jobs are preserved. Local claims, worker locks/PIDs and protected final evidence remain mandatory. `--action reconcile-expired --manifest <same pinned manifest>` supports an explicit later reconciliation under that same drain, without another chat, process stop or public MCP schema change. It refuses sealed/expired/foreign maintenance.
+
 ## Release steps
 
 1. Inspect `main`, dirty files, active/queued claims, installed pointer and prior receipt. Preserve unrelated work. Use minimal syntax/build checks and actual runtime observations. No generated tests, fixtures, Playwright/e2e scaffolding, full suites or CI test churn without fresh explicit instruction. Do not weaken required protections.

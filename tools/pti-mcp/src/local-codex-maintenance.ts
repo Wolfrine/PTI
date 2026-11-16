@@ -36,6 +36,23 @@ export class FirestoreMaintenance {
       tx.set(root,{maintenance},{merge:true});return maintenance;
     });
   }
+  async reconcileExpired(uid:string,request:MaintenanceRequest){
+    return this.db.runTransaction(async tx=>{
+      const root=this.root(uid),[snapshot,jobs]=await Promise.all([tx.get(root),tx.get(this.query(uid))]);
+      const maintenance=this.matching(snapshot.data()?.maintenance,request),at=this.clock();
+      if(maintenance.phase!=='draining'||at>=maintenance.deadline)throw Error('Expired leases may be reconciled only under the matching unsealed drain.');
+      const expired=jobs.docs.filter(doc=>{const job=doc.data();return job.status!=='queued'&&typeof job.leaseUntil==='number'&&Number.isFinite(job.leaseUntil)&&job.leaseUntil<at&&maintenance.protectedTasks.some(task=>task.id===doc.id&&task.generation===job.generation);});
+      for(const doc of expired){
+        const job=doc.data();
+        // Public get_task already reports a lost lease as interrupted. Persist
+        // that bridge fact; it is neither native completion nor a native stop.
+        tx.update(doc.ref,{status:'interrupted',updatedAt:at,
+          snapshot:{...(job.snapshot||{}),status:'interrupted',error:'The bridge lease expired. Native execution/outcome is unknown; no native stop or resubmission was performed.'},
+          leaseReconciliation:{maintenanceId:request.id,generation:job.generation,at,previousStatus:job.status,previousLeaseUntil:job.leaseUntil,previousError:job.snapshot?.error??null,nativeStopRequested:false}});
+      }
+      return {at,reconciled:expired.map(doc=>({id:doc.id,generation:doc.data().generation,previousLeaseUntil:doc.data().leaseUntil,status:'interrupted'})),nativeStopRequested:false};
+    });
+  }
   async seal(uid:string,request:MaintenanceRequest){
     return this.db.runTransaction(async tx=>{
       const root=this.root(uid),[snapshot,jobs]=await Promise.all([tx.get(root),tx.get(this.query(uid))]),host=snapshot.data(),maintenance=this.matching(host?.maintenance,request);

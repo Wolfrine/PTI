@@ -125,17 +125,19 @@ try{
   if(action==='check-external'){let external=true;try{externalOnly();}catch{external=false;}console.log(JSON.stringify({externalProcess:external,installationAttempted:false}));}
   else if(action==='status'){console.log(JSON.stringify(await control.status(owner)));}
   else if(action==='begin'){validate();console.log(JSON.stringify(await control.begin(owner,request)));}
+  else if(action==='reconcile-expired'){validate();console.log(JSON.stringify(await control.reconcileExpired(owner,request)));}
   else if(action==='abort'){console.log(JSON.stringify(await control.abort(owner,request)));}
   else if(action==='detach'){
     if(manifest.launchMethod!=='detached')throw Error('Use a new stage with --launch-method detached.');
     validate();await control.begin(owner,request);
     try{
+      const leaseReconciliation=await control.reconcileExpired(owner,request);
       const launch=JSON.parse(execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',path.join(stage,'maintenance-detach.ps1'),'-Manifest',manifestPath,'-ManifestSHA256',manifestHash],{windowsHide:true,encoding:'utf8',timeout:30000}));
       await new Promise((resolve,reject)=>{
         const receipt=()=>{if(!fs.existsSync(reportFile))return;try{const report=read(reportFile);if(report.externalProcessVerified&&report.manifestSHA256===manifestHash){clearTimeout(timeout);watch.close();resolve(report);}}catch{}};
         const watch=fs.watch(stage,receipt),timeout=setTimeout(()=>{watch.close();reject(Error('Detached process did not acknowledge the pinned stage.'));},20000);receipt();
       });
-      console.log(JSON.stringify({detached:true,scheduled:false,launch,manifest:manifestPath,manifestSHA256:manifestHash,result:reportFile}));
+      console.log(JSON.stringify({detached:true,scheduled:false,launch,leaseReconciliation,manifest:manifestPath,manifestSHA256:manifestHash,result:reportFile}));
     }catch(error){try{await control.abort(owner,request);}catch{throw Error(error.message+' Inspect the sealed gate/result; do not force admission open.');}throw error;}
   }
   else if(action==='schedule'){
@@ -184,5 +186,5 @@ try{
       atomic(reportFile,report);
     }finally{report.finishedAt=Date.now();try{await cleanup();report.taskCleanup=manifest.launchMethod==='detached'?'no scheduler task created':'exact one-shot cleanup checked';}catch(error){report.taskCleanup='cleanup requires inspection: '+error.message;}atomic(reportFile,report);}
     console.log(JSON.stringify(report));if(!['activated-verified','rolled-back-verified','aborted-before-install'].includes(report.outcome))process.exitCode=1;
-  }else{throw Error('Use --action stage/status/begin/detach/schedule/execute/recover/abort/check-external.');}
+  }else{throw Error('Use --action stage/status/begin/reconcile-expired/detach/schedule/execute/recover/abort/check-external.');}
 }finally{stopWatch?.();stopJobs?.();watcher?.close();taskWatcher?.close();if(exitObserver&&!exitObserver.killed)exitObserver.kill();await db.terminate();await deleteApp(app);}

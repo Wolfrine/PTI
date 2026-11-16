@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="./rain-effects.css?v=horizon-r9-20261115">
   <link rel="stylesheet" href="./embed.css?v=horizon-r9-20261115">
   <link rel="stylesheet" href="./artwork-lab.css?v=art-lab-1-20261115">
+  <link rel="stylesheet" href="./weather-lab.css?v=weather-accuracy-lab-20261116">
 </head>
 <body>
   <main class="app-shell">
@@ -93,6 +94,67 @@
               <button type="button" class="location-button" id="use-location" title="With permission, use an approximately 1 km area for weather and broad landscape classification. Precise GPS is not saved."><span class="location-icon" aria-hidden="true">⌖</span> My area</button>
             </div>
           </div>
+          <section class="weather-lab-panel" id="weather-lab-panel" aria-labelledby="weather-lab-title">
+            <div class="weather-lab-heading">
+              <div class="weather-lab-heading-copy">
+                <span class="art-lab-eyebrow">LIVING HORIZON · SOURCE CHECK</span>
+                <h3 id="weather-lab-title">Weather accuracy</h3>
+              </div>
+              <div class="weather-lab-controls">
+                <label class="weather-lab-field" for="weather-lab-location">
+                  <span>Compare area</span>
+                  <select id="weather-lab-location" autocomplete="off">
+                    <option value="kharghar">Kharghar</option>
+                    <option value="belapur">CBD Belapur</option>
+                    <option value="panvel">Panvel</option>
+                    <option value="vashi">Vashi</option>
+                    <option value="ulwe">Ulwe</option>
+                    <option value="thane">Thane</option>
+                    <option value="mumbai-airport">Mumbai Airport</option>
+                  </select>
+                </label>
+                <button type="button" class="weather-lab-action" id="weather-lab-device-location"><span aria-hidden="true">⌖</span> My location</button>
+                <button type="button" class="weather-lab-action weather-lab-refresh" id="weather-lab-refresh"><span aria-hidden="true">↻</span> Refresh</button>
+              </div>
+            </div>
+            <p class="weather-lab-status" id="weather-lab-status" role="status" aria-live="polite">Connecting to weather sources…</p>
+            <div class="weather-lab-readings" aria-label="Weather source comparison">
+              <article class="weather-lab-reading weather-lab-reading-model">
+                <div class="weather-lab-reading-head"><span class="weather-lab-source-tag">MODEL</span><span class="weather-lab-source-name">Open-Meteo</span></div>
+                <strong id="weather-lab-model-value" class="weather-lab-measure">—</strong>
+                <p id="weather-lab-model-detail" class="weather-lab-measure-detail">Awaiting forecast-grid reading</p>
+              </article>
+              <article class="weather-lab-reading weather-lab-reading-observed">
+                <div class="weather-lab-reading-head"><span class="weather-lab-source-tag">OBSERVED</span><span class="weather-lab-source-name">Nearby airport</span></div>
+                <strong id="weather-lab-observed-value" class="weather-lab-measure">—</strong>
+                <p id="weather-lab-observed-detail" class="weather-lab-measure-detail">Checking recent station reports</p>
+              </article>
+              <article class="weather-lab-reading weather-lab-reading-air">
+                <div class="weather-lab-reading-head"><span class="weather-lab-source-tag">AIR</span><span class="weather-lab-source-name">Particulate estimate</span></div>
+                <strong id="weather-lab-air-value" class="weather-lab-measure">—</strong>
+                <p id="weather-lab-air-detail" class="weather-lab-measure-detail">Awaiting air-quality estimate</p>
+              </article>
+            </div>
+            <div class="weather-lab-insight" aria-live="polite">
+              <span class="weather-lab-insight-mark" aria-hidden="true">≋</span>
+              <div><span class="weather-lab-insight-label">SOURCE COMPARISON</span><strong id="weather-lab-difference">Waiting for comparable observations</strong></div>
+            </div>
+            <div class="weather-lab-preview">
+              <div class="weather-lab-preview-label"><strong>Atmosphere preview</strong><span id="weather-lab-preview-note">Compare how each source changes the scene above.</span></div>
+              <div class="weather-lab-preview-tools">
+                <div class="weather-lab-preview-choices" role="group" aria-label="Choose weather source for scene preview">
+                  <button type="button" id="weather-lab-preview-model" class="is-selected" aria-pressed="true">Model</button>
+                  <button type="button" id="weather-lab-preview-observed" aria-pressed="false" disabled>Nearby observed</button>
+                </div>
+                <a class="weather-lab-view-scene" href="#horizon-frame">↑ View scene</a>
+              </div>
+            </div>
+            <div class="weather-lab-provenance">
+              <span id="weather-lab-accuracy">Selected area · approximate centre</span>
+              <span id="weather-lab-sources">Source and timestamp details appear when available.</span>
+              <a id="weather-lab-report-link" href="https://metars.eu/" target="_blank" rel="noopener noreferrer" hidden>Inspect airport report ↗</a>
+            </div>
+          </section>
           <section class="art-lab-panel" id="art-lab-panel" aria-labelledby="art-lab-title">
             <div class="art-lab-panel-heading">
               <div><span class="art-lab-eyebrow">SELECT A FOREGROUND</span><h3 id="art-lab-title">Twelve new landscapes</h3></div>

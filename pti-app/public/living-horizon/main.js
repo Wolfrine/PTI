@@ -35,6 +35,9 @@ const statusNode = document.querySelector('#horizon-status');
 const statusLabel = document.querySelector('#status-label');
 const isHomeEmbed = document.documentElement.classList.contains('horizon-embed');
 const isArtworkLab = document.documentElement.classList.contains('horizon-art-lab');
+// Only the experiment may preview nearby METAR observations. Home keeps its
+// previously accepted behaviour until the comparison has been reviewed.
+let weatherLabObservation = null;
 const homeClockButton = document.querySelector('#home-weather-clock');
 const homeClock = document.querySelector('#home-local-time');
 const homeRefreshStatus = document.querySelector('#home-refresh-status');
@@ -563,13 +566,21 @@ function renderMode() {
     const current = liveWeather.current;
     const rainfall = Math.max(Number(current.rain) || 0, Number(current.showers) || 0, Number(current.precipitation) || 0);
     const { weather, text } = conditions(Number(current.weather_code), Number(current.cloud_cover), rainfall);
+    const observed = isArtworkLab ? weatherLabObservation : null;
+    const obscuration = Array.isArray(observed?.phenomena) ? observed.phenomena.join(' · ') : '';
     const solar = celestialState(
       new Date(), currentArea.latitude, currentArea.longitude, environmentTimeZone(),
       localDayOffset(new Date(), environmentTimeZone()),
     );
     const phase = phaseFromSun(solar?.sun);
     const hhmm = String(current.time || '').split('T')[1]?.slice(0, 5);
-    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description: liveWeatherStale ? `${text} · earlier reading` : text, observedTime:hhmm,
+    const stationDate = observed?.observedAt ? new Date(observed.observedAt) : null;
+    const observedTime = stationDate && Number.isFinite(stationDate.getTime())
+      ? formatLocalTime(stationDate, environmentTimeZone()) : hhmm;
+    const skyText = text === 'Clear skies' ? 'Clear sky' : text;
+    const description = observed ? `${obscuration || 'Nearby airport air'} · ${skyText} (model)`
+      : liveWeatherStale ? `${text} · earlier reading` : text;
+    updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description, observedTime:observed ? observedTime : hhmm,
       cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), rainfall, state: liveWeatherStale ? 'stale' : 'live', celestial: solar,
       note: `Weather by Open-Meteo · ${liveLocation === COARSE_LOCATION.name ? 'coarse Navi Mumbai area' : 'your opted-in area'} · artwork is interpretive.` });
     const clouds = Number(current.cloud_cover);
@@ -586,6 +597,19 @@ function renderMode() {
     if (Number.isFinite(clouds)) frame.style.setProperty('--cloud-opacity', String(Math.min(.96, .10 + clouds / 124).toFixed(2)));
     const wind = Number(current.wind_speed_10m);
     if (Number.isFinite(wind)) frame.style.setProperty('--cloud-duration', `${Math.max(65, Math.min(145, 145 - wind * 2.4))}s`);
+    if (observed && Number.isFinite(observed.visibilityKm)) {
+      // A METAR measures conditions at a nearby airport, not at the device.
+      // Use the observation only for the experiment's air-transparency preview.
+      const smoke = observed.phenomena?.some(word => /smoke/i.test(word));
+      const haze = observed.phenomena?.some(word => /haze|dust/i.test(word));
+      setAtmosphericDepth(observed.visibilityKm, smoke ? 28 : haze ? 16 : 0);
+      visibilityReadout.hidden = false;
+      visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
+      heroKicker.textContent = 'MODEL SKY · OBSERVED AIR';
+      heroObservationTime.title = `${observed.stationName} (${observed.station}), ${observed.distanceKm.toFixed(1)} km away · ${observed.observedAt}`;
+      setStatus(`Observed · ${observed.station}`, 'sample');
+      sourceLine.textContent = `Nearby ${observed.station} · ${observed.distanceKm.toFixed(1)} km away · visibility and ${obscuration || 'air conditions'} measured; temperature, cloud and artwork still modelled/illustrative.`;
+    }
     return;
   }
   frame.style.removeProperty('--cloud-opacity');
@@ -593,7 +617,22 @@ function renderMode() {
   const now = new Date();
   const solar = celestialState(now, currentArea.latitude, currentArea.longitude, environmentTimeZone(), localDayOffset(now, environmentTimeZone()));
   const phase = phaseFromSun(solar?.sun);
-  updateScene({ phase, weather: 'cloudy', celestial:solar, location: isHomeEmbed || isAmbient ? liveLocation : COARSE_LOCATION.name, temperature: null,
+  const observed = isArtworkLab ? weatherLabObservation : null;
+  if (observed && Number.isFinite(observed.visibilityKm)) {
+    const obscuration = Array.isArray(observed.phenomena) ? observed.phenomena.join(' · ') : 'air conditions';
+    const stationDate = new Date(observed.observedAt);
+    updateScene({ phase, weather: 'clear', celestial: solar, location: liveLocation,
+      temperature: observed.temperatureC, description: `Nearby airport · ${obscuration}`,
+      observedTime: Number.isFinite(stationDate.getTime()) ? formatLocalTime(stationDate, environmentTimeZone()) : '',
+      state: 'live', note: `Measured at ${observed.stationName}, ${observed.distanceKm.toFixed(1)} km away. No forecast model available.` });
+    setAtmosphericDepth(observed.visibilityKm);
+    visibilityReadout.hidden = false;
+    visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
+    heroKicker.textContent = 'OBSERVED AIR · SKY UNAVAILABLE';
+    setStatus(`Observed · ${observed.station}`, 'sample');
+    return;
+  }
+  updateScene({ phase, weather: 'cloudy', celestial:solar, location: isHomeEmbed || isAmbient || isArtworkLab ? liveLocation : COARSE_LOCATION.name, temperature: null,
     description: isHomeEmbed ? (homeRefreshing ? 'Updating weather…' : 'Weather unavailable') : 'Weather feed unavailable · visual study',
     state: 'offline', note: 'Offline · sample atmosphere shown. No current weather reading available.' });
 }
@@ -957,8 +996,37 @@ function setup() {
   if (!isHomeEmbed && PRESETS[initialMode]) setMode(initialMode);
   else renderMode();
   setupArtworkLab();
+  if (isArtworkLab) {
+    // Load diagnostics only on the explicit experiment URL. The owner-approved
+    // Home weather remains unaffected by network or preview-source failures.
+    void import('./weather-lab.js?v=weather-accuracy-lab-20261116').then(({ setupWeatherLab }) => {
+      setupWeatherLab({
+        onAreaChange: area => {
+          weatherLabObservation = null;
+          ++liveAttempt;
+          liveWeather = null;
+          liveWeatherStale = false;
+          lastValidObservationAt = 0;
+          currentArea = { latitude: area.latitude, longitude: area.longitude, cache: false, label: area.name };
+          liveLocation = area.name;
+          placeProfile = classifyLandscape(area.name);
+          if (activeMode !== 'live') setMode('live');
+          else renderMode();
+          void fetchWeather(area.latitude, area.longitude, { ...currentArea, force: true });
+        },
+        onObservationPreview: observation => {
+          weatherLabObservation = observation;
+          if (activeMode !== 'live') setMode('live');
+          else renderMode();
+        },
+      });
+    }).catch(() => {
+      const status = document.querySelector('#weather-lab-status');
+      if (status) status.textContent = 'Weather source comparison could not load.';
+    });
+  }
   if (isHomeEmbed || isAmbient) tickHomeClock();
-  void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
+  if (!isArtworkLab) void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
   // Refresh only while the live scene is visible, at most once per 15 minutes.
   window.setInterval(() => {
     if (document.hidden || frame.classList.contains('out-of-view') || activeMode !== 'live' || homeRefreshing) return;

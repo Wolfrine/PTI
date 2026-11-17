@@ -5,6 +5,17 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
  let filter='all',epoch=0,moveSession=0,active=null,busy=false,recovery=null;
  let resuming=null,offeredReceipt=null;
  const receiptKey='velum-library-recovery-v1';
+ const resumeKey='velum-library-connect-resume-v1';
+ function clearConnectResume(){try{globalThis.sessionStorage?.removeItem(resumeKey);}catch{}}
+ function consumeConnectResume(receipt){
+  try{
+   const value=JSON.parse(globalThis.sessionStorage?.getItem(resumeKey)||'null');
+   clearConnectResume();
+   return new URL(location.href).searchParams.get('drive')==='connected'&&value?.owner===receipt.owner
+    &&Date.now()-value.requestedAt>=0&&Date.now()-value.requestedAt<10*60*1000
+    &&['id','from','to','at'].every(key=>value.record?.[key]===receipt.record[key]);
+  }catch{return false;}
+ }
  function validReceipt(value){
   const record=value?.record;
   return value?.version===1&&value.owner===getOwner()&&Boolean(value.owner)
@@ -71,7 +82,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    message(value);showRecovery();
   }
   function closeDetail(){epoch++;active=null;if(dialog.open)dialog.close();dialog.replaceChildren();for(const region of regions){region.classList.add('collapsed');region.querySelector('.library-tools-toggle')?.setAttribute('aria-expanded','false');}}
-  function clear(){moveSession++;recovery=null;offeredReceipt=null;busy=false;notice.hidden=true;closeDetail();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent='';});showRecovery();}
+  function clear({preserveResume=false}={}){if(!preserveResume)clearConnectResume();moveSession++;recovery=null;offeredReceipt=null;busy=false;notice.hidden=true;closeDetail();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent='';});showRecovery();}
  function message(value){const output=dialog.querySelector('[role=status]');if(output)output.textContent=value;}
   function setBusy(value){busy=value;dialog.querySelectorAll('button:not([data-close]):not([data-exit])').forEach(button=>button.disabled=value);document.querySelectorAll('.tile-quick-move').forEach(button=>button.disabled=value);showRecovery();}
  function draw(file,url){
@@ -178,7 +189,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const receipt=readReceipt();if(!receipt)return Promise.resolve();
   if(!canRead()){offerReconnect(receipt);return Promise.resolve();}
   const generation=moveSession;setBusy(true);
-  const promise=reconcileReceipt(receipt,generation).catch(error=>{
+  const promise=reconcileReceipt(receipt,generation,{continueAction:consumeConnectResume(receipt)}).catch(error=>{
    if(isCurrent(generation,receipt.owner))showNotice(error.message||'Reconnect Drive to check the last move.',{reconnectable:true,receipt});
   }).finally(()=>{if(isCurrent(generation,receipt.owner))setBusy(false);if(resuming?.promise===promise)resuming=null;});
   resuming={generation,promise};return promise;
@@ -188,6 +199,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const receipt=offeredReceipt,generation=moveSession;
   if(!receipt)return;
   if(!matchesReceipt(receipt)){showNotice('The saved move changed on this device. Sync to review its current location.');return;}
+  try{globalThis.sessionStorage?.setItem(resumeKey,JSON.stringify({owner:receipt.owner,record:receipt.record,requestedAt:Date.now()}));}catch{}
   // Start the shared popup on the click call stack, before any await or metadata request.
   let connection;
   try{connection=connect();}catch(error){showNotice(error.message||'Drive could not reconnect.',{reconnectable:true,receipt});return;}
@@ -197,7 +209,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    await reconcileReceipt(receipt,generation,{continueAction:true});
   }).catch(error=>{
    if(isCurrent(generation,receipt.owner))showNotice(error.message||'Drive could not reconnect.',{reconnectable:true,receipt});
-  }).finally(()=>{if(isCurrent(generation,receipt.owner))setBusy(false);});
+  }).finally(()=>{clearConnectResume();if(isCurrent(generation,receipt.owner))setBusy(false);});
  }
  async function undo(){
   if(!recovery||busy)return;
@@ -258,7 +270,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    finally{if(session===moveSession)setBusy(false);showRecovery();}
  });
   dialog.addEventListener('cancel',event=>{event.preventDefault();closeDetail();});
- window.addEventListener('velum:lock',clear);window.addEventListener('pagehide',clear);
+ window.addEventListener('velum:lock',clear);window.addEventListener('pagehide',()=>clear({preserveResume:true}));
   return {open,move:moveQuick,clear,resume,update(){const file=current();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent=file?.folderLabel||'';});},get filter(){return filter;},get busy(){return busy;}};
 }
 

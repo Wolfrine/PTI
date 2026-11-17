@@ -1,4 +1,4 @@
-// Drive tokens and resumable session URLs stay in this browser. No server or PC OAuth.
+// Drive media and resumable session URLs stay in the owner-authenticated browser.
 const libraryUrl=new URL('./drive-library.mjs',import.meta.url);libraryUrl.search=new URL(import.meta.url).search;
 const {createDriveLibrary,REFERENCES_FOLDER_ID,POSE_CATEGORIES}=await import(libraryUrl.href);
 const creationsUrl=new URL('./drive-creations.mjs',import.meta.url);creationsUrl.search=new URL(import.meta.url).search;
@@ -9,15 +9,22 @@ export {createDriveAccess,CONNECT_SCOPES,DRIVE_FILE_SCOPE,DRIVE_READ_SCOPE,DRIVE
 export const PRIVATE_FOLDER_ID = '1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA';
 const API = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 const OWNER = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2', PREFIX = 'velum-drive-upload-v1:';
-const FIELDS = 'id,name,mimeType,size,parents,appProperties,trashed,webViewLink';
+const FIELDS = 'id,name,mimeType,size,parents,appProperties,trashed,ownedByMe,webViewLink,capabilities(canMoveItemWithinDrive)';
 export function uploadUrl(value) {
   const url = new URL(value);
   if (url.origin !== 'https://www.googleapis.com' || url.username || url.password || url.pathname !== '/upload/drive/v3/files' || !url.searchParams.has('upload_id')) throw new Error('Drive returned an unsafe upload address.');
   return url.href;
 }
-export function verifySaved(file, job) {
-  if (!file || file.trashed || !/^[\w-]{8,160}$/.test(file.id) || file.mimeType !== 'image/png' || !file.parents?.includes(PRIVATE_FOLDER_ID)
-    || Number(file.size) !== job.result.bytes || file.appProperties?.velumJobId !== job.id || file.appProperties?.velumSha256 !== job.result.sha256) throw new Error('Drive file does not match this original and Private folder.');
+function verifyFile(file,job,expectedId){
+  if(!file||file.ownedByMe!==true||file.trashed!==false||!/^[\w-]{8,160}$/.test(file.id)
+    ||(expectedId&&file.id!==expectedId)||file.mimeType!=='image/png'||Number(file.size)!==job.result.bytes
+    ||file.appProperties?.velumJobId!==job.id||file.appProperties?.velumSha256!==job.result.sha256){
+    throw new Error('Drive file does not match your verified original.');
+  }
+}
+export function verifySaved(file, job, expectedId) {
+  verifyFile(file,job,expectedId);
+  if(file.parents?.length!==1||file.parents[0]!==PRIVATE_FOLDER_ID)throw new Error('Drive original is not in the exact Private folder.');
   return {id:file.id,name:file.name,webViewLink:`https://drive.google.com/file/d/${file.id}/view`};
 }
 export async function verifyOriginal(blob, job) {
@@ -28,63 +35,141 @@ export async function verifyOriginal(blob, job) {
   if (hash !== job.result.sha256) throw new Error('Original PNG integrity check failed.');
 }
 
-// Separated from OAuth and Picker so retry/offset/idempotence can be tested without a Google account.
-export function createDriveTransport({request,reserve,storage=globalThis.sessionStorage,onProgress=()=>{}}) {
-  const remember=(key,value)=>{try{storage?.setItem(key,JSON.stringify(value));}catch{throw new Error('Allow session storage to resume Drive uploads safely.');}};
-  async function file(id,signal) {
-    const response=await request(`${API}/files/${encodeURIComponent(id)}?fields=${FIELDS}`,{signal});
-    if(response.status===404)return null;
-    if(!response.ok)throw new Error(`Drive file verification failed (${response.status}).`);
-    return response.json();
-  }
+// Media creation uses drive.file; fixed-folder placement uses metadata access.
+export function createDriveTransport({request,readRequest,manageRequest,reserve,getOperationGuard,storage=globalThis.sessionStorage,onProgress=()=>{}}) {
   async function save({job,blob,signal}) {
+    if(![request,readRequest,manageRequest,reserve,getOperationGuard].every(value=>typeof value==='function'))throw new Error('Private Drive upload access is unavailable. Refresh Velum.');
+    const assertActive=getOperationGuard();
+    const check=()=>{signal?.throwIfAborted();assertActive();};
+    const send=async(operation,url,options={})=>{check();const response=await operation(url,{...options,signal});check();return response;};
+    const json=async response=>{const data=await response.json();check();return data;};
+    const remember=(key,value)=>{check();try{if(!storage?.setItem)throw new Error();storage.setItem(key,JSON.stringify(value));}catch{throw new Error('Allow session storage to resume Drive uploads safely.');}};
+    async function file(id){
+      const response=await send(manageRequest,`${API}/files/${encodeURIComponent(id)}?fields=${FIELDS}`);
+      if(response.status===404)return null;
+      if(!response.ok)throw new Error(`Drive file verification failed (${response.status}).`);
+      return json(response);
+    }
+    async function privateFolder(){
+      const response=await send(manageRequest,`${API}/files/${PRIVATE_FOLDER_ID}?fields=id,mimeType,trashed,ownedByMe,capabilities(canAddChildren)`);
+      if(!response.ok)throw new Error(`Could not verify the Private folder (${response.status}).`);
+      const actual=await json(response);
+      if(actual.id!==PRIVATE_FOLDER_ID||actual.mimeType!=='application/vnd.google-apps.folder'||actual.trashed!==false
+        ||actual.ownedByMe!==true||actual.capabilities?.canAddChildren!==true)throw new Error('Your exact Private folder cannot currently accept the original.');
+    }
+    let rootId;
+    async function root(){
+      if(rootId)return rootId;
+      const response=await send(readRequest,`${API}/files/root?fields=id,mimeType,trashed,ownedByMe`);
+      if(!response.ok)throw new Error(`Could not verify My Drive staging (${response.status}).`);
+      const actual=await json(response);
+      if(!/^[\w-]{8,160}$/.test(actual.id||'')||[PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(actual.id)
+        ||actual.mimeType!=='application/vnd.google-apps.folder'||actual.trashed!==false||actual.ownedByMe!==true)throw new Error('Your exact My Drive root could not be verified.');
+      return rootId=actual.id;
+    }
+    check();
     await verifyOriginal(blob,job);
+    check();
     if(!/^[\w-]{1,80}$/.test(job.id))throw new Error('Invalid creation ID.');
     const key=PREFIX+job.id;
     let state;try{state=JSON.parse(storage?.getItem(key)||'null');}catch{}
     if(state && (state.sha256!==job.result.sha256 || !/^[\w-]{8,160}$/.test(state.id)))throw new Error('Upload identity does not match this creation.');
-    if(!reserve)throw new Error('Private Drive upload reservation is unavailable.');
-    const reserved=await reserve(job,null);
-    if(reserved){if(state&&state.id!==reserved)state=null;state={...state,id:reserved,sha256:job.result.sha256};}
-    if(state?.id){const existing=await file(state.id,signal);if(existing){const saved=verifySaved(existing,job);storage?.removeItem(key);onProgress(1);return saved;}}
+    let placementAttempted=false,staged=false;
+    const complete=file=>{const saved=verifySaved(file,job,state.id);check();storage?.removeItem(key);onProgress(1);return saved;};
+    async function place(actual){
+      verifyFile(actual,job,state.id);
+      if(actual.parents?.length===1&&actual.parents[0]===PRIVATE_FOLDER_ID){await privateFolder();return complete(await file(state.id));}
+      const source=await root();
+      const verifyStaged=file=>{
+        verifyFile(file,job,state.id);
+        if(file.parents?.length!==1||file.parents[0]!==source||file.capabilities?.canMoveItemWithinDrive!==true)throw new Error('The reserved original is no longer movable from the exact My Drive root. Sync before retrying.');
+      };
+      verifyStaged(actual);staged=true;state.stage='placement';state.rootId=source;remember(key,state);
+      onProgress({message:'Original uploaded. Placing it in Private…'});
+      await privateFolder();
+      // Reread immediately before PATCH: another tab may already have finished placement.
+      const current=await file(state.id);
+      if(current?.parents?.length===1&&current.parents[0]===PRIVATE_FOLDER_ID)return complete(current);
+      verifyStaged(current);check();
+      placementAttempted=true;
+      const params=new URLSearchParams({addParents:PRIVATE_FOLDER_ID,removeParents:source,fields:FIELDS});
+      const response=await send(manageRequest,`${API}/files/${encodeURIComponent(state.id)}?${params}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'});
+      if(!response.ok)throw new Error(`Private placement failed (${response.status}).`);
+      verifySaved(await json(response),job,state.id);
+      return complete(await file(state.id));
+    }
+    try{
+    const reserved=await reserve(job,null);check();
+    if(reserved){
+      if(!/^[\w-]{8,160}$/.test(reserved)||(state&&state.id!==reserved))throw new Error('Upload reservation does not match this creation.');
+      state={...state,id:reserved,sha256:job.result.sha256};remember(key,state);
+    }else if(state?.id){
+      const confirmed=await reserve(job,state.id);check();
+      if(confirmed!==state.id)throw new Error('Upload reservation changed. Retry after syncing Studio.');
+    }
+    if(state?.id){const existing=await file(state.id);if(existing)return await place(existing);}
     if(!state){
       const q=`'${PRIVATE_FOLDER_ID}' in parents and trashed=false and appProperties has { key='velumJobId' and value='${job.id}' }`;
-      const found=await request(`${API}/files?${new URLSearchParams({q,fields:`files(${FIELDS})`,pageSize:'10'})}`,{signal});
+      const found=await send(request,`${API}/files?${new URLSearchParams({q,fields:`nextPageToken,files(${FIELDS})`,pageSize:'2'})}`);
       if(!found.ok)throw new Error(`Drive duplicate check failed (${found.status}).`);
-      const files=(await found.json()).files||[];
-      if(files.length){const saved=verifySaved(files[0],job);onProgress(1);return saved;}
-      const response=await request(`${API}/files/generateIds?count=1&space=drive&type=files`,{signal});
+      const listing=await json(found),files=listing.files||[];
+      if(files.length){
+        if(files.length!==1||listing.nextPageToken)throw new Error('More than one Drive original matches this creation. Review the existing files before retrying.');
+        verifySaved(files[0],job);
+        const id=await reserve(job,files[0].id);check();
+        if(id!==files[0].id)throw new Error('Another save reserved this creation. Retry to verify its original.');
+        state={id,sha256:job.result.sha256};remember(key,state);
+        return await place(await file(id));
+      }
+      const response=await send(request,`${API}/files/generateIds?count=1&space=drive&type=files`);
       if(!response.ok)throw new Error(`Could not reserve a Drive file ID (${response.status}).`);
-      const candidate=(await response.json()).ids?.[0];
-      state={id:await reserve(job,candidate),sha256:job.result.sha256};
+      const candidate=(await json(response)).ids?.[0];
+      if(!/^[\w-]{8,160}$/.test(candidate||''))throw new Error('Drive returned an invalid file ID.');
+      const id=await reserve(job,candidate);check();
+      state={id,sha256:job.result.sha256};
       if(!/^[\w-]{8,160}$/.test(state.id))throw new Error('Drive returned an invalid file ID.');
       remember(key,state);
+      const existing=await file(state.id);if(existing)return await place(existing);
     }
+    // Preflight the final folder before leaving any new original staged at My Drive root.
+    const source=await root();await privateFolder();
+    state.rootId=source;remember(key,state);
     let offset=0;
     if(state.session){
-      const response=await request(uploadUrl(state.session),{method:'PUT',headers:{'Content-Range':`bytes */${blob.size}`},signal});
-      if(response.ok){const saved=verifySaved(await file(state.id,signal),job);storage?.removeItem(key);onProgress(1);return saved;}
+      const response=await send(request,uploadUrl(state.session),{method:'PUT',headers:{'Content-Range':`bytes */${blob.size}`}});
+      if(response.ok)return await place(await file(state.id));
       if(response.status===308)offset=received(response,blob.size);
       else if(response.status===404||response.status===410){delete state.session;remember(key,state);}
       else throw new Error(`Could not resume upload (${response.status}); retry Save to Drive.`);
     }
     if(!state.session){
-      const response=await request(`${UPLOAD}?uploadType=resumable&fields=${FIELDS}`,{method:'POST',headers:{'Content-Type':'application/json','X-Upload-Content-Type':'image/png','X-Upload-Content-Length':String(blob.size)},body:JSON.stringify({id:state.id,name:`Velum-${job.id}.png`,mimeType:'image/png',parents:[PRIVATE_FOLDER_ID],appProperties:{velumJobId:job.id,velumSha256:job.result.sha256}}),signal});
-      if(response.status===409){const saved=verifySaved(await file(state.id,signal),job);storage?.removeItem(key);onProgress(1);return saved;}
+      state.stage='uploading';remember(key,state);
+      const response=await send(request,`${UPLOAD}?uploadType=resumable&fields=${FIELDS}`,{method:'POST',headers:{'Content-Type':'application/json','X-Upload-Content-Type':'image/png','X-Upload-Content-Length':String(blob.size)},body:JSON.stringify({id:state.id,name:`Velum-${job.id}.png`,mimeType:'image/png',parents:['root'],appProperties:{velumJobId:job.id,velumSha256:job.result.sha256}})});
+      if(response.status===409)return await place(await file(state.id));
       if(!response.ok)throw new Error(`Could not start Drive upload (${response.status}). Retry to use the same reserved file ID.`);
       state.session=uploadUrl(response.headers.get('Location'));remember(key,state);
     }
     while(offset<blob.size){
-      signal?.throwIfAborted();
+      check();
       const end=Math.min(offset+256*1024,blob.size);
-      const response=await request(uploadUrl(state.session),{method:'PUT',headers:{'Content-Type':'image/png','Content-Range':`bytes ${offset}-${end-1}/${blob.size}`},body:blob.slice(offset,end),signal});
-      if(response.ok){const saved=verifySaved(await file(state.id,signal),job);storage?.removeItem(key);onProgress(1);return saved;}
+      const response=await send(request,uploadUrl(state.session),{method:'PUT',headers:{'Content-Type':'image/png','Content-Range':`bytes ${offset}-${end-1}/${blob.size}`},body:blob.slice(offset,end)});
+      if(response.ok)return await place(await file(state.id));
       if(response.status!==308)throw new Error(`Drive upload paused (${response.status}). Retry Save to Drive to resume.`);
       const next=received(response,blob.size);if(next<=offset)throw new Error('Drive did not acknowledge this chunk; retry to resume.');
-      offset=next;onProgress(offset/blob.size);
+      offset=next;onProgress(offset/blob.size===1?{message:'Original uploaded. Verifying Private placement…'}:offset/blob.size);
     }
     // Some Drive servers acknowledge the final chunk with 308; verify the object before reporting success.
-    const saved=verifySaved(await file(state.id,signal),job);storage?.removeItem(key);onProgress(1);return saved;
+    return await place(await file(state.id));
+    }catch(error){
+      if(signal?.aborted)throw error;
+      if(staged||state?.stage==='placement'||state?.stage==='uploading'){
+        const message=staged&&!placementAttempted
+          ?'The original was verified in My Drive staging; Private placement was not confirmed. Retry Save to Drive to finish placement using the same original.'
+          :'The original may already be staged in My Drive; its Private placement was not confirmed. Retry Save to Drive to finish or confirm the same original.';
+        throw Object.assign(new Error(`${message} ${error?.message||''}`,{cause:error}),{code:error?.code||'drive/save-placement-unconfirmed'});
+      }
+      throw error;
+    }
   }
   return {save};
 }
@@ -129,31 +214,19 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
   }
   function readRequest(url,options={}){return access.request(url,options,[DRIVE_READ_SCOPE]);}
   function manageRequest(url,options={}){return access.request(url,options,[DRIVE_METADATA_SCOPE]);}
-  async function pick(folder,folderId=PRIVATE_FOLDER_ID,title='',mimeType='image/png,image/jpeg'){
+  async function pick(){
     const generation=epoch;await loadPicker();owner();if(generation!==epoch)throw new Error('Studio locked.');
     return new Promise((resolve,reject)=>{
-      const view=new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true);
-      if(folder)view.setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder');
-       else view.setMimeTypes(mimeType).setParent(folderId);
-      const picker=new google.picker.PickerBuilder().setAppId(appId).setDeveloperKey(apiKey).setOAuthToken(access.getToken([DRIVE_FILE_SCOPE])).setOrigin(location.origin).setTitle(title||(folder?'Select the existing Private folder':'Choose an image reference')).addView(view).setCallback(data=>{
+      const view=new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes('image/png,image/jpeg').setParent(PRIVATE_FOLDER_ID);
+      const picker=new google.picker.PickerBuilder().setAppId(appId).setDeveloperKey(apiKey).setOAuthToken(access.getToken([DRIVE_FILE_SCOPE])).setOrigin(location.origin).setTitle('Choose an image reference').addView(view).setCallback(data=>{
         if(data.action===google.picker.Action.CANCEL){pickers.delete(picker);picker.dispose();reject(new Error('Drive selection cancelled.'));}
         if(data.action===google.picker.Action.PICKED){const selected=data.docs?.[0];pickers.delete(picker);picker.dispose();resolve(selected);}
       }).build();pickers.set(picker,reject);picker.setVisible(true);
     });
   }
-  async function uploadFolderGrant(folderId=PRIVATE_FOLDER_ID){
-    if(![PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(folderId))throw new Error('Invalid destination folder.');
-    const generation=epoch;
-    const path=`${API}/files/${folderId}?fields=id,mimeType,trashed,isAppAuthorized,capabilities(canAddChildren)`;
-    const writable=async()=>{const response=await request(path);if(response.status===403||response.status===404)return false;if(!response.ok)throw new Error(`Could not verify the folder (${response.status}). Retry when online.`);const data=await response.json();return data.id===folderId&&data.mimeType==='application/vnd.google-apps.folder'&&data.trashed===false&&data.isAppAuthorized===true&&data.capabilities?.canAddChildren===true;};
-    const approved=await writable();if(generation!==epoch)throw new Error('Studio locked.');if(approved)return;
-    const selected=await pick(true,folderId,`Select the existing ${folderId===PRIVATE_FOLDER_ID?'Private':'References'} folder`);
-    if(selected?.id!==folderId)throw new Error('Choose the existing destination folder. No duplicate folder was created.');
-     if(!await writable())throw new Error(`The existing ${folderId===PRIVATE_FOLDER_ID?'Private':'References'} folder has not been granted writable access. Check the Google Picker selection.`);
-  }
   async function grantFile(file,{allowTrashed=false}={}){
     const generation=epoch;
-    access.require([DRIVE_METADATA_SCOPE]);
+    await access.ensure([DRIVE_METADATA_SCOPE]);
     check(generation);
     if(!/^[\w-]{8,160}$/.test(file?.id||''))throw new Error('Invalid Drive image.');
     const fields='id,name,mimeType,parents,trashed,ownedByMe,capabilities(canMoveItemWithinDrive,canTrash,canUntrash)';
@@ -169,7 +242,7 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
   }
   async function grantFolder(folderId,{source=false}={}){
     const generation=epoch;
-    access.require([DRIVE_METADATA_SCOPE]);
+    await access.ensure([DRIVE_METADATA_SCOPE]);
     check(generation);
     if(![PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(folderId))throw new Error('Invalid library folder.');
     const fields='id,mimeType,trashed,ownedByMe,capabilities(canAddChildren,canRemoveChildren)';
@@ -209,7 +282,11 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
       const generation=epoch,controller=new AbortController();controllers.add(controller);
       const cancel=()=>controller.abort();signal?.addEventListener('abort',cancel,{once:true});
       if(signal?.aborted)controller.abort();
-      try{await authorize();if(generation!==epoch)throw new Error('Studio locked.');await uploadFolderGrant();if(generation!==epoch)throw new Error('Studio locked.');return await createDriveTransport({request,reserve,storage,onProgress}).save({job,blob,signal:controller.signal});}
+      try{
+        controller.signal.throwIfAborted();check(generation);
+        await authorize();check(generation);controller.signal.throwIfAborted();
+        return await createDriveTransport({request,readRequest,manageRequest,reserve,getOperationGuard,storage,onProgress}).save({job,blob,signal:controller.signal});
+      }
       finally{controllers.delete(controller);signal?.removeEventListener('abort',cancel);}
     },
     async chooseReference({current=false,external=false}={}){
@@ -223,7 +300,7 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
           return{blob,source:{kind:'drive',id:source.id,name:source.name}};
         }
         if(external!==true)throw new Error('Choose a reference from the Private or References selector.');
-        await authorize();if(generation!==epoch)throw new Error('Studio locked.');const selected=await pick(false);
+        await authorize();if(generation!==epoch)throw new Error('Studio locked.');const selected=await pick();
         if(generation!==epoch)throw new Error('Studio locked.');
         const response=await request(`${API}/files/${encodeURIComponent(selected.id)}?alt=media`,{signal:controller.signal});
         if(!response.ok)throw new Error(`Could not read the selected Drive reference (${response.status}).`);

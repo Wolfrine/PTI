@@ -140,6 +140,11 @@ async function bootGallery() {
   const appModule = new URL('./app.js', import.meta.url);
   appModule.search = new URL(import.meta.url).search;
   await import(appModule.href);
+  window.addEventListener('velum:request-unlock',async()=>{
+    window.dispatchEvent(new Event('velum:lock'));
+    await showPinGate({setup:false});
+    window.dispatchEvent(new Event('velum:unlock'));
+  });
 
   const returnBtn = document.getElementById('returnBtn');
   const neutralScreen = document.getElementById('neutralScreen');

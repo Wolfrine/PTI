@@ -18,7 +18,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   reauthenticateWithPopup,
-  signOut,
   setPersistence,
   browserLocalPersistence,
   onAuthStateChanged
@@ -117,7 +116,7 @@ let initializedGallery = false;
 let connectingDrive = false;
 let pendingGalleryView = '';
 let renderSerial = 0;
-const access = createDriveAccess({auth,requestAccess:scopes => {
+const access = createDriveAccess({auth,backend:true,requestAccess:scopes => {
   const provider = new GoogleAuthProvider();
   scopes.forEach(scope => provider.addScope(scope));
   const parameters={include_granted_scopes:'true'};
@@ -155,13 +154,12 @@ mountStudio({ app, auth, drive:studioDrive }).catch(() => {
   if (studio) studio.textContent = 'Studio could not load. Reconnect and refresh Velum.';
 });
 window.addEventListener('velum:lock',clearGallerySession);
-window.addEventListener('velum:unlock',()=>{galleryLocked=false;if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');});
+window.addEventListener('velum:unlock',()=>{galleryLocked=false;void restoreGalleryConnection();});
 window.addEventListener('pagehide',()=>clearGallerySession({clearAccess:false}));
 window.addEventListener('pageshow',event=>{
   if(!event.persisted)return;
-  galleryLocked=false;
-  if(tokenProbablyFresh())void syncDrive({initial:true}).then(()=>libraryControls.resume());
-  else if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
+  // A BFCache return must pass the same local PIN gate as an ordinary reload.
+  window.dispatchEvent(new CustomEvent('velum:request-unlock'));
 });
 const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.connect(),current:currentMediaItem,getUrl:ensureObjectUrl,getOwner:()=>auth.currentUser?.uid||'',canRead:()=>access.has([DRIVE_READ_SCOPE])&&!galleryLocked,
  onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>{if(!galleryLocked)showToast(error.message);});}else{renderSerial++;current={type:'single',ids:[]};window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
@@ -259,11 +257,12 @@ function setAuthMessage(title, copy, status = '') {
 }
 
 async function connectDrive() {
+  if(access.disconnectPending)return disconnectDrive();
   if(connectingDrive||galleryLocked)return;
   const generation=galleryEpoch;
   connectingDrive=true;
   connectBtn.disabled=true;
-  setAuthMessage('Connecting', 'Authorize Drive viewing, file details management and Studio saving for your Google account.', 'Waiting for Google…');
+  setAuthMessage('Connecting', 'Connect Drive for browsing, fixed-folder moves and Studio saving.', access.mode==='temporary'?'Secure renewal setup is pending. Connecting a temporary session…':'Checking your saved Drive connection…');
   try {
     await access.connect();
     if(generation!==galleryEpoch||galleryLocked)return;
@@ -308,18 +307,22 @@ $('#openStudioBtn')?.addEventListener('click', async () => {
   } finally { connectingDrive=false;button.disabled = false; }
 });
 
-signOutBtn.addEventListener('click', async () => {
-  clearGallerySession();
-  libraryControls.clear();
-  await signOut(auth).catch(() => {});
-  galleryLocked=false;
-  authGate.classList.add('open');
-  setAuthMessage('Private collection','Connect to view Drive media, organize Private and References, and save Studio creations.','Media stays in Google Drive.');
-});
+async function disconnectDrive(){
+  if(signOutBtn.disabled)return;
+  signOutBtn.disabled=true;
+  try{
+    const result=await access.disconnect();
+    clearGallerySession();libraryControls.clear();galleryLocked=false;authGate.classList.add('open');
+    connectBtn.textContent=result.revoked?'Connect Google Drive':'Retry disconnect';
+    setAuthMessage(result.revoked?'Drive disconnected':'Disconnect pending','Your Google sign-in and local PIN are unchanged.',result.revoked?(result.googleRevoked?'Google Drive access was revoked. Connect again only when you choose.':'No saved Drive credential remains on this device or server.'):'Local access is cleared. Server or Google revocation is pending; retry Disconnect.');
+  }catch(error){showToast(error.message||'Disconnect could not be confirmed. Retry when online.');}
+  finally{signOutBtn.disabled=false;}
+}
+signOutBtn.addEventListener('click',disconnectDrive);
 
 syncBtn.addEventListener('click', async () => {
-  if (!tokenProbablyFresh()) return connectDrive();
-  await syncDrive({ initial: false });
+  try{await access.ensure();await syncDrive({initial:false});}
+  catch(error){showToast(error.message||'Drive needs a connection.');authGate.classList.add('open');}
 });
 
 function clearGallerySession({clearAccess=true}={}){
@@ -774,7 +777,7 @@ function renderBrowse() {
       move.type='button';move.className='tile-quick-move';
       move.setAttribute('aria-label',`Move ${item.name || 'image'} to ${destination}`);
       move.title=`Move to ${destination}`;
-      move.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h6l2 2H21v9.5H3z"/><path d="m12 14 3-3m0 0h-3m3 0v3"/></svg><span><small>Move to</small><strong>${destination}</strong></span>`;
+      move.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>';
       move.disabled=libraryControls.busy;
       move.onclick=async event=>{
         event.preventDefault();event.stopPropagation();
@@ -867,23 +870,15 @@ function initGallery() {
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 
-onAuthStateChanged(auth, async user => {
-  const nextOwner=user?.uid||'';
-  if(galleryOwner&&galleryOwner!==nextOwner){const wasLocked=galleryLocked;clearGallerySession();libraryControls.clear();galleryLocked=wasLocked;}
-  galleryOwner=nextOwner;
-  if(connectingDrive||galleryLocked)return;
-  if(!user){
-    authGate.classList.add('open');
-    setAuthMessage('Private collection','Connect to view Drive media, organize Private and References, and save Studio creations.','Media stays in Google Drive.');
-    return;
-  }
+async function restoreGalleryConnection(){
+  if(galleryLocked||!auth.currentUser)return;
   const generation=galleryEpoch;
   try{
     await access.restore();
     if(generation!==galleryEpoch||galleryLocked)return;
     if(!tokenProbablyFresh()){
       if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
-      setAuthMessage('Private collection','Reconnect Drive to open your gallery.','Your Studio sign-in is ready.');
+      setAuthMessage('Private collection',access.mode==='temporary'?'Secure renewal setup is pending. Connect a temporary Drive session.':'Connect Drive once to enable automatic renewal.','Your Studio sign-in and local PIN are ready.');
       return;
     }
     await syncDrive({initial:true});
@@ -894,4 +889,15 @@ onAuthStateChanged(auth, async user => {
       if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
     }
   }
+}
+onAuthStateChanged(auth, async user => {
+  const nextOwner=user?.uid||'';
+  if(galleryOwner&&galleryOwner!==nextOwner){const wasLocked=galleryLocked;clearGallerySession();libraryControls.clear();galleryLocked=wasLocked;}
+  galleryOwner=nextOwner;
+  if(connectingDrive||galleryLocked)return;
+  if(!user){
+    authGate.classList.add('open');
+    setAuthMessage('Private collection','Sign in once to connect your Drive collection.','Media stays in Google Drive.');return;
+  }
+  await restoreGalleryConnection();
 });

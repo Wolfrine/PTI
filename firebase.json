@@ -195,6 +195,7 @@
         }
       ],
       "rewrites": [
+        { "source": "/api/drive/**", "function": { "functionId": "velumDrive", "region": "us-central1" } },
         {
           "source": "**",
           "destination": "/index.html"

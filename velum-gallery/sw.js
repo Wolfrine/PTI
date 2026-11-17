@@ -17,7 +17,7 @@ self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET') return;
   const url=new URL(request.url);
-  if(url.origin!==self.location.origin || url.pathname.startsWith('/__/')) return;
+  if(url.origin!==self.location.origin || url.pathname.startsWith('/__/') || url.pathname.startsWith('/api/drive/')) return;
 
   const networkFirst = request.mode==='navigate' || /\.(?:html|m?js|css|webmanifest)$/.test(url.pathname);
 

@@ -5,6 +5,7 @@ import express, { NextFunction, Request, Response } from 'express';
 admin.initializeApp();
 
 export { onePieceHost } from './one-piece-host';
+export { velumDrive } from './velum-drive';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -578,7 +579,11 @@ function assertDocumentPath(path: string): string {
 }
 
 function normalizePath(path: string): string {
-    return path.trim().replace(/^\/+|\/+$/g, '');
+    const normalized = path.trim().replace(/^\/+|\/+$/g, '');
+    if (normalized.split('/').filter(Boolean)[0] === '_velumDrivePrivate') {
+        throw new McpValidationError(-32602, 'Server credential paths are not available through MCP.');
+    }
+    return normalized;
 }
 
 function splitPath(path: string): string[] {

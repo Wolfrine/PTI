@@ -2230,9 +2230,10 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-width: 65px;
+  width: 44px;
+  min-width: 44px;
   min-height: 44px;
-  padding: 0 9px;
+  padding: 0;
   border: 1px solid #d1b4c085;
   border-radius: 11px;
   background: #120c12df;

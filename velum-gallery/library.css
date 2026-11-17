@@ -8,3 +8,5 @@
 .library-action-notice{flex-wrap:wrap}
 .library-action-notice [data-reconnect],.library-detail [data-reconnect]{min-width:44px;min-height:44px;white-space:nowrap}
 .library-detail [data-reconnect]{margin:0 0 12px;background:#513143}
+.library-detail-body>img{height:40dvh;object-fit:contain}
+@media(min-width:601px){.library-detail-body>img{height:65dvh}}

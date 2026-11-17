@@ -14,7 +14,8 @@ function reconnectError() {
   return Object.assign(new Error('Reconnect Drive to continue this action.'), {code:'drive/reconnect-required'});
 }
 
-export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
+export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
+  cancelAccessRequest=()=>[], onConnectRequired=()=>{}, fetchImpl=fetch,
   storage=globalThis.sessionStorage, backupStorage=globalThis.localStorage, backend=false}) {
   let epoch = 0;
   let authorizationVersion = 0;
@@ -22,6 +23,10 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
   let connecting = null;
   let restoring = null;
   const controllers = new Set();
+  const cancelledGrantIds = new Set();
+  let disconnecting = null;
+  let lateRevocations = 0;
+  let lateGoogleRevoked = false;
   let serverMode=false,backendReady=null,temporaryAllowed=false,pendingTemporaryRevocation='',disconnectPending=false;
   try{disconnectPending=backupStorage?.getItem('velum-drive-disconnect-pending-v1')==='1';}catch{}
   let temporaryRevocationExpected=false,pendingTemporaryGoogleUid='',pendingTemporaryExpiry=0;
@@ -33,8 +38,13 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
     }
   }catch{}
   try{serverMode=backend&&backupStorage?.getItem('velum-drive-server-active-v1')==='1';}catch{}
-  if(backend)void fetchImpl('/api/drive/health',{cache:'no-store',credentials:'same-origin'})
-    .then(async response=>{if(response.ok){const value=await response.json();backendReady=value.ready===true?true:value.ready===false?false:null;}}).catch(()=>{});
+  const ready = backend ? fetchImpl('/api/drive/health',{
+    cache:'no-store', credentials:'same-origin', signal:AbortSignal.timeout(10000)
+  }).then(async response => {
+    if (!response.ok) return;
+    const value = await response.json();
+    if (value.service === 'velum-drive' && typeof value.ready === 'boolean') backendReady = value.ready;
+  }).catch(()=>{}) : Promise.resolve();
 
   async function serverRequest(path,generation){
     const owner=check(generation),user=auth.currentUser;
@@ -176,6 +186,7 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
         expiresAt
       };
       active = verified;
+      lateGoogleRevoked=false;
       temporaryRevocationExpected=true;pendingTemporaryRevocation=verified.token;pendingTemporaryGoogleUid=verified.googleUid;pendingTemporaryExpiry=verified.expiresAt;
       try{backupStorage?.setItem('velum-drive-temporary-grant-v1','1');}catch{}
       for (const cache of [storage, backupStorage]) {
@@ -189,32 +200,47 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
   }
 
   function connect() {
-    if(disconnectPending)return Promise.reject(Object.assign(new Error('Disconnect is still pending. Retry Disconnect before connecting again.'),{code:'drive/disconnect-pending'}));
+    if (auth.currentUser) {
+      try { identity(); } catch (error) { return Promise.reject(error); }
+    }
+    if (disconnecting) return Promise.reject(new Error('Finishing Disconnect. Try Connect Drive again when it finishes.'));
+    if (lateRevocations > 0) return Promise.reject(new Error('Google is finishing Disconnect. Use Connect Drive again when it finishes.'));
+    const temporaryRequest = !backend || (!serverMode && (backendReady === false || temporaryAllowed));
+    if (disconnectPending) {
+      if (!temporaryRequest) return Promise.reject(Object.assign(new Error('Server revocation is pending. Retry Disconnect before reconnecting.'), {code:'drive/disconnect-pending'}));
+      // An explicit new temporary connection supersedes an unconfirmed local disconnect.
+      disconnectPending = false;
+      try { backupStorage?.removeItem('velum-drive-disconnect-pending-v1'); } catch {}
+    }
     if (has()) return Promise.resolve();
     if (connecting?.generation === epoch) return connecting.promise;
     const generation = epoch;
     const version = ++authorizationVersion;
+    cancelledGrantIds.clear();
     invalidate();
-    // The SDK popup starts on this call stack, before any network preflight.
     let requested;
-    const temporaryRequest=!backend||(!serverMode&&temporaryAllowed);
     try {
-      if(backend&&!temporaryRequest&&auth.currentUser)requested=Promise.resolve(null);
-      else requested=requestAccess(temporaryRequest?[...CONNECT_SCOPES]:[]);
-    }
-    catch (error) { return Promise.reject(error); }
+      if (!auth.currentUser) requested = signIn([...CONNECT_SCOPES]);
+      else if (temporaryRequest) requested = requestAccess([...CONNECT_SCOPES]);
+      else requested = Promise.resolve(null);
+    } catch (error) { return Promise.reject(error); }
     const promise = Promise.resolve(requested).then(async credential => {
       check(generation);
-      if(backend){
-        try{await connectServer(generation);return;}
-        catch(error){
-          // Only an authenticated, explicit unconfigured response permits the labeled temporary path.
-          if(serverMode||error?.code!=='drive/not-configured')throw error;
-          backendReady=false;temporaryAllowed=true;
-          if(!temporaryRequest)throw Object.assign(new Error('Secure renewal setup is pending. Connect a temporary Drive session to continue.'),{code:'drive/temporary-session-required'});
-        }
+      if (temporaryRequest) {
+        await verify(credential?.accessToken, generation, version);
+        return;
       }
-      await verify(credential?.accessToken, generation, version);
+      try { await connectServer(generation); }
+      catch (error) {
+        if (serverMode || error?.code !== 'drive/not-configured') throw error;
+        backendReady = false;
+        temporaryAllowed = true;
+        if (credential?.accessToken) await verify(credential.accessToken, generation, version);
+        else throw Object.assign(new Error('Connect Drive to continue with your Google account.'), {code:'drive/connect-required'});
+      }
+    }).catch(error => {
+      if (generation === epoch && error?.code !== 'drive/cancelled') onConnectRequired(error);
+      throw error;
     }).finally(() => {
       if (connecting?.promise === promise) connecting = null;
     });
@@ -268,7 +294,7 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
   function restore(){
     if(disconnectPending)return Promise.reject(Object.assign(new Error('Disconnect is pending. Retry Disconnect to finish revoking access.'),{code:'drive/disconnect-pending'}));
     if(has())return Promise.resolve(true);
-    if(!backend)return restoreCached();
+    if(!backend||(!serverMode&&backendReady===false))return restoreCached();
     if(connecting?.generation===epoch)return connecting.promise.then(()=>true,()=>false);
     if(restoring?.generation===epoch)return restoring.promise;
     const generation=epoch;
@@ -365,6 +391,7 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
     epoch++;
     authorizationVersion++;
     active=null;
+    cancelAccessRequest('lock');
     for (const controller of controllers) controller.abort();
     controllers.clear();
   }
@@ -375,7 +402,8 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
     active=null;
   }
 
-  async function disconnect(){
+  async function performDisconnect(){
+    for (const id of cancelAccessRequest('disconnect')) cancelledGrantIds.add(id);
     if(!serverMode&&!active?.token){
       try{
         const saved=JSON.parse(storage?.getItem(SESSION_KEY)||backupStorage?.getItem(SESSION_KEY)||'null'),owner=identity();
@@ -394,7 +422,7 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
     clear();removeSession();
     disconnectPending=true;
     try{backupStorage?.setItem('velum-drive-disconnect-pending-v1','1');}catch{}
-    let serverRevoked=!backend,temporaryRevoked=!temporaryRevocationExpected,googleRevoked=false;
+    let serverRevoked=!backend,temporaryRevoked=!temporaryRevocationExpected,googleRevoked=lateGoogleRevoked;
     try{if(backend){const value=await serverRequest('disconnect',epoch);serverRevoked=value.revoked===true;googleRevoked=value.googleRevoked===true;}}catch{}
     if(googleRevoked){
       pendingTemporaryRevocation='';temporaryRevocationExpected=false;temporaryRevoked=true;
@@ -412,9 +440,55 @@ export function createDriveAccess({auth, requestAccess, fetchImpl=fetch,
         }
       }catch{}
     }
-    if(serverRevoked&&temporaryRevoked){disconnectPending=false;try{backupStorage?.removeItem('velum-drive-disconnect-pending-v1');}catch{}}
+    if(serverRevoked&&temporaryRevoked&&cancelledGrantIds.size===0){disconnectPending=false;try{backupStorage?.removeItem('velum-drive-disconnect-pending-v1');}catch{}}
     return {disconnected:true,revoked:!disconnectPending,googleRevoked};
   }
 
-  return {connect, ensure, restore, require, request, has, getToken:require, getOperationGuard, cancelPending, clear,disconnect,get disconnectPending(){return disconnectPending;},get mode(){return serverMode?'server':backendReady===false?'temporary':'checking';}};
+  function disconnect() {
+    if (disconnecting) return disconnecting;
+    const operation = performDisconnect().finally(() => {
+      if (disconnecting === operation) disconnecting = null;
+    });
+    disconnecting = operation;
+    return operation;
+  }
+
+  async function handleCancelledGrant({id, accessToken, googleUid}) {
+    if (!cancelledGrantIds.has(id)) return;
+    lateRevocations++;
+    try {
+      if (!accessToken) return;
+      pendingTemporaryRevocation = accessToken;
+      pendingTemporaryGoogleUid = googleUid;
+      pendingTemporaryExpiry = Date.now() + MAX_TOKEN_AGE_MS;
+      temporaryRevocationExpected = true;
+      try {
+        backupStorage?.setItem('velum-drive-revoke-expected-v1','1');
+        storage?.setItem('velum-drive-revoke-v1',JSON.stringify({token:accessToken,googleUid,expiresAt:pendingTemporaryExpiry}));
+      } catch {}
+      const response = await fetchImpl('https://oauth2.googleapis.com/revoke',{
+        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:new URLSearchParams({token:accessToken}), credentials:'omit', cache:'no-store',
+        signal:AbortSignal.timeout(15000)
+      });
+      if (response.ok) {
+        lateGoogleRevoked = true;
+        temporaryRevocationExpected = false;
+        pendingTemporaryRevocation = '';
+        try {
+          storage?.removeItem('velum-drive-revoke-v1');
+          backupStorage?.removeItem('velum-drive-revoke-expected-v1');
+          backupStorage?.removeItem('velum-drive-temporary-grant-v1');
+        } catch {}
+      }
+    } catch {} finally {
+      cancelledGrantIds.delete(id);
+      lateRevocations--;
+    }
+  }
+
+  return {connect, ensure, restore, require, request, has, ready, handleCancelledGrant,
+    getToken:require, getOperationGuard, cancelPending, clear, disconnect,
+    get disconnectPending(){return disconnectPending;},
+    get mode(){return serverMode?'server':backendReady===false?'temporary':'checking';}};
 }

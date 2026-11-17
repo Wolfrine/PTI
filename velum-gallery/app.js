@@ -12,12 +12,14 @@ const libraryModule=new URL('./drive-library.mjs',import.meta.url);libraryModule
 const {libraryQuery,libraryFile,PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID}=await import(libraryModule.href);
 const libraryUiModule=new URL('./gallery-library-ui.mjs',import.meta.url);libraryUiModule.search=new URL(import.meta.url).search;
 const {mountGalleryLibrary}=await import(libraryUiModule.href);
+const tokenModule = new URL('./google-drive-token.mjs', import.meta.url);
+tokenModule.search = new URL(import.meta.url).search;
+const {createGoogleDriveTokenRequest, preloadGoogleIdentityServices} = await import(tokenModule.href);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
-  reauthenticateWithPopup,
   setPersistence,
   browserLocalPersistence,
   onAuthStateChanged
@@ -116,17 +118,32 @@ let initializedGallery = false;
 let connectingDrive = false;
 let pendingGalleryView = '';
 let renderSerial = 0;
-const access = createDriveAccess({auth,backend:true,requestAccess:scopes => {
+let access;
+const tokenRequests = createGoogleDriveTokenRequest({
+  auth,
+  onCancelledResult:result => access.handleCancelledGrant(result)
+});
+access = createDriveAccess({auth,backend:true,
+ requestAccess:scopes => tokenRequests.request(scopes),
+ cancelAccessRequest:reason => tokenRequests.cancel(reason),
+ onConnectRequired:error => {
+   if(galleryLocked)return;
+   setAuthMessage('Connect Drive','Use your connected Google account to continue.',error.message);
+   if($('#studioView').classList.contains('active'))authGate.classList.add('open');
+ },
+ signIn:scopes => {
   const provider = new GoogleAuthProvider();
   scopes.forEach(scope => provider.addScope(scope));
   const parameters={include_granted_scopes:'true'};
   if(auth.currentUser?.email)parameters.login_hint=auth.currentUser.email;
   provider.setCustomParameters(parameters);
-  const popup = auth.currentUser
-    ? reauthenticateWithPopup(auth.currentUser, provider)
-    : signInWithPopup(auth, provider);
+  const popup = signInWithPopup(auth, provider);
   return popup.then(result => GoogleAuthProvider.credentialFromResult(result));
 }});
+connectBtn.disabled = true;
+void Promise.allSettled([preloadGoogleIdentityServices(), access.ready]).then(() => {
+  if(!connectingDrive)connectBtn.disabled = false;
+});
 const studioDrive = createStudioDrive({auth,access,apiKey:FIREBASE_CONFIG.apiKey,appId:FIREBASE_CONFIG.messagingSenderId,
   reserve: async (job,candidate) => {
     const uid=auth.currentUser?.uid;
@@ -257,7 +274,6 @@ function setAuthMessage(title, copy, status = '') {
 }
 
 async function connectDrive() {
-  if(access.disconnectPending)return disconnectDrive();
   if(connectingDrive||galleryLocked)return;
   const generation=galleryEpoch;
   connectingDrive=true;
@@ -313,8 +329,8 @@ async function disconnectDrive(){
   try{
     const result=await access.disconnect();
     clearGallerySession();libraryControls.clear();galleryLocked=false;authGate.classList.add('open');
-    connectBtn.textContent=result.revoked?'Connect Google Drive':'Retry disconnect';
-    setAuthMessage(result.revoked?'Drive disconnected':'Disconnect pending','Your Google sign-in and local PIN are unchanged.',result.revoked?(result.googleRevoked?'Google Drive access was revoked. Connect again only when you choose.':'No saved Drive credential remains on this device or server.'):'Local access is cleared. Server or Google revocation is pending; retry Disconnect.');
+    connectBtn.textContent='Connect Google Drive';
+    setAuthMessage('Drive disconnected','Connect Drive when you want access again.',result.revoked?(result.googleRevoked?'Google Drive access was revoked.':'Saved access has been cleared.'):'Local access is cleared. Google revocation is unconfirmed. You can reconnect or retry Disconnect.');
   }catch(error){showToast(error.message||'Disconnect could not be confirmed. Retry when online.');}
   finally{signOutBtn.disabled=false;}
 }

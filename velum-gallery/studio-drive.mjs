@@ -205,7 +205,7 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
     const checkAccess=access.getOperationGuard();
     return()=>{check(generation);checkAccess();};
   }
-  function authorize(){return access.ensure();}
+  function authorize(){return access.connect();}
   async function request(url,options={}){
     const response=await access.request(url,options,[DRIVE_FILE_SCOPE]);
     // Upload completion is verified with files.get. Only response headers are used here.
@@ -284,7 +284,7 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
       if(signal?.aborted)controller.abort();
       try{
         controller.signal.throwIfAborted();check(generation);
-        await authorize();check(generation);controller.signal.throwIfAborted();
+        await access.ensure();check(generation);controller.signal.throwIfAborted();
         return await createDriveTransport({request,readRequest,manageRequest,reserve,getOperationGuard,storage,onProgress}).save({job,blob,signal:controller.signal});
       }
       finally{controllers.delete(controller);signal?.removeEventListener('abort',cancel);}

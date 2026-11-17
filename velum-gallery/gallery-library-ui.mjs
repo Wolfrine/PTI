@@ -221,7 +221,11 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    try{persistMove({...record,from:record.to,to:record.from,at:Date.now()},'queued','undo');receipt=readReceipt();}
    catch(error){showNotice(error.message||'Undo could not be saved on this device.',{undoable:true});return;}
    setBusy(true);
-   try{await performMove(receipt,generation);}finally{if(isCurrent(generation,owner))setBusy(false);}
+   try{
+    await connect();
+    if(isCurrent(generation,owner)&&matchesReceipt(receipt))await performMove(receipt,generation);
+   }catch(error){if(isCurrent(generation,owner)&&matchesReceipt(receipt))offerReconnect(receipt);}
+   finally{if(isCurrent(generation,owner))setBusy(false);}
    return;
   }
   setBusy(true);showNotice('Restoring from Drive Trash…');
@@ -244,9 +248,14 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   }catch(error){showNotice(error.message||'The move could not be saved on this device.',{undoable:!!recovery});return false;}
   setBusy(true);
   try{
+   await connect();
+   if(!isCurrent(generation,owner)||!matchesReceipt(receipt))return false;
    const moved=await performMove(receipt,generation);
    if(moved&&focusUndo&&isCurrent(generation,owner))notice.querySelector('[data-action-undo]').focus();
    return moved;
+  }catch(error){
+   if(isCurrent(generation,owner)&&matchesReceipt(receipt))offerReconnect(receipt);
+   return false;
   }finally{if(isCurrent(generation,owner))setBusy(false);}
  }
  dialog.addEventListener('click',async event=>{

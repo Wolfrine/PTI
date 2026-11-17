@@ -293,27 +293,35 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
   async function connectServer(generation,version=authorizationVersion,recoverDisconnect=false,requestedDisconnectGeneration=disconnectGeneration(),management=false){
     const requestedOwner = check(generation);
     checkDisconnectGeneration(requestedDisconnectGeneration);
+    let readNeedsConsent=false;
     try{
       await serverSession(generation,version,recoverDisconnect,requestedDisconnectGeneration);
       if(!management||active?.managementReady)return;
     }
-    catch(error){if(!['drive/reconnect-required','drive/revocation-pending'].includes(error?.code))throw error;}
+    catch(error){
+      if(error?.code==='drive/revocation-pending')throw error;
+      if(error?.code!=='drive/reconnect-required')throw error;
+      // Management cannot replace the narrow gallery grant. Restore gallery
+      // access first; a saved Move can request management on the next action.
+      readNeedsConsent=management;
+    }
     check(generation, requestedOwner.googleUid);
     checkDisconnectGeneration(requestedDisconnectGeneration);
     if (version !== authorizationVersion) throw reconnectError();
     if (recoverDisconnect) checkDisconnectRecovery(check(generation));
-    const value=await serverRequest('start',generation,management?{management:true}:{});
+    const requestManagement=management&&!readNeedsConsent;
+    const value=await serverRequest('start',generation,requestManagement?{management:true}:{});
     check(generation, requestedOwner.googleUid);
     checkDisconnectGeneration(requestedDisconnectGeneration);
     if (version !== authorizationVersion) throw reconnectError();
     if (recoverDisconnect) checkDisconnectRecovery(requestedOwner);
     const url=new URL(value.authorizeUrl);
-    const clientId=management?value.clientId:CLIENT_ID;
-    if(management&&(!/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(clientId||'')||clientId.split('-')[0]===CLIENT_ID.split('-')[0]))throw new Error('Drive management requires its isolated server client.');
+    const clientId=requestManagement?value.clientId:CLIENT_ID;
+    if(requestManagement&&(!/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(clientId||'')||clientId.split('-')[0]===CLIENT_ID.split('-')[0]))throw new Error('Drive management requires its isolated server client.');
     if(url.origin!=='https://accounts.google.com'||url.pathname!=='/o/oauth2/v2/auth'||url.searchParams.get('client_id')!==clientId||url.searchParams.get('redirect_uri')!=='https://pti-app-2ab59-velum.web.app/api/drive/callback')throw new Error('Drive returned an invalid connection address.');
     const requestedScopes=(url.searchParams.get('scope')||'').split(/\s+/);
-    if(management&&!requestedScopes.includes(FULL_DRIVE_SCOPE))throw new Error('Drive management setup is still being published. Reload Velum before continuing.');
-    if(!management&&requestedScopes.includes(FULL_DRIVE_SCOPE))throw new Error('Drive returned an unsafe gallery connection.');
+    if(requestManagement&&!requestedScopes.includes(FULL_DRIVE_SCOPE))throw new Error('Drive management setup is still being published. Reload Velum before continuing.');
+    if(!requestManagement&&requestedScopes.includes(FULL_DRIVE_SCOPE))throw new Error('Drive returned an unsafe gallery connection.');
     location.assign(url.href);
     // Same-tab authorization returns through the fixed callback; never report a grant before it exists.
     return new Promise(()=>{});

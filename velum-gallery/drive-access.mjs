@@ -224,7 +224,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     const requestedOwner = check(generation);
     checkDisconnectGeneration(requestedDisconnectGeneration);
     try{await serverSession(generation,version,recoverDisconnect,requestedDisconnectGeneration);return;}
-    catch(error){if(error?.code!=='drive/reconnect-required')throw error;}
+    catch(error){if(!['drive/reconnect-required','drive/revocation-pending'].includes(error?.code))throw error;}
     check(generation, requestedOwner.googleUid);
     checkDisconnectGeneration(requestedDisconnectGeneration);
     if (version !== authorizationVersion) throw reconnectError();

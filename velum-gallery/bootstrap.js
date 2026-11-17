@@ -1,54 +1,5 @@
-const GOOGLE_CLIENT_ID = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
-const TOKEN_KEY = 'velum-drive-token';
-const TOKEN_AT_KEY = 'velum-drive-token-at';
-const CACHED_TOKEN_KEY = 'velum-drive-token-cache';
-const CACHED_TOKEN_AT_KEY = 'velum-drive-token-at-cache';
-const TOKEN_MAX_AGE = 50 * 60 * 1000;
 const PIN_KEY = 'velum-pin-v1';
 const PIN_ITERATIONS = 180000;
-
-// Keep the ordinary Drive access token only for its natural short lifetime, but let
-// an installed PWA survive a close/reopen without immediately asking Google again.
-// App sign-out/removal of the session token also clears this short-lived backup.
-const nativeStorageSetItem = Storage.prototype.setItem;
-const nativeStorageRemoveItem = Storage.prototype.removeItem;
-
-function restoreCachedDriveToken() {
-  try {
-    const token = localStorage.getItem(CACHED_TOKEN_KEY) || '';
-    const issuedAt = Number(localStorage.getItem(CACHED_TOKEN_AT_KEY) || 0);
-    if (token && issuedAt && Date.now() - issuedAt < TOKEN_MAX_AGE) {
-      nativeStorageSetItem.call(sessionStorage, TOKEN_KEY, token);
-      nativeStorageSetItem.call(sessionStorage, TOKEN_AT_KEY, String(issuedAt));
-      return;
-    }
-    nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_KEY);
-    nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_AT_KEY);
-  } catch {}
-}
-
-restoreCachedDriveToken();
-
-Storage.prototype.setItem = function(key, value) {
-  nativeStorageSetItem.call(this, key, value);
-  if (this === sessionStorage) {
-    try {
-      if (key === TOKEN_KEY) nativeStorageSetItem.call(localStorage, CACHED_TOKEN_KEY, String(value));
-      if (key === TOKEN_AT_KEY) nativeStorageSetItem.call(localStorage, CACHED_TOKEN_AT_KEY, String(value));
-    } catch {}
-  }
-};
-
-Storage.prototype.removeItem = function(key) {
-  nativeStorageRemoveItem.call(this, key);
-  if (this === sessionStorage) {
-    try {
-      if (key === TOKEN_KEY) nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_KEY);
-      if (key === TOKEN_AT_KEY) nativeStorageRemoveItem.call(localStorage, CACHED_TOKEN_AT_KEY);
-    } catch {}
-  }
-};
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -183,75 +134,9 @@ function showPinGate({ setup = false } = {}) {
   });
 }
 
-function hasFreshSessionToken() {
-  const token = sessionStorage.getItem(TOKEN_KEY);
-  const issuedAt = Number(sessionStorage.getItem(TOKEN_AT_KEY) || 0);
-  return Boolean(token && Date.now() - issuedAt < TOKEN_MAX_AGE);
-}
-
-function loadGoogleIdentityServices() {
-  if (window.google?.accounts?.oauth2) return Promise.resolve(true);
-  return new Promise(resolve => {
-    const existing = document.querySelector('script[data-velum-gis]');
-    if (existing) {
-      existing.addEventListener('load', () => resolve(Boolean(window.google?.accounts?.oauth2)), { once: true });
-      existing.addEventListener('error', () => resolve(false), { once: true });
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.dataset.velumGis = '1';
-    script.onload = () => resolve(Boolean(window.google?.accounts?.oauth2));
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
-  });
-}
-
-async function silentlyRenewDriveToken() {
-  if (hasFreshSessionToken()) return true;
-  const ready = await loadGoogleIdentityServices();
-  if (!ready) return false;
-
-  return new Promise(resolve => {
-    let settled = false;
-    const finish = value => {
-      if (settled) return;
-      settled = true;
-      resolve(value);
-    };
-    const timeout = setTimeout(() => finish(false), 5000);
-    try {
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: DRIVE_SCOPE,
-        include_granted_scopes: true,
-        callback: response => {
-          clearTimeout(timeout);
-          if (response?.access_token) {
-            sessionStorage.setItem(TOKEN_KEY, response.access_token);
-            sessionStorage.setItem(TOKEN_AT_KEY, String(Date.now()));
-            finish(true);
-          } else finish(false);
-        },
-        error_callback: () => {
-          clearTimeout(timeout);
-          finish(false);
-        }
-      });
-      client.requestAccessToken({ prompt: '' });
-    } catch {
-      clearTimeout(timeout);
-      finish(false);
-    }
-  });
-}
-
 async function bootGallery() {
   const hasPin = Boolean(localStorage.getItem(PIN_KEY));
   await showPinGate({ setup: !hasPin });
-  await silentlyRenewDriveToken();
   const appModule = new URL('./app.js', import.meta.url);
   appModule.search = new URL(import.meta.url).search;
   await import(appModule.href);

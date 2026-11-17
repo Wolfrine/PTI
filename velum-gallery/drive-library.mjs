@@ -22,45 +22,73 @@ export function libraryFile(file){
  const label=folderLabel(file);return {...file,folderLabel:label,folderId:label==='References'?REFERENCES_FOLDER_ID:label==='Private'?PRIVATE_FOLDER_ID:file.folderId||''};
 }
 async function json(response,message){if(!response.ok)throw new Error(`${message} (${response.status}). Reconnect or retry.`);return response.json();}
-export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFolder}){
+export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFolder,getOperationGuard=()=>()=>{}}){
  async function listReferences({folder='all',search='',cursor='',signal}={}){
   const params=new URLSearchParams({q:libraryQuery({folder,search}),fields:'nextPageToken,files(id,name,mimeType,parents,thumbnailLink,size,modifiedTime)',pageSize:'60',orderBy:'modifiedTime desc'});
   if(cursor)params.set('pageToken',cursor);
   const data=await json(await readRequest(`${API}/files?${params}`,{signal}),'Could not load references');
   return {files:(data.files||[]).map(libraryFile),cursor:data.nextPageToken||''};
  }
- async function metadata(file,signal){return json(await readRequest(`${API}/files/${id(file.id||file)}?fields=id,name,mimeType,parents,trashed,thumbnailLink,size`,{signal}),'Could not verify image');}
- async function manageable(file){
-  const actual=await grantFile(file);
-  if(actual.id!==file.id||actual.ownedByMe!==true||actual.trashed||!folderLabel(actual))throw new Error('Only your images in Private or References can be managed here.');
+ async function metadata(file,signal){return json(await readRequest(`${API}/files/${id(file.id||file)}?fields=id,name,mimeType,parents,trashed,ownedByMe,thumbnailLink,size,capabilities(canMoveItemWithinDrive,canTrash,canUntrash)`,{signal}),'Could not verify image');}
+ function verifyImage(actual,file,{allowTrashed=false}={}){
+  if(actual.id!==id(file.id)||actual.ownedByMe!==true||(!allowTrashed&&actual.trashed!==false)||!/^image\/[a-z0-9.+-]+$/i.test(actual.mimeType||'')
+   ||actual.parents?.length!==1||!Object.values(LIBRARY_FOLDERS).includes(actual.parents[0]))throw new Error('Only your images in Private or References can be managed here.');
+  if(file.folderId&&actual.parents[0]!==file.folderId)throw new Error('This image moved elsewhere. Sync before retrying.');
+ }
+ async function manageable(file,options){
+  id(file.id);
+  const actual=await grantFile(file,options);
+  verifyImage(actual,file,options);
   return actual;
  }
- async function move(file,destination){
+ async function move(file,destination,{onPending}={}){
+  const assertActive=getOperationGuard();
   if(!Object.values(LIBRARY_FOLDERS).includes(destination))throw new Error('Choose Private or References.');
   const actual=await manageable(file),source=libraryFile(actual).folderId;
+  assertActive();
   if(source===destination)throw new Error('This image is already in that folder.');
   if(actual.capabilities?.canMoveItemWithinDrive!==true)throw new Error('Google Drive has not allowed this file to move.');
-  await grantFolder(destination);
-  // Re-read after the grant: do not overwrite a move made in another tab.
+  await grantFolder(source,{source:true});assertActive();
+  await grantFolder(destination);assertActive();
+  // Re-read after authorization and folder checks to preserve external moves.
   const latest=await metadata(file);
-  if(latest.trashed||!latest.parents?.includes(source)||latest.parents?.some(parent=>parent!==source))throw new Error('This file moved elsewhere. Sync before retrying.');
+  assertActive();verifyImage(latest,{...file,folderId:source});
+  if(latest.capabilities?.canMoveItemWithinDrive!==true)throw new Error('Google Drive has not allowed this file to move.');
+  const recovery={kind:'move',id:file.id,name:latest.name,mimeType:latest.mimeType,from:source,to:destination,at:Date.now()};
+  await onPending?.(recovery);assertActive();
   const params=new URLSearchParams({addParents:destination,removeParents:source,fields:'id,name,parents,trashed'});
   const moved=await json(await writeRequest(`${API}/files/${id(file.id)}?${params}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'}),'Move was not confirmed');
-  if(moved.id!==file.id||moved.trashed||!moved.parents?.includes(destination)||moved.parents?.includes(source))throw new Error('Move response did not match. Sync to recover the actual location.');
-   return {file:libraryFile({...file,...moved}),recovery:{kind:'move',id:file.id,name:file.name,mimeType:file.mimeType,from:source,to:destination,at:Date.now()}};
+  assertActive();
+  if(moved.id!==file.id||moved.trashed!==false||moved.parents?.length!==1||moved.parents[0]!==destination)throw new Error('Move response did not match. Sync to recover the actual location.');
+  return {file:libraryFile({...latest,...moved}),recovery};
  }
  async function trash(file){
+  const assertActive=getOperationGuard();
   const actual=await manageable(file);
+  assertActive();
   if(actual.capabilities?.canTrash!==true)throw new Error('Google Drive has not allowed this file to be trashed.');
+  const latest=await metadata(file);assertActive();verifyImage(latest,{...file,folderId:actual.parents[0]});
+  if(latest.capabilities?.canTrash!==true)throw new Error('Google Drive has not allowed this file to be trashed.');
   const changed=await json(await writeRequest(`${API}/files/${id(file.id)}?fields=id,trashed`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:true})}),'Trash was not confirmed');
+  assertActive();
   if(changed.id!==file.id||changed.trashed!==true)throw new Error('Trash response did not match. Check Drive Trash.');
   return {kind:'trash',id:file.id,name:file.name,folderId:libraryFile(actual).folderId,at:Date.now()};
  }
- async function undo(record){
-   if(record?.kind==='move')return move({id:id(record.id),name:record.name,mimeType:record.mimeType,folderId:record.to},record.from);
+ async function undo(record,options){
+  if(record?.kind==='move'){
+   if(!Object.values(LIBRARY_FOLDERS).includes(record.from)||!Object.values(LIBRARY_FOLDERS).includes(record.to)||record.from===record.to)throw new Error('Invalid move recovery.');
+   return move({id:id(record.id),name:record.name,mimeType:record.mimeType,folderId:record.to},record.from,options);
+  }
   if(record?.kind!=='trash')throw new Error('No recoverable action selected.');
-  const restored=await json(await writeRequest(`${API}/files/${id(record.id)}?fields=id,name,parents,trashed`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:false})}),'Restore was not confirmed');
-  if(restored.trashed!==false)throw new Error('Restore response did not match. Open Drive Trash to recover it.');
+  const assertActive=getOperationGuard(),file={id:id(record.id),folderId:record.folderId};
+  const actual=await manageable(file,{allowTrashed:true});assertActive();
+  if(actual.trashed!==true||actual.capabilities?.canUntrash!==true)throw new Error('This image cannot be restored here. Check Drive Trash.');
+  await grantFolder(record.folderId);assertActive();
+  const latest=await metadata(file);assertActive();verifyImage(latest,file,{allowTrashed:true});
+  if(latest.trashed!==true||latest.capabilities?.canUntrash!==true)throw new Error('This image changed. Check Drive Trash.');
+  const restored=await json(await writeRequest(`${API}/files/${file.id}?fields=id,name,mimeType,parents,trashed`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:false})}),'Restore was not confirmed');
+  assertActive();
+  if(restored.id!==file.id||restored.trashed!==false||restored.parents?.length!==1||restored.parents[0]!==record.folderId)throw new Error('Restore response did not match. Open Drive Trash to recover it.');
   return {file:libraryFile(restored)};
  }
  async function choosePose({category='auto',twoPerson=false,excludeId='',random=Math.random,signal}={}){

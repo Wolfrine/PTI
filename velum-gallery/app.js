@@ -7,7 +7,7 @@ studioModule.search = new URL(import.meta.url).search;
 const { mountStudio } = await import(studioModule.href);
 const driveModule = new URL('./studio-drive.mjs', import.meta.url);
 driveModule.search = new URL(import.meta.url).search;
-const { createStudioDrive,readBoundedImage } = await import(driveModule.href);
+const { createStudioDrive,readBoundedImage,createDriveAccess,DRIVE_READ_SCOPE } = await import(driveModule.href);
 const libraryModule=new URL('./drive-library.mjs',import.meta.url);libraryModule.search=new URL(import.meta.url).search;
 const {libraryQuery,libraryFile}=await import(libraryModule.href);
 const libraryUiModule=new URL('./gallery-library-ui.mjs',import.meta.url);libraryUiModule.search=new URL(import.meta.url).search;
@@ -36,7 +36,6 @@ const FIREBASE_CONFIG = {
 };
 
 const PRIVATE_FOLDER_ID = '1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 
 const app = initializeApp(FIREBASE_CONFIG);
@@ -92,8 +91,11 @@ const toast = $('#toast');
 const browseGrid = $('#browseGrid');
 const sortSelect = $('#sortSelect');
 
-let accessToken = sessionStorage.getItem('velum-drive-token') || '';
-let tokenIssuedAt = Number(sessionStorage.getItem('velum-drive-token-at') || 0);
+let galleryEpoch = 0;
+let galleryLocked = false;
+let galleryRevision = 0;
+let galleryOwner = auth.currentUser?.uid || '';
+const galleryRequests = new Set();
 let images = [];
 let imageMap = new Map();
 const DISCOVERY_KEY = 'velum-feed-discovery-v1';
@@ -116,8 +118,16 @@ let initializedGallery = false;
 let connectingDrive = false;
 let pendingGalleryView = '';
 let renderSerial = 0;
-const studioDrive = createStudioDrive({auth,apiKey:FIREBASE_CONFIG.apiKey,appId:FIREBASE_CONFIG.messagingSenderId,
-  getReadAccess: () => tokenProbablyFresh() ? accessToken : '',
+const access = createDriveAccess({auth,requestAccess:scopes => {
+  const provider = new GoogleAuthProvider();
+  scopes.forEach(scope => provider.addScope(scope));
+  provider.setCustomParameters({include_granted_scopes:'true',login_hint:auth.currentUser?.email||'schttewary@gmail.com'});
+  const popup = auth.currentUser
+    ? reauthenticateWithPopup(auth.currentUser, provider)
+    : signInWithPopup(auth, provider);
+  return popup.then(result => GoogleAuthProvider.credentialFromResult(result));
+}});
+const studioDrive = createStudioDrive({auth,access,apiKey:FIREBASE_CONFIG.apiKey,appId:FIREBASE_CONFIG.messagingSenderId,
   reserve: async (job,candidate) => {
     const uid=auth.currentUser?.uid;
     if(uid!=='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2')throw new Error('Owner sign-in is required.');
@@ -134,41 +144,48 @@ const studioDrive = createStudioDrive({auth,apiKey:FIREBASE_CONFIG.apiKey,appId:
       return candidate;
     });
   },
-  requestAccess: async scope => {
-    const provider = new GoogleAuthProvider();
-    provider.addScope(scope);
-    provider.setCustomParameters({include_granted_scopes:'true'});
-    const result = await reauthenticateWithPopup(auth.currentUser,provider);
-    const credential=GoogleAuthProvider.credentialFromResult(result);
-    if(scope===DRIVE_SCOPE&&credential?.accessToken){accessToken=credential.accessToken;tokenIssuedAt=Date.now();sessionStorage.setItem('velum-drive-token',accessToken);sessionStorage.setItem('velum-drive-token-at',String(tokenIssuedAt));}
-    return credential;
-  }
 });
 studioDrive.setGalleryProvider({list:()=>images.filter(item=>item.kind==='image'),current:()=>currentMediaItem(),read:async (id,signal)=>{
   if(imageById(id)?.size>16*1024*1024)throw new Error('Choose a reference smaller than 16 MB.');
-  const response=await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`,{signal});
-  return readBoundedImage(response);
+  return readDrive(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`,{signal},readBoundedImage);
 }});
 mountStudio({ app, auth, drive:studioDrive }).catch(() => {
   const studio = document.querySelector('#studioView');
   if (studio) studio.textContent = 'Studio could not load. Reconnect and refresh Velum.';
 });
-window.addEventListener('velum:lock',()=>studioDrive.clear());
-const libraryControls=mountGalleryLibrary({drive:studioDrive,current:currentMediaItem,getUrl:ensureObjectUrl,
- onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;renderMoment(next);}else{renderSerial++;window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
- onChanged:async({kind,file,id})=>{
-   // A verified Drive PATCH is authoritative. Keep the Browse state in sync
-   // immediately; a second full Drive fetch must not turn success into failure.
+window.addEventListener('velum:lock',clearGallerySession);
+window.addEventListener('velum:unlock',()=>{galleryLocked=false;if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');});
+window.addEventListener('pagehide',()=>clearGallerySession({clearAccess:false}));
+window.addEventListener('pageshow',event=>{
+  if(!event.persisted)return;
+  galleryLocked=false;
+  if(tokenProbablyFresh())void syncDrive({initial:true}).then(()=>libraryControls.resume());
+  else if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
+});
+const libraryControls=mountGalleryLibrary({drive:studioDrive,current:currentMediaItem,getUrl:ensureObjectUrl,getOwner:()=>auth.currentUser?.uid||'',canRead:()=>access.has([DRIVE_READ_SCOPE])&&!galleryLocked,
+ onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>{if(!galleryLocked)showToast(error.message);});}else{renderSerial++;current={type:'single',ids:[]};window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
+ onChanged:({kind,file,id})=>{
+   galleryRevision++;
    if(kind==='trash')images=images.filter(item=>item.id!==id);
    else if(file){
      const old=imageMap.get(id);
-     if(old)images=images.map(item=>item.id===id?{...item,...file}:item);
-     else if(kind==='restore')await syncDrive();
+     const updated={...old,...file};
+     updated.kind ||= updated.mimeType?.startsWith('video/')?'video':updated.mimeType==='image/gif'?'gif':'image';
+     updated.addedAt ||= Date.now();
+     if(old)images=images.map(item=>item.id===id?updated:item);
+     else images.push(updated);
    }
    imageMap=new Map(images.map(item=>[item.id,item]));
    if(initializedGallery)renderBrowse();
+   const selected=currentMediaItem();
+   if(!selected||(libraryControls.filter!=='all'&&selected.folderLabel?.toLowerCase()!==libraryControls.filter)){
+     const next=chooseMoment();
+     if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>showToast(error.message));}
+     else{renderSerial++;current={type:'single',ids:[]};driftMedia.replaceChildren();window.__velumInteraction?.clearAdvance?.();}
+   }
    libraryControls.update();
  }
+
 });
 
 class EventStore {
@@ -231,7 +248,7 @@ const store = new EventStore();
 await store.init();
 
 function tokenProbablyFresh() {
-  return accessToken && (Date.now() - tokenIssuedAt) < 50 * 60 * 1000;
+  return access.has([DRIVE_READ_SCOPE]);
 }
 
 function setAuthMessage(title, copy, status = '') {
@@ -241,70 +258,62 @@ function setAuthMessage(title, copy, status = '') {
 }
 
 async function connectDrive() {
-  connectingDrive = true;
-  connectBtn.disabled = true;
-  setAuthMessage('Connecting', 'Choose the Google account that owns the private collection.', 'Waiting for Google…');
+  if(connectingDrive||galleryLocked)return;
+  const generation=galleryEpoch;
+  connectingDrive=true;
+  connectBtn.disabled=true;
+  setAuthMessage('Connecting', 'Authorize Drive viewing, file details management and Studio saving for your Google account.', 'Waiting for Google…');
   try {
-    if (!tokenProbablyFresh()) {
-      const provider = new GoogleAuthProvider();
-      provider.addScope(DRIVE_SCOPE);
-      provider.setCustomParameters({ include_granted_scopes: 'true' });
-      const result = await signInWithPopup(auth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (!credential?.accessToken) throw new Error('Google did not return a Drive access token.');
-      accessToken = credential.accessToken;
-      tokenIssuedAt = Date.now();
-      sessionStorage.setItem('velum-drive-token', accessToken);
-      sessionStorage.setItem('velum-drive-token-at', String(tokenIssuedAt));
-    }
-    await syncDrive({ initial: true });
-    if (pendingGalleryView && initializedGallery) {
-      const view = pendingGalleryView;
-      pendingGalleryView = '';
+    await access.connect();
+    if(generation!==galleryEpoch||galleryLocked)return;
+    await syncDrive({initial:true});
+    if(generation!==galleryEpoch||galleryLocked)return;
+    await libraryControls.resume();
+    if(pendingGalleryView&&initializedGallery){
+      const view=pendingGalleryView;
+      pendingGalleryView='';
       activateView(view);
     }
-  } catch (error) {
+  } catch(error) {
+    if(generation!==galleryEpoch||galleryLocked)return;
     console.error(error);
-    let status = error?.message || 'Could not connect.';
-    if (error?.code === 'auth/unauthorized-domain') {
-      status = `One-time Firebase setup needed: add ${location.hostname} to Authentication → Settings → Authorized domains.`;
-    }
-    setAuthMessage('Connection needed', 'Velum reads only the configured Private folder after you sign in.', status);
-    if (!$('#studioView').classList.contains('active')) authGate.classList.add('open');
+    const status=error?.code==='auth/unauthorized-domain'
+      ? `One-time Firebase setup needed: add ${location.hostname} to Authentication settings, Authorized domains.`
+      : error?.message||'Could not connect.';
+    setAuthMessage('Connection needed','Reconnect your Google account to open the private collection.',status);
+    if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
     else showToast(status);
   } finally {
-    connectingDrive = false;
-    connectBtn.disabled = false;
+    connectingDrive=false;
+    connectBtn.disabled=false;
   }
 }
 connectBtn.addEventListener('click', connectDrive);
-// Studio needs Firebase owner sign-in, independently of the read-only Drive grant.
 $('#openStudioBtn')?.addEventListener('click', async () => {
+  if(connectingDrive||galleryLocked)return;
+  const generation=galleryEpoch;
   const button = $('#openStudioBtn');
+  connectingDrive=true;
   button.disabled = true;
   try {
-    if (!auth.currentUser) await signInWithPopup(auth, new GoogleAuthProvider());
-    if (!auth.currentUser) return;
+    await access.connect();
+    if(generation!==galleryEpoch||galleryLocked)return;
     activateView('studio');
     authGate.classList.remove('open');
-  } catch {
-    setAuthMessage('Studio sign-in needed', 'Sign in with the owner Google account to open your private Studio.', 'No Drive permission is requested for Studio.');
-  } finally { button.disabled = false; }
+    await libraryControls.resume();
+  } catch(error) {
+    if(generation!==galleryEpoch||galleryLocked)return;
+    setAuthMessage('Studio connection needed','Connect the owner Google account for Studio and its Drive references.',error?.message||'Google authorization was not completed.');
+  } finally { connectingDrive=false;button.disabled = false; }
 });
 
 signOutBtn.addEventListener('click', async () => {
-  studioDrive.clear();
-  sessionStorage.removeItem('velum-drive-token');
-  sessionStorage.removeItem('velum-drive-token-at');
-  accessToken = '';
-  tokenIssuedAt = 0;
-  revokeObjectUrls();
-  images = [];
-  imageMap.clear();
-  initializedGallery = false;
+  clearGallerySession();
+  libraryControls.clear();
   await signOut(auth).catch(() => {});
+  galleryLocked=false;
   authGate.classList.add('open');
-  setAuthMessage('Private collection', 'Connect the Google account that owns the Drive folder.', 'Nothing is uploaded to this site.');
+  setAuthMessage('Private collection','Connect to view Drive media, organize Private and References, and save Studio creations.','Media stays in Google Drive.');
 });
 
 syncBtn.addEventListener('click', async () => {
@@ -312,23 +321,46 @@ syncBtn.addEventListener('click', async () => {
   await syncDrive({ initial: false });
 });
 
-async function driveFetch(url, options = {}) {
-  if (!accessToken) throw new Error('Drive is not connected.');
-  const headers = new Headers(options.headers || {});
-  headers.set('Authorization', `Bearer ${accessToken}`);
-  const response = await fetch(url, { ...options, headers });
-  if (response.status === 401) {
-    accessToken = '';
-    sessionStorage.removeItem('velum-drive-token');
-    sessionStorage.removeItem('velum-drive-token-at');
-    throw new Error('Google Drive authorization expired. Reconnect to continue.');
+function clearGallerySession({clearAccess=true}={}){
+  galleryLocked=true;
+  galleryEpoch++;
+  renderSerial++;
+  for(const controller of galleryRequests)controller.abort();
+  galleryRequests.clear();
+  studioDrive.clear({clearAccess});
+  revokeObjectUrls();
+  images=[];
+  imageMap.clear();
+  history=[];
+  historyIndex=-1;
+  current={type:'single',ids:[]};
+  initializedGallery=false;
+  browseObserver?.disconnect();
+  browseGrid.replaceChildren();
+  driftMedia.querySelectorAll('video').forEach(video=>video.pause());
+  driftMedia.replaceChildren();
+  ambientLayers.forEach(layer=>layer.style.backgroundImage='');
+  window.__velumInteraction?.clearAdvance?.();
+}
+
+async function readDrive(url,options={},parse=response=>response.json()){
+  if(galleryLocked)throw new Error('Unlock Velum before opening Drive media.');
+  const generation=galleryEpoch,owner=auth.currentUser?.uid;
+  const controller=new AbortController();
+  const cancel=()=>controller.abort();
+  options.signal?.addEventListener('abort',cancel,{once:true});
+  if(options.signal?.aborted)controller.abort();
+  galleryRequests.add(controller);
+  try{
+    const response=await access.request(url,{...options,signal:controller.signal},[DRIVE_READ_SCOPE]);
+    if(!response.ok)throw new Error(`Google Drive request failed (${response.status}). Reconnect or retry.`);
+    const value=await parse(response);
+    if(generation!==galleryEpoch||galleryLocked||owner!==auth.currentUser?.uid)throw new Error('Velum session changed. Reconnect after unlocking.');
+    return value;
+  }finally{
+    galleryRequests.delete(controller);
+    options.signal?.removeEventListener('abort',cancel);
   }
-  if (!response.ok) {
-    let detail = '';
-    try { detail = (await response.json())?.error?.message || ''; } catch {}
-    throw new Error(detail || `Google Drive request failed (${response.status}).`);
-  }
-  return response;
 }
 
 async function listPrivateImages() {
@@ -339,8 +371,7 @@ async function listPrivateImages() {
   do {
     const params = new URLSearchParams({ q, spaces: 'drive', pageSize: '1000', fields, orderBy: 'createdTime desc' });
     if (pageToken) params.set('pageToken', pageToken);
-    const response = await driveFetch(`${DRIVE_API}/files?${params}`);
-    const data = await response.json();
+    const data = await readDrive(`${DRIVE_API}/files?${params}`);
     all.push(...(data.files || []).filter(f =>
       f.mimeType?.startsWith('image/') || f.mimeType?.startsWith('video/')
     ));
@@ -372,6 +403,8 @@ async function listPrivateImages() {
 }
 
 async function syncDrive({ initial = false } = {}) {
+  if(galleryLocked)return false;
+  const generation=galleryEpoch,revision=galleryRevision;
   syncBtn.disabled = true;
   syncLabel.textContent = 'Syncing';
   if (initial && !$('#studioView').classList.contains('active')) {
@@ -380,6 +413,7 @@ async function syncDrive({ initial = false } = {}) {
   }
   try {
     const next = await listPrivateImages();
+    if(generation!==galleryEpoch||galleryLocked||revision!==galleryRevision)return false;
     if (!next.length) throw new Error('No supported media found in Private or References. Check folder access or add an image, then Sync.');
     images = next;
     imageMap = new Map(images.map(i => [i.id, i]));
@@ -391,9 +425,9 @@ async function syncDrive({ initial = false } = {}) {
       showToast(`${images.length} media synced`);
     }
   } catch (error) {
+    if(generation!==galleryEpoch||galleryLocked)return false;
     console.error(error);
-    if (initial && auth.currentUser && !tokenProbablyFresh() && !connectingDrive) activateView('studio');
-    else if (!$('#studioView').classList.contains('active')) authGate.classList.add('open');
+    if (!$('#studioView').classList.contains('active')) authGate.classList.add('open');
     else showToast('Drive gallery needs reconnecting. Studio is still available.');
     setAuthMessage('Could not open collection', 'Reconnect the Google account that owns the Private Drive folder.', error?.message || 'Drive access failed.');
   } finally {
@@ -433,8 +467,9 @@ async function ensureObjectUrl(id) {
     cached.lastUsed = Date.now();
     return cached.url;
   }
-  const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`);
-  const blob = await response.blob();
+  const generation=galleryEpoch;
+  const blob=await readDrive(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`,{},response=>response.blob());
+  if(generation!==galleryEpoch||galleryLocked)throw new Error('Velum is locked.');
   const url = URL.createObjectURL(blob);
   objectUrls.set(id, { url, bytes: blob.size || 0, lastUsed: Date.now() });
   trimMediaCache();
@@ -738,7 +773,7 @@ function renderBrowse() {
       move.type='button';move.className='tile-quick-move';
       move.setAttribute('aria-label',`Move ${item.name || 'image'} to ${destination}`);
       move.title=`Move to ${destination}`;
-      move.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h6l2 2H21v9.5H3z"/><path d="m12 14 3-3m0 0h-3m3 0v3"/></svg><span>${destination==='References'?'Refs':'Private'}</span>`;
+      move.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h6l2 2H21v9.5H3z"/><path d="m12 14 3-3m0 0h-3m3 0v3"/></svg><span><small>Move to</small><strong>${destination}</strong></span>`;
       move.disabled=libraryControls.busy;
       move.onclick=async event=>{
         event.preventDefault();event.stopPropagation();
@@ -800,7 +835,7 @@ function openInDrift(id) {
   renderMoment(moment);
 }
 
-function quickExit(){studioDrive.clear();window.dispatchEvent(new Event('velum:lock'));$('#neutralScreen').classList.add('open');}
+function quickExit(){window.dispatchEvent(new Event('velum:lock'));$('#neutralScreen').classList.add('open');}
 window.addEventListener('velum:quick-exit',quickExit);
 $('#exitBtn').onclick = quickExit;
 $('#returnBtn').onclick = () => $('#neutralScreen').classList.remove('open');
@@ -832,16 +867,30 @@ function initGallery() {
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 
 onAuthStateChanged(auth, async user => {
-  if (connectingDrive) return;
-  if (!user) {
+  const nextOwner=user?.uid||'';
+  if(galleryOwner&&galleryOwner!==nextOwner){const wasLocked=galleryLocked;clearGallerySession();libraryControls.clear();galleryLocked=wasLocked;}
+  galleryOwner=nextOwner;
+  if(connectingDrive||galleryLocked)return;
+  if(!user){
     authGate.classList.add('open');
-    setAuthMessage('Private collection', 'Connect the Google account that owns the Drive folder.', 'Images stay in Google Drive; votes stay on this device.');
+    setAuthMessage('Private collection','Connect to view Drive media, organize Private and References, and save Studio creations.','Media stays in Google Drive.');
     return;
   }
-  if (!tokenProbablyFresh()) {
-    activateView('studio');
-    return;
+  const generation=galleryEpoch;
+  try{
+    await access.restore();
+    if(generation!==galleryEpoch||galleryLocked)return;
+    if(!tokenProbablyFresh()){
+      if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
+      setAuthMessage('Private collection','Reconnect Drive to open your gallery.','Your Studio sign-in is ready.');
+      return;
+    }
+    await syncDrive({initial:true});
+    if(generation===galleryEpoch&&!galleryLocked)await libraryControls.resume();
+  }catch(error){
+    if(generation===galleryEpoch&&!galleryLocked){
+      setAuthMessage('Connection needed','Reconnect Drive to open your collection.',error?.message||'Drive needs reconnecting.');
+      if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
+    }
   }
-  await syncDrive({ initial: true });
 });
-

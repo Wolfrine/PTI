@@ -3,10 +3,10 @@ const libraryUrl=new URL('./drive-library.mjs',import.meta.url);libraryUrl.searc
 const {createDriveLibrary,REFERENCES_FOLDER_ID,POSE_CATEGORIES}=await import(libraryUrl.href);
 const creationsUrl=new URL('./drive-creations.mjs',import.meta.url);creationsUrl.search=new URL(import.meta.url).search;
 const {loadDriveCreations}=await import(creationsUrl.href);
+const accessUrl=new URL('./drive-access.mjs',import.meta.url);accessUrl.search=new URL(import.meta.url).search;
+const {createDriveAccess,CONNECT_SCOPES,DRIVE_FILE_SCOPE,DRIVE_READ_SCOPE,DRIVE_METADATA_SCOPE}=await import(accessUrl.href);
+export {createDriveAccess,CONNECT_SCOPES,DRIVE_FILE_SCOPE,DRIVE_READ_SCOPE,DRIVE_METADATA_SCOPE};
 export const PRIVATE_FOLDER_ID = '1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA';
-export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-export const DRIVE_READ_SCOPE='https://www.googleapis.com/auth/drive.readonly';
-const GOOGLE_CLIENT_ID = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com';
 const API = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 const OWNER = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2', PREFIX = 'velum-drive-upload-v1:';
 const FIELDS = 'id,name,mimeType,size,parents,appProperties,trashed,webViewLink';
@@ -106,99 +106,85 @@ function loadPicker(){
     const script=document.createElement('script');script.src='https://apis.google.com/js/api.js';script.async=true;script.onload=load;script.onerror=()=>reject(new Error('Google Picker needs a network connection.'));document.head.append(script);
   }).catch(error=>{pickerLoading=null;throw error;});
 }
-export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reserve,apiKey,appId,fetchImpl=fetch,storage=globalThis.sessionStorage}){
-  let token='',expiresAt=0,readToken='',readExpiresAt=0,gallery,epoch=0;
+export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=globalThis.sessionStorage}){
+  if(!access)throw new Error('Drive connection is unavailable. Refresh Velum.');
+  let gallery,epoch=0;
   const controllers=new Set(),pickers=new Map();
   const owner=()=>{if(auth.currentUser?.uid!==OWNER)throw new Error('Owner sign-in is required.');};
-  // Firebase identity, Drive scopes and folder authorization are separate grants.
-  // Validate combined/reloaded read tokens too: a timestamp or canAddChildren is
-  // not proof that Google granted drive.file to this app and this Google user.
-  async function inspect(candidate,generation){
-    if(!candidate)return false;
-    let response;
-    try{response=await fetchImpl('https://oauth2.googleapis.com/tokeninfo',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({access_token:candidate}),cache:'no-store',credentials:'omit'});}
-    catch{throw new Error('Could not verify Drive access. Reconnect when online and retry.');}
-    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
-    if(response.status===400||response.status===401)return false;
-    if(!response.ok)throw new Error('Could not verify Drive access. Retry when Google is available.');
-    const info=await response.json(),googleId=auth.currentUser.providerData?.find(item=>item.providerId==='google.com')?.uid;
-    if((info.aud||info.audience||info.issued_to)!==GOOGLE_CLIENT_ID || (googleId&&(info.sub||info.user_id)!==googleId))return false;
-    const seconds=Number(info.expires_in);
-    if(!String(info.scope||'').split(/\s+/).includes(DRIVE_FILE_SCOPE)||!Number.isFinite(seconds)||seconds<=60)return false;
-    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
-    token=candidate;expiresAt=Date.now()+Math.min(seconds-60,50*60)*1000;return true;
+  function check(generation){
+    owner();
+    if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
   }
-  async function authorize({promptFirst=false}={}){
-    owner();if(token&&Date.now()<expiresAt)return;
-    const generation=epoch;token='';expiresAt=0;
-    // Studio Save may reuse a verified, previously granted combined token.
-    // File management instead opens consent during the original mobile tap:
-    // a tokeninfo request here can expire the browser's popup activation.
-    if(!promptFirst&&await inspect(getReadAccess(),generation))return;
-    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
-    const credential=await requestAccess(DRIVE_FILE_SCOPE);
-    owner();if(generation!==epoch)throw new Error('Studio locked. Reconnect after unlocking.');
-    if(!await inspect(credential?.accessToken,generation))throw new Error('Google did not grant Drive file access. No file was changed.');
-  }
-  async function request(url,options={}){owner();const generation=epoch;if(!token||Date.now()>=expiresAt)throw new Error('Drive access expired. Retry this action to reconnect on this device.');const response=await fetchImpl(url,{...options,headers:{...options.headers,Authorization:`Bearer ${token}`}});owner();if(generation!==epoch)throw new Error('Studio locked.');if(response.status===401){token='';expiresAt=0;throw new Error('Drive access expired. Retry this action to reconnect on this device.');}return response;}
-  async function authorizeRead(){
-    owner();if(readToken&&Date.now()<readExpiresAt)return;
+  function getOperationGuard(){
     const generation=epoch;
-    const inspectRead=async candidate=>{
-      if(!candidate)return false;
-      const response=await fetchImpl('https://oauth2.googleapis.com/tokeninfo',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({access_token:candidate}),cache:'no-store',credentials:'omit'});
-      owner();if(generation!==epoch)throw new Error('Studio locked.');
-      if([400,401].includes(response.status))return false;
-      if(!response.ok)throw new Error('Google could not verify read access. Retry when online.');
-      const info=await response.json(),linked=auth.currentUser.providerData?.find(item=>item.providerId==='google.com')?.uid,seconds=Number(info.expires_in);
-      if((info.aud||info.audience||info.issued_to)!==GOOGLE_CLIENT_ID||(linked&&(info.sub||info.user_id)!==linked)||!String(info.scope||'').split(/\s+/).includes(DRIVE_READ_SCOPE)||seconds<=60||!Number.isFinite(seconds))return false;
-      readToken=candidate;readExpiresAt=Date.now()+Math.min(seconds-60,3000)*1000;return true;
-    };
-    if(await inspectRead(getReadAccess()))return;
-    owner();if(generation!==epoch)throw new Error('Studio locked.');
-    const credential=await requestAccess(DRIVE_READ_SCOPE);
-    if(generation!==epoch)throw new Error('Studio locked.');
-    if(!await inspectRead(credential?.accessToken))throw new Error('Google did not grant read access to this account. No reference was attached.');
+    const checkAccess=access.getOperationGuard();
+    return()=>{check(generation);checkAccess();};
   }
-  async function readRequest(url,options={}){
-    const generation=epoch;await authorizeRead();owner();if(generation!==epoch)throw new Error('Studio locked.');
-    const controller=new AbortController(),cancel=()=>controller.abort();controllers.add(controller);options.signal?.addEventListener('abort',cancel,{once:true});if(options.signal?.aborted)controller.abort();
-    try{const response=await fetchImpl(url,{...options,signal:controller.signal,headers:{...options.headers,Authorization:`Bearer ${readToken}`}});owner();if(generation!==epoch)throw new Error('Studio locked.');if(response.status===401){readToken='';readExpiresAt=0;throw new Error('Drive read access expired. Reconnect and retry.');}return response;}
-    finally{controllers.delete(controller);options.signal?.removeEventListener('abort',cancel);}
+  function authorize(){return access.ensure();}
+  async function request(url,options={}){
+    const response=await access.request(url,options,[DRIVE_FILE_SCOPE]);
+    // Upload completion is verified with files.get. Only response headers are used here.
+    if(url.startsWith(UPLOAD))await response.body?.cancel();
+    return response;
   }
+  function readRequest(url,options={}){return access.request(url,options,[DRIVE_READ_SCOPE]);}
+  function manageRequest(url,options={}){return access.request(url,options,[DRIVE_METADATA_SCOPE]);}
   async function pick(folder,folderId=PRIVATE_FOLDER_ID,title='',mimeType='image/png,image/jpeg'){
     const generation=epoch;await loadPicker();owner();if(generation!==epoch)throw new Error('Studio locked.');
     return new Promise((resolve,reject)=>{
       const view=new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true);
       if(folder)view.setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder');
        else view.setMimeTypes(mimeType).setParent(folderId);
-      const picker=new google.picker.PickerBuilder().setAppId(appId).setDeveloperKey(apiKey).setOAuthToken(token).setOrigin(location.origin).setTitle(title||(folder?'Select the existing Private folder':'Choose an image reference')).addView(view).setCallback(data=>{
+      const picker=new google.picker.PickerBuilder().setAppId(appId).setDeveloperKey(apiKey).setOAuthToken(access.getToken([DRIVE_FILE_SCOPE])).setOrigin(location.origin).setTitle(title||(folder?'Select the existing Private folder':'Choose an image reference')).addView(view).setCallback(data=>{
         if(data.action===google.picker.Action.CANCEL){pickers.delete(picker);picker.dispose();reject(new Error('Drive selection cancelled.'));}
         if(data.action===google.picker.Action.PICKED){const selected=data.docs?.[0];pickers.delete(picker);picker.dispose();resolve(selected);}
       }).build();pickers.set(picker,reject);picker.setVisible(true);
     });
   }
-  async function folderGrant(folderId=PRIVATE_FOLDER_ID){
+  async function uploadFolderGrant(folderId=PRIVATE_FOLDER_ID){
     if(![PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(folderId))throw new Error('Invalid destination folder.');
     const generation=epoch;
     const path=`${API}/files/${folderId}?fields=id,mimeType,trashed,isAppAuthorized,capabilities(canAddChildren)`;
-    const writable=async()=>{const response=await request(path);if(response.status===403||response.status===404)return false;if(!response.ok)throw new Error(`Could not verify the folder (${response.status}). Retry when online.`);const data=await response.json();return data.id===folderId&&data.mimeType==='application/vnd.google-apps.folder'&&!data.trashed&&data.isAppAuthorized===true&&data.capabilities?.canAddChildren===true;};
+    const writable=async()=>{const response=await request(path);if(response.status===403||response.status===404)return false;if(!response.ok)throw new Error(`Could not verify the folder (${response.status}). Retry when online.`);const data=await response.json();return data.id===folderId&&data.mimeType==='application/vnd.google-apps.folder'&&data.trashed===false&&data.isAppAuthorized===true&&data.capabilities?.canAddChildren===true;};
     const approved=await writable();if(generation!==epoch)throw new Error('Studio locked.');if(approved)return;
     const selected=await pick(true,folderId,`Select the existing ${folderId===PRIVATE_FOLDER_ID?'Private':'References'} folder`);
     if(selected?.id!==folderId)throw new Error('Choose the existing destination folder. No duplicate folder was created.');
      if(!await writable())throw new Error(`The existing ${folderId===PRIVATE_FOLDER_ID?'Private':'References'} folder has not been granted writable access. Check the Google Picker selection.`);
   }
-  async function grantFile(file){
-    await authorize({promptFirst:true});const generation=epoch;
-    const url=`${API}/files/${encodeURIComponent(file.id)}?fields=id,name,parents,trashed,ownedByMe,isAppAuthorized,capabilities(canMoveItemWithinDrive,canTrash)`;
-    const inspectFile=async()=>{const response=await request(url);if([403,404].includes(response.status))return null;if(!response.ok)throw new Error('Could not verify file permissions.');return response.json();};
-    let actual=await inspectFile();
-     if(!actual?.isAppAuthorized){const selected=await pick(false,file.folderId||PRIVATE_FOLDER_ID,`Allow Velum to manage this file: ${file.name||file.id}`,file.mimeType?.startsWith('image/')?file.mimeType:'image/png,image/jpeg');if(selected?.id!==file.id)throw new Error('Select the exact image you chose. Nothing was moved or trashed.');actual=await inspectFile();}
-    if(generation!==epoch)throw new Error('Studio locked.');
-    if(!actual?.isAppAuthorized)throw new Error('Google has not granted access to this file. Nothing was changed.');
+  async function grantFile(file,{allowTrashed=false}={}){
+    const generation=epoch;
+    await access.ensure([DRIVE_METADATA_SCOPE]);
+    check(generation);
+    if(!/^[\w-]{8,160}$/.test(file?.id||''))throw new Error('Invalid Drive image.');
+    const fields='id,name,mimeType,parents,trashed,ownedByMe,capabilities(canMoveItemWithinDrive,canTrash,canUntrash)';
+    const response=await manageRequest(`${API}/files/${encodeURIComponent(file.id)}?fields=${fields}`);
+    if(!response.ok)throw new Error(`Could not verify image permissions (${response.status}).`);
+    const actual=await response.json();
+    check(generation);
+    if(actual.id!==file.id||actual.ownedByMe!==true||typeof actual.trashed!=='boolean'
+      ||(!allowTrashed&&actual.trashed)){
+      throw new Error('Only your available Drive images can be managed here.');
+    }
     return actual;
   }
-  const library=createDriveLibrary({readRequest,writeRequest:async(url,options)=>{await authorize();return request(url,options);},grantFile,grantFolder:folderGrant});
+  async function grantFolder(folderId,{source=false}={}){
+    const generation=epoch;
+    await access.ensure([DRIVE_METADATA_SCOPE]);
+    check(generation);
+    if(![PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(folderId))throw new Error('Invalid library folder.');
+    const fields='id,mimeType,trashed,ownedByMe,capabilities(canAddChildren,canRemoveChildren)';
+    const response=await manageRequest(`${API}/files/${folderId}?fields=${fields}`);
+    if(!response.ok)throw new Error(`Could not verify the library folder (${response.status}).`);
+    const actual=await response.json();
+    check(generation);
+    const allowed=source?actual.capabilities?.canRemoveChildren:actual.capabilities?.canAddChildren;
+    if(actual.id!==folderId||actual.mimeType!=='application/vnd.google-apps.folder'||actual.trashed!==false
+      ||actual.ownedByMe!==true||allowed!==true){
+      throw new Error('Google Drive has not allowed this library folder change.');
+    }
+    return actual;
+  }
+  const library=createDriveLibrary({readRequest,writeRequest:manageRequest,grantFile,grantFolder,getOperationGuard});
   return {
     ...library,
     async loadQualityCreations(){
@@ -223,13 +209,20 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
       const generation=epoch,controller=new AbortController();controllers.add(controller);
       const cancel=()=>controller.abort();signal?.addEventListener('abort',cancel,{once:true});
       if(signal?.aborted)controller.abort();
-      try{await authorize();if(generation!==epoch)throw new Error('Studio locked.');await folderGrant();if(generation!==epoch)throw new Error('Studio locked.');return await createDriveTransport({request,reserve,storage,onProgress}).save({job,blob,signal:controller.signal});}
+      try{await authorize();if(generation!==epoch)throw new Error('Studio locked.');await uploadFolderGrant();if(generation!==epoch)throw new Error('Studio locked.');return await createDriveTransport({request,reserve,storage,onProgress}).save({job,blob,signal:controller.signal});}
       finally{controllers.delete(controller);signal?.removeEventListener('abort',cancel);}
     },
-    async chooseReference({current=false}={}){
+    async chooseReference({current=false,external=false}={}){
       owner();const generation=epoch,controller=new AbortController();controllers.add(controller);
       try{
-        if(current&&gallery?.current?.()){const source=gallery.current(),blob=await gallery.read(source.id,controller.signal);if(generation!==epoch)throw new Error('Studio locked.');return{blob,source:{kind:'drive',id:source.id,name:source.name}};}
+        if(current){
+          const source=gallery?.current?.();
+          if(!source)throw new Error('Select a current library image first.');
+          await access.ensure([DRIVE_READ_SCOPE]);check(generation);
+          const blob=await gallery.read(source.id,controller.signal);check(generation);
+          return{blob,source:{kind:'drive',id:source.id,name:source.name}};
+        }
+        if(external!==true)throw new Error('Choose a reference from the Private or References selector.');
         await authorize();if(generation!==epoch)throw new Error('Studio locked.');const selected=await pick(false);
         if(generation!==epoch)throw new Error('Studio locked.');
         const response=await request(`${API}/files/${encodeURIComponent(selected.id)}?alt=media`,{signal:controller.signal});
@@ -239,7 +232,24 @@ export function createStudioDrive({auth,requestAccess,getReadAccess=()=>'',reser
       }finally{controllers.delete(controller);}
     },
     setGalleryProvider(provider){gallery=provider;},
-    clear(){epoch++;for(const controller of controllers)controller.abort();controllers.clear();for(const[picker,reject]of pickers){picker.dispose();reject(new Error('Studio locked.'));}pickers.clear();token='';expiresAt=0;readToken='';readExpiresAt=0;try{for(let index=storage.length-1;index>=0;index--){const key=storage.key(index);if(key?.startsWith(PREFIX))storage.removeItem(key);}}catch{}}
+    clear({clearAccess=true}={}){
+      epoch++;
+      if(clearAccess)access.clear();
+      else access.cancelPending();
+      for(const controller of controllers)controller.abort();
+      controllers.clear();
+      for(const[picker,reject]of pickers){
+        picker.dispose();
+        reject(new Error('Studio locked.'));
+      }
+      pickers.clear();
+      try{
+        for(let index=storage.length-1;index>=0;index--){
+          const key=storage.key(index);
+          if(key?.startsWith(PREFIX))storage.removeItem(key);
+        }
+      }catch{}
+    }
   };
 }
 

@@ -70,10 +70,11 @@ test('explicit Connect is owner-only, requests shared scopes and cannot restore 
 });
 
 // Existing synthetic transport setup never signs in or uploads to Google.
-function fixture({read='',info=()=>grant(),folder=true,folderId=PRIVATE_FOLDER_ID,fetchOverride,accessError,backend=false}={}){
- const auth={currentUser:{uid:'5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',providerData:[{providerId:'google.com',uid:'fixture-google-user'}]}};
+function fixture({read='',info=()=>grant(),folder=true,folderId=PRIVATE_FOLDER_ID,fetchOverride,accessError,backend=false,serverMode=false}={}){
+ const auth={currentUser:{uid:'5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',providerData:[{providerId:'google.com',uid:'fixture-google-user'}],getIdToken:async()=>'fixture-firebase-id-token'}};
  const calls={oauth:0,picker:0,info:0,folder:0,writes:0,health:0,server:0},storage=memory(),backupStorage=memory();
  if(read)storage.setItem('velum-drive-access-v2',JSON.stringify({version:2,uid:auth.currentUser.uid,googleUid:'fixture-google-user',token:read,expiresAt:Date.now()+3600000}));
+ if(serverMode)backupStorage.setItem('velum-drive-server-active-v1','1');
  const originalGoogle=globalThis.google;
  globalThis.google={picker:new Proxy({},{get(){calls.picker++;throw new Error('Save must not open Picker.');}})};
  const fetchImpl=async(url,options)=>{
@@ -89,8 +90,91 @@ function fixture({read='',info=()=>grant(),folder=true,folderId=PRIVATE_FOLDER_I
  };
  const access=createDriveAccess({auth,storage,backupStorage,backend,requestAccess:async scopes=>{calls.oauth++;assert.deepEqual(scopes,[...CONNECT_SCOPES]);if(accessError)throw accessError;return{accessToken:'fixture-write'};},fetchImpl});
  const drive=createStudioDrive({auth,access,reserve:async()=>id,storage});
- return{drive,access,calls,auth,restore(){drive.clear();globalThis.google=originalGoogle;}};
+ return{drive,access,calls,auth,storage,backupStorage,restore(){drive.clear();globalThis.google=originalGoogle;}};
 }
+
+for(const [failure,health] of [
+ ['404 HTML',()=>new Response('<html>Not found</html>',{status:404})],
+ ['non-JSON success',()=>new Response('<html>Hosting fallback</html>')],
+ ['invalid health shape',()=>json({ready:true})],
+ ['network rejection',()=>{throw new TypeError('Health network unavailable');}]
+]){
+ test(`failed health (${failure}) restores verified cached access and permits one-tap GIS`,async()=>{
+  for(const read of ['', 'fixture-combined']){
+   const f=fixture({backend:true,read,fetchOverride:url=>url==='/api/drive/health'?health():null});
+   try{
+    assert.equal(await f.access.restore(),Boolean(read));
+    assert.equal(f.access.mode,'temporary');assert.equal(f.calls.server,0);assert.equal(f.calls.oauth,0);
+    const connecting=f.access.connect();
+    assert.equal(f.calls.oauth,read?0:1); // Request starts in the Connect gesture, before awaiting.
+    await connecting;
+    assert.equal(f.access.has(CONNECT_SCOPES),true);assert.equal(f.calls.info,1);assert.equal(f.calls.server,0);
+   }finally{f.restore();}
+  }
+ });
+}
+
+test('health timeout settles restore and permits one-tap GIS without a server request',async t=>{
+ const controller=new AbortController();
+ t.mock.method(AbortSignal,'timeout',milliseconds=>{assert.equal(milliseconds,10000);return controller.signal;});
+ const f=fixture({backend:true,fetchOverride:(url,options)=>url==='/api/drive/health'?new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(options.signal.reason),{once:true})):null});
+ try{
+  const restoring=f.access.restore();
+  controller.abort(new DOMException('Health probe timed out','TimeoutError'));
+  assert.equal(await restoring,false);assert.equal(f.access.mode,'temporary');
+  const connecting=f.access.connect();assert.equal(f.calls.oauth,1);
+  await connecting;assert.equal(f.access.has(),true);assert.equal(f.calls.server,0);
+ }finally{f.restore();}
+});
+
+test('startup restore joins Connect while GIS starts synchronously before health settles',async()=>{
+ for(const health of [()=>json({service:'velum-drive',ready:false}),()=>new Response('<html>Not found</html>',{status:404})]){
+  let finishHealth;
+  const f=fixture({backend:true,read:'fixture-cached',fetchOverride:url=>url==='/api/drive/health'?new Promise(resolve=>{finishHealth=resolve;}):null});
+  try{
+   const restoring=f.access.restore();assert.equal(f.access.restore(),restoring);
+   const connecting=f.access.connect();assert.equal(f.calls.oauth,1);assert.equal(f.access.connect(),connecting);
+   await Promise.resolve();assert.equal(f.calls.info,0);assert.equal(f.calls.server,0);assert.equal(f.access.has(),false);
+   finishHealth(health());
+   assert.deepEqual(await Promise.all([restoring,connecting]),[true,undefined]);
+   assert.equal(f.access.getToken(),'fixture-write');assert.equal(f.calls.info,1);assert.equal(f.calls.oauth,1);assert.equal(f.calls.server,0);
+  }finally{f.restore();}
+ }
+});
+
+test('health wait preserves Quick Exit and linked-account guards before adopting a grant',async()=>{
+ for(const change of [f=>f.drive.clear(),f=>{f.auth.currentUser.providerData[0].uid='changed-google-user';}]){
+  let finishHealth;
+  const f=fixture({backend:true,fetchOverride:url=>url==='/api/drive/health'?new Promise(resolve=>{finishHealth=resolve;}):null});
+  try{
+   const connecting=f.access.connect();assert.equal(f.calls.oauth,1);
+   change(f);finishHealth(json({service:'velum-drive',ready:false}));
+   await assert.rejects(connecting,/locked|account changed/);
+   assert.equal(f.access.has(),false);assert.equal(f.calls.info,0);assert.equal(f.calls.server,0);
+  }finally{f.restore();}
+ }
+});
+
+test('saved server mode survives failed health and session HTML, then retries without GIS or cached downgrade',async()=>{
+ let sessions=0,recovered=false;
+ const f=fixture({backend:true,serverMode:true,read:'fixture-cached',fetchOverride:url=>{
+  if(url==='/api/drive/health')return new Response('<html>Not found</html>',{status:404});
+  if(url==='/api/drive/session'){
+   sessions++;
+   return recovered?json({mode:'server',owner:'5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',googleSub:'fixture-google-user',scopes:[...CONNECT_SCOPES],expiresAt:Date.now()+3600000,accessToken:'fixture-server'}):new Response('<html>Unavailable</html>');
+  }
+  return null;
+ }});
+ try{
+  await assert.rejects(f.access.restore(),{code:'drive/unavailable'});
+  assert.equal(f.access.mode,'server');assert.equal(f.access.has(),false);assert.equal(f.calls.info,0);assert.equal(f.calls.oauth,0);
+  assert.equal(f.backupStorage.getItem('velum-drive-server-active-v1'),'1');
+  await assert.rejects(f.access.connect(),{code:'drive/unavailable'});
+  assert.equal(f.access.mode,'server');assert.equal(f.calls.oauth,0);
+  recovered=true;await f.access.connect();
+  assert.equal(sessions,3);assert.equal(f.access.getToken(),'fixture-server');assert.equal(f.calls.oauth,0);assert.equal(f.calls.info,0);
+ }finally{f.restore();}
+});
 test('Save authorizes on its user gesture and repeat Save reuses the verified grant without Picker',async()=>{
  for(const backend of [false,true]){
   const f=fixture({backend});

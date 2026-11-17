@@ -38,13 +38,27 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }
   }catch{}
   try{serverMode=backend&&backupStorage?.getItem('velum-drive-server-active-v1')==='1';}catch{}
-  const ready = backend ? fetchImpl('/api/drive/health',{
-    cache:'no-store', credentials:'same-origin', signal:AbortSignal.timeout(10000)
-  }).then(async response => {
-    if (!response.ok) return;
-    const value = await response.json();
-    if (value.service === 'velum-drive' && typeof value.ready === 'boolean') backendReady = value.ready;
-  }).catch(()=>{}) : Promise.resolve();
+  const ready = probeHealth();
+
+  function backendError() {
+    return Object.assign(new Error('The saved Drive connection is temporarily unavailable. Try Connect Drive again.'), {code:'drive/unavailable'});
+  }
+
+  async function probeHealth() {
+    if (!backend) return;
+    try {
+      const response = await fetchImpl('/api/drive/health', {
+        cache:'no-store', credentials:'same-origin', signal:AbortSignal.timeout(10000)
+      });
+      if (!response.ok) throw backendError();
+      const value = await response.json();
+      if (value?.service !== 'velum-drive' || typeof value.ready !== 'boolean') throw backendError();
+      backendReady = value.ready;
+    } catch {
+      // A saved server connection remains server-only through an outage.
+      if (!serverMode) backendReady = false;
+    }
+  }
 
   async function serverRequest(path,generation){
     const owner=check(generation),user=auth.currentUser;
@@ -53,13 +67,17 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     try{
       const response=await fetchImpl(`/api/drive/${path}`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${idToken}`},body:'{}',credentials:'same-origin',cache:'no-store',signal:controller.signal});
       check(generation,owner.googleUid);
-      const value=await response.json();check(generation,owner.googleUid);
+      let value;
+      try { value=await response.json(); } catch { throw backendError(); }
+      check(generation,owner.googleUid);
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw backendError();
       if(!response.ok)throw Object.assign(new Error(value.code==='drive/not-configured'?'Secure renewal setup is pending. A temporary Drive session is available.':'Drive connection needs attention.'),{code:value.code||'drive/unavailable'});
       return value;
     }finally{controllers.delete(controller);}
   }
-  async function serverSession(generation){
+  async function serverSession(generation,version=authorizationVersion){
     const value=await serverRequest('session',generation),owner=check(generation);
+    if (version !== authorizationVersion) throw reconnectError();
     if(value.mode!=='server'||value.owner!==owner.uid||value.googleSub!==owner.googleUid||!CONNECT_SCOPES.every(scope=>value.scopes?.includes(scope))||!Number.isFinite(value.expiresAt)||value.expiresAt<=Date.now()+60000)throw reconnectError();
     serverMode=true;backendReady=true;
     temporaryAllowed=false;
@@ -200,12 +218,14 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
   }
 
   function connect() {
+    let requestedOwner;
     if (auth.currentUser) {
-      try { identity(); } catch (error) { return Promise.reject(error); }
+      try { requestedOwner = identity(); } catch (error) { return Promise.reject(error); }
     }
     if (disconnecting) return Promise.reject(new Error('Finishing Disconnect. Try Connect Drive again when it finishes.'));
     if (lateRevocations > 0) return Promise.reject(new Error('Google is finishing Disconnect. Use Connect Drive again when it finishes.'));
-    const temporaryRequest = !backend || (!serverMode && (backendReady === false || temporaryAllowed));
+    const gestureNeedsToken = !backend || (!serverMode && backendReady !== true);
+    const temporaryRequest = !backend || (!serverMode && (backendReady === false || temporaryAllowed || backendReady === null));
     if (disconnectPending) {
       if (!temporaryRequest) return Promise.reject(Object.assign(new Error('Server revocation is pending. Retry Disconnect before reconnecting.'), {code:'drive/disconnect-pending'}));
       // An explicit new temporary connection supersedes an unconfirmed local disconnect.
@@ -221,12 +241,16 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     let requested;
     try {
       if (!auth.currentUser) requested = signIn([...CONNECT_SCOPES]);
-      else if (temporaryRequest) requested = requestAccess([...CONNECT_SCOPES]);
+      // Unknown health must not consume the gesture before GIS opens.
+      else if (gestureNeedsToken) requested = requestAccess([...CONNECT_SCOPES]);
       else requested = Promise.resolve(null);
     } catch (error) { return Promise.reject(error); }
     const promise = Promise.resolve(requested).then(async credential => {
-      check(generation);
-      if (temporaryRequest) {
+      const owner = check(generation, requestedOwner?.googleUid);
+      await ready;
+      check(generation, owner.googleUid);
+      if (version !== authorizationVersion) throw reconnectError();
+      if (!backend || (!serverMode && (backendReady === false || temporaryAllowed))) {
         await verify(credential?.accessToken, generation, version);
         return;
       }
@@ -253,61 +277,75 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     return restore().then(() => { require(scopes); });
   }
 
-  function restoreCached() {
+  async function restoreCached(generation, version) {
+    try {
+      const owner = check(generation);
+      let saved;
+      for (const cache of [storage, backupStorage]) {
+        let candidate;
+        try { candidate = JSON.parse(cache?.getItem(SESSION_KEY) || 'null'); } catch { continue; }
+        if (candidate?.version === 2 && candidate.uid === owner.uid && candidate.googleUid === owner.googleUid
+          && Number.isFinite(candidate.expiresAt) && candidate.expiresAt > Date.now()) {
+          saved = candidate;
+          break;
+        }
+      }
+      if (!saved) {
+        if (generation === epoch && version === authorizationVersion) invalidate();
+        return false;
+      }
+      await verify(saved.token, generation, version, saved.expiresAt);
+      return true;
+    } catch {
+      if (generation === epoch && version === authorizationVersion) invalidate();
+      return false;
+    } finally {
+      if (!active && generation === epoch && version === authorizationVersion) removeSession();
+    }
+  }
+
+  function restore() {
+    if (disconnectPending) return Promise.reject(Object.assign(new Error('Disconnect is pending. Retry Disconnect to finish revoking access.'), {code:'drive/disconnect-pending'}));
     if (has()) return Promise.resolve(true);
-    if (connecting?.generation === epoch) return connecting.promise.then(() => true, () => false);
+    if (connecting?.generation === epoch) return connecting.promise.then(() => has(), () => false);
     if (restoring?.generation === epoch) return restoring.promise;
+    let owner;
+    try { owner = identity(); } catch { return Promise.resolve(false); }
     const generation = epoch;
     const version = authorizationVersion;
     const promise = (async () => {
-      try {
-        const owner = identity();
-        let saved;
-        for (const cache of [storage, backupStorage]) {
-          let candidate;
-          try { candidate = JSON.parse(cache?.getItem(SESSION_KEY) || 'null'); } catch { continue; }
-          if (candidate?.version === 2 && candidate.uid === owner.uid && candidate.googleUid === owner.googleUid
-            && Number.isFinite(candidate.expiresAt) && candidate.expiresAt > Date.now()) {
-            saved = candidate;
-            break;
-          }
+      if (backend) await ready;
+      check(generation, owner.googleUid);
+      if (connecting?.generation === generation) return connecting.promise.then(() => has(), () => false);
+      if (version !== authorizationVersion || has()) return has();
+      let restored;
+      if (!backend || (!serverMode && backendReady === false)) {
+        restored = await restoreCached(generation, version);
+      } else {
+        try {
+          await serverSession(generation, version);
+          restored = true;
+        } catch (error) {
+          if (generation !== epoch || version !== authorizationVersion || serverMode || error?.code !== 'drive/not-configured') throw error;
+          backendReady = false;
+          temporaryAllowed = true;
+          restored = await restoreCached(generation, version);
         }
-        if (!saved) {
-          if (generation === epoch && version === authorizationVersion) invalidate();
-          return false;
-        }
-        await verify(saved.token, generation, version, saved.expiresAt);
-        return true;
-      } catch {
-        if (generation === epoch && version === authorizationVersion) invalidate();
-        return false;
-      } finally {
-        if (!active && generation === epoch && version === authorizationVersion) removeSession();
       }
-    })().finally(() => {
+      check(generation, owner.googleUid);
+      if (connecting?.generation === generation) return connecting.promise.then(() => has(), () => false);
+      return version === authorizationVersion ? restored : has();
+    })().catch(error => {
+      if (generation === epoch && version !== authorizationVersion) {
+        if (connecting?.generation === generation) return connecting.promise.then(() => has(), () => false);
+        return has();
+      }
+      throw error;
+    }).finally(() => {
       if (restoring?.promise === promise) restoring = null;
     });
     restoring = {generation, promise};
     return promise;
-  }
-
-  function restore(){
-    if(disconnectPending)return Promise.reject(Object.assign(new Error('Disconnect is pending. Retry Disconnect to finish revoking access.'),{code:'drive/disconnect-pending'}));
-    if(has())return Promise.resolve(true);
-    if(!backend||(!serverMode&&backendReady===false))return restoreCached();
-    if(connecting?.generation===epoch)return connecting.promise.then(()=>true,()=>false);
-    if(restoring?.generation===epoch)return restoring.promise;
-    const generation=epoch;
-    const promise=serverSession(generation).then(()=>true).catch(async error=>{
-      if(generation!==epoch)throw error;
-      if(!serverMode&&error?.code==='drive/not-configured'){
-        backendReady=false;temporaryAllowed=true;
-        // Do not let this wrapper's restoring marker recursively wait on itself.
-        restoring=null;return restoreCached();
-      }
-      throw error;
-    }).finally(()=>{if(restoring?.promise===promise)restoring=null;});
-    restoring={generation,promise};return promise;
   }
 
   async function request(url, options={}, scopes=[DRIVE_READ_SCOPE], retried=false) {

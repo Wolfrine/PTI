@@ -5,3 +5,6 @@
 .browse-view .tile .tile-folder{max-width:calc(100% - 12px);pointer-events:none;opacity:1;transform:none}
 .library-detail [data-location]{font-weight:600;color:#e1bfce}
 .library-detail [data-move]{min-height:44px}
+.library-action-notice{flex-wrap:wrap}
+.library-action-notice [data-reconnect],.library-detail [data-reconnect]{min-width:44px;min-height:44px;white-space:nowrap}
+.library-detail [data-reconnect]{margin:0 0 12px;background:#513143}

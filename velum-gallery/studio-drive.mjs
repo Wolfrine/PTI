@@ -153,7 +153,7 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
   }
   async function grantFile(file,{allowTrashed=false}={}){
     const generation=epoch;
-    await access.ensure([DRIVE_METADATA_SCOPE]);
+    access.require([DRIVE_METADATA_SCOPE]);
     check(generation);
     if(!/^[\w-]{8,160}$/.test(file?.id||''))throw new Error('Invalid Drive image.');
     const fields='id,name,mimeType,parents,trashed,ownedByMe,capabilities(canMoveItemWithinDrive,canTrash,canUntrash)';
@@ -169,7 +169,7 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
   }
   async function grantFolder(folderId,{source=false}={}){
     const generation=epoch;
-    await access.ensure([DRIVE_METADATA_SCOPE]);
+    access.require([DRIVE_METADATA_SCOPE]);
     check(generation);
     if(![PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(folderId))throw new Error('Invalid library folder.');
     const fields='id,mimeType,trashed,ownedByMe,capabilities(canAddChildren,canRemoveChildren)';

@@ -1,14 +1,14 @@
 const libUrl=new URL('./drive-library.mjs',import.meta.url);libUrl.search=new URL(import.meta.url).search;
 const {PRIVATE_FOLDER_ID:P,REFERENCES_FOLDER_ID:R}=await import(libUrl.href);
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-export function mountGalleryLibrary({drive,current,getUrl,onFilter,onChanged,getOwner,canRead,storage=globalThis.localStorage}){
+export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onChanged,getOwner,canRead,storage=globalThis.localStorage}){
  let filter='all',epoch=0,moveSession=0,active=null,busy=false,recovery=null;
- let resuming=null;
+ let resuming=null,offeredReceipt=null;
  const receiptKey='velum-library-recovery-v1';
  function validReceipt(value){
   const record=value?.record;
   return value?.version===1&&value.owner===getOwner()&&Boolean(value.owner)
-   &&['pending','confirmed'].includes(value.phase)&&['move','undo'].includes(value.intent||'move')&&record?.kind==='move'
+   &&['queued','pending','confirmed'].includes(value.phase)&&['move','undo'].includes(value.intent||'move')&&record?.kind==='move'
    &&/^[\w-]{8,160}$/.test(record.id||'')&&[P,R].includes(record.from)&&[P,R].includes(record.to)&&record.from!==record.to
    &&Number.isSafeInteger(record.at)&&record.at>0&&typeof record.name==='string'&&record.name.length<=250
    &&/^image\/[a-z0-9.+-]+$/i.test(record.mimeType||'');
@@ -20,7 +20,10 @@ export function mountGalleryLibrary({drive,current,getUrl,onFilter,onChanged,get
  function persistMove(record,phase,intent='move'){
   const value={version:1,owner:getOwner(),phase,intent,record:{kind:'move',id:record.id,name:String(record.name||'Image').slice(0,250),mimeType:record.mimeType,from:record.from,to:record.to,at:record.at}};
   const previous=readReceipt();
-  if(phase==='pending'&&intent==='move'&&previous?.phase==='confirmed')value.previous=previous.record;
+  if(phase!=='confirmed'){
+   if(previous?.phase==='confirmed')value.previous=previous.record;
+   else if(previous?.record.id===record.id&&previous.record.from===record.from&&previous.record.to===record.to)value.previous=previous.previous;
+  }
   if(!validReceipt(value))throw new Error('This move cannot keep a valid Undo receipt. Reconnect before moving it.');
   const serialized=JSON.stringify(value);
   storage.setItem(receiptKey,serialized);
@@ -29,6 +32,7 @@ export function mountGalleryLibrary({drive,current,getUrl,onFilter,onChanged,get
  }
  function clearReceipt(){try{storage.removeItem(receiptKey);}catch{}}
  function retainPreviousUndo(receipt){
+  if(!matchesReceipt(receipt))return false;
   if(!validReceipt({...receipt,phase:'confirmed',intent:'move',record:receipt.previous})){
    recovery=null;clearReceipt();return false;
   }
@@ -42,9 +46,10 @@ export function mountGalleryLibrary({drive,current,getUrl,onFilter,onChanged,get
  }
  const dialog=document.createElement('dialog');dialog.className='library-detail';dialog.setAttribute('aria-labelledby','libraryDetailTitle');document.body.append(dialog);
  const notice=document.createElement('div');notice.className='library-action-notice';notice.hidden=true;
- notice.setAttribute('role','status');notice.innerHTML='<span data-action-message></span><button type="button" data-action-undo hidden>Undo</button><button type="button" data-action-dismiss aria-label="Dismiss notice">×</button>';
+ notice.setAttribute('role','status');notice.innerHTML='<span data-action-message></span><button type="button" data-reconnect hidden>Reconnect Drive</button><button type="button" data-action-undo hidden>Undo</button><button type="button" data-action-dismiss aria-label="Dismiss notice">×</button>';
  document.body.append(notice);
  notice.querySelector('[data-action-undo]').addEventListener('click',()=>undo());
+ notice.querySelector('[data-reconnect]').addEventListener('click',reconnect);
  notice.querySelector('[data-action-dismiss]').addEventListener('click',()=>{notice.hidden=true;});
  const regions=[];
  for(const selector of ['#driftView','#browseView']){
@@ -58,126 +63,180 @@ export function mountGalleryLibrary({drive,current,getUrl,onFilter,onChanged,get
   region.querySelector('[data-details]')?.addEventListener('click',()=>open(current()));
   region.querySelector('[data-recovery]').addEventListener('click',undo);
  }
-  function showRecovery(){regions.forEach(region=>{const button=region.querySelector('[data-recovery]');button.hidden=!recovery;button.disabled=busy;});const undoButton=notice.querySelector('[data-action-undo]');undoButton.disabled=busy;}
-  function showNotice(value,{undoable=false}={}){notice.hidden=false;notice.querySelector('[data-action-message]').textContent=value;notice.querySelector('[data-action-undo]').hidden=!undoable;showRecovery();}
+  function showRecovery(){regions.forEach(region=>{const button=region.querySelector('[data-recovery]');button.hidden=!recovery;button.disabled=busy;});notice.querySelectorAll('button:not([data-action-dismiss])').forEach(button=>button.disabled=busy);}
+  function showNotice(value,{undoable=false,reconnectable=false,receipt=null}={}){
+   reconnectable=reconnectable&&validReceipt(receipt)&&matchesReceipt(receipt);offeredReceipt=reconnectable?receipt:null;
+   notice.hidden=false;notice.querySelector('[data-action-message]').textContent=value;notice.querySelector('[data-action-undo]').hidden=!undoable;
+   for(const surface of [notice,dialog]){const button=surface.querySelector('[data-reconnect]');if(button){button.hidden=!reconnectable;button.disabled=busy;}}
+   message(value);showRecovery();
+  }
   function closeDetail(){epoch++;active=null;if(dialog.open)dialog.close();dialog.replaceChildren();for(const region of regions){region.classList.add('collapsed');region.querySelector('.library-tools-toggle')?.setAttribute('aria-expanded','false');}}
-  function clear(){moveSession++;recovery=null;busy=false;notice.hidden=true;closeDetail();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent='';});showRecovery();}
+  function clear(){moveSession++;recovery=null;offeredReceipt=null;busy=false;notice.hidden=true;closeDetail();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent='';});showRecovery();}
  function message(value){const output=dialog.querySelector('[role=status]');if(output)output.textContent=value;}
   function setBusy(value){busy=value;dialog.querySelectorAll('button:not([data-close]):not([data-exit])').forEach(button=>button.disabled=value);document.querySelectorAll('.tile-quick-move').forEach(button=>button.disabled=value);showRecovery();}
  function draw(file,url){
   dialog.innerHTML=`<header><span>Private collection</span><div><button type="button" data-close>Close</button><button type="button" data-exit>Quick exit</button></div></header><div class="library-detail-body"><img src="${escape(url)}" alt="${escape(file.name)}"/><section><h2 id="libraryDetailTitle">${escape(file.name)}</h2><p data-location>${escape(file.folderLabel||'Private')}</p><small>Drive ID <code>${escape(file.id)}</code></small><div class="library-detail-actions"><button type="button" data-move>Move to ${file.folderId===R?'Private':'References'}</button><button type="button" data-more aria-expanded="false">More ···</button><button type="button" data-trash hidden>Move to Trash…</button></div><div data-confirm hidden><h3>Move this image to Trash?</h3><p>${escape(file.name)}</p><p>You can restore it from Drive Trash or Undo. The original file ID is preserved.</p><button type="button" data-cancel>Cancel</button><button type="button" data-confirm-trash>Move to Trash</button></div><p role="status"></p><button type="button" data-undo ${recovery?'':'hidden'}>Undo last action</button><a href="https://drive.google.com/drive/trash" target="_blank" rel="noopener">Open Drive Trash ↗</a></section></div>`;
+  dialog.querySelector('[data-move]').hidden=!file.mimeType?.startsWith('image/')||![P,R].includes(file.folderId);
+  const button=document.createElement('button');button.type='button';button.dataset.reconnect='';button.textContent='Reconnect Drive';button.hidden=notice.querySelector('[data-reconnect]').hidden;
+  dialog.querySelector('[role=status]').after(button);
  }
  async function open(file){
    if(!file||file.kind==='video')return;
    if(busy){showNotice('Finish the current Drive action first.',{undoable:!!recovery});return;}
-   const generation=++epoch;active=file;
+   const generation=++epoch,session=moveSession,owner=getOwner();active=file;
   draw(file,file.thumbnailLink||'');dialog.showModal();message('Loading preview…');
-  try{const url=await getUrl(file.id);if(generation!==epoch)return;draw(file,url);message('Moving preserves this file and its ID.');}catch(error){if(generation===epoch)message(error.message||'Preview could not load.');}
+  const image=dialog.querySelector('img'),status=dialog.querySelector('[role=status]');
+  const currentPreview=()=>generation===epoch&&session===moveSession&&owner===getOwner()&&dialog.open&&active?.id===file.id&&dialog.querySelector('img')===image;
+  try{const url=await getUrl(file.id);if(!currentPreview())return;image.src=url;if(!busy&&status.textContent==='Loading preview…')message('Moving preserves this file and its ID.');}
+  catch(error){if(currentPreview()&&!busy&&status.textContent==='Loading preview…')message(error.message||'Preview could not load.');}
  }
  function updateDetail(file,text){
   if(!dialog.open||active?.id!==file.id)return;
-  const preview=dialog.querySelector('img')?.src||active.thumbnailLink||'';
-  active={...active,...file};draw(active,preview);message(text);
+  active={...active,...file};
+  dialog.querySelector('h2').textContent=active.name;dialog.querySelector('img').alt=active.name;
+  dialog.querySelector('[data-location]').textContent=active.folderId===R?'References':'Private';
+  const move=dialog.querySelector('[data-move]');move.textContent=`Move to ${active.folderId===R?'Private':'References'}`;move.hidden=![P,R].includes(active.folderId);
+  dialog.querySelector('[data-undo]').hidden=!recovery;message(text);
  }
- async function reconcileReceipt(receipt,generation){
+ function isCurrent(generation,owner){return generation===moveSession&&Boolean(owner)&&owner===getOwner();}
+ function matchesReceipt(receipt){
+  const saved=readReceipt();
+  return validReceipt(receipt)&&saved?.owner===receipt.owner&&saved.intent===receipt.intent
+   &&['id','from','to','at'].every(key=>saved.record[key]===receipt.record[key]);
+ }
+ function needsReconnect(error){return error?.code==='drive/reconnect-required'||!canRead();}
+ function offerReconnect(receipt){showNotice(`Reconnect Drive to ${receipt.intent==='undo'?'restore the previous folder':'finish the move'}.`,{reconnectable:true,receipt});}
+ async function completeMove(receipt,file,generation){
+  if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))return false;
+  const restoring=receipt.intent==='undo';
+  if(restoring){recovery=null;clearReceipt();}
+  else{
+   recovery=receipt.record;
+   try{persistMove(recovery,'confirmed');}catch(error){console.error('Confirmed move receipt remains recoverable',error);}
+  }
+  showNotice(`${restoring?'Restored':'Moved'} to ${file.folderLabel}.`,{undoable:!restoring});
+  await reconcileChange({kind:restoring?'restore':'move',file,id:receipt.record.id});
+  if(isCurrent(generation,receipt.owner))updateDetail(file,restoring?'Restored to the previous folder.':'Move confirmed. Undo restores the previous folder.');
+  return true;
+ }
+ async function reconcileReceipt(receipt,generation,{continueAction=false}={}){
+  if(!validReceipt(receipt)||!matchesReceipt(receipt))return false;
   const record=receipt.record,actual=await drive.metadata(record.id);
-  if(generation!==moveSession||!canRead())return;
-  if(actual.id!==record.id||actual.ownedByMe!==true||actual.trashed!==false||!actual.mimeType?.startsWith('image/')||actual.parents?.length!==1){
+  if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))return false;
+  if(!canRead()){offerReconnect(receipt);return false;}
+  if(actual.id!==record.id||actual.ownedByMe!==true||actual.trashed!==false||actual.mimeType!==record.mimeType||actual.parents?.length!==1){
    const retained=retainPreviousUndo(receipt);
-   showNotice('This image needs review in Google Drive.',{undoable:retained});return;
+   showNotice('This image needs review in Google Drive.',{undoable:retained});return false;
   }
   const parent=actual.parents[0];
   if(![record.from,record.to].includes(parent)){
    const retained=retainPreviousUndo(receipt);
-   showNotice('This image moved to another folder. Review its current location in Google Drive.',{undoable:retained});return;
+   showNotice('This image moved to another folder. Review its current location in Google Drive.',{undoable:retained});return false;
   }
   const file={...actual,folderId:parent,folderLabel:parent===R?'References':'Private'};
-  if(parent===record.to){
-   if(receipt.intent==='undo'){
-    recovery=null;clearReceipt();showNotice(`Restored to ${file.folderLabel}.`);
-    await reconcileChange({kind:'restore',file,id:record.id});
-    if(generation===moveSession)updateDetail(file,'Restored to the previous folder.');return true;
+  if(parent===record.to)return completeMove(receipt,file,generation);
+  if(receipt.phase!=='confirmed'){
+   if(continueAction)return performMove(receipt,generation);
+   // Reload/Sync may inspect the receipt, but only the explicit reconnect gesture resumes writes.
+   offerReconnect(receipt);return false;
+  }
+  const retained=retainPreviousUndo(receipt);
+  showNotice(`Image is in ${file.folderLabel}.`,{undoable:retained});
+  await reconcileChange({kind:'move',file,id:record.id});
+  if(isCurrent(generation,receipt.owner))updateDetail(file,'The image is in its previous folder.');
+  return false;
+ }
+ async function performMove(receipt,generation){
+  if(!validReceipt(receipt)||!isCurrent(generation,receipt.owner))return false;
+  if(!matchesReceipt(receipt)){showNotice('The saved move changed on this device. Review the image before retrying.');return false;}
+  const record=receipt.record;
+  showNotice(receipt.intent==='undo'?'Moving… Back to the previous folder.':`Moving… To ${record.to===R?'References':'Private'}.`);
+  try{
+   const result=await drive.move({id:record.id,name:record.name,mimeType:record.mimeType,folderId:record.from},record.to,{onPending:next=>{
+    if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))throw new Error('Velum locked or the saved move changed before it started.');
+    persistMove({...next,at:record.at},'pending',receipt.intent);
+   }});
+   return await completeMove(receipt,result.file,generation);
+  }catch(error){
+   if(!isCurrent(generation,receipt.owner))return false;
+   if(!matchesReceipt(receipt)){showNotice('The saved move changed on this device. Review its location in Drive.');return false;}
+   if(needsReconnect(error)){offerReconnect(receipt);return false;}
+   const saved=readReceipt();
+   if(saved?.phase==='pending'&&matchesReceipt(receipt)){
+    try{return await reconcileReceipt(saved,generation);}
+    catch{if(isCurrent(generation,receipt.owner))showNotice('Move confirmation is pending. Reconnect Drive to check its location.',{reconnectable:true,receipt});}
+   }else{
+    const retained=retainPreviousUndo(receipt);
+    showNotice(error.message||'Drive did not confirm this move.',{undoable:retained});
    }
-   recovery=record;
-   try{persistMove(record,'confirmed');}catch(error){console.error('Confirmed move receipt remains pending',error);}
-   showNotice(`Moved to ${file.folderLabel}.`,{undoable:true});
-   await reconcileChange({kind:'move',file,id:record.id});
-   if(generation===moveSession)updateDetail(file,'Move confirmed. Undo restores the previous folder.');
-   return true;
-  }else{
-   if(receipt.intent==='undo'){
-    recovery={...record,from:record.to,to:record.from};
-    try{persistMove(recovery,'confirmed');}catch(error){console.error('Original Undo receipt remains recoverable',error);}
-    showNotice(`Image is still in ${file.folderLabel}. Undo remains available.`,{undoable:true});
-    await reconcileChange({kind:'move',file,id:record.id});
-    if(generation===moveSession)updateDetail(file,'Undo has not been applied. You can retry it.');
-    return false;
-   }
-   const retained=retainPreviousUndo(receipt);
-   showNotice(`Image is in ${file.folderLabel}.`,{undoable:retained});
-   await reconcileChange({kind:'move',file,id:record.id});
-   if(generation===moveSession)updateDetail(file,'The image is in its previous folder.');
+   return false;
   }
  }
  function resume(){
-  if(busy||!canRead())return Promise.resolve();
+  if(busy)return Promise.resolve();
   if(resuming?.generation===moveSession)return resuming.promise;
   const receipt=readReceipt();if(!receipt)return Promise.resolve();
+  if(!canRead()){offerReconnect(receipt);return Promise.resolve();}
   const generation=moveSession;setBusy(true);
   const promise=reconcileReceipt(receipt,generation).catch(error=>{
-   if(generation===moveSession)showNotice(error.message||'Reconnect Drive to check the last move.');
-  }).finally(()=>{if(generation===moveSession)setBusy(false);if(resuming?.promise===promise)resuming=null;});
+   if(isCurrent(generation,receipt.owner))showNotice(error.message||'Reconnect Drive to check the last move.',{reconnectable:true,receipt});
+  }).finally(()=>{if(isCurrent(generation,receipt.owner))setBusy(false);if(resuming?.promise===promise)resuming=null;});
   resuming={generation,promise};return promise;
  }
- async function undo(){
-   if(!recovery||busy)return;const session=moveSession,record=recovery;let pending=null;setBusy(true);
-   showNotice('Restoring previous folder…');
-   try{const result=await drive.undo(record,{onPending:next=>{
-     if(session!==moveSession)throw new Error('Velum locked before Undo started.');
-     pending=persistMove(next,'pending','undo');
-    }});if(session!==moveSession)return;recovery=null;clearReceipt();
-    showNotice(`Restored to ${result.file.folderLabel||'the previous folder'}.`);
-    await reconcileChange({kind:'restore',file:result.file,id:record.id});
-    if(session===moveSession)updateDetail(result.file,'Restored to the previous folder.');
-   }
-   catch(error){if(session===moveSession){
-    if(pending){try{await reconcileReceipt({record:pending,intent:'undo'},session);}catch{showNotice('Undo confirmation is pending. Reconnect Drive to check its location.');}}
-    else showNotice(error.message||'Undo could not be confirmed.',{undoable:!!recovery});
-   }}
-   finally{if(session===moveSession)setBusy(false);}
+ function reconnect(){
+  if(busy)return;
+  const receipt=offeredReceipt,generation=moveSession;
+  if(!receipt)return;
+  if(!matchesReceipt(receipt)){showNotice('The saved move changed on this device. Sync to review its current location.');return;}
+  // Start the shared popup on the click call stack, before any await or metadata request.
+  let connection;
+  try{connection=connect();}catch(error){showNotice(error.message||'Drive could not reconnect.',{reconnectable:true,receipt});return;}
+  setBusy(true);showNotice('Reconnecting Drive…');
+  return Promise.resolve(connection).then(async()=>{
+   if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))return;
+   await reconcileReceipt(receipt,generation,{continueAction:true});
+  }).catch(error=>{
+   if(isCurrent(generation,receipt.owner))showNotice(error.message||'Drive could not reconnect.',{reconnectable:true,receipt});
+  }).finally(()=>{if(isCurrent(generation,receipt.owner))setBusy(false);});
  }
-  async function moveQuick(file,{focusUndo=false}={}){
-   if(busy||!file||!file.mimeType?.startsWith('image/')||![P,R].includes(file.folderId))return false;
-   const session=moveSession;
-   if(readReceipt()?.phase==='pending'){
-    try{await drive.authorize();if(session===moveSession)await resume();}
-    catch(error){if(session===moveSession)showNotice(error.message||'Reconnect Drive to check the last move.');}
-    return false;
-   }
-   const destination=file.folderId===R?P:R;let pending=null;
-   setBusy(true);showNotice(`Authorizing move to ${destination===R?'References':'Private'}…`);
-   try{
-    const result=await drive.move(file,destination,{onPending:record=>{
-     if(session!==moveSession)throw new Error('Velum locked before the move started.');
-     pending=persistMove(record,'pending');
-    }});
-    if(session!==moveSession)return false;
-    recovery=result.recovery;
-    try{persistMove(recovery,'confirmed');}catch(error){console.error('Move confirmed, pending receipt retained',error);}
-    showNotice(`Moved to ${result.file.folderLabel}.`,{undoable:true});
-    await reconcileChange({kind:'move',file:result.file,id:file.id});
-    if(session!==moveSession)return true;
-    updateDetail(result.file,`Moved to ${result.file.folderLabel}. Undo restores the previous folder.`);
-    if(focusUndo)notice.querySelector('[data-action-undo]').focus();
-    return true;
-   }catch(error){
-    if(session===moveSession){
-     if(pending){try{return Boolean(await reconcileReceipt(readReceipt()||{record:pending},session));}catch{showNotice('Move confirmation is pending. Reconnect Drive to check its location.');}}
-     else showNotice(error?.message||'Drive did not confirm this move.',{undoable:!!recovery});
-    }
-    return false;
-   }finally{if(session===moveSession)setBusy(false);}
+ async function undo(){
+  if(!recovery||busy)return;
+  const existing=readReceipt();
+  if(existing&&existing.phase!=='confirmed'){offerReconnect(existing);return;}
+  const generation=moveSession,owner=getOwner(),record=recovery;
+  if(record.kind==='move'){
+   let receipt;
+   try{persistMove({...record,from:record.to,to:record.from,at:Date.now()},'queued','undo');receipt=readReceipt();}
+   catch(error){showNotice(error.message||'Undo could not be saved on this device.',{undoable:true});return;}
+   setBusy(true);
+   try{await performMove(receipt,generation);}finally{if(isCurrent(generation,owner))setBusy(false);}
+   return;
   }
+  setBusy(true);showNotice('Restoring from Drive Trash…');
+  try{
+   const result=await drive.undo(record);if(!isCurrent(generation,owner))return;
+   recovery=null;clearReceipt();showNotice('Restored from Drive Trash.');
+   await reconcileChange({kind:'restore',file:result.file,id:record.id});
+   if(isCurrent(generation,owner))updateDetail(result.file,'Restored from Drive Trash.');
+  }catch(error){if(isCurrent(generation,owner))showNotice(error.message||'Undo could not be confirmed.',{undoable:true});}
+  finally{if(isCurrent(generation,owner))setBusy(false);}
+ }
+ async function moveQuick(file,{focusUndo=false}={}){
+  if(busy||!file||!file.mimeType?.startsWith('image/')||![P,R].includes(file.folderId))return false;
+  const generation=moveSession,owner=getOwner(),existing=readReceipt();
+  if(existing&&existing.phase!=='confirmed'){offerReconnect(existing);return false;}
+  let receipt;
+  try{
+   persistMove({kind:'move',id:file.id,name:file.name,mimeType:file.mimeType,from:file.folderId,to:file.folderId===R?P:R,at:Date.now()},'queued');
+   receipt=readReceipt();
+  }catch(error){showNotice(error.message||'The move could not be saved on this device.',{undoable:!!recovery});return false;}
+  setBusy(true);
+  try{
+   const moved=await performMove(receipt,generation);
+   if(moved&&focusUndo&&isCurrent(generation,owner))notice.querySelector('[data-action-undo]').focus();
+   return moved;
+  }finally{if(isCurrent(generation,owner))setBusy(false);}
+ }
  dialog.addEventListener('click',async event=>{
   const button=event.target.closest('button');if(!button)return;
    if(button.hasAttribute('data-close')){closeDetail();return;}
@@ -185,6 +244,7 @@ export function mountGalleryLibrary({drive,current,getUrl,onFilter,onChanged,get
   if(button.hasAttribute('data-more')){dialog.querySelector('[data-trash]').hidden=false;button.setAttribute('aria-expanded','true');return;}
   if(button.hasAttribute('data-trash')){dialog.querySelector('[data-confirm]').hidden=false;dialog.querySelector('[data-cancel]').focus();return;}
   if(button.hasAttribute('data-cancel')){dialog.querySelector('[data-confirm]').hidden=true;dialog.querySelector('[data-trash]').focus();return;}
+  if(button.hasAttribute('data-reconnect'))return reconnect();
   if(button.hasAttribute('data-undo'))return undo();
   if(button.hasAttribute('data-move'))return moveQuick(active);
    if(busy||!active||!button.hasAttribute('data-confirm-trash'))return;

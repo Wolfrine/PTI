@@ -9,7 +9,7 @@ const driveModule = new URL('./studio-drive.mjs', import.meta.url);
 driveModule.search = new URL(import.meta.url).search;
 const { createStudioDrive,readBoundedImage,createDriveAccess,DRIVE_READ_SCOPE } = await import(driveModule.href);
 const libraryModule=new URL('./drive-library.mjs',import.meta.url);libraryModule.search=new URL(import.meta.url).search;
-const {libraryQuery,libraryFile}=await import(libraryModule.href);
+const {libraryQuery,libraryFile,PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID}=await import(libraryModule.href);
 const libraryUiModule=new URL('./gallery-library-ui.mjs',import.meta.url);libraryUiModule.search=new URL(import.meta.url).search;
 const {mountGalleryLibrary}=await import(libraryUiModule.href);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
@@ -35,7 +35,6 @@ const FIREBASE_CONFIG = {
   measurementId: 'G-BY7B708EVV'
 };
 
-const PRIVATE_FOLDER_ID = '1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 
 const app = initializeApp(FIREBASE_CONFIG);
@@ -121,7 +120,9 @@ let renderSerial = 0;
 const access = createDriveAccess({auth,requestAccess:scopes => {
   const provider = new GoogleAuthProvider();
   scopes.forEach(scope => provider.addScope(scope));
-  provider.setCustomParameters({include_granted_scopes:'true',login_hint:auth.currentUser?.email||'schttewary@gmail.com'});
+  const parameters={include_granted_scopes:'true'};
+  if(auth.currentUser?.email)parameters.login_hint=auth.currentUser.email;
+  provider.setCustomParameters(parameters);
   const popup = auth.currentUser
     ? reauthenticateWithPopup(auth.currentUser, provider)
     : signInWithPopup(auth, provider);
@@ -162,7 +163,7 @@ window.addEventListener('pageshow',event=>{
   if(tokenProbablyFresh())void syncDrive({initial:true}).then(()=>libraryControls.resume());
   else if(!$('#studioView').classList.contains('active'))authGate.classList.add('open');
 });
-const libraryControls=mountGalleryLibrary({drive:studioDrive,current:currentMediaItem,getUrl:ensureObjectUrl,getOwner:()=>auth.currentUser?.uid||'',canRead:()=>access.has([DRIVE_READ_SCOPE])&&!galleryLocked,
+const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.connect(),current:currentMediaItem,getUrl:ensureObjectUrl,getOwner:()=>auth.currentUser?.uid||'',canRead:()=>access.has([DRIVE_READ_SCOPE])&&!galleryLocked,
  onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>{if(!galleryLocked)showToast(error.message);});}else{renderSerial++;current={type:'single',ids:[]};window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
  onChanged:({kind,file,id})=>{
    galleryRevision++;
@@ -767,8 +768,8 @@ function renderBrowse() {
     opener.innerHTML = `<div class="tile-placeholder" style="aspect-ratio:1/${ratio}">${preview}${badge}<span class="tile-folder">${item.folderLabel||'Private'}</span></div><div class="tile-meta"><span title="Deliberate holds and historical likes">♥ ${s.affectionHolds + s.directUp}</span><span>${(s.affectionDurationMs / 1000).toFixed(s.affectionDurationMs < 10000 ? 1 : 0).replace(/\.0$/, '')}s held · ${s.views} views</span></div>`;
     opener.onclick = () => openInDrift(item.id);
     tile.append(opener);
-    if(item.mimeType?.startsWith('image/')&&['Private','References'].includes(item.folderLabel)){
-      const destination=item.folderLabel==='References'?'Private':'References';
+    if(item.mimeType?.startsWith('image/')&&[PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(item.folderId)){
+      const destination=item.folderId===REFERENCES_FOLDER_ID?'Private':'References';
       const move=document.createElement('button');
       move.type='button';move.className='tile-quick-move';
       move.setAttribute('aria-label',`Move ${item.name || 'image'} to ${destination}`);

@@ -2,7 +2,7 @@
 
 Static phone-first gallery deployed as a secondary Firebase Hosting site in the PTI Firebase project.
 
-The current Move/Undo implementation uses an owner-authenticated backend proxy with persistent server receipts. Full Drive management is isolated from the existing narrow browser connection in a separate OAuth project and stays disabled until its confidential client and owner consent are installed. See the [management boundary and activation status](design/server-moves-2026-11-17.md). A source/build or staged deployment does not establish a successful live Move/Undo.
+The current Move/Undo implementation uses an owner-authenticated backend proxy with persistent server receipts. Full Drive management is isolated from the existing narrow browser connection in a separate OAuth project. Its client and secure secret are installed; the owner must complete the separate initial Google consent before it can move images. See the [management boundary and activation status](design/server-moves-2026-11-17.md). A source/build or deployment does not establish a successful live Move/Undo. The public [authorization and privacy page](about.html) supplies Google's required production branding links.
 
 ## Studio: private local generation
 

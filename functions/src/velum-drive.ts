@@ -12,7 +12,7 @@ const CALLBACK=ORIGIN+'/api/drive/callback';
 const CLIENT='185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com';
 // Full consent must belong to a different API project: old browser clients in
 // the read project's combined grant must never inherit the management scope.
-const MANAGEMENT_CLIENT=(process.env.VELUM_DRIVE_MANAGEMENT_CLIENT_ID||'').trim();
+const MANAGEMENT_CLIENT='542835526747-lj8t3hl7590of1m2l8btojf0ciitkkcc.apps.googleusercontent.com';
 const MANAGEMENT_CONFIGURED=/^\d{8,30}-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(MANAGEMENT_CLIENT)
  &&MANAGEMENT_CLIENT.split('-')[0]!==CLIENT.split('-')[0];
 const ROOT='_velumDrivePrivate';
@@ -188,10 +188,20 @@ async function start(req:Request,res:Response){
  });
  res.setHeader('Set-Cookie',`${COOKIE}=${hash}.${binding}; Path=/api/drive; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
- url.search=new URLSearchParams({client_id:cfg.clientId,redirect_uri:CALLBACK,response_type:'code',scope:['openid','email','profile',...SCOPES,...(management?[MANAGEMENT_SCOPE]:[])].join(' '),access_type:'offline',include_granted_scopes:'true',prompt:'consent',login_hint:identity.googleSub,state,nonce,code_challenge:digestBase64(verifier),code_challenge_method:'S256'}).toString();
+ url.search=new URLSearchParams({client_id:cfg.clientId,redirect_uri:CALLBACK,response_type:'code',scope:['openid','email','profile',...(management?[MANAGEMENT_SCOPE]:SCOPES)].join(' '),access_type:'offline',include_granted_scopes:'false',prompt:'consent',login_hint:identity.googleSub,state,nonce,code_challenge:digestBase64(verifier),code_challenge_method:'S256'}).toString();
  res.json({authorizeUrl:url.href,clientId:cfg.clientId});
 }
 function digestBase64(value:string){return createHash('sha256').update(value).digest('base64url');}
+async function managementHealth(){
+ if(!OFFLINE_ENABLED||!MANAGEMENT_CONFIGURED)return false;
+ let timer:ReturnType<typeof setTimeout>|undefined;
+ try{
+  return await Promise.race([
+   config('management').then(()=>true,()=>false),
+   new Promise<false>(resolve=>{timer=setTimeout(()=>resolve(false),2000);})
+  ]);
+ }finally{if(timer)clearTimeout(timer);}
+}
 async function callback(req:Request,res:Response){
  clearCookie(res);
  let cfg:Config|undefined,issued='';
@@ -635,8 +645,10 @@ export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_S
  const path=req.path.replace(/^\/api\/drive/,'');
  try{
   if(req.method==='GET'&&path==='/health'){
+   const optionalManagement=managementHealth();
    if(OFFLINE_ENABLED)await config();
-    res.json({service:'velum-drive',version:'offline-v3',ready:OFFLINE_ENABLED,managementProxy:true,managementConfigured:MANAGEMENT_CONFIGURED,managementClientId:MANAGEMENT_CONFIGURED?MANAGEMENT_CLIENT:''});return;
+   const managementConfigured=await optionalManagement;
+   res.json({service:'velum-drive',version:'offline-v3',ready:OFFLINE_ENABLED,managementProxy:true,managementConfigured,managementClientId:managementConfigured?MANAGEMENT_CLIENT:''});return;
   }
   if(req.method==='GET'&&path==='/callback'){await callback(req,res);return;}
   if(req.method!=='POST'){res.status(405).json({code:'drive/method-not-allowed'});return;}

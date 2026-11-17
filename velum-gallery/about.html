@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#080607">
+  <title>Velum · About and privacy</title>
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}html{scroll-padding-top:24px}body{margin:0;background:#080607;color:#e9dfe2;font:16px/1.7 system-ui,sans-serif}main{width:min(100% - 40px,720px);margin:48px auto 64px}header{padding-bottom:28px;border-bottom:1px solid #35252c}.mark{margin:0 0 16px;color:#bfa3ae;font-size:12px;letter-spacing:.18em;text-transform:uppercase}h1{margin:0 0 16px;font:400 clamp(36px,8vw,52px)/1.12 Georgia,serif;letter-spacing:-.025em}h2{margin:0 0 12px;font:400 27px/1.25 Georgia,serif}h3{margin:24px 0 6px;font-size:16px}p{margin:0 0 16px;color:#bcaeb4}a{color:#edced9;text-underline-offset:4px}a:focus-visible{outline:2px solid #edced9;outline-offset:5px;border-radius:2px}nav{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:16px}nav a{display:inline-flex;align-items:center;min-height:44px}section{padding:32px 0;border-bottom:1px solid #35252c}footer{padding-top:24px;font-size:13px;color:#9f8f97}.open{display:inline-flex;align-items:center;min-height:44px;margin-top:4px}@media(max-width:480px){main{margin-top:28px}section{padding:28px 0}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="mark">Velum · Private collection</p>
+      <h1>Your collection,<br>with you.</h1>
+      <p>Velum is a personal gallery and image studio for its authorized owner. Browse images from your Google Drive, organize them between Private and References, and save your own Studio creations.</p>
+      <a class="open" href="./">Open Velum ↗</a>
+      <nav aria-label="Information"><a href="#privacy">Privacy policy</a><a href="#terms">Terms of use</a></nav>
+    </header>
+    <section id="privacy" aria-labelledby="privacy-title">
+      <h2 id="privacy-title">Privacy policy</h2>
+      <p>Effective 18 November 2026. This page describes Velum’s current handling of Google account and application data.</p>
+      <h3>Google account and Drive access</h3>
+      <p>Firebase Authentication identifies the owner through Google sign-in. Velum uses the linked Google identity, account information and authorization to provide the private collection. Browser access uses Drive read, metadata and app-file permissions for gallery media, references and Studio uploads.</p>
+      <p>Optional full Drive authorization belongs to a separate server connection. Its access tokens remain on the backend. Its refresh credential is encrypted in private Firestore records; the client secret and encryption key are held in Google Secret Manager. The server permits image moves only between the two configured Private and References folders after checking the owner, file and current parent.</p>
+      <h3>Storage and use</h3>
+      <p>Gallery originals remain in Google Drive. Viewing loads media into the browser. Reactions, viewing history and local privacy settings stay in browser storage. Short-lived browser credentials may be retained for a temporary session; the full Drive credential is never stored in browser storage.</p>
+      <p>Studio prompts, chosen reference inputs, results and feedback may be stored in the owner’s private Firebase workspace and processed on the owner-approved local PC. Move receipts retain private file IDs, folder IDs and operation timestamps to reconcile interrupted actions and support Undo. These records are separate from the public website.</p>
+      <p>Google data is used to provide these owner-requested features. Velum does not sell it, use it for advertising, or use it to train a general-purpose model. Google and Firebase provide the authentication, hosting, database and Drive services; the approved local PC processes Studio requests. Private media and credentials are not published with the website.</p>
+      <h3>Control and retention</h3>
+      <p>Lock and Quick Exit clear private in-memory access without revoking the saved server connection. Disconnect Drive disables both server grants and attempts Google revocation. Uncertain cleanup is retained for retry. You can also revoke access in your Google Account’s third-party connections settings. Revoking access does not delete your Drive files or Studio originals.</p>
+      <p>Private receipts and Studio records remain available for recovery and the owner’s use; they have no automatic deletion schedule. Browser history and reactions remain until cleared on that device. For questions about access or stored data, use the support contact displayed on the Google consent screen.</p>
+    </section>
+    <section id="terms" aria-labelledby="terms-title">
+      <h2 id="terms-title">Terms of use</h2>
+      <p>Velum is a private personal application for its authorized owner. Use an authorized account and only media you own or have permission to use. Google Drive authorization is optional and can be withdrawn.</p>
+      <p>Drive operations depend on the permissions and availability of Google services. A Move or Save is complete only when Velum confirms its destination. Keep the recovery receipt while an action is pending. The local PIN is a privacy lock; Google and Firebase authentication control access to the connected services.</p>
+      <p>Google services remain subject to their applicable terms. This page does not grant access to another person’s account, change file ownership or sharing, or authorize operations outside Velum’s stated features.</p>
+    </section>
+    <footer>Velum · About, authorization and privacy<br><a class="open" href="./">Return to your collection</a></footer>
+  </main>
+</body>
+</html>

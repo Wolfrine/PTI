@@ -1,4 +1,4 @@
-// Metadata and operations stay in the signed-in browser. No server Drive secret.
+// Reads stay in the signed-in browser; production parent changes use the fixed-folder server proxy.
 export const PRIVATE_FOLDER_ID='1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA';
 export const REFERENCES_FOLDER_ID='1yDt_5NSv8fDYhZvOdsihdJwKQJuTzx66';
 export const POSES_FOLDER_ID='1I7hpdViUAhmzME0zUXWWvR59R46pHPiG';
@@ -33,7 +33,7 @@ export function driveResponseError(response,action){
  });
 }
 async function json(response,message){if(!response.ok)throw driveResponseError(response,message);return response.json();}
-export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFolder,getOperationGuard=()=>()=>{}}){
+export function createDriveLibrary({readRequest,writeRequest,moveRequest,moveStatusRequest,grantFile,grantFolder,getOperationGuard=()=>()=>{}}){
  async function listReferences({folder='all',search='',cursor='',signal}={}){
   const params=new URLSearchParams({q:libraryQuery({folder,search}),fields:'nextPageToken,files(id,name,mimeType,parents,thumbnailLink,size,modifiedTime)',pageSize:'60',orderBy:'modifiedTime desc'});
   if(cursor)params.set('pageToken',cursor);
@@ -52,9 +52,18 @@ export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFold
   verifyImage(actual,file,options);
   return actual;
  }
- async function move(file,destination,{onPending}={}){
+ async function move(file,destination,{onPending,requestedAt}={}){
   const assertActive=getOperationGuard();
   if(!Object.values(LIBRARY_FOLDERS).includes(destination))throw new Error('Choose Private or References.');
+  if(moveRequest){
+   if(!Object.values(LIBRARY_FOLDERS).includes(file.folderId)||file.folderId===destination)throw new Error('Choose the other library folder.');
+   const recovery={kind:'move',id:id(file.id),name:file.name,mimeType:file.mimeType,from:file.folderId,to:destination,
+    at:Number.isSafeInteger(requestedAt)&&requestedAt>0?requestedAt:Date.now(),serverManaged:true};
+   await onPending?.(recovery);assertActive();
+   const result=await moveRequest({id:file.id,from:recovery.from,to:destination,at:recovery.at});assertActive();
+   const moved=confirmedMove(result,recovery);
+   return {file:libraryFile({...file,...moved}),recovery};
+  }
   const actual=await manageable(file),source=libraryFile(actual).folderId;
   assertActive();
   if(source===destination)throw new Error('This image is already in that folder.');
@@ -65,13 +74,27 @@ export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFold
   const latest=await metadata(file);
   assertActive();verifyImage(latest,{...file,folderId:source});
   if(latest.capabilities?.canMoveItemWithinDrive!==true)throw new Error('Google Drive has not allowed this file to move.');
-  const recovery={kind:'move',id:file.id,name:latest.name,mimeType:latest.mimeType,from:source,to:destination,at:Date.now()};
+  const recovery={kind:'move',id:file.id,name:latest.name,mimeType:latest.mimeType,from:source,to:destination,at:Number.isSafeInteger(requestedAt)&&requestedAt>0?requestedAt:Date.now()};
   await onPending?.(recovery);assertActive();
   const params=new URLSearchParams({addParents:destination,removeParents:source,fields:'id,name,parents,trashed'});
   const moved=await json(await writeRequest(`${API}/files/${id(file.id)}?${params}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'}),'Move was not confirmed');
   assertActive();
   if(moved.id!==file.id||moved.trashed!==false||moved.parents?.length!==1||moved.parents[0]!==destination)throw new Error('Move response did not match. Sync to recover the actual location.');
   return {file:libraryFile({...latest,...moved}),recovery};
+ }
+ function confirmedMove(result,record){
+  const file=result.file;
+  if(result.phase!=='confirmed'||!/^[a-f0-9]{64}$/.test(result.receiptId||'')||file?.id!==record.id||file.ownedByMe!==true||file.trashed!==false
+   ||!/^image\/[a-z0-9.+-]+$/i.test(file.mimeType||'')||file.parents?.length!==1||file.parents[0]!==record.to)throw new Error('Move receipt was not confirmed. Check the saved action.');
+  return file;
+ }
+ async function reconcileMove(record){
+  if(!moveStatusRequest)throw new Error('Secure move recovery is unavailable. Reload Velum.');
+  const assertActive=getOperationGuard();
+  const result=await moveStatusRequest({id:id(record.id),from:record.from,to:record.to,at:record.at});assertActive();
+  if(result.phase==='confirmed')return {...result,file:libraryFile({...record,...confirmedMove(result,record)})};
+  if(!['pending','not-started'].includes(result.phase))throw new Error('Move recovery returned an invalid receipt.');
+  return {phase:result.phase,retryable:result.retryable===true};
  }
  async function trash(file){
   const assertActive=getOperationGuard();
@@ -119,6 +142,6 @@ export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFold
   if(!chosen)throw new Error('No different supported pose is available in this category.');
   return {...chosen,category:key,categoryLabel:group.label,catalogId:group.id,folderId:group.id,folderLabel:'Poses'};
  }
- return {listReferences,metadata,move,trash,undo,choosePose};
+ return {listReferences,metadata,move,reconcileMove,trash,undo,choosePose};
 }
 

@@ -257,9 +257,12 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
     }
     return actual;
   }
-  const library=createDriveLibrary({readRequest,writeRequest:manageRequest,grantFile,grantFolder,getOperationGuard});
+  const library=createDriveLibrary({readRequest,writeRequest:manageRequest,
+    moveRequest:access.managementProxy?data=>access.move(data):undefined,
+    moveStatusRequest:access.managementProxy?data=>access.moveStatus(data):undefined,grantFile,grantFolder,getOperationGuard});
   return {
     ...library,
+    get managementProxy(){return access.managementProxy===true;},
     async loadQualityCreations(){
       const controller=new AbortController();controllers.add(controller);
       try{return await loadDriveCreations({signal:controller.signal,

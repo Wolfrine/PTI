@@ -3,6 +3,9 @@ export const DRIVE_METADATA_SCOPE = 'https://www.googleapis.com/auth/drive.metad
 export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Save creates originals through Velum. Library moves use metadata access.
 export const CONNECT_SCOPES = Object.freeze([DRIVE_READ_SCOPE, DRIVE_METADATA_SCOPE, DRIVE_FILE_SCOPE]);
+const BROWSER_SCOPES = new Set([...CONNECT_SCOPES,'openid','email','profile',
+  'https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/userinfo.profile']);
+const FULL_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 
 const OWNER_UID = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 const CLIENT_ID = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com';
@@ -97,6 +100,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       check(generation,owner.googleUid);
       if (!value || typeof value !== 'object' || Array.isArray(value)) throw backendError();
       if(!response.ok){
+        if(['move','move-status'].includes(path)&&active&&['drive/reconnect-required','drive/management-required','drive/connection-changed','drive/revocation-pending'].includes(value.code))active.managementReady=false;
         const messages={
           'drive/not-configured':'Secure renewal setup is pending. A temporary Drive session is available.',
           'drive/revocation-pending':'Drive is finishing a previous disconnect. Its recovery window can take up to ten minutes.',
@@ -104,9 +108,26 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
           'drive/reconnect-required':'The saved Drive grant needs to be connected again.',
           'drive/owner-sign-in-required':'Sign in to the Velum owner account again to renew Drive access.',
           'drive/google-unavailable':'Google could not renew the saved Drive connection. Try again.',
-          'drive/configuration-unavailable':'The saved Drive connection is temporarily unavailable. Try again.'
+          'drive/configuration-unavailable':'The saved Drive connection is temporarily unavailable. Try again.',
+          'drive/management-setup-required':'Secure Drive management setup is pending. Your gallery connection is still available.',
+          'drive/management-required':'Approve Drive management once to finish this move.',
+          'drive/move-in-progress':'This image already has a move in progress. Check the saved action.',
+          'drive/move-pending':'Google has not confirmed this move. Check the saved action.',
+          'drive/file-location-changed':'This image changed folders. Sync to check its current location.',
+          'drive/receipt-no-longer-current':'This saved action is no longer the current folder change. Sync to check the image.',
+          'drive/previous-move-pending':'A previous move for this image still needs to be checked before another action.',
+          'drive/move-unconfirmed':'Google has not confirmed the destination. Check the saved action.',
+          'drive/file-not-manageable':'Only your untrashed images in the two library folders can be moved here.',
+          'drive/folder-not-manageable':'Google Drive has not allowed access to both exact library folders.',
+          'drive/file-not-movable':'Google Drive has not allowed this image to move.',
+          'drive/google-rejected':'Google Drive did not allow this move. The saved action can be checked safely.',
+          'drive/browser-scope-rejected':'Google returned unexpected gallery permissions. The token was not accepted.'
         };
-        throw Object.assign(new Error(messages[value.code]||`Drive could not complete this connection (${response.status}).`),{code:value.code||'drive/unavailable',status:response.status,stage:path});
+        throw Object.assign(new Error(messages[value.code]||`Drive could not complete this ${path==='move'?'move':'connection'} (${response.status}).`),{
+          code:value.code||'drive/unavailable',status:response.status,stage:path==='move'?'Move was not confirmed':path,
+          phase:value.phase==='pending'?'pending':undefined,
+          receiptId:/^[a-f0-9]{64}$/.test(value.receiptId||'')?value.receiptId:undefined
+        });
       }
       return value;
     }finally{controllers.delete(controller);}
@@ -249,13 +270,18 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     const value=await serverRequest('session',generation),owner=check(generation,requestedOwner.googleUid);
     checkDisconnectGeneration(requestedDisconnectGeneration);
     if (version !== authorizationVersion) throw reconnectError();
-    if(value.mode!=='server'||value.owner!==owner.uid||value.googleSub!==owner.googleUid||!CONNECT_SCOPES.every(scope=>value.scopes?.includes(scope))||!Number.isFinite(value.expiresAt)||value.expiresAt<=Date.now()+60000||typeof value.accessToken!=='string'||!value.accessToken)throw reconnectError();
+    if(value.mode!=='server'||value.owner!==owner.uid||value.googleSub!==owner.googleUid
+      ||!Array.isArray(value.scopes)||!CONNECT_SCOPES.every(scope=>value.scopes.includes(scope))
+      ||!value.scopes.every(scope=>BROWSER_SCOPES.has(scope))
+      ||!Number.isFinite(value.expiresAt)||value.expiresAt<=Date.now()+60000
+      ||typeof value.accessToken!=='string'||!value.accessToken)throw reconnectError();
     if (recoverDisconnect) checkDisconnectRecovery(owner);
     serverMode=true;backendReady=true;
     temporaryAllowed=false;
     try{backupStorage?.setItem('velum-drive-server-active-v1','1');}catch{}
     removeSession();
-    active={uid:owner.uid,googleUid:owner.googleUid,token:value.accessToken,scopes:value.scopes,expiresAt:Math.min(value.expiresAt,Date.now()+MAX_TOKEN_AGE_MS)};
+    active={uid:owner.uid,googleUid:owner.googleUid,token:value.accessToken,scopes:value.scopes,
+      managementReady:value.managementReady===true,expiresAt:Math.min(value.expiresAt,Date.now()+MAX_TOKEN_AGE_MS)};
     lateGoogleRevoked = false;
     if (recoverDisconnect) {
       // Explicit owner intent can supersede a legacy marker with no credential.
@@ -264,22 +290,30 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }
     clearConnectIntent();
   }
-  async function connectServer(generation,version=authorizationVersion,recoverDisconnect=false,requestedDisconnectGeneration=disconnectGeneration()){
+  async function connectServer(generation,version=authorizationVersion,recoverDisconnect=false,requestedDisconnectGeneration=disconnectGeneration(),management=false){
     const requestedOwner = check(generation);
     checkDisconnectGeneration(requestedDisconnectGeneration);
-    try{await serverSession(generation,version,recoverDisconnect,requestedDisconnectGeneration);return;}
+    try{
+      await serverSession(generation,version,recoverDisconnect,requestedDisconnectGeneration);
+      if(!management||active?.managementReady)return;
+    }
     catch(error){if(!['drive/reconnect-required','drive/revocation-pending'].includes(error?.code))throw error;}
     check(generation, requestedOwner.googleUid);
     checkDisconnectGeneration(requestedDisconnectGeneration);
     if (version !== authorizationVersion) throw reconnectError();
     if (recoverDisconnect) checkDisconnectRecovery(check(generation));
-    const value=await serverRequest('start',generation);
+    const value=await serverRequest('start',generation,management?{management:true}:{});
     check(generation, requestedOwner.googleUid);
     checkDisconnectGeneration(requestedDisconnectGeneration);
     if (version !== authorizationVersion) throw reconnectError();
     if (recoverDisconnect) checkDisconnectRecovery(requestedOwner);
     const url=new URL(value.authorizeUrl);
-    if(url.origin!=='https://accounts.google.com'||url.pathname!=='/o/oauth2/v2/auth'||url.searchParams.get('client_id')!==CLIENT_ID||url.searchParams.get('redirect_uri')!=='https://pti-app-2ab59-velum.web.app/api/drive/callback')throw new Error('Drive returned an invalid connection address.');
+    const clientId=management?value.clientId:CLIENT_ID;
+    if(management&&(!/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(clientId||'')||clientId.split('-')[0]===CLIENT_ID.split('-')[0]))throw new Error('Drive management requires its isolated server client.');
+    if(url.origin!=='https://accounts.google.com'||url.pathname!=='/o/oauth2/v2/auth'||url.searchParams.get('client_id')!==clientId||url.searchParams.get('redirect_uri')!=='https://pti-app-2ab59-velum.web.app/api/drive/callback')throw new Error('Drive returned an invalid connection address.');
+    const requestedScopes=(url.searchParams.get('scope')||'').split(/\s+/);
+    if(management&&!requestedScopes.includes(FULL_DRIVE_SCOPE))throw new Error('Drive management setup is still being published. Reload Velum before continuing.');
+    if(!management&&requestedScopes.includes(FULL_DRIVE_SCOPE))throw new Error('Drive returned an unsafe gallery connection.');
     location.assign(url.href);
     // Same-tab authorization returns through the fixed callback; never report a grant before it exists.
     return new Promise(()=>{});
@@ -304,7 +338,8 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       for(const cache of [storage,backupStorage]){
         try{
           const value=JSON.parse(cache?.getItem(SESSION_KEY)||'null');
-          if(value?.version===2&&value.uid===OWNER_UID&&typeof value.googleUid==='string'&&typeof value.token==='string'&&value.token&&Number.isFinite(value.expiresAt)){
+          if(value?.version===2&&value.uid===OWNER_UID&&typeof value.googleUid==='string'&&typeof value.token==='string'&&value.token&&Number.isFinite(value.expiresAt)
+            &&(!Array.isArray(value.scopes)||value.scopes.every(scope=>BROWSER_SCOPES.has(scope)))){
             temporaryRevocationExpected=true;
             rememberTemporaryRevocation(value.token, value.googleUid, value.expiresAt);
             backupStorage?.setItem('velum-drive-temporary-grant-v1','1');
@@ -377,7 +412,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       const scopes = String(info.scope || '').split(/\s+/).filter(Boolean);
       const remainingMs = Number(info.expires_in) * 1000;
       if (audience !== CLIENT_ID || subject !== owner.googleUid
-        || !CONNECT_SCOPES.every(scope => scopes.includes(scope))
+        || !CONNECT_SCOPES.every(scope => scopes.includes(scope)) || !scopes.every(scope=>BROWSER_SCOPES.has(scope))
         || !Number.isFinite(remainingMs) || remainingMs <= TOKEN_MARGIN_MS) {
         throw reconnectError();
       }
@@ -406,7 +441,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }
   }
 
-  function connect() {
+  function connect({management=false}={}) {
     let requestedOwner;
     if (auth.currentUser) {
       try { requestedOwner = identity(); } catch (error) { return Promise.reject(error); }
@@ -414,10 +449,14 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     if (disconnecting) return Promise.reject(new Error('Finishing Disconnect. Try Connect Drive again when it finishes.'));
     if (lateRevocations > 0) return Promise.reject(new Error('Google is finishing Disconnect. Use Connect Drive again when it finishes.'));
     const recoverDisconnect = disconnectPending;
-    const gestureNeedsToken = !backend || (!serverMode && backendReady !== true);
+    const gestureNeedsToken = !management&&(!backend || (!serverMode && backendReady !== true));
     const temporaryRequest = !backend || (!serverMode && (backendReady === false || temporaryAllowed || backendReady === null));
-    if (!recoverDisconnect && has()) return Promise.resolve();
-    if (connecting?.generation === epoch) return connecting.promise;
+    if(management&&!backend)return Promise.reject(Object.assign(new Error('Secure Drive management is unavailable.'),{code:'drive/management-unavailable'}));
+    if (!recoverDisconnect && has() && (!management||active.managementReady)) return Promise.resolve();
+    if (connecting?.generation === epoch) {
+      if(!management||connecting.management)return connecting.promise;
+      return connecting.promise.then(()=>connect({management:true}));
+    }
     const generation = epoch;
     const version = ++authorizationVersion;
     const requestedDisconnectGeneration = disconnectGeneration();
@@ -425,7 +464,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     invalidate();
     let requested;
     try {
-      if (!auth.currentUser) requested = signIn(recoverDisconnect && !temporaryRequest ? [] : [...CONNECT_SCOPES]);
+      if (!auth.currentUser) requested = signIn(management||recoverDisconnect && !temporaryRequest ? [] : [...CONNECT_SCOPES]);
       // Unknown health must not consume the gesture before GIS opens.
       else if (gestureNeedsToken) requested = requestAccess([...CONNECT_SCOPES]);
       else requested = Promise.resolve(null);
@@ -437,6 +476,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       check(generation, owner.googleUid);
       if (version !== authorizationVersion) throw reconnectError();
       checkDisconnectGeneration(requestedDisconnectGeneration);
+      if(management&&backendReady!==true)throw backendError();
       if (!backend || (!serverMode && (backendReady === false || temporaryAllowed))) {
         await verify(credential?.accessToken, generation, version);
         check(generation, owner.googleUid);
@@ -451,12 +491,12 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       rememberConnectIntent(owner, requestedDisconnectGeneration);
       if (recoverDisconnect) {
         checkDisconnectRecovery(owner);
-        await connectServer(generation, version, true, requestedDisconnectGeneration);
+        await connectServer(generation, version, true, requestedDisconnectGeneration,management);
         return;
       }
-      try { await connectServer(generation, version, false, requestedDisconnectGeneration); }
+      try { await connectServer(generation, version, false, requestedDisconnectGeneration,management); }
       catch (error) {
-        if (serverMode || error?.code !== 'drive/not-configured') throw error;
+        if (management || serverMode || error?.code !== 'drive/not-configured') throw error;
         backendReady = false;
         temporaryAllowed = true;
         if (credential?.accessToken) await verify(credential.accessToken, generation, version);
@@ -469,13 +509,30 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }).finally(() => {
       if (connecting?.promise === promise) connecting = null;
     });
-    connecting = {generation, promise};
+    connecting = {generation, promise,management};
     return promise;
   }
 
   function ensure(scopes=CONNECT_SCOPES) {
     if (has(scopes)) return Promise.resolve();
     return restore().then(() => { require(scopes); });
+  }
+
+  async function move(data) {
+    const generation=epoch,owner=identity();
+    await ensure();
+    check(generation,owner.googleUid);
+    if(!active?.managementReady)throw Object.assign(new Error('Approve Drive management once to move this image.'),{code:'drive/management-required'});
+    const result=await serverRequest('move',generation,data);
+    check(generation,owner.googleUid);
+    return result;
+  }
+
+  async function moveStatus(data){
+    const generation=epoch,owner=identity();
+    await ensure();check(generation,owner.googleUid);
+    const result=await serverRequest('move-status',generation,data);
+    check(generation,owner.googleUid);return result;
   }
 
   async function restoreCached(generation, version) {
@@ -739,8 +796,9 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }
   }
 
-  return {connect, ensure, restore, require, request, has, ready, handleCancelledGrant,
+  return {connect, ensure, restore, require, request, has, ready, handleCancelledGrant,move,moveStatus,
     getToken:require, getOperationGuard, cancelPending, clear, disconnect,
     get disconnectPending(){return disconnectPending;},
+    get managementProxy(){return backend;},
     get mode(){return serverMode?'server':backendReady===false?'temporary':'checking';}};
 }

@@ -61,6 +61,6 @@ test('signed-in Drive authorization uses GIS incremental grants without forcing 
  assert.match(source,/requestAccess:\s*scopes\s*=>\s*tokenRequests\.request\(scopes\)/);
  assert.doesNotMatch(tokenSource,/prompt\s*:\s*['"]consent['"]/);
  assert.match(tokenSource,/oauth\.initTokenClient\(/);
- assert.match(tokenSource,/include_granted_scopes:\s*true/);
+ assert.match(tokenSource,/include_granted_scopes:\s*false/);
  assert.match(tokenSource,/requestAccessToken\(\{prompt:\s*['"]['"],\s*login_hint:\s*googleUid\}/);
 });

@@ -7,6 +7,9 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
  const receiptKey='velum-library-recovery-v1';
  const resumeKey='velum-library-connect-resume-v1';
  function clearConnectResume(){try{globalThis.sessionStorage?.removeItem(resumeKey);}catch{}}
+ function rememberConnectResume(receipt){
+  try{globalThis.sessionStorage?.setItem(resumeKey,JSON.stringify({owner:receipt.owner,record:receipt.record,requestedAt:Date.now()}));}catch{}
+ }
  function consumeConnectResume(receipt){
   try{
    const value=JSON.parse(globalThis.sessionStorage?.getItem(resumeKey)||'null');
@@ -29,7 +32,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   catch{return null;}
  }
  function persistMove(record,phase,intent='move'){
-  const value={version:1,owner:getOwner(),phase,intent,record:{kind:'move',id:record.id,name:String(record.name||'Image').slice(0,250),mimeType:record.mimeType,from:record.from,to:record.to,at:record.at}};
+  const value={version:1,owner:getOwner(),phase,intent,record:{kind:'move',id:record.id,name:String(record.name||'Image').slice(0,250),mimeType:record.mimeType,from:record.from,to:record.to,at:record.at,serverManaged:record.serverManaged===true}};
   const previous=readReceipt();
   if(phase!=='confirmed'){
    if(previous?.phase==='confirmed')value.previous=previous.record;
@@ -115,14 +118,14 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    &&['id','from','to','at'].every(key=>saved.record[key]===receipt.record[key]);
  }
  function needsReconnect(error){
-  return ['drive/reconnect-required','drive/sign-in-required','drive/owner-sign-in-required','drive/connect-required',
+  return ['drive/reconnect-required','drive/management-required','drive/sign-in-required','drive/owner-sign-in-required','drive/connect-required',
    'auth/user-token-expired','auth/invalid-user-token','auth/user-disabled'].includes(error?.code);
  }
  function offerReconnect(receipt,error){
   const authorizationRequired=needsReconnect(error)||(!error&&!canRead()),pending=readReceipt()?.phase==='pending';
   const action=receipt.intent==='undo'?'restore the previous folder':'finish the move';
   showNotice(error?.message||(authorizationRequired?`Reconnect Drive to ${action}.`:`Check the saved action to ${action}.`),{
-   reconnectable:true,receipt,reconnectLabel:authorizationRequired?'Reconnect Drive':pending?'Check move':'Retry move'
+   reconnectable:true,receipt,reconnectLabel:authorizationRequired?'Reconnect Drive':pending&&!error?.retryable?'Check move':'Retry move'
   });
  }
  function connectionFailed(error,receipt){
@@ -135,7 +138,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   }else offerReconnect(receipt,error);
  }
  function persistRejectedMove(receipt,error){
-  if(receipt.phase!=='queued'||error.status!==403||error.stage!=='Move was not confirmed'||!matchesReceipt(receipt))return;
+  if(error.phase==='pending'||receipt.phase!=='queued'||error.status!==403||error.stage!=='Move was not confirmed'||!matchesReceipt(receipt))return;
   const saved=readReceipt();
   if(saved?.phase!=='pending')return;
   const value={...saved,rejection:{status:403,message:error.message.slice(0,400)}};
@@ -148,7 +151,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const restoring=receipt.intent==='undo';
   if(restoring){recovery=null;clearReceipt();}
   else{
-   recovery=receipt.record;
+   recovery=readReceipt().record;
    try{persistMove(recovery,'confirmed');}catch(error){console.error('Confirmed move receipt remains recoverable',error);}
   }
   showNotice(`${restoring?'Restored':'Moved'} to ${file.folderLabel}.`,{undoable:!restoring});
@@ -160,7 +163,19 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   let saved=readReceipt();
   if(!validReceipt(receipt)||!matchesReceipt(receipt,saved))return false;
   receipt=saved;
-  const record=receipt.record,actual=await drive.metadata(record.id);
+  const record=receipt.record;
+  let serverNotStarted=false;
+  if(record.serverManaged&&receipt.phase!=='confirmed'){
+   const result=await drive.reconcileMove(record);
+   if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))return false;
+   if(result.phase==='confirmed')return completeMove(receipt,result.file,generation);
+   if(result.phase==='pending'){
+    if(continueAction&&result.retryable)return performMove(receipt,generation);
+    offerReconnect(receipt,{message:result.retryable?'The image is still in its previous folder. Retry the saved move.':'The move is still being checked. Its receipt is kept safely.',retryable:result.retryable});return false;
+   }
+   serverNotStarted=true;
+  }
+  const actual=await drive.metadata(record.id);
   saved=readReceipt();
   if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt,saved))return false;
   receipt=saved;
@@ -177,7 +192,13 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    showNotice('This image moved to another folder. Review its current location in Google Drive.',{undoable:retained});return false;
   }
   const file={...actual,folderId:parent,folderLabel:parent===R?'References':'Private'};
-  if(parent===record.to)return completeMove(receipt,file,generation);
+  if(parent===record.to){
+   if(serverNotStarted){
+    const retained=retainPreviousUndo(receipt);showNotice(`Image is already in ${file.folderLabel}.`,{undoable:retained});
+    await reconcileChange({kind:'move',file,id:record.id});return false;
+   }
+   return completeMove(receipt,file,generation);
+  }
   if(receipt.phase!=='confirmed'){
    if(receipt.rejection?.status===403&&typeof receipt.rejection.message==='string'&&receipt.rejection.message.length<=400){
     const retained=retainPreviousUndo(receipt);
@@ -203,7 +224,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const record=receipt.record;
   showNotice(receipt.intent==='undo'?'Moving… Back to the previous folder.':`Moving… To ${record.to===R?'References':'Private'}.`);
   try{
-   const result=await drive.move({id:record.id,name:record.name,mimeType:record.mimeType,folderId:record.from},record.to,{onPending:next=>{
+   const result=await drive.move({id:record.id,name:record.name,mimeType:record.mimeType,folderId:record.from},record.to,{requestedAt:record.at,onPending:next=>{
     if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))throw new Error('Velum locked or the saved move changed before it started.');
     persistMove({...next,at:record.at},'pending',receipt.intent);
    }});
@@ -240,7 +261,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const receipt=offeredReceipt,generation=moveSession;
   if(!receipt)return;
   if(!matchesReceipt(receipt)){showNotice('The saved move changed on this device. Sync to review its current location.');return;}
-  try{globalThis.sessionStorage?.setItem(resumeKey,JSON.stringify({owner:receipt.owner,record:receipt.record,requestedAt:Date.now()}));}catch{}
+  rememberConnectResume(receipt);
   // Start the shared popup on the click call stack, before any await or metadata request.
   let connection;
   try{connection=connect();}catch(error){clearConnectResume();connectionFailed(error,receipt);return;}
@@ -259,14 +280,14 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const generation=moveSession,owner=getOwner(),record=recovery;
   if(record.kind==='move'){
    let receipt;
-   try{persistMove({...record,from:record.to,to:record.from,at:Date.now()},'queued','undo');receipt=readReceipt();}
+   try{persistMove({...record,from:record.to,to:record.from,at:Date.now(),serverManaged:drive.managementProxy===true},'queued','undo');receipt=readReceipt();}
    catch(error){showNotice(error.message||'Undo could not be saved on this device.',{undoable:true});return;}
-   setBusy(true);
+   setBusy(true);rememberConnectResume(receipt);showNotice('Moving… Back to the previous folder.');
    try{
     await connect();
     if(isCurrent(generation,owner)&&matchesReceipt(receipt))await performMove(receipt,generation);
    }catch(error){if(isCurrent(generation,owner))connectionFailed(error,receipt);}
-   finally{if(isCurrent(generation,owner))setBusy(false);}
+   finally{clearConnectResume();if(isCurrent(generation,owner))setBusy(false);}
    return;
   }
   setBusy(true);showNotice('Restoring from Drive Trash…');
@@ -284,10 +305,10 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   if(existing&&existing.phase!=='confirmed'){offerReconnect(existing);return false;}
   let receipt;
   try{
-   persistMove({kind:'move',id:file.id,name:file.name,mimeType:file.mimeType,from:file.folderId,to:file.folderId===R?P:R,at:Date.now()},'queued');
+   persistMove({kind:'move',id:file.id,name:file.name,mimeType:file.mimeType,from:file.folderId,to:file.folderId===R?P:R,at:Date.now(),serverManaged:drive.managementProxy===true},'queued');
    receipt=readReceipt();
   }catch(error){showNotice(error.message||'The move could not be saved on this device.',{undoable:!!recovery});return false;}
-  setBusy(true);
+  setBusy(true);rememberConnectResume(receipt);showNotice(`Moving… To ${receipt.record.to===R?'References':'Private'}.`);
   try{
    await connect();
    if(!isCurrent(generation,owner)||!matchesReceipt(receipt))return false;
@@ -297,7 +318,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   }catch(error){
    if(isCurrent(generation,owner))connectionFailed(error,receipt);
    return false;
-  }finally{if(isCurrent(generation,owner))setBusy(false);}
+  }finally{clearConnectResume();if(isCurrent(generation,owner))setBusy(false);}
  }
  dialog.addEventListener('click',async event=>{
   const button=event.target.closest('button');if(!button)return;

@@ -85,7 +85,7 @@ export function createGoogleDriveTokenRequest({auth, onCancelledResult}) {
       const client = oauth.initTokenClient({
         client_id:CLIENT_ID,
         scope:scopes.join(' '),
-        include_granted_scopes:true,
+        include_granted_scopes:false,
         prompt:'',
         login_hint:googleUid,
         callback:response => finish(operation, response),

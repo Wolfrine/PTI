@@ -159,7 +159,7 @@ access = createDriveAccess({auth,backend:true,
  signIn:scopes => {
   const provider = new GoogleAuthProvider();
   scopes.forEach(scope => provider.addScope(scope));
-  const parameters={include_granted_scopes:'true'};
+  const parameters={include_granted_scopes:'false'};
   if(auth.currentUser?.email)parameters.login_hint=auth.currentUser.email;
   provider.setCustomParameters(parameters);
   const popup = signInWithPopup(auth, provider);
@@ -203,7 +203,7 @@ window.addEventListener('pageshow',event=>{
   // A BFCache return must pass the same local PIN gate as an ordinary reload.
   window.dispatchEvent(new CustomEvent('velum:request-unlock'));
 });
-const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.connect(),current:currentMediaItem,getUrl:ensureObjectUrl,getOwner:()=>auth.currentUser?.uid||'',canRead:()=>access.has([DRIVE_READ_SCOPE])&&!galleryLocked,
+const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.connect({management:true}),current:currentMediaItem,getUrl:ensureObjectUrl,getOwner:()=>auth.currentUser?.uid||'',canRead:()=>access.has([DRIVE_READ_SCOPE])&&!galleryLocked,
  onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>{if(!galleryLocked)showToast(error.message);});}else{renderSerial++;current={type:'single',ids:[]};window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
  onChanged:({kind,file,id})=>{
    galleryRevision++;

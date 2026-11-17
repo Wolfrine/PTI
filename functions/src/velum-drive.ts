@@ -5,6 +5,7 @@ import {createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqu
 import type {Request, Response} from 'express';
 
 const PROJECT='pti-app-2ab59';
+const RUNTIME_SERVICE_ACCOUNT=`velum-drive-runtime@${PROJECT}.iam.gserviceaccount.com`;
 const OWNER='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 const ORIGIN='https://pti-app-2ab59-velum.web.app';
 const CALLBACK=ORIGIN+'/api/drive/callback';
@@ -13,15 +14,17 @@ const ROOT='_velumDrivePrivate';
 const SCOPES=['https://www.googleapis.com/auth/drive.readonly','https://www.googleapis.com/auth/drive.metadata','https://www.googleapis.com/auth/drive.file'];
 const COOKIE='__session'; // Firebase Hosting forwards only this cookie to rewritten Functions.
 const TTL=10*60*1000;
-// Activation is separate from deployment: the shared OAuth client secret is currently inaccessible.
-// Enable only after both exact Secret Manager versions, runtime IAM and the fixed redirect are configured.
+// Activate after the two exact secrets, fixed redirect, private rules and deployed runtime IAM are verified.
 const OFFLINE_ENABLED=false;
 const cloud=new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});
 const oidc=new OAuth2Client(CLIENT);
 type Config={clientSecret:string;key:Buffer};
 type Envelope={iv:string;tag:string;ciphertext:string};
-type Grant={revision:number;googleSub:string;enabled:boolean;refresh?:Envelope;pendingHash?:string;lastStartedAt?:number;revocationUntil?:number};
+type Grant={revision:number;googleSub:string;enabled:boolean;refresh?:Envelope;pendingHash?:string;pendingUntil?:number;lastStartedAt?:number;revocationUntil?:number};
 class DriveError extends Error{constructor(public status:number,public code:string){super(code);}}
+class InvalidGrantError extends DriveError {
+ constructor(){super(409,'drive/reconnect-required');}
+}
 const db=()=>admin.firestore();
 const grantRef=()=>db().doc(`${ROOT}/connection`);
 const digest=(value:string)=>createHash('sha256').update(value).digest('hex');
@@ -32,6 +35,8 @@ async function config():Promise<Config>{
  if(!OFFLINE_ENABLED)throw new DriveError(503,'drive/not-configured');
  if(cachedConfig&&cachedConfig.until>Date.now())return cachedConfig.value;
  try{
+  const credentials=await cloud.getCredentials();
+  if(credentials.client_email!==RUNTIME_SERVICE_ACCOUNT)throw new Error('runtime identity');
   const client=await cloud.getClient();
   const read=async(name:string)=>{
    const r=await client.request<{payload:{data:string}}>({url:`https://secretmanager.googleapis.com/v1/projects/${PROJECT}/secrets/${name}/versions/latest:access`,timeout:10000});
@@ -71,7 +76,8 @@ async function googlePost(url:string,body:URLSearchParams){
  try{
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body,signal:AbortSignal.timeout(15000)});
   const value=await r.json() as Record<string,any>;
-  if(!r.ok)throw new DriveError(409,value.error==='invalid_grant'?'drive/reconnect-required':'drive/google-unavailable');
+  if(r.status===400&&value?.error==='invalid_grant')throw new InvalidGrantError();
+  if(!r.ok)throw new DriveError(503,'drive/google-unavailable');
   return value;
  }catch(error){if(error instanceof DriveError)throw error;throw new DriveError(503,'drive/google-unavailable');}
 }
@@ -84,8 +90,19 @@ async function verifiedAccess(accessToken:unknown,googleSub:string){
 }
 function clearCookie(res:Response){res.setHeader('Set-Cookie',`${COOKIE}=; Path=/api/drive; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);}
 async function revoke(token:string){
+ // Google revocation can affect a newer grant for this project. Each worker
+ // extends the shared barrier before its request, including duplicate drains.
+ await db().runTransaction(async tx=>{
+  const current=(await tx.get(grantRef())).data() as Grant|undefined;
+  tx.set(grantRef(),{revocationUntil:Math.max(current?.revocationUntil||0,Date.now()+TTL)},{merge:true});
+ });
  const response=await fetch('https://oauth2.googleapis.com/revoke',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({token}),signal:AbortSignal.timeout(15000)});
- if(!response.ok)throw new DriveError(503,'drive/revocation-pending');
+ if(response.ok)return true;
+ if(response.status===400){
+  const value=await response.json().catch(()=>null) as {error?:unknown}|null;
+  if(value?.error==='invalid_token')return false;
+ }
+ throw new DriveError(503,'drive/revocation-pending');
 }
 async function drainRevocations(cfg:Config){
  const pending=await db().collection(`${ROOT}/revocations/items`).limit(10).get();
@@ -94,14 +111,22 @@ async function drainRevocations(cfg:Config){
 }
 async function rejectIssuance(token:string,cfg:Config){
  const ref=db().collection(`${ROOT}/revocations/items`).doc();
- // Storage and Google's revoke endpoint fail independently; always attempt both.
+ // Persist the cleanup token and block new issuance before revoking a project-wide grant.
  try{await ref.set({sealed:seal(token,cfg.key,`revocation:${ref.id}`),createdAt:admin.firestore.FieldValue.serverTimestamp()});}catch{}
- try{await db().runTransaction(async tx=>{
+ const revision=await db().runTransaction(async tx=>{
    const current=(await tx.get(grantRef())).data() as Grant|undefined;
-   tx.set(grantRef(),{enabled:false,revision:(current?.revision||0)+1,revocationUntil:Date.now()+TTL},{merge:true});
-  });}catch{}
- await revoke(token);
+   const next=(current?.revision||0)+1;
+   tx.set(grantRef(),{enabled:false,revision:next,revocationUntil:Date.now()+TTL},{merge:true});
+   return next;
+  });
+ const googleRevoked=await revoke(token);
  try{await ref.delete();}catch{}
+ await db().runTransaction(async tx=>{
+  const current=(await tx.get(grantRef())).data() as Grant|undefined;
+  if(current?.revision!==revision)return;
+  const cleared={pendingHash:admin.firestore.FieldValue.delete(),pendingUntil:admin.firestore.FieldValue.delete()};
+  tx.update(grantRef(),googleRevoked?{...cleared,refresh:admin.firestore.FieldValue.delete()}:cleared);
+ });
 }
 async function start(req:Request,res:Response){
  const identity=await owner(req),cfg=await config();
@@ -111,10 +136,11 @@ async function start(req:Request,res:Response){
  await db().runTransaction(async tx=>{
   const snapshot=await tx.get(grantRef()),grant=snapshot.data() as Grant|undefined;
   if((grant?.refresh&&!grant.enabled)||(grant?.revocationUntil||0)>now)throw new DriveError(409,'drive/revocation-pending');
+  if(grant?.pendingHash&&(grant.pendingUntil||(grant.lastStartedAt||0)+TTL)>now)throw new DriveError(429,'drive/connect-in-progress');
   if(grant?.lastStartedAt&&now-grant.lastStartedAt<10000)throw new DriveError(429,'drive/connect-in-progress');
   const revision=grant?.revision||0;
   tx.set(attempt,{uid:OWNER,googleSub:identity.googleSub,revision,bindingHash:digest(binding),sealed:seal(JSON.stringify({verifier,nonce}),cfg.key,`attempt:${hash}`),expiresAt:admin.firestore.Timestamp.fromMillis(now+TTL),used:false});
-  tx.set(grantRef(),{revision,googleSub:identity.googleSub,enabled:grant?.enabled===true,pendingHash:hash,lastStartedAt:now},{merge:true});
+  tx.set(grantRef(),{revision,googleSub:identity.googleSub,enabled:grant?.enabled===true,pendingHash:hash,pendingUntil:now+TTL,lastStartedAt:now},{merge:true});
  });
  res.setHeader('Set-Cookie',`${COOKIE}=${hash}.${binding}; Path=/api/drive; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -125,6 +151,7 @@ function digestBase64(value:string){return createHash('sha256').update(value).di
 async function callback(req:Request,res:Response){
  clearCookie(res);
  let cfg:Config|undefined,issued='';
+ let claimed:{hash:string;revision:number}|undefined;
  try{
   cfg=await config();const state=typeof req.query.state==='string'?req.query.state:'';
   if(!/^[\w-]{43}$/.test(state))throw new DriveError(400,'drive/invalid-state');
@@ -135,16 +162,19 @@ async function callback(req:Request,res:Response){
   const attempt=await db().runTransaction(async tx=>{
    const [a,g]=await Promise.all([tx.get(attemptRef),tx.get(grantRef())]);
    const value=a.data(),grant=g.data() as Grant|undefined;
-   if(!value||value.used||value.uid!==OWNER||value.expiresAt.toMillis()<Date.now()||!same(value.bindingHash,digest(binding))||grant?.pendingHash!==hash||grant?.revision!==value.revision)throw new DriveError(403,'drive/invalid-state');
-   tx.update(attemptRef,{used:true});return value;
+   if(!value||value.used||value.uid!==OWNER||value.expiresAt.toMillis()<Date.now()||!same(value.bindingHash,digest(binding))||grant?.pendingHash!==hash||grant?.revision!==value.revision||(grant?.revocationUntil||0)>Date.now())throw new DriveError(403,'drive/invalid-state');
+   tx.update(attemptRef,{used:true});
+   tx.update(grantRef(),{pendingUntil:Date.now()+TTL});
+   return value;
   });
+  claimed={hash,revision:attempt.revision};
   if(req.query.error)throw new DriveError(409,'drive/consent-not-completed');
   if(typeof req.query.code!=='string'||req.query.code.length>4096)throw new DriveError(400,'drive/invalid-code');
   const user=await admin.auth().getUser(OWNER);
   if(user.disabled||!user.providerData.some(p=>p.providerId==='google.com'&&p.uid===attempt.googleSub))throw new DriveError(403,'drive/identity-changed');
   const {verifier,nonce}=JSON.parse(unseal(attempt.sealed,cfg.key,`attempt:${hash}`));
   const tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({code:req.query.code,client_id:CLIENT,client_secret:cfg.clientSecret,redirect_uri:CALLBACK,grant_type:'authorization_code',code_verifier:verifier}));
-  issued=typeof tokens.refresh_token==='string'?tokens.refresh_token:'';
+  issued=typeof tokens.refresh_token==='string'?tokens.refresh_token:typeof tokens.access_token==='string'?tokens.access_token:'';
   const ticket=await oidc.verifyIdToken({idToken:String(tokens.id_token||''),audience:CLIENT});
   const claims=ticket.getPayload();
   if(claims?.sub!==attempt.googleSub||!same(String((claims as any)?.nonce||''),nonce))throw new DriveError(403,'drive/identity-changed');
@@ -160,27 +190,56 @@ async function callback(req:Request,res:Response){
   res.redirect(303,ORIGIN+'/?drive=connected');
  }catch{
   if(issued&&cfg){try{await rejectIssuance(issued,cfg);}catch{/* encrypted revocation record is retained; never log credentials */}}
+  else if(claimed){
+   const failed=claimed;
+   try{await db().runTransaction(async tx=>{
+    const current=(await tx.get(grantRef())).data() as Grant|undefined;
+    if(current?.revision===failed.revision&&current.pendingHash===failed.hash){
+     tx.update(grantRef(),{pendingHash:admin.firestore.FieldValue.delete(),pendingUntil:admin.firestore.FieldValue.delete()});
+    }
+   });}catch{}
+  }
   res.redirect(303,ORIGIN+'/?drive=not-connected');
  }
 }
 async function session(req:Request,res:Response){
  const identity=await owner(req),cfg=await config();
  const value=(await grantRef().get()).data() as Grant|undefined;
+ if((value?.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/revocation-pending');
  if(!value?.enabled||!value.refresh||value.googleSub!==identity.googleSub)throw new DriveError(409,'drive/reconnect-required');
+ const refreshToken=unseal(value.refresh,cfg.key,`refresh:${OWNER}:${identity.googleSub}`);
  let tokens;
  try{
-  tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:CLIENT,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:unseal(value.refresh,cfg.key,`refresh:${OWNER}:${identity.googleSub}`)}));
+  tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:CLIENT,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:refreshToken}));
  }catch(error){
-  if(error instanceof DriveError&&error.code==='drive/reconnect-required')await db().runTransaction(async tx=>{
-   const current=(await tx.get(grantRef())).data() as Grant|undefined;
-   if(current?.revision===value.revision)tx.update(grantRef(),{enabled:false,revision:value.revision+1});
-  });
+  if(error instanceof InvalidGrantError)await expireInvalidRefresh(value,refreshToken,cfg);
   throw error;
  }
  const access=await verifiedAccess(tokens.access_token,identity.googleSub);
  const current=(await grantRef().get()).data() as Grant|undefined;
- if(!current?.enabled||current.revision!==value.revision||current.googleSub!==identity.googleSub)throw new DriveError(409,'drive/connection-changed');
+ if(!current?.enabled||current.revision!==value.revision||current.googleSub!==identity.googleSub||(current.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/connection-changed');
  res.json({...access,owner:OWNER,googleSub:identity.googleSub,mode:'server'});
+}
+async function expireInvalidRefresh(value:Grant,token:string,cfg:Config){
+ await db().runTransaction(async tx=>{
+  const [snapshot,pending]=await Promise.all([
+   tx.get(grantRef()),tx.get(db().collection(`${ROOT}/revocations/items`).limit(10))
+  ]);
+  const current=snapshot.data() as Grant|undefined;
+  if(current?.enabled&&current.revision===value.revision&&current.googleSub===value.googleSub
+   &&current.refresh?.iv===value.refresh?.iv&&current.refresh?.tag===value.refresh?.tag
+   &&current.refresh?.ciphertext===value.refresh?.ciphertext){
+   tx.update(grantRef(),{
+    enabled:false,revision:value.revision+1,refresh:admin.firestore.FieldValue.delete(),
+    ...(!current.pendingHash?{lastStartedAt:admin.firestore.FieldValue.delete()}:{})
+   });
+  }
+  for(const item of pending.docs){
+   let queued;
+   try{queued=unseal(item.data().sealed,cfg.key,`revocation:${item.id}`);}catch{continue;}
+   if(same(queued,token))tx.delete(item.ref);
+  }
+ });
 }
 async function disconnect(req:Request,res:Response){
  const identity=await owner(req);
@@ -195,20 +254,24 @@ async function disconnect(req:Request,res:Response){
  if(!previous?.refresh&&!OFFLINE_ENABLED){res.json({disconnected:true,revoked:true,googleRevoked:false});return;}
  try{
   const cfg=await config();await drainRevocations(cfg);
-  if(previous?.refresh)await revoke(unseal(previous.refresh,cfg.key,`refresh:${OWNER}:${previous.googleSub}`));
+  let googleRevoked=false;
+  if(previous?.refresh)googleRevoked=await revoke(unseal(previous.refresh,cfg.key,`refresh:${OWNER}:${previous.googleSub}`));
   await db().runTransaction(async tx=>{
    const current=(await tx.get(grantRef())).data() as Grant|undefined;
    if(current?.revision===(previous?.revision||0)+1)tx.update(grantRef(),{refresh:admin.firestore.FieldValue.delete()});
   });
   if(waiting)throw new DriveError(409,'drive/revocation-pending');
-  res.json({disconnected:true,revoked:true,googleRevoked:Boolean(previous?.refresh)});
+  res.json({disconnected:true,revoked:true,googleRevoked});
  }catch{res.status(202).json({disconnected:true,revoked:false,code:'drive/revocation-pending'});}
 }
-export const velumDrive=onRequest({region:'us-central1',memory:'256MiB',timeoutSeconds:60,maxInstances:2,invoker:'public',cors:false},async(req,res)=>{
+export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_SERVICE_ACCOUNT,memory:'256MiB',timeoutSeconds:60,maxInstances:2,invoker:'public',cors:false},async(req,res)=>{
  res.set({'Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Vary':'Origin, Authorization, Cookie'});
  const path=req.path.replace(/^\/api\/drive/,'');
  try{
-  if(req.method==='GET'&&path==='/health'){res.json({service:'velum-drive',version:'offline-v1',ready:OFFLINE_ENABLED});return;}
+  if(req.method==='GET'&&path==='/health'){
+   if(OFFLINE_ENABLED)await config();
+   res.json({service:'velum-drive',version:'offline-v2',ready:OFFLINE_ENABLED});return;
+  }
   if(req.method==='GET'&&path==='/callback'){await callback(req,res);return;}
   if(req.method!=='POST'){res.status(405).json({code:'drive/method-not-allowed'});return;}
   if(Number(req.get('content-length')||0)>2048)throw new DriveError(413,'drive/invalid-request');

@@ -15,7 +15,7 @@ const SCOPES=['https://www.googleapis.com/auth/drive.readonly','https://www.goog
 const COOKIE='__session'; // Firebase Hosting forwards only this cookie to rewritten Functions.
 const TTL=10*60*1000;
 // Activate after the two exact secrets, fixed redirect, private rules and deployed runtime IAM are verified.
-const OFFLINE_ENABLED=false;
+const OFFLINE_ENABLED=true;
 const cloud=new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});
 const oidc=new OAuth2Client(CLIENT);
 type Config={clientSecret:string;key:Buffer};

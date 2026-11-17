@@ -202,9 +202,18 @@ async function callback(req:Request,res:Response){
   res.redirect(303,ORIGIN+'/?drive=not-connected');
  }
 }
+async function sessionGrant(){
+ return db().runTransaction(async tx=>{
+  const [grant,pending]=await Promise.all([
+   tx.get(grantRef()),tx.get(db().collection(`${ROOT}/revocations/items`).limit(1))
+  ]);
+  if(!pending.empty)throw new DriveError(409,'drive/revocation-pending');
+  return grant.data() as Grant|undefined;
+ });
+}
 async function session(req:Request,res:Response){
  const identity=await owner(req),cfg=await config();
- const value=(await grantRef().get()).data() as Grant|undefined;
+ const value=await sessionGrant();
  if((value?.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/revocation-pending');
  if(!value?.enabled||!value.refresh||value.googleSub!==identity.googleSub)throw new DriveError(409,'drive/reconnect-required');
  const refreshToken=unseal(value.refresh,cfg.key,`refresh:${OWNER}:${identity.googleSub}`);
@@ -216,7 +225,7 @@ async function session(req:Request,res:Response){
   throw error;
  }
  const access=await verifiedAccess(tokens.access_token,identity.googleSub);
- const current=(await grantRef().get()).data() as Grant|undefined;
+ const current=await sessionGrant();
  if(!current?.enabled||current.revision!==value.revision||current.googleSub!==identity.googleSub||(current.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/connection-changed');
  res.json({...access,owner:OWNER,googleSub:identity.googleSub,mode:'server'});
 }

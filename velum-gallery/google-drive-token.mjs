@@ -1,4 +1,6 @@
 const CLIENT_ID = '185802494856-rn0q6qi5goj0mifha0bkah55slu3kvju.apps.googleusercontent.com';
+const IDENTITY_SCOPES=['openid','email','profile'];
+const ALLOWED_SCOPES=new Set([...IDENTITY_SCOPES,'https://www.googleapis.com/auth/drive.readonly','https://www.googleapis.com/auth/drive.metadata','https://www.googleapis.com/auth/drive.file']);
 let loading;
 
 export function preloadGoogleIdentityServices() {
@@ -64,6 +66,7 @@ export function createGoogleDriveTokenRequest({auth, onCancelledResult}) {
   }
 
   function request(scopes) {
+    if(!Array.isArray(scopes)||scopes.some(scope=>!ALLOWED_SCOPES.has(scope)))return Promise.reject(connectionError());
     if (active) return active.promise;
     const oauth = globalThis.google?.accounts?.oauth2;
     const user = auth.currentUser;
@@ -84,7 +87,7 @@ export function createGoogleDriveTokenRequest({auth, onCancelledResult}) {
     try {
       const client = oauth.initTokenClient({
         client_id:CLIENT_ID,
-        scope:scopes.join(' '),
+        scope:[...new Set([...IDENTITY_SCOPES,...scopes])].join(' '),
         include_granted_scopes:false,
         prompt:'',
         login_hint:googleUid,

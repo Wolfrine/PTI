@@ -18,6 +18,8 @@ const MANAGEMENT_CONFIGURED=/^\d{8,30}-[a-z0-9]+\.apps\.googleusercontent\.com$/
 const ROOT='_velumDrivePrivate';
 const SCOPES=['https://www.googleapis.com/auth/drive.readonly','https://www.googleapis.com/auth/drive.metadata','https://www.googleapis.com/auth/drive.file'];
 const MANAGEMENT_SCOPE='https://www.googleapis.com/auth/drive';
+const IDENTITY_REQUEST_SCOPES=['openid','email','profile'];
+const BROWSER_REQUEST_SCOPES=[...IDENTITY_REQUEST_SCOPES,...SCOPES];
 const OIDC_SCOPES=['openid','email','profile','https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/userinfo.profile'];
 const BROWSER_SCOPES=new Set([...SCOPES,...OIDC_SCOPES]);
 const SERVER_SCOPES=new Set([...BROWSER_SCOPES,MANAGEMENT_SCOPE]);
@@ -45,7 +47,7 @@ type Purpose='read'|'management';
 type Config={clientSecret:string;key:Buffer;clientId:string;purpose:Purpose};
 type Envelope={iv:string;tag:string;ciphertext:string};
 type Grant={revision:number;googleSub:string;enabled:boolean;clientId?:string;managementReady?:boolean;refresh?:Envelope;pendingHash?:string;pendingUntil?:number;lastStartedAt?:number;revocationUntil?:number};
-class DriveError extends Error{constructor(public status:number,public code:string){super(code);}}
+class DriveError extends Error{constructor(public status:number,public code:string,public checkFailure?:string){super(code);}}
 class InvalidGrantError extends DriveError {
  constructor(){super(409,'drive/reconnect-required');}
 }
@@ -115,7 +117,10 @@ async function verifiedAccess(accessToken:unknown,googleSub:string,purpose:'brow
  const scopes=String(info.scope||'').split(/\s+/).filter(Boolean),seconds=Number(info.expires_in);
  const required=purpose==='management'?[MANAGEMENT_SCOPE]:purpose==='callback'?[]:SCOPES;
  const audiences=[info.aud,info.audience,info.issued_to].filter(value=>value!==undefined),subjects=[info.sub,info.user_id].filter(value=>value!==undefined);
- if(!audiences.length||!audiences.every(value=>value===clientId)||!subjects.length||!subjects.every(value=>value===googleSub)||!required.every(s=>scopes.includes(s))||!Number.isFinite(seconds)||seconds<=90)throw new DriveError(409,'drive/reconnect-required');
+ const failure=!audiences.length?'audience-missing':!audiences.every(value=>value===clientId)?'audience-mismatch'
+  :!subjects.length?'subject-missing':!subjects.every(value=>value===googleSub)?'subject-mismatch'
+  :!required.every(s=>scopes.includes(s))?'required-scope-missing':!Number.isFinite(seconds)||seconds<=90?'expiry-invalid':'';
+ if(failure)throw new DriveError(409,'drive/reconnect-required',failure);
  const allowed=purpose==='browser'?BROWSER_SCOPES:SERVER_SCOPES;
  if(!scopes.every(scope=>allowed.has(scope)))throw new DriveError(503,purpose==='browser'?'drive/browser-scope-rejected':'drive/server-scope-rejected');
  return {accessToken,expiresAt:Date.now()+Math.min(seconds-60,45*60)*1000,scopes};
@@ -188,7 +193,7 @@ async function start(req:Request,res:Response){
  });
  res.setHeader('Set-Cookie',`${COOKIE}=${hash}.${binding}; Path=/api/drive; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
- url.search=new URLSearchParams({client_id:cfg.clientId,redirect_uri:CALLBACK,response_type:'code',scope:['openid','email','profile',...(management?[MANAGEMENT_SCOPE]:SCOPES)].join(' '),access_type:'offline',include_granted_scopes:'false',prompt:'consent',login_hint:identity.googleSub,state,nonce,code_challenge:digestBase64(verifier),code_challenge_method:'S256'}).toString();
+ url.search=new URLSearchParams({client_id:cfg.clientId,redirect_uri:CALLBACK,response_type:'code',scope:[...IDENTITY_REQUEST_SCOPES,...(management?[MANAGEMENT_SCOPE]:SCOPES)].join(' '),access_type:'offline',include_granted_scopes:'false',prompt:'consent',login_hint:identity.googleSub,state,nonce,code_challenge:digestBase64(verifier),code_challenge_method:'S256'}).toString();
  res.json({authorizeUrl:url.href,clientId:cfg.clientId});
 }
 function digestBase64(value:string){return createHash('sha256').update(value).digest('base64url');}
@@ -204,7 +209,7 @@ async function managementHealth(){
 }
 async function callback(req:Request,res:Response){
  clearCookie(res);
- let cfg:Config|undefined,issued='';
+ let cfg:Config|undefined,issued='',stage='state';
  let claimed:{hash:string;revision:number;purpose:Purpose}|undefined;
  try{
   const state=typeof req.query.state==='string'?req.query.state:'';
@@ -231,11 +236,14 @@ async function callback(req:Request,res:Response){
   const user=await admin.auth().getUser(OWNER);
   if(user.disabled||!user.providerData.some(p=>p.providerId==='google.com'&&p.uid===attempt.googleSub))throw new DriveError(403,'drive/identity-changed');
   const {verifier,nonce}=JSON.parse(unseal(attempt.sealed,cfg.key,`attempt:${hash}`));
+  stage='code-exchange';
   const tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({code:req.query.code,client_id:cfg.clientId,client_secret:cfg.clientSecret,redirect_uri:CALLBACK,grant_type:'authorization_code',code_verifier:verifier}));
   issued=typeof tokens.refresh_token==='string'?tokens.refresh_token:typeof tokens.access_token==='string'?tokens.access_token:'';
+  stage='identity';
   const ticket=await oidc.verifyIdToken({idToken:String(tokens.id_token||''),audience:cfg.clientId});
   const claims=ticket.getPayload();
   if(claims?.sub!==attempt.googleSub||!same(String((claims as any)?.nonce||''),nonce))throw new DriveError(403,'drive/identity-changed');
+  stage='access';
   const access=await verifiedAccess(tokens.access_token,attempt.googleSub,'callback',cfg.clientId);
   if(purpose==='read'&&access.scopes.includes(MANAGEMENT_SCOPE)){
    // Never adopt full authority in the browser project's connection. A valid
@@ -253,9 +261,26 @@ async function callback(req:Request,res:Response){
   // Prove that the new refresh credential can issue a browser-safe subset
   // before replacing the current grant. The full access credential stays here.
   if(purpose==='read'){
-   const narrow=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:tokens.refresh_token,scope:SCOPES.join(' ')}));
-   await verifiedAccess(narrow.access_token,attempt.googleSub,'browser',cfg.clientId);
+   stage='read-refresh-probe';
+   try{
+    const narrow=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:tokens.refresh_token,scope:BROWSER_REQUEST_SCOPES.join(' ')}));
+    await verifiedAccess(narrow.access_token,attempt.googleSub,'browser',cfg.clientId);
+   }catch(error){
+    // Initial owner identity and narrow access are already verified. Nothing
+    // was exposed; discard this uncommitted credential without revoking an
+    // existing project connection merely because a renewal probe failed.
+    const retained=await db().runTransaction(async tx=>{
+     const current=(await tx.get(grantRef(purpose))).data() as Grant|undefined;
+     if(!current?.enabled||!current.refresh||current.googleSub!==attempt.googleSub
+      ||current.revision!==attempt.revision||current.pendingHash!==hash||(current.revocationUntil||0)>Date.now())return false;
+     tx.update(grantRef(purpose),{pendingHash:admin.firestore.FieldValue.delete(),pendingUntil:admin.firestore.FieldValue.delete()});
+     return true;
+    }).catch(()=>false);
+    if(retained)issued='';
+    throw error;
+   }
   }
+  stage='persist';
   await db().runTransaction(async tx=>{
    const current=(await tx.get(grantRef(purpose))).data() as Grant|undefined;
    if(current?.revision!==attempt.revision||current?.pendingHash!==hash||(current?.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/connection-changed');
@@ -265,7 +290,9 @@ async function callback(req:Request,res:Response){
   issued='';
   console.info(JSON.stringify({event:'velum-drive-consent',managementReady:purpose==='management',narrowValidated:purpose==='read'}));
   res.redirect(303,ORIGIN+'/?drive=connected');
- }catch{
+ }catch(error){
+  console.info(JSON.stringify({event:'velum-drive-consent-failed',purpose:cfg?.purpose||'unknown',stage,
+   code:error instanceof DriveError?error.code:'drive/verification-failed',check:error instanceof DriveError?error.checkFailure:undefined}));
   if(issued&&cfg){try{await rejectIssuance(issued,cfg);}catch{/* encrypted revocation record is retained; never log credentials */}}
   else if(claimed){
    const failed=claimed;
@@ -300,12 +327,14 @@ async function session(req:Request,res:Response){
  const refreshToken=unseal(value.refresh,cfg.key,refreshContext('read',identity.googleSub));
  let tokens;
  try{
-   tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:CLIENT,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:refreshToken,scope:SCOPES.join(' ')}));
+   tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:CLIENT,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:refreshToken,scope:BROWSER_REQUEST_SCOPES.join(' ')}));
  }catch(error){
   if(error instanceof InvalidGrantError)await expireInvalidRefresh(value,refreshToken,cfg);
   throw error;
  }
- const access=await verifiedAccess(tokens.access_token,identity.googleSub);
+ let access;
+ try{access=await verifiedAccess(tokens.access_token,identity.googleSub);}
+ catch(error){console.info(JSON.stringify({event:'velum-drive-session-rejected',code:error instanceof DriveError?error.code:'drive/unavailable',check:error instanceof DriveError?error.checkFailure:undefined}));throw error;}
  const current=await sessionGrant();
  if(!current?.enabled||current.revision!==value.revision||current.googleSub!==identity.googleSub||(current.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/connection-changed');
  res.json({...access,owner:OWNER,googleSub:identity.googleSub,mode:'server',managementReady:await managementReadiness(identity.googleSub)});
@@ -464,7 +493,7 @@ async function managementAccess(grant:Grant,googleSub:string,cfg:Config){
  const refreshToken=unseal(grant.refresh!,cfg.key,refreshContext('management',googleSub));
  let tokens;
  try{
-  tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:refreshToken,scope:MANAGEMENT_SCOPE}));
+  tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:refreshToken,scope:[...IDENTITY_REQUEST_SCOPES,MANAGEMENT_SCOPE].join(' ')}));
  }catch(error){
   if(error instanceof InvalidGrantError)await expireInvalidRefresh(grant,refreshToken,cfg);
   throw error;
@@ -648,7 +677,7 @@ export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_S
    const optionalManagement=managementHealth();
    if(OFFLINE_ENABLED)await config();
    const managementConfigured=await optionalManagement;
-   res.json({service:'velum-drive',version:'offline-v3',ready:OFFLINE_ENABLED,managementProxy:true,managementConfigured,managementClientId:managementConfigured?MANAGEMENT_CLIENT:''});return;
+   res.json({service:'velum-drive',version:'offline-v3.1',ready:OFFLINE_ENABLED,managementProxy:true,managementConfigured,managementClientId:managementConfigured?MANAGEMENT_CLIENT:''});return;
   }
   if(req.method==='GET'&&path==='/callback'){await callback(req,res);return;}
   if(req.method!=='POST'){res.status(405).json({code:'drive/method-not-allowed'});return;}

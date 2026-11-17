@@ -71,7 +71,18 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       try { value=await response.json(); } catch { throw backendError(); }
       check(generation,owner.googleUid);
       if (!value || typeof value !== 'object' || Array.isArray(value)) throw backendError();
-      if(!response.ok)throw Object.assign(new Error(value.code==='drive/not-configured'?'Secure renewal setup is pending. A temporary Drive session is available.':'Drive connection needs attention.'),{code:value.code||'drive/unavailable'});
+      if(!response.ok){
+        const messages={
+          'drive/not-configured':'Secure renewal setup is pending. A temporary Drive session is available.',
+          'drive/revocation-pending':'Drive is finishing a previous disconnect. Its recovery window can take up to ten minutes.',
+          'drive/connect-in-progress':'A Drive connection is already in progress. Finish that connection before trying again.',
+          'drive/reconnect-required':'The saved Drive grant needs to be connected again.',
+          'drive/owner-sign-in-required':'Sign in to the Velum owner account again to renew Drive access.',
+          'drive/google-unavailable':'Google could not renew the saved Drive connection. Try again.',
+          'drive/configuration-unavailable':'The saved Drive connection is temporarily unavailable. Try again.'
+        };
+        throw Object.assign(new Error(messages[value.code]||`Drive could not complete this connection (${response.status}).`),{code:value.code||'drive/unavailable',status:response.status,stage:path});
+      }
       return value;
     }finally{controllers.delete(controller);}
   }
@@ -367,6 +378,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     headers.set('Authorization', `Bearer ${token}`);
     try {
       const response = await fetchImpl(url, {...options, headers, signal:controller.signal});
+      let driveFailure;
       check(generation, googleUid);
       if (response.status === 401) {
         if (active?.token === token) invalidate();
@@ -375,6 +387,16 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
         throw reconnectError();
       }
       if (!response.ok) {
+        // Preserve a small Google error summary before closing the response.
+        // Expected upload statuses still reach their existing callers unchanged.
+        const payload=await response.clone().json().catch(()=>null);
+        check(generation,googleUid);
+        const detail=payload?.error;
+        const candidate=detail?.errors?.[0]?.reason||detail?.status||'';
+        driveFailure={
+          reason:typeof candidate==='string'&&/^[\w.-]{1,80}$/.test(candidate)?candidate:'',
+          message:typeof detail?.message==='string'?detail.message.replace(/[\r\n\t]+/g,' ').slice(0,240):''
+        };
         await response.body?.cancel();
         finish();
       }
@@ -411,6 +433,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
         return typeof value === 'function' ? value.bind(target) : value;
       }});
       return new Proxy(response, {get(target, property) {
+        if (property === 'driveFailure') return driveFailure;
         if (property === 'body') return body;
         if (['json','text','blob','arrayBuffer','formData'].includes(property)) {
           return () => guardResult(() => target[property]());

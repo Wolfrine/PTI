@@ -21,7 +21,18 @@ export function libraryQuery({folder='all',search='',imagesOnly=true}={}){
 export function libraryFile(file){
  const label=folderLabel(file);return {...file,folderLabel:label,folderId:label==='References'?REFERENCES_FOLDER_ID:label==='Private'?PRIVATE_FOLDER_ID:file.folderId||''};
 }
-async function json(response,message){if(!response.ok)throw new Error(`${message} (${response.status}). Reconnect or retry.`);return response.json();}
+export function driveResponseError(response,action){
+ const failure=response.driveFailure;
+ const reason=failure?.reason||'';
+ const detail=failure?.message?` ${failure.message}`:'';
+ const throttled=['rateLimitExceeded','userRateLimitExceeded','sharingRateLimitExceeded'].includes(reason);
+ const code=response.status===429||response.status>=500||throttled?'drive/temporary-unavailable'
+  :response.status===403?'drive/permission-denied':'drive/api-error';
+ return Object.assign(new Error(`${action} (${response.status}${reason?`, ${reason}`:''}).${detail}`),{
+  code,status:response.status,reason,stage:action
+ });
+}
+async function json(response,message){if(!response.ok)throw driveResponseError(response,message);return response.json();}
 export function createDriveLibrary({readRequest,writeRequest,grantFile,grantFolder,getOperationGuard=()=>()=>{}}){
  async function listReferences({folder='all',search='',cursor='',signal}={}){
   const params=new URLSearchParams({q:libraryQuery({folder,search}),fields:'nextPageToken,files(id,name,mimeType,parents,thumbnailLink,size,modifiedTime)',pageSize:'60',orderBy:'modifiedTime desc'});

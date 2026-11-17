@@ -75,10 +75,10 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   region.querySelector('[data-recovery]').addEventListener('click',undo);
  }
   function showRecovery(){regions.forEach(region=>{const button=region.querySelector('[data-recovery]');button.hidden=!recovery;button.disabled=busy;});notice.querySelectorAll('button:not([data-action-dismiss])').forEach(button=>button.disabled=busy);}
-  function showNotice(value,{undoable=false,reconnectable=false,receipt=null}={}){
+  function showNotice(value,{undoable=false,reconnectable=false,receipt=null,reconnectLabel='Reconnect Drive'}={}){
    reconnectable=reconnectable&&validReceipt(receipt)&&matchesReceipt(receipt);offeredReceipt=reconnectable?receipt:null;
    notice.hidden=false;notice.querySelector('[data-action-message]').textContent=value;notice.querySelector('[data-action-undo]').hidden=!undoable;
-   for(const surface of [notice,dialog]){const button=surface.querySelector('[data-reconnect]');if(button){button.hidden=!reconnectable;button.disabled=busy;}}
+   for(const surface of [notice,dialog]){const button=surface.querySelector('[data-reconnect]');if(button){button.hidden=!reconnectable;button.disabled=busy;button.textContent=reconnectLabel;}}
    message(value);showRecovery();
   }
   function closeDetail(){epoch++;active=null;if(dialog.open)dialog.close();dialog.replaceChildren();for(const region of regions){region.classList.add('collapsed');region.querySelector('.library-tools-toggle')?.setAttribute('aria-expanded','false');}}
@@ -88,7 +88,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
  function draw(file,url){
   dialog.innerHTML=`<header><span>Private collection</span><div><button type="button" data-close>Close</button><button type="button" data-exit>Quick exit</button></div></header><div class="library-detail-body"><img src="${escape(url)}" alt="${escape(file.name)}"/><section><h2 id="libraryDetailTitle">${escape(file.name)}</h2><p data-location>${escape(file.folderLabel||'Private')}</p><small>Drive ID <code>${escape(file.id)}</code></small><div class="library-detail-actions"><button type="button" data-move>Move to ${file.folderId===R?'Private':'References'}</button><button type="button" data-more aria-expanded="false">More ···</button><button type="button" data-trash hidden>Move to Trash…</button></div><div data-confirm hidden><h3>Move this image to Trash?</h3><p>${escape(file.name)}</p><p>You can restore it from Drive Trash or Undo. The original file ID is preserved.</p><button type="button" data-cancel>Cancel</button><button type="button" data-confirm-trash>Move to Trash</button></div><p role="status"></p><button type="button" data-undo ${recovery?'':'hidden'}>Undo last action</button><a href="https://drive.google.com/drive/trash" target="_blank" rel="noopener">Open Drive Trash ↗</a></section></div>`;
   dialog.querySelector('[data-move]').hidden=!file.mimeType?.startsWith('image/')||![P,R].includes(file.folderId);
-  const button=document.createElement('button');button.type='button';button.dataset.reconnect='';button.textContent='Reconnect Drive';button.hidden=notice.querySelector('[data-reconnect]').hidden;
+  const button=document.createElement('button');button.type='button';button.dataset.reconnect='';button.textContent=notice.querySelector('[data-reconnect]').textContent;button.hidden=notice.querySelector('[data-reconnect]').hidden;
   dialog.querySelector('[role=status]').after(button);
  }
  async function open(file){
@@ -110,13 +110,39 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   dialog.querySelector('[data-undo]').hidden=!recovery;message(text);
  }
  function isCurrent(generation,owner){return generation===moveSession&&Boolean(owner)&&owner===getOwner();}
- function matchesReceipt(receipt){
-  const saved=readReceipt();
+ function matchesReceipt(receipt,saved=readReceipt()){
   return validReceipt(receipt)&&saved?.owner===receipt.owner&&saved.intent===receipt.intent
    &&['id','from','to','at'].every(key=>saved.record[key]===receipt.record[key]);
  }
- function needsReconnect(error){return error?.code==='drive/reconnect-required'||!canRead();}
- function offerReconnect(receipt){showNotice(`Reconnect Drive to ${receipt.intent==='undo'?'restore the previous folder':'finish the move'}.`,{reconnectable:true,receipt});}
+ function needsReconnect(error){
+  return ['drive/reconnect-required','drive/sign-in-required','drive/owner-sign-in-required','drive/connect-required',
+   'auth/user-token-expired','auth/invalid-user-token','auth/user-disabled'].includes(error?.code);
+ }
+ function offerReconnect(receipt,error){
+  const authorizationRequired=needsReconnect(error)||(!error&&!canRead()),pending=readReceipt()?.phase==='pending';
+  const action=receipt.intent==='undo'?'restore the previous folder':'finish the move';
+  showNotice(error?.message||(authorizationRequired?`Reconnect Drive to ${action}.`:`Check the saved action to ${action}.`),{
+   reconnectable:true,receipt,reconnectLabel:authorizationRequired?'Reconnect Drive':pending?'Check move':'Retry move'
+  });
+ }
+ function connectionFailed(error,receipt){
+  if(!matchesReceipt(receipt))return;
+  if(needsReconnect(error)){offerReconnect(receipt,error);return;}
+  const saved=readReceipt();
+  if(saved?.phase==='queued'){
+   const retained=retainPreviousUndo(receipt);
+   showNotice(error.message||'Drive could not start this move.',{undoable:retained});
+  }else offerReconnect(receipt,error);
+ }
+ function persistRejectedMove(receipt,error){
+  if(receipt.phase!=='queued'||error.status!==403||error.stage!=='Move was not confirmed'||!matchesReceipt(receipt))return;
+  const saved=readReceipt();
+  if(saved?.phase!=='pending')return;
+  const value={...saved,rejection:{status:403,message:error.message.slice(0,400)}};
+  const serialized=JSON.stringify(value);
+  storage.setItem(receiptKey,serialized);
+  if(storage.getItem(receiptKey)!==serialized)throw new Error('The rejected move still needs a location check.');
+ }
  async function completeMove(receipt,file,generation){
   if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))return false;
   const restoring=receipt.intent==='undo';
@@ -131,22 +157,32 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   return true;
  }
  async function reconcileReceipt(receipt,generation,{continueAction=false}={}){
-  if(!validReceipt(receipt)||!matchesReceipt(receipt))return false;
+  let saved=readReceipt();
+  if(!validReceipt(receipt)||!matchesReceipt(receipt,saved))return false;
+  receipt=saved;
   const record=receipt.record,actual=await drive.metadata(record.id);
-  if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))return false;
+  saved=readReceipt();
+  if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt,saved))return false;
+  receipt=saved;
   if(!canRead()){offerReconnect(receipt);return false;}
   if(actual.id!==record.id||actual.ownedByMe!==true||actual.trashed!==false||actual.mimeType!==record.mimeType||actual.parents?.length!==1){
+   if(receipt.phase==='pending'){showNotice('This pending move needs review in Google Drive. Its receipt is kept on this device.');return false;}
    const retained=retainPreviousUndo(receipt);
    showNotice('This image needs review in Google Drive.',{undoable:retained});return false;
   }
   const parent=actual.parents[0];
   if(![record.from,record.to].includes(parent)){
+   if(receipt.phase==='pending'){showNotice('This image moved to another folder. Its pending receipt is kept for review.');return false;}
    const retained=retainPreviousUndo(receipt);
    showNotice('This image moved to another folder. Review its current location in Google Drive.',{undoable:retained});return false;
   }
   const file={...actual,folderId:parent,folderLabel:parent===R?'References':'Private'};
   if(parent===record.to)return completeMove(receipt,file,generation);
   if(receipt.phase!=='confirmed'){
+   if(receipt.rejection?.status===403&&typeof receipt.rejection.message==='string'&&receipt.rejection.message.length<=400){
+    const retained=retainPreviousUndo(receipt);
+    showNotice(receipt.rejection.message,{undoable:retained});return false;
+   }
    if(continueAction)return performMove(receipt,generation);
    // Reload/Sync may inspect the receipt, but only the explicit reconnect gesture resumes writes.
    offerReconnect(receipt);return false;
@@ -159,7 +195,11 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
  }
  async function performMove(receipt,generation){
   if(!validReceipt(receipt)||!isCurrent(generation,receipt.owner))return false;
-  if(!matchesReceipt(receipt)){showNotice('The saved move changed on this device. Review the image before retrying.');return false;}
+  const savedAtDispatch=readReceipt();
+  if(!matchesReceipt(receipt,savedAtDispatch)){showNotice('The saved move changed on this device. Review the image before retrying.');return false;}
+  // The caller may hold an older queued snapshot of a now-pending action.
+  // Rejection cleanup eligibility must use the stored phase at dispatch.
+  receipt=savedAtDispatch;
   const record=receipt.record;
   showNotice(receipt.intent==='undo'?'Moving… Back to the previous folder.':`Moving… To ${record.to===R?'References':'Private'}.`);
   try{
@@ -171,11 +211,12 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   }catch(error){
    if(!isCurrent(generation,receipt.owner))return false;
    if(!matchesReceipt(receipt)){showNotice('The saved move changed on this device. Review its location in Drive.');return false;}
-   if(needsReconnect(error)){offerReconnect(receipt);return false;}
+   if(needsReconnect(error)){offerReconnect(receipt,error);return false;}
+   try{persistRejectedMove(receipt,error);}catch{}
    const saved=readReceipt();
    if(saved?.phase==='pending'&&matchesReceipt(receipt)){
     try{return await reconcileReceipt(saved,generation);}
-    catch{if(isCurrent(generation,receipt.owner))showNotice('Move confirmation is pending. Reconnect Drive to check its location.',{reconnectable:true,receipt});}
+    catch(checkError){if(isCurrent(generation,receipt.owner))offerReconnect(receipt,checkError);}
    }else{
     const retained=retainPreviousUndo(receipt);
     showNotice(error.message||'Drive did not confirm this move.',{undoable:retained});
@@ -190,7 +231,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   if(!canRead()){offerReconnect(receipt);return Promise.resolve();}
   const generation=moveSession;setBusy(true);
   const promise=reconcileReceipt(receipt,generation,{continueAction:consumeConnectResume(receipt)}).catch(error=>{
-   if(isCurrent(generation,receipt.owner))showNotice(error.message||'Reconnect Drive to check the last move.',{reconnectable:true,receipt});
+   if(isCurrent(generation,receipt.owner))connectionFailed(error,receipt);
   }).finally(()=>{if(isCurrent(generation,receipt.owner))setBusy(false);if(resuming?.promise===promise)resuming=null;});
   resuming={generation,promise};return promise;
  }
@@ -202,13 +243,13 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   try{globalThis.sessionStorage?.setItem(resumeKey,JSON.stringify({owner:receipt.owner,record:receipt.record,requestedAt:Date.now()}));}catch{}
   // Start the shared popup on the click call stack, before any await or metadata request.
   let connection;
-  try{connection=connect();}catch(error){showNotice(error.message||'Drive could not reconnect.',{reconnectable:true,receipt});return;}
-  setBusy(true);showNotice('Reconnecting Drive…');
+  try{connection=connect();}catch(error){clearConnectResume();connectionFailed(error,receipt);return;}
+  setBusy(true);showNotice('Checking the saved move…');
   return Promise.resolve(connection).then(async()=>{
    if(!isCurrent(generation,receipt.owner)||!matchesReceipt(receipt))return;
    await reconcileReceipt(receipt,generation,{continueAction:true});
   }).catch(error=>{
-   if(isCurrent(generation,receipt.owner))showNotice(error.message||'Drive could not reconnect.',{reconnectable:true,receipt});
+   if(isCurrent(generation,receipt.owner))connectionFailed(error,receipt);
   }).finally(()=>{clearConnectResume();if(isCurrent(generation,receipt.owner))setBusy(false);});
  }
  async function undo(){
@@ -224,7 +265,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    try{
     await connect();
     if(isCurrent(generation,owner)&&matchesReceipt(receipt))await performMove(receipt,generation);
-   }catch(error){if(isCurrent(generation,owner)&&matchesReceipt(receipt))offerReconnect(receipt);}
+   }catch(error){if(isCurrent(generation,owner))connectionFailed(error,receipt);}
    finally{if(isCurrent(generation,owner))setBusy(false);}
    return;
   }
@@ -254,7 +295,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    if(moved&&focusUndo&&isCurrent(generation,owner))notice.querySelector('[data-action-undo]').focus();
    return moved;
   }catch(error){
-   if(isCurrent(generation,owner)&&matchesReceipt(receipt))offerReconnect(receipt);
+   if(isCurrent(generation,owner))connectionFailed(error,receipt);
    return false;
   }finally{if(isCurrent(generation,owner))setBusy(false);}
  }

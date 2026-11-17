@@ -13,11 +13,12 @@ function fixture({fresh=false,user=true,studio=false}={}){
  node('#authGate').classList.add('open');
  const calls={connections:0,toasts:[],sync:0,clear:0},listeners=new Map();let connected=fresh;
  const access={has:()=>connected,restore:async()=>connected,connect:async()=>{if(!connected){calls.connections++;connected=true;}}};
- const context={Date,Headers,console:{error(){}},auth:{currentUser:user?{uid:'owner-fixture'}:null},access,connectingDrive:false,pendingGalleryView:'',initializedGallery:false,DRIVE_READ_SCOPE:'https://www.googleapis.com/auth/drive.readonly',galleryOwner:'',galleryEpoch:0,galleryLocked:false,galleryRevision:0,renderSerial:0,galleryRequests:new Set(),history:[],historyIndex:-1,current:{type:'single',ids:[]},browseObserver:null,ambientLayers:[],browseGrid:node('#browseGrid'),revokeObjectUrls(){},libraryControls:{resume:async()=>{},clear(){}},
+ const context={Date,Headers,AbortController,console:{error(){}},auth:{currentUser:user?{uid:'owner-fixture'}:null},access,connectingDrive:false,pendingGalleryView:'',initializedGallery:false,DRIVE_READ_SCOPE:'https://www.googleapis.com/auth/drive.readonly',galleryOwner:'',galleryEpoch:0,galleryLocked:false,galleryRevision:0,renderSerial:0,galleryRequests:new Set(),history:[],historyIndex:-1,current:{type:'single',ids:[]},browseObserver:null,ambientLayers:[],browseGrid:node('#browseGrid'),revokeObjectUrls(){},libraryControls:{resume:async()=>{},clear(){}},
+  gallerySync:null,galleryListingState:'idle',pendingDiscoveryBase:null,discovered:{},browseState:null,browseRenderVersion:0,browseStatus:node('browse-status'),browsePagination:node('browse-pagination'),updateBrowseStatus(){},
   $:node,document:{querySelectorAll:()=>nav},authGate:node('#authGate'),authTitle:node('#authTitle'),authCopy:node('#authCopy'),authStatus:node('#authStatus'),connectBtn:node('#connectBtn'),syncBtn:node('#syncBtn'),syncLabel:node('#syncLabel'),driftMedia:node('#driftMedia'),
   window:{__velumInteraction:{clearAdvance(){}},addEventListener(type,listener){listeners.set(type,listener);},dispatchEvent(event){listeners.get(event.type)?.(event);}},studioDrive:{clear(){calls.clear++;connected=false;}},Event:class{constructor(type){this.type=type;}},
   gestures:{fit(){}},finalizeView(){},renderBrowse(){},scheduleAdvance(){},showToast:message=>calls.toasts.push(message),rememberDiscovery(){},images:[],imageMap:new Map(),initGallery(){context.initializedGallery=true;},
-  listPrivateImages:async()=>{calls.sync++;return[{id:'fixture-media'}];},onAuthStateChanged:(_auth,callback)=>{context.changed=callback;}};
+  listPrivateImages:async function*(){calls.sync++;yield{items:[{id:'fixture-media'}],complete:true};},onAuthStateChanged:(_auth,callback)=>{context.changed=callback;}};
  runInNewContext(['tokenProbablyFresh','setAuthMessage','activateView','connectDrive','syncDrive','clearGallerySession','quickExit','restoreGalleryConnection'].map(handler).join('\n')+"\n"+source.match(/window\.addEventListener\('velum:lock',clearGallerySession\);/)[0]+'\n'+source.slice(source.lastIndexOf('onAuthStateChanged(auth,')),context);
  return{context,node,calls};
 }
@@ -35,11 +36,11 @@ test('fresh Drift token reload keeps the gallery path and does not ask Google ag
  const f=fixture({fresh:true});await f.context.changed(f.context.auth.currentUser);assert.equal(f.calls.sync,1);assert.equal(f.calls.connections,0);assert.equal(f.node('#driftView').classList.contains('active'),true);
 });
 test('expired server-side Drift access during boot keeps the connection gate available',async()=>{
- const f=fixture({fresh:true});f.context.listPrivateImages=async()=>{throw new Error('expired');};await f.context.changed(f.context.auth.currentUser);assert.equal(f.node('#driftView').classList.contains('active'),true);assert.equal(f.node('#authGate').classList.contains('open'),true);assert.equal(f.calls.connections,0);
+ const f=fixture({fresh:true});f.context.listPrivateImages=async function*(){throw new Error('expired');};await f.context.changed(f.context.auth.currentUser);assert.equal(f.node('#driftView').classList.contains('active'),true);assert.equal(f.node('#authGate').classList.contains('open'),true);assert.equal(f.calls.connections,0);
 });
 test('late failed Drift sync cannot cover an already open Studio',async()=>{
  const f=fixture({fresh:true});let reject;
- f.context.listPrivateImages=()=>new Promise((_,fail)=>{reject=fail;});const sync=f.context.syncDrive({initial:true});f.context.activateView('studio');reject(new Error('Drive unavailable'));await sync;
+ f.context.listPrivateImages=async function*(){await new Promise((_,fail)=>{reject=fail;});};const sync=f.context.syncDrive({initial:true});f.context.activateView('studio');reject(new Error('Drive unavailable'));await sync;
  assert.equal(f.node('#studioView').classList.contains('active'),true);assert.equal(f.node('#authGate').classList.contains('open'),false);
 });
 test('explicit gallery entry uses the shared connection and resumes the requested view',async()=>{

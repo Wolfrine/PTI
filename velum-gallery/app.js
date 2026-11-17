@@ -89,7 +89,25 @@ const driftStage = $('#driftStage');
 const heartField = $('#heartField');
 const toast = $('#toast');
 const browseGrid = $('#browseGrid');
+const browseView = $('#browseView');
 const sortSelect = $('#sortSelect');
+const BROWSE_PAGE_SIZE = 60;
+const browsePagination = document.createElement('div');
+browsePagination.className = 'browse-pagination';
+browsePagination.hidden = true;
+const browseStatus = document.createElement('p');
+browseStatus.setAttribute('role', 'status');
+const browsePageActions = document.createElement('div');
+const browsePrevious = document.createElement('button');
+browsePrevious.type = 'button';
+browsePrevious.textContent = 'Previous';
+browsePrevious.setAttribute('aria-controls', 'browseGrid');
+const browseNext = document.createElement('button');
+browseNext.type = 'button';
+browseNext.setAttribute('aria-controls', 'browseGrid');
+browsePageActions.append(browsePrevious, browseNext);
+browsePagination.append(browseStatus, browsePageActions);
+browseGrid.after(browsePagination);
 
 let galleryEpoch = 0;
 let galleryLocked = false;
@@ -100,10 +118,13 @@ let images = [];
 let imageMap = new Map();
 const DISCOVERY_KEY = 'velum-feed-discovery-v1';
 let discovered = {};
+let pendingDiscoveryBase = null;
 try { discovered = JSON.parse(localStorage.getItem(DISCOVERY_KEY) || '{}') || {}; } catch {}
-function rememberDiscovery(items) {
-  discovered = reconcileDiscovery(items, discovered);
-  try { localStorage.setItem(DISCOVERY_KEY, JSON.stringify(discovered)); } catch {}
+function rememberDiscovery(items, { prior = discovered, persist = true } = {}) {
+  discovered = reconcileDiscovery(items, prior);
+  if (persist) {
+    try { localStorage.setItem(DISCOVERY_KEY, JSON.stringify(discovered)); } catch {}
+  }
 }
 let objectUrls = new Map();
 const MEDIA_CACHE_LIMIT = 40;
@@ -114,6 +135,10 @@ let historyIndex = -1;
 let viewStarted = 0;
 let wakeLock = null;
 let browseObserver = null;
+let browseState = null;
+let browseRenderVersion = 0;
+let gallerySync = null;
+let galleryListingState = 'idle';
 let initializedGallery = false;
 let connectingDrive = false;
 let pendingGalleryView = '';
@@ -192,9 +217,9 @@ const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.
      else images.push(updated);
    }
    imageMap=new Map(images.map(item=>[item.id,item]));
-   if(initializedGallery)renderBrowse();
+   if(initializedGallery)renderBrowse({ preservePage: true });
    const selected=currentMediaItem();
-   if(!selected||(libraryControls.filter!=='all'&&selected.folderLabel?.toLowerCase()!==libraryControls.filter)){
+   if(!selected||!matchesGalleryFilter(selected)){
      const next=chooseMoment();
      if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>showToast(error.message));}
      else{renderSerial++;current={type:'single',ids:[]};driftMedia.replaceChildren();window.__velumInteraction?.clearAdvance?.();}
@@ -344,6 +369,13 @@ syncBtn.addEventListener('click', async () => {
 function clearGallerySession({clearAccess=true}={}){
   galleryLocked=true;
   galleryEpoch++;
+  gallerySync?.controller.abort();
+  gallerySync = null;
+  galleryListingState = 'idle';
+  if (pendingDiscoveryBase) discovered = pendingDiscoveryBase;
+  pendingDiscoveryBase = null;
+  syncBtn.disabled = false;
+  syncLabel.textContent = 'Sync';
   renderSerial++;
   for(const controller of galleryRequests)controller.abort();
   galleryRequests.clear();
@@ -356,7 +388,11 @@ function clearGallerySession({clearAccess=true}={}){
   current={type:'single',ids:[]};
   initializedGallery=false;
   browseObserver?.disconnect();
+  browseRenderVersion++;
+  browseState = null;
   browseGrid.replaceChildren();
+  browseStatus.textContent = '';
+  browsePagination.hidden = true;
   driftMedia.querySelectorAll('video').forEach(video=>video.pause());
   driftMedia.replaceChildren();
   ambientLayers.forEach(layer=>layer.style.backgroundImage='');
@@ -383,76 +419,149 @@ async function readDrive(url,options={},parse=response=>response.json()){
   }
 }
 
-async function listPrivateImages() {
+async function* listPrivateImages({ signal } = {}) {
   const fields = 'nextPageToken,files(id,name,mimeType,parents,createdTime,modifiedTime,size,thumbnailLink,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis))';
   const q = libraryQuery({imagesOnly:false});
-  const all = [];
+  const all = new Map();
   let pageToken = '';
   do {
-    const params = new URLSearchParams({ q, spaces: 'drive', pageSize: '1000', fields, orderBy: 'createdTime desc' });
+    // Open a small first page before reading the rest of the collection.
+    const params = new URLSearchParams({ q, spaces: 'drive', pageSize: pageToken ? '500' : '60', fields, orderBy: 'createdTime desc' });
     if (pageToken) params.set('pageToken', pageToken);
-    const data = await readDrive(`${DRIVE_API}/files?${params}`);
-    all.push(...(data.files || []).filter(f =>
-      f.mimeType?.startsWith('image/') || f.mimeType?.startsWith('video/')
-    ));
+    const data = await readDrive(`${DRIVE_API}/files?${params}`, { signal });
+    for (const file of data.files || []) {
+      if (!/^[\w-]{8,160}$/.test(file.id || '') || file.parents?.length !== 1
+        || ![PRIVATE_FOLDER_ID, REFERENCES_FOLDER_ID].includes(file.parents[0])
+        || (!file.mimeType?.startsWith('image/') && !file.mimeType?.startsWith('video/'))) continue;
+      all.set(file.id, galleryMedia(file));
+    }
     pageToken = data.nextPageToken || '';
+    yield { items: [...all.values()], complete: !pageToken };
   } while (pageToken);
+}
 
-  return [...new Map(all.map(file=>[file.id,file])).values()].map(file => {
-    const kind = file.mimeType?.startsWith('video/')
-      ? 'video'
-      : file.mimeType === 'image/gif'
-        ? 'gif'
-        : 'image';
-    const mediaMeta = kind === 'video' ? file.videoMediaMetadata : file.imageMediaMetadata;
-    return {
-      ...libraryFile(file),
-      id: file.id,
-      name: file.name,
-      mimeType: file.mimeType,
-      kind,
-      addedAt: Date.parse(file.createdTime || file.modifiedTime || new Date().toISOString()),
-      modifiedAt: Date.parse(file.modifiedTime || file.createdTime || new Date().toISOString()),
-      width: mediaMeta?.width || 0,
-      height: mediaMeta?.height || 0,
-      durationMs: Number(file.videoMediaMetadata?.durationMillis || 0),
-      size: Number(file.size || 0),
-      thumbnailLink: file.thumbnailLink || ''
-    };
-  });
+function galleryMedia(file) {
+  const kind = file.mimeType?.startsWith('video/')
+    ? 'video'
+    : file.mimeType === 'image/gif' ? 'gif' : 'image';
+  const mediaMeta = kind === 'video' ? file.videoMediaMetadata : file.imageMediaMetadata;
+  return {
+    ...libraryFile(file),
+    id: file.id,
+    name: file.name,
+    mimeType: file.mimeType,
+    kind,
+    addedAt: Date.parse(file.createdTime || file.modifiedTime || new Date().toISOString()),
+    modifiedAt: Date.parse(file.modifiedTime || file.createdTime || new Date().toISOString()),
+    width: mediaMeta?.width || 0,
+    height: mediaMeta?.height || 0,
+    durationMs: Number(file.videoMediaMetadata?.durationMillis || 0),
+    size: Number(file.size || 0),
+    thumbnailLink: file.thumbnailLink || ''
+  };
 }
 
 async function syncDrive({ initial = false } = {}) {
   if(galleryLocked)return false;
-  const generation=galleryEpoch,revision=galleryRevision;
+  gallerySync?.controller.abort();
+  const operation = {
+    controller: new AbortController(),
+    generation: galleryEpoch,
+    revision: galleryRevision,
+    owner: auth.currentUser?.uid
+  };
+  gallerySync = operation;
+  galleryListingState = 'loading';
+  pendingDiscoveryBase ||= { ...discovered };
+  const discoveryBase = pendingDiscoveryBase;
+  const progressive = !initializedGallery || !images.length;
+  const active = () => gallerySync === operation && operation.generation === galleryEpoch
+    && operation.owner === auth.currentUser?.uid && !galleryLocked;
   syncBtn.disabled = true;
   syncLabel.textContent = 'Syncing';
-  if (initial && !$('#studioView').classList.contains('active')) {
+  updateBrowseStatus();
+  if (initial && !initializedGallery && !$('#studioView').classList.contains('active')) {
     authGate.classList.add('open');
     setAuthMessage('Opening collection', 'Reading Private and References folder metadata.', 'Media remains in Google Drive.');
   }
   try {
-    const next = await listPrivateImages();
-    if(generation!==galleryEpoch||galleryLocked||revision!==galleryRevision)return false;
-    if (!next.length) throw new Error('No supported media found in Private or References. Check folder access or add an image, then Sync.');
-    images = next;
-    imageMap = new Map(images.map(i => [i.id, i]));
-    rememberDiscovery(images);
-    authGate.classList.remove('open');
-    if (!initializedGallery) initGallery();
-    else {
-      renderBrowse();
-      showToast(`${images.length} media synced`);
+    for await (const { items, complete } of listPrivateImages({ signal: operation.controller.signal })) {
+      if (!active()) return false;
+      if (operation.revision !== galleryRevision) {
+        galleryListingState = 'partial';
+        showToast('Collection changed. Sync again to finish.');
+        return false;
+      }
+      galleryListingState = complete ? 'complete' : 'loading';
+      if (complete && !items.length) {
+        finalizeView(false);
+        renderSerial++;
+        images = [];
+        imageMap.clear();
+        history = [];
+        historyIndex = -1;
+        current = { type: 'single', ids: [] };
+        window.__velumInteraction?.clearAdvance?.();
+        driftMedia.querySelectorAll('video').forEach(video => video.pause());
+        driftMedia.replaceChildren();
+        ambientLayers.forEach(layer => { layer.style.backgroundImage = ''; });
+        revokeObjectUrls();
+        rememberDiscovery([], { prior: discoveryBase });
+        pendingDiscoveryBase = null;
+        initializedGallery = true;
+        authGate.classList.remove('open');
+        renderBrowse();
+        if (pendingGalleryView) {
+          const view = pendingGalleryView;
+          pendingGalleryView = '';
+          activateView(view);
+        }
+        showToast('Private and References are empty.');
+        return true;
+      }
+      // A refresh keeps the current complete snapshot until its replacement is ready.
+      if (items.length && (progressive || complete)) {
+        images = items;
+        imageMap = new Map(images.map(item => [item.id, item]));
+        // Partial pages must not prune historic discovery or turn old imports into new media.
+        rememberDiscovery(images, { prior: discoveryBase, persist: complete });
+        if (complete) pendingDiscoveryBase = null;
+        authGate.classList.remove('open');
+        if (complete && initializedGallery) reconcileGallerySelection();
+        if (!initializedGallery) initGallery();
+        else {
+          if (!current.ids.length) startGalleryMoment();
+          renderBrowse({ preservePage: true });
+        }
+        if (pendingGalleryView) {
+          const view = pendingGalleryView;
+          pendingGalleryView = '';
+          activateView(view);
+        }
+      }
+      updateBrowseStatus();
+      if (complete) showToast(`${images.length} media synced`);
     }
+    return true;
   } catch (error) {
-    if(generation!==galleryEpoch||galleryLocked)return false;
+    if (!active()) return false;
     console.error(error);
+    galleryListingState = 'partial';
+    if (initializedGallery && images.length) {
+      showToast('Sync paused. Loaded media stays available.');
+      return false;
+    }
     if (!$('#studioView').classList.contains('active')) authGate.classList.add('open');
     else showToast('Drive gallery needs reconnecting. Studio is still available.');
     setAuthMessage('Could not open collection', 'Reconnect the Google account that owns the Private Drive folder.', error?.message || 'Drive access failed.');
   } finally {
-    syncBtn.disabled = false;
-    syncLabel.textContent = 'Sync';
+    operation.controller.abort();
+    if (gallerySync === operation) {
+      gallerySync = null;
+      syncBtn.disabled = false;
+      syncLabel.textContent = 'Sync';
+      updateBrowseStatus();
+    }
   }
 }
 
@@ -482,6 +591,7 @@ function trimMediaCache() {
 }
 
 async function ensureObjectUrl(id) {
+  if (!imageMap.has(id)) throw new Error('This media is no longer in the collection. Sync before opening it.');
   const cached = objectUrls.get(id);
   if (cached) {
     cached.lastUsed = Date.now();
@@ -490,6 +600,7 @@ async function ensureObjectUrl(id) {
   const generation=galleryEpoch;
   const blob=await readDrive(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`,{},response=>response.blob());
   if(generation!==galleryEpoch||galleryLocked)throw new Error('Velum is locked.');
+  if (!imageMap.has(id)) throw new Error('This media left the collection while loading.');
   const url = URL.createObjectURL(blob);
   objectUrls.set(id, { url, bytes: blob.size || 0, lastUsed: Date.now() });
   trimMediaCache();
@@ -512,11 +623,59 @@ function imageById(id) { return imageMap.get(id); }
 function isVideoMedia(item) { return item?.kind === 'video'; }
 function isGifMedia(item) { return item?.kind === 'gif'; }
 function currentMediaItem() { return current.ids.length ? imageById(current.ids[0]) : null; }
+function matchesGalleryFilter(item) {
+  const filter = libraryControls.filter;
+  return filter === 'all' || item.folderId === (filter === 'private' ? PRIVATE_FOLDER_ID : REFERENCES_FOLDER_ID);
+}
+
+function reconcileGallerySelection() {
+  const retained = [];
+  let retainedIndex = -1;
+  history.forEach((moment, index) => {
+    const ids = moment.ids.filter(id => {
+      const item = imageMap.get(id);
+      return item && matchesGalleryFilter(item);
+    });
+    if (!ids.length) return;
+    retained.push({ ...moment, ids });
+    if (index <= historyIndex) retainedIndex = retained.length - 1;
+  });
+  history = retained;
+  historyIndex = retainedIndex;
+
+  const selected = currentMediaItem();
+  if (!selected || !matchesGalleryFilter(selected)) {
+    finalizeView(false);
+    renderSerial++;
+    current = { type: 'single', ids: [] };
+    window.__velumInteraction?.clearAdvance?.();
+    driftMedia.querySelectorAll('video').forEach(video => video.pause());
+    driftMedia.replaceChildren();
+    ambientLayers.forEach(layer => { layer.style.backgroundImage = ''; });
+    const next = chooseMoment();
+    if (next) {
+      history = history.slice(0, historyIndex + 1);
+      history.push(next);
+      historyIndex = history.length - 1;
+      const generation = galleryEpoch;
+      void renderMoment(next).catch(error => {
+        if (generation === galleryEpoch && !galleryLocked && current.ids[0] === next.ids[0]) showToast(error.message || 'Could not open this media.');
+      });
+    }
+  }
+  for (const [id, entry] of objectUrls) {
+    if (!imageMap.has(id)) {
+      URL.revokeObjectURL(entry.url);
+      objectUrls.delete(id);
+    }
+  }
+  libraryControls.update();
+}
 
 function chooseMoment() {
   // Build an exposure-aware feed; recent picks are excluded where possible.
   const recentIds = history.slice(-6).flatMap(h => h.ids);
-  const candidates=libraryControls.filter==='all'?images:images.filter(item=>item.folderLabel.toLowerCase()===libraryControls.filter);
+  const candidates = images.filter(matchesGalleryFilter);
   if(!candidates.length)return null;
   const item = chooseFeedImage(candidates, {
     getStats: id => store.stats(id),
@@ -710,11 +869,59 @@ function confidenceScore(s) {
   const lower = (p + z*z/(2*n) - z*Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1 + z*z/n);
   return lower * Math.log2(n + 2) + s.score * .35;
 }
-function renderBrowse() {
-  if (!initializedGallery) return;
-  let arr = libraryControls.filter==='all'?[...images]:images.filter(item=>item.folderLabel.toLowerCase()===libraryControls.filter);
+function browseActive(state) {
+  return state && browseState === state && state.version === browseRenderVersion
+    && state.generation === galleryEpoch && state.owner === auth.currentUser?.uid
+    && !galleryLocked && browseView.classList.contains('active');
+}
+
+function visibleBrowseAnchor(state) {
+  if (!browseActive(state)) return null;
+  const viewport = browseView.getBoundingClientRect();
+  for (const media of browseGrid.querySelectorAll('[data-id]')) {
+    const tile = media.closest('.tile');
+    const rect = tile.getBoundingClientRect();
+    if (rect.bottom > viewport.top && rect.top < viewport.bottom) {
+      return { id: media.dataset.id, offset: rect.top - viewport.top };
+    }
+  }
+  return null;
+}
+
+function updateBrowseStatus() {
+  const state = browseState;
+  if (!browseActive(state)) return;
+  const total = state.items.length;
+  const start = state.page * BROWSE_PAGE_SIZE;
+  const end = Math.min(start + BROWSE_PAGE_SIZE, total);
+  const folder = libraryControls.filter === 'all' ? '' : ` in ${libraryControls.filter === 'private' ? 'Private' : 'References'}`;
+  const scope = galleryListingState === 'complete' ? 'media' : 'loaded media';
+  const progress = galleryListingState === 'loading' ? ' · Reading more from Drive…'
+    : galleryListingState === 'partial' ? ' · Sync paused; use Sync to finish.' : '';
+  browseStatus.textContent = total
+    ? `${start + 1}–${end} of ${total} ${scope}${folder}${progress}`
+    : `No media${folder}${galleryListingState === 'complete' ? '.' : ' loaded yet.'}${progress}`;
+  browsePrevious.disabled = state.page === 0;
+  browseNext.disabled = end >= total;
+  browseNext.textContent = end < total ? 'Next 60'
+    : galleryListingState === 'loading' ? 'Reading more…'
+    : galleryListingState === 'partial' ? 'End of loaded media' : 'End of collection';
+  browsePageActions.hidden = !total;
+  browsePagination.hidden = false;
+}
+
+function renderBrowse({ preservePage = false } = {}) {
+  // Drift startup does not pay for hidden Browse tiles or their event-history reads.
+  if (!initializedGallery || galleryLocked || !browseView.classList.contains('active')) return;
+  const prior = browseState;
+  const visibleAnchor = preservePage ? visibleBrowseAnchor(prior) : null;
+  const arr = images.filter(matchesGalleryFilter);
   const key = sortSelect.value;
-  const stat = i => store.stats(i.id);
+  const stats = new Map();
+  const stat = item => {
+    if (!stats.has(item.id)) stats.set(item.id, store.stats(item.id));
+    return stats.get(item.id);
+  };
   if (key === 'newest') arr.sort((a,b) => b.addedAt-a.addedAt);
   if (key === 'oldest') arr.sort((a,b) => a.addedAt-b.addedAt);
   if (key === 'score') arr.sort((a,b) => confidenceScore(stat(b))-confidenceScore(stat(a)));
@@ -724,15 +931,62 @@ function renderBrowse() {
   if (key === 'views') arr.sort((a,b) => stat(b).views-stat(a).views);
   if (key === 'leastViews' || key === 'rare') arr.sort((a,b) => stat(a).views-stat(b).views);
   if (key === 'recent') arr.sort((a,b) => stat(b).lastView-stat(a).lastView);
-  if (key === 'random') arr.sort(() => Math.random()-.5);
+  // Keep an existing random order stable as later Drive pages arrive.
+  const randomRanks = preservePage && prior?.sort === 'random' ? new Map(prior.randomRanks) : new Map();
+  if (key === 'random') {
+    for (const item of arr) if (!randomRanks.has(item.id)) randomRanks.set(item.id, Math.random());
+    arr.sort((a,b) => randomRanks.get(a.id) - randomRanks.get(b.id));
+  }
+  let page = preservePage
+    ? Math.min(prior?.page || 0, Math.max(0, Math.ceil(arr.length / BROWSE_PAGE_SIZE) - 1)) : 0;
+  let restoreAnchor = null;
+  if (preservePage && prior) {
+    const positions = new Map(arr.map((item, index) => [item.id, index]));
+    const visibleIndex = visibleAnchor ? prior.items.findIndex(item => item.id === visibleAnchor.id) : -1;
+    const start = visibleIndex >= 0 ? visibleIndex : prior.page * BROWSE_PAGE_SIZE;
+    // A moved or removed first item falls back to the nearest surviving neighbor.
+    for (let distance = 0; distance < prior.items.length; distance++) {
+      const following = prior.items[start + distance];
+      const preceding = distance ? prior.items[start - distance] : null;
+      const anchorIndex = positions.get(following?.id) ?? positions.get(preceding?.id);
+      if (anchorIndex !== undefined) {
+        page = Math.floor(anchorIndex / BROWSE_PAGE_SIZE);
+        if (visibleAnchor) restoreAnchor = { id: arr[anchorIndex].id, offset: visibleAnchor.offset };
+        break;
+      }
+    }
+  }
+  browseState = {
+    items: arr, stat, page, sort: key, randomRanks,
+    generation: galleryEpoch, owner: auth.currentUser?.uid, version: ++browseRenderVersion
+  };
+  renderBrowsePage({ restoreAnchor });
+  if (!preservePage) browseView.scrollTop = 0;
+}
 
-  browseGrid.innerHTML = '';
+function renderBrowsePage({ restoreAnchor = null } = {}) {
+  const state = browseState;
+  if (!browseActive(state)) return;
+  const pageItems = state.items.slice(state.page * BROWSE_PAGE_SIZE, (state.page + 1) * BROWSE_PAGE_SIZE);
+  let focusedAction = null;
+  if (browseGrid.contains(document.activeElement)) {
+    const control = document.activeElement.closest('.tile-open, .tile-quick-move');
+    const tile = control?.closest('.tile');
+    if (tile) {
+      focusedAction = {
+        id: tile.querySelector('[data-id]')?.dataset.id,
+        selector: control.classList.contains('tile-quick-move') ? '.tile-quick-move' : '.tile-open'
+      };
+    }
+  }
+  browseGrid.replaceChildren();
   browseObserver?.disconnect();
   browseObserver = new IntersectionObserver(entries => {
+    if (!browseActive(state)) return;
     entries.forEach(entry => {
       const media = entry.target;
       const item = imageById(media.dataset.id);
-      if (!item) return;
+      if (!item || !media.isConnected) return;
 
       if (!entry.isIntersecting) {
         media.dataset.visible = '0';
@@ -746,7 +1000,7 @@ function renderBrowse() {
       if (media.getAttribute('src')) return;
 
       const setPreview = src => {
-        if (!media.isConnected || media.dataset.visible !== '1' || !src) return;
+        if (!browseActive(state) || !media.isConnected || media.dataset.visible !== '1' || !src) return;
         media.src = src;
         media.classList.add('loaded');
       };
@@ -762,15 +1016,16 @@ function renderBrowse() {
       }
 
       ensureObjectUrl(item.id).then(url => {
-        if (!media.isConnected || media.dataset.visible !== '1') return;
+        if (!browseActive(state) || !media.isConnected || media.dataset.visible !== '1') return;
         media.dataset.fullMediaId = item.id;
         setPreview(url);
       }).catch(() => {});
     });
-  }, { root: $('#browseView'), rootMargin: '420px 0px' });
+  }, { root: browseView, rootMargin: '420px 0px' });
 
-  arr.forEach(item => {
-    const s = stat(item);
+  const fragment = document.createDocumentFragment();
+  pageItems.forEach(item => {
+    const s = state.stat(item);
     const tile = document.createElement('article');
     tile.className = `tile tile-${item.kind || 'image'}`;
     const opener = document.createElement('button');
@@ -804,11 +1059,46 @@ function renderBrowse() {
       };
       tile.append(move);
     }
-    browseGrid.append(tile);
-    const previewEl = tile.querySelector('[data-id]');
-    if (previewEl) browseObserver.observe(previewEl);
+    fragment.append(tile);
   });
+  browseGrid.append(fragment);
+  const previews = [...browseGrid.querySelectorAll('[data-id]')];
+  previews.forEach(media => browseObserver.observe(media));
+  updateBrowseStatus();
+  if (restoreAnchor) {
+    const media = previews.find(item => item.dataset.id === restoreAnchor.id);
+    if (media) {
+      const offset = media.closest('.tile').getBoundingClientRect().top - browseView.getBoundingClientRect().top;
+      browseView.scrollTop += offset - restoreAnchor.offset;
+    }
+  }
+  if (focusedAction) {
+    const viewport = browseView.getBoundingClientRect();
+    const media = previews.find(item => item.dataset.id === focusedAction.id)
+      || previews.find(item => item.dataset.id === restoreAnchor?.id)
+      || previews.find(item => {
+        const rect = item.closest('.tile').getBoundingClientRect();
+        return rect.bottom > viewport.top && rect.top < viewport.bottom;
+      }) || previews[0];
+    const tile = media?.closest('.tile');
+    const equivalent = tile?.querySelector(focusedAction.selector);
+    const target = equivalent && !equivalent.disabled ? equivalent : tile?.querySelector('.tile-open');
+    target?.focus({ preventScroll: true });
+  }
 }
+
+function changeBrowsePage(delta) {
+  const state = browseState;
+  if (!browseActive(state)) return;
+  const page = state.page + delta;
+  if (page < 0 || page * BROWSE_PAGE_SIZE >= state.items.length) return;
+  state.page = page;
+  renderBrowsePage();
+  browseView.scrollTop = 0;
+  browseGrid.querySelector('.tile-open')?.focus({ preventScroll: true });
+}
+browsePrevious.onclick = () => changeBrowsePage(-1);
+browseNext.onclick = () => changeBrowsePage(1);
 sortSelect.onchange = renderBrowse;
 
 function activateView(view, { incoming = false } = {}) {
@@ -874,14 +1164,23 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+function startGalleryMoment() {
+  const moment = chooseMoment();
+  if (!moment) return;
+  history = [moment];
+  historyIndex = 0;
+  const generation = galleryEpoch;
+  void renderMoment(moment).catch(error => {
+    if (generation === galleryEpoch && !galleryLocked) showToast(error.message || 'Could not open this media.');
+  });
+}
+
 function initGallery() {
   if (!images.length) return;
   initializedGallery = true;
-  history = [chooseMoment()];
-  historyIndex = 0;
-  renderMoment(history[0]);
+  startGalleryMoment();
   renderBrowse();
-  showToast(`${images.length} media · Drive connected`);
+  showToast(galleryListingState === 'loading' ? 'Drive connected · Reading collection…' : `${images.length} media · Drive connected`);
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});

@@ -1,6 +1,6 @@
 // Drive media and resumable session URLs stay in the owner-authenticated browser.
 const libraryUrl=new URL('./drive-library.mjs',import.meta.url);libraryUrl.search=new URL(import.meta.url).search;
-const {createDriveLibrary,REFERENCES_FOLDER_ID,POSE_CATEGORIES}=await import(libraryUrl.href);
+const {createDriveLibrary,driveResponseError,REFERENCES_FOLDER_ID,POSE_CATEGORIES}=await import(libraryUrl.href);
 const creationsUrl=new URL('./drive-creations.mjs',import.meta.url);creationsUrl.search=new URL(import.meta.url).search;
 const {loadDriveCreations}=await import(creationsUrl.href);
 const accessUrl=new URL('./drive-access.mjs',import.meta.url);accessUrl.search=new URL(import.meta.url).search;
@@ -231,7 +231,7 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
     if(!/^[\w-]{8,160}$/.test(file?.id||''))throw new Error('Invalid Drive image.');
     const fields='id,name,mimeType,parents,trashed,ownedByMe,capabilities(canMoveItemWithinDrive,canTrash,canUntrash)';
     const response=await manageRequest(`${API}/files/${encodeURIComponent(file.id)}?fields=${fields}`);
-    if(!response.ok)throw new Error(`Could not verify image permissions (${response.status}).`);
+    if(!response.ok)throw driveResponseError(response,'Could not verify image permissions');
     const actual=await response.json();
     check(generation);
     if(actual.id!==file.id||actual.ownedByMe!==true||typeof actual.trashed!=='boolean'
@@ -247,13 +247,13 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
     if(![PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID].includes(folderId))throw new Error('Invalid library folder.');
     const fields='id,mimeType,trashed,ownedByMe,capabilities(canAddChildren,canRemoveChildren)';
     const response=await manageRequest(`${API}/files/${folderId}?fields=${fields}`);
-    if(!response.ok)throw new Error(`Could not verify the library folder (${response.status}).`);
+    if(!response.ok)throw driveResponseError(response,source?'Could not verify the source folder':'Could not verify the destination folder');
     const actual=await response.json();
     check(generation);
     const allowed=source?actual.capabilities?.canRemoveChildren:actual.capabilities?.canAddChildren;
     if(actual.id!==folderId||actual.mimeType!=='application/vnd.google-apps.folder'||actual.trashed!==false
       ||actual.ownedByMe!==true||allowed!==true){
-      throw new Error('Google Drive has not allowed this library folder change.');
+      throw Object.assign(new Error(source?'Google Drive has not allowed moving images out of this folder.':'Google Drive has not allowed adding images to this folder.'),{code:'drive/permission-denied',stage:source?'source folder':'destination folder'});
     }
     return actual;
   }

@@ -16,6 +16,17 @@ const COOKIE='__session'; // Firebase Hosting forwards only this cookie to rewri
 const TTL=10*60*1000;
 // Activate after the two exact secrets, fixed redirect, private rules and deployed runtime IAM are verified.
 const OFFLINE_ENABLED=true;
+const MOVE_REASONS=new Set(['unknown','insufficientPermissions','insufficientFilePermissions',
+ 'appNotAuthorizedToFile','forbidden','domainPolicy','fieldNotWritable','dailyLimitExceeded',
+ 'rateLimitExceeded','userRateLimitExceeded','sharingRateLimitExceeded','storageQuotaExceeded',
+ 'activeItemCreationLimitExceeded','myDriveHierarchyDepthLimitExceeded','numChildrenInNonRootLimitExceeded',
+ 'teamDriveFileLimitExceeded','teamDriveHierarchyTooDeep','teamDriveMembershipRequired',
+ 'fileOwnerNotMemberOfTeamDrive','fileWriterTeamDriveMoveInDisabled','teamDrivesFolderMoveInNotSupported',
+ 'cannotModifyInheritedTeamDrivePermission','downloadRestrictedForRevision','fileNotDownloadable']);
+const MOVE_RPC_REASONS=new Set(['unknown','ACCESS_TOKEN_SCOPE_INSUFFICIENT','SERVICE_DISABLED',
+ 'CONSUMER_INVALID','BILLING_DISABLED','RATE_LIMIT_EXCEEDED','SECURITY_POLICY_VIOLATED',
+ 'ACCESS_DENIED','API_KEY_INVALID','API_KEY_HTTP_REFERRER_BLOCKED','API_KEY_SERVICE_BLOCKED']);
+const MOVE_RPC_STATUSES=new Set(['unknown','PERMISSION_DENIED','RESOURCE_EXHAUSTED','UNAUTHENTICATED']);
 const cloud=new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});
 const oidc=new OAuth2Client(CLIENT);
 type Config={clientSecret:string;key:Buffer};
@@ -273,6 +284,26 @@ async function disconnect(req:Request,res:Response){
   res.json({disconnected:true,revoked:true,googleRevoked});
  }catch{res.status(202).json({disconnected:true,revoked:false,code:'drive/revocation-pending'});}
 }
+async function moveDiagnostic(req:Request,res:Response){
+ await owner(req);
+ const data=req.body;
+ const fields=['schema','status','reason','rpcReason','rpcStatus','scopeInsufficient','organizeDenied','mode','release'];
+ if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).length!==fields.length
+  ||!fields.every(field=>Object.prototype.hasOwnProperty.call(data,field))
+  ||data.schema!==1||data.status!==403||!MOVE_REASONS.has(data.reason)
+  ||!MOVE_RPC_REASONS.has(data.rpcReason)||!MOVE_RPC_STATUSES.has(data.rpcStatus)
+  ||typeof data.scopeInsufficient!=='boolean'||typeof data.organizeDenied!=='boolean'
+  ||!['server','temporary'].includes(data.mode)||typeof data.release!=='string'
+  ||!(data.release==='unversioned'||/^\d{14}-[a-f0-9]{8}$/.test(data.release))){
+  throw new DriveError(400,'drive/invalid-diagnostic');
+ }
+ try{
+  await db().doc(`${ROOT}/moveDiagnostic`).create({...data,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+ }catch(error){
+  if((error as {code?:number}).code!==6)throw error;
+ }
+ res.json({captured:true});
+}
 export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_SERVICE_ACCOUNT,memory:'256MiB',timeoutSeconds:60,maxInstances:2,invoker:'public',cors:false},async(req,res)=>{
  res.set({'Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Vary':'Origin, Authorization, Cookie'});
  const path=req.path.replace(/^\/api\/drive/,'');
@@ -287,6 +318,7 @@ export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_S
   if(path==='/start')await start(req,res);
   else if(path==='/session')await session(req,res);
   else if(path==='/disconnect')await disconnect(req,res);
+  else if(path==='/move-diagnostic')await moveDiagnostic(req,res);
   else res.status(404).json({code:'drive/not-found'});
  }catch(error){
   const known=error instanceof DriveError;

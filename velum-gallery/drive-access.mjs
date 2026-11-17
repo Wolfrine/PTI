@@ -12,6 +12,19 @@ const MAX_TOKEN_AGE_MS = 50 * 60 * 1000;
 const CONNECT_INTENT_KEY = 'velum-drive-connect-intent-v1';
 const CONNECT_INTENT_MAX_AGE_MS = 10 * 60 * 1000;
 const DISCONNECT_GENERATION_KEY = 'velum-drive-disconnect-generation-v1';
+const MOVE_DIAGNOSTIC_KEY = 'velum-drive-move-diagnostic-v1';
+// Fixed Google error codes keep identifiers and free-form messages out of diagnostics.
+const MOVE_REASONS = new Set(['unknown','insufficientPermissions','insufficientFilePermissions',
+  'appNotAuthorizedToFile','forbidden','domainPolicy','fieldNotWritable','dailyLimitExceeded',
+  'rateLimitExceeded','userRateLimitExceeded','sharingRateLimitExceeded','storageQuotaExceeded',
+  'activeItemCreationLimitExceeded','myDriveHierarchyDepthLimitExceeded','numChildrenInNonRootLimitExceeded',
+  'teamDriveFileLimitExceeded','teamDriveHierarchyTooDeep','teamDriveMembershipRequired',
+  'fileOwnerNotMemberOfTeamDrive','fileWriterTeamDriveMoveInDisabled','teamDrivesFolderMoveInNotSupported',
+  'cannotModifyInheritedTeamDrivePermission','downloadRestrictedForRevision','fileNotDownloadable']);
+const MOVE_RPC_REASONS = new Set(['unknown','ACCESS_TOKEN_SCOPE_INSUFFICIENT','SERVICE_DISABLED',
+  'CONSUMER_INVALID','BILLING_DISABLED','RATE_LIMIT_EXCEEDED','SECURITY_POLICY_VIOLATED',
+  'ACCESS_DENIED','API_KEY_INVALID','API_KEY_HTTP_REFERRER_BLOCKED','API_KEY_SERVICE_BLOCKED']);
+const MOVE_RPC_STATUSES = new Set(['unknown','PERMISSION_DENIED','RESOURCE_EXHAUSTED','UNAUTHENTICATED']);
 
 function reconnectError() {
   return Object.assign(new Error('Reconnect Drive to continue this action.'), {code:'drive/reconnect-required'});
@@ -32,6 +45,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
   let lateRevocations = 0;
   let lateGoogleRevoked = false;
   let explicitConnectIntent;
+  let moveDiagnosticAttempted = false;
   let serverMode=false,backendReady=null,temporaryAllowed=false,pendingTemporaryRevocation='',disconnectPending=false;
   try{disconnectPending=backupStorage?.getItem('velum-drive-disconnect-pending-v1')==='1';}catch{}
   let temporaryRevocationExpected=false,pendingTemporaryGoogleUid='',pendingTemporaryExpiry=0;
@@ -71,12 +85,12 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }
   }
 
-  async function serverRequest(path,generation){
+  async function serverRequest(path,generation,data={}){
     const owner=check(generation),user=auth.currentUser;
     const idToken=await user.getIdToken();check(generation,owner.googleUid);
     const controller=new AbortController();controllers.add(controller);
     try{
-      const response=await fetchImpl(`/api/drive/${path}`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${idToken}`},body:'{}',credentials:'same-origin',cache:'no-store',signal:controller.signal});
+      const response=await fetchImpl(`/api/drive/${path}`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${idToken}`},body:JSON.stringify(data),credentials:'same-origin',cache:'no-store',signal:controller.signal});
       check(generation,owner.googleUid);
       let value;
       try { value=await response.json(); } catch { throw backendError(); }
@@ -96,6 +110,36 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       }
       return value;
     }finally{controllers.delete(controller);}
+  }
+  async function reportMoveFailure(url, options, detail, generation) {
+    if (!backend || moveDiagnosticAttempted || options.method !== 'PATCH' || detail?.code !== 403) return;
+    const requestUrl = new URL(url);
+    const from = requestUrl.searchParams.get('removeParents');
+    const to = requestUrl.searchParams.get('addParents');
+    const folders = ['1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA','1yDt_5NSv8fDYhZvOdsihdJwKQJuTzx66'];
+    if (requestUrl.origin !== 'https://www.googleapis.com' || !/^\/drive\/v3\/files\/[\w-]{8,160}$/.test(requestUrl.pathname)
+      || requestUrl.searchParams.getAll('removeParents').length !== 1 || requestUrl.searchParams.getAll('addParents').length !== 1
+      || !folders.includes(from) || !folders.includes(to) || from === to || options.body !== '{}') return;
+    try { if (backupStorage?.getItem(MOVE_DIAGNOSTIC_KEY) === '1') return; } catch {}
+    moveDiagnosticAttempted = true;
+    const rpc = Array.isArray(detail?.details)
+      ? detail.details.find(value => value?.['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo') : null;
+    const reason = detail?.errors?.[0]?.reason;
+    const release = new URL(import.meta.url).searchParams.get('v')?.match(/^(\d{14}-[a-f0-9]{8})(?:-|$)/)?.[1] || 'unversioned';
+    const data = {
+      schema:1, status:403,
+      reason:MOVE_REASONS.has(reason) ? reason : 'unknown',
+      rpcReason:MOVE_RPC_REASONS.has(rpc?.reason) ? rpc.reason : 'unknown',
+      rpcStatus:MOVE_RPC_STATUSES.has(detail?.status) ? detail.status : 'unknown',
+      scopeInsufficient:typeof detail?.message === 'string' && /insufficient authentication scopes/i.test(detail.message),
+      organizeDenied:typeof detail?.message === 'string' && /\bfileOrganize\b/.test(detail.message),
+      mode:serverMode ? 'server' : 'temporary', release
+    };
+    const result = await serverRequest('move-diagnostic', generation, data);
+    check(generation);
+    if (result.captured === true) {
+      try { backupStorage?.setItem(MOVE_DIAGNOSTIC_KEY, '1'); } catch {}
+    }
   }
   function disconnectGeneration() {
     try { return backupStorage?.getItem(DISCONNECT_GENERATION_KEY) || ''; }
@@ -550,6 +594,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
           reason:typeof candidate==='string'&&/^[\w.-]{1,80}$/.test(candidate)?candidate:'',
           message:typeof detail?.message==='string'?detail.message.replace(/[\r\n\t]+/g,' ').slice(0,240):''
         };
+        if (response.status === 403) void reportMoveFailure(url, options, detail, generation).catch(() => {});
         await response.body?.cancel();
         finish();
       }

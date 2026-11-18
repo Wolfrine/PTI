@@ -170,7 +170,7 @@ function verifyStage(){
   if(!stage||!equal(physical(stage),stage)||hash(manifestPath)!==pin||
      fs.readFileSync(path.join(stage,'manifest.sha256'),'utf8').trim().toLowerCase()!==pin||
      manifest.manifestSHA256)throw Error('Pinned stage changed.');
-  if(manifest.desktopModelTransition?.version!==2||manifest.desktopModelTransition.model!==targetModel||manifest.desktopModelTransition.effort!==targetEffort||!/^[a-f0-9]{64}$/.test(manifest.desktopModelTransition.enrollmentHash||''))throw Error('Stage lacks the native-quiescence/model gate; create a new reviewed stage.');
+  if(manifest.desktopModelTransition?.version!==3||manifest.desktopModelTransition.model!==targetModel||manifest.desktopModelTransition.effort!==targetEffort||!/^[a-f0-9]{64}$/.test(manifest.desktopModelTransition.enrollmentHash||''))throw Error('Stage lacks the queue/Goal/native-quiescence/model gate; create a new reviewed stage.');
   if(identity()!==manifest.ownerSid||manifest.targetVersion!==targetVersion||manifest.nodePath!==process.execPath)throw Error('Owner, runtime or target changed.');
   for(const item of [...manifest.runtimeFiles,...manifest.payloadFiles,...manifest.launcherFiles]){
     const file=inside(stage,path.join(stage,item.location));const actual=meta(file);
@@ -203,7 +203,7 @@ function modelRuntime(){
   return candidates[0];
 }
 // Read the existing owner module registry; do not create another enrollment store.
-async function desktopModelPreflight(db,{enforce=true,expectedEnrollmentHash=null}={}){
+async function desktopModelPreflight(db,{enforce=true,expectedEnrollmentHash=null,transitionBaseline=false}={}){
   const config=read(path.join(F,'config.json'));
   const normalized=value=>path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase();
   const snapshot=await db.doc('_ptiLocalServices/local-codex/owners/'+owner).collection('modules').get();
@@ -217,13 +217,13 @@ async function desktopModelPreflight(db,{enforce=true,expectedEnrollmentHash=nul
   }
   parents.sort((a,b)=>a.moduleId.localeCompare(b.moduleId));
   const enrollmentHash=sha(JSON.stringify(parents));
-  const observations=await verifyCatalog(modelRuntime(),parents);
+  const {rows:observations,catalog}=await verifyCatalog(modelRuntime(),parents,{transitionBaseline});
   const blockers=observations.filter(item=>!item.compatible);
   if(!parents.length)blockers.unshift({reason:'native-enrollment-empty-unverified'});
   if(config.model!==targetModel||config.reasoningEffort!==targetEffort)blockers.unshift({reason:'rollback-worker-model-mismatch',model:config.model??null,effort:config.reasoningEffort??null});
   if(expectedEnrollmentHash&&enrollmentHash!==expectedEnrollmentHash)blockers.unshift({reason:'module-enrollment-changed'});
-  const report={version:2,observedAt:new Date().toISOString(),ready:blockers.length===0,model:targetModel,effort:targetEffort,
-    configuredModel:config.model??null,configuredEffort:config.reasoningEffort??null,enrollmentHash,parents:observations,blockers};
+  const report={version:3,observedAt:new Date().toISOString(),ready:blockers.length===0,model:targetModel,effort:targetEffort,
+    configuredModel:config.model??null,configuredEffort:config.reasoningEffort??null,enrollmentHash,catalog,parents:observations,blockers};
   if(enforce&&!report.ready)throw Object.assign(Error('Desktop quiescence/model preflight blocks H cutover: '+blockers.length+' unresolved default/parent/queue/enrollment observation(s). Run --action model-preflight. Admission must remain fenced; no parent/default was changed.'),{code:'DESKTOP_PREFLIGHT_BLOCKED'});
   return report;
 }
@@ -234,31 +234,67 @@ async function ownerModelPreflight(options){
   const app=initializeApp({projectId:'pti-app-2ab59',credential:applicationDefault()},'local-codex-model-preflight-'+randomUUID()),db=getFirestore(app);
   try{return await desktopModelPreflight(db,options);}finally{await db.terminate();await deleteApp(app);}
 }
-async function nativeQuiescence(rpc,thread){
+// Project each page immediately: never retain/export queued input or turn items.
+// Pagination bounds and malformed/repeated cursors are unknown, never empty.
+async function metadataPages(rpc,method,params,project,maxPages=100){
+  const rows=[],cursors=new Set(),ids=new Set();let cursor=null;
+  for(let page=0;page<maxPages;page++){
+    const result=await rpc(method,{...params,limit:100,cursor});
+    if(!Array.isArray(result?.data)||!(result.nextCursor===null||typeof result.nextCursor==='string'&&result.nextCursor.length))throw Error('Malformed metadata pagination.');
+    for(const item of result.data){
+      if(typeof item?.id!=='string'||!item.id||ids.has(item.id))throw Error('Unstable metadata pagination.');
+      ids.add(item.id);rows.push(project(item));
+    }
+    if(result.nextCursor===null)return rows;
+    if(cursors.has(result.nextCursor))throw Error('Repeated metadata cursor.');
+    cursors.add(result.nextCursor);cursor=result.nextCursor;
+  }
+  throw Error('Metadata pagination bound reached.');
+}
+const turnMetadata=turn=>({id:turn.id,status:turn.status,startedAt:turn.startedAt??null,completedAt:turn.completedAt??null});
+const metadataHash=rows=>sha(JSON.stringify([...rows].sort((a,b)=>a.id.localeCompare(b.id))));
+async function nativeQuiescence(rpc,thread,{transitionBaseline=false}={}){
   const blockers=[],status=thread.status?.type??null;
   if(status==='active')blockers.push('native-thread-active');
   else if(status!=='idle')blockers.push('native-runtime-idle-unverified');
-  let latest=null,queue=null;const readErrors=[];
+  let latest=null,queue=null,goal=null,goalKnown=false,baseline=null;const readErrors=[];
   try{latest=await rpc('thread/turns/list',{threadId:thread.id,limit:1,sortDirection:'desc',itemsView:'notLoaded'});}
   catch(error){blockers.push('native-latest-turn-unreadable');readErrors.push({method:'thread/turns/list',code:error.rpcCode??'unknown'});}
-  try{queue=await rpc('thread/queue/list',{threadId:thread.id,limit:1});}
+  try{queue=await metadataPages(rpc,'thread/queue/list',{threadId:thread.id},item=>({id:item.id}));}
   catch(error){blockers.push('native-queue-unreadable');readErrors.push({method:'thread/queue/list',code:error.rpcCode??'unknown'});}
+  try{
+    const result=await rpc('thread/goal/get',{threadId:thread.id});
+    if(result?.goal===null)goalKnown=true;
+    else if(result?.goal?.threadId===thread.id&&['active','paused','blocked','usageLimited','budgetLimited','complete'].includes(result.goal.status)){
+      goal={status:result.goal.status,createdAt:result.goal.createdAt??null,updatedAt:result.goal.updatedAt??null};goalKnown=true;
+    }
+  }catch(error){readErrors.push({method:'thread/goal/get',code:error.rpcCode??'unknown'});}
+  if(!goalKnown)blockers.push('native-goal-unverified');
+  else if(goal&&goal.status!=='complete')blockers.push('native-goal-resume-hazard');
   const turn=Array.isArray(latest?.data)&&latest.data.length===1?latest.data[0]:null;
   const terminal=!!turn&&['completed','failed','interrupted'].includes(turn.status)&&
     Number.isFinite(turn.completedAt)&&turn.completedAt>0&&Number.isFinite(turn.startedAt)&&turn.startedAt<=turn.completedAt;
   if(!terminal)blockers.push('native-latest-turn-terminal-unverified');
-  const queueKnown=Array.isArray(queue?.data)&&queue.nextCursor===null;
+  const queueKnown=Array.isArray(queue);
   if(!queueKnown)blockers.push('native-queue-empty-unverified');
-  if(Array.isArray(queue?.data)&&queue.data.length)blockers.push('native-queue-pending');
+  if(queue?.length)blockers.push('native-queue-pending');
+  if(transitionBaseline){
+    try{
+      const turns=await metadataPages(rpc,'thread/turns/list',{threadId:thread.id,sortDirection:'desc',itemsView:'notLoaded'},turnMetadata);
+      if(!turn||turns[0]?.id!==turn.id||JSON.stringify(turns[0])!==JSON.stringify(turnMetadata(turn)))throw Error('Latest turn changed during baseline read.');
+      baseline={complete:true,turnCount:turns.length,turnMetadataSHA256:metadataHash(turns)};
+    }catch(error){blockers.push('native-turn-baseline-unverified');readErrors.push({method:'thread/turns/list:baseline',code:error.rpcCode??'unknown'});}
+  }
   // This connection is an isolated reader, not the desktop writer's server.
   // Even an empty queue and stored terminal turn cannot attest owner idleness
   // or fence new desktop input. No flag/age/exported status can waive this.
   blockers.push('desktop-owner-quiescence-unverified');
   return {quiescent:false,ownerQuiescenceVerified:false,reader:'isolated-app-server',status,
-    latestTurn:turn?{id:turn.id,status:turn.status,startedAt:turn.startedAt??null,completedAt:turn.completedAt??null}:null,
-    terminalTurnRecorded:terminal,queueEntries:Array.isArray(queue?.data)?queue.data.length:null,queueComplete:queueKnown,readErrors,blockers};
+    latestTurn:turn?turnMetadata(turn):null,terminalTurnRecorded:terminal,
+    queueEntries:queue?.length??null,queueComplete:queueKnown,queueIdsSHA256:queueKnown?metadataHash(queue):null,
+    goalKnown,goal,baseline,readErrors,blockers};
 }
-async function verifyCatalog(executable,parents=[]){
+async function verifyCatalog(executable,parents=[],options={}){
   // account/model/thread reads only: no resume, queue, turn or native model mutation.
   const config=read(path.join(F,'config.json')),env={...process.env};
   for(const name of Object.keys(env))if(['OPENAI_API_KEY','CODEX_API_KEY','CODEX_ACCESS_TOKEN','OPENAI_BASE_URL','OPENAI_API_BASE'].includes(name.toUpperCase()))delete env[name];
@@ -272,14 +308,11 @@ async function verifyCatalog(executable,parents=[]){
   try{
     await rpc('initialize',{clientInfo:{name:'local_codex_storage_migration',version:'0.4.15'},capabilities:{experimentalApi:true}});send({method:'initialized'});
     const account=await rpc('account/read',{refreshToken:false});if(account.account?.type!=='chatgpt')throw Error('ChatGPT subscription sign-in is required.');
-    let cursor=null,found=false;const visited=new Set();
-    for(let page=0;page<20;page++){
-      const result=await rpc('model/list',{limit:100,includeHidden:false,cursor});
-      const model=result.data?.find(item=>item.model===targetModel);
-      if(model){if(!model.supportedReasoningEfforts?.some(item=>item.reasoningEffort===targetEffort))throw Error('Target reasoning effort is not in the signed-in catalog.');found=true;break;}
-      cursor=result.nextCursor;if(!cursor||visited.has(cursor))break;visited.add(cursor);
-    }
-    if(!found)throw Error('Target model is not in the signed-in catalog.');
+    const models=await metadataPages(rpc,'model/list',{includeHidden:false},item=>({id:item.id,model:item.model,
+      efforts:(item.supportedReasoningEfforts||[]).map(effort=>effort.reasoningEffort)}),20);
+    const target=models.find(item=>item.model===targetModel);
+    if(!target?.efforts.includes(targetEffort))throw Error('Target model/effort is not in the signed-in catalog.');
+    const catalog=models.filter(item=>/^gpt-6\.2(?:-|$)/.test(item.model));
     const observed=new Map(),rows=[];
     for(const parent of parents){
       if(!observed.has(parent.threadId)){
@@ -287,7 +320,7 @@ async function verifyCatalog(executable,parents=[]){
           const {thread}=await rpc('thread/read',{threadId:parent.threadId,includeTurns:false});
           observed.set(parent.threadId,{id:thread.id,model:thread.model??null,effort:thread.reasoningEffort??null,provider:thread.modelProvider??null,
             cwd:thread.cwd?physical(thread.cwd):null,status:thread.status?.type??thread.status??null,archived:thread.archived===true,
-            nativeQuiescence:await nativeQuiescence(rpc,thread)});
+            nativeQuiescence:await nativeQuiescence(rpc,thread,options)});
         }catch{observed.set(parent.threadId,{reason:'native-parent-unreadable'});}
       }
       const item=observed.get(parent.threadId);
@@ -295,7 +328,7 @@ async function verifyCatalog(executable,parents=[]){
       const compatible=!!modelCompatible&&item.nativeQuiescence?.quiescent===true;
       rows.push({...parent,...item,modelCompatible:!!modelCompatible,compatible,...(!compatible?{reason:item.reason||(!item.nativeQuiescence?.quiescent?'native-quiescence-unverified':'saved-parent-model-or-context-mismatch')}:{})});
     }
-    return rows;
+    return {rows,catalog};
   }finally{
     rejectAll(Error('Metadata read complete.'));lines.close();child.stdin.end();
     await Promise.race([new Promise(resolve=>child.once('exit',resolve)),new Promise(resolve=>setTimeout(resolve,3000))]);
@@ -303,9 +336,47 @@ async function verifyCatalog(executable,parents=[]){
     if(!exited)throw Error('Read-only native metadata connection did not close normally; no existing process was stopped.');
   }
 }
-if(action==='model-preflight'){
+function compareTransitionBaseline(previous,current){
+  if(previous.version!==3||previous.kind!=='native-model-transition-audit'||!Array.isArray(previous.parents))throw Error('Expected a version-3 transition audit baseline.');
+  const before=new Map(previous.parents.map(item=>[item.threadId,item])),after=new Map(current.parents.map(item=>[item.threadId,item]));
+  const enrollmentUnchanged=previous.enrollmentHash===current.enrollmentHash;
+  const parents=[...after].map(([threadId,item])=>{
+    const old=before.get(threadId),a=old?.nativeQuiescence,b=item.nativeQuiescence;
+    const turnMetadataUnchanged=!!a?.baseline?.complete&&!!b?.baseline?.complete&&
+      a.baseline.turnCount===b.baseline.turnCount&&a.baseline.turnMetadataSHA256===b.baseline.turnMetadataSHA256;
+    return {threadId,turnMetadataUnchanged,
+      queueUnchanged:!!a?.queueComplete&&!!b?.queueComplete&&a.queueIdsSHA256===b.queueIdsSHA256,
+      goalUnchanged:!!a?.goalKnown&&!!b?.goalKnown&&JSON.stringify(a.goal)===JSON.stringify(b.goal),
+      contextUnchanged:!!old&&old.id===item.id&&old.provider===item.provider&&old.cwd===item.cwd&&old.archived===item.archived,
+      savedModelChanged:!!old&&(old.model!==item.model||old.effort!==item.effort)};
+  });
+  return {enrollmentUnchanged,turnMetadataUnchanged:enrollmentUnchanged&&before.size===after.size&&parents.length>0&&parents.every(item=>item.turnMetadataUnchanged),
+    continuousWriterExclusionVerified:false,parents};
+}
+if(['model-preflight','transition-preflight'].includes(action)){
   if(has('--manifest'))throw Error('Model preflight is a read-only source action, not a staged migration.');
-  const result=await ownerModelPreflight({enforce:false});
+  if(has('--baseline')&&action!=='transition-preflight')throw Error('Baseline comparison requires transition-preflight.');
+  let previous=null;
+  if(has('--baseline')){
+    const file=physical(arg('--baseline'));
+    if(!/^H:\\/i.test(file))throw Error('Private transition baselines must reside on H:.');
+    meta(file);previous=read(file);
+  }
+  const result=await ownerModelPreflight({enforce:false,transitionBaseline:action==='transition-preflight'});
+  if(action==='transition-preflight'){
+    result.kind='native-model-transition-audit';
+    result.transition={pilotReady:false,ownerFenceVerified:false,admissionChanged:false,
+      baselineComplete:result.parents.length>0&&result.parents.every(item=>item.nativeQuiescence?.baseline?.complete),
+      requiredSequence:['verify-supported-native-writer-exclusion-and-recovery-before-draining',
+        'acquire-hosted-admission-fence-before-any-parent-model-change','wait-for-protected-native-terminal-evidence',
+        'verify-empty-queues-and-no-resumable-goals-under-continuous-native-exclusion',
+        'pilot-picker-persistence-and-unchanged-turn-baseline-or-restore',
+        'migrate-exact-enrolled-parents-then-F-rollback-default-last',
+        'hold-both-fences-through-H-cutover-or-verified-model-and-worker-rollback'],
+      blocker:'desktop-owner-quiescence-unverified',
+      nextStep:'Verify an official owner-side writer exclusion and durable no-turn picker path after this native turn ends. Isolated status, empty queues, completed Goals and baseline equality cannot authorize migration.'};
+    if(previous)result.baselineComparison=compareTransitionBaseline(previous,result);
+  }
   console.log(JSON.stringify(result));process.exit(result.ready?0:2);
 }
 function HIsEmptyExceptStages(){
@@ -372,7 +443,7 @@ if(action==='stage'){
     previous:old,previousPointerHash:installedHash,previousReleaseFiles,sourceConfigHash,
     nonModelConfigHash:configNonModelHash(read(path.join(F,'config.json'))),
     targetVersion,model:targetModel,reasoningEffort:targetEffort,deadline,
-    desktopModelTransition:{version:2,model:targetModel,effort:targetEffort,enrollmentHash:desktopModelTransition.enrollmentHash,observedAt:desktopModelTransition.observedAt},
+    desktopModelTransition:{version:3,model:targetModel,effort:targetEffort,enrollmentHash:desktopModelTransition.enrollmentHash,observedAt:desktopModelTransition.observedAt},
     artifactSetHash:sha(JSON.stringify(payloadFiles)),payloadFiles,runtimeFiles,launcherFiles,
     maintenanceControllerSource:{path:'tools/pti-mcp/src/local-codex-maintenance.ts',
       sourceSHA256:freshController.sourceSHA256,compiledSHA256:freshController.compiledSHA256,

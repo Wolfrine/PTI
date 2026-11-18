@@ -46,7 +46,12 @@ block staging. The F: rollback worker's configured pair must already match too;
 changing only the H: default would break either forward handoffs or rollback.
 
 A separate owner-authorized, quiescent model transition is required first.
-Finish active writers and hold new admissions through supported owner controls.
+Verify a supported continuous native-writer exclusion and recovery path **before
+draining**. Acquire the existing hosted admission fence **before the first saved
+parent pin diverges**, allow the current native claim to finish, then retain both
+fences through model migration, H cutover or verified rollback. Bridge drain alone
+does not exclude Desktop, daemon or CLI input. Do not acquire a drain that this
+helper cannot safely complete or reopen: it is not a model-transition controller.
 Use the model/reasoning control in each exact existing desktop chat, then verify
 native metadata readback. Official `thread/resume` accepts model overrides, but
 using it to migrate desktop-owned writers has not been verified here and must
@@ -64,9 +69,13 @@ the unchanged F: installation. Stages without this contract must be restaged;
 never relax the gate to activate 6.2. Metadata such as `notLoaded` is not evidence
 that an app-owned writer is idle; retain the separate native-writer fence.
 
-The version-2 contract also reads every enrolled parent's runtime status
+The version-3 contract also reads every enrolled parent's runtime status
 (including retired project mappings; an empty enrollment is unverified),
-latest turn with `itemsView: notLoaded` (no item content), and first queue page.
+latest turn with `itemsView: notLoaded` (no item content), all queue pages, and
+`thread/goal/get`. Queued input is discarded; only queue counts/ID hashes are
+reported. A Goal must be explicitly absent or complete; paused, blocked and
+limited Goals still present a resume hazard. Unreadable Goals, malformed pages,
+repeated cursors, duplicate IDs or pagination bounds fail closed.
 Active, unknown, unreadable, incomplete or pending observations block every gate,
 including abort, rollback and final admission release. Empty history or a bare
 `interrupted` export is not terminal/non-delivery proof. Stored terminal metadata
@@ -75,7 +84,35 @@ current writer or fence new desktop input. It therefore reports
 `desktop-owner-quiescence-unverified` and refuses cutover even for apparently
 dormant parents. A supported owner-side quiescence/fencing route must be verified
 and implemented before this blocker can be removed; there is no override flag.
-Do not deploy an old frozen runner to avoid the version-2 gate.
+Do not deploy an old frozen runner to avoid the version-3 gate.
+
+Before changing anything, collect a private transition baseline on H: using the
+same registry and official read APIs (no second collector or enrollment store):
+
+```powershell
+node tools/pti-mcp/scripts/local-codex-storage-migration.mjs --action transition-preflight > H:\Workspace\Reports\LocalCodex\transition-before.json
+node tools/pti-mcp/scripts/local-codex-storage-migration.mjs --action transition-preflight --baseline H:\Workspace\Reports\LocalCodex\transition-before.json > H:\Workspace\Reports\LocalCodex\transition-after.json
+```
+
+Use an existing owner-private destination. These commands exit 2 while blocked,
+work while the F: default is still 6.1, and do not prepare H, drain admission,
+load/resume a parent, select a model, start a turn or activate a Goal. In addition
+to release blockers they report the signed-in 6.2 catalog, exhaustive turn counts
+and metadata hashes, queue/Goal observations, and before/after context, saved-model
+and history comparisons. Turn text/items, queue input, Goal objectives and account
+identity are excluded. Pagination is bounded at 10,000 turns/queue entries per
+parent; incomplete/unstable reads remain unknown. Hash equality is a snapshot
+comparison, not continuous exclusion or independent owner-idle proof. The current
+reader therefore always reports `pilotReady: false`; no baseline grants permission
+to resume a cold parent or override `desktop-owner-quiescence-unverified`.
+
+The installed 0.169.0-alpha.11.1 protocol exposes `thread/settings/update` with
+`model` and `effort` for subsequent turns. This does not establish that the
+Desktop composer persists the choice or that a cold resume is safe: persisted
+queued submissions or a resumable Goal can dispatch on resume. Verify a no-turn
+picker pilot only after both fences are proven, independently compare raw saved
+metadata/history and restore the prior pair before reopening if the transition
+cannot finish. Never send a synthetic turn to establish persistence.
 
 Official controls: [queue semantics](https://learn.chatgpt.com/docs/developer-commands?surface=cli),
 [desktop model control](https://learn.chatgpt.com/docs/models?surface=app), and

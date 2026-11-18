@@ -7,18 +7,44 @@ import {randomUUID} from 'node:crypto';
 import {execFileSync,spawn} from 'node:child_process';
 
 const args=process.argv.slice(2),arg=name=>args[args.indexOf(name)+1],action=arg('--action');
-const repo='F:\\Workspace\\Programs\\Independent-Products\\PTI',root='F:\\Workspace\\Support\\LocalCodexBridge';
+const repo='F:\\Workspace\\Programs\\Independent-Products\\PTI';
+const legacyRoot='F:\\Workspace\\Support\\LocalCodexBridge',hRoot='H:\\LocalCodexBridge';
 const read=file=>JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));
 const psQuote=value=>"'"+String(value).replaceAll("'","''")+"'";
 const ps=code=>execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-Command',code],{windowsHide:true,encoding:'utf8',maxBuffer:1048576,timeout:30000}).trim();
 const git=(...argv)=>execFileSync(manifest?.gitPath||'git',['-C',repo,...argv],{encoding:'utf8',windowsHide:true,timeout:15000}).trim();
 const owner='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',relayTask='PTI Local Codex Relay';
-// Preserve pinned legacy F: state/recovery while placing all new stages on H:.
-const physicalStoragePath=value=>{const actual=path.resolve(value);let existing=actual;while(!fs.existsSync(existing)){const parent=path.dirname(existing);if(parent===existing)throw Error('Storage volume is unavailable.');existing=parent;}const physical=path.resolve(fs.realpathSync.native(existing),path.relative(existing,actual));if(!/^F:\\/i.test(physical)&&!/^H:\\Workspace\\/i.test(physical))throw Error('Use F: source/legacy state or an H:\\Workspace artifact path.');return physical;};
-const contained=(parent,value)=>{const actual=physicalStoragePath(value);if(!actual.toLowerCase().startsWith(path.resolve(parent).toLowerCase()+path.sep))throw Error('Path escaped its owning directory.');return actual;};
+const physical=value=>{const actual=path.resolve(value);let existing=actual;while(!fs.existsSync(existing)){const parent=path.dirname(existing);if(parent===existing)throw Error('Path has no existing parent.');existing=parent;}return path.resolve(fs.realpathSync.native(existing),path.relative(existing,actual));};
+const approvedRoot=value=>{
+  const normalized=path.resolve(value);
+  const approved=[legacyRoot,hRoot].find(candidate=>candidate.toLowerCase()===normalized.toLowerCase());
+  if(!approved||physical(normalized).toLowerCase()!==approved.toLowerCase())throw Error('Bridge installation must be the physical F: legacy or H: operational root.');
+  return approved;
+};
+// Retain the earlier H artifact stage as well as the operational H root.
+const legacyHMaintenance='H:\\Workspace\\Storage-Recovery\\LocalCodex\\Maintenance\\';
+const maintenancePath=value=>{
+  const actual=physical(value),allowed=[legacyHMaintenance,path.join(hRoot,'maintenance')+path.sep];
+  if(!/^F:\\/i.test(actual)&&!allowed.some(base=>actual.toLowerCase().startsWith(base.toLowerCase())))throw Error('Maintenance manifest must use legacy F: or a scoped H: stage.');
+  return actual;
+};
+const artifactPath=value=>{
+  const actual=physical(value),allowed=['H:\\Workspace\\',hRoot+path.sep];
+  if(!/^F:\\/i.test(actual)&&!allowed.some(base=>actual.toLowerCase().startsWith(base.toLowerCase())))throw Error('Evidence must use F: source/legacy state or approved H: artifact storage.');
+  return actual;
+};
+const contained=(parent,value)=>{const actual=physical(value),base=physical(parent);if(!actual.toLowerCase().startsWith(base.toLowerCase()+path.sep))throw Error('Path escaped its owning directory.');return actual;};
 const original=path.dirname(fileURLToPath(import.meta.url));
-const manifestPath=args.includes('--manifest')?physicalStoragePath(arg('--manifest')):null;
+const manifestPath=args.includes('--manifest')?maintenancePath(arg('--manifest')):null;
 let manifest=manifestPath?read(manifestPath):null,stage=manifestPath?path.dirname(manifestPath):null;
+const root=approvedRoot(manifest?.root??(args.includes('--install-root')?arg('--install-root'):legacyRoot));
+const stageRootValid=value=>{
+  const actual=maintenancePath(value);
+  const valid=root===legacyRoot?(/^F:\\/i.test(actual)||actual.toLowerCase().startsWith(legacyHMaintenance.toLowerCase())):actual.toLowerCase().startsWith((path.join(hRoot,'maintenance')+path.sep).toLowerCase());
+  if(!valid)throw Error('Stage must use the selected bridge root or its approved H: artifact stage.');
+  return actual;
+};
+if(stage)stageRootValid(stage);
 const policy=await import(pathToFileURL(manifestPath?path.join(stage,'policy.mjs'):path.join(repo,'tools/local-codex/src/maintenance-policy.mjs')).href);
 const {releaseFiles,sha256,verifyRelease,recoveryAction}=policy;
 const hashFile=file=>sha256(fs.readFileSync(file));
@@ -40,7 +66,7 @@ function validate(checkSource=true,checkProvider=true){
 }
 function atomic(file,value){const tmp=file+'.'+randomUUID()+'.tmp';fs.writeFileSync(tmp,JSON.stringify(value,null,2)+'\n');fs.renameSync(tmp,file);}
 if(action==='stage'){
-  stage=physicalStoragePath(arg('--directory'));if(!stage.toLowerCase().startsWith('h:\\workspace\\storage-recovery\\localcodex\\maintenance\\'))throw Error('New maintenance stages belong under H:\\Workspace\\Storage-Recovery\\LocalCodex\\Maintenance.');if(fs.existsSync(stage))throw Error('Use a new staging directory.');fs.mkdirSync(stage,{recursive:true});
+  stage=stageRootValid(arg('--directory'));if(/^F:\\/i.test(stage))throw Error('New maintenance output belongs in the scoped H: maintenance stage.');if(fs.existsSync(stage))throw Error('Use a new staging directory.');fs.mkdirSync(stage,{recursive:true});
   if(git('branch','--show-current')!=='main')throw Error('Maintenance delivery must use main.');
   const active=read(path.join(root,'active.json')),previousDir=contained(path.join(root,'releases'),path.join(root,active.release));
   const payload=path.join(stage,'payload');fs.mkdirSync(payload);
@@ -48,7 +74,7 @@ if(action==='stage'){
   const artifacts=releaseFiles.map(name=>metadata(path.join(payload,name))),previousArtifacts=releaseFiles.map(name=>metadata(path.join(previousDir,name)));
   verifyRelease(payload,artifacts);verifyRelease(previousDir,previousArtifacts);
   for(const [from,to] of [[path.join(original,'local-codex-maintenance.mjs'),'runner.mjs'],[path.join(repo,'tools/pti-mcp/dist/local-codex-maintenance.js'),'controller.mjs'],[path.join(repo,'tools/local-codex/src/maintenance-policy.mjs'),'policy.mjs'],[path.join(repo,'tools/local-codex/maintenance-once.ps1'),'maintenance-once.ps1'],[path.join(repo,'tools/local-codex/maintenance-hidden.vbs'),'maintenance-hidden.vbs'],[path.join(repo,'tools/local-codex/maintenance-detach.ps1'),'maintenance-detach.ps1']])fs.copyFileSync(from,path.join(stage,to),fs.constants.COPYFILE_EXCL);
-  const routing=args.includes('--routing-evidence')?physicalStoragePath(arg('--routing-evidence')):null;
+  const routing=args.includes('--routing-evidence')?artifactPath(arg('--routing-evidence')):null;
   if(routing)fs.copyFileSync(routing,path.join(stage,'routing-evidence.json'),fs.constants.COPYFILE_EXCL);
   const id=randomUUID(),deadline=Date.parse(arg('--deadline'));
   if(!Number.isFinite(deadline)||deadline<=Date.now())throw Error('Supply an explicit future --deadline for this maintenance operation, not model task duration.');

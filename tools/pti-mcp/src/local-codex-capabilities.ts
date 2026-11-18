@@ -7,7 +7,7 @@ export const browserContextSchema=z.object({
   reason:z.enum(['missing-app-session-context','incomplete-app-session-context','app-session-context-unverified']),
   verified:z.literal(false),
 }).strict();
-export const HOST_VERSION='0.4.9';
+export const HOST_VERSION='0.4.10';
 export function desktopQueueWorker(version:string){const [major,minor,patch]=version.split('.').map(Number);return major>0||minor>4||minor===4&&patch>=12;}
 export const desktopHandoff='This report describes only the standalone relay process, not a denial of desktop-owned Chrome. For owner-authorized browser work with worker 0.4.12 or later, call continue_desktop_chat with the exact existing module parent, its catalog project and the authorized prompt. It opens the existing desktop chat through the supported app link and official Codex queue. Poll its handoff operation, then read_codex_thread for the exact native turn and actual completed outcome. The existing chat keeps its model, permissions and official tool checks. No new chat, PTI Owner Chrome grant or QA broker is needed. Never copy browser identities or bypass an actual tool denial.';
 

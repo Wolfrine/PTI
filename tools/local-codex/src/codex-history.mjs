@@ -6,7 +6,72 @@ import {config,home,project,read,runtime,subscriptionEnvironment,alive} from './
 import {observeNativeTurn} from './native-observation.mjs';
 
 // History operations use the installed, signed-in protocol directly. They never
-// start a model, execute shell commands, or edit the Codex session database.
+// start a model or edit the Codex session database. The separate remote-control
+// actions below run only fixed, documented Codex CLI subcommands.
+function fixedCodexCli(argv,timeoutMs,{preserveRunning=false}={}) {
+  return new Promise((resolve,reject)=>{
+    const proc=spawn(runtime(),[...(config().codexArgs||[]),...argv],{
+      cwd:home,env:subscriptionEnvironment(),windowsHide:true,stdio:['ignore','pipe','pipe'],
+    });
+    let stdout='',stderr='',bytes=0,settled=false,timer;
+    const finish=(error,value)=>{
+      if(settled)return;settled=true;clearTimeout(timer);
+      error?reject(error):resolve(value);
+    };
+    const abort=reason=>{try{proc.kill();}catch{}finish(Error(reason));};
+    const collect=target=>chunk=>{
+      if(settled)return;
+      const value=chunk.toString('utf8');bytes+=Buffer.byteLength(value);
+      if(bytes>65536){abort('Codex CLI output exceeded its safety bound.');return;}
+      if(target==='stdout')stdout+=value;else stderr+=value;
+    };
+    proc.stdout?.on('data',collect('stdout'));
+    proc.stderr?.on('data',collect('stderr'));
+    proc.once('error',error=>finish(error));
+    proc.once('close',(status,signal)=>finish(null,{status,signal,stdout,stderr}));
+    timer=setTimeout(()=>{
+      if(preserveRunning){
+        proc.unref();
+        finish(null,{status:null,running:true,pid:proc.pid,stdout,stderr});
+      }else abort('Codex CLI command timed out; its outcome is unverified.');
+    },timeoutMs);
+    timer.unref();
+  });
+}
+
+async function remoteControl(action) {
+  // Never accept argv, shell text, project directories or environment overrides
+  // from the remote caller. This is a host-control operation, not a repo edit.
+  const auth=await fixedCodexCli(['login','status'],10000);
+  if(auth.status!==0||!/Logged in using ChatGPT/i.test((auth.stdout||'')+(auth.stderr||''))) {
+    throw Error('Codex Remote Control requires the signed-in ChatGPT subscription. No pairing code was created.');
+  }
+  const pairing=action==='remote-pair';
+  const result=await fixedCodexCli(['remote-control',pairing?'pair':'start',...(pairing?['--json']:[])],pairing?40000:8000,{preserveRunning:!pairing});
+  if(!pairing&&result.running)return {operation:'remote-control-start',state:'process-still-running',verified:false,host_control:true};
+  if(result.status!==0) {
+    const diagnostic=((result.stdout||'')+'\n'+(result.stderr||'')).toLowerCase();
+    const reason=/unknown subcommand|unrecognized subcommand|unexpected argument|found argument/.test(diagnostic)?'unsupported-cli-command':
+      /login|sign.in|authenticat|unauthoriz/.test(diagnostic)?'authentication-required':
+      /daemon|socket|connection refused|econnrefused/.test(diagnostic)?'daemon-unavailable':'cli-failed';
+    throw Error(`Codex Remote Control ${pairing?'pair':'start'} failed (${reason}, exit ${result.status??'unknown'}). No pairing code was returned.`);
+  }
+  if(!pairing)return {operation:'remote-control-start',state:'start-command-succeeded',host_control:true};
+  let decoded;
+  try {decoded=JSON.parse((result.stdout||'').trim());}
+  catch {throw Error('Codex Remote Control pair returned no valid JSON pairing receipt. No code was shared.');}
+  const receipt=decoded&&typeof decoded.result==='object'&&decoded.result!==null?decoded.result:decoded;
+  const manualCode=receipt?.manualPairingCode;
+  if(typeof manualCode!=='string'||manualCode.trim().length<4||manualCode.trim().length>200) {
+    throw Error('Codex Remote Control did not return a usable manual pairing code.');
+  }
+  // pairingCode may contain a QR token or URL; never forward it. The owner
+  // requested only the short-lived manual code and its expiry.
+  const expiry=receipt.expiresAt;
+  return {operation:'remote-control-pair',state:'code-created',manualPairingCode:manualCode.trim(),
+    expiresAt:typeof expiry==='string'||Number.isFinite(expiry)?expiry:null,host_control:true};
+}
+
 export async function withCodex(operation) {
   const proc=spawn(runtime(),[...(config().codexArgs||[]),'app-server','--stdio'],{
     cwd:home,windowsHide:true,stdio:['pipe','pipe','pipe'],env:subscriptionEnvironment(),
@@ -68,6 +133,7 @@ export async function assertStoredIdle(rpc,thread,excludeTaskId){
   if(latest.data.some(turn=>!observeNativeTurn(thread,turn).terminal_observed))throw Error('Native ownership is unresolved. Use the existing-chat desktop queue for owner-authorized remote work; inspect its exact turn until completion. A stored interrupted state does not release another writer.');
 }
 export async function history(action,args) {
+  if(action==='remote-start'||action==='remote-pair')return remoteControl(action);
   return withCodex(async rpc=>{
     if(action==='desktop'){
       const {desktopHandoff}=await import('./desktop-handoff.mjs');

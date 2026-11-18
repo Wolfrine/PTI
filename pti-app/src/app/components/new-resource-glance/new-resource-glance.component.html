@@ -23,5 +23,15 @@
       <div class="instrument-foot has-meter"><small class="firebase-context" [title]="firebasePeakContext">{{ firebasePeakContext }}</small><div class="signal-track" [class.is-unknown]="!firebasePeak" role="progressbar" aria-label="Highest observed daily eligible database quota use" [attr.aria-valuenow]="firebasePeak ? (firebasePeak.percent > 100 ? 100 : firebasePeak.percent) : null" [attr.aria-valuetext]="firebasePeak ? (firebasePeak.percent | number:'1.0-1') + '% used' : 'Unavailable'" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="firebasePeak ? (firebasePeak.percent > 100 ? 100 : firebasePeak.percent) : 0"></span></div></div>
     </a>
   </div>
+  <a class="billing-strip" [routerLink]="['/new-resource-usage', 'billing']" aria-label="Open Google Cloud billing details">
+    <span class="billing-identity"><span class="billing-icon" aria-hidden="true"><mat-icon>payments</mat-icon></span><span class="billing-copy"><strong>Google Cloud spend</strong><small [title]="billingContext">{{ billingContext }}</small></span></span>
+    <span class="billing-values" *ngIf="billingAvailable && billing as reading; else billingNotConnected">
+      <span class="billing-amount primary"><strong>{{ reading.net | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong><small>Net this month</small></span>
+      <span class="billing-amount"><strong>{{ reading.gross | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong><small>Charges</small></span>
+      <span class="billing-amount"><strong>{{ reading.credits | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong><small>Credits</small></span>
+    </span>
+    <ng-template #billingNotConnected><span class="billing-missing">{{ billingStatus }}</span></ng-template>
+    <mat-icon class="billing-arrow" aria-hidden="true">north_east</mat-icon>
+  </a>
   <p class="pulse-provenance">{{ githubCoverage }} <span aria-hidden="true">·</span> {{ firebaseReporting }} <span aria-hidden="true">·</span> Figures show reported sources only</p>
 </section>

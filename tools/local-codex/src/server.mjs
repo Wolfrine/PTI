@@ -32,6 +32,7 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
   project: z.string(), prompt, mode: z.enum(['inspect', 'edit']).default('inspect'), request_key: key,
   work_key:key.optional(),title:z.string().trim().min(1).max(100).optional(),thread_id:z.string().uuid().optional(),
   strategy:z.enum(['auto','single','team']).default('auto'),purpose:z.enum(['work','acceptance']).default('work'),
+  model:z.string().regex(/^[a-z0-9][a-z0-9._-]{0,99}$/i).optional(),reasoning_effort:z.enum(['none','minimal','low','medium','high','xhigh','max','ultra']).optional(),
   chat_routing:z.object({affinity_id:z.string().regex(/^[a-f0-9]{64}$/),module_key:z.string(),selection:z.enum(['new','affinity','explicit','rotate']),previous_thread_id:z.string().uuid().optional(),reason:z.string().optional()}).strict().optional(),
   affinity_fallback:z.boolean().default(false),handoff:z.string().max(4000).optional(),
   relay_generation:z.number().int().positive().optional(),
@@ -39,14 +40,17 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
   const target = project(args.project);
   const jobId = digest(args.work_key?`work:${target.key}:${args.mode}:${args.work_key}`:args.request_key).slice(0, 32);
   const requestKeyDigest=digest(args.request_key);
-  const inputHash = digest(JSON.stringify({ project: target.key, prompt: args.prompt, mode: args.mode,title:args.title,thread_id:args.thread_id,strategy:args.strategy,purpose:args.purpose,...(args.chat_routing?{chat_routing:args.chat_routing,affinity_fallback:args.affinity_fallback,handoff:args.handoff}:{}) }));
-  const legacyHash=args.strategy==='auto'&&args.purpose==='work'?digest(JSON.stringify({project:target.key,prompt:args.prompt,mode:args.mode,title:args.title,thread_id:args.thread_id})):null;
+  const inputHash = digest(JSON.stringify({ project: target.key, prompt: args.prompt, mode: args.mode,title:args.title,thread_id:args.thread_id,strategy:args.strategy,purpose:args.purpose,...(args.model?{model:args.model}:{}),...(args.reasoning_effort?{reasoning_effort:args.reasoning_effort}:{}),...(args.chat_routing?{chat_routing:args.chat_routing,affinity_fallback:args.affinity_fallback,handoff:args.handoff}:{}) }));
+  const legacyHash=!args.model&&!args.reasoning_effort&&args.strategy==='auto'&&args.purpose==='work'?digest(JSON.stringify({project:target.key,prompt:args.prompt,mode:args.mode,title:args.title,thread_id:args.thread_id})):null;
   const directory = taskDir(jobId);
   fs.mkdirSync(path.dirname(directory), { recursive: true });
   try { fs.mkdirSync(directory); } catch (error) {
     if (error.code !== 'EEXIST') throw error;
     const existing = task(jobId);
     const sameInput=existing.inputHash===inputHash||existing.inputHash===legacyHash;
+    if(args.work_key&&((args.model!==undefined&&existing.requestedModel!==args.model)||(args.reasoning_effort!==undefined&&existing.requestedReasoningEffort!==args.reasoning_effort))) {
+      throw Error('This work_key already belongs to a different model or reasoning effort. Use a new work_key.');
+    }
     if(args.work_key&&existing.requestKeyDigest!==requestKeyDigest){
       if(existing.requestedThreadId===undefined&&!sameInput)throw Error('Legacy source identity is unknown; continue the task or use a distinct work key.');
       if(existing.requestedThreadId!==undefined&&existing.requestedThreadId!==(args.thread_id||null))throw Error('This work key belongs to a different requested source thread.');
@@ -58,19 +62,21 @@ register('start_task', 'Start an asynchronous local Codex task. Inspect reads a 
   const now = new Date().toISOString();
   const title=args.title||args.prompt.split(/[\r\n]/)[0].replace(/\s+/g,' ').slice(0,80);
   const job = { id: jobId, project: target.key, cwd: target.path, resourcePath:target.resourcePath, mode: args.mode,strategy:args.strategy,purpose:args.purpose,relayGeneration:args.relay_generation,inputHash, prompt: args.prompt,title,workKey:args.work_key,requestKeyDigest,
+    ...(args.model?{requestedModel:args.model}:{}),...(args.reasoning_effort?{requestedReasoningEffort:args.reasoning_effort}:{}),
     ...(args.chat_routing?{chatRouting:args.chat_routing,affinityFallback:args.affinity_fallback,handoff:args.handoff}:{}),
-    createdAt: now, updatedAt: now, status: 'queued', requestedThreadId:args.thread_id||null,threadId: args.thread_id||null, turnId: null, messages: [], pending: [], history: [] };
+    createdAt: now, updatedAt: now, status: 'queued', nativeTurnDispatchAttempted:false, requestedThreadId:args.thread_id||null,threadId: args.thread_id||null, turnId: null, messages: [], pending: [], history: [] };
   write(path.join(directory, 'task.json'), job);
   launch(jobId, worker);
   return job;
 });
 
-register('codex_history','Internal history, organization and explicitly authorized existing-chat desktop handoff for the authenticated relay. Only action desktop queues native work.',{
-  action:z.enum(['list','read','rename','archive','unarchive','desktop']),
+register('codex_history','Internal history, organization, existing-chat desktop handoff and narrowly allowed remote-control CLI operations for the authenticated relay. Only action desktop queues native work.',{
+  action:z.enum(['list','read','rename','archive','unarchive','desktop','remote-start','remote-pair']),
   args:z.object({project:z.string().optional(),thread_id:z.string().uuid().optional(),query:z.string().max(200).optional(),
     archived:z.boolean().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).optional(),title:z.string().trim().min(1).max(100).optional(),prompt:prompt.optional(),request_id:id.optional(),cancel:z.boolean().optional()}).strict(),
 },false,async ({action,args})=>{
-  if(action!=='list'&&!args.thread_id)throw Error('A selected thread ID is required.');
+  if(!['list','remote-start','remote-pair'].includes(action)&&!args.thread_id)throw Error('A selected thread ID is required.');
+  if(['remote-start','remote-pair'].includes(action)&&Object.keys(args).length)throw Error('Remote-control operations accept no project, thread or arbitrary arguments.');
   if(action==='rename'&&!args.title)throw Error('A short title is required.');
   return history(action,args);
 });
@@ -108,7 +114,9 @@ register('continue_task', 'Continue a completed or interrupted bridge-created Co
     const current = read(path.join(directory, 'task.json'));
     if (current.updatedAt !== job.updatedAt) throw new Error('Task changed; retrieve it before continuing.');
     for (const name of ['cancel.json', 'worker.lock']) if (fs.existsSync(path.join(directory, name))) fs.unlinkSync(path.join(directory, name));
-    Object.assign(job, { prompt: args.prompt, status: 'queued', pending: [], final: null, error: null, updatedAt: new Date().toISOString() });
+    Object.assign(job, { prompt: args.prompt, status: 'queued', pending: [], final: null, error: null, turnId:null, nativeTurnDispatchAttempted:false, updatedAt: new Date().toISOString() });
+    delete job.nativeTerminal;
+    delete job.nativeDeliveryAbsent;
     job.relayGeneration=args.relay_generation;
     job.affinityFallback=false;
     job.history.push({ key: action, inputHash });

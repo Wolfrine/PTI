@@ -8,6 +8,14 @@ This is the canonical upgrade path for an existing Windows worker. `install.ps1`
 
 The executor requires every protected hosted task at the same generation and terminal, no other nonterminal jobs, no local relay claims, no live worker lock/PID and all protected worker processes exited. It then seals the fence transactionally. The gate stays closed through stop, pointer swap, heartbeat verification and rollback. Expiry never opens a sealed/unknown install. An idle snapshot is never a lock.
 
+The host's **raw owner reservations** are also checked transactionally before
+sealing and again before the final release. Any `nativeWriterFence:true` or
+`unresolved_native_writer` blocks maintenance even if its bridge job already
+looks terminal or its lease/time-to-live expired. Only the exact native
+terminal or confirmed non-delivery evidence may release that reservation.
+The storage cutover applies the same gate; neither helper may infer native
+writer release from a scheduler idle snapshot.
+
 The current path is a **detached owner one-shot, not a scheduled job or polling loop**. `maintenance-detach.ps1` uses documented local [Win32_Process.Create](https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/create-method-in-class-win32-process) with hidden/detached/job-breakaway flags and a minimal non-secret owner environment. Windows permits that creation or returns a refusal; no elevation/policy workaround is attempted. The WMI provider owns the child instead of Codex. No persistent WMI subscription, service or scheduler task is created. Frozen WScript → hidden PowerShell → Node verifies the same Windows SID and rejects any Codex/bridge-worker ancestor. Existing owner ADC is used normally through the SDK; no credential/session/environment secret is copied.
 
 A launcher can disappear between CIM lookup and `GetOwnerSid` (WMI 0x80041002). That exact not-found case records `launch.ownerVerified:false`, not a successful owner check. Other CIM failures, access denial and SID mismatch remain fatal. Detached admission acknowledges only the actual executor's independently checked SID, manifest hash, source commit, target version and external-process receipt. Thus a missing short-lived launcher does not abort an otherwise verified executor; no claim of process ownership is inferred from a PID alone.
@@ -28,6 +36,8 @@ The detached launch reconciles protected claimed jobs whose bridge lease has alr
    node scripts/local-codex-maintenance.mjs --action detach --manifest H:\Workspace\Storage-Recovery\LocalCodex\Maintenance\VERSION-release\manifest.json
    ```
 
+   The existing F: installation is still the default. **After a separately verified guarded storage cutover** to `H:\LocalCodexBridge`, provide `--install-root H:\LocalCodexBridge` on `--action stage`, stage beneath `H:\LocalCodexBridge\maintenance\<unique-stage>`, and use that H: manifest path for `detach` and any recovery. Do not point the updater at H: while the scheduled relay still runs on F:. See [storage migration](storage-migration.md); the normal release updater does not perform a drive cutover.
+
    Run from `tools/pti-mcp`. Stage pins seven target/prior file SHA-256 values/sizes; frozen helpers/routing report; installed stop/launchers; interpreters; Chrome provider files/pointers; source commit; owner; worker PIDs; rollback pointer. The launch pins the entire manifest SHA-256. This is hash integrity, not Authenticode signing. No config/authentication file is copied/replaced. `detach` acquires drain, invokes Windows creation and awaits the external executor's actual acknowledgement. Failed launch aborts only an unsealed drain; sealed/unknown state stays closed for recovery.
 5. Inspect `launch.json`, `result.json` and `--action status` / `bridge_status.maintenance`. Require `externalProcessVerified:true`, correct owner/hash and `waiting-for-drain`. **Finish the delivering task.** Do not await activation inside its claim. No additional owner terminal command is needed normally. After actual exit, the executor seals, copies/verifies seven files, disables the existing relay trigger, calls its exact guarded stop script, swaps `active.json`, re-enables/starts that relay and verifies fresh local + hosted heartbeat/listener/version. It rechecks target/provider pins and protected task final states before clearing drain.
 6. After task termination, read `result.json` and `bridge_status.lastMaintenance`. Success requires `activated-verified`, the requested observed version, fresh local/hosted heartbeat, listener connected, seven matching files and protected task terminal evidence. Waiting/installing is not activation. The executor records observations independently of the delivering agent's intent. Chrome's separate tab/site consent and gameplay/audio acceptance remain separate.
@@ -47,6 +57,20 @@ The detached launch reconciles protected claimed jobs whose bridge lease has alr
 The earlier 0.4.8 release used the successful one-time scheduler adapter; its verified receipt is historical evidence. Legacy `--launch-method scheduled` / `--action schedule` remains only for an explicitly requested scheduler run. Default detached stages refuse accidental scheduler execution.
 
 ## Compatibility and prior RCA
+
+### Integrated 0.4.10 host and 0.4.15 worker source
+
+Deploy the 0.4.10 host before activating the 0.4.15 worker or its new model,
+durable-queue and host-control features. Existing configured models and native
+desktop chats remain unchanged until their separately authorized transition.
+Keep raw native-writer fences through drain, seal and final health verification.
+
+For the legacy F: installation, new ordinary maintenance stages use
+`H:\Workspace\Storage-Recovery\LocalCodex\Maintenance`; an activated H: bridge
+uses `H:\LocalCodexBridge\maintenance`. Both scoped H: paths and pinned legacy
+F: manifests remain readable by the one-shot launchers. New F: stage creation
+is refused. Review reports default to `H:\Workspace\Reports\LocalCodex` even
+while the live bridge remains on F:. Source integration alone activates nothing.
 
 ### Releases that change ChatGPT tools
 

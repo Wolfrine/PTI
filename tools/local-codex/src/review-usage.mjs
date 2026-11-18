@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {home,read,write,VERSION} from './common.mjs';
+import {home,read,write,VERSION,assertBridgeHome} from './common.mjs';
 
 const numeric=value=>Number.isFinite(value)&&value>=0?value:null;
 const median=values=>{const sorted=values.filter(v=>v!==null).sort((a,b)=>a-b);return sorted.length?sorted[Math.floor(sorted.length/2)]:null;};
@@ -99,7 +99,9 @@ async function syncOwnerMetadata(taskIds){
   });
 }
 export async function reviewUsage({days=7,sync=false,outputDirectory=path.join(home,'harness','reviews')}={}){
-  if(!fs.realpathSync.native(home).toLowerCase().startsWith('f:\\'))throw Error('Bridge review data must resolve to F:.');
+  if(path.win32.normalize(fs.realpathSync.native(home)).replace(/[\\/]+$/,'').toLowerCase()!==assertBridgeHome())throw Error('Bridge review data must resolve to the approved bridge root.');
+  const storageDrive=path.win32.parse(path.win32.resolve(home)).root.toLowerCase();
+  const onStorageDrive=value=>path.win32.isAbsolute(value)&&path.win32.parse(path.win32.resolve(value)).root.toLowerCase()===storageDrive;
   const taskRoot=path.join(home,'tasks');
   const files=fs.existsSync(taskRoot)?fs.readdirSync(taskRoot,{withFileTypes:true}).filter(entry=>entry.isDirectory()&&/^[a-f0-9]{32}$/.test(entry.name)).map(entry=>({name:entry.name,at:fs.statSync(path.join(taskRoot,entry.name)).mtimeMs})).sort((a,b)=>b.at-a.at).slice(0,5000):[];
   const tasks=files.map(entry=>{try{return read(path.join(home,'tasks',entry.name,'task.json'));}catch{return null;}}).filter(Boolean);
@@ -111,12 +113,12 @@ export async function reviewUsage({days=7,sync=false,outputDirectory=path.join(h
   report.transport=state.transport?{...state.transport,basis:'Cumulative local relay request/event counters since transport.startedAt; not billed Firestore operations.',observedAt:new Date().toISOString()}:null;
   report.headroom={freeMemoryBytes:os.freemem(),totalMemoryBytes:os.totalmem()};
   const fingerprint=reviewFingerprint(report);
-  if(!path.win32.isAbsolute(outputDirectory)||!path.win32.resolve(outputDirectory).toLowerCase().startsWith('f:\\'))throw Error('Review outputs must be on F:.');
+  if(!onStorageDrive(outputDirectory))throw Error('Review outputs must use the bridge storage drive.');
   let existingParent=outputDirectory;
   while(!fs.existsSync(existingParent))existingParent=path.dirname(existingParent);
-  if(!fs.realpathSync.native(existingParent).toLowerCase().startsWith('f:\\'))throw Error('Review output parent must resolve to F:.');
+  if(!onStorageDrive(fs.realpathSync.native(existingParent)))throw Error('Review output parent must resolve to the bridge storage drive.');
   fs.mkdirSync(outputDirectory,{recursive:true});
-  if(!fs.realpathSync.native(outputDirectory).toLowerCase().startsWith('f:\\'))throw Error('Review outputs must resolve to F:.');
+  if(!onStorageDrive(fs.realpathSync.native(outputDirectory)))throw Error('Review outputs must resolve to the bridge storage drive.');
   const indexFile=path.join(outputDirectory,'latest.json');
   let prior;try{prior=read(indexFile);}catch{}
   const changed=prior?.fingerprint!==fingerprint;

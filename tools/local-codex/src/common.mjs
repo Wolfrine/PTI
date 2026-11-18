@@ -6,10 +6,20 @@ import {modelSelection} from './model-policy.mjs';
 import {ownerLimit,ownerDuration} from './limits.mjs';
 import {browserContextPreflight} from './browser-context.mjs';
 
-export const VERSION = '0.4.14';
+export const VERSION = '0.4.15';
+// Keep the F: installation as the bootstrap/default until the guarded owner
+// migration explicitly switches the existing relay to H:. Project checkouts
+// are independently required to remain on F:.
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
+export const H_DRIVE_HOME = 'H:/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');
+const bridgeRoots = new Set([DEFAULT_HOME,H_DRIVE_HOME].map(value=>path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase()));
+export function assertBridgeHome(value=home) {
+  const normalized=path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase();
+  if(!path.win32.isAbsolute(value)||!bridgeRoots.has(normalized))throw Error('Bridge home must be the existing F: root or the approved H: root.');
+  return normalized;
+}
 export const digest = text => crypto.createHash('sha256').update(text).digest('hex');
 export function subscriptionEnvironment() {
   const env={...process.env};
@@ -30,8 +40,10 @@ export function write(file, value) {
   }finally{if(fs.existsSync(temporary))fs.unlinkSync(temporary);}
 }
 export function config() {
+  assertBridgeHome();
   const value = read(configFile);
-  if (!path.win32.isAbsolute(home) || !home.toLowerCase().startsWith('f:')) throw new Error('Bridge data must be on F:.');
+  const resolved=path.win32.normalize(fs.realpathSync.native(home)).replace(/[\\/]+$/,'').toLowerCase();
+  if(resolved!==assertBridgeHome())throw Error('Bridge root must not be a junction, symlink or redirected path.');
   if (!value.projects || !Object.keys(value.projects).length) throw new Error('Configure at least one project.');
   for(const [name,min] of [['maxConcurrentTasks',1],['maxSubagentsPerTask',0]]){
     value[name]=ownerLimit(value[name],name,min);

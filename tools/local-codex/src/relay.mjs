@@ -29,6 +29,70 @@ function deadline(){return Math.min(retryAt||nextMaintenance,state.active.length
 const metrics=state.transport||{schemaVersion:1,startedAt:new Date().toISOString(),syncRequests:0,dispatchRequests:0,emptyDispatches:0,notificationEvents:0,listenerSessions:0,localFileEvents:0,reportRequests:0,suppressedReports:0,failedRequests:0,claims:0};
 const persist=()=>write(stateFile,state);
 const remove=job=>{state.active=withoutClaim(state.active,job);watchers.get(job.id)?.();watchers.delete(job.id);dirty.delete(job.id);persist();};
+const remoteTimers=new Map(),remoteInFlight=new Map(),remoteErrors=new Set();
+const remoteOperation=job=>job.command&&['remote-start','remote-pair'].includes(job.command.action);
+const remoteFile=job=>path.join(home,'data',`remote-${job.id}.json`);
+function remoteExpiry(value,now){
+  const observed=typeof value==='number'?(value<1e12?value*1000:value):typeof value==='string'?Date.parse(value):NaN;
+  return Math.min(Number.isFinite(observed)?observed:now+5*60000,now+10*60000);
+}
+function scheduleRemoteRedaction(file,when){
+  if(remoteTimers.has(file))return;
+  const timer=setTimeout(()=>{
+    remoteTimers.delete(file);
+    try{readRemoteReceipt(file);}catch{process.emitWarning('A Local Codex remote pairing receipt could not be redacted.');}
+  },Math.max(0,when-Date.now()));
+  timer.unref();remoteTimers.set(file,timer);
+}
+function readRemoteReceipt(file){
+  if(!fs.existsSync(file))return null;
+  const receipt=read(file);
+  if(receipt.operation==='remote-control-pair'&&receipt.manualPairingCode){
+    if(!Number.isFinite(receipt.scrubAt)||Date.now()>=receipt.scrubAt){
+      const redacted={operation:'remote-control-pair',state:'expired',redacted:true,expiresAt:receipt.expiresAt??null,host_control:true};
+      write(file,redacted);return redacted;
+    }
+    scheduleRemoteRedaction(file,receipt.scrubAt);
+  }
+  return receipt;
+}
+for(const name of fs.readdirSync(path.join(home,'data')).filter(name=>/^remote-[a-f0-9]{32}\.json$/.test(name))){
+  try{readRemoteReceipt(path.join(home,'data',name));}
+  catch{process.emitWarning('A Local Codex remote pairing receipt could not be redacted during startup.');}
+}
+async function serviceRemote(job){
+  const file=remoteFile(job),cached=readRemoteReceipt(file);
+  if(cached){
+    if(cached.state==='attempting')throw Error('A previous remote-control operation has an unknown outcome; it was not replayed. Use a fresh request after inspecting remote status.');
+    return cached;
+  }
+  // The attempt marker is written before invoking the CLI. An interrupted
+  // relay cannot accidentally generate a second code for the same request.
+  write(file,{operation:job.command.action,state:'attempting',startedAt:Date.now(),host_control:true});
+  const result=await local('codex_history',job.command);
+  if(job.command.action==='remote-pair'&&result.state==='code-created'){
+    const scrubAt=remoteExpiry(result.expiresAt,Date.now());
+    write(file,{...result,scrubAt});
+    if(scrubAt<=Date.now())return readRemoteReceipt(file);
+    scheduleRemoteRedaction(file,scrubAt);
+  }else write(file,result);
+  return result;
+}
+// A completed MCP application rejection can prove that a brand-new task was
+// never created only when its deterministic local directory was absent both
+// before and after the rejection. A transport timeout cannot prove this.
+const localStartId=job=>digest(`relay-${job.id}-${job.generation}`).slice(0,32);
+const rejectedStartFile=job=>path.join(home,'data',`rejected-start-${job.id}-${job.generation}.json`);
+function localStartDirectoryAbsent(job){
+  try{fs.lstatSync(taskDir(localStartId(job)));return false;}
+  catch(error){if(error.code==='ENOENT')return true;throw error;}
+}
+async function reportRejectedStart(job,receipt){
+  if(job.mode!=='edit'||receipt.localId!==localStartId(job)||!localStartDirectoryAbsent(job))throw Error('Local start rejection cannot prove non-delivery: its deterministic task directory now exists or identity changed.');
+  await api('report',{id:job.id,generation:job.generation,lease:job.lease,
+    snapshot:{status:'failed',error:receipt.error,native_delivery_absent:true}});
+  remove(job);
+}
 function observe(job){
   if(!job.localId||watchers.has(job.id))return;
   watchers.set(job.id,watchTask(taskDir(job.localId),()=>{metrics.localFileEvents++;dirty.add(job.id);events.wake();},()=>{watchers.get(job.id)?.();watchers.delete(job.id);dirty.add(job.id);events.wake();}));
@@ -58,13 +122,38 @@ async function api(action,body){
   if(!response.ok){await response.body?.cancel();if(response.status===401)until=0;throw Error(response.status===409?'lease_lost':`Relay request unavailable (HTTP ${response.status}).`);}
   const result=await response.json();lastSuccess=Date.now();lossCancelled=false;return result;
 }
-function snapshot(job){return {
+function nativeTerminalProven(job,generation){
+  const proof=job.nativeTerminal;
+  return job.mode==='edit'&&Number.isInteger(generation)&&job.relayGeneration===generation&&
+    ['completed','failed','interrupted'].includes(job.status)&&
+    typeof job.threadId==='string'&&job.threadId.length>0&&
+    typeof job.turnId==='string'&&job.turnId.length>0&&
+    proof?.source==='turn/completed'&&proof.threadId===job.threadId&&
+    proof.turnId===job.turnId&&proof.status===job.status;
+}
+function nativeDeliveryProvenAbsent(job,generation){
+  const proof=job.nativeDeliveryAbsent;
+  return job.mode==='edit'&&Number.isInteger(generation)&&job.relayGeneration===generation&&
+    ['completed','failed','interrupted'].includes(job.status)&&job.nativeTurnDispatchAttempted===false&&
+    proof?.source==='worker-terminal-before-turn-start'&&proof.generation===generation&&proof.status===job.status;
+}
+function nativeTurnKnown(job,generation){
+  return job.mode==='edit'&&Number.isInteger(generation)&&job.relayGeneration===generation&&
+    job.nativeTurnDispatchAttempted===true&&typeof job.threadId==='string'&&job.threadId.length>0&&
+    typeof job.turnId==='string'&&job.turnId.length>0;
+}
+function snapshot(job,generation){return {
   status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,
   messages:job.messages.slice(-10).map(m=>({text:m.text,phase:m.phase||null})),pending:job.pending||[],
   ...(job.model?{model:job.model}:{}),...(job.reasoningEffort?{reasoning_effort:job.reasoningEffort}:{}),
   ...(job.executionPolicy?{execution_policy:job.executionPolicy}:{}),
   ...(job.chatRouting?{chat_routing:job.chatRouting}:{}),
   ...(job.threadId?{thread_id:job.threadId}:{}),...(job.telemetry?{telemetry:job.telemetry}:{}),
+  // The exact native turn can be pinned before completion for later signed-in
+  // history reconciliation. Knowing its ID alone never proves termination.
+  ...(nativeTurnKnown(job,generation)?{native_turn_id:job.turnId}:{}),
+  ...(nativeTurnKnown(job,generation)&&nativeTerminalProven(job,generation)?{native_terminal_observed:true}:{}),
+  ...(nativeDeliveryProvenAbsent(job,generation)?{native_delivery_absent:true}:{}),
 };}
 async function authMode(){
   if(Date.now()>authUntil){const health=await local('bridge_status');cachedAuth=health.authMode;authUntil=Date.now()+60000;}
@@ -114,17 +203,32 @@ async function service(job,controls){
       const receipt=path.join(home,'data',`history-${job.id}.json`);
       if(controls?.cancel)await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'interrupted'}});
       else{
-        const result=fs.existsSync(receipt)?read(receipt):await local('codex_history',job.command);
-        if(!fs.existsSync(receipt))write(receipt,result);
+        const result=remoteOperation(job)?await serviceRemote(job):fs.existsSync(receipt)?read(receipt):await local('codex_history',job.command);
+        if(!remoteOperation(job)&&!fs.existsSync(receipt))write(receipt,result);
         await api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:{status:'completed',result}});
       }
       remove(job);return;
     }
     if(!job.localId){
       const request_key=`relay-${job.id}-${job.generation}`,previous=state.localTasks?.[job.id];
-      const result=previous
-        ?await local('continue_task',{task_id:previous,prompt:job.prompt,request_key,relay_generation:job.generation})
-        :await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:job.generation,strategy:job.strategy||'auto',purpose:job.purpose||'work',...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{}),...(job.chat_routing?{chat_routing:job.chat_routing,affinity_fallback:job.affinity_fallback||false}:{}),...(job.handoff?{handoff:job.handoff}:{})});
+      const rejectionFile=rejectedStartFile(job);
+      if(!previous&&fs.existsSync(rejectionFile)){
+        await reportRejectedStart(job,read(rejectionFile));return;
+      }
+      const absentBefore=!previous&&localStartDirectoryAbsent(job);
+      let result;
+      try{
+        result=previous
+          ?await local('continue_task',{task_id:previous,prompt:job.prompt,request_key,relay_generation:job.generation})
+          :await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:job.generation,strategy:job.strategy||'auto',purpose:job.purpose||'work',...(job.title?{title:job.title}:{}),...(job.thread_id?{thread_id:job.thread_id}:{}),...(job.model?{model:job.model}:{}),...(job.reasoning_effort?{reasoning_effort:job.reasoning_effort}:{}),...(job.chat_routing?{chat_routing:job.chat_routing,affinity_fallback:job.affinity_fallback||false}:{}),...(job.handoff?{handoff:job.handoff}:{})});
+      }catch(error){
+        if(job.mode==='edit'&&!previous&&absentBefore&&error.scope==='local'&&!error.retryable&&localStartDirectoryAbsent(job)){
+          const receipt={localId:localStartId(job),error:error.message.slice(0,2000)};
+          write(rejectionFile,receipt);
+          await reportRejectedStart(job,receipt);return;
+        }
+        throw error;
+      }
       job.localId=result.id;state.localTasks||={};state.localTasks[job.id]=result.id;persist();
     }
     observe(job);
@@ -150,7 +254,7 @@ async function service(job,controls){
       await serviceDesktop(job,controls,{project:job.project,thread_id:current.threadId,prompt:job.prompt});
       return;
     }
-    if(await reportChangedSnapshot(job,snapshot(current),value=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:value})))persist();else metrics.suppressedReports++;
+    if(await reportChangedSnapshot(job,snapshot(current,job.generation),value=>api('report',{id:job.id,generation:job.generation,lease:job.lease,snapshot:value})))persist();else metrics.suppressedReports++;
     if(['completed','failed','interrupted'].includes(current.status))remove(job);
   }catch(error){
     if(error.message==='lease_lost'){await cancelOwned(job);remove(job);return;}
@@ -199,9 +303,21 @@ try{
         if(response.more){dispatchRequested=true;syncRequested=true;events.wake();}
       }
       const selected=state.active.filter(job=>dirty.delete(job.id));
-      const results=await Promise.allSettled(selected.map(job=>service(job,controlsById.get(job.id))));
+      const ordinary=[];
+      for(const job of selected){
+        if(!remoteOperation(job)){ordinary.push(job);continue;}
+        if(remoteInFlight.has(job.id))continue;
+        // Pairing may wait on the native CLI for tens of seconds. Keep lease
+        // maintenance and unrelated task reports moving while it finishes.
+        const operation=service(job,controlsById.get(job.id))
+          .catch(()=>{remoteErrors.add(job.id);dirty.add(job.id);})
+          .finally(()=>{remoteInFlight.delete(job.id);events.wake();});
+        remoteInFlight.set(job.id,operation);
+      }
+      const results=await Promise.allSettled(ordinary.map(job=>service(job,controlsById.get(job.id))));
       let failed=false;
-      results.forEach((result,index)=>{if(result.status==='rejected'){failed=true;dirty.add(selected[index].id);}});
+      results.forEach((result,index)=>{if(result.status==='rejected'){failed=true;dirty.add(ordinary[index].id);}});
+      if(remoteErrors.size){remoteErrors.clear();failed=true;}
       if(failed)throw Error('task_report_retry_pending');
       if(listenerError)throw Error('notification_listener_unavailable');
       retryAt=0;retryDelay=1000;state.transport=metrics;state.lastSuccess=lastSuccess;persist();

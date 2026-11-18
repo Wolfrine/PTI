@@ -41,12 +41,24 @@ function rpc(method, params) {
     send({ id: requestId, method, params });
   });
 }
-function finish(status, error) {
+function finish(status, error, nativeTerminal) {
   if (closed) return;
   closed = true;
   clearInterval(timer);
   job.status = status;
   job.pending = [];
+  // Only the exact native turn/completed notification may establish that the
+  // app-server released this worker's parent writer. Synthetic failure paths
+  // (worker exit, cancellation, timeout) deliberately carry no proof.
+  if(nativeTerminal){job.nativeTerminal=nativeTerminal;delete job.nativeDeliveryAbsent;}
+  else {
+    delete job.nativeTerminal;
+    // Pre-dispatch failure is provable only when this worker has never tried
+    // sending turn/start. A missing turnId after an attempted RPC proves nothing.
+    if(['completed','failed','interrupted'].includes(status)&&job.nativeTurnDispatchAttempted===false){
+      job.nativeDeliveryAbsent={source:'worker-terminal-before-turn-start',generation:job.relayGeneration??null,status};
+    }else delete job.nativeDeliveryAbsent;
+  }
   if (error) job.error = error;
   if(telemetry){telemetry.finish();archiveRun(job,telemetry,status);}
   save();
@@ -105,7 +117,10 @@ function notification(message) {
     if(message.method==='thread/tokenUsage/updated'||message.method==='model/rerouted'||message.method==='thread/started'||message.method==='item/completed'&&p.item?.type!=='agentMessage')save();
   }
   if (p.threadId && p.threadId !== job.threadId) return;
-  if (message.method === 'turn/started') { job.turnId = p.turn.id; save(); }
+  if(message.method==='turn/started'&&job.nativeTurnDispatchAttempted===true&&p.threadId===job.threadId&&
+    typeof p.turn?.id==='string'&&p.turn.id&&(!job.turnId||job.turnId===p.turn.id)){
+    job.turnId=p.turn.id;save();
+  }
   if (message.method === 'item/completed' && p.item?.type === 'agentMessage') {
     const item = { id: p.item.id, phase: p.item.phase || null, text: p.item.text.slice(0, 48000), turnId: p.turnId };
     if (!job.messages.some(existing => existing.id === item.id)) job.messages.push(item);
@@ -114,10 +129,12 @@ function notification(message) {
     save();
   }
   if (message.method === 'turn/completed') {
+    if(p.threadId!==job.threadId||!job.turnId||p.turn?.id!==job.turnId||!['completed','failed','interrupted'].includes(p.turn.status))return;
+    const nativeTerminal={source:'turn/completed',threadId:p.threadId,turnId:p.turn.id,status:p.turn.status};
     Promise.allSettled([...childChecks.values()]).then(()=>{
       if(closed)return;
       if (!job.final && p.turn.status === 'completed') job.final = job.messages.filter(item => item.turnId === p.turn.id).at(-1)?.text || '';
-      finish(p.turn.status, p.turn.error?.message);
+      finish(p.turn.status, p.turn.error?.message,nativeTerminal);
     });
   }
   if (message.method === 'error' && !p.willRetry) {
@@ -129,8 +146,10 @@ try {
   if(job.telemetry&&!(job.runs||[]).some(run=>run.runId===job.telemetry.runId))archiveRun(job,job.telemetry,job.telemetry.finishedAt?'unknown':'interrupted');
   delete job.executionPolicy;
   telemetry=createTelemetry(job);
-  const settings=config();selection=modelSelection(settings);policy=harnessPolicy(job,settings,selection);
-  job.strategy=policy.strategy;job.purpose||='work';job.turnId=null;job.model=null;job.reasoningEffort=null;
+  const settings=config();
+  selection=modelSelection(settings,{model:job.requestedModel,reasoningEffort:job.requestedReasoningEffort});
+  policy=harnessPolicy(job,settings,selection);
+  job.strategy=policy.strategy;job.purpose||='work';job.turnId=null;job.model=null;job.reasoningEffort=null;delete job.nativeTerminal;delete job.nativeDeliveryAbsent;
   const target = project(job.project);
   if (target.path !== job.cwd) throw new Error('The project path changed. Start a new task after reviewing list_projects.');
   if(job.chatRouting)moduleLock=acquireIdentityLock('module',job.chatRouting.affinity_id);
@@ -230,7 +249,12 @@ try {
   save();
   if(isNewThread&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
   const currentPrompt=job.handoff?`Project handoff supplied for this rotation (source context only):\n${job.handoff}\n\nCurrent authorized request:\n${job.prompt}`:job.prompt;
+  if(job.nativeTurnDispatchAttempted===true)throw Error('Native turn dispatch was already attempted for this local generation; reconcile it before continuing.');
+  // This durable write must precede sending turn/start. If the RPC reaches
+  // native Codex and the worker dies before its response, delivery is unknown.
+  job.nativeTurnDispatchAttempted=true;save();
   const turn = await rpc('turn/start', { threadId: job.threadId, model: selection.model, effort: selection.effort, input: [{ type: 'text', text: currentPrompt }] });
+  if(typeof turn?.turn?.id!=='string'||!turn.turn.id||job.turnId&&job.turnId!==turn.turn.id)throw Error('Native turn identity mismatch; preserve this generation for reconciliation.');
   job.turnId = turn.turn.id;
   save();
 } catch (error) { finish('failed', error.message); }

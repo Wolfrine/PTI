@@ -1,6 +1,8 @@
-param()
+param([string]$BridgeRoot = 'F:\Workspace\Support\LocalCodexBridge')
 $ErrorActionPreference='Stop'
-$root='F:\Workspace\Support\LocalCodexBridge\chrome'
+$BridgeRoot=[IO.Path]::GetFullPath($BridgeRoot).TrimEnd('\')
+if($BridgeRoot -notin @('F:\Workspace\Support\LocalCodexBridge','H:\LocalCodexBridge')){throw 'Use the approved F: or H: Local Codex bridge root.'}
+$root=Join-Path $BridgeRoot 'chrome'
 if(Test-Path -LiteralPath (Join-Path $root 'ipc\native.lock')){
   $lock=Get-Content -LiteralPath (Join-Path $root 'ipc\native.lock') -Raw | ConvertFrom-Json
   if(Get-Process -Id $lock.pid -ErrorAction SilentlyContinue){throw 'Release the extension and wait for its native connection to close. No process is killed.'}

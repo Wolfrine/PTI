@@ -1,11 +1,13 @@
-export const DEFAULT_MODEL = 'gpt-6.1-sol';
+export const DEFAULT_MODEL = 'gpt-6.2-sol';
 export const DEFAULT_EFFORT = 'xhigh';
 const efforts = new Set(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
 const choiceRequired = detail => Error(`${detail} Ask the owner which model and reasoning effort to use; no fallback was started.`);
 
-export function modelSelection(configuration = {}) {
-  const model = configuration.model ?? DEFAULT_MODEL;
-  const effort = configuration.reasoningEffort ?? DEFAULT_EFFORT;
+export function modelSelection(configuration = {}, requested = {}) {
+  // A task can deliberately select Astra or another catalog-supported model.
+  // Absent task values preserve the installed owner's configured defaults.
+  const model = requested.model ?? configuration.model ?? DEFAULT_MODEL;
+  const effort = requested.reasoningEffort ?? configuration.reasoningEffort ?? DEFAULT_EFFORT;
   if (typeof model !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,99}$/i.test(model) || !efforts.has(effort)) {
     throw choiceRequired('The configured model or reasoning effort is invalid.');
   }

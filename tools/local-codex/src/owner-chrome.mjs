@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {home} from './common.mjs';
 
-const providerRoot='F:\\Workspace\\Support\\LocalCodexBridge\\chrome';
+const providerRoot=path.join(home,'chrome');
 export function ownerChromeConfiguration(job,workerPid,nodePath) {
   const pointer=path.join(providerRoot,'active.json');if(!fs.existsSync(pointer))return {args:[],instructions:'The optional PTI Owner Chrome provider is disabled. It is not required for app-owned Chrome control. Browser work belongs in an existing desktop-owned chat using its official tools and normal authorization; the standalone preflight applies only to this bridge invocation.'};
   const active=JSON.parse(fs.readFileSync(pointer,'utf8'));

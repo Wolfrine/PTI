@@ -1,9 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {modelSelection, requireModel, verifyModel} from '../src/model-policy.mjs';
-const selection = {model: 'gpt-6.1-sol', effort: 'xhigh'};
+const selection = {model: 'gpt-6.2-sol', effort: 'xhigh'};
 const model = {model: selection.model, supportedReasoningEfforts: [{reasoningEffort: 'xhigh'}]};
-test('owner preference defaults explicitly to Sol 6.1 / xhigh and validates configured alternatives', () => {
+test('owner preference defaults explicitly to Sol 6.2 / xhigh and validates configured alternatives', () => {
   assert.deepEqual(modelSelection(), selection);
   assert.deepEqual(modelSelection({model: 'owner-selected-model', reasoningEffort: 'high'}), {model: 'owner-selected-model', effort: 'high'});
   assert.throws(() => modelSelection({reasoningEffort: 'extra-high'}), /Ask the owner/);

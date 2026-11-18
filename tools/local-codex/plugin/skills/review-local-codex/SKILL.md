@@ -9,7 +9,7 @@ The owner authorizes an ongoing evidence-led improvement loop for this harness. 
 
 ## Establish evidence
 
-Verify that the reviewer itself uses `gpt-6.1-sol` with `xhigh`, using actual scheduled-turn metadata. An attached heartbeat uses its chat's configuration; a model name in the prompt alone is not proof. Preserve the verified pair, or ask the owner if it is unavailable or uncertain.
+Verify that the reviewer itself uses the owner-selected model/effort, normally `gpt-6.2-sol` with `xhigh` after migration, using actual scheduled-turn metadata. An attached heartbeat keeps its chat's existing model until changed through supported native controls; a model name in the prompt alone is not proof. Report a still-6.1 reviewer as not yet migrated instead of silently changing or claiming its runtime selection.
 
 From the PTI repository run `node tools/local-codex/src/review-usage.mjs --days 7 --sync`; the owning README documents the installed-release equivalent. A native scheduled reviewer can run it directly. In ordinary ChatGPT, use the delegate harness to start/continue one scoped Local Codex maintenance task for this authorized review and its report; select edit only for authorized report/source writes. A delegated worker must not call the bridge recursively. Reuse existing task metadata and account usage readings; do not duplicate prompts, finals, command output, credentials or unrelated conversations in a review log. Keep artifacts on F:. Confirm report coverage and collector freshness.
 

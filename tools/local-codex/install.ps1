@@ -1,6 +1,7 @@
-param([switch]$NoSchedule,[string]$MaintenanceManifest,[string]$ManifestSHA256)
+param([switch]$NoSchedule,[string]$MaintenanceManifest,[string]$ManifestSHA256,[string]$InstallRoot = 'F:\Workspace\Support\LocalCodexBridge')
 $ErrorActionPreference = 'Stop'
-$installRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\LocalCodexBridge')
+$installRoot = [IO.Path]::GetFullPath($InstallRoot).TrimEnd('\')
+if ($installRoot -notin @('F:\Workspace\Support\LocalCodexBridge','H:\LocalCodexBridge')) { throw 'Use the approved F: or H: Local Codex bridge root.' }
 if ((Test-Path -LiteralPath $installRoot) -and ((Get-Item -LiteralPath $installRoot).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Install root must not be a junction.' }
 if ($MaintenanceManifest) {
   & (Join-Path $PSScriptRoot 'maintenance-once.ps1') -Manifest $MaintenanceManifest -ManifestSHA256 $ManifestSHA256
@@ -13,11 +14,12 @@ $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 $taskName = 'PTI Local Codex Relay'
 $previousTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
 $restoreTask = $previousTask -and $previousTask.State -ne 'Disabled'
+if ($previousTask -and (@($previousTask.Actions).Count -ne 1 -or $previousTask.Actions[0].WorkingDirectory -ne $installRoot)) { throw 'The existing relay task points to another root or has an unknown action. Use the guarded storage-migration procedure before switching it.' }
 # Disable triggers before stopping: a queued minute trigger can otherwise start
 # the old pointer while files are being copied. Always restore an enabled task.
 try {
 if ($restoreTask) { Disable-ScheduledTask -TaskName $taskName | Out-Null }
-if (Test-Path -LiteralPath (Join-Path $installRoot 'active.json')) { & (Join-Path $PSScriptRoot 'stop.ps1') }
+if (Test-Path -LiteralPath (Join-Path $installRoot 'active.json')) { & (Join-Path $PSScriptRoot 'stop.ps1') -InstallRoot $installRoot }
 $protectModule = Join-Path $PSScriptRoot '..\codex-usage-monitor\src\dpapi.mjs'
 & $nodePath --input-type=module -e "const {pathToFileURL}=await import('node:url'); const {WindowsProtection}=await import(pathToFileURL(process.argv[1])); await new WindowsProtection().secureDirectory(process.argv[2]);" $protectModule $installRoot
 if ($LASTEXITCODE -ne 0) { throw 'Cannot secure private worker directory.' }

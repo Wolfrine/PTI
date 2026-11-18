@@ -1,7 +1,9 @@
-param()
+param([string]$BridgeRoot = 'F:\Workspace\Support\LocalCodexBridge')
 $ErrorActionPreference='Stop'
 $source=$PSScriptRoot
-$root='F:\Workspace\Support\LocalCodexBridge\chrome'
+$BridgeRoot=[IO.Path]::GetFullPath($BridgeRoot).TrimEnd('\')
+if($BridgeRoot -notin @('F:\Workspace\Support\LocalCodexBridge','H:\LocalCodexBridge')){throw 'Use the approved F: or H: Local Codex bridge root.'}
+$root=Join-Path $BridgeRoot 'chrome'
 if (([IO.Path]::GetFullPath($source)) -notlike 'F:\*') { throw 'Provider source must be on F:.' }
 $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 $owner=$identity.User
@@ -35,7 +37,7 @@ foreach($sid in @($owner,[Security.Principal.SecurityIdentifier]::new('S-1-5-18'
 foreach($relative in @('ipc','ipc\commands','ipc\responses','ipc\requests','releases',('releases\'+$version),('releases\'+$version+'\extension'))){New-Item -ItemType Directory -Path (Join-Path $root $relative) -Force | Out-Null}
 foreach($name in @('native-host.mjs','mcp.mjs')){Copy-Item -LiteralPath (Join-Path $source ('dist\'+$name)) -Destination (Join-Path $release $name)}
 foreach($name in @('manifest.json','policy.js','background.js','popup.html','popup.js','popup.css')){Copy-Item -LiteralPath (Join-Path $source ('extension\'+$name)) -Destination (Join-Path $release ('extension\'+$name))}
-$node=(Get-Content -LiteralPath 'F:\Workspace\Support\LocalCodexBridge\active.json' -Raw | ConvertFrom-Json).nodePath
+$node=(Get-Content -LiteralPath (Join-Path $BridgeRoot 'active.json') -Raw | ConvertFrom-Json).nodePath
 [IO.File]::WriteAllText((Join-Path $release 'node-path.txt'),$node,[Text.UTF8Encoding]::new($false))
 & 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe' /nologo /target:winexe ('/out:'+(Join-Path $release 'native-host.exe')) (Join-Path $source 'NativeHost.cs')
 if($LASTEXITCODE -ne 0){throw 'Native host shim build failed.'}

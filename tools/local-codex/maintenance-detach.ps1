@@ -38,10 +38,21 @@ $wscript=Join-Path $env:SystemRoot 'System32\wscript.exe'
 $command='"'+$wscript+'" //B //NoLogo "'+(Join-Path $stage 'maintenance-hidden.vbs')+'" "'+$manifestPath+'" '+$ManifestSHA256
 $result=Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine=$command;CurrentDirectory=$stage;ProcessStartupInformation=$startup}
 if($result.ReturnValue -ne 0){throw ('Windows refused detached creation; Win32_Process.Create return code '+$result.ReturnValue+'. No elevated fallback was attempted.')}
-$created=Get-CimInstance Win32_Process -Filter ('ProcessId = '+$result.ProcessId) -ErrorAction Stop
-$actual=Invoke-CimMethod -InputObject $created -MethodName GetOwnerSid
-if($actual.ReturnValue -ne 0 -or $actual.Sid -ne $identity.User.Value){throw 'Detached process owner could not be confirmed; inspect the gate before recovery.'}
-$receipt=[ordered]@{id=$value.id;method='local-wmi-detached-one-shot';scheduled=$false;pid=[int]$result.ProcessId;parentPid=[int]$created.ParentProcessId;ownerVerified=$true;manifestSHA256=$ManifestSHA256.ToLower();at=(Get-Date).ToUniversalTime().ToString('o')}
+$created=$null;$ownerVerified=$false
+try {
+  $created=Get-CimInstance Win32_Process -Filter ('ProcessId = '+$result.ProcessId) -ErrorAction Stop
+  if($created){
+    $actual=Invoke-CimMethod -InputObject $created -MethodName GetOwnerSid -ErrorAction Stop
+    if($actual.ReturnValue -ne 0 -or $actual.Sid -ne $identity.User.Value){throw 'Detached process owner differs or could not be confirmed; inspect the gate before recovery.'}
+    $ownerVerified=$true
+  }
+} catch {
+  # A launcher may exit between CIM reads. Never label that owner verified:
+  # the caller must await the pinned executor's independent owner attestation.
+  # Other failures, including access denial or a different SID, remain fatal.
+  if($_.FullyQualifiedErrorId -notmatch '0x80041002'){throw}
+}
+$receipt=[ordered]@{id=$value.id;method='local-wmi-detached-one-shot';scheduled=$false;pid=[int]$result.ProcessId;parentPid=$(if($created){[int]$created.ParentProcessId}else{$null});ownerVerified=$ownerVerified;manifestSHA256=$ManifestSHA256.ToLower();at=(Get-Date).ToUniversalTime().ToString('o')}
 $file=Join-Path $stage 'launch.json';$tmp=$file+'.tmp'
 [IO.File]::WriteAllText($tmp,($receipt | ConvertTo-Json),[Text.UTF8Encoding]::new($false));Move-Item -LiteralPath $tmp -Destination $file -ErrorAction Stop
 $receipt | ConvertTo-Json -Compress

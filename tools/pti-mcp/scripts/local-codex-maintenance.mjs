@@ -134,7 +134,7 @@ try{
       const leaseReconciliation=await control.reconcileExpired(owner,request);
       const launch=JSON.parse(execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',path.join(stage,'maintenance-detach.ps1'),'-Manifest',manifestPath,'-ManifestSHA256',manifestHash],{windowsHide:true,encoding:'utf8',timeout:30000}));
       await new Promise((resolve,reject)=>{
-        const receipt=()=>{if(!fs.existsSync(reportFile))return;try{const report=read(reportFile);if(report.externalProcessVerified&&report.manifestSHA256===manifestHash){clearTimeout(timeout);watch.close();resolve(report);}}catch{}};
+        const receipt=()=>{if(!fs.existsSync(reportFile))return;try{const report=read(reportFile);if(report.externalProcessVerified&&report.ownerSid===manifest.ownerSid&&report.manifestSHA256===manifestHash&&report.sourceCommit===manifest.sourceCommit&&report.targetVersion===manifest.targetVersion){clearTimeout(timeout);watch.close();resolve(report);}}catch{}};
         const watch=fs.watch(stage,receipt),timeout=setTimeout(()=>{watch.close();reject(Error('Detached process did not acknowledge the pinned stage.'));},20000);receipt();
       });
       console.log(JSON.stringify({detached:true,scheduled:false,launch,leaseReconciliation,manifest:manifestPath,manifestSHA256:manifestHash,result:reportFile}));
@@ -151,7 +151,7 @@ try{
     externalOnly();if(ps('[Security.Principal.WindowsIdentity]::GetCurrent().User.Value')!==manifest.ownerSid)throw Error('External Windows owner identity changed.');
     const attempt=path.join(stage,action+'.attempt');fs.closeSync(fs.openSync(attempt,'wx'));
     let sealed=action==='recover',swapped=false;
-    const report={id:manifest.id,targetVersion:manifest.targetVersion,startedAt:Date.now(),outcome:'waiting-for-drain',activated:false,externalProcessVerified:true,manifestSHA256:manifestHash,sourceCommit:manifest.sourceCommit,pid:process.pid,launchMethod:manifest.launchMethod||'scheduled-legacy',observationMode:'Firestore/file-notifications-and-Windows-process-handles',scheduled:manifest.launchMethod!=='detached'};atomic(reportFile,report);
+    const report={id:manifest.id,targetVersion:manifest.targetVersion,startedAt:Date.now(),outcome:'waiting-for-drain',activated:false,externalProcessVerified:true,ownerSid:manifest.ownerSid,manifestSHA256:manifestHash,sourceCommit:manifest.sourceCommit,pid:process.pid,launchMethod:manifest.launchMethod||'scheduled-legacy',observationMode:'Firestore/file-notifications-and-Windows-process-handles',scheduled:manifest.launchMethod!=='detached'};atomic(reportFile,report);
     observeRuntime();
     try{
       if(action==='execute'){

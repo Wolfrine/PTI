@@ -1,0 +1,28 @@
+<section class="cloud-billing" aria-labelledby="billing-summary-heading">
+  <div class="billing-heading"><div><p class="eyebrow">CLOUD BILLING EXPORT</p><h2 id="billing-summary-heading">Your Google Cloud bill</h2></div><span class="reading-state" [class.warning]="reportedStatus !== 'Current' && reportedStatus !== 'Cached'">{{ reportedStatus }}</span></div>
+
+  <ng-container *ngIf="hasAmounts && billing as reading; else disconnected">
+    <p class="context">Invoice month {{ invoiceMonth }} · {{ reading.currency }} · Figures are from the last completed export, not a final invoice.</p>
+    <div class="summary-grid">
+      <div class="summary-card primary"><span>Net accrued cost</span><strong>{{ reading.net | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong><small>Charges + credits + other items</small></div>
+      <div class="summary-card"><span>Regular charges</span><strong>{{ reading.gross | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong><small>Before separate export credits</small></div>
+      <div class="summary-card"><span>Credits / discounts</span><strong>{{ reading.credits | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong><small>Signed credits from Google</small></div>
+      <div class="summary-card"><span>Other charges</span><strong>{{ reading.otherCharges | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong><small>Tax, adjustments and rounding</small></div>
+    </div>
+    <div class="snapshot-context">
+      <span><mat-icon aria-hidden="true">calendar_month</mat-icon> Latest export: {{ reading.latestExportAt ? (reading.latestExportAt | date:'d MMM yyyy, h:mm a') : 'time unavailable' }}</span>
+      <span><mat-icon aria-hidden="true">sync</mat-icon> PTI refresh: {{ state.reading?.collectedAt | date:'d MMM yyyy, h:mm a' }}</span>
+      <span *ngIf="reading.changeSincePrevious !== null"><mat-icon aria-hidden="true">trending_up</mat-icon> Net change since previous refresh: {{ reading.changeSincePrevious > 0 ? '+' : '' }}{{ reading.changeSincePrevious | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</span>
+    </div>
+
+    <div class="breakdown-grid">
+      <section class="breakdown" aria-labelledby="service-heading"><header><h3 id="service-heading">By service</h3><span>Net cost</span></header><div class="breakdown-row" *ngFor="let entry of reading.services"><span [title]="entry.name">{{ entry.name }}</span><strong>{{ entry.net | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong></div><p class="breakdown-empty" *ngIf="!reading.services.length">No service breakdown available.</p></section>
+      <section class="breakdown" aria-labelledby="project-heading"><header><h3 id="project-heading">By project</h3><span>Net cost</span></header><div class="breakdown-row" *ngFor="let entry of reading.projects"><span [title]="entry.name">{{ entry.name }}</span><strong>{{ entry.net | currency:reading.currency!:'symbol-narrow':'1.2-2' }}</strong></div><p class="breakdown-empty" *ngIf="!reading.projects.length">No project breakdown available.</p></section>
+    </div>
+  </ng-container>
+
+  <ng-template #disconnected><div class="connection-card"><mat-icon aria-hidden="true">receipt_long</mat-icon><div><h3>Cost tracking {{ reportedStatus | lowercase }}</h3><p>{{ connectionMessage }}</p><a href="https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery-setup" target="_blank" rel="noopener noreferrer">Cloud Billing export setup <mat-icon aria-hidden="true">open_in_new</mat-icon></a></div></div></ng-template>
+
+  <aside class="alert-card"><mat-icon aria-hidden="true">notifications_active</mat-icon><div><strong>Billing alerts: not verified</strong><p>For warnings without opening PTI, set a monthly Google Cloud Billing budget with email notifications. Alerts can be delayed and do not stop charges.</p><a href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">Open Cloud Billing <mat-icon aria-hidden="true">open_in_new</mat-icon></a></div></aside>
+  <p class="disclaimer">The export includes all linked projects on its billing account, subject to its available history and collection delay. A final Google invoice can differ until all adjustments are posted. PTI refreshes this private view twice daily.</p>
+</section>

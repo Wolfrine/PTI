@@ -1,5 +1,6 @@
 // The dashboard consumes one owner-only snapshot. No provider tokens, raw account
 // identifiers, logs or individual workflow records are persisted.
+import { collectCloudBilling } from './cloud-billing.mjs';
 export const PTI_PROJECT = 'pti-app-2ab59';
 export const PTI_REPOSITORY = 'Wolfrine/PTI';
 export const SOURCE = 'pti-platform-usage';
@@ -310,11 +311,13 @@ export async function collectFirebase({ now, token, projects, fetchImpl = fetch 
 }
 
 export async function createPlatformSnapshot({ now = new Date().toISOString(), billingToken = '', workflowToken = '',
-  cloudToken = '', configuredProjects = '', registeredProjects = [], repositoryConfig = [], fetchImpl = fetch } = {}) {
+  cloudToken = '', configuredProjects = '', registeredProjects = [], repositoryConfig = [], billingExport,
+  fetchImpl = fetch } = {}) {
   if (!Number.isFinite(Date.parse(now))) throw new Error('invalid-collection-time');
-  const [github, firebase] = await Promise.all([
+  const [github, firebase, cloudBilling] = await Promise.all([
     collectGithub({ now, billingToken, workflowToken, repositoryConfig, fetchImpl }),
     collectFirebase({ now, token: cloudToken, projects: projectIds(configuredProjects, registeredProjects), fetchImpl }),
+    collectCloudBilling({ now, token: cloudToken, exportConfig: billingExport, fetchImpl }),
   ]);
-  return { schemaVersion: 1, source: SOURCE, collectedAt: now, github, firebase };
+  return { schemaVersion: 1, source: SOURCE, collectedAt: now, github, firebase, cloudBilling };
 }

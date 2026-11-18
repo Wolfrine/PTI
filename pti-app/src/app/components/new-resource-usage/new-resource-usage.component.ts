@@ -5,13 +5,14 @@ import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/r
 import { Subscription } from 'rxjs';
 import { NewCodexUsageComponent } from '../new-codex-usage/new-codex-usage.component';
 import { NewDevelopmentResourcesComponent } from '../new-development-resources/new-development-resources.component';
+import { NewCloudBillingComponent } from '../new-cloud-billing/new-cloud-billing.component';
 
-type Source = 'codex' | 'github' | 'firebase';
+type Source = 'codex' | 'github' | 'firebase' | 'billing';
 
 @Component({
   selector: 'app-new-resource-usage',
   standalone: true,
-  imports: [CommonModule, MatIconModule, RouterLink, RouterLinkActive, NewCodexUsageComponent, NewDevelopmentResourcesComponent],
+  imports: [CommonModule, MatIconModule, RouterLink, RouterLinkActive, NewCodexUsageComponent, NewDevelopmentResourcesComponent, NewCloudBillingComponent],
   templateUrl: './new-resource-usage.component.html',
   styleUrl: './new-resource-usage.component.scss',
 })
@@ -24,7 +25,7 @@ export class NewResourceUsageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.routeSubscription = this.route.paramMap.subscribe(params => {
       const source = params.get('source');
-      if (source === 'codex' || source === 'github' || source === 'firebase') this.source = source;
+      if (source === 'codex' || source === 'github' || source === 'firebase' || source === 'billing') this.source = source;
       else void this.router.navigateByUrl('/home', { replaceUrl: true });
     });
   }
@@ -32,7 +33,7 @@ export class NewResourceUsageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { this.routeSubscription?.unsubscribe(); }
 
   get heading(): string {
-    return { codex: 'Codex allowance', github: 'GitHub activity', firebase: 'Firebase usage' }[this.source];
+    return { codex: 'Codex allowance', github: 'GitHub activity', firebase: 'Firebase usage', billing: 'Cloud billing' }[this.source];
   }
 
   get description(): string {
@@ -40,6 +41,7 @@ export class NewResourceUsageComponent implements OnInit, OnDestroy {
       codex: 'Your connected Codex allowance, reset windows and token history.',
       github: 'Reported repository workflows, failed runs and available Actions billing.',
       firebase: 'Project activity and per-database estimates for confirmed Firestore free-tier limits.',
+      billing: 'Real Google Cloud charges, credits and net cost from the private billing export.',
     }[this.source];
   }
 

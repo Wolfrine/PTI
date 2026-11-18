@@ -28,6 +28,15 @@
 .firebase .signal-track span{background:linear-gradient(90deg,#be8646,#e8b569);box-shadow:0 0 8px rgba(191,139,62,.14)}
 .signal-track.is-unknown{background:repeating-linear-gradient(135deg,#ece6df,#ece6df 3px,#ded7cf 3px,#ded7cf 6px)}.signal-track.is-unknown>span{display:none}
 .github-failure{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:650;color:#9e6951;white-space:nowrap}.github-failure mat-icon{width:13px;height:13px;font-size:13px}
+.billing-strip{display:flex;align-items:center;gap:18px;min-width:0;margin-top:8px;padding:12px 15px;border:1px solid #e8dfd7;border-radius:12px;background:#fffaf5;color:inherit;text-decoration:none;transition:background .14s ease}
+.billing-strip:hover{background:#fdf1e9}.billing-strip:focus-visible{outline:2px solid #d46d5d;outline-offset:2px}
+.billing-identity{display:flex;align-items:center;min-width:0;gap:10px;flex:1 1 230px}
+.billing-icon{flex:none;display:grid;place-items:center;width:31px;height:31px;border-radius:9px;color:#b65a4b;background:#f9e8df}.billing-icon mat-icon{font-size:18px;width:18px;height:18px}
+.billing-copy{display:flex;flex-direction:column;min-width:0;gap:4px}.billing-copy strong{font-size:13px;color:#382d28}.billing-copy small{font-size:10px;line-height:1.35;color:#837368;overflow-wrap:anywhere}
+.billing-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1 1 480px;gap:16px}
+.billing-amount{display:flex;flex-direction:column;gap:3px;min-width:0}.billing-amount strong{font-size:15px;font-weight:750;color:#45372f;letter-spacing:-.025em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.billing-amount.primary strong{font-size:21px;color:#a24d40}.billing-amount small{font-size:10px;color:#837368}
+.billing-missing{font-size:12px;font-weight:750;color:#a37141;white-space:nowrap}
+.billing-arrow{font-size:16px;width:16px;height:16px;flex:none;color:#9e9287;margin-left:auto}
 .pulse-provenance{font-size:10px;line-height:1.4;color:#83756c;margin-top:6px;overflow-wrap:anywhere}
 @media(max-width:760px){
   :host{margin-top:24px}
@@ -50,6 +59,9 @@
   .instrument-foot.has-meter small{text-align:left}
   .signal-track{height:6px}
   .pulse-provenance{font-size:9px;margin-top:5px}
+  .billing-strip{padding:10px 12px;gap:9px;flex-wrap:wrap}.billing-identity{flex:1 1 calc(100% - 35px)}.billing-icon{width:28px;height:28px}.billing-copy strong{font-size:12px}.billing-copy small{font-size:10px}
+  .billing-values{flex:1 1 100%;gap:8px;border-top:1px solid #ebdfd6;padding-top:9px}.billing-amount strong{font-size:13px}.billing-amount.primary strong{font-size:18px}.billing-amount small{font-size:9px}.billing-arrow{margin-left:0}
+  .billing-missing{font-size:11px}
 }
 @media(max-width:370px){.pulse-instrument{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.pulse-instrument,.signal-track span{transition:none}}

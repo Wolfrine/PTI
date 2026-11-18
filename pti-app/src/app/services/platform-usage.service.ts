@@ -7,8 +7,32 @@ import { AuthService } from './auth.service';
 
 export type PlatformSectionStatus = 'ok' | 'partial' | 'not-connected' | 'error';
 
+export interface CloudBillingReading {
+  status: PlatformSectionStatus;
+  invoiceMonth: string;
+  currency: string | null;
+  gross: number | null;
+  credits: number | null;
+  otherCharges: number | null;
+  net: number | null;
+  latestExportAt: string | null;
+  changeSincePrevious: number | null;
+  reason: 'export-not-configured' | 'invalid-export-configuration' | 'missing-query-credentials' | 'export-query-failed' | 'awaiting-export' | null;
+  projects: CloudBillingBreakdown[];
+  services: CloudBillingBreakdown[];
+}
+
+export interface CloudBillingBreakdown {
+  name: string;
+  gross: number;
+  credits: number;
+  otherCharges: number;
+  net: number;
+}
+
 export interface PlatformUsageReading {
   collectedAt: string;
+  cloudBilling: CloudBillingReading | null;
   github: {
     status: PlatformSectionStatus;
     period: string;
@@ -56,6 +80,8 @@ const status = (value: unknown): PlatformSectionStatus =>
   value === 'ok' || value === 'partial' || value === 'not-connected' || value === 'error' ? value : 'error';
 const amount = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+const signedAmount = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 const count = (value: unknown): number | null =>
   Number.isSafeInteger(value) && (value as number) >= 0 ? value as number : null;
 const itemStatus = (value: unknown): 'ok' | 'error' | 'not-connected' =>
@@ -69,6 +95,39 @@ const validPacificDay = (value: unknown): string | null => {
   const date = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : null;
 };
+
+const billingReason = (value: unknown): CloudBillingReading['reason'] =>
+  value === 'export-not-configured' || value === 'invalid-export-configuration' ||
+  value === 'missing-query-credentials' || value === 'export-query-failed' || value === 'awaiting-export' ? value : null;
+
+function billingBreakdown(value: unknown): CloudBillingBreakdown[] {
+  return (Array.isArray(value) ? value : []).slice(0, 50).flatMap(item => {
+    const entry = record(item);
+    const name = nonEmptyString(entry['name']);
+    const gross = signedAmount(entry['gross']);
+    const credits = signedAmount(entry['credits']);
+    const otherCharges = signedAmount(entry['otherCharges']);
+    const net = signedAmount(entry['net']);
+    return name !== null && gross !== null && credits !== null && otherCharges !== null && net !== null
+      ? [{ name, gross, credits, otherCharges, net }] : [];
+  });
+}
+
+function readCloudBilling(value: unknown): CloudBillingReading | null {
+  if (!isRecord(value) || value['source'] !== 'cloud-billing-bigquery-standard') return null;
+  const invoiceMonth = value['invoiceMonth'];
+  if (typeof invoiceMonth !== 'string' || !/^\d{4}(?:0[1-9]|1[0-2])$/.test(invoiceMonth)) return null;
+  const currency = typeof value['currency'] === 'string' && /^[A-Z]{3}$/.test(value['currency']) ? value['currency'] : null;
+  return {
+    status: status(value['status']), invoiceMonth, currency,
+    gross: signedAmount(value['gross']), credits: signedAmount(value['credits']),
+    otherCharges: signedAmount(value['otherCharges']), net: signedAmount(value['net']),
+    latestExportAt: validIsoDateTime(value['latestExportAt']),
+    changeSincePrevious: signedAmount(value['changeSincePrevious']),
+    reason: billingReason(value['reason']),
+    projects: billingBreakdown(value['projects']), services: billingBreakdown(value['services']),
+  };
+}
 
 // Never turn absent API metrics into zero. Cached values are source-labelled, not billable truth.
 export function readPlatformUsageDocument(value: unknown): PlatformUsageReading | null {
@@ -113,6 +172,7 @@ export function readPlatformUsageDocument(value: unknown): PlatformUsageReading 
   });
   return {
     collectedAt: data['collectedAt'],
+    cloudBilling: readCloudBilling(data['cloudBilling']),
     github: {
       status: status(github['status']),
       period: typeof github['period'] === 'string' && /^\d{4}-\d{2}$/.test(github['period']) ? github['period'] : '',

@@ -38,12 +38,21 @@ try {
     configuredProjects: process.env.PTI_FIREBASE_PROJECT_IDS || '',
     registeredProjects: trustedRegistry.firebaseProjectIds,
     repositoryConfig: trustedRegistry.githubRepositories,
+    billingExport: trustedRegistry.billingExport,
   });
+  const current = snapshot.cloudBilling;
+  if (current.status === 'ok') {
+    const previous = (await firestore.doc(`users/${OWNER_UID}/resourceUsage/current`).get()).data()?.cloudBilling;
+    if (previous?.status === 'ok' && current.invoiceMonth === previous.invoiceMonth &&
+      current.currency === previous.currency && typeof previous.net === 'number' && Number.isFinite(previous.net)) {
+      current.changeSincePrevious = Number((current.net - previous.net).toFixed(6));
+    }
+  }
   // Service Account roles are deliberately restricted by Google IAM. A project
   // without Monitoring Viewer shows as unavailable rather than inventing zeros.
   await firestore.doc(`users/${OWNER_UID}/resourceUsage/current`).set(snapshot);
   const available = snapshot.firebase.projects.filter(project => project.status === 'ok').length;
-  console.log(`Published private platform snapshot: GitHub ${snapshot.github.coveredRepoCount}/${snapshot.github.repositoryCount} active repositories, Firebase ${available}/${snapshot.firebase.projects.length} projects; billing ${snapshot.github.billedActionsMinutes === null ? 'not connected' : 'connected'}.`);
+  console.log(`Published private platform snapshot: GitHub ${snapshot.github.coveredRepoCount}/${snapshot.github.repositoryCount} active repositories, Firebase ${available}/${snapshot.firebase.projects.length} projects, Cloud Billing ${current.status}.`);
 } finally {
   await app.delete();
 }

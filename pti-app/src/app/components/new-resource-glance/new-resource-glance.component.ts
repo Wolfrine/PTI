@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CodexUsageService, UsageState, UsageWindow } from '../../services/codex-usage.service';
-import { PlatformUsageReading, PlatformUsageService, PlatformUsageState } from '../../services/platform-usage.service';
+import { CloudBillingReading, PlatformUsageReading, PlatformUsageService, PlatformUsageState } from '../../services/platform-usage.service';
 import { readingStale, resetLabel, windowLabel } from '../new-codex-usage/new-codex-usage.component';
 
 interface FirebaseQuotaPeak {
@@ -118,6 +118,27 @@ export class NewResourceGlanceComponent implements OnInit, OnDestroy {
 
   get githubStatus(): string { return this.providerStatus(this.github?.status); }
   get firebaseStatus(): string { return this.providerStatus(this.platform.reading?.firebase.status); }
+  get billing(): CloudBillingReading | null { return this.platform.reading?.cloudBilling ?? null; }
+  get billingStatus(): string {
+    if (this.billing?.reason === 'awaiting-export') return 'Awaiting export';
+    return this.providerStatus(this.billing?.status ?? 'not-connected');
+  }
+  get billingAvailable(): boolean {
+    return this.billing?.status === 'ok' && !!this.billing.currency && this.billing.net !== null &&
+      this.billing.gross !== null && this.billing.credits !== null;
+  }
+  get billingPeriod(): string {
+    const month = this.billing?.invoiceMonth;
+    return month ? `${month.slice(0, 4)}-${month.slice(4)}` : 'Current month';
+  }
+  get billingContext(): string {
+    if (this.billing?.reason === 'awaiting-export') return 'Waiting for the first exported billing rows';
+    if (this.billing?.status === 'error') return 'Billing export needs attention';
+    if (!this.billingAvailable) return 'Connect the Cloud Billing export to track actual costs';
+    return `Invoice month ${this.billingPeriod} · Includes adjustments · Exported ${this.billing?.latestExportAt ?
+      new Date(this.billing.latestExportAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'time unknown'}`;
+  }
+  get billingStatusWarning(): boolean { return this.billingStatus !== 'Current' && this.billingStatus !== 'Cached'; }
 
   private providerStatus(status: 'ok' | 'partial' | 'not-connected' | 'error' | undefined): string {
     if (this.offline) return 'Offline';

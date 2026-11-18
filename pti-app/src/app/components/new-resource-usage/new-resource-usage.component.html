@@ -6,10 +6,12 @@
       <a routerLink="/new-resource-usage/codex" routerLinkActive="selected" [attr.aria-current]="source === 'codex' ? 'page' : null"><mat-icon aria-hidden="true">auto_awesome</mat-icon> Codex</a>
       <a routerLink="/new-resource-usage/github" routerLinkActive="selected" [attr.aria-current]="source === 'github' ? 'page' : null"><mat-icon aria-hidden="true">account_tree</mat-icon> GitHub</a>
       <a routerLink="/new-resource-usage/firebase" routerLinkActive="selected" [attr.aria-current]="source === 'firebase' ? 'page' : null"><mat-icon aria-hidden="true">dns</mat-icon> Firebase</a>
+      <a routerLink="/new-resource-usage/billing" routerLinkActive="selected" [attr.aria-current]="source === 'billing' ? 'page' : null"><mat-icon aria-hidden="true">payments</mat-icon> Billing</a>
     </nav>
     <section class="provider-body" [attr.aria-label]="heading">
       <app-new-codex-usage *ngIf="source === 'codex'"></app-new-codex-usage>
-      <app-new-development-resources *ngIf="source !== 'codex'" [source]="platformSource" [showHeading]="false"></app-new-development-resources>
+      <app-new-development-resources *ngIf="source === 'github' || source === 'firebase'" [source]="platformSource" [showHeading]="false"></app-new-development-resources>
+      <app-new-cloud-billing *ngIf="source === 'billing'"></app-new-cloud-billing>
     </section>
     <footer class="detail-footer"><a routerLink="/home"><mat-icon aria-hidden="true">arrow_back</mat-icon> Home dashboard</a><span>Private to your PTI account</span></footer>
   </div>

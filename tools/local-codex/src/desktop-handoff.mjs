@@ -5,6 +5,7 @@ import {home,project,digest,read,write,config,runtime,subscriptionEnvironment} f
 import {acquireWorkspaceLock,canonicalResource} from './workspace-locks.mjs';
 import {modelSelection,verifyModel} from './model-policy.mjs';
 import {observeNativeTurn} from './native-observation.mjs';
+import {PROJECT_LEAD_CONTRACT} from './execution-policy.mjs';
 
 export function reconcileHandoffReceipts(thread,turns){
   const root=path.join(home,'data'),observations=[];
@@ -117,7 +118,7 @@ export async function desktopHandoff(rpc,args,assertBridgeIdle) {
     let queuedItem=own;
     if(!queuedItem){
       write(receiptFile,receipt('preparing'));
-      const prompt=`${marker}\nThe owner requested this work through Local Codex. Continue this same chat with its existing model, permissions and official tools. Do not create another chat or treat prior bridge preflight as a desktop restriction. Actual tool denials remain binding.\n\n${args.prompt}`;
+      const prompt=`${marker}\nThe owner requested this work through Local Codex. ${PROJECT_LEAD_CONTRACT} Continue this same chat with its existing model, permissions and official tools. Do not create another chat or treat prior bridge preflight as a desktop restriction. Actual tool denials remain binding.\n\n${args.prompt}`;
       // Use the documented CLI queue writer; no private app transport or
       // experimental queue-start behavior is required.
       const queuedCommand=spawnSync(runtime(),['queue','--thread',thread.id,'--message',prompt],{cwd:target.path,windowsHide:true,encoding:'utf8',timeout:10000,env:subscriptionEnvironment()});

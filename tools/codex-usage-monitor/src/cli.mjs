@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { DEFAULT_ROOT, VERSION } from './config.mjs';
 import { resolveCodex, collect } from './rpc.mjs';
-import { normalizeRateLimits, normalizeDaily, fingerprint, accountIdFingerprint, safeCode } from './core.mjs';
+import { normalizeRateLimits, normalizeEarnedResets, normalizeDaily, fingerprint, accountIdFingerprint, safeCode } from './core.mjs';
 import { setup } from './setup.mjs';
 import { runOnce } from './monitor.mjs';
 import { readJson } from './store.mjs';
@@ -17,6 +17,7 @@ try {
       console.log(JSON.stringify({ outcome: 'paired', credentialProtection: 'windows-dpapi-current-user' }));
     } else console.log(JSON.stringify({ source: 'real-account-readings', version: binary.version,
       allowance: results.allowanceError ? { status: safeCode(results.allowanceError) } : normalizeRateLimits(results.allowanceResult),
+      earnedResets: results.allowanceError ? {status:safeCode(results.allowanceError)} : normalizeEarnedResets(results.allowanceResult),
       daily: results.dailyError ? { status: safeCode(results.dailyError) } : { latest: normalizeDaily(results.dailyResult).latest, reportedDays: results.dailyResult?.dailyUsageBuckets?.length || 0 } }, null, 2));
   } else if (command === 'run') {
     console.log(JSON.stringify(await runOnce({ root })));

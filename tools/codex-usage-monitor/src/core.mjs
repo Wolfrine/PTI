@@ -27,6 +27,28 @@ export function normalizeRateLimits(result) {
     return { limitId, label: label(bucket.limitName) || limitId, windows };
   });
 }
+export function normalizeEarnedResets(result, observedAt = new Date().toISOString()) {
+  const unavailable = errorCode => ({status:'unavailable', availableCount:null, details:null, detailsComplete:null, earliestReportedExpiryAt:null, observedAt, errorCode});
+  const source = result?.rateLimitResetCredits;
+  if (source == null) return unavailable(null);
+  if (!record(source) || !Number.isSafeInteger(source.availableCount) || source.availableCount < 0) return unavailable('invalid-source-response');
+  // The source count is authoritative; returned details can be absent/capped.
+  // Never publish opaque credit IDs, descriptions or account identity.
+  let details = null, errorCode = null;
+  try {
+    if (source.credits != null) {
+      if (!Array.isArray(source.credits)) invalid();
+      details = source.credits.slice(0,100).map(row => {
+        if (!record(row)) invalid();
+        return {resetType:label(row.resetType), status:label(row.status), expiresAt:optionalNumber(row.expiresAt, x => Number.isSafeInteger(x) && x >= 0)};
+      });
+    }
+  } catch { details = null; errorCode = 'invalid-source-response'; }
+  const expiries = (details || []).filter(row => row.status === 'available' && row.expiresAt !== null).map(row => row.expiresAt);
+  return {status:'ok', availableCount:source.availableCount, details,
+    detailsComplete:details === null ? null : source.credits.length <= 100 && details.length === source.availableCount && details.every(row => row.status === 'available'),
+    earliestReportedExpiryAt:expiries.length ? Math.min(...expiries) : null, observedAt, errorCode};
+}
 export function normalizeDaily(result) {
   if (!record(result)) invalid();
   if (result.dailyUsageBuckets == null) return { latest: null, buckets: [] };
@@ -72,7 +94,8 @@ export function createSnapshot(previous, results, now = new Date().toISOString()
   return {
     schemaVersion: 1, source: 'codex-app-server', collectorVersion: VERSION, lastAttemptAt: now,
     allowance: section(previousAllowance, results.allowanceResult, results.allowanceError,
-      value => ({ buckets: normalizeRateLimits(value) }), prior => ({ buckets: prior?.buckets || [] }),
+      value => ({ buckets: normalizeRateLimits(value), earnedResets: normalizeEarnedResets(value, now) }),
+      prior => ({ buckets: prior?.buckets || [], earnedResets: prior?.earnedResets ? {...prior.earnedResets, status:'stale'} : normalizeEarnedResets(null, now) }),
       value => value.buckets.some(b => b.windows.some(w => w.usedPercent !== null))),
     daily: section(previousDaily, results.dailyResult, results.dailyError, normalizeDaily,
       prior => ({ latest: prior?.latest || null, buckets: prior?.buckets || [] }), value => value.latest !== null),

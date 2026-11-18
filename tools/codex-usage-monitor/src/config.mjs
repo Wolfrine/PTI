@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-export const VERSION = '1.0.1';
+export const VERSION = '1.0.2';
 export const PROJECT = 'pti-app-2ab59';
 export const OWNER_UID = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 export const DOCUMENT = `users/${OWNER_UID}/codexProjects/codex-usage`;

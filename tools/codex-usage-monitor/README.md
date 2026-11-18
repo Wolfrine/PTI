@@ -18,6 +18,8 @@ Requirements: your existing Codex desktop login, Node.js20+, npm, Windows Task S
 
 `install.ps1 -NoSchedule` installs a runtime without changing the scheduler, useful for inspection before pairing. Then run installed `setup.ps1`, and rerun `install.ps1` to register the task. For upgrades, rerun the installer from tested `main`; credentials remain outside versioned releases.
 
+For an existing installation with unchanged dependencies, `install.ps1 -NoSchedule -ReuseDependencies` can avoid a second full dependency download. It compares the complete old/new lock (ignoring only the collector's two root version fields), verifies the dependency target stays under this private F-drive installation, and links the new release to that retained dependency tree. Changed locks refuse reuse; ordinary installation still uses `npm ci`. Keep the referenced prior release while the junction is used. No credentials, ACL baseline or existing schedule is changed by this option.
+
 ## Local files and credentials
 
 Runtime: `F:\Workspace\Support\PTI\codex-usage-monitor\releases\<version>-<revision>`. New installations, upgrades, setup/status/removal commands and direct CLI use default to this F-drive root. The stable `run.ps1` reads its installation's `active.json` and an absolute Node path, so switching repository branches has no effect. `data\credential.json` holds only a current-user-DPAPI encrypted envelope; local account binding and the Firebase refresh token are inside it. The DPAPI/DACL helper is the existing PTI One Piece helper copied unchanged for portable packaging. Directory ACLs allow the current Windows identity and SYSTEM. No credential is committed, logged or placed in a scheduled command line.

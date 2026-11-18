@@ -1,4 +1,4 @@
-param([switch]$Setup, [switch]$NoSchedule, [string]$NativeAuthConfig)
+param([switch]$Setup, [switch]$NoSchedule, [string]$NativeAuthConfig, [switch]$ReuseDependencies)
 $ErrorActionPreference = 'Stop'
 $sourceRoot = $PSScriptRoot
 $installRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\codex-usage-monitor')
@@ -37,9 +37,32 @@ if ([IO.Path]::GetFullPath($NativeAuthConfig) -ne [IO.Path]::GetFullPath($native
 Copy-Item -LiteralPath $nativeConfig -Destination (Join-Path $releaseRoot 'native-auth.json') -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'package.json'),(Join-Path $sourceRoot 'package-lock.json') -Destination $releaseRoot -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'src') -Destination $releaseRoot -Recurse -Force
-Push-Location $releaseRoot
-try { & $npmPath ci --omit=dev --ignore-scripts --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { throw 'Monitor dependencies could not be installed.' } }
-finally { Pop-Location }
+if ($ReuseDependencies) {
+  # Reuse only an identical lock under the same private F-drive installation.
+  # The referenced prior release must remain; no credential or scheduler changes.
+  $prior = Get-Content -LiteralPath (Join-Path $installRoot 'active.json') -Raw | ConvertFrom-Json
+  $priorRoot = [IO.Path]::GetFullPath((Join-Path $installRoot ([string]$prior.release)))
+  if (!$priorRoot.StartsWith(([IO.Path]::GetFullPath((Join-Path $installRoot 'releases')) + '\')) -or $priorRoot -eq $releaseRoot) { throw 'Invalid prior dependency release.' }
+  $verifyDependencies = @'
+import fs from 'node:fs';
+import path from 'node:path';
+const [oldFile,newFile,modules,root]=process.argv.slice(1);
+const locks=[oldFile,newFile].map(file=>JSON.parse(fs.readFileSync(file,'utf8')));
+for(const lock of locks){delete lock.version;delete lock.packages[''].version;}
+if(JSON.stringify(locks[0])!==JSON.stringify(locks[1]))throw Error('Dependency lock differs; reuse refused.');
+const actual=fs.realpathSync.native(modules),base=fs.realpathSync.native(root);
+if(!actual.toLowerCase().startsWith((base+path.sep+'releases'+path.sep).toLowerCase()))throw Error('Dependency target escaped private releases.');
+console.log(actual);
+'@
+  $sharedDependencies = & $nodePath --input-type=module -e $verifyDependencies (Join-Path $priorRoot 'package-lock.json') (Join-Path $sourceRoot 'package-lock.json') (Join-Path $priorRoot 'node_modules') $installRoot
+  if ($LASTEXITCODE -ne 0) { throw 'Existing dependencies could not be verified; pointer unchanged.' }
+  New-Item -ItemType Junction -Path (Join-Path $releaseRoot 'node_modules') -Target ([string]$sharedDependencies) -ErrorAction Stop | Out-Null
+  Write-Output 'Identical dependency lock verified; prior private dependency release retained.'
+} else {
+  Push-Location $releaseRoot
+  try { & $npmPath ci --omit=dev --ignore-scripts --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { throw 'Monitor dependencies could not be installed.' } }
+  finally { Pop-Location }
+}
 foreach ($file in @('run.ps1','run-hidden.vbs','setup.ps1','status.ps1','remove.ps1')) { Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination $installRoot -Force }
 $active = @{ version=$version; revision=$revision; release=('releases\' + $releaseName); nodePath=$nodePath; installedAt=[DateTime]::UtcNow.ToString('o') } | ConvertTo-Json
 [IO.File]::WriteAllText((Join-Path $installRoot 'active.json.tmp'), $active)

@@ -12,7 +12,8 @@ their F-drive validation is intentional and unchanged.
 - Worker source **0.4.15** accepts either the exact legacy F: bridge root or
   `H:\LocalCodexBridge` through `LOCAL_CODEX_BRIDGE_HOME`. The default remains
   the legacy F: root until the owner-controlled cutover. Neither root may be
-  a junction or symlink. Review outputs follow the selected storage drive.
+  a junction or symlink. Review outputs stay on H: even while the live bridge
+  remains on F:.
 - `run.ps1`, `stop.ps1`, `install.ps1`, maintenance entry scripts and the
   optional Chrome provider understand the two explicit roots. An installer
   cannot silently redirect an existing registered relay to a different root.
@@ -22,6 +23,50 @@ their F-drive validation is intentional and unchanged.
 - Maintain the existing Firebase owner identity, Windows user SID, ChatGPT
   subscription login, project paths, native chat IDs, active task generations,
   and remote plugin binding. Do not copy OAuth/browser identities.
+
+## Saved-parent model transition is a release gate
+
+The public `codex queue` uses the saved thread's model; a worker default, startup
+`-c model=...`, or queued `/model` text does not migrate an app-owned parent.
+The handoff keeps exact provider/model/effort checks and rechecks immediately
+before queueing. It never falls back to 6.1 or creates another chat.
+
+Run the read-only production preflight from the canonical PTI checkout:
+
+```powershell
+node tools/pti-mcp/scripts/local-codex-storage-migration.mjs --action model-preflight
+```
+
+This reads the existing owner `modules` registry and signed-in native
+`account/read`, `model/list`, and metadata-only `thread/read`; it never resumes,
+queues, starts a turn or changes a model. Exit 2 means blocked. Every enrolled
+parent must expose the exact `openai` / `gpt-6.2-sol` / `xhigh` selection and
+matching project context. Unknown, unreadable, changed or mismatched identities
+block staging. The F: rollback worker's configured pair must already match too;
+changing only the H: default would break either forward handoffs or rollback.
+
+A separate owner-authorized, quiescent model transition is required first.
+Finish active writers and hold new admissions through supported owner controls.
+Use the model/reasoning control in each exact existing desktop chat, then verify
+native metadata readback. Official `thread/resume` accepts model overrides, but
+using it to migrate desktop-owned writers has not been verified here and must
+not steal ownership. No unattended UI migration is promised. Do not send `/model`
+as queue text, rotate parents or edit session databases. Reconcile the F: worker
+default under that same controlled transition only after its parents match;
+no such change is performed by this storage helper. Preserve IDs and history.
+
+Only a passing preflight can produce a stage. The pinned manifest records the
+enrollment fingerprint and model contract. Fresh reads repeat before drain,
+after drain/before seal, and before either success or rollback reopens admission.
+A changed enrollment or model blocks activation and verified rollback release.
+A pre-install abort may reopen the unchanged F: installation; handoff checks
+still reject mismatched parents. Stages without this contract must be restaged;
+never relax the gate to activate 6.2. Metadata such as `notLoaded` is not evidence
+that an app-owned writer is idle; retain the separate native-writer fence.
+
+Official controls: [queue semantics](https://learn.chatgpt.com/docs/developer-commands?surface=cli),
+[desktop model control](https://learn.chatgpt.com/docs/models?surface=app), and
+[app-server resume/read behavior](https://learn.chatgpt.com/docs/app-server).
 
 ## Preconditions before any PC cutover
 
@@ -65,8 +110,8 @@ node scripts/local-codex-storage-migration.mjs --action detach --manifest H:\Loc
 The new `build-to-h.mjs` uses the same reviewed esbuild inputs/license
 packaging as the ordinary worker build but writes all seven outputs to H:
 (no F: bundle, provider, or scratch output). The payload may alternatively
-be a previously reviewed seven-file F: repository build. `stage` performs
-root/ACL/owner/scheduler/model-catalog preflight and produces a SHA-256-pinned
+be an existing reviewed seven-file F: build; do not generate another there.
+`stage` performs root/ACL/owner/scheduler/model/parent preflight and produces a SHA-256-pinned
 manifest on H:. `detach` acquires the hosted drain and starts a bounded
 external owner process. **Finish the task that launched it** so its existing
 claim can end. The external executor waits for native/hosted work to drain,
@@ -144,10 +189,10 @@ persist each phase and an immutable source/target/hash manifest for recovery.
    resolves **inside H:**. Verify current-user DPAPI can decrypt the existing
    protected envelope under the same SID *without logging plaintext*; the
    credential's entropy is independent of its path.
-   Rewrite only the **H copy** of `config.json` from an exact existing
-   `gpt-6.1-sol/xhigh` pair to `gpt-6.2-sol/xhigh`, leaving the F rollback
-   config, all other fields and native desktop chat model selections intact.
-   Verify model catalog support before switching the scheduler.
+   Copy the already verified `gpt-6.2-sol/xhigh` F: configuration unchanged
+   into H:, including its model pair. The F: rollback default and all enrolled
+   desktop parents must match before staging; this cutover does not perform a
+   model transition. Verify catalog and parent metadata again before the switch.
 3. Under the still-sealed fence, disable the **existing** `PTI Local Codex
    Relay` triggers, invoke its exact installed guarded stop and verify the
    old PID and descendants exited. Replace the action and working directory
@@ -168,7 +213,7 @@ persist each phase and an immutable source/target/hash manifest for recovery.
 - If copying, hashes, owner ACL, DPAPI, scheduling or heartbeat verification
   fails, **keep admission closed**, disable the H: action, restore the original
   F: action/working directory, restart only the exact original owner relay,
-  and verify its fresh hosted heartbeat before releasing the fence.
+  and verify its fresh hosted heartbeat plus enrolled-parent model compatibility before releasing the fence.
 - An H: relay may have refreshed its Firebase token before failing health
   verification. Recovery compares the encrypted F/H credential envelopes,
   validates the H copy with same-owner DPAPI, checks F against the saved

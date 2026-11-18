@@ -6,7 +6,7 @@ import readline from 'node:readline';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
 import {createRequire} from 'node:module';
-import {execFileSync,spawn,spawnSync} from 'node:child_process';
+import {execFileSync,spawn} from 'node:child_process';
 
 if(process.platform!=='win32')throw Error('This migration requires the owner Windows PC.');
 const args=process.argv.slice(2),arg=name=>args[args.indexOf(name)+1],has=name=>args.includes(name);
@@ -128,9 +128,8 @@ function guardScratch(){
     if(!/^F:\\/i.test(resolvedRepo)||!actual.toLowerCase().startsWith((resolvedRepo+path.sep).toLowerCase())&&!equal(actual,resolvedRepo))
       throw Error('Configured project '+key+' does not resolve to its physical F: repository.');
   }
-  if(config.model==='gpt-6.1-sol'&&config.reasoningEffort==='xhigh')return {...config,model:targetModel,reasoningEffort:targetEffort};
   if(config.model===targetModel&&config.reasoningEffort===targetEffort)return config;
-  throw Error('Installed model/effort differs from the exact owner-approved 6.1-sol/xhigh or 6.2-sol/xhigh pair.');
+  throw Error('Desktop model transition is incomplete: the F rollback worker must already use '+targetModel+'/'+targetEffort+'. H cutover never changes a model default.');
 }
 function configNonModelHash(config){
   const rest=structuredClone(config);delete rest.model;delete rest.reasoningEffort;
@@ -171,6 +170,7 @@ function verifyStage(){
   if(!stage||!equal(physical(stage),stage)||hash(manifestPath)!==pin||
      fs.readFileSync(path.join(stage,'manifest.sha256'),'utf8').trim().toLowerCase()!==pin||
      manifest.manifestSHA256)throw Error('Pinned stage changed.');
+  if(manifest.desktopModelTransition?.version!==1||manifest.desktopModelTransition.model!==targetModel||manifest.desktopModelTransition.effort!==targetEffort||!/^[a-f0-9]{64}$/.test(manifest.desktopModelTransition.enrollmentHash||''))throw Error('Stage lacks the desktop model-transition gate; create a new reviewed stage.');
   if(identity()!==manifest.ownerSid||manifest.targetVersion!==targetVersion||manifest.nodePath!==process.execPath)throw Error('Owner, runtime or target changed.');
   for(const item of [...manifest.runtimeFiles,...manifest.payloadFiles,...manifest.launcherFiles]){
     const file=inside(stage,path.join(stage,item.location));const actual=meta(file);
@@ -202,33 +202,86 @@ function modelRuntime(){
   if(!candidates.length)throw Error('Desktop Codex binary unavailable for model catalog preflight.');
   return candidates[0];
 }
-async function verifyCatalog(executable){
-  // One isolated read-only app-server, no native thread or turn creation.
+// Read the existing owner module registry; do not create another enrollment store.
+async function desktopModelPreflight(db,{enforce=true,expectedEnrollmentHash=null}={}){
+  const config=read(path.join(F,'config.json'));
+  const normalized=value=>path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase();
+  const scope=(project,resource)=>JSON.stringify([normalized(project),normalized(resource)]);
+  const allowed=new Set(Object.values(config.projects||{}).map(project=>scope(physical(project.path),physical(project.resourcePath||project.path))));
+  const snapshot=await db.doc('_ptiLocalServices/local-codex/owners/'+owner).collection('modules').get();
+  const parents=[];
+  for(const doc of snapshot.docs){
+    const item=doc.data();
+    if(!/^[a-f0-9]{64}$/.test(doc.id)||typeof item.projectPath!=='string'||typeof item.resourcePath!=='string'||typeof item.moduleKey!=='string')throw Error('Owner module catalog is malformed; model transition cannot be verified.');
+    if(!allowed.has(scope(item.projectPath,item.resourcePath))||!item.threadId)continue;
+    if(!/^[a-f0-9-]{36}$/.test(item.threadId))throw Error('Owner module parent identity is malformed.');
+    parents.push({moduleId:doc.id,moduleKey:item.moduleKey,threadId:item.threadId,projectPath:normalized(item.projectPath),resourcePath:normalized(item.resourcePath)});
+  }
+  parents.sort((a,b)=>a.moduleId.localeCompare(b.moduleId));
+  const enrollmentHash=sha(JSON.stringify(parents));
+  const observations=await verifyCatalog(modelRuntime(),parents);
+  const blockers=observations.filter(item=>!item.compatible);
+  if(config.model!==targetModel||config.reasoningEffort!==targetEffort)blockers.unshift({reason:'rollback-worker-model-mismatch',model:config.model??null,effort:config.reasoningEffort??null});
+  if(expectedEnrollmentHash&&enrollmentHash!==expectedEnrollmentHash)blockers.unshift({reason:'module-enrollment-changed'});
+  const report={version:1,observedAt:new Date().toISOString(),ready:blockers.length===0,model:targetModel,effort:targetEffort,
+    configuredModel:config.model??null,configuredEffort:config.reasoningEffort??null,enrollmentHash,parents:observations,blockers};
+  if(enforce&&!report.ready)throw Error('Desktop model transition blocks H cutover: '+blockers.length+' unresolved default/parent/enrollment observation(s). Run --action model-preflight. Matching catalog availability is insufficient; no parent/default was changed.');
+  return report;
+}
+async function ownerModelPreflight(options){
+  const require=createRequire(path.join(repo,'tools/pti-mcp/package.json'));
+  const {initializeApp,applicationDefault,deleteApp}=require('firebase-admin/app'),{getFirestore}=require('firebase-admin/firestore');
+  process.env.GOOGLE_CLOUD_QUOTA_PROJECT='worldline-intel';
+  const app=initializeApp({projectId:'pti-app-2ab59',credential:applicationDefault()},'local-codex-model-preflight-'+randomUUID()),db=getFirestore(app);
+  try{return await desktopModelPreflight(db,options);}finally{await db.terminate();await deleteApp(app);}
+}
+async function verifyCatalog(executable,parents=[]){
+  // account/model/thread reads only: no resume, queue, turn or native model mutation.
   const config=read(path.join(F,'config.json')),env={...process.env};
   for(const name of Object.keys(env))if(['OPENAI_API_KEY','CODEX_API_KEY','CODEX_ACCESS_TOKEN','OPENAI_BASE_URL','OPENAI_API_BASE'].includes(name.toUpperCase()))delete env[name];
-  const processHandle=spawn(executable,[...(config.codexArgs||[]),'app-server','--stdio'],{cwd:repo,windowsHide:true,stdio:['pipe','pipe','pipe'],env});
-  const pending=new Map(),lines=readline.createInterface({input:processHandle.stdout});let sequence=0,closed=false;
+  const child=spawn(executable,[...(config.codexArgs||[]),'app-server','--stdio'],{cwd:repo,windowsHide:true,stdio:['pipe','pipe','pipe'],env});
+  const pending=new Map(),lines=readline.createInterface({input:child.stdout});let sequence=0,exited=false;
   const rejectAll=error=>{for(const item of pending.values()){clearTimeout(item.timer);item.reject(error);}pending.clear();};
-  processHandle.on('error',rejectAll);processHandle.on('exit',()=>rejectAll(Error('Codex catalog app-server exited.')));processHandle.stderr.resume();
-  const send=value=>processHandle.stdin.write(JSON.stringify(value)+'\n');
-  lines.on('line',line=>{try{const response=JSON.parse(line);if(response.method&&response.id!==undefined){send({id:response.id,error:{code:-32601,message:'Catalog probe cannot approve actions.'}});return;}const waiter=pending.get(response.id);if(!waiter)return;clearTimeout(waiter.timer);pending.delete(response.id);response.error?waiter.reject(Error(response.error.message)):waiter.resolve(response.result);}catch(error){rejectAll(error);}});
-  const rpc=(method,params)=>new Promise((resolve,reject)=>{const id=++sequence,timer=setTimeout(()=>{pending.delete(id);reject(Error('Catalog probe timed out: '+method));},20000);pending.set(id,{resolve,reject,timer});send({id,method,params});});
+  child.on('error',rejectAll);child.on('exit',()=>{exited=true;rejectAll(Error('Codex metadata connection exited.'));});child.stderr.resume();
+  const send=value=>child.stdin.write(JSON.stringify(value)+'\n');
+  lines.on('line',line=>{try{const m=JSON.parse(line);if(m.method&&m.id!==undefined){send({id:m.id,error:{code:-32601,message:'Model preflight cannot approve actions.'}});return;}const p=pending.get(m.id);if(!p)return;clearTimeout(p.timer);pending.delete(m.id);m.error?p.reject(Error('Native metadata read rejected.')):p.resolve(m.result);}catch(error){rejectAll(error);}});
+  const rpc=(method,params)=>new Promise((resolve,reject)=>{const id=++sequence,timer=setTimeout(()=>{pending.delete(id);reject(Error('Native metadata read timed out: '+method));},20000);pending.set(id,{resolve,reject,timer});send({id,method,params});});
   try{
-    await rpc('initialize',{clientInfo:{name:'local_codex_storage_migration',version:'0.4.15'},capabilities:{experimentalApi:true}});
-    send({method:'initialized'});
-    const account=await rpc('account/read',{refreshToken:false});if(account.account?.type!=='chatgpt')throw Error('Owner desktop Codex is not signed in via ChatGPT.');
-    let cursor=null;const visited=new Set();
-    for(let i=0;i<20;i++){
-      const models=await rpc('model/list',{limit:100,includeHidden:false,cursor});
-      const match=models.data?.find(item=>item.model===targetModel);
-      if(match){if(!match.supportedReasoningEfforts?.some(item=>item.reasoningEffort===targetEffort))throw Error('6.2 Sol xhigh is not available to this signed-in owner.');return;}
-      cursor=models.nextCursor;if(!cursor||visited.has(cursor))break;visited.add(cursor);
+    await rpc('initialize',{clientInfo:{name:'local_codex_storage_migration',version:'0.4.15'},capabilities:{experimentalApi:true}});send({method:'initialized'});
+    const account=await rpc('account/read',{refreshToken:false});if(account.account?.type!=='chatgpt')throw Error('ChatGPT subscription sign-in is required.');
+    let cursor=null,found=false;const visited=new Set();
+    for(let page=0;page<20;page++){
+      const result=await rpc('model/list',{limit:100,includeHidden:false,cursor});
+      const model=result.data?.find(item=>item.model===targetModel);
+      if(model){if(!model.supportedReasoningEfforts?.some(item=>item.reasoningEffort===targetEffort))throw Error('Target reasoning effort is not in the signed-in catalog.');found=true;break;}
+      cursor=result.nextCursor;if(!cursor||visited.has(cursor))break;visited.add(cursor);
     }
-    throw Error('Signed-in Codex model catalog does not include 6.2 Sol.');
+    if(!found)throw Error('Target model is not in the signed-in catalog.');
+    const observed=new Map(),rows=[];
+    for(const parent of parents){
+      if(!observed.has(parent.threadId)){
+        try{
+          const {thread}=await rpc('thread/read',{threadId:parent.threadId,includeTurns:false});
+          observed.set(parent.threadId,{id:thread.id,model:thread.model??null,effort:thread.reasoningEffort??null,provider:thread.modelProvider??null,
+            cwd:thread.cwd?physical(thread.cwd):null,status:thread.status?.type??thread.status??null,archived:thread.archived===true});
+        }catch{observed.set(parent.threadId,{reason:'native-parent-unreadable'});}
+      }
+      const item=observed.get(parent.threadId);
+      const compatible=item.id===parent.threadId&&item.model===targetModel&&item.effort===targetEffort&&item.provider==='openai'&&!item.archived&&item.cwd&&equal(path.win32.normalize(item.cwd),path.win32.normalize(parent.projectPath));
+      rows.push({...parent,...item,compatible:!!compatible,...(!compatible?{reason:item.reason||'saved-parent-model-or-context-mismatch'}:{})});
+    }
+    return rows;
   }finally{
-    if(!closed){closed=true;rejectAll(Error('Catalog probe complete.'));lines.close();processHandle.stdin.end();}
-    if(processHandle.pid){if(process.platform==='win32')spawnSync('taskkill.exe',['/PID',String(processHandle.pid),'/T','/F'],{windowsHide:true,stdio:'ignore',timeout:10000});else processHandle.kill();}
+    rejectAll(Error('Metadata read complete.'));lines.close();child.stdin.end();
+    await Promise.race([new Promise(resolve=>child.once('exit',resolve)),new Promise(resolve=>setTimeout(resolve,3000))]);
+    child.stdout.destroy();child.stderr.destroy();child.unref();
+    if(!exited)throw Error('Read-only native metadata connection did not close normally; no existing process was stopped.');
   }
+}
+if(action==='model-preflight'){
+  if(has('--manifest'))throw Error('Model preflight is a read-only source action, not a staged migration.');
+  const result=await ownerModelPreflight({enforce:false});
+  console.log(JSON.stringify(result));process.exit(result.ready?0:2);
 }
 function HIsEmptyExceptStages(){
   const occupied=fs.readdirSync(H).filter(name=>name.toLowerCase()!=='maintenance');
@@ -254,6 +307,7 @@ function payloadDirectory(value){
 if(action==='stage'){
   if(has('--manifest'))throw Error('Stage requires a new directory, not an existing manifest.');
   assertRoot(F,F);
+  const desktopModelTransition=await ownerModelPreflight({enforce:true});
   if(!fs.existsSync(H))secureH();else verifyPrivateH();
   HIsEmptyExceptStages();guardScratch();guardChrome();reserveFRollback();
   const existing=expectTask(F);
@@ -266,7 +320,6 @@ if(action==='stage'){
   const relayBytes=fs.readFileSync(path.join(payloadSource,'relay.mjs'),'utf8');
   if(!relayBytes.includes(targetVersion)||!relayBytes.includes('H:/LocalCodexBridge'))throw Error('Payload does not visibly embed the 0.4.15 dual-drive worker; rebuild from current reviewed sources.');
   const selected=guardScratch();if(selected.model!==targetModel||selected.reasoningEffort!==targetEffort)throw Error('Model selection was not reconciled.');
-  await verifyCatalog(modelRuntime());
   const deadline=Date.parse(arg('--deadline'));
   if(!Number.isFinite(deadline)||deadline<=Date.now()+90000)throw Error('Supply a future deadline allowing protected native work to finish.');
   const directory=stagePath(arg('--directory'));
@@ -294,6 +347,7 @@ if(action==='stage'){
     previous:old,previousPointerHash:installedHash,previousReleaseFiles,sourceConfigHash,
     nonModelConfigHash:configNonModelHash(read(path.join(F,'config.json'))),
     targetVersion,model:targetModel,reasoningEffort:targetEffort,deadline,
+    desktopModelTransition:{version:1,model:targetModel,effort:targetEffort,enrollmentHash:desktopModelTransition.enrollmentHash,observedAt:desktopModelTransition.observedAt},
     artifactSetHash:sha(JSON.stringify(payloadFiles)),payloadFiles,runtimeFiles,launcherFiles,
     maintenanceControllerSource:{path:'tools/pti-mcp/src/local-codex-maintenance.ts',
       sourceSHA256:freshController.sourceSHA256,compiledSHA256:freshController.compiledSHA256,
@@ -314,6 +368,10 @@ process.env.GOOGLE_CLOUD_QUOTA_PROJECT='worldline-intel';
 const {FirestoreMaintenance}=await import(pathToFileURL(path.join(stage,'controller.mjs')).href);
 const app=initializeApp({projectId:'pti-app-2ab59',credential:applicationDefault()},'local-codex-storage-'+manifest.id);
 const db=getFirestore(app),control=new FirestoreMaintenance(db,owner);
+async function finishCompatible(...args){
+  await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
+  return control.finish(owner,req,...args);
+}
 if(action==='status'){
   try{console.log(JSON.stringify(await control.status(owner)));}
   finally{await db.terminate();await deleteApp(app);}
@@ -322,6 +380,7 @@ if(action==='status'){
 if(action==='detach'){
   try{
     expectTask(F);
+    await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
     await control.begin(owner,req);
     try{
       const launch=JSON.parse(execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',path.join(stage,'maintenance-detach.ps1'),'-Manifest',manifestPath,'-ManifestSHA256',pin],{windowsHide:true,encoding:'utf8',timeout:30000}));
@@ -626,13 +685,14 @@ subscribe();
 try{
   try{
     if(action==='execute'){
-      await verifyCatalog(modelRuntime());
+      await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
       await observeUntil(()=>{
         if(!observedHost||observedJobs===undefined)return false;
         if(observedHost.maintenance?.id!==manifest.id||observedHost.maintenance?.phase!=='draining')throw Error('Maintenance drain was lost or replaced.');
         const nativeFenced=Array.isArray(observedHost.reservations)&&observedHost.reservations.some(slot=>slot?.nativeWriterFence===true||slot?.status==='unresolved_native_writer');
         return observedJobs===0&&!nativeFenced&&localIdle();
       },manifest.deadline,'Native work did not drain before the deadline; no task was stopped.');
+      await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
       reserveFRollback();
       await control.seal(owner,req);sealed=true;
       await control.guard(owner,req);
@@ -660,7 +720,7 @@ try{
       ensureFRelayStopped();
       guardScratch();
       if(!localIdle())throw Error('The preserved F task state changed during H verification.');
-      const outcome=await control.finish(owner,req,targetVersion,switchedAt,reportFile);
+      const outcome=await finishCompatible(targetVersion,switchedAt,reportFile);
       Object.assign(report,outcome,{activated:true,modelVerified:targetModel,reasoningEffortVerified:targetEffort,
         phase:'completed',sourceFilesDeleted:0,fRetained:true,hostListenerVerified:true});
       atomic(reportFile,report);
@@ -676,7 +736,7 @@ try{
         await control.recovery(owner,req);
         await control.guard(owner,req);
         const restarted=await restoreF();
-        Object.assign(report,await control.finish(owner,req,manifest.previous.version,restarted,reportFile),
+        Object.assign(report,await finishCompatible(manifest.previous.version,restarted,reportFile),
           {phase:'rolled-back',rollbackVerified:true,activated:false,fRetained:true,sourceFilesDeleted:0});
       }
       atomic(reportFile,report);
@@ -695,7 +755,7 @@ try{
         await control.recovery(owner,req);
         await control.guard(owner,req);
         const restarted=await restoreF();
-        Object.assign(report,await control.finish(owner,req,manifest.previous.version,restarted,reportFile),
+        Object.assign(report,await finishCompatible(manifest.previous.version,restarted,reportFile),
           {phase:'rolled-back',rollbackVerified:true,activated:false,fRetained:true,sourceFilesDeleted:0});
       }catch(recoveryError){
         report.outcome='recovery-required';report.phase='sealed-owner-recovery';report.recoveryError=recoveryError.message;

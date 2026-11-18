@@ -3,7 +3,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {home,project,digest,read,write,config,runtime,subscriptionEnvironment} from './common.mjs';
 import {acquireWorkspaceLock,canonicalResource} from './workspace-locks.mjs';
-import {modelSelection,verifyModel} from './model-policy.mjs';
+import {modelSelection,verifyDesktopModel} from './model-policy.mjs';
 import {observeNativeTurn} from './native-observation.mjs';
 import {PROJECT_LEAD_CONTRACT} from './execution-policy.mjs';
 
@@ -107,12 +107,15 @@ export async function desktopHandoff(rpc,args,assertBridgeIdle) {
   if(!own){
     assertBridgeIdle(thread);
     const selection=modelSelection(config());
-    if(thread.modelProvider!=='openai')throw Error('The existing chat is not using the owner-approved Codex provider. No fallback was started.');
-    verifyModel({model:thread.model,reasoningEffort:thread.reasoningEffort,modelProvider:thread.modelProvider},selection);
+    verifyDesktopModel(thread,selection);
   }
   const release=acquireWorkspaceLock(home,{taskId:`desktop-${args.request_id}`,cwd:target.path,resourcePath:target.resourcePath,mode:'edit'});
   try {
-    if(!own)assertBridgeIdle((await rpc('thread/read',{threadId:thread.id,includeTurns:false})).thread);
+    if(!own){
+      const fresh=(await rpc('thread/read',{threadId:thread.id,includeTurns:false})).thread;
+      assertBridgeIdle(fresh);
+      verifyDesktopModel(fresh,modelSelection(config()));
+    }
     const opened=spawnSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',`Start-Process -FilePath 'codex://threads/${thread.id}' -WindowStyle Hidden`],{windowsHide:true,encoding:'utf8',timeout:10000});
     if(opened.status!==0)throw Error('The registered Codex desktop link could not open the existing chat. Nothing new was queued.');
     let queuedItem=own;

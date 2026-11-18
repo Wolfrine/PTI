@@ -63,6 +63,8 @@ The earlier 0.4.8 release used the successful one-time scheduler adapter; its ve
 Deploy the 0.4.10 host before activating the 0.4.15 worker or its new model,
 durable-queue and host-control features. Existing configured models and native
 desktop chats remain unchanged until their separately authorized transition.
+H: cutover requires the F: rollback default and enrolled saved parents to be
+verified as the target pair first; catalog availability alone cannot authorize it.
 Keep raw native-writer fences through drain, seal and final health verification.
 
 For the legacy F: installation, new ordinary maintenance stages use

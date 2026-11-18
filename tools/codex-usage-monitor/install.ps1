@@ -1,9 +1,20 @@
 param([switch]$Setup, [switch]$NoSchedule, [string]$NativeAuthConfig, [switch]$ReuseDependencies)
 $ErrorActionPreference = 'Stop'
 $sourceRoot = $PSScriptRoot
-$installRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\codex-usage-monitor')
-$expectedRoot = [IO.Path]::GetFullPath('F:\Workspace\Support\PTI\codex-usage-monitor')
+$installRoot = [IO.Path]::GetFullPath('H:\Workspace\Runtimes\PTI\codex-usage-monitor')
+$expectedRoot = [IO.Path]::GetFullPath('H:\Workspace\Runtimes\PTI\codex-usage-monitor')
 if ($installRoot -ne $expectedRoot) { throw 'Unexpected install target.' }
+$ancestor = $installRoot
+while ($ancestor) {
+  if ((Test-Path -LiteralPath $ancestor) -and ((Get-Item -LiteralPath $ancestor).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Refusing installation through a junction.' }
+  $ancestor = Split-Path -Parent $ancestor
+}
+if (!$NoSchedule) {
+  $existingTask = Get-ScheduledTask -TaskName 'PTI Codex Usage Monitor' -ErrorAction SilentlyContinue
+  if ($existingTask -and (@($existingTask.Actions).Count -ne 1 -or $existingTask.Actions[0].WorkingDirectory -ne $installRoot -or $existingTask.Actions[0].Arguments -ne ('//B //NoLogo "' + (Join-Path $installRoot 'run-hidden.vbs') + '"'))) {
+    throw 'Existing monitor task uses another root. Use the documented idle, verified migration; this installer will not retarget it.'
+  }
+}
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 $npmPath = (Get-Command npm.cmd -ErrorAction Stop).Source
 $nativeConfig = Join-Path $installRoot 'native-auth.json'
@@ -38,7 +49,7 @@ Copy-Item -LiteralPath $nativeConfig -Destination (Join-Path $releaseRoot 'nativ
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'package.json'),(Join-Path $sourceRoot 'package-lock.json') -Destination $releaseRoot -Force
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'src') -Destination $releaseRoot -Recurse -Force
 if ($ReuseDependencies) {
-  # Reuse only an identical lock under the same private F-drive installation.
+  # Reuse only an identical lock under the same private H-drive installation.
   # The referenced prior release must remain; no credential or scheduler changes.
   $prior = Get-Content -LiteralPath (Join-Path $installRoot 'active.json') -Raw | ConvertFrom-Json
   $priorRoot = [IO.Path]::GetFullPath((Join-Path $installRoot ([string]$prior.release)))

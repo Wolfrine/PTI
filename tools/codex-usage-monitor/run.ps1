@@ -1,6 +1,6 @@
 param([ValidateSet('run','status','setup','probe')][string]$Command = 'run')
 $ErrorActionPreference = 'Stop'
-$installRoot = if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'active.json') -PathType Leaf) { $PSScriptRoot } else { 'F:\Workspace\Support\PTI\codex-usage-monitor' }
+$installRoot = if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'active.json') -PathType Leaf) { $PSScriptRoot } else { 'H:\Workspace\Runtimes\PTI\codex-usage-monitor' }
 $active = Get-Content -LiteralPath (Join-Path $installRoot 'active.json') -Raw | ConvertFrom-Json
 $releaseRoot = [IO.Path]::GetFullPath((Join-Path $installRoot ([string]$active.release)))
 if (-not $releaseRoot.StartsWith(([IO.Path]::GetFullPath((Join-Path $installRoot 'releases')) + '\'), [StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid installed release path.' }

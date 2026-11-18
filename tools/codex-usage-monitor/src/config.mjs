@@ -14,5 +14,5 @@ export const FIREBASE_CONFIG = Object.freeze({
   projectId: PROJECT,
   appId: '1:185802494856:web:5e9777771492528c6e203d',
 });
-export const DEFAULT_ROOT = 'F:\\Workspace\\Support\\PTI\\codex-usage-monitor';
+export const DEFAULT_ROOT = 'H:\\Workspace\\Runtimes\\PTI\\codex-usage-monitor';
 export const STATES = ['ok', 'error', 'unavailable', 'unsupported'];

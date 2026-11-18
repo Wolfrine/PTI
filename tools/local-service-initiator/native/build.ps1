@@ -1,7 +1,10 @@
-param([string]$OutputDirectory='F:\Workspace\Support\PTI\native-launcher-build')
+param([string]$OutputDirectory='H:\Workspace\Builds\PTI\native-launcher')
 $ErrorActionPreference='Stop'
+$env:TEMP='H:\Workspace\Temp\PTI-native'
+$env:TMP=$env:TEMP
+New-Item -ItemType Directory -Path $env:TEMP -Force | Out-Null
 $outputRoot=[IO.Path]::GetFullPath($OutputDirectory)
-if (!$outputRoot.StartsWith('F:\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Native build output must be on F.' }
+if (!$outputRoot.StartsWith('H:\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Native build output must be on H:; source stays on F:.' }
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (!(Test-Path -LiteralPath $compiler)) { throw 'Installed Windows .NET Framework C# compiler is unavailable.' }
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null

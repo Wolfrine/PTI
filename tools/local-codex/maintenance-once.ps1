@@ -1,7 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$Manifest,[Parameter(Mandatory=$true)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$ManifestSHA256,[switch]$Recover)
 $ErrorActionPreference = 'Stop'
 $manifestPath = [IO.Path]::GetFullPath($Manifest)
-if (-not $manifestPath.StartsWith('F:\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Maintenance manifest must be on F:.' }
+if (-not $manifestPath.StartsWith('F:\',[StringComparison]::OrdinalIgnoreCase) -and -not $manifestPath.StartsWith('H:\Workspace\Storage-Recovery\LocalCodex\Maintenance\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Use the pinned legacy F: manifest or the scoped H: maintenance stage.' }
 if ((Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash -ne $ManifestSHA256) { throw 'Manifest differs from the hash pinned in the owner task action.' }
 $stageRoot = Split-Path -Parent $manifestPath
 $value = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json

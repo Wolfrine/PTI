@@ -19,13 +19,13 @@ The detached launch reconciles protected claimed jobs whose bridge lease has alr
 ## Release steps
 
 1. Inspect `main`, dirty files, active/queued claims, installed pointer and prior receipt. Preserve unrelated work. Use minimal syntax/build checks and actual runtime observations. No generated tests, fixtures, Playwright/e2e scaffolding, full suites or CI test churn without fresh explicit instruction. Do not weaken required protections.
-2. Build the actual worker locally if needed. The target is the existing seven-file build. For 0.4.10, PTI Owner Chrome is disabled by default: verify its configuration returns no MCP injection. Verify the repaired invocation scope by continuing an existing bridge chat, letting its writer exit, then using the same chat through the desktop app for real Chrome control. Do not create a chat merely for verification. Save actual evidence on F:.
+2. Build the actual worker locally if needed. The target is the existing seven-file build. Windows build outputs and evidence belong on H:; source stays on F:. The build entry point uses verified H: compatibility links and refuses un-migrated physical F: output directories. PTI Owner Chrome remains disabled by default. Verify the affected actual runtime path; do not create a chat merely for verification. Existing immutable loaded release/state stays protected until the guarded drain completes.
 3. Commit/push on `main`. No hosted redeploy is needed when the host protocol/schema is unchanged. For this local release use CI skip rather than synthetic suites; never dispatch/rerun Actions just to wait.
 4. Stage a new immutable directory under the owner-private installation and an explicit future observation deadline. This bounds the updater, not model execution. Example (replace timestamp with a real future deadline):
 
    ```powershell
-   node scripts/local-codex-maintenance.mjs --action stage --launch-method detached --directory F:\Workspace\Support\LocalCodexBridge\maintenance\0.4.9-release --deadline 2026-11-08T11:00:00+05:30 --routing-evidence F:\Workspace\Codex\2026-11-08\local-codex-049-activation\outputs\routing.json
-   node scripts/local-codex-maintenance.mjs --action detach --manifest F:\Workspace\Support\LocalCodexBridge\maintenance\0.4.9-release\manifest.json
+   node scripts/local-codex-maintenance.mjs --action stage --launch-method detached --directory H:\Workspace\Storage-Recovery\LocalCodex\Maintenance\VERSION-release --deadline FUTURE-ISO-TIMESTAMP --routing-evidence H:\Workspace\Reports\LocalCodex\routing.json
+   node scripts/local-codex-maintenance.mjs --action detach --manifest H:\Workspace\Storage-Recovery\LocalCodex\Maintenance\VERSION-release\manifest.json
    ```
 
    Run from `tools/pti-mcp`. Stage pins seven target/prior file SHA-256 values/sizes; frozen helpers/routing report; installed stop/launchers; interpreters; Chrome provider files/pointers; source commit; owner; worker PIDs; rollback pointer. The launch pins the entire manifest SHA-256. This is hash integrity, not Authenticode signing. No config/authentication file is copied/replaced. `detach` acquires drain, invokes Windows creation and awaits the external executor's actual acknowledgement. Failed launch aborts only an unsealed drain; sealed/unknown state stays closed for recovery.

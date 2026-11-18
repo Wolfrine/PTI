@@ -98,7 +98,7 @@ async function syncOwnerMetadata(taskIds){
     return response.json();
   });
 }
-export async function reviewUsage({days=7,sync=false,outputDirectory=path.join(home,'harness','reviews')}={}){
+export async function reviewUsage({days=7,sync=false,outputDirectory=process.platform==='win32'?'H:/Workspace/Reports/LocalCodex':path.join(home,'harness','reviews')}={}){
   if(!fs.realpathSync.native(home).toLowerCase().startsWith('f:\\'))throw Error('Bridge review data must resolve to F:.');
   const taskRoot=path.join(home,'tasks');
   const files=fs.existsSync(taskRoot)?fs.readdirSync(taskRoot,{withFileTypes:true}).filter(entry=>entry.isDirectory()&&/^[a-f0-9]{32}$/.test(entry.name)).map(entry=>({name:entry.name,at:fs.statSync(path.join(taskRoot,entry.name)).mtimeMs})).sort((a,b)=>b.at-a.at).slice(0,5000):[];

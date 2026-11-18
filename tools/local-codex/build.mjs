@@ -1,6 +1,12 @@
 import {build} from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
+import {artifactDirectory,ensureArtifactLink,storageEnvironment} from './src/storage.mjs';
+Object.assign(process.env,storageEnvironment());
+if(process.platform==='win32'){
+  ensureArtifactLink(path.resolve('dist'),artifactDirectory('Builds','PTI','local-codex','dist'));
+  ensureArtifactLink(path.resolve('chrome/dist'),artifactDirectory('Builds','PTI','local-codex','chrome'));
+}
 const built=await build({entryPoints:['src/server.mjs','src/worker.mjs','src/relay.mjs','src/setup.mjs','src/pair-existing.mjs','src/review-usage.mjs'],outdir:'dist',bundle:true,platform:'node',format:'esm',outExtension:{'.js':'.mjs'},target:'node20',metafile:true,banner:{js:"import {createRequire as __createRequire} from 'node:module'; const require=__createRequire(import.meta.url);"}});
 const packages=new Set(Object.keys(built.metafile.inputs).map(f=>f.match(/^node_modules\/((?:@[^/]+\/)?[^/]+)/)?.[1]).filter(Boolean));
 const notices=[];for(const name of [...packages].sort()){

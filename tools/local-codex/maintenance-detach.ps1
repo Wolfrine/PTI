@@ -4,7 +4,7 @@ $ErrorActionPreference='Stop'
 # Use this process's built-in modules; do not change the user's environment.
 $env:PSModulePath=Join-Path $PSHOME 'Modules'
 $manifestPath=[IO.Path]::GetFullPath($Manifest)
-if(-not $manifestPath.StartsWith('F:\',[StringComparison]::OrdinalIgnoreCase)){throw 'Maintenance manifest must be on F:.'}
+if(-not $manifestPath.StartsWith('F:\',[StringComparison]::OrdinalIgnoreCase) -and -not $manifestPath.StartsWith('H:\Workspace\Storage-Recovery\LocalCodex\Maintenance\',[StringComparison]::OrdinalIgnoreCase)){throw 'Use the pinned legacy F: manifest or the scoped H: maintenance stage.'}
 if((Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash -ne $ManifestSHA256){throw 'Pinned manifest hash changed.'}
 $stage=Split-Path -Parent $manifestPath
 $value=Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json

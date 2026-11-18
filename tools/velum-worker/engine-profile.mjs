@@ -12,7 +12,7 @@ export const QWEN_WEIGHTS=Object.freeze({
  'vae/qwen_image_2.1_vae_bf16.safetensors':675509688,
 });
 export function engineProfile(model){
- if(model===QWEN_MODEL)return {python:path.join(QWEN_ENGINE,'venv','Scripts','python.exe'),script:path.join(HERE,'infer-qwen.py'),outputRoot:path.join(HERE,'.runtime','qwen21'),timeoutMs:7200000,parentTimeoutMs:7230000};
+ if(model===QWEN_MODEL)return {python:path.join(QWEN_ENGINE,'venv','Scripts','python.exe'),script:path.join(HERE,'infer-qwen.py'),outputRoot:'H:\\Workspace\\Generated\\Velum\\qwen21',timeoutMs:7200000,parentTimeoutMs:7230000};
  return {python:'F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe',script:path.join(HERE,'infer.py'),outputRoot:'H:\\AI-ImageGen\\portrait-pilot\\velum-studio',timeoutMs:1800000,parentTimeoutMs:1830000};
 }
 // Presence/size/runtime-source checks only. No imports, downloads or GPU loads.

@@ -5,14 +5,15 @@ import { spawn, spawnSync } from 'node:child_process';
 import {modelSelection} from './model-policy.mjs';
 import {ownerLimit,ownerDuration} from './limits.mjs';
 import {browserContextPreflight} from './browser-context.mjs';
+import {storageEnvironment} from './storage.mjs';
 
-export const VERSION = '0.4.14';
+export const VERSION = '0.4.15';
 export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');
 export const digest = text => crypto.createHash('sha256').update(text).digest('hex');
 export function subscriptionEnvironment() {
-  const env={...process.env};
+  const env=storageEnvironment(process.env);
   for(const name of Object.keys(env))if(['OPENAI_API_KEY','CODEX_API_KEY','CODEX_ACCESS_TOKEN','OPENAI_BASE_URL','OPENAI_API_BASE'].includes(name.toUpperCase()))delete env[name];
   return env;
 }

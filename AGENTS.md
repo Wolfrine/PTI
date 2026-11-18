@@ -8,6 +8,10 @@
 
 # AGENTS
 
+## Canonical storage - owner correction 18 November 2026
+
+F: holds repositories/source/code and essential Git. H: holds models, runtimes/SDKs, caches, temp/scratch, generated assets/build outputs, reports and backups. Configure effective consumer paths before generating anything; a checkout on F: does not authorize F: outputs. Historical F-only artifact/model guidance is superseded. See `tools/local-codex/docs/storage-placement.md` for active compatibility exceptions and verified migration controls. Preserve live state, dirty work, credentials and denied targets.
+
 **PTI's current dashboard is `/home`: the authenticated personal app launcher shown after Google sign-in.** It contains pinned/recent apps, categories, search and private Codex usage readings. Start with [README.md](README.md). The current launcher apps and delivery/data contracts are documented there.
 
 Do not interpret "PTI dashboard" as CEO Command or the former time-investment dashboards. `/dashboard`, `/new-dashboard`, `/codex-command` and project-detail URLs are retired redirects to `/home`; their UI and exclusive code are removed. Their intent is retained only in [the retirement archive](docs/archive/retired-dashboards.md), with the historical source revision. Historical records and older design notes are evidence, not authority to revive those screens. Standalone domain/activity tools and all saved Firestore data remain intact.

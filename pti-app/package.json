@@ -4,8 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch --configuration development",
     "test": "ng test",
     "serve:ssr:pti-app": "node dist/pti-app/server/server.mjs"
   },

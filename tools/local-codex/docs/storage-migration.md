@@ -59,10 +59,23 @@ Only a passing preflight can produce a stage. The pinned manifest records the
 enrollment fingerprint and model contract. Fresh reads repeat before drain,
 after drain/before seal, and before either success or rollback reopens admission.
 A changed enrollment or model blocks activation and verified rollback release.
-A pre-install abort may reopen the unchanged F: installation; handoff checks
-still reject mismatched parents. Stages without this contract must be restaged;
+A pre-install abort must pass the same native-quiescence check before reopening
+the unchanged F: installation. Stages without this contract must be restaged;
 never relax the gate to activate 6.2. Metadata such as `notLoaded` is not evidence
 that an app-owned writer is idle; retain the separate native-writer fence.
+
+The version-2 contract also reads every enrolled parent's runtime status
+(including retired project mappings; an empty enrollment is unverified),
+latest turn with `itemsView: notLoaded` (no item content), and first queue page.
+Active, unknown, unreadable, incomplete or pending observations block every gate,
+including abort, rollback and final admission release. Empty history or a bare
+`interrupted` export is not terminal/non-delivery proof. Stored terminal metadata
+is diagnostic only: the isolated app-server cannot attest the desktop owner's
+current writer or fence new desktop input. It therefore reports
+`desktop-owner-quiescence-unverified` and refuses cutover even for apparently
+dormant parents. A supported owner-side quiescence/fencing route must be verified
+and implemented before this blocker can be removed; there is no override flag.
+Do not deploy an old frozen runner to avoid the version-2 gate.
 
 Official controls: [queue semantics](https://learn.chatgpt.com/docs/developer-commands?surface=cli),
 [desktop model control](https://learn.chatgpt.com/docs/models?surface=app), and

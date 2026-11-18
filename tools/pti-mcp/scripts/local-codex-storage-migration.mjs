@@ -170,7 +170,7 @@ function verifyStage(){
   if(!stage||!equal(physical(stage),stage)||hash(manifestPath)!==pin||
      fs.readFileSync(path.join(stage,'manifest.sha256'),'utf8').trim().toLowerCase()!==pin||
      manifest.manifestSHA256)throw Error('Pinned stage changed.');
-  if(manifest.desktopModelTransition?.version!==1||manifest.desktopModelTransition.model!==targetModel||manifest.desktopModelTransition.effort!==targetEffort||!/^[a-f0-9]{64}$/.test(manifest.desktopModelTransition.enrollmentHash||''))throw Error('Stage lacks the desktop model-transition gate; create a new reviewed stage.');
+  if(manifest.desktopModelTransition?.version!==2||manifest.desktopModelTransition.model!==targetModel||manifest.desktopModelTransition.effort!==targetEffort||!/^[a-f0-9]{64}$/.test(manifest.desktopModelTransition.enrollmentHash||''))throw Error('Stage lacks the native-quiescence/model gate; create a new reviewed stage.');
   if(identity()!==manifest.ownerSid||manifest.targetVersion!==targetVersion||manifest.nodePath!==process.execPath)throw Error('Owner, runtime or target changed.');
   for(const item of [...manifest.runtimeFiles,...manifest.payloadFiles,...manifest.launcherFiles]){
     const file=inside(stage,path.join(stage,item.location));const actual=meta(file);
@@ -206,14 +206,12 @@ function modelRuntime(){
 async function desktopModelPreflight(db,{enforce=true,expectedEnrollmentHash=null}={}){
   const config=read(path.join(F,'config.json'));
   const normalized=value=>path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase();
-  const scope=(project,resource)=>JSON.stringify([normalized(project),normalized(resource)]);
-  const allowed=new Set(Object.values(config.projects||{}).map(project=>scope(physical(project.path),physical(project.resourcePath||project.path))));
   const snapshot=await db.doc('_ptiLocalServices/local-codex/owners/'+owner).collection('modules').get();
   const parents=[];
   for(const doc of snapshot.docs){
     const item=doc.data();
     if(!/^[a-f0-9]{64}$/.test(doc.id)||typeof item.projectPath!=='string'||typeof item.resourcePath!=='string'||typeof item.moduleKey!=='string')throw Error('Owner module catalog is malformed; model transition cannot be verified.');
-    if(!allowed.has(scope(item.projectPath,item.resourcePath))||!item.threadId)continue;
+    if(!item.threadId)continue; // Check all enrolled parents, including retired project mappings.
     if(!/^[a-f0-9-]{36}$/.test(item.threadId))throw Error('Owner module parent identity is malformed.');
     parents.push({moduleId:doc.id,moduleKey:item.moduleKey,threadId:item.threadId,projectPath:normalized(item.projectPath),resourcePath:normalized(item.resourcePath)});
   }
@@ -221,11 +219,12 @@ async function desktopModelPreflight(db,{enforce=true,expectedEnrollmentHash=nul
   const enrollmentHash=sha(JSON.stringify(parents));
   const observations=await verifyCatalog(modelRuntime(),parents);
   const blockers=observations.filter(item=>!item.compatible);
+  if(!parents.length)blockers.unshift({reason:'native-enrollment-empty-unverified'});
   if(config.model!==targetModel||config.reasoningEffort!==targetEffort)blockers.unshift({reason:'rollback-worker-model-mismatch',model:config.model??null,effort:config.reasoningEffort??null});
   if(expectedEnrollmentHash&&enrollmentHash!==expectedEnrollmentHash)blockers.unshift({reason:'module-enrollment-changed'});
-  const report={version:1,observedAt:new Date().toISOString(),ready:blockers.length===0,model:targetModel,effort:targetEffort,
+  const report={version:2,observedAt:new Date().toISOString(),ready:blockers.length===0,model:targetModel,effort:targetEffort,
     configuredModel:config.model??null,configuredEffort:config.reasoningEffort??null,enrollmentHash,parents:observations,blockers};
-  if(enforce&&!report.ready)throw Error('Desktop model transition blocks H cutover: '+blockers.length+' unresolved default/parent/enrollment observation(s). Run --action model-preflight. Matching catalog availability is insufficient; no parent/default was changed.');
+  if(enforce&&!report.ready)throw Object.assign(Error('Desktop quiescence/model preflight blocks H cutover: '+blockers.length+' unresolved default/parent/queue/enrollment observation(s). Run --action model-preflight. Admission must remain fenced; no parent/default was changed.'),{code:'DESKTOP_PREFLIGHT_BLOCKED'});
   return report;
 }
 async function ownerModelPreflight(options){
@@ -234,6 +233,30 @@ async function ownerModelPreflight(options){
   process.env.GOOGLE_CLOUD_QUOTA_PROJECT='worldline-intel';
   const app=initializeApp({projectId:'pti-app-2ab59',credential:applicationDefault()},'local-codex-model-preflight-'+randomUUID()),db=getFirestore(app);
   try{return await desktopModelPreflight(db,options);}finally{await db.terminate();await deleteApp(app);}
+}
+async function nativeQuiescence(rpc,thread){
+  const blockers=[],status=thread.status?.type??null;
+  if(status==='active')blockers.push('native-thread-active');
+  else if(status!=='idle')blockers.push('native-runtime-idle-unverified');
+  let latest=null,queue=null;const readErrors=[];
+  try{latest=await rpc('thread/turns/list',{threadId:thread.id,limit:1,sortDirection:'desc',itemsView:'notLoaded'});}
+  catch(error){blockers.push('native-latest-turn-unreadable');readErrors.push({method:'thread/turns/list',code:error.rpcCode??'unknown'});}
+  try{queue=await rpc('thread/queue/list',{threadId:thread.id,limit:1});}
+  catch(error){blockers.push('native-queue-unreadable');readErrors.push({method:'thread/queue/list',code:error.rpcCode??'unknown'});}
+  const turn=Array.isArray(latest?.data)&&latest.data.length===1?latest.data[0]:null;
+  const terminal=!!turn&&['completed','failed','interrupted'].includes(turn.status)&&
+    Number.isFinite(turn.completedAt)&&turn.completedAt>0&&Number.isFinite(turn.startedAt)&&turn.startedAt<=turn.completedAt;
+  if(!terminal)blockers.push('native-latest-turn-terminal-unverified');
+  const queueKnown=Array.isArray(queue?.data)&&queue.nextCursor===null;
+  if(!queueKnown)blockers.push('native-queue-empty-unverified');
+  if(Array.isArray(queue?.data)&&queue.data.length)blockers.push('native-queue-pending');
+  // This connection is an isolated reader, not the desktop writer's server.
+  // Even an empty queue and stored terminal turn cannot attest owner idleness
+  // or fence new desktop input. No flag/age/exported status can waive this.
+  blockers.push('desktop-owner-quiescence-unverified');
+  return {quiescent:false,ownerQuiescenceVerified:false,reader:'isolated-app-server',status,
+    latestTurn:turn?{id:turn.id,status:turn.status,startedAt:turn.startedAt??null,completedAt:turn.completedAt??null}:null,
+    terminalTurnRecorded:terminal,queueEntries:Array.isArray(queue?.data)?queue.data.length:null,queueComplete:queueKnown,readErrors,blockers};
 }
 async function verifyCatalog(executable,parents=[]){
   // account/model/thread reads only: no resume, queue, turn or native model mutation.
@@ -244,7 +267,7 @@ async function verifyCatalog(executable,parents=[]){
   const rejectAll=error=>{for(const item of pending.values()){clearTimeout(item.timer);item.reject(error);}pending.clear();};
   child.on('error',rejectAll);child.on('exit',()=>{exited=true;rejectAll(Error('Codex metadata connection exited.'));});child.stderr.resume();
   const send=value=>child.stdin.write(JSON.stringify(value)+'\n');
-  lines.on('line',line=>{try{const m=JSON.parse(line);if(m.method&&m.id!==undefined){send({id:m.id,error:{code:-32601,message:'Model preflight cannot approve actions.'}});return;}const p=pending.get(m.id);if(!p)return;clearTimeout(p.timer);pending.delete(m.id);m.error?p.reject(Error('Native metadata read rejected.')):p.resolve(m.result);}catch(error){rejectAll(error);}});
+  lines.on('line',line=>{try{const m=JSON.parse(line);if(m.method&&m.id!==undefined){send({id:m.id,error:{code:-32601,message:'Model preflight cannot approve actions.'}});return;}const p=pending.get(m.id);if(!p)return;clearTimeout(p.timer);pending.delete(m.id);m.error?p.reject(Object.assign(Error('Native metadata read rejected.'),{rpcCode:m.error.code})):p.resolve(m.result);}catch(error){rejectAll(error);}});
   const rpc=(method,params)=>new Promise((resolve,reject)=>{const id=++sequence,timer=setTimeout(()=>{pending.delete(id);reject(Error('Native metadata read timed out: '+method));},20000);pending.set(id,{resolve,reject,timer});send({id,method,params});});
   try{
     await rpc('initialize',{clientInfo:{name:'local_codex_storage_migration',version:'0.4.15'},capabilities:{experimentalApi:true}});send({method:'initialized'});
@@ -263,12 +286,14 @@ async function verifyCatalog(executable,parents=[]){
         try{
           const {thread}=await rpc('thread/read',{threadId:parent.threadId,includeTurns:false});
           observed.set(parent.threadId,{id:thread.id,model:thread.model??null,effort:thread.reasoningEffort??null,provider:thread.modelProvider??null,
-            cwd:thread.cwd?physical(thread.cwd):null,status:thread.status?.type??thread.status??null,archived:thread.archived===true});
+            cwd:thread.cwd?physical(thread.cwd):null,status:thread.status?.type??thread.status??null,archived:thread.archived===true,
+            nativeQuiescence:await nativeQuiescence(rpc,thread)});
         }catch{observed.set(parent.threadId,{reason:'native-parent-unreadable'});}
       }
       const item=observed.get(parent.threadId);
-      const compatible=item.id===parent.threadId&&item.model===targetModel&&item.effort===targetEffort&&item.provider==='openai'&&!item.archived&&item.cwd&&equal(path.win32.normalize(item.cwd),path.win32.normalize(parent.projectPath));
-      rows.push({...parent,...item,compatible:!!compatible,...(!compatible?{reason:item.reason||'saved-parent-model-or-context-mismatch'}:{})});
+      const modelCompatible=item.id===parent.threadId&&item.model===targetModel&&item.effort===targetEffort&&item.provider==='openai'&&!item.archived&&item.cwd&&equal(path.win32.normalize(item.cwd),path.win32.normalize(parent.projectPath));
+      const compatible=!!modelCompatible&&item.nativeQuiescence?.quiescent===true;
+      rows.push({...parent,...item,modelCompatible:!!modelCompatible,compatible,...(!compatible?{reason:item.reason||(!item.nativeQuiescence?.quiescent?'native-quiescence-unverified':'saved-parent-model-or-context-mismatch')}:{})});
     }
     return rows;
   }finally{
@@ -347,7 +372,7 @@ if(action==='stage'){
     previous:old,previousPointerHash:installedHash,previousReleaseFiles,sourceConfigHash,
     nonModelConfigHash:configNonModelHash(read(path.join(F,'config.json'))),
     targetVersion,model:targetModel,reasoningEffort:targetEffort,deadline,
-    desktopModelTransition:{version:1,model:targetModel,effort:targetEffort,enrollmentHash:desktopModelTransition.enrollmentHash,observedAt:desktopModelTransition.observedAt},
+    desktopModelTransition:{version:2,model:targetModel,effort:targetEffort,enrollmentHash:desktopModelTransition.enrollmentHash,observedAt:desktopModelTransition.observedAt},
     artifactSetHash:sha(JSON.stringify(payloadFiles)),payloadFiles,runtimeFiles,launcherFiles,
     maintenanceControllerSource:{path:'tools/pti-mcp/src/local-codex-maintenance.ts',
       sourceSHA256:freshController.sourceSHA256,compiledSHA256:freshController.compiledSHA256,
@@ -372,6 +397,10 @@ async function finishCompatible(...args){
   await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
   return control.finish(owner,req,...args);
 }
+async function abortCompatible(){
+  await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
+  return control.abort(owner,req);
+}
 if(action==='status'){
   try{console.log(JSON.stringify(await control.status(owner)));}
   finally{await db.terminate();await deleteApp(app);}
@@ -390,7 +419,7 @@ if(action==='detach'){
       });
       console.log(JSON.stringify({detached:true,launch,acknowledgment,manifest:manifestPath,manifestSHA256:pin,activationAttempted:false}));
     }catch(error){
-      try{await control.abort(owner,req);}catch{throw Error(error.message+' Inspect the sealed maintenance gate; do not clear it manually.');}
+      try{await abortCompatible();}catch(blocker){throw Error(error.message+' Admission remains fenced: '+blocker.message);}
       throw error;
     }
   }finally{await db.terminate();await deleteApp(app);}
@@ -610,6 +639,7 @@ async function health(root,version,after){
   },Date.now()+manifest.healthTimeoutMs,'Fresh same-owner local/hosted listener and model heartbeat not observed.');
 }
 async function restoreF(){
+  await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
   const current=taskState();
   if(equal(current.workingDirectory,H)){
     expectTask(H,current);
@@ -710,9 +740,11 @@ try{
       report.excludedRepository=inventory.excludedRepository;
       report.phase='copying';atomic(reportFile,report);
       copyToH(inventory);
+      await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
       const installed=installNewHRelease(inventory);
       report.installed=installed;report.phase='switching';atomic(reportFile,report);
       await control.guard(owner,req);
+      await desktopModelPreflight(db,{expectedEnrollmentHash:manifest.desktopModelTransition.enrollmentHash});
       expectTask(F);taskSwitch(H);
       const switchedAt=Date.now();report.switchedAt=switchedAt;
       taskCommand('Enable');taskCommand('Start');
@@ -731,7 +763,7 @@ try{
         Object.assign(report,state.lastMaintenance,{phase:'previously-finished',activated:state.lastMaintenance.outcome==='activated-verified'});
       }else if(state.maintenance.id!==manifest.id)throw Error('Another owner maintenance operation owns the gate.');
       else if(state.maintenance.phase==='draining'){
-        Object.assign(report,await control.abort(owner,req),{phase:'aborted-before-stop'});
+        Object.assign(report,await abortCompatible(),{phase:'aborted-before-stop'});
       }else{
         await control.recovery(owner,req);
         await control.guard(owner,req);
@@ -748,8 +780,11 @@ try{
       if(state.lastMaintenance?.id!==manifest.id)throw Error('Maintenance fence changed unexpectedly: '+error.message);
       Object.assign(report,state.lastMaintenance,{phase:'previously-finished'});
     }else if(state.maintenance.id!==manifest.id)throw Error('Foreign maintenance owns the fence: '+error.message);
-    else if(state.maintenance.phase==='draining'&&!sealed){
-      Object.assign(report,await control.abort(owner,req),{phase:'aborted-before-stop'});
+    else if(error.code==='DESKTOP_PREFLIGHT_BLOCKED'){
+      report.outcome='recovery-required';report.phase='admission-fenced';
+    }else if(state.maintenance.phase==='draining'&&!sealed){
+      try{Object.assign(report,await abortCompatible(),{phase:'aborted-before-stop'});}
+      catch(blocker){report.outcome='recovery-required';report.phase='admission-fenced';report.recoveryError=blocker.message;}
     }else{
       try{
         await control.recovery(owner,req);

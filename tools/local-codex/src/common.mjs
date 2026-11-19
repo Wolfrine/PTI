@@ -3,19 +3,16 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import {modelSelection} from './model-policy.mjs';
-import {ownerLimit,ownerDuration} from './limits.mjs';
 import {browserContextPreflight} from './browser-context.mjs';
 import {storageEnvironment} from './storage.mjs';
 
-export const VERSION = '0.4.15';
-// Keep the F: installation as the bootstrap/default until the guarded owner
-// migration explicitly switches the existing relay to H:. Project checkouts
-// are independently required to remain on F:.
-export const DEFAULT_HOME = 'F:/Workspace/Support/LocalCodexBridge';
+export const VERSION = '0.5.0';
+export const DEFAULT_HOME = 'H:/LocalCodexBridge';
 export const H_DRIVE_HOME = 'H:/LocalCodexBridge';
+export const LEGACY_HOME = 'F:/Workspace/Support/LocalCodexBridge';
 export const home = process.env.LOCAL_CODEX_BRIDGE_HOME || DEFAULT_HOME;
 export const configFile = path.join(home, 'config.json');
-const bridgeRoots = new Set([DEFAULT_HOME,H_DRIVE_HOME].map(value=>path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase()));
+const bridgeRoots = new Set([DEFAULT_HOME,LEGACY_HOME].map(value=>path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase()));
 export function assertBridgeHome(value=home) {
   const normalized=path.win32.normalize(value).replace(/[\\/]+$/,'').toLowerCase();
   if(!path.win32.isAbsolute(value)||!bridgeRoots.has(normalized))throw Error('Bridge home must be the existing F: root or the approved H: root.');
@@ -46,10 +43,6 @@ export function config() {
   const resolved=path.win32.normalize(fs.realpathSync.native(home)).replace(/[\\/]+$/,'').toLowerCase();
   if(resolved!==assertBridgeHome())throw Error('Bridge root must not be a junction, symlink or redirected path.');
   if (!value.projects || !Object.keys(value.projects).length) throw new Error('Configure at least one project.');
-  for(const [name,min] of [['maxConcurrentTasks',1],['maxSubagentsPerTask',0]]){
-    value[name]=ownerLimit(value[name],name,min);
-  }
-  value.maxTaskMinutes=ownerDuration(value.maxTaskMinutes);
   return value;
 }
 export function project(key) {
@@ -90,16 +83,14 @@ export function launch(id, worker) {
   });
   proc.on('error', error => {
     const job = task(id);
-    if (job.status === 'queued') write(path.join(taskDir(id), 'task.json'), { ...job, status: 'failed', error: error.message });
+    if (job.status === 'queued') write(path.join(taskDir(id), 'task.json'), { ...job, status: 'failed', error: error.message,
+      nativeDeliveryAbsent:{source:'worker-terminal-before-turn-start',generation:job.relayGeneration??null,status:'failed'} });
   });
   proc.unref();
 }
 export function view(job) {
-  if (job.status === 'queued' && Date.now() - Date.parse(job.updatedAt) > 60000 && !alive(job.workerPid)) {
-    return { ...job, status: 'interrupted', error: 'The queued worker did not start. Continue to retry.' };
-  }
   if (['running', 'waiting_for_user'].includes(job.status) && !alive(job.workerPid)) {
-    return { ...job, status: 'interrupted', error: 'The local worker stopped. Continue the task to resume its Codex thread.' };
+    return { ...job, status: 'unknown', error: 'The local worker stopped without a native terminal receipt. Reconcile its exact native turn; execution was not replayed.' };
   }
   return job;
 }
@@ -111,7 +102,6 @@ export function health() {
   const authMode=login.status===0&&/Logged in using ChatGPT/i.test(login.stdout+login.stderr)?'chatgpt':'unavailable';
   const selection=modelSelection(config());
   return { version: VERSION, codexVersion: result.stdout.trim(), codexPath: executable, dataPath: home, model:selection.model, reasoning_effort:selection.effort,
-    maxConcurrentTasks:config().maxConcurrentTasks,maxSubagentsPerTask:config().maxSubagentsPerTask,maxTaskMinutes:config().maxTaskMinutes,
     authMode,
     transport: 'stdio', networkListener: false, signIn: 'Uses the current Windows user Codex sign-in; verified when a task starts.',
     webMobile: 'Available through the authenticated PTI job relay when this worker is online.',

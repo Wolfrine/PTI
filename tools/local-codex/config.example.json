@@ -1,7 +1,4 @@
 {
-  "maxTaskMinutes": null,
-  "maxConcurrentTasks": null,
-  "maxSubagentsPerTask": null,
   "model": "gpt-6.2-sol",
   "reasoningEffort": "xhigh",
   "firebaseAuthApiKey": "REPLACE_WITH_DEDICATED_NATIVE_FIREBASE_AUTH_KEY",

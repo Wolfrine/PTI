@@ -1,49 +1,45 @@
-param([switch]$NoSchedule,[string]$MaintenanceManifest,[string]$ManifestSHA256,[string]$InstallRoot = 'F:\Workspace\Support\LocalCodexBridge')
+param([switch]$NoSchedule,[string]$InstallRoot = 'H:\LocalCodexBridge')
 $ErrorActionPreference = 'Stop'
 $installRoot = [IO.Path]::GetFullPath($InstallRoot).TrimEnd('\')
-if ($installRoot -notin @('F:\Workspace\Support\LocalCodexBridge','H:\LocalCodexBridge')) { throw 'Use the approved F: or H: Local Codex bridge root.' }
-if ((Test-Path -LiteralPath $installRoot) -and ((Get-Item -LiteralPath $installRoot).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Install root must not be a junction.' }
-if ($MaintenanceManifest) {
-  & (Join-Path $PSScriptRoot 'maintenance-once.ps1') -Manifest $MaintenanceManifest -ManifestSHA256 $ManifestSHA256
-  exit $LASTEXITCODE
-}
-if (Test-Path -LiteralPath (Join-Path $installRoot 'active.json')) {
-  throw 'Existing installations require the maintenance drain + external one-shot path. See tools/local-codex/docs/maintenance-upgrade.md. Do not restart a live task or use an idle snapshot as a lock.'
-}
+if ($installRoot -ne 'H:\LocalCodexBridge') { throw 'New releases use H:\LocalCodexBridge. The F: installation is retained only for existing work.' }
+if ((Test-Path -LiteralPath $installRoot) -and ((Get-Item -LiteralPath $installRoot).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Install root must not be redirected.' }
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
-$taskName = 'PTI Local Codex Relay'
-$previousTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-$restoreTask = $previousTask -and $previousTask.State -ne 'Disabled'
-if ($previousTask -and (@($previousTask.Actions).Count -ne 1 -or $previousTask.Actions[0].WorkingDirectory -ne $installRoot)) { throw 'The existing relay task points to another root or has an unknown action. Use the guarded storage-migration procedure before switching it.' }
-# Disable triggers before stopping: a queued minute trigger can otherwise start
-# the old pointer while files are being copied. Always restore an enabled task.
-try {
-if ($restoreTask) { Disable-ScheduledTask -TaskName $taskName | Out-Null }
-if (Test-Path -LiteralPath (Join-Path $installRoot 'active.json')) { & (Join-Path $PSScriptRoot 'stop.ps1') -InstallRoot $installRoot }
+$payloadFiles = @('server.mjs','worker.mjs','relay.mjs','setup.mjs','pair-existing.mjs','review-usage.mjs','THIRD-PARTY-NOTICES.txt')
+$payloadRoot = Join-Path $PSScriptRoot 'dist'
+$resolvedPayload = (Get-Item -LiteralPath $payloadRoot).Target
+if ($resolvedPayload -is [array]) { $resolvedPayload = $resolvedPayload[0] }
+if (-not $resolvedPayload -or -not ([IO.Path]::GetFullPath([string]$resolvedPayload)).StartsWith('H:\', [StringComparison]::OrdinalIgnoreCase)) { throw 'Build payload must resolve to its verified H: output directory.' }
+$payloadHashes = @{}
+foreach ($file in $payloadFiles) { $payloadHashes[$file] = (Get-FileHash -LiteralPath (Join-Path $payloadRoot $file) -Algorithm SHA256).Hash }
 $protectModule = Join-Path $PSScriptRoot '..\codex-usage-monitor\src\dpapi.mjs'
 & $nodePath --input-type=module -e "const {pathToFileURL}=await import('node:url'); const {WindowsProtection}=await import(pathToFileURL(process.argv[1])); await new WindowsProtection().secureDirectory(process.argv[2]);" $protectModule $installRoot
-if ($LASTEXITCODE -ne 0) { throw 'Cannot secure private worker directory.' }
+if ($LASTEXITCODE -ne 0) { throw 'Cannot secure the private runtime directory.' }
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'package.json') -Raw | ConvertFrom-Json).version
-$stamp = [DateTime]::UtcNow.ToString('yyyyMMddHHmmss')
-$releaseName = $version + '-' + $stamp
+$sourceSha = (& git -C $PSScriptRoot rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Cannot identify release source revision.' }
+$releaseName = $version + '-' + [DateTime]::UtcNow.ToString('yyyyMMddHHmmss')
 $release = Join-Path $installRoot ('releases\' + $releaseName)
-New-Item -ItemType Directory -Path $release -Force | Out-Null
-Copy-Item -Path (Join-Path $PSScriptRoot 'dist\*') -Destination $release -Force
-if (-not (Test-Path -LiteralPath (Join-Path $installRoot 'config.json'))) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'config.example.json') -Destination (Join-Path $installRoot 'config.json') }
-foreach ($file in @('run.ps1','run-hidden.vbs','stop.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $installRoot -Force }
-$active = @{version=$version; release=('releases\' + $releaseName); nodePath=$nodePath; installedAt=[DateTime]::UtcNow.ToString('o')} | ConvertTo-Json
-[IO.File]::WriteAllText((Join-Path $installRoot 'active.json'), $active)
-if ($NoSchedule) { Write-Output 'Worker installed; schedule unchanged.'; exit 0 }
-if (-not (Test-Path -LiteralPath (Join-Path $installRoot 'data\credential.json'))) { throw 'Pair the worker with run.ps1 -Command setup before scheduling.' }
-$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-$action = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\wscript.exe') -Argument ('//B //NoLogo "' + (Join-Path $installRoot 'run-hidden.vbs') + '"') -WorkingDirectory $installRoot
-$triggers = @((New-ScheduledTaskTrigger -AtLogOn -User $currentUser),(New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1)))
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-$principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $triggers -Settings $settings -Principal $principal -Description 'Private outbound Local Codex job relay using the signed-in Windows user and ChatGPT subscription.' -Force | Out-Null
-Enable-ScheduledTask -TaskName $taskName | Out-Null
-Start-ScheduledTask -TaskName $taskName
-Write-Output 'PTI Local Codex Relay scheduled with a windowless launcher.'
-} finally {
- if ($restoreTask) { Enable-ScheduledTask -TaskName $taskName | Out-Null }
+New-Item -ItemType Directory -Path $release -ErrorAction Stop | Out-Null
+foreach ($file in $payloadFiles) {
+  $destination = Join-Path $release $file
+  Copy-Item -LiteralPath (Join-Path $payloadRoot $file) -Destination $destination -ErrorAction Stop
+  if ((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash -ne $payloadHashes[$file]) { throw ('Installed payload hash mismatch: ' + $file) }
 }
+if (-not (Test-Path -LiteralPath (Join-Path $installRoot 'config.json'))) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'config.example.json') -Destination (Join-Path $installRoot 'config.json') }
+foreach ($file in @('run.ps1','run-hidden.vbs','stop.ps1')) {
+  $source = Join-Path $PSScriptRoot $file
+  $destination = Join-Path $installRoot $file
+  Copy-Item -LiteralPath $source -Destination $destination -Force
+  if ((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash) { throw ('Installed launcher hash mismatch: ' + $file) }
+}
+# Existing native workers retain their installed executable. This pointer change
+# neither interrupts them nor replays their requests. Config and credentials stay.
+$active = @{version=$version;release=('releases\' + $releaseName);nodePath=$nodePath;sourceSha=$sourceSha;payloadSHA256=$payloadHashes;installedAt=[DateTime]::UtcNow.ToString('o')} | ConvertTo-Json -Depth 5
+[IO.File]::WriteAllText((Join-Path $installRoot 'active.json'),$active)
+if ($NoSchedule) { Write-Output ('Verified seven-file release installed: ' + $version + ' source ' + $sourceSha + '; scheduled launcher unchanged.'); exit 0 }
+$taskName = 'PTI Local Codex Relay'
+$scheduled = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+if (-not $scheduled) { throw 'No existing relay task is available. Release is staged; creating a scheduler task requires separate owner authorization.' }
+$action = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\wscript.exe') -Argument ('//B //NoLogo "' + (Join-Path $installRoot 'run-hidden.vbs') + '"') -WorkingDirectory $installRoot
+Set-ScheduledTask -TaskName $taskName -Action $action | Out-Null
+Write-Output 'Verified release installed and existing task action retargeted. Triggers, principal, settings and active native work were preserved. Verify the next actual scheduled invocation and hosted heartbeat.'

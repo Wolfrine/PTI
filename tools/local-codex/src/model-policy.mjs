@@ -17,7 +17,7 @@ export function modelSelection(configuration = {}, requested = {}) {
 export async function requireModel(rpc, selection) {
   let cursor = null;
   const seen = new Set();
-  for (let page = 0; page < 20; page++) {
+  while (true) {
     let result;
     try { result = await rpc('model/list', {limit: 100, includeHidden: false, cursor}); }
     catch { throw choiceRequired('The signed-in Codex model catalog could not be verified.'); }
@@ -39,12 +39,4 @@ export function verifyModel(started, selection) {
   if (started.model !== selection.model || started.reasoningEffort !== selection.effort) {
     throw choiceRequired(`Codex returned ${started.model || 'an unknown model'} / ${started.reasoningEffort || 'an unknown effort'} instead of ${selection.model} / ${selection.effort}.`);
   }
-}
-
-// The public desktop queue uses the saved parent's model, not startup defaults.
-export function verifyDesktopModel(thread, selection) {
-  if(thread.modelProvider==='openai'&&thread.model===selection.model&&thread.reasoningEffort===selection.effort)return;
-  const error=Error(`Desktop model transition required for parent ${thread.id||'unknown'}: saved ${thread.model||'unknown'}/${thread.reasoningEffort||'unknown'} (${thread.modelProvider||'unknown provider'}), required ${selection.model}/${selection.effort}. No input was queued or model changed. Use supported native model controls on this same idle parent and verify readback; never rotate or fall back.`);
-  error.code='DESKTOP_MODEL_TRANSITION_REQUIRED';
-  throw error;
 }

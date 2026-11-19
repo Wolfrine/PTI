@@ -1,165 +1,32 @@
-# Local Codex: complete inspected limits and dependencies
+# Local Codex boundaries
 
-Audit date: 8 November 2026. Scope: installed Windows configuration, worker/relay source, hosted Local Codex admission and protocol source, plugin guidance, relevant desktop configuration, and actual native-chat/browser operation. This is a control inventory, not a claim that every failure condition was deliberately triggered.
+The 0.5.0 source contract is authenticated transport -> Windows helper -> official native Codex. Verify source, hosted transport, plugin publication and installed helper separately. This document does not claim a release is deployed, installed or accepted.
 
-Baseline when this repair began on 16 November: worker 0.4.12 / host 0.4.9 / published plugin 0.4.17. Plugin 0.4.18 is now published with unchanged App binding; worker 0.4.13 source/build adds remote ownership recovery and terminal reconciliation, with activation pending this delivering claim's exit. The 8 November existing ChatGPT conversation invoked `continue_desktop_chat`, the existing Co-Director chat controlled Chrome, and its completed result returned through relay history. That is historical browser evidence. Source/build, publication and installed activation remain separate. See [the current repair evidence and limitations](../decisions/2026-11-16-native-writer-recovery.md). Earlier statements below that the relay has no automatic launcher describe previous releases.
+## Supported scope
 
-## Confirmed working and changes delivered
+The private owner-authenticated connection submits requests, reads progress/results/history, forwards genuine human answers and requests cancellation. New work starts in a fresh native session; explicit task/native-thread continuation is supported. Native Codex owns planning, subagents when useful, Git, integration and verification. The helper adds no module affinity/rotation, desktop handoff, resource reservations, artificial execution/capacity limits, maintenance fence or scheduler.
 
-- Existing native chat `01a1b6f2-9121-7412-b874-370f30fe57da` completed bridge generation 5, then ran through the desktop app in turn `01a1b9f4-c353-7e72-88ff-9d6446c8dac2`. The official Chrome tool operated the authenticated Taleweald tab, clicked Supervisors and Milestones, and saved a screenshot. No replacement chat or PTI Chrome consent was needed.
-- Real screenshot, also inspected by the supervising chat: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/existing-chat-official-chrome.jpg`. Milestones showed 8 total, 4 in motion/review, 0 blocked and 0 owner accepted. These are page observations, not gameplay or owner acceptance.
-- Worker 0.4.10 fixed persisted instructions which incorrectly carried standalone browser prohibitions into desktop continuations. Final worker 0.4.11 also removes the remaining preemptive tool prohibition based on missing environment metadata. Actual official tool permission checks now decide access.
-- PTI Owner Chrome's active pointer and Native Messaging registration are disabled. New worker jobs receive no `pti_chrome` MCP injection. Existing extension/release files and historical evidence are preserved; the Chrome extension itself remains installed. It is not a prerequisite for normal browser control.
-- Plugin 0.4.12 uses the existing desktop-owned chat for browser work and treats the QA broker and PTI Chrome provider as optional. No new model provider or API key was added.
-- Removed the stop caused solely by a model-catalog upgrade recommendation. The selected model/effort must still actually be available and must not be silently replaced.
-- Fixed the detached updater's inherited PowerShell module-path mismatch using only its own built-in modules and process environment.
-- Added the actual Taleweald repository to the installed project catalog. Existing Ragnarok mappings and historical tasks were preserved.
+Inspect remains read-only. Edit applies only to the owner's current task. Private transport and native Full Access do not authorize unrelated changes, publication, messages, authentication extraction or browser-policy bypass. Native account, model, writer and permission constraints remain real.
 
-Final activation: worker **0.4.11**, source `3b8a2ed`, installed through the detached owner updater. The receipt verified all seven files, fresh hosted/local heartbeats, connected listener and no maintenance fence left. Receipt: `F:/Workspace/Support/LocalCodexBridge/maintenance/0.4.11-release-3b8a2ed/result.json`. Live catalog readback confirmed all 9 configured projects available. An actual no-model Codex catalog request also verified the configured model/effort after release. No synthetic suites were run.
+## Evidence and recovery
 
-## Model execution and external services
+- Exact request identity prevents duplicate dispatch. Identical retries return the existing operation; different inputs cannot reuse the key. Ambiguous dispatch remains unresolved and must never be replayed under another key.
+- A status-wait or network timeout ends one transport observation. It does not prove the native task stopped. Report the native terminal event or exact unresolved state.
+- A helper heartbeat proves liveness at its observation time. It does not prove native progress, model execution, a successful deliverable, browser access or owner acceptance.
+- Read-only history may omit tool outputs, images and attachments and can be truncated/paginated. A stored `interrupted` label without terminal evidence may be unknown. Preserve exact task/thread/turn identity.
+- Cancellation is requested until the native outcome is observed. Report unavailable native stop control; edits already made are not automatically rolled back.
+- New work requests `gpt-6.2-sol/xhigh`. Verify current catalog support and actual execution metadata. Configuration or source changes do not establish model use. Preserve active executions and report their real selection.
 
-Model execution uses the installed official Codex executable and the owner's ChatGPT subscription sign-in. Live `codex login status`, the completed bridge turn, and desktop continuation support this. The inspected runtime reports `codex-cli 0.166.0-alpha.5.1`, model `gpt-6.1-sol`, effort `xhigh`.
+## Browser, audio and devices
 
-`subscriptionEnvironment()` removes API-key/custom-endpoint overrides from the child environment; task startup requires `account.type === chatgpt` and provider `openai`. No alternate LLM service is called by the bridge. This deliberately enforces the owner's Codex-only requirement.
+Use official tools available in the executing native turn and their normal entry/permission checks. Missing official tools or actual denials leave the requested browser/desktop verification unavailable. Continue independent work and name the exact gap. The transport performs no automatic desktop-chat transfer and supplies no independent Chrome provider.
 
-The web/mobile connector still uses the existing PTI HTTPS/Firestore/Firebase Authentication infrastructure for job delivery, authentication, status and stored results. Those are network APIs, not additional AI-model APIs. Its Firebase public application key is not an OpenAI API key. Native desktop execution can use the app directly; describing the entire remote relay as having no external APIs would be inaccurate.
+No raw CDP/Playwright, browser identity/pipe copying, credential recovery or alternate-controller retry of a denied action. Navigation, a build or an old screenshot does not establish visual acceptance, real authenticated flow, audible behavior or physical-device operation. Those require actual observed use in the intended environment.
 
-Sources: `src/common.mjs`, `src/worker.mjs`, `src/credentials.mjs`, `src/relay.mjs`, `../pti-mcp/src/http-app.ts`.
+## Delivery
 
-## Execution, permissions and ownership
+Source/Git stays on F:. Operational state, releases, caches, builds, temporary work, reports and backups belong on H:. Preserve platform-required app state, private authentication, native history and active executions. Leave the independent quota collector untouched.
 
-| Control | Current effect | Origin / disposition |
-|---|---|---|
-| Concurrent bridge tasks | `maxConcurrentTasks: null`; no bridge task-count ceiling | Earlier 1/3 limits are inactive. Legacy compatibility code applies only to older workers. |
-| Subagent count | `maxSubagentsPerTask: null`; no bridge count ceiling | Earlier 2-child limit inactive. No invented replacement native cap. |
-| Task duration | `maxTaskMinutes: null`; no total bridge execution deadline | Earlier 30-minute default inactive. Individual network/protocol timeouts below still exist. |
-| Nesting | No bridge-imposed nesting ceiling | Native Codex/account constraints still apply. |
-| Strategy `single` | Disables subagents for that task | Explicit strategy, not a global limit. `auto` and `team` use native subagents. |
-| Model and reasoning | Exact configured model/effort required for parent and descendants; a real mismatch stops the task | Owner-selected policy. A newer-model recommendation alone no longer stops work. No fallback to another provider. |
-| Inspect/edit modes | Inspect is read-only; edit is Full Access; both use approval `never` | Current authorization boundary. A continuation cannot change its project or broaden inspect to edit. A new task record can reuse the same module chat. |
-| Project catalog | Only configured, existing physical F-drive project keys are accepted | Bridge routing allowlist plus owner F-drive rule. Now 9 entries including Taleweald. Hosted heartbeat schema still permits at most 30 entries. |
-| Repository concurrency | An edit locks the whole physical Git checkout against other bridge readers/writers; independent reads can coexist | Bridge-added conservative coordination, coarser than file-level locking. Different module names do not bypass it. Parent subagents can divide files inside one task. |
-| Native chat writer | One active writer per chat; unfinished turns and desktop-held writers cannot be taken over | Native Codex ownership plus bridge checks. A completed turn can still be loaded. Worker 0.4.13 uses the same normal desktop queue for eligible pre-turn edit failures; no lock deletion or manual owner desktop requirement. Native stop remains unavailable when supported app control cannot connect. |
-| Module identity | One active parent per physical project/module; distinct related outcomes reuse it | Owner reuse requirement. No automatic age/turn/token-based rotation. Missing/archived/incompatible automatic selections can rotate; explicit selections do not silently change. |
-| Request identity | A request/work key cannot be reused for different inputs or source identity | Duplicate-execution protection, not a work limit. |
-| Recursive relay calls | Workers cannot submit back into their own relay | Bridge policy prevents recursive jobs. Native subagents remain available. |
-| Maintenance | New admissions pause while existing jobs drain and the seven-file release is verified | Integrity/ownership safeguard. Finite maintenance deadline does not limit model work. Failure rolls back or retains a recovery fence. |
-| Interactive requests | Worker handles command/file approvals and user-input questions; other native interactive request types are rejected | Wrapper capability gap, not a Codex prohibition. Normal edit work uses approval `never`. Genuine decisions must still come from the owner. |
-| Account and local listener | Owner-only relay; one relay process for this installation | Authentication and duplicate-listener protection. Not a limit on independent task count or ChatGPT connections. |
+Use the existing main deployment pipeline and external one-shot helper activation. Reuse the existing windowless lifecycle and create no new schedule. Require hashes, installed-pointer readback and fresh authenticated local/hosted observations. Report terminal release evidence and any remaining runtime/browser/device gate; only the owner accepts.
 
-Sources: `src/limits.mjs`, `src/harness-policy.mjs`, `src/model-policy.mjs`, `src/execution-policy.mjs`, `src/workspace-locks.mjs`, `src/chat-routing.mjs`, `src/worker.mjs`, `../pti-mcp/src/local-codex-admission.ts`, `../pti-mcp/src/local-codex-affinity.ts`.
-
-## Connection, timeout and recovery behavior
-
-| Limit | Exact behavior | Practical consequence |
-|---|---|---|
-| Heartbeat freshness | Hosted worker is offline after 60 seconds without a fresh heartbeat | New work is rejected rather than silently queued while the PC is unavailable. |
-| Unclaimed request | Expires after 120 seconds | Limits dispatch waiting, not execution duration. |
-| Active lease | 90 seconds, renewed while connected | Lost generation/lease cannot keep reporting as current. |
-| Connection-loss interruption | Local relay requests cancellation after more than 45 seconds without a successful relay request | Bridge restriction, not a Codex limit. Can interrupt standalone work during an outage. It cannot stop an app-owned desktop turn through an independent reader; that work may continue after the lease/ChatGPT call ends. |
-| Network request | Relay HTTP 20 seconds; Firebase token refresh 15 seconds | Request failure/retry does not itself impose a total task-duration ceiling. |
-| Retry delay | Exponential 1 second up to 30 seconds | Transport recovery, not extra model inference. |
-| Health cadence | Normally 30 seconds; quiet connected idle state 40 seconds | Uses listeners for dispatch, not periodic empty job queries. |
-| Native protocol response | Worker RPC 60 seconds; history RPC 20 seconds | Can fail startup/history if the app-server does not respond; not a model-turn duration cap. |
-| Result wait | Hosted `get_task`: 0–50 seconds, default 20; internal local endpoint: 0–20, default 0 | One wait call returns; the underlying task continues. |
-| Local startup view | Queued worker older than 60 seconds with no live PID is reported interrupted | Diagnoses failure to launch. |
-| Local file operations | Atomic write retries up to about 1 second; workspace admission tickets wait about 1 second | Bounded contention recovery, not a user-visible task budget. |
-
-Sources: `src/relay.mjs`, `src/credentials.mjs`, `src/worker.mjs`, `src/codex-history.mjs`, `src/common.mjs`, `src/workspace-locks.mjs`, `../pti-mcp/src/local-codex.ts`.
-
-## Message, history and reporting limits
-
-These are wrapper transport/storage bounds. They do not reduce the underlying native chat's context window or delete its transcript.
-
-| Surface | Current bound |
-|---|---|
-| Submitted prompt / continuation | 24,000 characters |
-| Task title / default title | 100 characters / first 80 characters if no title is supplied; plugin requires short module titles |
-| Request and work keys / module key | Request/work key 8–128 characters; module key 1–128 in its permitted identifier alphabet |
-| Rotation handoff / history query / cursor | 4,000 / 200 / 4,000 characters |
-| Final or agent message | 48,000 characters; excess is truncated by worker collection |
-| Collected recent agent messages | Last 30 locally; last 10 sent in each relay snapshot |
-| Error text | 2,000 characters |
-| Recent task discovery | Hosted storage reads the latest 100 tasks before filtering; tool returns at most 30 matches and a 1,000-character final preview. Durable module catalog is separate and not limited to this recent window. |
-| Native thread listing / reading | List at most 20 per page; read at most 10 turns per hosted call; pagination supported |
-| History message export | 4,000 characters per message; 16,000 total text budget; tool outputs and attachments omitted; truncation signaled. Serialized history result at most 24,000 characters. Use app-native history when richer detail is needed. |
-| Local run summaries / owner outcomes | Last 50 run summaries per local task and last 50 explicit owner outcome records in hosted summary arrays; native transcript retained |
-| Usage review | 1–90 day window; reads up to 5,000 most recently modified local task directories; remote IDs fetched in batches of 100 without a total requested-ID cap |
-| Usage attribution | Latest reported response counters, not complete generation/account billing. Missing child/legacy metadata remains unknown. |
-| HTTP request bodies | Connector 256 KiB; worker 768 KiB; MCP SDK protocol validation includes a 100-message batch bound |
-| Project metadata | Up to 30 projects; path 2,048 characters; name 100; project key 64 |
-| Catalog enumeration | Up to 20 model-list pages of 100 entries to find the exact selected model |
-
-Sources: `src/server.mjs`, `src/worker.mjs`, `src/codex-history.mjs`, `src/telemetry.mjs`, `src/review-usage.mjs`, `../pti-mcp/src/local-codex.ts`, `../pti-mcp/src/http-app.ts`.
-
-## Browser and desktop boundaries
-
-The bridge launches an official standalone Codex app-server. The desktop app supplies its own tools and authorization to app-owned continuations. These are execution contexts, not different permanent kinds of chat: the same native chat successfully ran in both this audit. The supported app continuation tool was used; no browser identity, pipe, consent record or credential was copied.
-
-Missing environment metadata no longer instructs the worker to skip an available official browser tool. Actual tool denials, URL checks and account permissions remain binding. Hosted `requires_handoff` telemetry describes the relay's own session capability; it must not be treated as a denial for every desktop chat. The relay itself still has no automatic app-owned-session launcher; the current desktop app's supported continuation tool supplies that route.
-
-Windows native screenshot capture separately returned a capture timeout on this machine. Official Chrome screenshots and interactions worked. The repair avoids that failing native capture path for browser work; it does not claim the native Windows capture engine itself was fixed. Gameplay, audio capture/perception and physical-mobile interaction were not verified by this browser-navigation check.
-
-## Optional features outside the default browser path
-
-| Component | Restrictions retained in its optional implementation |
-|---|---|
-| Interactive QA broker | Recordkeeping only; no session launcher. One foreground reservation, 90-second lease, default 24-hour request expiry. Explicit idle release, operator attestations, and exact run identity. HTTPS or loopback HTTP without credentials/query/fragment; up to 30 objectives, observations and artifacts; up to 50 listed requests. These are not prerequisites for ordinary official Chrome control. |
-| PTI Owner Chrome | Disabled. If explicitly restored: only `http://localhost:4173` and `https://taleweald.firebaseapp.com`; exact task/PID/generation/tab/site owner consent; foreground-only; 5/15/30-minute owner grants; no arbitrary JavaScript, cookies, browser/OS shortcuts or audio capture. MCP command wait 31 seconds; Native Messaging frame maximum 8,000,000 bytes; coordinates 0–10,000; text 1,000 characters; objectives 1,500; up to 5 touch points; viewport 240–2560 by 240–1600. None apply to the successful official Chrome route. |
-| Legacy local plugin | Disabled in global config; outdated polling/capability guidance is inactive. Current published plugin is 0.4.14. |
-
-Sources: `../pti-mcp/src/local-codex-interactive.ts`, `chrome/mcp.mjs`, `chrome/runtime.mjs`, `chrome/native-host.mjs`, global Codex config.
-
-## Chat organization and remaining practical limits
-
-The durable module catalog now exposes existing exact module keys/current native parents instead of relying on the recent task window. Prior work renamed 45 chats and arranged 50 in five project sidebar sections; two actual project-membership moves were verified. Other requested project moves were refused by the app because their source project could not be safely determined. Sidebar grouping is not the same as project membership; no app database was edited to manufacture it.
-
-Some already-loaded historical chats can still retain the old developer instructions until refreshed through their normal owner/runtime. The verified same-chat continuation was refreshed correctly. New bridge turns receive the installed policy; a writer-held historical chat must not be force-taken-over merely to update its history. No claim is made that every dormant historical chat was individually exercised.
-
-Retained rules above are now visible and attributable. The bridge adds no active task/subagent/nesting/duration ceiling, no additional model API, no mandatory PTI Chrome grant, and no blanket prohibition against a bridge-origin chat running through the desktop app. Native Codex usage/context/capability limits remain platform-managed; this audit does not invent or promise their numeric limits.
-
-
-## Hosted-report correction after the mobile chat discrepancy
-
-The existing ChatGPT chat `Resume T03 production leadership` read hosted 0.4.7 flags and the bridge-only generation result, then reported direct Chrome was not activated. The flags were fixed relay values, not an observation of that chat or the PC's app-owned browser. Its Co-Director native chat still had an older 0.4.8-era turn, separate from the verified browser-repair chat.
-
-Hosted 0.4.8 labels capability scope at both report and capability level, explicitly marks the caller session unobserved, removes mandatory manual-consent/QA wording, and labels task results as bridge-generation-only. Plugin 0.4.13 instructs callers to inspect actual tool inventory and latest native history before drawing conclusions. Existing false authorization flags remain truthful for the relay; no authorization is fabricated.
-
-Deployment run `42458671130` completed successfully for commit `eea1952`. Live `bridge_status` returned host 0.4.8, worker 0.4.11 online, the explicit relay scope and caller-session unknown values. Live `get_task` returned the new bridge-generation scope and native-history notice. The same relay history tool available to the mobile chat retrieved the later successful desktop turn without creating a chat or model run.
-
-The successful earlier browser verification was initiated by the desktop app. This does not prove that an ordinary mobile plugin chat exposes `send_message_to_thread` or can initiate that same route. Publishing a plugin does not add a missing app-native activation API. Automatic mobile-origin activation remains unverified/unimplemented by this relay; current desktop control is verified. No extra model API, new native chat, game change or simulated browser result is introduced by this correction.
-
-## Existing Taleweald Co-Director connection verification
-
-The exact existing Co-Director chat `01a1b7c7-885c-7053-999c-40be33901ca8` completed desktop-owned turn `01a1ba1a-b87f-7d21-bfec-2d2d9fce3149` on 8 November 2026. After checking that the bridge writer was idle, the supported app continuation tool dispatched work to that same chat. Its official Chrome tool reused authenticated tab `1189487672` at `https://taleweald.firebaseapp.com/ops/`, clicked Supervisors and Milestones, and observed Supervisor command and Milestone ledger respectively. No new chat, extension grant, alternate model API or repository change was needed for the interaction.
-
-The supervising chat visually inspected the resulting 74,708-byte JPEG at `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/taleweald-existing-codirector-chrome.jpg`; SHA256 `307EFE34FE98A6209535155D5B5B641B1E6325FAABE263C95FCE7C920896C1CC`. Relay history operation `c38aa83f50e27ae0d79624d8f25dd268` retrieved this exact completed native turn. Existing ChatGPT conversation `6aefa39d-a20c-83ee-8200-6f8550413041` retrieved the result and acknowledged the successful Chrome interaction in completed turn `70267b2f-c35b-44e8-a3dc-4da4d4646158`.
-
-Native Remote settings showed the paired device `Android 14 LE2101` and “Last connected 7m.” Saved app state also reported a connected mobile device. The accessibility output did not expose switch values. This establishes an existing pairing and a recent connection, not a verified phone-origin launch. Both verification messages were dispatched through the desktop app. The relay omits screenshot bytes, so actual phone rendering remains unverified. The ordinary mobile plugin still lacks the supported app-owned activation route; this verification does not implement one.
-
-Official installed `codex doctor --json` confirmed the desktop app-server handshake, provider HTTP and WebSocket connectivity. It identified `features.remote_connections = true` in the global config as ignored and unrecognized. That obsolete line was removed; a subsequent `doctor --json --network-only` reported all four checks, including config load, as OK. Native Remote pairing was not changed. Optional MCP environment warnings, endpoint-protection exclusion uncertainty and historical rollout-index differences remain separate diagnostics; no app database or protection settings were altered.
-
-Structured evidence: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/taleweald-existing-chat-verification.json`. This was practical runtime verification, not a synthetic suite, gameplay check, audio check or owner acceptance. Existing bridge tests remain referenced by the hosted deployment workflow; no required protections were removed or run for this documentation update.
-
-## Automatic handoff through the existing desktop chat
-
-The missing route is implemented with the documented official `codex queue --thread <existing-id> --message <text>` command and `codex://threads/<existing-id>` link. The desktop app consumes the durable queue and owns the native turn, including its existing Chrome tools. No private app socket, browser identity, additional model API, new chat, persistent helper or recurring automation is used.
-
-Hosted `continue_desktop_chat` takes the exact existing native thread ID, its catalog project, authorized prompt and stable request key. Admission checks existing bridge activity; the local dispatcher verifies the chat directory, selected model/provider/effort, pending queue and checkout lock before dispatch. The app retains its native permissions. A durable receipt and per-request marker recover uncertain retries without silently sending the prompt twice. The operation reports `started` only after the matching user message appears in a native turn. It observes startup for 12 seconds and removes its own still-pending message if no start is observed; this does not cap native work duration.
-
-The handoff operation is a dispatch receipt, not a model-task lifetime wrapper. Use `read_codex_thread` for its exact turn and completed final result. Native work, approvals and cancellation remain app-owned after dispatch; canceling the dispatch operation is not a native-turn stop command. The text-only history export still omits screenshot bytes. A separate history reader may label an unfinished app-owned turn interrupted until completion is persisted; handoff receipts report live status unobserved instead of asserting that interruption.
-
-Practical evidence before release: the CLI queue started turn `01a1ba32-7831-76c3-8de1-b73c8063b012` in Co-Director chat `01a1b7c7-885c-7053-999c-40be33901ca8`, which used official Chrome and saved `taleweald-cli-queue-chrome.jpg`. The implemented dispatcher then started completed turn `01a1ba39-2ef5-7c60-8ea2-4d18b6009c13`, again clicked Supervisors and Milestones and saved `taleweald-automatic-handoff-chrome.jpg`. Retrying the identical dispatch returned that same turn without another model run. Evidence and receipts are under `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/`. Hosted publication, installed activation and mobile-conversation verification are recorded separately when observed.
-
-## Released mobile/web plugin to existing desktop chat: verified
-
-On 8 November 2026, worker 0.4.12 activated through maintenance receipt `f00929c4-5356-449e-9b4a-bbd852752b56`, with all seven installed artifacts matched, a fresh connected listener and external-process verification. Host 0.4.9 deployed from `5d5a24f952d2fc8065a7a64aab189de19f2ddfb9`; workflow `42463191883` completed all four jobs successfully, including deployed authentication/resource-boundary checks. Plugin 0.4.14 was published under the existing identity as release `pluginrel_6af0316de45481919a7357df6efea46a`.
-
-The saved ChatGPT connection initially retained the old 18 tools. Its official **Refresh tools** action exposed all 19, including `continue_desktop_chat`; account, permissions, App ID and plugin identity were preserved. This refresh is now part of the maintenance release instructions.
-
-Existing ChatGPT conversation `6aefa39d-a20c-83ee-8200-6f8550413041` invoked the new tool with catalog project `ragnarok`, existing module parent `01a1b7c7-885c-7053-999c-40be33901ca8` and request key `taleweald-mobile-handoff-20261108-final`. Its handoff operation `948bbe46aa826d29e3f74c9e917c4438` started native turn `01a1ba4b-5756-74f0-ba34-ebaff5a74864`; that turn completed in 22.5 seconds. The real Chrome tool reused tab `1189487672` at `https://taleweald.firebaseapp.com/ops/`, clicked Supervisors and observed **Supervisor command**, then clicked Milestones and observed **Milestone ledger**. The supervising chat independently inspected the saved 74,697-byte screenshot: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/taleweald-mobile-plugin-handoff.jpg`, SHA256 `E4C225008FAAF5C5C7C99B6054AB85A6085340375C468F6B11D714E291DA6344`.
-
-The same ChatGPT conversation retrieved the completed native turn through history operation `dd235bddc80b76a2fc70fc988c4279b2`, after its first read saw unfinished work. The conversation's visible activity confirms both the plugin-origin dispatch and result retrieval. This verifies the ordinary mobile/web plugin route, not a physical phone screen/touch interaction. Screenshot bytes remain local/native; no claim is made about phone image rendering, gameplay, audio or owner acceptance. No new chat, PTI Owner Chrome grant, additional model API, scheduler or game-source change was introduced.
-
-Structured evidence: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/taleweald-mobile-plugin-handoff-verification.json`. Existing required pipeline checks were preserved; stale tool/version/capability expectations were aligned with the release. No new test cases were added.
+Historical controls and observations are retained in [../decisions/](../decisions/). Their old tool counts, module/queue/provider contracts, versions, paths, limits and release results are not current instructions or current availability proof.

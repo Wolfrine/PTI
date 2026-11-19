@@ -6,7 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {JSONRPCMessageSchema,isInitializeRequest,SUPPORTED_PROTOCOL_VERSIONS} from '@modelcontextprotocol/sdk/types.js';
 import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE, type UserIdentity } from './oauth.js';
-import { CodexRelay, createCodexServer, workerPollSchema, workerSyncSchema, workerReportSchema, OWNER } from './local-codex.js';
+import { CodexRelay, createCodexServer, heartbeatSchema, workerPollSchema, workerSyncSchema, workerControlSchema, workerReportSchema, OWNER } from './local-codex.js';
 import { morselBlinkitRouter } from './morsel-blinkit-http.js';
 
 function escape(value: string) { return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]!)); }
@@ -122,10 +122,12 @@ button.onclick=async()=>{button.disabled=true;try{
         const identity=await options.verifyIdentity(bearer[1]);await provider.checkUser(identity.uid,identity.authenticatedAt);if(identity.uid!==OWNER)throw Error('authentication_required');
         if(req.params.action==='poll')res.json(await relay.poll(identity.uid,workerPollSchema.parse(req.body)));
         else if(req.params.action==='sync')res.json(await relay.sync(identity.uid,workerSyncSchema.parse(req.body)));
+        else if(req.params.action==='heartbeat')res.json(await relay.heartbeat(identity.uid,heartbeatSchema.parse(req.body)));
+        else if(req.params.action==='control')res.json(await relay.control(identity.uid,workerControlSchema.parse(req.body).active));
         else if(req.params.action==='report')res.json(await relay.report(identity.uid,workerReportSchema.parse(req.body)));
         else if(req.params.action==='review_data')res.json(await relay.reviewData(identity.uid,req.body));
         else res.status(404).json({error:'Unknown worker action.'});
-      }catch(error){const message=(error as Error).message;res.status(message==='lease_lost'?409:400).json({error:message==='lease_lost'?'lease_lost':'Worker request rejected.'});}
+      }catch(error){const message=(error as Error).message;res.status(message==='request_mismatch'?409:400).json({error:message==='request_mismatch'?'request_mismatch':'Worker request rejected.'});}
     });
   }
   app.post('/consent', express.json({limit:'16kb'}), async (req,res) => {

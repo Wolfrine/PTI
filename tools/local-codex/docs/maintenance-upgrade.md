@@ -1,87 +1,33 @@
-# Local Codex maintenance releases and self-updates
+# External helper release activation
 
-This is the canonical upgrade path for an existing Windows worker. `install.ps1` without a maintenance manifest is bootstrap only. Keep the same project/module parent, current model/effort, sign-in, configuration and history. Never copy credentials, broaden permissions, alter browser preflight or cancel another job to release a worker.
+Use this runbook for an owner-authorized Local Codex helper release. Worker, hosted transport and private plugin are separate releases. Source changes, a build, a staged payload or a launched updater do not prove installation.
 
-## Admission fence and external ownership
+## Prepare
 
-`start_task`, continuation/history admissions and `claimOne` transact on the same owner Firestore document. Drain writes its `maintenance` fence there: a concurrent admission/claim conflicts and retries against it. New work is explicitly rejected, not silently queued/dropped. Existing running/waiting tasks renew, receive answers, report and finish. Previously queued work makes drain refuse; never cancel it to create an upgrade window. Begin requires a fresh maintenance-aware hosted heartbeat (`maintenanceProtocol:1`, marker timestamp equal to heartbeat timestamp). Host 0.4.6 supports this protocol.
+1. Verify the canonical F: checkout, main revision and dirty ownership. Preserve unrelated work. Inspect effective paths and free space before building. Put dependencies/caches, build payload, release files, receipts and rollback copies on H:.
+2. Build the reviewed payload with the repository's current build entry point. Record source revision and exact SHA-256 file inventory. Keep the previous installed release and encrypted configuration/state recoverable. Never expose credential contents.
+3. Deploy the matching hosted transport through the existing main pipeline and verify its actual deployed contract. Update the existing private plugin only when authorized, preserving identity, audience, App binding and `.app.json` metadata.
 
-The executor requires every protected hosted task at the same generation and terminal, no other nonterminal jobs, no local relay claims, no live worker lock/PID and all protected worker processes exited. It then seals the fence transactionally. The gate stays closed through stop, pointer swap, heartbeat verification and rollback. Expiry never opens a sealed/unknown install. An idle snapshot is never a lock.
+## Activate once, externally
 
-The host's **raw owner reservations** are also checked transactionally before
-sealing and again before the final release. Any `nativeWriterFence:true` or
-`unresolved_native_writer` blocks maintenance even if its bridge job already
-looks terminal or its lease/time-to-live expired. Only the exact native
-terminal or confirmed non-delivery evidence may release that reservation.
-The storage cutover applies the same gate; neither helper may infer native
-writer release from a scheduler idle snapshot.
+From the canonical PTI repository, stage the reviewed H: payload with:
 
-The current path is a **detached owner one-shot, not a scheduled job or polling loop**. `maintenance-detach.ps1` uses documented local [Win32_Process.Create](https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/create-method-in-class-win32-process) with hidden/detached/job-breakaway flags and a minimal non-secret owner environment. Windows permits that creation or returns a refusal; no elevation/policy workaround is attempted. The WMI provider owns the child instead of Codex. No persistent WMI subscription, service or scheduler task is created. Frozen WScript → hidden PowerShell → Node verifies the same Windows SID and rejects any Codex/bridge-worker ancestor. Existing owner ADC is used normally through the SDK; no credential/session/environment secret is copied.
+```powershell
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tools/local-codex/install.ps1 -NoSchedule -InstallRoot H:\LocalCodexBridge
+```
 
-A launcher can disappear between CIM lookup and `GetOwnerSid` (WMI 0x80041002). That exact not-found case records `launch.ownerVerified:false`, not a successful owner check. Other CIM failures, access denial and SID mismatch remain fatal. Detached admission acknowledges only the actual executor's independently checked SID, manifest hash, source commit, target version and external-process receipt. Thus a missing short-lived launcher does not abort an otherwise verified executor; no claim of process ownership is inferred from a PID alone.
+`-NoSchedule` leaves the existing scheduled task unchanged. The installer verifies the exact seven-file payload, preserves existing configuration/credential state and records the installed release, source SHA and Node path in `active.json`. Inspect the inventory and pointer rather than assuming the command succeeded. Existing private state must be copied/verified opaquely before switching from another root; this staging command is not a storage migration.
 
-Drain/health observations use Firestore owner/jobs listeners, local file notifications and Windows process-handle `WaitForExit`, with one finite maintenance deadline and separate finite health deadlines. No periodic status-query timer. Existing work is never killed on timeout. The existing **PTI Local Codex Relay** lifecycle task is reused only after drain; no new recurring or one-shot scheduler entry is added.
+Activate through the reviewed external one-shot operator, outside the delivering native process. Launch it windowlessly with hidden children. Retarget only the existing helper task's action to the verified H: windowless launcher; preserve its principal, triggers and settings. No `Register-ScheduledTask -Force`, replacement task, recurring watcher, drain protocol, admission fence or resource manager. The installer without `-NoSchedule` may update that existing action; it must never create or retime a task.
 
-The detached launch reconciles protected claimed jobs whose bridge lease has already expired, transactionally under its matching unsealed drain. `get_task` already exposes these as interrupted; the controller persists that bridge state with generation/previous-lease audit and an explicit unknown native outcome. It does not interrupt native work, change generations or expire valid queued work. Concurrent lease renewal conflicts/retries the transaction; fresh jobs are preserved. Local claims, worker locks/PIDs and protected final evidence remain mandatory. `--action reconcile-expired --manifest <same pinned manifest>` supports an explicit later reconciliation under that same drain, without another chat, process stop or public MCP schema change. It refuses sealed/expired/foreign maintenance.
+Preserve actual running native executions and their result observation until native terminal evidence is available. Do not terminate Codex, other jobs or unrelated services. An actual unresolved installation/path/consumer condition is a concrete blocker to report; do not manufacture a global native-chat quiescence requirement.
 
-## Release steps
+The external operator verifies the staged file inventory/pointer and starts the helper through the existing windowless launcher. Preserve private authentication, task history and the prior release. If activation cannot complete, retain its exact error/receipt and restore only its own verified pointer/action changes where safe. Do not replay an ambiguously dispatched native request as part of recovery.
 
-1. Inspect `main`, dirty files, active/queued claims, installed pointer and prior receipt. Preserve unrelated work. Use minimal syntax/build checks and actual runtime observations. No generated tests, fixtures, Playwright/e2e scaffolding, full suites or CI test churn without fresh explicit instruction. Do not weaken required protections.
-2. Build the actual worker locally if needed. The target is the existing seven-file build. Windows build outputs and evidence belong on H:; source stays on F:. The build entry point uses verified H: compatibility links and refuses un-migrated physical F: output directories. PTI Owner Chrome remains disabled by default. Verify the affected actual runtime path; do not create a chat merely for verification. Existing immutable loaded release/state stays protected until the guarded drain completes.
-3. Commit/push on `main`. No hosted redeploy is needed when the host protocol/schema is unchanged. For this local release use CI skip rather than synthetic suites; never dispatch/rerun Actions just to wait.
-4. Stage a new immutable directory under the owner-private installation and an explicit future observation deadline. This bounds the updater, not model execution. Example (replace timestamp with a real future deadline):
+## Verify the result
 
-   ```powershell
-   node scripts/local-codex-maintenance.mjs --action stage --launch-method detached --directory H:\Workspace\Storage-Recovery\LocalCodex\Maintenance\VERSION-release --deadline FUTURE-ISO-TIMESTAMP --routing-evidence H:\Workspace\Reports\LocalCodex\routing.json
-   node scripts/local-codex-maintenance.mjs --action detach --manifest H:\Workspace\Storage-Recovery\LocalCodex\Maintenance\VERSION-release\manifest.json
-   ```
+Read the exact installed pointer and payload hashes. Observe fresh local helper status and owner-authenticated hosted status, including the loaded release. Verify a real authorized request and its native terminal result when execution behavior changed. Check actual native model/effort separately: `gpt-6.2-sol/xhigh` is requested, not proven by configuration.
 
-   The existing F: installation is still the default. **After a separately verified guarded storage cutover** to `H:\LocalCodexBridge`, provide `--install-root H:\LocalCodexBridge` on `--action stage`, stage beneath `H:\LocalCodexBridge\maintenance\<unique-stage>`, and use that H: manifest path for `detach` and any recovery. Do not point the updater at H: while the scheduled relay still runs on F:. See [storage migration](storage-migration.md); the normal release updater does not perform a drive cutover.
+Report source revision, payload inventory, installer receipt, installed release, actual observations, rollback state and unresolved gaps. A successful activation is distinct from publication, practical deliverable verification and owner acceptance.
 
-   Run from `tools/pti-mcp`. Stage pins seven target/prior file SHA-256 values/sizes; frozen helpers/routing report; installed stop/launchers; interpreters; Chrome provider files/pointers; source commit; owner; worker PIDs; rollback pointer. The launch pins the entire manifest SHA-256. This is hash integrity, not Authenticode signing. No config/authentication file is copied/replaced. `detach` acquires drain, invokes Windows creation and awaits the external executor's actual acknowledgement. Failed launch aborts only an unsealed drain; sealed/unknown state stays closed for recovery.
-5. Inspect `launch.json`, `result.json` and `--action status` / `bridge_status.maintenance`. Require `externalProcessVerified:true`, correct owner/hash and `waiting-for-drain`. **Finish the delivering task.** Do not await activation inside its claim. No additional owner terminal command is needed normally. After actual exit, the executor seals, copies/verifies seven files, disables the existing relay trigger, calls its exact guarded stop script, swaps `active.json`, re-enables/starts that relay and verifies fresh local + hosted heartbeat/listener/version. It rechecks target/provider pins and protected task final states before clearing drain.
-6. After task termination, read `result.json` and `bridge_status.lastMaintenance`. Success requires `activated-verified`, the requested observed version, fresh local/hosted heartbeat, listener connected, seven matching files and protected task terminal evidence. Waiting/installing is not activation. The executor records observations independently of the delivering agent's intent. Chrome's separate tab/site consent and gameplay/audio acceptance remain separate.
-
-## Failure / recovery
-
-- `aborted-before-install`: queued work, source/pin change, launch refusal, lost observation or pre-seal deadline. No active task was stopped. Resolve the cause and use a new stage; never reuse a consumed attempt.
-- `rolled-back-verified`: failure after sealing restores the exact prior seven-file release/pointer under the fence. Admission reopens only after fresh old-worker local/hosted heartbeat/listener and task evidence. A changed Chrome provider is left intact while restoring the prior worker; rollback does not overwrite it.
-- `recovery-required` or crashed executor: keep admission closed. From an external owner terminal, invoke the same pinned helper:
-
-   ```powershell
-   powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File F:\Workspace\Support\LocalCodexBridge\maintenance\0.4.9-release\maintenance-once.ps1 -Manifest F:\Workspace\Support\LocalCodexBridge\maintenance\0.4.9-release\manifest.json -ManifestSHA256 (Get-Content F:\Workspace\Support\LocalCodexBridge\maintenance\0.4.9-release\manifest.sha256) -Recover
-   ```
-
-   Compare the digest with the original launch receipt first. Recovery validates prior bytes/helpers even if Git HEAD moved. It refuses active claims, another maintenance owner, missing task evidence or unknown gate. Do not delete the fence, force a pointer while admission is open, copy credentials or kill processes by broad names. `--action abort` releases only an untouched unsealed drain. If normal owner authentication is unavailable, preserve fence/pointer/receipts and restore access normally.
-
-The earlier 0.4.8 release used the successful one-time scheduler adapter; its verified receipt is historical evidence. Legacy `--launch-method scheduled` / `--action schedule` remains only for an explicitly requested scheduler run. Default detached stages refuse accidental scheduler execution.
-
-## Compatibility and prior RCA
-
-### Integrated 0.4.10 host and 0.4.15 worker source
-
-Deploy the 0.4.10 host before activating the 0.4.15 worker or its new model,
-durable-queue and host-control features. Existing configured models and native
-desktop chats remain unchanged until their separately authorized transition.
-H: cutover requires the F: rollback default and enrolled saved parents to be
-verified as the target pair first; catalog availability alone cannot authorize it.
-Keep raw native-writer fences through drain, seal and final health verification.
-
-For the legacy F: installation, new ordinary maintenance stages use
-`H:\Workspace\Storage-Recovery\LocalCodex\Maintenance`; an activated H: bridge
-uses `H:\LocalCodexBridge\maintenance`. Both scoped H: paths and pinned legacy
-F: manifests remain readable by the one-shot launchers. New F: stage creation
-is refused. Review reports default to `H:\Workspace\Reports\LocalCodex` even
-while the live bridge remains on F:. Source integration alone activates nothing.
-
-### Releases that change ChatGPT tools
-
-Worker activation, hosted deployment, plugin publication and the saved ChatGPT connection metadata are separate delivery steps. For a tool/schema change, finish the deployed host checks, publish changed skills under the existing plugin identity, then open that plugin's **Manage → Local Codex Connection → Refresh tools** control. Verify the actual advertised inventory before dispatching from an existing conversation. Do not recreate the connection, change its permissions or create a chat just to refresh metadata.
-
-On 8 November 2026 the existing connection still advertised 18 tools after host 0.4.9 and plugin 0.4.14 were live. Refresh tools changed it to 19, including `continue_desktop_chat`, while retaining the same account, App ID and permissions. A release is not end-to-end verified until the existing ChatGPT conversation invokes the tool, the existing native chat performs the requested action and the completed result is retrieved. A published skill alone does not update a cached tool catalog. Evidence: `F:/Workspace/Codex/2026-11-08/local-codex-repair/outputs/local-codex-refreshed-tools.jpg`.
-
-For these releases, update all existing registered-tool and version expectations in `src/local-codex.test.ts`, `src/oauth.test.ts` and `scripts/verify-host.mjs` together. Preserve the authentication/resource-boundary checks. Native permission authorization may be `null` when an automatic route is available because the destination chat performs those checks; this must not be asserted as a fixed relay denial.
-
-Plugin 0.4.8, hosted MCP 0.4.6 and worker 0.4.9 are separately versioned and compatible: this adapter changes no MCP tool/schema/App binding. **No separate plugin publication is needed** for activation or internal task-scoped Chrome routing. Published skill wording that says “schedule” describes the older adapter; this runbook's current command is `detach`. Do not create/publish another plugin from the worker.
-
-The first two 0.4.8 attempts delivered a build without the shared fence/external executor; each follow-up acquired the claim that made self-restart unsafe. That engineering fix independently activated 0.4.8. The 0.4.9 delivery then deferred under a no-schedules directive. This detached adapter preserves the proven transaction/install/rollback path while removing the scheduler dependency and periodic checks. Future self-updates must arm the actual executor and finish their claim, rather than return another advisory-only deferral.
+Earlier drain/fence, module-enrollment, desktop-writer migration and recovery-controller procedures are superseded. Their decision records remain historical evidence. Use only the current reviewed installer interface; do not revive retired commands from history.

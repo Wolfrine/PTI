@@ -1,260 +1,148 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import { randomUUID } from 'node:crypto';
-import { spawn, spawnSync } from 'node:child_process';
-import { home, config, project, read, write, runtime, task, taskDir, digest, alive, subscriptionEnvironment } from './common.mjs';
-import {assertStoredIdle} from './codex-history.mjs';
+import {randomUUID} from 'node:crypto';
+import {spawn,spawnSync} from 'node:child_process';
+import {config,project,read,write,runtime,task,taskDir,digest,alive,subscriptionEnvironment,VERSION} from './common.mjs';
 import {modelSelection,requireModel,verifyModel} from './model-policy.mjs';
 import {harnessPolicy} from './harness-policy.mjs';
 import {createTelemetry,archiveRun} from './telemetry.mjs';
-import {acquireWorkspaceLock} from './workspace-locks.mjs';
 import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execution-policy.mjs';
-import {executionDeadline,deadlineElapsed} from './limits.mjs';
-import {moduleParent} from './chat-routing.mjs';
 import {browserContextPreflight,browserContextInstructions} from './browser-context.mjs';
-import {ownerChromeConfiguration} from './owner-chrome.mjs';
 
-const id = process.argv[2];
-const directory = taskDir(id);
-const file = path.join(directory, 'task.json');
-const lock = path.join(directory, 'worker.lock');
-let lockFd;
-try { lockFd = fs.openSync(lock, 'wx'); } catch { process.exit(0); }
-let job = task(id), proc, timer, deadline, closed = false, sequence = 0, releaseWorkspace,threadLock,moduleLock,telemetry,selection,policy;
-const requests = new Map(), waiting = new Map();
-const childChecks = new Map();
-function acquireIdentityLock(kind,value){
-  const locks=path.join(home,'locks');fs.mkdirSync(locks,{recursive:true});
-  const candidate=path.join(locks,`${digest(kind+':'+value)}.json`);
-  if(fs.existsSync(candidate)&&!alive(read(candidate).pid))fs.unlinkSync(candidate);
-  const fd=fs.openSync(candidate,'wx');fs.writeFileSync(fd,JSON.stringify({pid:process.pid,taskId:id}));fs.closeSync(fd);return candidate;
-}
-function acquireThreadLock(threadId){threadLock=acquireIdentityLock('thread',threadId);}
-function save() { job.updatedAt = new Date().toISOString(); if(telemetry)job.telemetry=telemetry.snapshot(); write(file, job); }
-function send(message) { if (proc?.stdin.writable) proc.stdin.write(`${JSON.stringify(message)}\n`); }
-function rpc(method, params) {
-  return new Promise((resolve, reject) => {
-    const requestId = ++sequence;
-    const timeout = setTimeout(() => { requests.delete(requestId); reject(new Error(`Codex ${method} timed out.`)); }, 60000);
-    requests.set(requestId, { resolve, reject, timeout });
-    send({ id: requestId, method, params });
-  });
-}
-function finish(status, error, nativeTerminal) {
-  if (closed) return;
-  closed = true;
-  clearInterval(timer);
-  job.status = status;
-  job.pending = [];
-  // Only the exact native turn/completed notification may establish that the
-  // app-server released this worker's parent writer. Synthetic failure paths
-  // (worker exit, cancellation, timeout) deliberately carry no proof.
-  if(nativeTerminal){job.nativeTerminal=nativeTerminal;delete job.nativeDeliveryAbsent;}
-  else {
-    delete job.nativeTerminal;
-    // Pre-dispatch failure is provable only when this worker has never tried
-    // sending turn/start. A missing turnId after an attempted RPC proves nothing.
-    if(['completed','failed','interrupted'].includes(status)&&job.nativeTurnDispatchAttempted===false){
-      job.nativeDeliveryAbsent={source:'worker-terminal-before-turn-start',generation:job.relayGeneration??null,status};
-    }else delete job.nativeDeliveryAbsent;
+const id=process.argv[2],directory=taskDir(id),file=path.join(directory,'task.json');
+let job=task(id),proc,timer,closed=false,sequence=0,cancelling=false,telemetry;
+const requests=new Map(),waiting=new Map();
+function save(){job.updatedAt=new Date().toISOString();if(telemetry)job.telemetry=telemetry.snapshot();write(file,job);}
+function send(message){if(!proc?.stdin.writable)throw Error('Native Codex connection is unavailable.');proc.stdin.write(JSON.stringify(message)+'\n');}
+function rpc(method,params){return new Promise((resolve,reject)=>{const requestId=++sequence;requests.set(requestId,{resolve,reject});try{send({id:requestId,method,params});}catch(error){requests.delete(requestId);reject(error);}});}
+function finish(status,error,nativeTerminal){
+  if(closed)return;
+  if(job.nativeTurnDispatchAttempted===true&&!nativeTerminal)status='unknown';
+  if(status==='unknown'){
+    if(job.cancellationState==='interrupt_requested')job.cancellationState='interrupt_delivery_unknown';
+    job.status=status;if(error)job.error=error;save();
+    if(proc?.pid&&alive(proc.pid))return;
   }
-  if (error) job.error = error;
-  if(telemetry){telemetry.finish();archiveRun(job,telemetry,status);}
-  save();
-  for (const request of requests.values()) { clearTimeout(request.timeout); request.reject(new Error('Worker closed.')); }
-  requests.clear();
+  if(closed)return;closed=true;clearInterval(timer);job.status=status;job.pending=[];
+  if(nativeTerminal){job.nativeTerminal=nativeTerminal;if(job.cancellationState)job.cancellationState='terminal_observed';}
+  else if(job.nativeTurnDispatchAttempted===false)job.nativeDeliveryAbsent={source:'worker-terminal-before-turn-start',generation:job.relayGeneration??null,status};
+  if(error)job.error=error;
+  if(telemetry){telemetry.finish();archiveRun(job,telemetry,status);}save();
+  for(const request of requests.values())request.reject(Error('Native worker closed.'));requests.clear();
   proc?.stdin.end();
-  if (proc?.pid && alive(proc.pid)) {
-    if (process.platform === 'win32') spawnSync('taskkill.exe', ['/PID', String(proc.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore', timeout: 10000 });
+  // Cleanup is allowed only after exact native terminal evidence or a proven
+  // failure before turn dispatch. Uncertain native delivery stays observable.
+  if(proc?.pid&&alive(proc.pid)){
+    if(process.platform==='win32')spawnSync('taskkill.exe',['/PID',String(proc.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});
     else proc.kill();
   }
-  fs.closeSync(lockFd);
-  if (fs.existsSync(lock)) fs.unlinkSync(lock);
-  releaseWorkspace?.();
-  if (threadLock && fs.existsSync(threadLock) && read(threadLock).taskId === id) fs.unlinkSync(threadLock);
-  if (moduleLock && fs.existsSync(moduleLock) && read(moduleLock).taskId === id) fs.unlinkSync(moduleLock);
-  setTimeout(() => process.exit(status === 'failed' ? 1 : 0), 100).unref();
+  setTimeout(()=>process.exit(status==='failed'?1:0),100).unref();
 }
-function serverRequest(message) {
-  const requestId = `${message.id}:${randomUUID()}`;
-  const approvalMethods = ['item/commandExecution/requestApproval', 'item/fileChange/requestApproval'];
-  const kind = approvalMethods.includes(message.method) ? 'approval' : message.method === 'item/tool/requestUserInput' ? 'question' : null;
-  if (!kind) {
-    send({ id: message.id, error: { code: -32601, message: 'This bridge does not support this interactive request. Ask the user to use local Codex.' } });
-    return;
+function serverRequest(message){
+  const requestId=`${message.id}:${randomUUID()}`;
+  const kind=['item/commandExecution/requestApproval','item/fileChange/requestApproval'].includes(message.method)?'approval':message.method==='item/tool/requestUserInput'?'question':null;
+  if(!kind){send({id:message.id,error:{code:-32601,message:'This interactive request is not supported by the bridge.'}});return;}
+  waiting.set(requestId,message);telemetry?.requestOpened(requestId,kind);
+  job.pending.push({id:requestId,kind,method:message.method,details:message.params});job.status='waiting_for_user';save();
+}
+function notification(message){
+  const p=message.params||{};
+  // Telemetry is observation only; native Codex owns agent scheduling.
+  telemetry?.observe(message,job.threadId);
+  if(message.method==='serverRequest/resolved')for(const [requestId,request] of waiting){
+    if(String(request.id)!==String(p.requestId)||p.threadId&&request.params?.threadId!==p.threadId)continue;
+    waiting.delete(requestId);telemetry?.requestClosed(requestId);job.pending=job.pending.filter(value=>value.id!==requestId);job.status=waiting.size?'waiting_for_user':'running';save();
   }
-  const pending = { id: requestId, kind, method: message.method, details: message.params };
-  waiting.set(requestId, message);
-  telemetry?.requestOpened(requestId,kind);
-  job.pending.push(pending);
-  job.status = 'waiting_for_user';
-  save();
+  if(p.threadId&&p.threadId!==job.threadId)return;
+  if(message.method==='model/rerouted'){job.returnedModel=p.toModel||job.returnedModel;save();}
+  if(message.method==='turn/started'&&job.nativeTurnDispatchAttempted===true&&p.threadId===job.threadId&&p.turn?.id){job.turnId=p.turn.id;save();}
+  if(message.method==='item/completed'&&p.item?.type==='agentMessage'){
+    const item={id:p.item.id,phase:p.item.phase||null,text:p.item.text,turnId:p.turnId};
+    if(!job.messages.some(existing=>existing.id===item.id))job.messages.push(item);
+    if(item.phase==='final_answer')job.final=item.text;save();
+  }
+  if(message.method==='turn/completed'&&p.threadId===job.threadId&&job.turnId===p.turn?.id&&['completed','failed','interrupted'].includes(p.turn.status)){
+    if(!job.final&&p.turn.status==='completed')job.final=job.messages.filter(item=>item.turnId===p.turn.id).at(-1)?.text||'';
+    finish(p.turn.status,p.turn.error?.message,{source:'turn/completed',threadId:p.threadId,turnId:p.turn.id,status:p.turn.status});
+  }
+  if(message.method==='error'&&!p.willRetry){job.error=p.error?.message||'Codex reported an error.';save();}
+  if(message.method==='thread/tokenUsage/updated')save();
 }
-function notification(message) {
-  const p = message.params || {};
-  if(message.method==='serverRequest/resolved'){
-    for(const [requestId,request] of waiting){
-      if(String(request.id)!==String(p.requestId)||p.threadId&&request.params?.threadId!==p.threadId)continue;
-      waiting.delete(requestId);telemetry?.requestClosed(requestId);job.pending=job.pending.filter(value=>value.id!==requestId);
-      job.status=waiting.size?'waiting_for_user':'running';save();
+async function controls(){
+  if(closed)process.exit(0);
+  try{
+    if(fs.existsSync(path.join(directory,'cancel.json'))&&!cancelling){
+      cancelling=true;
+      if(job.turnId){
+        job.cancellationState='interrupt_requested';delete job.controlError;save();
+        try{
+          await rpc('turn/interrupt',{threadId:job.threadId,turnId:job.turnId});
+          if(closed)return;
+          job.cancellationState='interrupt_acknowledged';save();
+        }catch(error){
+          if(closed)return;
+          job.controlError=error.message;
+          job.cancellationState=typeof error.code==='number'?'interrupt_rejected':'interrupt_delivery_unknown';save();
+        }
+        // Keep this delivery attempted after rejection or transport uncertainty.
+        // Re-reading the same cancel marker must never resend an interrupt.
+      }
+      else if(job.nativeTurnDispatchAttempted===false){job.cancellationState='cancelled_before_dispatch';finish('interrupted','Cancelled by the user before native turn dispatch.');return;}
+      else{if(job.cancellationState!=='waiting_for_native_turn'){job.cancellationState='waiting_for_native_turn';save();}cancelling=false;}
     }
-  }
-  const violation=telemetry?.observe(message,job.threadId,selection);
-  if(violation){finish('failed',violation);return;}
-  if(telemetry&&policy){
-    const observed=telemetry.snapshot();
-    if(policy.maxSubagents!==null&&observed.childrenSeen>policy.maxSubagents){finish('failed','The owner-selected subagent limit was exceeded.');return;}
-    for(const child of observed.children){
-      if(child.selectionVerified||childChecks.has(child.threadId))continue;
-      const check=rpc('thread/read',{threadId:child.threadId,includeTurns:false}).then(({thread})=>{
-        if(closed||thread?.parentThreadId!==job.threadId&&!telemetry.snapshot().children.some(value=>value.threadId===thread?.parentThreadId))return;
-        const mismatch=thread.modelProvider&&thread.modelProvider!=='openai'?'A subagent selected a different model provider. Ask the owner; no fallback is allowed.':telemetry.childMetadata(child.threadId,thread,selection,true);
-        if(mismatch)finish('failed',mismatch);else save();
-      }).catch(()=>{/* Missing metadata remains unknown, not verified execution. */});
-      childChecks.set(child.threadId,check);
+    for(const [requestId,message] of waiting){
+      const responseFile=path.join(directory,`response-${digest(requestId)}.json`);if(!fs.existsSync(responseFile))continue;
+      const response=read(responseFile);
+      const payload=message.method==='item/tool/requestUserInput'?{answers:Object.fromEntries(Object.entries(response.answers).map(([key,answers])=>[key,{answers}]))}:{decision:response.decision==='approve'?'accept':'decline'};
+      send({id:message.id,result:payload});waiting.delete(requestId);telemetry?.requestClosed(requestId);job.pending=job.pending.filter(item=>item.id!==requestId);job.status=waiting.size?'waiting_for_user':'running';save();
     }
-    if(message.method==='thread/tokenUsage/updated'||message.method==='model/rerouted'||message.method==='thread/started'||message.method==='item/completed'&&p.item?.type!=='agentMessage')save();
-  }
-  if (p.threadId && p.threadId !== job.threadId) return;
-  if(message.method==='turn/started'&&job.nativeTurnDispatchAttempted===true&&p.threadId===job.threadId&&
-    typeof p.turn?.id==='string'&&p.turn.id&&(!job.turnId||job.turnId===p.turn.id)){
-    job.turnId=p.turn.id;save();
-  }
-  if (message.method === 'item/completed' && p.item?.type === 'agentMessage') {
-    const item = { id: p.item.id, phase: p.item.phase || null, text: p.item.text.slice(0, 48000), turnId: p.turnId };
-    if (!job.messages.some(existing => existing.id === item.id)) job.messages.push(item);
-    job.messages = job.messages.slice(-30);
-    if (item.phase === 'final_answer') job.final = item.text;
-    save();
-  }
-  if (message.method === 'turn/completed') {
-    if(p.threadId!==job.threadId||!job.turnId||p.turn?.id!==job.turnId||!['completed','failed','interrupted'].includes(p.turn.status))return;
-    const nativeTerminal={source:'turn/completed',threadId:p.threadId,turnId:p.turn.id,status:p.turn.status};
-    Promise.allSettled([...childChecks.values()]).then(()=>{
-      if(closed)return;
-      if (!job.final && p.turn.status === 'completed') job.final = job.messages.filter(item => item.turnId === p.turn.id).at(-1)?.text || '';
-      finish(p.turn.status, p.turn.error?.message,nativeTerminal);
-    });
-  }
-  if (message.method === 'error' && !p.willRetry) {
-    job.error = p.error?.message || 'Codex reported an error.';
-    save();
-  }
+  }catch(error){if(!closed){job.controlError=error.message;save();}}
 }
-try {
-  if(job.telemetry&&!(job.runs||[]).some(run=>run.runId===job.telemetry.runId))archiveRun(job,job.telemetry,job.telemetry.finishedAt?'unknown':'interrupted');
-  delete job.executionPolicy;
-  telemetry=createTelemetry(job);
-  const settings=config();
-  selection=modelSelection(settings,{model:job.requestedModel,reasoningEffort:job.requestedReasoningEffort});
-  policy=harnessPolicy(job,settings,selection);
-  job.strategy=policy.strategy;job.purpose||='work';job.turnId=null;job.model=null;job.reasoningEffort=null;delete job.nativeTerminal;delete job.nativeDeliveryAbsent;
-  const target = project(job.project);
-  if (target.path !== job.cwd) throw new Error('The project path changed. Start a new task after reviewing list_projects.');
-  if(job.chatRouting)moduleLock=acquireIdentityLock('module',job.chatRouting.affinity_id);
-  releaseWorkspace=acquireWorkspaceLock(home,{taskId:id,cwd:job.cwd,resourcePath:target.resourcePath||job.resourcePath||job.cwd,mode:job.mode});
-  job.workerPid = process.pid;
-  job.status = 'running';
-  const childEnv = subscriptionEnvironment();
-  job.browserContext = {...browserContextPreflight(childEnv),checkedAt:new Date().toISOString()};
-  const ownerChrome=ownerChromeConfiguration(job,process.pid,process.execPath);
-  save();
-  proc = spawn(runtime(), [...(config().codexArgs || []), ...ownerChrome.args, 'app-server', '--stdio'], {
-    cwd: job.cwd, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: childEnv,
-  });
-  proc.on('error', error => finish('failed', error.message));
-  proc.on('exit', (code, signal) => { if (!closed) finish('failed', `Codex exited before completion (${code ?? signal}).`); });
-  // Do not retain stderr or command output: it can include project or authentication data.
+try{
+  // Task creation, not a resource reservation, owns delivery identity. Re-entering
+  // a worker after an attempted native dispatch never replays that request.
+  if(job.nativeTurnDispatchAttempted!==false)throw Error('Native dispatch was already attempted. Reconcile its exact turn; no automatic replay was started.');
+  const settings=config(),target=project(job.project),selection=modelSelection(settings,{model:job.requestedModel,reasoningEffort:job.requestedReasoningEffort});
+  if(target.path!==job.cwd)throw Error('The configured project path changed. Select the current project before new work.');
+  job.requestedModel=selection.model;job.requestedReasoningEffort=selection.effort;
+  job.workerPid=process.pid;job.status='running';job.browserContext={...browserContextPreflight(),checkedAt:new Date().toISOString()};telemetry=createTelemetry(job);save();
+  proc=spawn(runtime(),[...(settings.codexArgs||[]),'app-server','--stdio'],{cwd:job.cwd,windowsHide:true,stdio:['pipe','pipe','pipe'],env:subscriptionEnvironment()});
+  proc.on('error',error=>finish(job.nativeTurnDispatchAttempted?'unknown':'failed',error.message));
+  proc.on('exit',(code,signal)=>{if(!closed)finish(job.nativeTurnDispatchAttempted?'unknown':'failed',`Native Codex exited without a terminal receipt (${code??signal}).`);});
   proc.stderr.resume();
-  const lines = readline.createInterface({ input: proc.stdout });
-  lines.on('line', line => {
-    try {
-      const message = JSON.parse(line);
-      if (message.method && message.id !== undefined) serverRequest(message);
-      else if (message.id !== undefined) {
-        const pending = requests.get(message.id);
-        if (pending) { clearTimeout(pending.timeout); requests.delete(message.id); message.error ? pending.reject(Object.assign(new Error(message.error.message),{code:message.error.code})) : pending.resolve(message.result); }
-      } else notification(message);
-    } catch (error) { finish('failed', error.message); }
+  readline.createInterface({input:proc.stdout}).on('line',line=>{
+    let message;try{message=JSON.parse(line);}catch{finish(job.nativeTurnDispatchAttempted?'unknown':'failed','Native Codex returned an invalid protocol message.');return;}
+    if(message.method&&message.id!==undefined)serverRequest(message);
+    else if(message.id!==undefined){const pending=requests.get(message.id);if(pending){requests.delete(message.id);message.error?pending.reject(Object.assign(Error(message.error.message),{code:message.error.code})):pending.resolve(message.result);}}
+    else try{notification(message);}catch(error){finish(job.nativeTurnDispatchAttempted?'unknown':'failed',error.message);}
   });
-  timer = setInterval(async () => {
-    try {
-      if (fs.existsSync(path.join(directory, 'cancel.json'))) {
-        if (job.turnId) await rpc('turn/interrupt', { threadId: job.threadId, turnId: job.turnId });
-        finish('interrupted');
-        return;
-      }
-      if(deadlineElapsed(deadline,Date.now())){finish('interrupted','The owner-configured maximum task duration elapsed. Continue explicitly to resume.');return;}
-      for (const [requestId, message] of waiting) {
-        const responseFile = path.join(directory, `response-${digest(requestId)}.json`);
-        if (!fs.existsSync(responseFile)) continue;
-        const response = read(responseFile);
-        const payload = message.method === 'item/tool/requestUserInput'
-          ? { answers: Object.fromEntries(Object.entries(response.answers).map(([key, answers]) => [key, { answers }])) }
-          : { decision: response.decision === 'approve' ? 'accept' : 'decline' };
-        send({ id: message.id, result: payload });
-        waiting.delete(requestId);
-        telemetry.requestClosed(requestId);
-        job.pending = job.pending.filter(item => item.id !== requestId);
-        job.status = waiting.size ? 'waiting_for_user' : 'running';
-        save();
-      }
-    } catch (error) { finish('failed', error.message); }
-  }, 500);
-  // Check the optional owner deadline on the existing control timer. A large
-  // explicit duration must not overflow setTimeout into a one-millisecond kill.
-  deadline=executionDeadline(Date.now(),settings.maxTaskMinutes);
-  await rpc('initialize', { clientInfo: { name: 'local_codex_bridge', title: 'Local Codex Bridge', version: '0.1.0' }, capabilities: { experimentalApi: false } });
-  send({ method: 'initialized', params: {} });
-  const account = await rpc('account/read', { refreshToken: false });
-  if (account.account?.type !== 'chatgpt') throw new Error('ChatGPT subscription sign-in is required. API-key authentication is disabled for this bridge.');
-  await requireModel(rpc, selection);
-  const parent=await moduleParent(rpc,job,target);
-  if(parent.reason){
-    job.chatRouting={...job.chatRouting,selection:'new',previous_thread_id:job.threadId,reason:parent.reason};
-    job.threadId=null;save();
+  timer=setInterval(controls,500);
+  await rpc('initialize',{clientInfo:{name:'local_codex_bridge',title:'Local Codex Bridge',version:VERSION},capabilities:{experimentalApi:true}});send({method:'initialized',params:{}});
+  const account=await rpc('account/read',{refreshToken:false});if(account.account?.type!=='chatgpt')throw Error('ChatGPT subscription sign-in is required. API-key authentication is disabled.');
+  await requireModel(rpc,selection);job.catalogVerifiedAt=new Date().toISOString();save();
+  const permissions=executionPolicy(job.mode),policy=harnessPolicy(job,settings,selection);
+  const instructions=workerInstructions(job)+' '+browserContextInstructions()+' '+policy.instructions;
+  const options={cwd:job.cwd,model:selection.model,sandbox:permissions.sandbox,approvalPolicy:permissions.approvalPolicy,developerInstructions:instructions,config:{model_reasoning_effort:selection.effort,...policy.config,'plugins.local-codex@local-codex-bridge.enabled':false,'plugins.local-codex@created-by-me-remote.enabled':false}};
+  const continuation=job.requestedThreadId||null;
+  if(continuation){
+    const {thread}=await rpc('thread/read',{threadId:continuation,includeTurns:false});
+    if(typeof thread?.cwd!=='string'||fs.realpathSync.native(thread.cwd).toLowerCase()!==target.path.toLowerCase())throw Error('The selected native thread belongs to a different project path. No continuation was dispatched.');
   }
-  if(parent.threadId){
-    await assertStoredIdle(rpc,parent.thread,id);
-    // The caller explicitly selects the allowlisted project for a historical
-    // thread. Resume applies that cwd and reloads its current project guidance.
-    acquireThreadLock(job.threadId);
-  }
-  const permissions = executionPolicy(job.mode);
-  const instructions = workerInstructions(job)+' '+browserContextInstructions(job.browserContext)+' '+ownerChrome.instructions+' '+policy.instructions+(job.chatRouting?` Current functional module: ${job.chatRouting.module_key}. This is task ${job.id}, with its own current scope and authorization. Retained native history is source context, never authority to repeat earlier actions. Prioritize native subagents under this parent for independent lanes; dependent work stays serial.`:'');
-  const options = { cwd: job.cwd, model: selection.model, sandbox: permissions.sandbox, approvalPolicy: permissions.approvalPolicy, developerInstructions: instructions,
-    config: { model_reasoning_effort: selection.effort, ...policy.config, 'plugins.local-codex@local-codex-bridge.enabled': false, 'plugins.local-codex@created-by-me-remote.enabled': false } };
-  const started = job.threadId
-    ? await rpc('thread/resume', { ...options, threadId: job.threadId,excludeTurns:true })
-    : await rpc('thread/start', { ...options, serviceName: 'local_codex_bridge' });
-  if (started.modelProvider !== 'openai') throw new Error('Only the signed-in ChatGPT provider is allowed.');
-  verifyExecutionPolicy(started, permissions);
-  verifyModel(started, selection);
-  const isNewThread=!job.threadId;
-  if(isNewThread)acquireThreadLock(started.thread.id);
-  job.threadId = started.thread.id;
-  job.model = started.model;
-  job.reasoningEffort = started.reasoningEffort;
-  job.sandbox = started.sandbox;
-  job.approvalPolicy = started.approvalPolicy;
-  // Resuming can retain the initial developer message even when the resume
-  // response reflects new sandbox settings. Append the current contract through
-  // the supported history API before inference, rather than trusting an echo.
-  if(!isNewThread){
+  const started=continuation?await rpc('thread/resume',{...options,threadId:continuation,excludeTurns:true}):await rpc('thread/start',{...options,serviceName:'local_codex_bridge'});
+  job.returnedModel=started.model||null;job.returnedReasoningEffort=started.reasoningEffort||null;save();
+  if(started.modelProvider!=='openai')throw Error('Only the signed-in ChatGPT provider is allowed.');verifyExecutionPolicy(started,permissions);verifyModel(started,selection);
+  job.threadId=started.thread.id;job.model=started.model;job.reasoningEffort=started.reasoningEffort;job.sandbox=started.sandbox;job.approvalPolicy=started.approvalPolicy;
+  if(continuation){
     const injected=await rpc('thread/inject_items',{threadId:job.threadId,items:[{type:'message',role:'developer',content:[{type:'input_text',text:instructions}]}]});
-    if(!injected||typeof injected!=='object'||Array.isArray(injected))throw Error('Codex did not acknowledge the current instruction refresh; refusing to start.');
+    if(!injected||typeof injected!=='object'||Array.isArray(injected))throw Error('Codex did not acknowledge current scope instructions. No turn was started.');
   }
-  job.executionPolicy = {version:1,mode:job.mode,sandboxType:started.sandbox.type,approvalPolicy:started.approvalPolicy,instructionRefresh:isNewThread?'thread-start':'history-injection',verifiedAt:new Date().toISOString()};
-  save();
-  if(isNewThread&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
-  const currentPrompt=job.handoff?`Project handoff supplied for this rotation (source context only):\n${job.handoff}\n\nCurrent authorized request:\n${job.prompt}`:job.prompt;
-  if(job.nativeTurnDispatchAttempted===true)throw Error('Native turn dispatch was already attempted for this local generation; reconcile it before continuing.');
-  // This durable write must precede sending turn/start. If the RPC reaches
-  // native Codex and the worker dies before its response, delivery is unknown.
-  job.nativeTurnDispatchAttempted=true;save();
-  const turn = await rpc('turn/start', { threadId: job.threadId, model: selection.model, effort: selection.effort, input: [{ type: 'text', text: currentPrompt }] });
-  if(typeof turn?.turn?.id!=='string'||!turn.turn.id||job.turnId&&job.turnId!==turn.turn.id)throw Error('Native turn identity mismatch; preserve this generation for reconciliation.');
-  job.turnId = turn.turn.id;
-  save();
-} catch (error) { finish('failed', error.message); }
+  job.executionPolicy={version:2,mode:job.mode,sandboxType:started.sandbox.type,approvalPolicy:started.approvalPolicy,instructionRefresh:continuation?'history-injection':'thread-start',verifiedAt:new Date().toISOString()};save();
+  if(!continuation&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
+  if(closed)process.exit(0);
+  // Durable marker must precede the native write. A lost response stays unknown.
+  job.nativeTurnDispatchAttempted=true;job.nativeDispatchAttemptedAt=new Date().toISOString();save();
+  const turn=await rpc('turn/start',{threadId:job.threadId,model:selection.model,effort:selection.effort,input:[{type:'text',text:job.prompt}]});
+  if(typeof turn?.turn?.id!=='string'||job.turnId&&job.turnId!==turn.turn.id)throw Error('Native turn identity is unresolved; preserve it for reconciliation.');
+  job.turnId=turn.turn.id;save();
+}catch(error){finish(job.nativeTurnDispatchAttempted?'unknown':'failed',error.message);}

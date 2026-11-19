@@ -1,6 +1,13 @@
-name: PTI Home - manual Hosting-only release
+name: PTI Home - Hosting-only release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'pti-app/public/living-horizon/**'
+      - 'pti-app/public/assets/images/living-horizon/**'
+      - 'pti-app/src/app/components/new-home/**'
+      - '.github/workflows/pti-home-hosting-only.yml'
   workflow_dispatch:
     inputs:
       expected_sha:
@@ -20,12 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout exact dispatch revision
+      - name: Checkout exact release revision
         uses: actions/checkout@v4
 
       - name: Verify intended revision
         env:
-          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          EXPECTED_SHA: ${{ inputs.expected_sha || github.sha }}
         shell: bash
         run: |
           set -euo pipefail

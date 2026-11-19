@@ -3,12 +3,12 @@
 import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName, celestialAppearance,
-} from './environment.js?v=home-one-reveal-20261119';
+} from './environment.js?v=artwork-expansion-20261119';
 import { EXPERIMENTAL_ARTWORKS } from './artwork-experiments.js?v=artwork-promotion-20261116';
 import {
   REGION_PACKS, resolveLandscapeProfile, pickRegionPack, artworkMatchesPack,
-  eligibleArtwork, regionalArtworkIndex,
-} from './landscape-regions.js?v=home-one-reveal-20261119';
+  eligibleArtwork, regionalArtworkIndex, randomRegionalArtworkIndex,
+} from './landscape-regions.js?v=artwork-expansion-20261119';
 import { createCloudSystem } from './clouds.js?v=horizon-r8-20261115';
 import { createRainSystem } from './rain-effects.js?v=horizon-r8-20261115';
 import { fetchNearbyObservation } from './weather-sources.js?v=weather-home-accuracy-20261116';
@@ -85,6 +85,8 @@ let lastObservationFetch = 0;
 let currentArea = { latitude: COARSE_LOCATION.latitude, longitude: COARSE_LOCATION.longitude, cache: true, label: COARSE_LOCATION.name };
 let placeProfile = classifyLandscape(COARSE_LOCATION.name);
 let artIndex = -1;
+let homeSelectedArtIndex = -1;
+let homeFallbackArtIndex = -1;
 let experimentalArtIndex = -1;
 let artOverride = null;
 let artOverrideDay = null;
@@ -376,6 +378,16 @@ function updateArtworkSource() {
 }
 
 function selectedDailyArtworkIndex() {
+  if (isHomeEmbed) {
+    // Draw once per page load, and hold the result across weather/model/GPS
+    // renders. Explicit clock refresh chooses another random unseen painting.
+    const homePool = eligibleArtwork(placeProfile, { homeOnly: true });
+    if (!(homeFallbackArtIndex >= 0 && homeSelectedArtIndex === homeFallbackArtIndex)
+      && !homePool.some(art => art.index === homeSelectedArtIndex)) {
+      homeSelectedArtIndex = randomRegionalArtworkIndex(placeProfile, { homeOnly: true });
+    }
+    return homeSelectedArtIndex;
+  }
   const timezone = environmentTimeZone();
   const today = localDayKey(new Date(), timezone);
   if (today !== renderedDay) {
@@ -496,6 +508,14 @@ function setupArtworkLab() {
 function advanceArtwork() {
   if (isArtworkLab && experimentalArtIndex >= 0) {
     selectExperimentalArtwork((experimentalArtIndex + 1) % EXPERIMENTAL_ARTWORKS.length);
+    return;
+  }
+  if (isHomeEmbed) {
+    homeFallbackArtIndex = -1;
+    homeSelectedArtIndex = randomRegionalArtworkIndex(placeProfile, { homeOnly: true });
+    // Clock refresh prepares the complete next scene first, so its artwork
+    // is only revealed after fresh weather and image decoding are ready.
+    if (!homeVisualBusy) updateDailyArt();
     return;
   }
   const candidates = activeMode === 'live'
@@ -1110,8 +1130,14 @@ async function presentHomeScene(token) {
       ? ARTWORKS.findIndex(art => art.file === previousFile || art.wideFile === previousFile)
       : -1;
     if (previousIndex >= 0) {
-      artOverride = previousIndex;
-      artOverrideDay = localDayKey(new Date(), environmentTimeZone());
+      if (isHomeEmbed) {
+        homeSelectedArtIndex = previousIndex;
+        homeFallbackArtIndex = previousIndex;
+      }
+      else {
+        artOverride = previousIndex;
+        artOverrideDay = localDayKey(new Date(), environmentTimeZone());
+      }
     } else frame.classList.add('home-art-unavailable');
   } else if (frame.classList.contains('home-art-unavailable')) {
     const art = ARTWORKS[selectedDailyArtworkIndex()];

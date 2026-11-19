@@ -5,7 +5,7 @@
 // https://operations.osmfoundation.org/policies/nominatim/ .
 // No credential, exact GPS, Firebase, persisted location or scheduled polling.
 
-import { ARTWORKS, classifyLandscape, dateParts } from './environment.js?v=artwork-promotion-20261116';
+import { ARTWORKS, classifyLandscape, dateParts } from './environment.js?v=artwork-expansion-20261119';
 
 export const REGION_PACKS = Object.freeze({
   'coastal-foothill': { title: 'Coastal foothills', geography: 'Original Navi Mumbai interpretation' },
@@ -216,7 +216,71 @@ export function eligibleArtwork(profile = {}, { homeOnly = false } = {}) {
   const pack = pickRegionPack(profile);
   return ARTWORKS.map((artwork, index) => ({ ...artwork, index }))
     .filter(artwork => artworkMatchesPack(artwork, pack.id)
-      && (!homeOnly || !artwork.file.startsWith('experiments/')));
+      && (!homeOnly || !artwork.file.startsWith('experiments/') || artwork.homeEligible));
+}
+
+// Home art is an actual random draw, not a day-number or catalogue-position
+// sequence. A per-tab shuffled bag makes each eligible painting appear once
+// before any repeats. Store only public artwork IDs and broad pack names;
+// never keep coordinates, precise locations, weather or account information.
+const HOME_BAG_STORAGE_PREFIX = 'pti.living-horizon.art-bag.v1.';
+const transientHomeBags = new Map();
+
+function randomBelow(maximum) {
+  if (maximum <= 1) return 0;
+  const secure = globalThis.crypto;
+  if (secure?.getRandomValues) {
+    const sample = new Uint32Array(1);
+    const range = 0x100000000;
+    const limit = Math.floor(range / maximum) * maximum;
+    do { secure.getRandomValues(sample); } while (sample[0] >= limit);
+    return sample[0] % maximum;
+  }
+  return Math.floor(Math.random() * maximum);
+}
+
+function freshRandomOrder(ids, previousId) {
+  const order = [...ids];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = randomBelow(i + 1);
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  // Picks use pop(). Prevent a duplicate across successive shuffled bags.
+  if (order.length > 1 && order[order.length - 1] === previousId) {
+    [order[0], order[order.length - 1]] = [order[order.length - 1], order[0]];
+  }
+  return order;
+}
+
+function homeBag(packId) {
+  if (transientHomeBags.has(packId)) return transientHomeBags.get(packId);
+  let saved = null;
+  try { saved = JSON.parse(globalThis.sessionStorage?.getItem(HOME_BAG_STORAGE_PREFIX + packId) || 'null'); }
+  catch { /* Private browsing may disallow storage. In-memory rotation still works. */ }
+  transientHomeBags.set(packId, saved);
+  return saved;
+}
+
+export function randomRegionalArtworkIndex(profile = {}, options = { homeOnly: true }) {
+  const pack = pickRegionPack(profile);
+  const pool = eligibleArtwork(profile, options);
+  if (!pool.length) return 0;
+  const ids = pool.map(art => art.id);
+  const cached = homeBag(pack.id);
+  const samePool = cached && Array.isArray(cached.pool) && cached.pool.length === ids.length
+    && ids.every((id, index) => cached.pool[index] === id);
+  const last = ids.includes(cached?.last) ? cached.last : null;
+  let remaining = samePool && Array.isArray(cached.remaining)
+    && cached.remaining.every(id => ids.includes(id))
+    && new Set(cached.remaining).size === cached.remaining.length
+    ? cached.remaining.slice() : [];
+  if (!remaining.length) remaining = freshRandomOrder(ids, last);
+  const chosen = remaining.pop();
+  const next = { pool: ids, remaining, last: chosen };
+  transientHomeBags.set(pack.id, next);
+  try { globalThis.sessionStorage?.setItem(HOME_BAG_STORAGE_PREFIX + pack.id, JSON.stringify(next)); }
+  catch { /* Storage is optional and never blocks rendering. */ }
+  return pool.find(art => art.id === chosen)?.index ?? pool[0].index;
 }
 
 function textHash(value) {

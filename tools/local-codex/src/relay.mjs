@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {randomUUID} from 'node:crypto';
+import {openRelayState} from './relay-state.mjs';
 import {fileURLToPath} from 'node:url';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -14,11 +14,22 @@ import {browserContextReport} from './browser-context.mjs';
 
 const base='https://pti-firestore-mcp-185802494856.asia-south1.run.app/local-codex/worker';
 const stateFile=path.join(home,'data','relay-state.json');fs.mkdirSync(path.dirname(stateFile),{recursive:true});
-let state=fs.existsSync(stateFile)?read(stateFile):{instanceId:randomUUID(),active:[]};state.active=Array.isArray(state.active)?state.active:[];state.instanceId||=randomUUID();
+const {state,persist,restoredFromBackup}=openRelayState(stateFile);
+const generation=job=>job.nativeGeneration??job.generation;
+const localRequestKey=job=>`relay-${job.id}-${generation(job)}`;
+if(restoredFromBackup) {
+  for (const job of state.active) {
+    // An older checkpoint may predate a native dispatch. Reconcile the
+    // deterministic receipt and preserve uncertainty if it cannot be found.
+    if(!job.command && !job.localId && !job.localDelivery && job.transportVersion==='0.5.0') {
+      job.localDelivery={state:'attempted',localId:digest(localRequestKey(job)).slice(0,32)};
+    }
+  }
+}
+persist();
 let token='',until=0,client,connecting,refreshing,stopping=false,stopListener,listenerToken,listenerConnected=false,listenerError,nextSync=0,retryAt=0,retryDelay=1000,syncRequested=true,dispatchRequested=true;
 const events=eventWakeup(),watchers=new Map(),dirty=new Set(state.active.map(job=>job.id)),controlsById=new Map();
-const persist=()=>write(stateFile,state);
-const generation=job=>job.nativeGeneration??job.generation;
+
 const identity=job=>({id:job.id,generation:generation(job),nativeGeneration:generation(job),...(job.deliveryId?{deliveryId:job.deliveryId}:{}),...(job.lease?{lease:job.lease}:{})});
 const remove=job=>{state.active=state.active.filter(value=>value.id!==job.id||generation(value)!==generation(job));watchers.get(job.id)?.();watchers.delete(job.id);dirty.delete(job.id);controlsById.delete(job.id);persist();};
 const sourceSha=()=>{if(process.env.LOCAL_CODEX_SOURCE_SHA)return process.env.LOCAL_CODEX_SOURCE_SHA;const file=path.join(home,'active.json');return fs.existsSync(file)?read(file).sourceSha||null:null;};
@@ -76,7 +87,7 @@ async function service(job,controls){
     }else if(job.transportVersion!=='0.5.0'){
       await report(job,{status:'unknown',error:'Legacy request retained without new native dispatch. Reconcile the original worker receipt.'});return;
     }else{
-      const request_key=`relay-${job.id}-${generation(job)}`,localId=digest(request_key).slice(0,32);
+      const request_key=localRequestKey(job),localId=digest(request_key).slice(0,32);
       // Identity-only delivery journal: not a checkout, worker or resource lock.
       job.localDelivery={state:'attempted',localId,at:new Date().toISOString()};persist();
       try{

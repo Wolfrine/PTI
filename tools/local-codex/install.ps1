@@ -1,8 +1,20 @@
-param([switch]$NoSchedule,[string]$InstallRoot = 'H:\LocalCodexBridge')
+param([switch]$NoSchedule,[string]$InstallRoot = 'H:\LocalCodexBridge',[string]$SourceSha)
 $ErrorActionPreference = 'Stop'
 $installRoot = [IO.Path]::GetFullPath($InstallRoot).TrimEnd('\')
 if ($installRoot -ne 'H:\LocalCodexBridge') { throw 'New releases use H:\LocalCodexBridge. The F: installation is retained only for existing work.' }
 if ((Test-Path -LiteralPath $installRoot) -and ((Get-Item -LiteralPath $installRoot).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Install root must not be redirected.' }
+$sourceRevision = if ($SourceSha) {
+  if ($SourceSha -notmatch '^[0-9a-f]{40}$') { throw 'SourceSha must be a full commit ID.' }
+  & git -C $PSScriptRoot merge-base --is-ancestor $SourceSha refs/remotes/origin/main
+  if ($LASTEXITCODE -ne 0) { throw 'SourceSha is not on published main.' }
+  & git -C $PSScriptRoot diff --quiet $SourceSha -- .
+  if ($LASTEXITCODE -ne 0) { throw 'Local Codex source differs from the selected commit.' }
+  $SourceSha
+} else {
+  $head = & git -C $PSScriptRoot rev-parse HEAD
+  if ($LASTEXITCODE -ne 0) { throw 'Cannot identify release source revision.' }
+  $head.Trim()
+}
 $nodePath = (Get-Command node.exe -ErrorAction Stop).Source
 $payloadFiles = @('server.mjs','worker.mjs','relay.mjs','setup.mjs','pair-existing.mjs','review-usage.mjs','THIRD-PARTY-NOTICES.txt')
 $payloadRoot = Join-Path $PSScriptRoot 'dist'
@@ -15,8 +27,7 @@ $protectModule = Join-Path $PSScriptRoot '..\codex-usage-monitor\src\dpapi.mjs'
 & $nodePath --input-type=module -e "const {pathToFileURL}=await import('node:url'); const {WindowsProtection}=await import(pathToFileURL(process.argv[1])); await new WindowsProtection().secureDirectory(process.argv[2]);" $protectModule $installRoot
 if ($LASTEXITCODE -ne 0) { throw 'Cannot secure the private runtime directory.' }
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'package.json') -Raw | ConvertFrom-Json).version
-$sourceSha = (& git -C $PSScriptRoot rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0) { throw 'Cannot identify release source revision.' }
+
 $releaseName = $version + '-' + [DateTime]::UtcNow.ToString('yyyyMMddHHmmss')
 $release = Join-Path $installRoot ('releases\' + $releaseName)
 New-Item -ItemType Directory -Path $release -ErrorAction Stop | Out-Null
@@ -34,9 +45,9 @@ foreach ($file in @('run.ps1','run-hidden.vbs','stop.ps1')) {
 }
 # Existing native workers retain their installed executable. This pointer change
 # neither interrupts them nor replays their requests. Config and credentials stay.
-$active = @{version=$version;release=('releases\' + $releaseName);nodePath=$nodePath;sourceSha=$sourceSha;payloadSHA256=$payloadHashes;installedAt=[DateTime]::UtcNow.ToString('o')} | ConvertTo-Json -Depth 5
+$active = @{version=$version;release=('releases\' + $releaseName);nodePath=$nodePath;sourceSha=$sourceRevision;payloadSHA256=$payloadHashes;installedAt=[DateTime]::UtcNow.ToString('o')} | ConvertTo-Json -Depth 5
 [IO.File]::WriteAllText((Join-Path $installRoot 'active.json'),$active)
-if ($NoSchedule) { Write-Output ('Verified seven-file release installed: ' + $version + ' source ' + $sourceSha + '; scheduled launcher unchanged.'); exit 0 }
+if ($NoSchedule) { Write-Output ('Verified seven-file release installed: ' + $version + ' source ' + $sourceRevision + '; scheduled launcher unchanged.'); exit 0 }
 $taskName = 'PTI Local Codex Relay'
 $scheduled = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
 if (-not $scheduled) { throw 'No existing relay task is available. Release is staged; creating a scheduler task requires separate owner authorization.' }

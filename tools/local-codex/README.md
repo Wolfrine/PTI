@@ -8,6 +8,8 @@ The 0.5.0 source contract replaces the former desktop handoff and resource-manag
 
 Use `bridge_status` and `list_projects` to verify the current helper and exact source checkout. Submit an authorized `inspect` or `edit` request with stable request identity, then observe that task through `get_task`. `list_tasks`, `list_codex_threads` and `read_codex_thread` provide discovery and read-only history. Use `respond_to_task` for the owner's actual answer and `cancel_task` for an explicit stop request. Record an outcome only when the owner supplies it.
 
+The Windows relay flushes two revisioned copies of its delivery journal. After an interrupted write or a damaged copy, it restores the newest valid checkpoint and retains the damaged file beside the journal. Recovery reconciles exact native receipts for ambiguous offers. If every existing copy is invalid, it stops and preserves the journal for repair.
+
 `request_key` is immutable exact input identity. Identical retries resolve to the existing operation; changed inputs cannot reuse its key. Optional `work_key` is descriptive only and never selects a parent or changes retry identity. When native dispatch may have occurred, an uncertain result remains unresolved until reconciled; never replay it under a new key. A wait timeout ends one status request, not the native task. A native writer/protocol denial remains an actual error: report it without a handoff or alternative submission.
 
 Inspect stays read-only. Edit permission applies only to the current authorized task. Preserve unrelated work, native history, signed-in subscription authentication and required security/deployment controls. The bridge does not authorize publishing, sending messages, credential extraction or unrelated changes.

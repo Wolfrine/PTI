@@ -25,10 +25,10 @@ export function subscriptionEnvironment() {
   return env;
 }
 export const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
-export function write(file, value) {
+export function write(file, value, {durable = false} = {}) {
   const temporary = `${file}.${process.pid}.${crypto.randomUUID()}.tmp`;
   try{
-    fs.writeFileSync(temporary, JSON.stringify(value, null, 2));
+    fs.writeFileSync(temporary, JSON.stringify(value, null, 2), {flush:durable});
     // Windows readers and antivirus can briefly hold a destination without
     // delete-sharing. Retain the old complete file while retrying replacement.
     for(let attempt=0;;attempt++){

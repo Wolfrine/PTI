@@ -3,9 +3,11 @@ import {createRequire} from 'node:module';
 import {randomBytes,createHash} from 'node:crypto';
 import {readFile,writeFile} from 'node:fs/promises';
 import {DEFAULT_SETTINGS} from './core.mjs';
-const {db,auth,now}=createRequire(import.meta.url)('./runtime.cjs');
+import {configureNativeAuth} from '../tools/pti-mcp/scripts/configure-native-auth.mjs';
+const {app,db,auth,now}=createRequire(import.meta.url)('./runtime.cjs');
 const firestore='https://firestore.googleapis.com/v1/projects/pti-app-2ab59/databases/(default)/documents';
-const apiKey='AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs';
+// CI synthetic identities need the existing native key, not a browser-referrer key.
+const {firebaseAuthApiKey:apiKey}=await configureNativeAuth({accessToken:(await app.options.credential.getAccessToken()).access_token});
 const suffix=randomBytes(6).toString('hex'),uids=[`personal-test-a-${suffix}`,`personal-test-b-${suffix}`];
 const checks=[];
 const pass=(name,condition)=>{assert(condition,name);checks.push(name);console.log(`PASS ${name}`);};

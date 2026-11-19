@@ -2,6 +2,9 @@ name: Refresh private PTI platform usage
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['personal-functions/publish-platform-usage.mjs', 'personal-functions/platform-usage-core.mjs', '.github/workflows/platform-usage.yml']
   schedule:
     # Twice daily. This is not a live metrics poll; PTI reads one cached document.
     - cron: '17 2,14 * * *'
@@ -25,6 +28,9 @@ jobs:
           node-version: 22
       - name: Install existing Firebase Admin runtime
         run: npm install --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
+      - name: Check the usage snapshot calculation
+        if: github.event_name != 'schedule'
+        run: node personal-functions/platform-usage-core.test.mjs
       - name: Refresh owner-only cached usage
         env:
           GITHUB_TOKEN: ${{ github.token }}

@@ -2,9 +2,9 @@ name: Wedding · verify and release
 on:
   push:
     branches: [main]
-    paths: ['wedding-planner/**', 'personal-harness/firestore.rules', 'firebase.wedding*.json', '.firebaserc', '.github/workflows/wedding.yml']
+    paths: ['wedding-planner/**', 'firebase.wedding*.json', '.firebaserc', '.github/workflows/wedding.yml']
   pull_request:
-    paths: ['wedding-planner/**', 'personal-harness/firestore.rules', 'firebase.wedding*.json', '.firebaserc', '.github/workflows/wedding.yml']
+    paths: ['wedding-planner/**', 'firebase.wedding*.json', '.firebaserc', '.github/workflows/wedding.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -67,7 +67,7 @@ jobs:
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
           umask 077
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
-      - name: Protect and initialize the existing wedding workspace
+      - name: Initialize the existing wedding workspace
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: node wedding-planner/scripts/provision.mjs
       - name: Check live client authorization with temporary synthetic accounts

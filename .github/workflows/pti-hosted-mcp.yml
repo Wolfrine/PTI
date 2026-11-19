@@ -2,9 +2,9 @@ name: PTI shared MCP
 on:
   push:
     branches: [main]
-    paths: ['tools/pti-mcp/**', 'tools/blinkit-reader/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'tools/blinkit-reader/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', '.github/workflows/pti-hosted-mcp.yml']
   pull_request:
-    paths: ['tools/pti-mcp/**', 'tools/blinkit-reader/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', 'personal-harness/firestore.rules', '.github/workflows/pti-hosted-mcp.yml']
+    paths: ['tools/pti-mcp/**', 'tools/blinkit-reader/**', 'tools/local-codex/**', 'food-app/core.mjs', 'food-app/intelligence.mjs', 'food-app/places.mjs', 'food-app/blinkit-projection.mjs', 'food-app/firebase-config.mjs', 'personal-harness/core.mjs', '.github/workflows/pti-hosted-mcp.yml']
 permissions:
   contents: read
 concurrency:
@@ -126,11 +126,11 @@ jobs:
           if [[ "$LOCAL_CODEX_ONLY" != true ]]; then
             node tools/pti-mcp/scripts/verify-data.mjs
           fi
-      - name: Verify the live Local Codex rules and sign-in prerequisites
+      - name: Verify Local Codex sign-in prerequisites
         if: env.LOCAL_CODEX_ONLY == 'true'
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-        run: node tools/pti-mcp/scripts/local-codex-release-guard.mjs before
+        run: node tools/pti-mcp/scripts/local-codex-release-guard.mjs
       - name: Check existing billing prerequisite without changing it
         run: |
           set -euo pipefail
@@ -153,7 +153,7 @@ jobs:
           printf '%s' "$ACCESS_TOKEN" | docker login -u oauth2accesstoken --password-stdin "https://$IMAGE_HOST"
           docker build -f tools/pti-mcp/Dockerfile -t "$IMAGE_PREFIX/$SERVICE:$GITHUB_SHA" .
           docker push "$IMAGE_PREFIX/$SERVICE:$GITHUB_SHA"
-      - name: Isolate OAuth records and register sign-in origin
+      - name: Register hosted sign-in origin
         if: env.LOCAL_CODEX_ONLY != 'true'
         env:
           ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
@@ -170,14 +170,6 @@ jobs:
             --min-instances=0 --max-instances=2 --concurrency=40 --timeout=120 --quiet
       - name: Verify public connection and authentication boundary
         run: node tools/pti-mcp/scripts/verify-host.mjs
-      - name: Confirm live Firestore rules stayed identical
-        if: always() && env.LOCAL_CODEX_ONLY == 'true'
-        env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-        run: |
-          if [[ -f "$RUNNER_TEMP/local-codex-rules.json" ]]; then
-            node tools/pti-mcp/scripts/local-codex-release-guard.mjs after
-          fi
       - name: Redact only this diagnostic task's legacy audit payloads
         if: env.LOCAL_CODEX_ONLY != 'true' && contains(github.event.head_commit.message, '[velum-audit-redaction]')
         run: >-

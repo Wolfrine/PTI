@@ -2,9 +2,9 @@ name: Velum worker notification checks
 on:
   push:
     branches: [main]
-    paths: ['tools/velum-worker/**', 'velum-gallery/device-config.mjs', 'personal-harness/firestore.rules', '.github/workflows/velum-worker-checks.yml']
+    paths: ['tools/velum-worker/**', 'velum-gallery/device-config.mjs', '.github/workflows/velum-worker-checks.yml']
   pull_request:
-    paths: ['tools/velum-worker/**', 'velum-gallery/device-config.mjs', 'personal-harness/firestore.rules', '.github/workflows/velum-worker-checks.yml']
+    paths: ['tools/velum-worker/**', 'velum-gallery/device-config.mjs', '.github/workflows/velum-worker-checks.yml']
 permissions:
   contents: read
 jobs:

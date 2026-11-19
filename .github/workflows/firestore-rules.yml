@@ -1,0 +1,64 @@
+name: Shared Firestore rules · verify / manual publish
+
+on:
+  push:
+    branches: [main]
+    paths: ['personal-harness/firestore.rules']
+  pull_request:
+    paths: ['personal-harness/firestore.rules']
+  workflow_dispatch:
+    inputs:
+      reviewed_live_ruleset:
+        description: 'Exact production ruleset name reviewed and reconciled into this source'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+concurrency:
+  group: shared-firestore-rules
+  cancel-in-progress: false
+
+jobs:
+  verify_and_release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Check shared client boundaries on the Firestore emulator
+        run: |
+          npm ci --prefix apps/one-piece --ignore-scripts --no-audit --no-fund
+          npm ci --prefix wedding-planner --ignore-scripts --no-audit --no-fund
+          npm ci --prefix venture-lab/tests --ignore-scripts --no-audit --no-fund
+          node apps/one-piece/scripts/test-emulator.mjs
+          node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/tests/atlas.rules.test.mjs'
+          node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-tests --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs tools/velum-worker/studio2.rules.test.mjs tools/velum-worker/device-isolation.rules.test.mjs tools/velum-worker/qwen.rules.test.mjs tools/velum-worker/progress.rules.test.mjs tools/velum-worker/queue-events.rules.test.mjs'
+      - name: Configure existing Firebase deployment identity
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          umask 077
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firestore-rules-credential.json"
+      - name: Publish only the explicitly reviewed shared rules change
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firestore-rules-credential.json
+          REVIEWED_LIVE_RULESET: ${{ inputs.reviewed_live_ruleset }}
+        run: |
+          set -euo pipefail
+          npm ci --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
+          node personal-functions/publish-firestore-rules.mjs
+      - name: Remove temporary credential
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firestore-rules-credential.json"

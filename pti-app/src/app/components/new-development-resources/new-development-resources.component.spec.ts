@@ -9,7 +9,7 @@ describe('Development Resources on Home', () => {
   const partial = (): PlatformUsageState => ({
     status: 'ready', fromCache: false,
     reading: {
-      collectedAt: new Date().toISOString(),
+      collectedAt: new Date().toISOString(), cloudBilling: null,
       github: { status: 'partial', period: '2026-10', billedActionsMinutes: null, billedActionsUsd: null,
         workflowRuns24h: 4, failedRuns24h: 0, workflowRepoScope: 'Wolfrine/PTI' },
       firebase: { status: 'partial', projects: [
@@ -21,7 +21,7 @@ describe('Development Resources on Home', () => {
   const projectWide = (): PlatformUsageState => ({
     status: 'ready', fromCache: false,
     reading: {
-      collectedAt: new Date().toISOString(),
+      collectedAt: new Date().toISOString(), cloudBilling: null,
       github: { status: 'ok', period: '2026-10', billedActionsMinutes: 41, billedActionsUsd: 0.32,
         workflowRuns24h: 99, failedRuns24h: 9, workflowRepoScope: 'Wolfrine/PTI', repositoryCount: 4, coveredRepoCount: 2,
         repos: [

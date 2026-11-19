@@ -30,6 +30,9 @@ html.horizon-embed .home-weather-clock[aria-busy="true"] svg{animation:home-weat
 @keyframes home-weather-refresh{to{transform:rotate(1turn)}}
 @media(prefers-reduced-motion:reduce){
   html.horizon-embed .home-weather-clock[aria-busy="true"] svg{animation:none;opacity:.55}
+  html.horizon-embed .horizon-caption,
+  html.horizon-embed .home-weather-clock,
+  html.horizon-embed .home-weather-source-details{transition:none}
 }
 html.horizon-embed .horizon-title-line h1{min-width:0;overflow:hidden;text-overflow:ellipsis}
 html.horizon-embed .atmospheric-readouts{min-height:0;padding:0;margin-top:4px;gap:3px 7px;color:#f8f9f4e5;font-size:11px;line-height:1.4}
@@ -39,8 +42,81 @@ html.horizon-embed .home-weather-credits{position:absolute;z-index:9;right:14px;
 html.horizon-embed .home-weather-credits a{color:inherit;text-decoration:none}
 html.horizon-embed .home-weather-credits a:hover{text-decoration:underline}
 html.horizon-embed .home-weather-credits a:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:2px}
+
+/* Home reveals its resolved first scene once; the loading surface is an
+   atmospheric wash, without invented city names or weather readings. */
+html.horizon-embed .horizon-frame:not(.home-ready){background:linear-gradient(165deg,#88b5be 0%,#c3d2c3 59%,#ebd7b6 100%)}
+html.horizon-embed .horizon-sky{transition:opacity .7s ease,background 1.5s ease}
+html.horizon-embed .horizon-frame:not(.home-ready) .horizon-sky,
+html.horizon-embed .horizon-frame:not(.home-ready) .sun,
+html.horizon-embed .horizon-frame:not(.home-ready) .sun-halo,
+html.horizon-embed .horizon-frame:not(.home-ready) .moon,
+html.horizon-embed .horizon-frame:not(.home-ready) .moon-halo,
+html.horizon-embed .horizon-frame:not(.home-ready) .starfield,
+html.horizon-embed .horizon-frame:not(.home-ready) .cloudbank,
+html.horizon-embed .horizon-frame:not(.home-ready) .horizon-clouds,
+html.horizon-embed .horizon-frame:not(.home-ready) .landscape,
+html.horizon-embed .horizon-frame:not(.home-ready) .valley-mist,
+html.horizon-embed .horizon-frame:not(.home-ready) .distance-haze,
+html.horizon-embed .horizon-frame:not(.home-ready) .pollution-haze,
+html.horizon-embed .horizon-frame:not(.home-ready) .rain-sheet,
+html.horizon-embed .horizon-frame:not(.home-ready) #weather-canvas,
+html.horizon-embed .horizon-frame:not(.home-ready) .horizon-caption,
+html.horizon-embed .horizon-frame:not(.home-ready) .home-weather-clock,
+html.horizon-embed .horizon-frame:not(.home-ready) .home-weather-source-details{opacity:0!important}
+html.horizon-embed .horizon-frame:not(.home-ready) .home-weather-clock,
+html.horizon-embed .horizon-frame:not(.home-ready) .home-weather-source-details{pointer-events:none}
+html.horizon-embed .horizon-frame:not(.home-ready) .horizon-vignette{opacity:.23}
+html.horizon-embed .horizon-frame.home-art-unavailable .landscape{opacity:0!important}
+html.horizon-embed .horizon-caption,
+html.horizon-embed .home-weather-clock,
+html.horizon-embed .home-weather-source-details{transition:opacity .38s ease}
+html.horizon-embed .horizon-frame.home-caption-changing .horizon-caption{opacity:0}
+
+/* One opaque wash conceals all inner scene preparation. The complete sky,
+   landscape and typography are painted underneath before a single reveal. */
+.home-scene-veil{display:none}
+html.horizon-embed .home-scene-veil{display:block;position:absolute;inset:0;z-index:15;pointer-events:none;opacity:1;overflow:hidden;background:radial-gradient(ellipse 65% 110% at 77% 76%,#f7e6c7aa 0%,transparent 80%),linear-gradient(155deg,#7daebb 0%,#c4d6cf 60%,#e7cfae 100%);transition:opacity .56s cubic-bezier(.22,.61,.36,1)}
+html.horizon-embed .home-scene-veil::before{content:"";position:absolute;inset:-22%;background:radial-gradient(ellipse 38% 44% at 55% 50%,#ffffff42,transparent 76%);animation:sky-wash-drift 9s ease-in-out infinite alternate}
+html.horizon-embed .home-scene-veil span{position:absolute;left:clamp(18px,3vw,33px);bottom:clamp(20px,3vw,28px);color:#fffdf5;font-size:11px;font-weight:500;letter-spacing:.035em;text-shadow:0 1px 8px #47635a69;opacity:0;animation:sky-wash-note .65s ease .8s forwards}
+html.horizon-embed .horizon-frame.home-ready .home-scene-veil{opacity:0}
+html.horizon-embed .horizon-frame.home-ready .home-scene-veil::before{animation:none}
+html.horizon-embed .horizon-frame.home-ready .home-scene-veil span{animation:none;opacity:0;transition:opacity .18s ease}
+@keyframes sky-wash-drift{from{transform:translate3d(-2%,0,0) scale(.99)}to{transform:translate3d(3%,1%,0) scale(1.04)}}
+@keyframes sky-wash-note{to{opacity:.83}}
+html.horizon-embed .horizon-frame:not(.home-painted) .horizon-sky,
+html.horizon-embed .horizon-frame:not(.home-painted) .landscape,
+html.horizon-embed .horizon-frame:not(.home-painted) .sun,
+html.horizon-embed .horizon-frame:not(.home-painted) .sun-halo,
+html.horizon-embed .horizon-frame:not(.home-painted) .moon,
+html.horizon-embed .horizon-frame:not(.home-painted) .moon-halo,
+html.horizon-embed .horizon-frame:not(.home-painted) .cloudbank,
+html.horizon-embed .horizon-frame:not(.home-painted) .horizon-caption,
+html.horizon-embed .horizon-frame:not(.home-painted) .home-weather-clock,
+html.horizon-embed .horizon-frame:not(.home-painted) .home-weather-source-details{transition:none!important}
+
+/* Attribution lives behind a discreet, keyboard-accessible information icon. */
+.home-weather-source-details{display:none}
+html.horizon-embed .home-weather-source-details{display:block;position:absolute;right:12px;bottom:8px;z-index:12}
+html.horizon-embed .home-weather-source-details summary{width:25px;height:25px;display:grid;place-items:center;list-style:none;cursor:pointer;border:1px solid #fff7;background:#263e3a40;backdrop-filter:blur(8px);border-radius:50%;color:#fffcf0;font-size:17px;line-height:1;text-shadow:0 1px 4px #14232399}
+html.horizon-embed .home-weather-source-details summary::-webkit-details-marker{display:none}
+html.horizon-embed .home-weather-source-details summary:focus-visible{outline:2px solid #fff;outline-offset:3px}
+html.horizon-embed .home-weather-source-details .home-weather-credits{position:absolute;right:0;bottom:35px;display:flex;flex-direction:column;gap:7px;width:max-content;min-width:218px;max-width:min(305px,calc(100vw - 40px));padding:13px 14px;border:1px solid #ffffff75;border-radius:13px;color:#283b37;background:#fffff0ed;backdrop-filter:blur(15px);box-shadow:0 8px 24px #192b2b55;text-shadow:none;font-size:11px;line-height:1.4}
+html.horizon-embed .home-weather-source-details .home-weather-credits[hidden],
+html.horizon-embed .home-weather-source-details .home-weather-credits a[hidden]{display:none!important}
+html.horizon-embed .home-weather-source-details .home-weather-credits span{font-weight:700;color:#527369}
+html.horizon-embed .home-weather-source-details .home-weather-credits a{color:#304b5e;text-decoration:none}
+html.horizon-embed .home-weather-source-details .home-weather-credits a:hover{text-decoration:underline}
 @media(max-width:760px){
   html.horizon-embed .horizon-frame{height:clamp(194px,56vw,228px)}
-  html.horizon-embed .horizon-caption{bottom:22px;max-width:calc(100% - 36px)}
+  html.horizon-embed .horizon-caption{bottom:22px;max-width:calc(100% - 64px)}
   html.horizon-embed .home-weather-clock{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+  html.horizon-embed .horizon-caption,
+  html.horizon-embed .home-weather-clock,
+  html.horizon-embed .home-weather-source-details,
+  html.horizon-embed .home-scene-veil{transition:none!important}
+  html.horizon-embed .home-scene-veil::before{animation:none}
+  html.horizon-embed .home-scene-veil span{animation:none;opacity:.83}
 }

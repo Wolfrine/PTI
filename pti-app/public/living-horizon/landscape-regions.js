@@ -212,10 +212,11 @@ export function artworkMatchesPack(artwork, packId) {
   return Boolean(artwork && (artwork.pack === packId || artwork.compatiblePacks?.includes(packId)));
 }
 
-export function eligibleArtwork(profile = {}) {
+export function eligibleArtwork(profile = {}, { homeOnly = false } = {}) {
   const pack = pickRegionPack(profile);
   return ARTWORKS.map((artwork, index) => ({ ...artwork, index }))
-    .filter(artwork => artworkMatchesPack(artwork, pack.id));
+    .filter(artwork => artworkMatchesPack(artwork, pack.id)
+      && (!homeOnly || !artwork.file.startsWith('experiments/')));
 }
 
 function textHash(value) {
@@ -239,9 +240,9 @@ function shuffleBag(seed, count) {
 
 // Returns global ARTWORKS index. All images in one pack are visited once per
 // shuffled cycle, with no adjacent duplicate at day-block boundaries.
-export function regionalArtworkIndex(date, timezone, profile = {}) {
+export function regionalArtworkIndex(date, timezone, profile = {}, options = {}) {
   const pack = pickRegionPack(profile);
-  const pool = eligibleArtwork(profile);
+  const pool = eligibleArtwork(profile, options);
   if (!pool.length) return 0;
   if (pool.length === 1) return pool[0].index;
   const p = dateParts(date, timezone);

@@ -3,12 +3,12 @@
 import {
   ARTWORKS, classifyLandscape, localDayKey, celestialState,
   phaseFromSun, formatLocalTime, paintMoon, moonPhaseName, celestialAppearance,
-} from './environment.js?v=weather-home-accuracy-20261116';
+} from './environment.js?v=home-one-reveal-20261119';
 import { EXPERIMENTAL_ARTWORKS } from './artwork-experiments.js?v=artwork-promotion-20261116';
 import {
   REGION_PACKS, resolveLandscapeProfile, pickRegionPack, artworkMatchesPack,
   eligibleArtwork, regionalArtworkIndex,
-} from './landscape-regions.js?v=artwork-promotion-20261116';
+} from './landscape-regions.js?v=home-one-reveal-20261119';
 import { createCloudSystem } from './clouds.js?v=horizon-r8-20261115';
 import { createRainSystem } from './rain-effects.js?v=horizon-r8-20261115';
 import { fetchNearbyObservation } from './weather-sources.js?v=weather-home-accuracy-20261116';
@@ -55,6 +55,7 @@ const forecastHours = document.querySelector('#forecast-hours');
 const forecastSource = document.querySelector('#forecast-source');
 const sourceLine = document.querySelector('#source-line');
 const artwork = document.querySelector('#artwork');
+const incomingArtwork = document.querySelector('#artwork-incoming');
 const artButton = document.querySelector('#next-art');
 const artCount = document.querySelector('#art-count');
 const artLabGrid = document.querySelector('#art-lab-grid');
@@ -92,6 +93,12 @@ let simulation = null;
 let landscapeResolveAttempt = 0;
 let homeRefreshing = false;
 let selectedForecastIndex = null;
+let homeVisualBusy = isHomeEmbed;
+let homeVisualReady = false;
+let homePresentationToken = 0;
+let artCrossfadeToken = 0;
+let artCrossfadeTimer = null;
+let artCrossfadeFile = null;
 
 const clamp = (n, minimum, maximum) => Math.max(minimum, Math.min(maximum, n));
 const displayTime = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -223,6 +230,7 @@ function updateScene({ phase, weather, description, temperature, location, state
     : state === 'stale' ? 'LAST OBSERVED SKY'
     : state === 'forecast' ? 'FORECAST · HOURS AHEAD'
     : state === 'simulation' ? 'LIVING HORIZON · SIMULATION' : 'LIVING HORIZON · VISUAL STUDY';
+  if (isHomeEmbed) heroKicker.textContent = state === 'stale' ? 'AN EARLIER GLIMPSE' : 'THE SKY, RIGHT NOW';
   if (state === 'live') setStatus('Live weather', 'live');
   else if (state === 'stale') setStatus('Earlier observation', 'sample');
   else if (state === 'forecast') setStatus('Model forecast', 'sample');
@@ -275,38 +283,99 @@ function displayedArtwork() {
     ? EXPERIMENTAL_ARTWORKS[experimentalArtIndex] : ARTWORKS[artIndex];
 }
 
-function positionArtwork() {
-  const art = displayedArtwork();
+function positionArtwork(targetImage = artwork, art = displayedArtwork()) {
   const width = frame.clientWidth;
   const height = frame.clientHeight;
-  if (!art || !width || !height || !artwork.naturalWidth || !artwork.naturalHeight) return;
-  const renderedHeight = Math.max(height, width * artwork.naturalHeight / artwork.naturalWidth);
+  if (!art || !width || !height || !targetImage.naturalWidth || !targetImage.naturalHeight) return;
+  const renderedHeight = Math.max(height, width * targetImage.naturalHeight / targetImage.naturalWidth);
   const overflow = Math.max(0, renderedHeight - height);
-  const ridgeY = artwork.dataset.wide === 'true' ? art.wideRidgeY : art.ridgeY;
+  const ridgeY = targetImage.dataset.wide === 'true' ? art.wideRidgeY : art.ridgeY;
   const ridge = (ridgeY || art.ridgeY) * renderedHeight;
   const target = height * .65;
   const position = overflow > 1 ? clamp((ridge - target) / overflow, 0, 1) : 0;
   const shift = Math.max(0, target - (ridge - position * overflow));
-  artwork.style.setProperty('--art-fit-y', `${(position * 100).toFixed(2)}%`);
-  artwork.style.setProperty('--art-shift-y', `${shift.toFixed(1)}px`);
+  targetImage.style.setProperty('--art-fit-y', `${(position * 100).toFixed(2)}%`);
+  targetImage.style.setProperty('--art-shift-y', `${shift.toFixed(1)}px`);
+}
+
+function artworkSource(art) {
+  const wide = Boolean(art.wideFile) && frame.clientWidth / Math.max(1, frame.clientHeight) > 2.7;
+  const file = wide ? art.wideFile : art.file;
+  return { file, wide, src: '../assets/images/living-horizon/' + (art.experimental ? 'experiments/' : '') + file };
+}
+
+function crossfadeHomeArtwork(art, selection) {
+  if (artCrossfadeFile === selection.file) {
+    positionArtwork(incomingArtwork, art);
+    return;
+  }
+  const change = ++artCrossfadeToken;
+  artCrossfadeFile = selection.file;
+  window.clearTimeout(artCrossfadeTimer);
+  const finish = () => {
+    if (change !== artCrossfadeToken) return;
+    artCrossfadeFile = null;
+    artwork.dataset.file = selection.file;
+    artwork.dataset.wide = String(selection.wide);
+    artwork.src = selection.src;
+    positionArtwork(artwork, art);
+    incomingArtwork.style.transition = 'none';
+    incomingArtwork.classList.remove('is-visible');
+    requestAnimationFrame(() => {
+      if (change === artCrossfadeToken) incomingArtwork.style.removeProperty('transition');
+    });
+  };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    finish();
+    return;
+  }
+  incomingArtwork.style.transition = 'none';
+  incomingArtwork.classList.remove('is-visible');
+  // A rapid second refresh must never reuse a half-opaque incoming layer.
+  void incomingArtwork.offsetWidth;
+  incomingArtwork.style.removeProperty('transition');
+  incomingArtwork.dataset.wide = String(selection.wide);
+  incomingArtwork.src = selection.src;
+  const reveal = () => {
+    if (change !== artCrossfadeToken) return;
+    positionArtwork(incomingArtwork, art);
+    requestAnimationFrame(() => {
+      if (change !== artCrossfadeToken) return;
+      incomingArtwork.classList.add('is-visible');
+      artCrossfadeTimer = window.setTimeout(finish, 760);
+    });
+  };
+  if (incomingArtwork.complete && incomingArtwork.naturalWidth) reveal();
+  else {
+    incomingArtwork.addEventListener('load', reveal, { once: true });
+    incomingArtwork.addEventListener('error', () => {
+      if (change !== artCrossfadeToken) return;
+      artCrossfadeFile = null;
+      incomingArtwork.classList.remove('is-visible');
+    }, { once: true });
+  }
 }
 
 function updateArtworkSource() {
   const art = displayedArtwork();
   if (!art) return;
+  if (isHomeEmbed && homeVisualBusy && homeVisualReady) return;
   // Compact cards use a purpose-composed panoramic painting. Portrait/TV
   // scenes retain the complete original 16:9 art and its foreground details.
-  const wide = Boolean(art.wideFile) && frame.clientWidth / Math.max(1, frame.clientHeight) > 2.7;
-  const file = wide ? art.wideFile : art.file;
+  const { file, wide, src } = artworkSource(art);
   if (artwork.dataset.file !== file) {
+    if (isHomeEmbed && homeVisualReady) {
+      crossfadeHomeArtwork(art, { file, wide, src });
+      return;
+    }
     artwork.dataset.file = file;
     artwork.dataset.wide = String(wide);
-    artwork.src = '../assets/images/living-horizon/' + (art.experimental ? 'experiments/' : '') + file;
+    artwork.src = src;
   }
-  positionArtwork();
+  positionArtwork(artwork, art);
 }
 
-function updateDailyArt() {
+function selectedDailyArtworkIndex() {
   const timezone = environmentTimeZone();
   const today = localDayKey(new Date(), timezone);
   if (today !== renderedDay) {
@@ -314,10 +383,32 @@ function updateDailyArt() {
     artOverride = null;
     artOverrideDay = null;
   }
+  return artOverrideDay === today && artOverride !== null ? artOverride
+    : regionalArtworkIndex(new Date(), timezone, placeProfile, { homeOnly: isHomeEmbed });
+}
+
+async function preloadHomeArtwork() {
+  const art = ARTWORKS[selectedDailyArtworkIndex()];
+  if (!art) return false;
+  const { src } = artworkSource(art);
+  const preview = new Image();
+  preview.decoding = 'async';
+  preview.src = src;
+  let timer;
+  try {
+    const decoded = await Promise.race([
+      preview.decode().then(() => true, () => false),
+      new Promise(resolve => { timer = window.setTimeout(() => resolve(false), 4200); }),
+    ]);
+    return decoded && preview.naturalWidth > 0;
+  } catch { return false; /* A missing image never blocks weather or the controls. */ }
+  finally { window.clearTimeout(timer); }
+}
+
+function updateDailyArt() {
+  const selected = selectedDailyArtworkIndex();
   const pack = pickRegionPack(placeProfile);
-  const pool = eligibleArtwork(placeProfile);
-  const selected = artOverrideDay === today && artOverride !== null ? artOverride
-    : regionalArtworkIndex(new Date(), timezone, placeProfile);
+  const pool = eligibleArtwork(placeProfile, { homeOnly: isHomeEmbed });
   if (selected === artIndex) return;
   artIndex = selected;
   // Candidate previews override only the visible art. The regional selector
@@ -408,11 +499,12 @@ function advanceArtwork() {
     return;
   }
   const candidates = activeMode === 'live'
-    ? eligibleArtwork(placeProfile).map(entry => entry.index)
+    ? eligibleArtwork(placeProfile, { homeOnly: isHomeEmbed }).map(entry => entry.index)
     : ARTWORKS.map((_, index) => index);
   const position = candidates.indexOf(artIndex);
   artOverride = candidates[(position + 1) % candidates.length] ?? 0;
   artOverrideDay = localDayKey(new Date(), environmentTimeZone());
+  if (isHomeEmbed && homeVisualBusy) return;
   updateDailyArt();
   if (simulation) { simulation.art = artIndex + 1; syncStudio(); }
 }
@@ -569,6 +661,9 @@ function renderSimulation() {
 }
 
 function renderMode() {
+  // Home shows one coherent snapshot. Independent model, METAR, GPS and
+  // reverse-geocoding completions update state silently until it is ready.
+  if (isHomeEmbed && homeVisualBusy) return;
   updateDailyArt();
   for (const button of forecastHours.querySelectorAll('button[data-forecast-index]')) {
     button.setAttribute('aria-pressed', String(activeMode === 'forecast' && Number(button.dataset.forecastIndex) === selectedForecastIndex));
@@ -608,7 +703,7 @@ function renderMode() {
     const skyText = text === 'Clear skies' ? 'Clear sky' : text;
     const description = observed ? (isArtworkLab ? `${obscuration || 'Nearby airport air'} · ${skyText} (model)`
       : `${obscuration || (observed.visibilityKm < 8 ? 'Reduced visibility' : skyText)} nearby`)
-      : liveWeatherStale ? `${text} · earlier model` : (isHomeEmbed || isAmbient) ? `${text} · model estimate` : text;
+      : liveWeatherStale ? `${text} · earlier` : isHomeEmbed ? text : isAmbient ? `${text} · model estimate` : text;
     updateScene({ phase, weather, location: liveLocation, temperature: Number(current.temperature_2m), description, observedTime:observed ? observedTime : hhmm,
       cloudCover:Number(current.cloud_cover), wind:Number(current.wind_speed_10m), rainfall, state: liveWeatherStale ? 'stale' : 'live', celestial: solar,
       note: `Weather by Open-Meteo · ${currentArea.cache ? 'regional estimate' : 'consented device area'} · artwork is interpretive.` });
@@ -634,11 +729,11 @@ function renderMode() {
       setAtmosphericDepth(observed.visibilityKm, smoke ? 28 : haze ? 16 : 0);
       visibilityReadout.hidden = false;
       if (isArtworkLab) visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
-      heroKicker.textContent = 'NEARBY AIR · MODEL SKY';
+      if (!isHomeEmbed) heroKicker.textContent = 'NEARBY AIR · MODEL SKY';
       heroObservationTime.title = `${observed.stationName} (${observed.station}), ${observed.distanceKm.toFixed(1)} km away · ${observed.observedAt}`;
       setStatus(`Observed · ${observed.station}`, 'sample');
       sourceLine.textContent = `Nearby ${observed.station} · ${observed.distanceKm.toFixed(1)} km away · visibility and ${obscuration || 'air conditions'} measured; temperature and clouds modelled; artwork illustrative.`;
-    } else if (isHomeEmbed || isAmbient) {
+    } else if (isAmbient) {
       heroKicker.textContent = currentArea.cache ? 'REGIONAL SKY · MODEL ESTIMATE' : 'LOCAL SKY · MODEL ESTIMATE';
     }
     return;
@@ -659,12 +754,12 @@ function renderMode() {
     setAtmosphericDepth(observed.visibilityKm);
     visibilityReadout.hidden = false;
     if (isArtworkLab) visibilityReadout.textContent = `Nearby observed visibility ${observed.visibilityLowerBound ? '≥' : ''}${observed.visibilityKm.toFixed(1)} km`;
-    heroKicker.textContent = 'OBSERVED AIR · SKY UNAVAILABLE';
+    if (!isHomeEmbed) heroKicker.textContent = 'OBSERVED AIR · SKY UNAVAILABLE';
     setStatus(`Observed · ${observed.station}`, 'sample');
     return;
   }
   updateScene({ phase, weather: 'cloudy', celestial:solar, location: isHomeEmbed || isAmbient || isArtworkLab ? liveLocation : COARSE_LOCATION.name, temperature: null,
-    description: isHomeEmbed ? (homeRefreshing ? 'Updating weather…' : 'Weather unavailable') : 'Weather feed unavailable · visual study',
+    description: isHomeEmbed ? 'Weather unavailable' : 'Weather feed unavailable · visual study',
     state: 'offline', note: 'Offline · sample atmosphere shown. No current weather reading available.' });
 }
 function setMode(mode) {
@@ -828,10 +923,11 @@ function readCache(maxAge = CACHE_AGE_MS) {
 async function fetchWeather(latitude, longitude, { cache = false, label = COARSE_LOCATION.name, force = false } = {}) {
   const myAttempt = ++liveAttempt;
   currentArea = { latitude, longitude, cache, label };
+  let nearbyPromise = Promise.resolve();
   if (isHomeEmbed || isAmbient) {
     // Airport readings refresh independently: a broken station feed must never
     // prevent the temperature, sunrise or cloud forecast from loading.
-    void fetchNearbyObservation({ latitude, longitude }).then(({ observation }) => {
+    nearbyPromise = fetchNearbyObservation({ latitude, longitude }).then(({ observation }) => {
       if (myAttempt !== liveAttempt) return;
       homeNearbyObservation = observation;
       if (activeMode === 'live') renderMode();
@@ -845,7 +941,17 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
   lastObservationFetch = Date.now();
   if (cache && !force) {
     const stored = readCache();
-    if (stored) { liveWeather = stored.data; liveWeatherStale = false; lastValidObservationAt = stored.at; lastObservationFetch = stored.at; liveLocation = label; if (activeMode === 'live') renderMode(); renderForecast(); return true; }
+    if (stored) {
+      liveWeather = stored.data;
+      liveWeatherStale = false;
+      lastValidObservationAt = stored.at;
+      lastObservationFetch = stored.at;
+      liveLocation = label;
+      if (isHomeEmbed) await nearbyPromise;
+      if (activeMode === 'live') renderMode();
+      renderForecast();
+      return true;
+    }
   }
   if (activeMode === 'live') setStatus('Connecting', 'fetching');
   try {
@@ -872,6 +978,7 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
     liveLocation = currentArea.label;
     lastObservationFetch = Date.now();
     if (cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data })); } catch { /* Storage is optional. */ } }
+    if (isHomeEmbed) await nearbyPromise;
     if (activeMode === 'live') renderMode();
     renderForecast();
     return true;
@@ -883,6 +990,7 @@ async function fetchWeather(latitude, longitude, { cache = false, label = COARSE
     if (!liveWeather && lastKnown) { liveWeather = lastKnown.data; lastValidObservationAt = lastKnown.at; liveLocation = label; }
     if (liveWeather && (!lastValidObservationAt || Date.now() - lastValidObservationAt >= LAST_OBSERVATION_AGE_MS)) liveWeather = null;
     liveWeatherStale = Boolean(liveWeather?.current);
+    if (isHomeEmbed) await nearbyPromise;
     if (activeMode === 'live') renderMode();
     renderForecast();
     console.info('Living Horizon: current weather unavailable; using clearly labelled visual study.', error?.message || error);
@@ -973,49 +1081,147 @@ function changeArea({ latitude, longitude }) {
   }
 }
 
-async function refreshHomeWeather() {
-  if (homeRefreshing) return;
+function invalidatePendingHomeFetches() {
+  ++liveAttempt;
+  ++landscapeResolveAttempt;
   ++deviceLocationRequest;
+}
+
+async function withinHomeDeadline(work, milliseconds) {
+  let timer;
+  const result = await Promise.race([
+    Promise.resolve(work).then(value => ({ timedOut: false, value }), error => ({ timedOut: false, error })),
+    new Promise(resolve => { timer = window.setTimeout(() => resolve({ timedOut: true }), milliseconds); }),
+  ]);
+  window.clearTimeout(timer);
+  if (result.timedOut) invalidatePendingHomeFetches();
+  return result;
+}
+
+async function presentHomeScene(token) {
+  const artworkReady = await preloadHomeArtwork();
+  if (token !== homePresentationToken) return;
+  let recoveredArtwork = null;
+  if (!artworkReady) {
+    // Do not expose the HTML's temporary gouache poster when a selected image
+    // fails to decode. On refresh, keep the last successfully painted artwork.
+    const previousFile = artwork.dataset.file;
+    const previousIndex = homeVisualReady
+      ? ARTWORKS.findIndex(art => art.file === previousFile || art.wideFile === previousFile)
+      : -1;
+    if (previousIndex >= 0) {
+      artOverride = previousIndex;
+      artOverrideDay = localDayKey(new Date(), environmentTimeZone());
+    } else frame.classList.add('home-art-unavailable');
+  } else if (frame.classList.contains('home-art-unavailable')) {
+    const art = ARTWORKS[selectedDailyArtworkIndex()];
+    recoveredArtwork = art ? { art, ...artworkSource(art) } : null;
+  }
+  if (homeVisualReady) {
+    // Only the wording dips briefly while a prepared painting crossfades.
+    frame.classList.add('home-caption-changing');
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      await new Promise(resolve => window.setTimeout(resolve, 390));
+    }
+  }
+  if (token !== homePresentationToken) return;
+  if (recoveredArtwork) {
+    artwork.dataset.file = recoveredArtwork.file;
+    artwork.dataset.wide = String(recoveredArtwork.wide);
+    artwork.src = recoveredArtwork.src;
+    positionArtwork(artwork, recoveredArtwork.art);
+  }
+  homeVisualBusy = false;
+  renderMode();
+  if (artworkReady) frame.classList.remove('home-art-unavailable');
+  if (!homeVisualReady) {
+    homeVisualReady = true;
+    requestAnimationFrame(() => {
+      frame.classList.add('home-ready');
+      // The cover owns the entire first fade. Enable ordinary atmospheric
+      // transitions only after its 560 ms exit, so nothing assembles piecemeal.
+      window.setTimeout(() => frame.classList.add('home-painted'), 610);
+    });
+  }
+  frame.classList.remove('home-caption-changing');
+  frame.setAttribute('aria-busy', 'false');
+}
+
+async function initializeHomeScene() {
+  const token = ++homePresentationToken;
+  homeVisualBusy = true;
+  frame.setAttribute('aria-busy', 'true');
+  const loading = (async () => {
+    const locationRequest = deviceLocationRequest;
+    const hasDeviceLocation = await restoreGrantedArea();
+    // A timed-out geolocation attempt may finish after Home is already shown.
+    if (token !== homePresentationToken || locationRequest !== deviceLocationRequest) return;
+    if (!hasDeviceLocation) {
+      await fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
+    }
+  })();
+  await withinHomeDeadline(loading, 17500);
+  if (token === homePresentationToken) await presentHomeScene(token);
+}
+
+async function refreshHomeInBackground() {
+  if (!isHomeEmbed || homeVisualBusy) return;
+  const token = ++homePresentationToken;
+  homeVisualBusy = true;
+  await withinHomeDeadline(fetchWeather(currentArea.latitude, currentArea.longitude, currentArea), 12500);
+  if (token === homePresentationToken) await presentHomeScene(token);
+}
+
+async function refreshHomeWeather() {
+  if (homeRefreshing || homeVisualBusy) return;
+  const token = ++homePresentationToken;
+  const locationRequest = ++deviceLocationRequest;
   homeRefreshing = true;
+  homeVisualBusy = true;
   homeClockButton.setAttribute('aria-busy', 'true');
   homeClockButton.setAttribute('aria-disabled', 'true');
   homeRefreshStatus.textContent = 'Updating weather and artwork.';
   try {
+    const result = await withinHomeDeadline((async () => {
+      const location = await getCoarsePosition(0);
+      if (token !== homePresentationToken || locationRequest !== deviceLocationRequest) return null;
+      const areaChanged = location && (location.latitude !== currentArea.latitude || location.longitude !== currentArea.longitude);
+      if (areaChanged || location && currentArea.cache) changeArea(location);
+      if (location) deviceLocationAccuracy = location.accuracyMeters;
+      const { latitude, longitude } = currentArea;
+      const [weatherUpdated] = await Promise.all([
+        fetchWeather(latitude, longitude, { ...currentArea, force: true }),
+        location && (areaChanged || liveLocation === 'Your area' || currentArea.cache)
+          ? resolveCoarsePlace(latitude, longitude) : undefined,
+      ]);
+      return { location, weatherUpdated };
+    })(), 17500);
+    if (token !== homePresentationToken) return;
     advanceArtwork();
-    const location = await getCoarsePosition(0);
-    const areaChanged = location && (location.latitude !== currentArea.latitude || location.longitude !== currentArea.longitude);
-    if (areaChanged || location && currentArea.cache) {
-      changeArea(location);
-      renderMode();
-    }
-    if (location) deviceLocationAccuracy = location.accuracyMeters;
-    const { latitude, longitude } = currentArea;
-    const [weatherUpdated] = await Promise.all([
-      fetchWeather(latitude, longitude, { ...currentArea, force: true }),
-      location && (areaChanged || liveLocation === 'Your area' || currentArea.cache)
-        ? resolveCoarsePlace(latitude, longitude) : undefined,
-    ]);
-    homeRefreshStatus.textContent = weatherUpdated
-      ? location ? `Weather updated for ${liveLocation}.` : `Location unavailable. Weather updated for ${liveLocation}.`
-      : `Weather unavailable for ${liveLocation}.`;
+    await presentHomeScene(token);
+    if (result.timedOut) homeRefreshStatus.textContent = 'Showing the latest available weather.';
+    else if (result.error) homeRefreshStatus.textContent = 'Weather refresh unavailable.';
+    else if (!result.value) homeRefreshStatus.textContent = 'Showing the latest available weather.';
+    else homeRefreshStatus.textContent = result.value.weatherUpdated
+      ? `Weather updated for ${liveLocation}.` : `Weather unavailable for ${liveLocation}.`;
   } finally {
     homeRefreshing = false;
     homeClockButton.setAttribute('aria-busy', 'false');
     homeClockButton.removeAttribute('aria-disabled');
-    if (!liveWeather) renderMode();
+    if (homeVisualBusy && token === homePresentationToken) await presentHomeScene(token);
   }
 }
 
 async function restoreGrantedArea() {
   // A previously granted browser permission is reusable without reprompting;
   // first-time location access is still initiated only by the user's tap.
-  if (!navigator.permissions?.query || !navigator.geolocation) return;
+  if (!navigator.permissions?.query || !navigator.geolocation) return false;
   const request = deviceLocationRequest;
   try {
     const permission = await navigator.permissions.query({ name: 'geolocation' });
-    if (permission.state !== 'granted' || homeRefreshing || request !== deviceLocationRequest) return;
+    if (permission.state !== 'granted' || homeRefreshing || request !== deviceLocationRequest) return false;
     const location = await getCoarsePosition(60000);
-    if (!location || homeRefreshing || request !== deviceLocationRequest) return;
+    if (!location || homeRefreshing || request !== deviceLocationRequest) return false;
     const changed = location.latitude !== currentArea.latitude || location.longitude !== currentArea.longitude;
     if (changed || currentArea.cache) changeArea(location);
     deviceLocationAccuracy = location.accuracyMeters;
@@ -1024,7 +1230,9 @@ async function restoreGrantedArea() {
       fetchWeather(latitude, longitude, { ...currentArea, force: true }),
       resolveCoarsePlace(latitude, longitude),
     ]);
+    return request === deviceLocationRequest;
   } catch { /* Browsers without a working permissions API retain regional view. */ }
+  return false;
 }
 
 function seededStars() {
@@ -1044,7 +1252,7 @@ function seededStars() {
 function setup() {
   seededStars();
   document.querySelector('#sim-art').max = String(ARTWORKS.length);
-  artwork.addEventListener('load', positionArtwork);
+  artwork.addEventListener('load', () => positionArtwork());
   new ResizeObserver(updateArtworkSource).observe(frame);
   // Sky art and rain each own their resize, motion and visibility lifecycle.
   new IntersectionObserver(([entry]) => {
@@ -1103,21 +1311,24 @@ function setup() {
     });
   }
   if (isHomeEmbed || isAmbient) tickHomeClock();
-  if (!isArtworkLab) void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
-  if (isHomeEmbed || isAmbient) void restoreGrantedArea();
+  if (isHomeEmbed) void initializeHomeScene();
+  else if (!isArtworkLab) void fetchWeather(COARSE_LOCATION.latitude, COARSE_LOCATION.longitude, { cache: true });
+  if (isAmbient) void restoreGrantedArea();
   // Refresh only while the live scene is visible, at most once per 15 minutes.
   window.setInterval(() => {
     if (document.hidden || frame.classList.contains('out-of-view') || activeMode !== 'live' || homeRefreshing) return;
     if (liveWeather) renderMode();
     if (Date.now() - lastObservationFetch >= CACHE_AGE_MS) {
-      void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
+      if (isHomeEmbed) void refreshHomeInBackground();
+      else void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
     }
   }, 60000);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden || frame.classList.contains('out-of-view') || activeMode !== 'live' || homeRefreshing) return;
     renderMode();
     if (Date.now() - lastObservationFetch > CACHE_AGE_MS) {
-      void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
+      if (isHomeEmbed) void refreshHomeInBackground();
+      else void fetchWeather(currentArea.latitude, currentArea.longitude, currentArea);
     }
   });
   useLocation.addEventListener('click', async () => {

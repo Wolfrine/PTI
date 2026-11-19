@@ -223,6 +223,11 @@
 .horizon-frame[data-phase="night"]{--art-filter:brightness(.46) saturate(.78) hue-rotate(8deg)}
 .horizon-frame[data-phase="night"] .horizon-vignette{opacity:.75}
 
+/* An already-decoded replacement painting glides over the current one.
+   The original layer stays in place until the new layer has fully arrived. */
+.incoming-artwork{opacity:0;transition:opacity .72s cubic-bezier(.22,.61,.36,1);will-change:opacity}
+.incoming-artwork.is-visible{opacity:1}
+
 html.horizon-ambient,html.horizon-ambient body{margin:0;width:100%;min-width:0;min-height:100%;overflow:hidden;background:#121f30}
 html.horizon-ambient .app-shell{display:block;min-height:100dvh}
 html.horizon-ambient .sidebar,html.horizon-ambient .topbar,html.horizon-ambient .mobile-nav,
@@ -241,4 +246,12 @@ html.horizon-ambient .atmospheric-readouts{margin-top:13px;padding:0;color:#fffd
 html.horizon-ambient .home-weather-clock{z-index:10;min-height:42px;display:flex;align-items:center;gap:6px;right:clamp(20px,3vw,54px);top:clamp(20px,3vw,50px);background:#fffdf4c9;font-variant-numeric:tabular-nums}
 html.horizon-ambient .home-weather-credits{position:absolute;z-index:9;right:24px;bottom:16px;font-size:10px;display:flex;gap:9px;color:#fff;text-shadow:0 1px 4px #112b22}
 html.horizon-ambient .home-weather-credits a{color:inherit}
+html.horizon-ambient .home-weather-source-details{display:block;position:absolute;right:24px;bottom:16px;z-index:12}
+html.horizon-ambient .home-weather-source-details summary{list-style:none;cursor:pointer;color:#fff;font-size:19px;text-shadow:0 1px 5px #172b28}
+html.horizon-ambient .home-weather-source-details summary::-webkit-details-marker{display:none}
+html.horizon-ambient .home-weather-source-details summary:focus-visible{outline:2px solid #fff;outline-offset:3px}
+html.horizon-ambient .home-weather-source-details .home-weather-credits{right:0;bottom:33px;display:flex;flex-direction:column;gap:7px;min-width:225px;padding:14px;border-radius:12px;color:#263f3b;background:#fffdf2ed;text-shadow:none;box-shadow:0 8px 25px #0c1c2370}
+html.horizon-ambient .home-weather-source-details .home-weather-credits[hidden],
+html.horizon-ambient .home-weather-source-details .home-weather-credits a[hidden]{display:none!important}
+html.horizon-ambient .home-weather-source-details .home-weather-credits a{color:#315a6e}
 @media(max-width:760px){html.horizon-ambient .horizon-frame{height:100dvh;border-radius:0}html.horizon-ambient .horizon-caption{left:22px;bottom:45px;max-width:calc(100% - 44px)}html.horizon-ambient .horizon-title-line h1{font-size:clamp(28px,8vw,50px)}html.horizon-ambient .hero-temperature{font-size:clamp(24px,7vw,40px)}}

@@ -4,7 +4,7 @@ export const HOST_VERSION='0.5.0';
 // Helper diagnostics are not a native browser authorization decision.
 export const browserContextSchema=z.object({
   executionContext:z.literal('standalone-app-server'),status:z.enum(['unavailable','unverified']),
-  reason:z.enum(['missing-app-session-context','incomplete-app-session-context','app-session-context-unverified']),verified:z.literal(false),
+  reason:z.enum(['missing-app-session-context','incomplete-app-session-context','app-session-context-unverified','official-tool-discovery-required']),verified:z.literal(false),
 }).strict();
 export function transportCapabilities(worker:{version:string;at:number;dispatchReady?:boolean}|undefined,now:number) {
   return {hostVersion:HOST_VERSION,workerVersion:worker?.version||null,

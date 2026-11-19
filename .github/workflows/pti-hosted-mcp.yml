@@ -13,10 +13,31 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    outputs:
+      local_codex_only: ${{ steps.scope.outputs.local_codex_only }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Identify Local Codex-only releases
+        id: scope
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          git diff --name-only -z "$BEFORE" "$GITHUB_SHA" > "$RUNNER_TEMP/pti-release-paths"
+          only=true
+          seen=false
+          while IFS= read -r -d '' file; do
+            seen=true
+            case "$file" in
+              tools/local-codex/*|tools/pti-mcp/src/local-codex*.ts|tools/pti-mcp/scripts/local-codex-*.mjs|tools/pti-mcp/scripts/verify-host.mjs|.github/workflows/pti-hosted-mcp.yml) ;;
+              *) only=false ;;
+            esac
+          done < "$RUNNER_TEMP/pti-release-paths"
+          echo "local_codex_only=$([[ $seen == true ]] && echo "$only" || echo false)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -43,7 +64,7 @@ jobs:
       - run: npm ci --prefix apps/one-piece --ignore-scripts --no-audit --no-fund
       - run: node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-local-codex-listener --config firebase.one-piece-tests.json 'node --test tools/local-codex/test/notification-rules.test.mjs'
   native_auth:
-    if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI'
+    if: github.event_name == 'push' && github.repository == 'Wolfrine/PTI' && needs.verify.outputs.local_codex_only != 'true'
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -84,6 +105,7 @@ jobs:
       REGION: asia-south1
       SERVICE: pti-firestore-mcp
       PUBLIC_ORIGIN: https://pti-firestore-mcp-185802494856.asia-south1.run.app
+      LOCAL_CODEX_ONLY: ${{ needs.verify.outputs.local_codex_only }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,11 +119,18 @@ jobs:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           token_format: access_token
       - uses: google-github-actions/setup-gcloud@v2
-      - name: Verify real owner-scoped app reads and temporary MCP CRUD
+      - name: Build the host and verify shared app data on shared releases
         run: |
           npm ci --prefix tools/pti-mcp --ignore-scripts --no-audit --no-fund
           npm run build --prefix tools/pti-mcp
-          node tools/pti-mcp/scripts/verify-data.mjs
+          if [[ "$LOCAL_CODEX_ONLY" != true ]]; then
+            node tools/pti-mcp/scripts/verify-data.mjs
+          fi
+      - name: Verify the live Local Codex rules and sign-in prerequisites
+        if: env.LOCAL_CODEX_ONLY == 'true'
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: node tools/pti-mcp/scripts/local-codex-release-guard.mjs before
       - name: Check existing billing prerequisite without changing it
         run: |
           set -euo pipefail
@@ -125,6 +154,7 @@ jobs:
           docker build -f tools/pti-mcp/Dockerfile -t "$IMAGE_PREFIX/$SERVICE:$GITHUB_SHA" .
           docker push "$IMAGE_PREFIX/$SERVICE:$GITHUB_SHA"
       - name: Isolate OAuth records and register sign-in origin
+        if: env.LOCAL_CODEX_ONLY != 'true'
         env:
           ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
         run: node tools/pti-mcp/scripts/prepare-host.mjs
@@ -140,8 +170,16 @@ jobs:
             --min-instances=0 --max-instances=2 --concurrency=40 --timeout=120 --quiet
       - name: Verify public connection and authentication boundary
         run: node tools/pti-mcp/scripts/verify-host.mjs
+      - name: Confirm live Firestore rules stayed identical
+        if: always() && env.LOCAL_CODEX_ONLY == 'true'
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          if [[ -f "$RUNNER_TEMP/local-codex-rules.json" ]]; then
+            node tools/pti-mcp/scripts/local-codex-release-guard.mjs after
+          fi
       - name: Redact only this diagnostic task's legacy audit payloads
-        if: contains(github.event.head_commit.message, '[velum-audit-redaction]')
+        if: env.LOCAL_CODEX_ONLY != 'true' && contains(github.event.head_commit.message, '[velum-audit-redaction]')
         run: >-
           node tools/pti-mcp/scripts/redact-velum-diagnostic-audit.mjs --apply
           --job-id diag-clothed-4r-20261105-a747ea-1

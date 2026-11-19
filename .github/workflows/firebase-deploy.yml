@@ -5,6 +5,12 @@ on:
     branches:
       - main
     paths-ignore:
+      # Local Codex runs through the shared Cloud Run MCP workflow.
+      - 'tools/local-codex/**'
+      - 'tools/pti-mcp/src/local-codex*.ts'
+      - 'tools/pti-mcp/scripts/local-codex-*.mjs'
+      - 'tools/pti-mcp/scripts/verify-host.mjs'
+      - '.github/workflows/pti-hosted-mcp.yml'
       - 'wedding-planner/**'
       - 'firebase.wedding*.json'
       - '.github/workflows/wedding.yml'

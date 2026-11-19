@@ -29,8 +29,8 @@ export function reconcileHandoffReceipts(thread,turns){
   return observations;
 }
 
-// Dispatch through Codex's public durable queue and desktop deep link. This
-// process never resumes the chat, hosts its tools, or copies browser identity.
+// Dispatch through Codex's public durable queue with native session resumption
+// and the desktop deep link. The desktop retains its tools and browser identity.
 export async function desktopHandoff(rpc,args,assertBridgeIdle) {
   if(process.platform!=='win32')throw Error('This installed desktop handoff is for Windows.');
   if(!/^[a-f0-9-]{36}$/.test(args.thread_id||'')||! /^[a-f0-9]{32}$/.test(args.request_id||'')||!args.prompt?.trim())throw Error('Desktop handoff requires an existing thread, prompt and durable request identity.');
@@ -103,7 +103,8 @@ export async function desktopHandoff(rpc,args,assertBridgeIdle) {
   }
   // Once submitted, a normal queue entry waits behind the owning writer. Do
   // not reopen the app or spend another startup window on every observation.
-  if(own)return record(receipt('queued',{queued_submission_id:own.id,work_state:'queued'}));
+  if(own)return record(receipt('queued',{queued_submission_id:own.id,work_state:'queued',
+    ...(prior?.activation_warning?{activation_warning:true}:{})}));
   if(!own){
     assertBridgeIdle(thread);
     const selection=modelSelection(config());
@@ -128,7 +129,12 @@ export async function desktopHandoff(rpc,args,assertBridgeIdle) {
       const queueId=queuedCommand.stdout?.match(/Queued message ([a-f0-9-]{36}) for thread/);
       if(queuedCommand.status!==0||!queueId)throw Error('Codex queue did not return a delivery receipt. The durable intent is retained; do not duplicate this request.');
       queuedItem={id:queueId[1]};
-      write(receiptFile,receipt('queued',{queued_submission_id:queuedItem.id}));
+      // The CLI may exit 0 even when it warns that resume failed. Persist only
+      // the warning category; a matching native turn remains the success proof.
+      const output=`${queuedCommand.stdout||''}\n${queuedCommand.stderr||''}`;
+      const activationWarning=/\b(?:warn(?:ing)?|unable|failed|could not)\b[^\r\n]*\bresume\b|\bresume\b[^\r\n]*\b(?:warn(?:ing)?|unable|failed|could not)\b/i.test(output);
+      write(receiptFile,receipt('queued',{queued_submission_id:queuedItem.id,
+        ...(activationWarning?{activation_warning:true}:{})}));
     }
     // Bounded startup observation only. Native work has no added duration cap.
     const until=Date.now()+12000;
@@ -139,6 +145,7 @@ export async function desktopHandoff(rpc,args,assertBridgeIdle) {
     }while(Date.now()<until);
     // The owner's durable queue input waits behind the owning native turn.
     // Startup observation bounds this call, not the authorized queued work.
-    return record(receipt('queued',{queued_submission_id:queuedItem.id,work_state:'queued'}));
+    return record(receipt('queued',{queued_submission_id:queuedItem.id,work_state:'queued',
+      ...(read(receiptFile)?.activation_warning?{activation_warning:true}:{})}));
   }finally{release();}
 }

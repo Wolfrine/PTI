@@ -122,9 +122,9 @@ export async function desktopHandoff(rpc,args,assertBridgeIdle) {
     if(!queuedItem){
       write(receiptFile,receipt('preparing'));
       const prompt=`${marker}\nThe owner requested this work through Local Codex. ${PROJECT_LEAD_CONTRACT} Continue this same chat with its existing model, permissions and official tools. Do not create another chat or treat prior bridge preflight as a desktop restriction. Actual tool denials remain binding.\n\n${args.prompt}`;
-      // Use the documented CLI queue writer; no private app transport or
-      // experimental queue-start behavior is required.
-      const queuedCommand=spawnSync(runtime(),['queue','--thread',thread.id,'--message',prompt],{cwd:target.path,windowsHide:true,encoding:'utf8',timeout:10000,env:subscriptionEnvironment()});
+      // A durable queue receipt does not activate an unloaded native chat.
+      // --resume is the official CLI path; existing queued entries are never re-submitted.
+      const queuedCommand=spawnSync(runtime(),['queue','--thread',thread.id,'--message',prompt,'--resume'],{cwd:target.path,windowsHide:true,encoding:'utf8',timeout:10000,env:subscriptionEnvironment()});
       const queueId=queuedCommand.stdout?.match(/Queued message ([a-f0-9-]{36}) for thread/);
       if(queuedCommand.status!==0||!queueId)throw Error('Codex queue did not return a delivery receipt. The durable intent is retained; do not duplicate this request.');
       queuedItem={id:queueId[1]};

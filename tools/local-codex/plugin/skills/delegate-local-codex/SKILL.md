@@ -9,9 +9,9 @@ Use the private connection when work or verification needs this PC. Check bridge
 
 Give the lead one compact contract:
 
-- **Objective** — what the owner wants to be true.
-- **Acceptance** — what actual artifact, behavior or evidence will show it.
-- **Scope and constraints** — checkout, inspect/edit authority, relevant source, permissions and explicit stop conditions.
+- **Objective** - what the owner wants to be true.
+- **Acceptance** - what actual artifact, behavior or evidence will show it.
+- **Scope and constraints** - checkout, inspect/edit authority, relevant source, permissions and explicit stop conditions.
 
 Native Codex owns the plan, useful independent subagents, implementation, integration, Git, critique, practical verification and correction. Use native Plan when helpful. Keep these phases with the same lead. Supervise consequential milestones and relay real owner decisions. Let Codex recover from routine problems within scope and continue independent work when a genuine dependency is blocked.
 

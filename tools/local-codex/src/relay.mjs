@@ -128,14 +128,18 @@ async function service(job,controls){
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{stopping=true;events.wake();});
 try{
   while(!stopping){
+    let failureStage='native_status';
     try{
       if(retryAt>Date.now()){await events.wait(retryAt-Date.now());continue;}
       const settings=config(),selection=modelSelection(settings),health=await local('bridge_status');if(health.authMode!=='chatgpt')throw Error('ChatGPT subscription sign-in required.');
+      failureStage='owner_signin';
       await authenticate();
+      failureStage='dispatch_listener';
       if(!stopListener||listenerError||listenerToken!==token){
         await stopListener?.();stopListener=undefined;listenerConnected=false;listenerError=undefined;listenerToken=token;
         stopListener=await listenForDispatch({firebase:firebaseAuthConfig(),idToken:token,uid:OWNER,changed:()=>{dispatchRequested=true;syncRequested=true;events.wake();},connection:online=>{if(listenerConnected!==online){listenerConnected=online;syncRequested=true;events.wake();}},failed:error=>{listenerError=error;events.wake();}});
       }
+      failureStage='host_sync';
       if(syncRequested||Date.now()>=nextSync){
         const heartbeat={instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,model:selection.model,reasoning_effort:selection.effort,runtimeRoot:home,sourceSha:sourceSha(),browser_context:browserContextReport(),nativeControls:supportsNativeControls(health.codexVersion),dispatchReady:true,projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',available:false};}})};
         const dispatch=dispatchRequested;dispatchRequested=false;syncRequested=false;
@@ -150,15 +154,26 @@ try{
         for(const job of state.active){observe(job);dirty.add(job.id);}persist();
         if(response.more){dispatchRequested=true;syncRequested=true;events.wake();}
       }
+      failureStage='native_observation';
       const selected=state.active.filter(job=>dirty.delete(job.id));
       const outcomes=await Promise.allSettled(selected.map(job=>service(job,controlsById.get(job.id))));let failed=false;
       outcomes.forEach((value,index)=>{if(value.status==='rejected'){failed=true;dirty.add(selected[index].id);}});if(failed)throw outcomes.find(value=>value.status==='rejected').reason;
-      if(listenerError)throw Error('Dispatch listener unavailable.');
+      failureStage='dispatch_listener';
+      if(listenerError)throw listenerError;
+      failureStage='local_checkpoint';
       retryAt=0;retryDelay=1000;persist();
       write(path.join(home,'data','status.json'),{version:VERSION,pid:process.pid,at:new Date().toISOString(),state:'online',runtimeRoot:home,sourceSha:sourceSha(),listenerConnected,activeTasks:state.active.map(job=>job.id)});
     }catch(error){
       retryAt=Date.now()+retryDelay;retryDelay=Math.min(30000,retryDelay*2);persist();
-      write(path.join(home,'data','status.json'),{version:VERSION,pid:process.pid,at:new Date().toISOString(),state:'unavailable',runtimeRoot:home,sourceSha:sourceSha(),errorCode:error.relayCode||'connection_signin_or_observation_required',activeTasks:state.active.map(job=>job.id)});
+      const knownCodes={
+        'Pair this worker to the PTI owner account first.':'owner_pairing_missing',
+        'PTI sign-in needs reconnecting.':'owner_token_refresh_rejected',
+        'PTI account mismatch.':'owner_account_mismatch',
+        'ChatGPT subscription sign-in required.':'codex_subscription_unavailable',
+        'Notification account mismatch.':'dispatch_listener_account_mismatch',
+      };
+      const errorCode=error.relayCode||(Object.hasOwn(knownCodes,error.message)?knownCodes[error.message]:null)||(error.code==='permission-denied'?'dispatch_permission_denied':failureStage+'_unavailable');
+      write(path.join(home,'data','status.json'),{version:VERSION,pid:process.pid,at:new Date().toISOString(),state:'unavailable',runtimeRoot:home,sourceSha:sourceSha(),failureStage,errorCode,activeTasks:state.active.map(job=>job.id)});
     }
     await events.wait(Math.max(0,(retryAt||nextSync)-Date.now()));
   }

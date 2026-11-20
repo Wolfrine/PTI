@@ -93,8 +93,18 @@ async function service(job,controls){
     // desktop, pairing, QA or remote-control paths.
     if(!['list','read'].includes(job.command.action)){await report(job,{status:'unknown',error:'Legacy execution path retired; request and receipts preserved without cancellation or replay.'});return;}
     if(controls?.cancel){await report(job,{status:'interrupted',native_delivery_absent:true});remove(job);return;}
-    const file=path.join(home,'data',`history-${job.id}.json`);let value;
-    if(fs.existsSync(file))value=read(file);else{value=await local('codex_history',job.command);write(file,value);}
+    const file=path.join(home,'data','history-'+job.id+'.json');
+    let value;
+    try{
+      if(fs.existsSync(file))value=read(file);
+      else{value=await local('codex_history',job.command);write(file,value);}
+    }catch(error){
+      if(!error.localRejection)throw error;
+      // A definitive history rejection belongs to this read request. Preserve
+      // its receipt and let other claims and the healthy listener progress.
+      await report(job,{status:'failed',error:error.message.slice(0,2000)});
+      remove(job);return;
+    }
     await report(job,{status:'completed',result:value});remove(job);return;
   }
   if(!job.localId){

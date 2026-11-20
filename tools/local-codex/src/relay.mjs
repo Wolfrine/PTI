@@ -4,7 +4,7 @@ import {openRelayState} from './relay-state.mjs';
 import {fileURLToPath} from 'node:url';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
-import {home,config,project,read,write,digest,subscriptionEnvironment,VERSION,taskDir} from './common.mjs';
+import {home,config,project,read,write,digest,subscriptionEnvironment,supportsNativeControls,VERSION,taskDir} from './common.mjs';
 import {loadCredential,saveCredential,refresh,firebaseAuthConfig,OWNER} from './credentials.mjs';
 import {modelSelection} from './model-policy.mjs';
 import {reportChangedSnapshot} from './progress.mjs';
@@ -49,19 +49,20 @@ async function authenticate(){
 async function api(action,body){
   await authenticate();
   const response=await fetch(`${base}/${action}`,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
-  if(!response.ok){await response.body?.cancel();if(response.status===401)until=0;throw Error(`Relay request unavailable (HTTP ${response.status}).`);}return response.json();
+  if(!response.ok){await response.body?.cancel();if(response.status===401)until=0;throw Object.assign(Error("Relay request unavailable."),{relayCode:"relay_http_"+action+"_"+response.status});}return response.json();
 }
-function observe(job){
-  if(!job.localId||watchers.has(job.id)||!fs.existsSync(taskDir(job.localId)))return;
-  watchers.set(job.id,watchTask(taskDir(job.localId),()=>{dirty.add(job.id);events.wake();},()=>{watchers.get(job.id)?.();watchers.delete(job.id);dirty.add(job.id);events.wake();}));
+function observe(job,directory=job.localId&&taskDir(job.localId),filename='task.json'){
+  if(!directory||watchers.has(job.id)||!fs.existsSync(directory))return;
+  watchers.set(job.id,watchTask(directory,()=>{dirty.add(job.id);events.wake();},()=>{watchers.get(job.id)?.();watchers.delete(job.id);dirty.add(job.id);events.wake();},filename));
 }
 function snapshot(job){
-  const proof=job.nativeTerminal,exact=proof?.source==='turn/completed'&&proof.threadId===job.threadId&&proof.turnId===job.turnId&&proof.status===job.status;
+  const proof=job.nativeTerminal,exact=proof?.source==='turn/completed'&&proof.threadId===job.threadId&&(proof.turnId===job.turnId||job.observedTurns?.some(turn=>turn.turn_id===proof.turnId&&turn.status===proof.status))&&proof.status===job.status;
   return {status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,messages:(job.messages||[]).slice(-10).map(message=>({text:message.text,phase:message.phase||null})),pending:job.pending||[],
     control_error:job.controlError?.slice(0,2000)||null,cancellation_state:job.cancellationState||null,
     requested_model:job.requestedModel||null,returned_model:job.returnedModel||job.model||null,requested_reasoning_effort:job.requestedReasoningEffort||null,returned_reasoning_effort:job.returnedReasoningEffort||job.reasoningEffort||null,
     ...(job.model?{model:job.model}:{}),...(job.reasoningEffort?{reasoning_effort:job.reasoningEffort}:{}),...(job.executionPolicy?{execution_policy:job.executionPolicy}:{}),...(job.telemetry?{telemetry:job.telemetry}:{}),
-    ...(job.threadId?{thread_id:job.threadId,native_thread_id:job.threadId}:{}),...(job.turnId?{native_turn_id:job.turnId}:{}),...(exact?{native_terminal_observed:true}:{}),
+    ...(job.nativeControls?{native_controls:true,active_turn_id:job.activeTurnId||null,goal_status:job.goalStatus||null,observed_turns:job.observedTurns||[]}:{}),
+    ...(job.threadId?{thread_id:job.threadId,native_thread_id:job.threadId}:{}),...(job.turnId?{native_turn_id:job.turnId}:{}),...(exact?{native_terminal_observed:true,...(proof.turnId!==job.turnId?{native_terminal_turn_id:proof.turnId}:{})}:{}),
     ...(job.nativeTurnDispatchAttempted===false&&job.nativeDeliveryAbsent?{native_delivery_absent:true}:{}),
   };
 }
@@ -72,6 +73,21 @@ function reconcileLocalIdentity(job){
 }
 async function service(job,controls){
   if(controls&&generation(controls)!==undefined&&generation(controls)!==generation(job))throw Error('Mismatched delivery controls.');
+  if(job.command?.action==='native_control'){
+    const {source_id, ...args}=job.command.args;
+    const task_id=digest(localRequestKey({id:source_id,generation:args.generation})).slice(0,32);
+    let answer;
+    try{answer=await local('native_control',{...args,task_id,operation_id:job.id});}
+    catch(error){
+      if(!error.localRejection)throw error;
+      answer={status:'unknown',error:error.message.slice(0,2000)};
+    }
+    if(answer.error)answer.error=answer.error.slice(0,2000);
+    await report(job,answer);
+    if(answer.status==='running')observe(job,path.join(taskDir(task_id),'control-'+job.id),'receipt.json');
+    else remove(job);
+    return;
+  }
   if(job.command){
     // Preserve old receipts and unsupported requests without invoking retired
     // desktop, pairing, QA or remote-control paths.
@@ -121,7 +137,7 @@ try{
         stopListener=await listenForDispatch({firebase:firebaseAuthConfig(),idToken:token,uid:OWNER,changed:()=>{dispatchRequested=true;syncRequested=true;events.wake();},connection:online=>{if(listenerConnected!==online){listenerConnected=online;syncRequested=true;events.wake();}},failed:error=>{listenerError=error;events.wake();}});
       }
       if(syncRequested||Date.now()>=nextSync){
-        const heartbeat={instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,model:selection.model,reasoning_effort:selection.effort,runtimeRoot:home,sourceSha:sourceSha(),browser_context:browserContextReport(),dispatchReady:true,projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',available:false};}})};
+        const heartbeat={instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,model:selection.model,reasoning_effort:selection.effort,runtimeRoot:home,sourceSha:sourceSha(),browser_context:browserContextReport(),nativeControls:supportsNativeControls(health.codexVersion),dispatchReady:true,projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',available:false};}})};
         const dispatch=dispatchRequested;dispatchRequested=false;syncRequested=false;
         let response;try{response=await api('sync',{heartbeat,dispatch,active:state.active.map(identity)});}catch(error){syncRequested=true;dispatchRequested||=dispatch;throw error;}
         nextSync=Date.now()+(response.syncDelayMs||30000);
@@ -136,13 +152,13 @@ try{
       }
       const selected=state.active.filter(job=>dirty.delete(job.id));
       const outcomes=await Promise.allSettled(selected.map(job=>service(job,controlsById.get(job.id))));let failed=false;
-      outcomes.forEach((value,index)=>{if(value.status==='rejected'){failed=true;dirty.add(selected[index].id);}});if(failed)throw Error('A task observation/report will retry without replaying native work.');
+      outcomes.forEach((value,index)=>{if(value.status==='rejected'){failed=true;dirty.add(selected[index].id);}});if(failed)throw outcomes.find(value=>value.status==='rejected').reason;
       if(listenerError)throw Error('Dispatch listener unavailable.');
       retryAt=0;retryDelay=1000;persist();
       write(path.join(home,'data','status.json'),{version:VERSION,pid:process.pid,at:new Date().toISOString(),state:'online',runtimeRoot:home,sourceSha:sourceSha(),listenerConnected,activeTasks:state.active.map(job=>job.id)});
     }catch(error){
       retryAt=Date.now()+retryDelay;retryDelay=Math.min(30000,retryDelay*2);persist();
-      write(path.join(home,'data','status.json'),{version:VERSION,pid:process.pid,at:new Date().toISOString(),state:'unavailable',runtimeRoot:home,sourceSha:sourceSha(),errorCode:'connection_signin_or_observation_required',activeTasks:state.active.map(job=>job.id)});
+      write(path.join(home,'data','status.json'),{version:VERSION,pid:process.pid,at:new Date().toISOString(),state:'unavailable',runtimeRoot:home,sourceSha:sourceSha(),errorCode:error.relayCode||'connection_signin_or_observation_required',activeTasks:state.active.map(job=>job.id)});
     }
     await events.wait(Math.max(0,(retryAt||nextSync)-Date.now()));
   }

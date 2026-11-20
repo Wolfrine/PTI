@@ -4,7 +4,9 @@ Local Codex is a private transport from the existing ChatGPT plugin to a small W
 
 ## Current execution contract
 
-The 0.5.0 source contract replaces the former desktop handoff and resource-management layer. New work starts a fresh native session. `continue_task` explicitly continues a selected task; `start_task` with an explicit `thread_id` selects saved native history. There is no automatic desktop-chat transfer, module-parent selection or rotation. The helper adds no checkout, thread, continuation, writer or foreground reservations, capacity/session/time limits, maintenance fence or resource scheduler. Native Codex and account constraints still apply.
+The 0.5.0 source contract replaces the former desktop handoff and resource-management layer. Start a fresh session for a distinct outcome. Give one native lead the objective, acceptance evidence and authorized scope, and keep its planning, review, repair and verification in that thread. `continue_task` explicitly continues a selected task; `start_task` with an explicit `thread_id` selects saved native history. There is no automatic desktop-chat transfer, module-parent selection or rotation. The helper adds no checkout, thread, continuation, writer or foreground reservations, capacity/session/time limits, maintenance fence or resource scheduler. Native Codex and account constraints still apply.
+
+The 0.5.1 helper adds selected-thread native Goal controls and live queue/steer using the installed Codex 0.169.1+ app-server. See [lifecycle and recovery](plugin/skills/delegate-local-codex/references/relay-lifecycle.md) for receipt and execution semantics.
 
 Use `bridge_status` and `list_projects` to verify the current helper and exact source checkout. Submit an authorized `inspect` or `edit` request with stable request identity, then observe that task through `get_task`. `list_tasks`, `list_codex_threads` and `read_codex_thread` provide discovery and read-only history. Use `respond_to_task` for the owner's actual answer and `cancel_task` for an explicit stop request. Record an outcome only when the owner supplies it.
 
@@ -28,10 +30,10 @@ Repositories and source remain on F:. Operational state, releases, dependencies/
 
 Worker, hosted transport and private plugin have separate delivery evidence. Build the reviewed source, deploy the host through the existing main pipeline, then activate the helper with the [external one-shot runbook](docs/maintenance-upgrade.md). Preserve active native executions. Reuse the existing windowless helper lifecycle; create no schedule or resource manager. Require exact artifact hashes, installed-pointer readback and fresh authenticated local/hosted helper observations before claiming activation. Source changes are not installation proof.
 
-The plugin source is in `plugin/`. Release 0.5.0 keeps the existing plugin identity, audience, App binding and `.app.json` metadata. Publication must update that existing private plugin and read it back. It must not create a replacement plugin or connection. `connection.json` records the transport contract; credentials remain private and are never part of plugin source.
+The plugin source is in `plugin/`. Release 0.5.1 keeps the existing plugin identity, audience, App binding and `.app.json` metadata. Publication must update that existing private plugin and read it back. It must not create a replacement plugin or connection. `connection.json` records the transport contract; credentials remain private and are never part of plugin source.
 
 ## Review and history
 
 [HARNESS.md](HARNESS.md) is the compact operating contract. The existing usage collector is independent: leave its schedule, runtime, private data and publication unchanged. Read its current observations only when relevant to an owner decision; do not add collectors, reset consumption or background reviews.
 
-The files in [decisions/](decisions/) preserve historical observations and superseded designs, including module affinity, desktop queues, interactive-QA brokerage, Owner Chrome and guarded drain/fence releases. They are historical evidence, not current instructions. This README, HARNESS and active plugin references define the 0.5.0 contract; a historical tool count, version, path, limit or activation result does not establish current availability.
+The files in [decisions/](decisions/) preserve historical observations and superseded designs, including module affinity, desktop queues, interactive-QA brokerage, Owner Chrome and guarded drain/fence releases. They are historical evidence, not current instructions. This README, HARNESS and active plugin references define the current contract; a historical tool count, version, path, limit or activation result does not establish current availability.

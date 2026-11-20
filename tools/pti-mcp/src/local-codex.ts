@@ -10,10 +10,14 @@ export const OWNER='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 export const terminal=['completed','failed','interrupted'];
 const id=z.string().regex(/^[a-f0-9]{32}$/),key=z.string().min(8).max(128),text=z.string().trim().min(1).max(24000),threadId=z.string().uuid(),title=z.string().trim().min(1).max(100);
 const model=z.string().regex(/^[a-z0-9][a-z0-9._-]{0,99}$/i),effort=z.enum(['none','minimal','low','medium','high','xhigh','max','ultra']);
+const objective=z.string().trim().min(1).max(12000);
+const goalSet=z.object({objective:objective.optional(),status:z.enum(['active','paused']).default('paused'),token_budget:z.number().int().positive().optional()});
+type GoalSet=z.infer<typeof goalSet>;
+type NativeControl={action:'goal_get'|'goal_clear'}|{action:'goal_set';objective?:string;status:'active'|'paused';tokenBudget?:number}|{action:'steer'|'queue';expectedTurnId:string;prompt:string};
 const project=z.object({key:z.string().regex(/^[a-z0-9-]{1,64}$/),name:z.string().max(100),path:z.string().regex(/^F:[\\/]/i).max(2048),resourcePath:z.string().regex(/^F:[\\/]/i).max(2048).optional(),available:z.boolean()}).strict();
 export const heartbeatSchema=z.object({
   instanceId:z.string().uuid(),authMode:z.literal('chatgpt'),dispatchReady:z.boolean().optional(),version:z.string().max(40),model:z.string().max(100).optional(),reasoning_effort:z.string().max(20).optional(),projects:z.array(project),browser_context:browserContextSchema.optional(),
-  runtimeRoot:z.string().max(2048).optional(),sourceSha:z.string().regex(/^[a-f0-9]{40}$/).nullable().optional(),
+  nativeControls:z.boolean().optional(),runtimeRoot:z.string().max(2048).optional(),sourceSha:z.string().regex(/^[a-f0-9]{40}$/).nullable().optional(),
 // Legacy heartbeat extras are ignored, never interpreted as scheduling policy.
 }).strip();
 export type Worker=z.infer<typeof heartbeatSchema>&{at:number};
@@ -73,6 +77,10 @@ export class CodexRelay {
   constructor(readonly store:RelayStore,readonly clock=()=>Date.now()) {}
   private owner(uid:string) {if(uid!==OWNER)throw Error('Account is not authorized.');}
   private ready(worker:Worker|undefined) {if(!worker||worker.authMode!=='chatgpt'||worker.dispatchReady===false||this.clock()-worker.at>60000)throw Error('Local Codex is unavailable. The PC must be awake, online and signed in to ChatGPT. Nothing was queued.');return worker;}
+  private controlReady(worker:{version:string;nativeControls?:boolean}) {
+    const [major,minor,patch]=worker.version.split('.').map(Number);
+    return worker.nativeControls===true&&(major>0||minor>5||minor===5&&patch>=1);
+  }
   private target(worker:Worker,projectKey:string) {const target=worker.projects.find(item=>item.key===projectKey&&item.available);if(!target)throw Error('Choose an available key from list_projects.');normalizedPath(target.path);normalizedPath(target.resourcePath||target.path);return target;}
   private public(job:Job) {
     const snapshot={...(job.snapshot||{})};
@@ -86,7 +94,7 @@ export class CodexRelay {
   }
   async capabilities(uid:string) {this.owner(uid);return transportCapabilities(await this.store.worker(uid),this.clock());}
   async status(uid:string) {this.owner(uid);const worker=await this.store.worker(uid);return {version:HOST_VERSION,...transportCapabilities(worker,this.clock()),model:worker?.model||null,reasoning_effort:worker?.reasoning_effort||null,runtimeRoot:worker?.runtimeRoot||null,sourceSha:worker?.sourceSha||null,authMode:worker?.authMode||'unavailable',lastSeenAt:worker?new Date(worker.at).toISOString():null,openaiApiKeyRequired:false};}
-  async projects(uid:string) {this.owner(uid);const worker=this.ready(await this.store.worker(uid));return {projects:worker.projects,notice:'Start creates a fresh native session. Select a native thread explicitly only for authorized continuation in this project and mode.'};}
+  async projects(uid:string) {this.owner(uid);const worker=this.ready(await this.store.worker(uid));return {projects:worker.projects,notice:'Select the authorized project. Continue the existing native thread for the same outcome.'};}
   async list(uid:string,args:{project?:string;query?:string;limit:number}) {this.owner(uid);const jobs=(await this.store.list(uid)).filter(job=>!job.command&&(!args.project||job.project===args.project)&&(!args.query||[job.title,job.workKey,job.id].some(value=>value?.toLowerCase().includes(args.query!.toLowerCase()))));
     return {tasks:jobs.slice(0,args.limit).map(job=>({id:job.id,title:job.title||'Historical task',project:job.project,mode:job.mode,generation:job.generation,status:this.public(job).status,storedStatus:job.status,thread_id:job.threadId||job.snapshot?.thread_id||null,updatedAt:new Date(job.updatedAt).toISOString()})),has_more:jobs.length>args.limit,coverage:'most-recent-100-jobs',notice:'Historical records are preserved. This list does not resume or cancel them.'};}
   async start(uid:string,args:Start) {this.owner(uid);const selectedModel=args.model||'gpt-6.2-sol',selectedEffort=args.reasoning_effort||'xhigh',jobId=digest(`${uid}:${args.request_key}`).slice(0,32),inputHash=digest(JSON.stringify({...args,model:selectedModel,reasoning_effort:selectedEffort}));
@@ -102,6 +110,34 @@ export class CodexRelay {
       const host=this.ready(worker);if(!supportsTransport(host.version))throw Error('Upgrade the PC helper to 0.5.0 before submitting a history read.');
       const projectKey=typeof command.args.project==='string'?command.args.project:host.projects.find(item=>item.available)?.key;if(!projectKey)throw Error('No available project.');const target=this.target(host,projectKey),at=this.clock(),scoped=command.action==='list'?{...command,args:{...command.args,project:projectKey}}:command,job:Job={id:jobId,project:projectKey,projectPath:target.path,resourcePath:target.resourcePath||target.path,mode:'inspect',prompt:'',inputHash,command:scoped,generation:1,status:'queued',createdAt:at,updatedAt:at,expiresAt:null,history:[],responses:[],transportVersion:HOST_VERSION};return {job,result:this.public(job)};
     });}
+  async nativeControl(uid:string,sourceId:string,requestKey:string,control:NativeControl) {
+    this.owner(uid);
+    const jobId=digest(`${uid}:native-control:${requestKey}`).slice(0,32);
+    const inputHash=digest(JSON.stringify({sourceId,control}));
+    const source=await this.store.read(uid,sourceId);
+    return this.store.update(uid,jobId,(old,worker)=>{
+      if(old){
+        if(old.inputHash!==inputHash)throw Error('request_key already identifies another native control.');
+        return {job:old,result:this.public(old)};
+      }
+      if(!source||source.command||source.transportVersion!==HOST_VERSION)throw Error('Select the bridge task that owns this native thread.');
+      const host=this.ready(worker);
+      if(!this.controlReady(host))throw Error('A helper with Codex 0.169.1+ native controls is required. Nothing was queued.');
+      const recorded=source.snapshot?.native_thread_id;
+      if(typeof recorded!=='string'||!source.snapshot?.execution_policy)throw Error('Wait for native thread and execution policy evidence on this task.');
+      const nativeThreadId=threadId.parse(recorded);
+      const target=this.target(host,source.project);
+      if(!source.projectPath||normalizedPath(source.projectPath)!==normalizedPath(target.path))throw Error('The task project path changed.');
+      if('expectedTurnId' in control&&source.snapshot?.active_turn_id!==control.expectedTurnId)throw Error('Read the active native turn on the selected task before following up.');
+      if(control.action==='goal_set'&&control.status==='active'&&(!source.snapshot?.native_controls||!source.snapshot?.native_turn_id||!['running','waiting_for_user'].includes(source.status)))throw Error('Continue the authorized outcome before activating its Goal.');
+      const at=this.clock();
+      const command={action:'native_control',args:{source_id:source.id,generation:source.generation,thread_id:nativeThreadId,project:source.project,mode:source.mode,created_at:at,control}};
+      const job:Job={id:jobId,project:source.project,projectPath:target.path,resourcePath:target.resourcePath||target.path,
+        mode:source.mode,prompt:'',inputHash,command,generation:1,status:'queued',createdAt:at,updatedAt:at,expiresAt:null,
+        history:[],responses:[],transportVersion:HOST_VERSION,continuation_of:source.id,threadId:nativeThreadId};
+      return {job,result:this.public(job)};
+    });
+  }
   async get(uid:string,jobId:string) {this.owner(uid);const job=await this.store.read(uid,jobId);if(!job)throw Error('Unknown task.');return this.public(job);}
   async wait(uid:string,jobId:string,seconds:number,signal?:AbortSignal) {this.owner(uid);signal?.throwIfAborted();if(seconds<=0)return this.get(uid,jobId);
     return new Promise<ReturnType<CodexRelay['public']>>((resolve,reject)=>{
@@ -123,14 +159,14 @@ export class CodexRelay {
       return {job,result:this.public(job)};
     });
   }
-  async cancel(uid:string,jobId:string) {this.owner(uid);return this.store.update(uid,jobId,job=>{if(!job)throw Error('Unknown task.');if(!terminal.includes(job.status)&&!job.cancelRequested){job.cancelRequested=true;job.updatedAt=this.clock();if(job.status==='queued'&&!job.delivery&&job.transportVersion===HOST_VERSION){job.status='interrupted';job.snapshot={status:'interrupted',native_delivery_absent:true,error:'Owner cancelled before dispatch.'};}}return {job,result:this.public(job)};});}
+  async cancel(uid:string,jobId:string) {this.owner(uid);return this.store.update(uid,jobId,job=>{if(!job)throw Error('Unknown task.');if(job.command?.action==='native_control')throw Error('Native controls have one delivery attempt. Observe the operation and use only explicit native controls to change its effects.');if(!terminal.includes(job.status)&&!job.cancelRequested){job.cancelRequested=true;job.updatedAt=this.clock();if(job.status==='queued'&&!job.delivery&&job.transportVersion===HOST_VERSION){job.status='interrupted';job.snapshot={status:'interrupted',native_delivery_absent:true,error:'Owner cancelled before dispatch.'};}}return {job,result:this.public(job)};});}
   async respond(uid:string,args:{task_id:string;request_id:string;decision?:'approve'|'decline';answers?:Record<string,string[]>}) {this.owner(uid);return this.store.update(uid,args.task_id,job=>{
     if(!job)throw Error('Unknown task.');const pending=job.snapshot?.pending as {id:string;kind:string;details?:{questions?:{id:string}[]}}[]|undefined,request=pending?.find(item=>item.id===args.request_id);if(!request||job.status!=='waiting_for_user')throw Error('No matching active request.');
     if(request.kind==='approval'&&(!args.decision||args.answers))throw Error('Approval requires the human approve/decline decision.');if(request.kind==='question'&&(!args.answers||args.decision||(request.details?.questions||[]).some(item=>!args.answers?.[item.id]?.length)))throw Error('Answer the displayed questions.');
     job.responses||=[];const previous=job.responses.find(item=>item.request_id===args.request_id);if(previous&&!isDeepStrictEqual(previous,args))throw Error('This request already has a different answer.');if(!previous){job.responses.push(args);job.updatedAt=this.clock();}return {job,result:{task_id:job.id,accepted:true}};
   });}
   async recordOutcome(uid:string,args:{task_id:string;generation:number;outcome:'accepted'|'needs_rework'|'abandoned'}) {this.owner(uid);return this.store.update(uid,args.task_id,job=>{
-    if(!job||job.generation!==args.generation)throw Error('Retrieve the current task generation before recording the human verdict.');if(!terminal.includes(this.public(job).status))throw Error('Record a human verdict only after the native task is terminal.');
+    if(!job||job.command||job.generation!==args.generation)throw Error('Retrieve the current task generation before recording the human verdict.');if(!terminal.includes(this.public(job).status))throw Error('Record a human verdict only after the native task is terminal.');
     if(job.ownerOutcome!==args.outcome||job.outcomeGeneration!==job.generation){job.ownerOutcome=args.outcome;job.outcomeGeneration=job.generation;job.outcomeAt=this.clock();job.outcomesHistory=[...(job.outcomesHistory||[]),{generation:job.generation,outcome:args.outcome,at:job.outcomeAt}];}return {job,result:{task_id:job.id,generation:job.generation,ownerOutcome:job.ownerOutcome,outcomeAt:new Date(job.outcomeAt!).toISOString()}};
   });}
   async reviewData(uid:string,input:unknown={}) {this.owner(uid);const args=z.object({task_ids:z.array(id).optional()}).strict().parse(input),ids=args.task_ids?[...new Set(args.task_ids)]:null,found=ids?await this.store.readMany(uid,ids):await this.store.list(uid);
@@ -143,7 +179,8 @@ export class CodexRelay {
   private async dispatch(uid:string,heartbeat:z.infer<typeof heartbeatSchema>) {
     if(!supportsTransport(heartbeat.version)||heartbeat.dispatchReady===false)return [];const jobs:Record<string,unknown>[]=[];
     for(const jobId of await this.store.queued(uid)){const delivered=await this.store.update<Record<string,unknown>|null>(uid,jobId,(job,worker)=>{
-      if(!job)throw Error('Unknown task.');if(job.transportVersion!==HOST_VERSION||job.status!=='queued'||job.delivery||job.cancelRequested)return {job,result:null};if(job.command&&!['list','read'].includes(job.command.action))return {job,result:null};
+      if(!job)throw Error('Unknown task.');if(job.transportVersion!==HOST_VERSION||job.status!=='queued'||job.delivery||job.cancelRequested)return {job,result:null};if(job.command&&!['list','read','native_control'].includes(job.command.action))return {job,result:null};
+      if(job.command?.action==='native_control'&&!this.controlReady(heartbeat))return {job,result:null};
       let target:z.infer<typeof project>;
       try{target=this.target({...heartbeat,at:this.clock()},job.project);if(job.projectPath&&normalizedPath(job.projectPath)!==normalizedPath(target.path)||job.resourcePath&&normalizedPath(job.resourcePath)!==normalizedPath(target.resourcePath||target.path))throw Error('The selected project path changed before dispatch.');}
       catch(error){job.status='failed';job.updatedAt=this.clock();job.snapshot={status:'failed',native_delivery_absent:true,error:(error as Error).message};return {job,result:null};}
@@ -157,7 +194,7 @@ export class CodexRelay {
     if(!job||job.generation!==body.generation||body.nativeGeneration!==undefined&&body.nativeGeneration!==job.generation)throw Error('request_mismatch');const expected=job.delivery?.id||job.lease,token=body.deliveryId||body.lease;if(expected&&token!==expected)throw Error('request_mismatch');if(job.transportVersion===HOST_VERSION&&!job.delivery)throw Error('Request was never dispatched.');
     const thread=body.snapshot.native_thread_id||body.snapshot.thread_id,turn=body.snapshot.native_turn_id;if(typeof thread==='string'&&job.threadId&&thread!==job.threadId)throw Error('Native thread does not match this request.');if(typeof turn==='string'&&typeof job.snapshot?.native_turn_id==='string'&&turn!==job.snapshot.native_turn_id)throw Error('Native turn does not match this generation.');
     const policy=body.snapshot.execution_policy as {mode?:string}|undefined;if(policy&&policy.mode!==job.mode)throw Error('Native execution mode does not match this request.');
-    if(job.snapshot?.native_terminal_observed===true&&body.snapshot.native_terminal_observed===true&&job.status!==body.snapshot.status)throw Error('Native terminal observations disagree.');
+    if(job.snapshot?.native_terminal_observed===true&&body.snapshot.native_terminal_observed===true&&(job.status!==body.snapshot.status||job.snapshot.native_terminal_turn_id!==body.snapshot.native_terminal_turn_id))throw Error('Native terminal observations disagree.');
     if(terminal.includes(job.status)&&(!terminal.includes(String(body.snapshot.status))||job.snapshot?.native_terminal_observed===true&&body.snapshot.native_terminal_observed!==true))return {job,result:{accepted:true,ignored:'terminal-generation'}};
     if(typeof thread==='string')job.threadId=thread;
     // A report-only observer of a retired path cannot erase its original receipt.
@@ -172,23 +209,38 @@ export const workerSyncSchema=z.object({heartbeat:heartbeatSchema,active:z.array
 export const workerControlSchema=z.object({active:z.array(activeClaim).default([])}).strict();
 const executionPolicySchema=z.object({version:z.union([z.literal(1),z.literal(2)]),mode:z.enum(['inspect','edit']),sandboxType:z.enum(['readOnly','dangerFullAccess']),approvalPolicy:z.literal('never'),instructionRefresh:z.enum(['thread-start','history-injection']),verifiedAt:z.string().datetime({offset:true})}).strict().refine(value=>value.sandboxType===(value.mode==='edit'?'dangerFullAccess':'readOnly'),'Execution policy mode and sandbox disagree');
 export const workerReportSchema=z.object({id,generation:z.number().int().positive(),nativeGeneration:z.number().int().positive().optional(),lease:z.string().uuid().optional(),deliveryId:z.string().uuid().optional(),snapshot:z.object({
-  status:z.enum(['running','waiting_for_user','completed','failed','interrupted','unknown']),final:z.string().max(48000).nullable().optional(),result:z.record(z.string(),z.unknown()).refine(value=>JSON.stringify(value).length<=24000,'History result too large').optional(),thread_id:threadId.optional(),native_thread_id:threadId.optional(),native_turn_id:threadId.optional(),native_terminal_observed:z.literal(true).optional(),native_delivery_absent:z.literal(true).optional(),
+  status:z.enum(['running','waiting_for_user','completed','failed','interrupted','unknown']),final:z.string().max(48000).nullable().optional(),result:z.record(z.string(),z.unknown()).refine(value=>JSON.stringify(value).length<=24000,'History result too large').optional(),thread_id:threadId.optional(),native_thread_id:threadId.optional(),native_turn_id:threadId.optional(),native_terminal_turn_id:threadId.optional(),native_terminal_observed:z.literal(true).optional(),native_delivery_absent:z.literal(true).optional(),
   error:z.string().max(2000).nullable().optional(),control_error:z.string().max(2000).nullable().optional(),cancellation_state:z.enum(['interrupt_requested','interrupt_delivery_unknown','terminal_observed','interrupt_acknowledged','interrupt_rejected','cancelled_before_dispatch','waiting_for_native_turn']).nullable().optional(),messages:z.array(z.object({text:z.string().max(48000),phase:z.string().nullable().optional()}).strict()).max(10).optional(),pending:z.array(z.object({id:z.string().max(200),kind:z.enum(['approval','question']),method:z.string().max(100),details:z.record(z.string(),z.unknown())}).strict()).optional(),
+  native_controls:z.literal(true).optional(),active_turn_id:threadId.nullable().optional(),
+  goal_status:z.enum(['active','paused','blocked','usageLimited','budgetLimited','complete']).nullable().optional(),
+  observed_turns:z.array(z.object({turn_id:threadId,status:z.enum(['inProgress','completed','failed','interrupted']),client_message_id:z.string().max(64).optional()}).strict()).max(20).optional(),
   model:z.string().max(100).optional(),requested_model:z.string().max(100).nullable().optional(),returned_model:z.string().max(100).nullable().optional(),reasoning_effort:z.string().max(20).optional(),requested_reasoning_effort:z.string().max(20).nullable().optional(),returned_reasoning_effort:z.string().max(20).nullable().optional(),execution_policy:executionPolicySchema.optional(),telemetry:z.record(z.string(),z.unknown()).optional(),chat_routing:z.record(z.string(),z.unknown()).optional(),
-}).strict()}).strict().refine(value=>value.nativeGeneration===undefined||value.nativeGeneration===value.generation,'Generation aliases disagree').refine(value=>!value.deliveryId||!value.lease||value.deliveryId===value.lease,'Delivery aliases disagree').refine(value=>!value.snapshot.native_thread_id||!value.snapshot.thread_id||value.snapshot.native_thread_id===value.snapshot.thread_id,'Native thread aliases disagree').refine(value=>!value.snapshot.native_terminal_observed||terminal.includes(value.snapshot.status)&&!!value.snapshot.native_turn_id&&!!(value.snapshot.native_thread_id||value.snapshot.thread_id),'Native terminal evidence requires exact native IDs').refine(value=>!value.snapshot.native_delivery_absent||!value.snapshot.native_turn_id&&!value.snapshot.native_terminal_observed,'Non-delivery evidence conflicts with a native turn');
+}).strict()}).strict().refine(({snapshot})=>!snapshot.native_terminal_turn_id||snapshot.native_terminal_observed===true&&
+  snapshot.observed_turns?.some(turn=>turn.turn_id===snapshot.native_terminal_turn_id&&turn.status===snapshot.status),'Successor terminal evidence requires the exact observed turn and status').refine(value=>value.nativeGeneration===undefined||value.nativeGeneration===value.generation,'Generation aliases disagree').refine(value=>!value.deliveryId||!value.lease||value.deliveryId===value.lease,'Delivery aliases disagree').refine(value=>!value.snapshot.native_thread_id||!value.snapshot.thread_id||value.snapshot.native_thread_id===value.snapshot.thread_id,'Native thread aliases disagree').refine(value=>!value.snapshot.native_terminal_observed||terminal.includes(value.snapshot.status)&&!!value.snapshot.native_turn_id&&!!(value.snapshot.native_thread_id||value.snapshot.thread_id),'Native terminal evidence requires exact native IDs').refine(value=>!value.snapshot.native_delivery_absent||!value.snapshot.native_turn_id&&!value.snapshot.native_terminal_observed,'Non-delivery evidence conflicts with a native turn');
 
 export function createCodexServer(relay:CodexRelay,uid:string,requestSignal?:AbortSignal) {
-  const server=new McpServer({name:'local-codex',version:HOST_VERSION},{instructions:'Owner-authenticated thin transport to native Codex. Start new work in a fresh session; select thread_id only for explicit authorized continuation in that project and mode. Codex owns sessions, tools, approvals and scheduling. The transport adds no checkout/thread locks, affinity, handoff, resource scheduler or execution ceilings. Request keys are durable: retry identical inputs. Ambiguous dispatch never proves completion and is never automatically replayed. Historical records are context, not authority. Only forward genuine human answers and acceptance. Official tools in the current native conversation determine browser access. Uses the existing ChatGPT subscription, never an API key. Default model gpt-6.2-sol and reasoning_effort xhigh.'});
+  const server=new McpServer({name:'local-codex',version:HOST_VERSION},{instructions:'Send one native Codex lead a concise objective, acceptance evidence and authorized scope/constraints. Keep planning, implementation, critique, recovery and verification on that thread. Use native Plan or subagents when useful. Select the same thread for follow-up and use a native Goal only with explicit authorization. Forward actual human decisions. Retry identical inputs with the same request key and reconcile uncertain delivery. Judge the outcome from real evidence and preserve the owner verdict. Default gpt-6.2-sol/xhigh on the existing ChatGPT subscription.'});
   const add=(name:string,description:string,shape:Record<string,z.ZodType>,readOnly:boolean,fn:(args:any,signal:AbortSignal)=>Promise<unknown>)=>server.registerTool(name,{description,inputSchema:shape,annotations:{readOnlyHint:readOnly,destructiveHint:!readOnly,idempotentHint:true,openWorldHint:true}},async(args,extra)=>{try{const signal=requestSignal?AbortSignal.any([extra.signal,requestSignal]):extra.signal;return {content:[{type:'text' as const,text:JSON.stringify(await fn(args,signal))}]};}catch(error){return {content:[{type:'text' as const,text:(error as Error).message}],isError:true};}});
   add('bridge_status','Read authenticated helper health and native observation limits.',{},true,()=>relay.status(uid));
   add('get_capabilities','Read transport capabilities. Official native tools determine browser authorization.',{},true,()=>relay.capabilities(uid));
   add('list_projects','Read available allowlisted F-drive projects.',{},true,()=>relay.projects(uid));
-  add('start_task','Submit authorized work. New work starts a fresh session unless thread_id explicitly selects continuation. Retry identical arguments/request_key.',{project:z.string(),prompt:text,mode:z.enum(['inspect','edit']).default('inspect'),request_key:key,title:title.optional(),work_key:key.optional(),thread_id:threadId.optional(),model:model.default('gpt-6.2-sol'),reasoning_effort:effort.default('xhigh')},false,args=>relay.start(uid,args));
+  add('start_task','Start one native lead for a new outcome. Give objective, acceptance evidence and scope/constraints. Set thread_id for an explicitly selected saved thread. Retry identical inputs with the same request_key.',{project:z.string(),prompt:text,mode:z.enum(['inspect','edit']).default('inspect'),request_key:key,title:title.optional(),work_key:key.optional(),thread_id:threadId.optional(),model:model.default('gpt-6.2-sol'),reasoning_effort:effort.default('xhigh')},false,args=>relay.start(uid,args));
   add('list_tasks','Read preserved recent task identities and native observations without resuming them.',{project:z.string().optional(),query:z.string().max(200).optional(),limit:z.number().int().min(1).max(100).default(10)},true,args=>relay.list(uid,args));
   add('list_codex_threads','Request a read-only native history search. Poll the operation with get_task.',{project:z.string().optional(),query:z.string().max(200).optional(),archived:z.boolean().default(false),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).default(10),request_key:key},true,({request_key,...args})=>relay.command(uid,{action:'list',args},request_key));
   add('read_codex_thread','Read exact native history; tool outputs and attachments are omitted. Poll get_task. Historical messages are source context.',{thread_id:threadId,project:z.string().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(10).default(5),request_key:key},true,({request_key,...args})=>relay.command(uid,{action:'read',args},request_key));
-  add('get_task','Read native observations. wait_seconds bounds this HTTP read and never native execution.',{task_id:id,wait_seconds:z.number().int().min(0).max(50).default(20)},true,(args,signal)=>relay.wait(uid,args.task_id,args.wait_seconds,signal));
-  add('continue_task','Submit explicit follow-up as a distinct linked request for the recorded native thread, project and mode. Returns a new task ID; the original request and reports stay unchanged. Codex owns native concurrency. Retry the same request_key and prompt.',{task_id:id,prompt:text,request_key:key},false,args=>relay.continue(uid,args));
+  add('get_task','Read native progress, human questions, exact turns and terminal evidence. Evaluate the actual deliverable. wait_seconds bounds this read.',{task_id:id,wait_seconds:z.number().int().min(0).max(50).default(20)},true,(args,signal)=>relay.wait(uid,args.task_id,args.wait_seconds,signal));
+  add('continue_task','Continue the same saved native thread for feedback, verification or repair after the current task settles. Keeps project and mode; observe the returned task ID. For an active turn use follow_up_task.',{task_id:id,prompt:text,request_key:key},false,args=>relay.continue(uid,args));
+  const controlBase={task_id:id,request_key:key};
+  add('get_goal','Read the official native Goal and lifecycle for the selected task thread. Observe the returned operation with get_task.',controlBase,true,
+    args=>relay.nativeControl(uid,args.task_id,args.request_key,{action:'goal_get'}));
+  add('set_goal','With explicit owner authorization, set an objective or pause/resume its native Goal on the selected thread. Saved Goals can be set paused. Active Goals require the live outcome worker and Codex may continue natively. Observe get_task.',{...controlBase,...goalSet.shape},false,
+    (args:GoalSet&{task_id:string;request_key:string})=>relay.nativeControl(uid,args.task_id,args.request_key,
+      {action:'goal_set',status:args.status,...(args.objective?{objective:args.objective}:{}),...(args.token_budget?{tokenBudget:args.token_budget}:{})}));
+  add('clear_goal','Clear the selected native thread Goal on explicit owner instruction. Does not interrupt an active turn. Observe the operation with get_task.',controlBase,false,
+    args=>relay.nativeControl(uid,args.task_id,args.request_key,{action:'goal_clear'}));
+  add('follow_up_task','Send authorized same-outcome input to the exact active_turn_id from get_task. Queue runs when Codex is ready; steer redirects that turn. Observe the operation acknowledgement and the source task for consumption and results. A rejected steer is never queued automatically.',{
+    ...controlBase,expected_turn_id:threadId,delivery:z.enum(['queue','steer']).default('queue'),prompt:objective
+  },false,args=>relay.nativeControl(uid,args.task_id,args.request_key,{action:args.delivery,expectedTurnId:args.expected_turn_id,prompt:args.prompt}));
   add('respond_to_task','Forward the genuine human answer to an exact pending native request.',{task_id:id,request_id:z.string().max(200),decision:z.enum(['approve','decline']).optional(),answers:z.record(z.string(),z.array(z.string().max(4000)).max(10)).optional()},false,args=>relay.respond(uid,args));
   add('record_task_outcome','Record the explicit human verdict for a terminal generation. Completion or silence never establishes acceptance.',{task_id:id,generation:z.number().int().positive(),outcome:z.enum(['accepted','needs_rework','abandoned'])},false,args=>relay.recordOutcome(uid,args));
   add('cancel_task','Forward explicit cancellation for this task. Does not undo edits.',{task_id:id},false,args=>relay.cancel(uid,args.task_id));

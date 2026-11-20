@@ -2,7 +2,7 @@
 
 Owner-authorized 0.5.0 direction, 19 November 2026: authenticated transport -> small Windows helper -> official native Codex. Keep the transport responsible for delivery and observation. Native Codex owns planning, useful native subagents, implementation or investigation, integration, Git, critique and practical verification. The current human request sets scope; delegation does not broaden it.
 
-- Start new work in a fresh native session. Continue only when the caller explicitly selects an existing task or native thread. Preserve history and actual running executions.
+- Use one native lead for a substantive outcome. Continue the selected thread through planning, critique, recovery and verification. Start a fresh thread for a distinct outcome. Preserve history and active native executions.
 - Remove the former desktop handoff, module-parent affinity/rotation, checkout/thread/continuation locks, writer/foreground reservations, artificial capacity/session/time limits, maintenance fences and resource scheduler. Let native Codex report its own actual constraints and errors. Do not invent replacement caps or claim unlimited native/account capacity.
 - Preserve exact request identity. Identical retries return the existing operation; changed inputs cannot reuse its key. Ambiguous native dispatch is never replayed under a new identity. Reconcile exact task/thread/turn evidence and disclose uncertainty.
 - Request `gpt-6.2-sol/xhigh` for new work and verify the actual native model/effort. A saved setting or source default is not execution proof. Preserve already-running work and report its real selection.

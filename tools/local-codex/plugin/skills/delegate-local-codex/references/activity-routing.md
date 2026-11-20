@@ -10,7 +10,7 @@ Use the least costly available route that can deliver the owner's requested qual
 | Browser/desktop interaction | Official tools available in the executing turn |
 | Device, audio or experiential acceptance | The actual intended environment; missing access leaves the gate open |
 
-Give native Codex the outcome, constraints, exact source checkout and required evidence. Native Codex owns its plan, useful independent subagents, integration, critique and delivery. New work starts fresh; explicit task/thread continuation remains available. Do not enforce module parents or prescribe a shell-by-shell execution script.
+Give native Codex the outcome, constraints, exact source checkout and required evidence. Native Codex owns its plan, useful independent subagents, integration, critique and delivery. Use the same selected native thread for the same outcome, including implementation after planning and repair after review. Do not enforce module parents or prescribe a shell-by-shell execution script.
 
 ## Existing allowance observations
 

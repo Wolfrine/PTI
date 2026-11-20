@@ -4,7 +4,7 @@ import path from 'node:path';
 import {artifactDirectory,ensureArtifactLink,storageEnvironment} from './src/storage.mjs';
 Object.assign(process.env,storageEnvironment());
 if(process.platform==='win32'){
-  ensureArtifactLink(path.resolve('dist'),artifactDirectory('Builds','PTI','local-codex','dist'));
+  ensureArtifactLink(path.resolve('dist'),artifactDirectory('Builds','PTI','local-codex',process.env.LOCAL_CODEX_BUILD_SLOT || 'dist'));
 }
 const built=await build({entryPoints:['src/server.mjs','src/worker.mjs','src/relay.mjs','src/setup.mjs','src/pair-existing.mjs','src/review-usage.mjs'],outdir:'dist',bundle:true,platform:'node',format:'esm',outExtension:{'.js':'.mjs'},target:'node20',metafile:true,banner:{js:"import {createRequire as __createRequire} from 'node:module'; const require=__createRequire(import.meta.url);"}});
 const directories=new Set(Object.keys(built.metafile.inputs).map(file=>file.replaceAll('\\','/').match(/^((?:.*\/)?node_modules\/(?:@[^/]+\/)?[^/]+)(?:\/|$)/)?.[1]).filter(Boolean));

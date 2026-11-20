@@ -48,7 +48,7 @@ try{
  }
  const cb=db.batch();cb.set(codexSession,{expiresAt:now()+300,revoked:false});cb.set(codexAccess,{uid:user.uid,email:user.email,authenticatedAt:now(),clientId:'local-codex-deployment-check',scopes:['local-codex:jobs'],sessionId:codexSessionId,resource:origin+'/local-codex/mcp',expiresAt:now()+300});await cb.commit();
  codexClient=new Client({name:'local-codex-live-acceptance',version:'1'});await codexClient.connect(new StreamableHTTPClientTransport(new URL(origin+'/local-codex/mcp'),{requestInit:{headers:{Authorization:'Bearer '+codexToken}}}));
- const codexTools=(await codexClient.listTools()).tools;const codexNames=codexTools.map(t=>t.name).sort();assert.deepEqual(codexNames,['bridge_status','cancel_task','continue_task','get_capabilities','get_task','list_codex_threads','list_projects','list_tasks','read_codex_thread','record_task_outcome','respond_to_task','start_task']);
+ const codexTools=(await codexClient.listTools()).tools;const codexNames=codexTools.map(t=>t.name).sort();assert.deepEqual(codexNames,['bridge_status','cancel_task','clear_goal','continue_task','follow_up_task','get_capabilities','get_goal','get_task','list_codex_threads','list_projects','list_tasks','read_codex_thread','record_task_outcome','respond_to_task','set_goal','start_task']);
  const health=await codexClient.callTool({name:'bridge_status',arguments:{}});assert(!health.isError);const bridge=JSON.parse(health.content.find(c=>c.type==='text').text);assert.equal(bridge.openaiApiKeyRequired,false);assert.equal(bridge.version,'0.5.0');
  const schema=codexTools.find(t=>t.name==='start_task').inputSchema;for(const field of ['model','reasoning_effort','thread_id'])assert(field in schema.properties,`start_task.${field}`);
  for(const field of ['module_key','chat_policy','rotation_reason','handoff','strategy','purpose'])assert(!(field in schema.properties),`retired start_task.${field}`);
@@ -56,5 +56,5 @@ try{
  console.log('PASS: deployed thin transport schema',JSON.stringify({bridgeVersion:bridge.version,workerVersion:bridge.workerVersion,online:bridge.online,model:bridge.model,reasoning_effort:bridge.reasoning_effort}));
  assert.equal((await fetch(origin+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+codexToken}})).status,403);
  assert.equal((await fetch(origin+'/local-codex/mcp',{method:'POST',headers:{Authorization:'Bearer '+token}})).status,403);
- console.log('PASS: Local Codex has twelve authenticated request/history tools, and PTI/Codex tokens cannot cross resources. No local job was submitted.');
+ console.log('PASS: Local Codex has sixteen authenticated request, history and native control tools, and PTI/Codex tokens cannot cross resources. No local job was submitted.');
 }finally{await client?.close().catch(()=>{});await codexClient?.close().catch(()=>{});const batch=db.batch();for(const ref of [accessRef,sessionRef,codexAccess,codexSession])batch.delete(ref);await batch.commit();}

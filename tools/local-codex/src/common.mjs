@@ -6,7 +6,7 @@ import {modelSelection} from './model-policy.mjs';
 import {browserContextPreflight} from './browser-context.mjs';
 import {storageEnvironment} from './storage.mjs';
 
-export const VERSION = '0.5.0';
+export const VERSION = '0.5.1';
 export const DEFAULT_HOME = 'H:/LocalCodexBridge';
 export const H_DRIVE_HOME = 'H:/LocalCodexBridge';
 export const LEGACY_HOME = 'F:/Workspace/Support/LocalCodexBridge';
@@ -66,6 +66,10 @@ export function task(id) { return read(path.join(taskDir(id), 'task.json')); }
 export function alive(pid) {
   if (!Number.isInteger(pid)) return false;
   try { process.kill(pid, 0); return true; } catch { return false; }
+}
+export function supportsNativeControls(version) {
+  const [, major, minor, patch]=/^codex-cli (\d+)\.(\d+)\.(\d+)(?:\s|$)/.exec(version)||[];
+  return Number(major)>0||Number(minor)>169||Number(minor)===169&&Number(patch)>=1;
 }
 export function runtime() {
   const configured = config().codexPath;

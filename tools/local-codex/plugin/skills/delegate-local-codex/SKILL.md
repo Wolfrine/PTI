@@ -1,29 +1,26 @@
 ---
 name: delegate-local-codex
-description: Use this PC's native Codex for authorized project inspection, implementation and explicit saved-session continuation through the private Local Codex transport.
+description: Give one native Codex lead an authorized local outcome and continue that thread through implementation, review, recovery and verification.
 ---
 
 # Local Codex
 
-Use the existing private connection as authenticated transport to the PC helper and official native Codex. Keep discussion in the requesting chat. Native Codex owns planning, useful subagents, implementation or investigation, integration, Git, critique and practical verification within the owner's scope.
+Use the private connection when work or verification needs this PC. Check bridge_status and select the authorized checkout with list_projects. Find the existing task or thread for the same outcome before starting fresh.
 
-## Submit and observe
+Give the lead one compact contract:
 
-1. Use ChatGPT directly when its available tools/context can deliver the requested result and evidence. Use native Codex for PC-only work or when local execution materially helps. Read [activity routing](references/activity-routing.md) only when the route, allowance or model decision needs it.
-2. Read `bridge_status` and `list_projects` to establish actual availability and the exact authorized source checkout. Inspect existing task evidence when an earlier dispatch may still be unresolved. Do not infer access, completion or installation from a capability label.
-3. Start new work with `start_task` in a fresh native session, the authorized `inspect` or `edit` mode and stable `request_key`. Give the lead a compact outcome contract: goal, quality/acceptance evidence, source checkout, essential context, constraints and any owner-supplied deadline/stop condition. Native Codex chooses its execution plan. Use `continue_task` only for explicit continuation of a selected task and follow its returned new task ID; the original request remains unchanged. Set `start_task.thread_id` only when the caller explicitly selects that saved native history. Optional `work_key` is descriptive and never chooses a parent or changes exact retry identity.
-4. Request `gpt-6.2-sol/xhigh` for new work. Verify live catalog support and actual native execution model/effort; a configuration field or status heartbeat is not execution proof. Report mismatch or unavailable evidence, preserving already-running work. Never silently substitute a model.
-5. Observe the exact task through `get_task` using waits supported by the current schema. A timeout does not stop the native task. Forward meaningful progress, actual errors and genuine human decisions while this ChatGPT turn is active. For `waiting_for_user`, use `respond_to_task` with the owner's actual answer. Treat `cancel_task` as a request until terminal evidence confirms the outcome.
-6. Judge delivery from actual output, runtime evidence and the native terminal result. Use read-only `list_codex_threads`/`read_codex_thread` when exact history is needed, respecting pagination and omitted artifacts. Record `accepted`, `needs_rework` or `abandoned` through `record_task_outcome` only for explicit owner feedback on the correct generation.
+- **Objective** — what the owner wants to be true.
+- **Acceptance** — what actual artifact, behavior or evidence will show it.
+- **Scope and constraints** — checkout, inspect/edit authority, relevant source, permissions and explicit stop conditions.
 
-## Boundaries
+Native Codex owns the plan, useful independent subagents, implementation, integration, Git, critique, practical verification and correction. Use native Plan when helpful. Keep these phases with the same lead. Supervise consequential milestones and relay real owner decisions. Let Codex recover from routine problems within scope and continue independent work when a genuine dependency is blocked.
 
-- The transport/helper adds no desktop handoff, module-parent affinity or rotation, checkout/thread/continuation locks, writer/foreground reservations, artificial capacity/session/time limits, maintenance fence or resource scheduler. Native Codex/account constraints remain real. Report actual native errors directly.
-- Identical retries resolve to the same request. Different inputs cannot reuse its key. When dispatch may have happened, keep the outcome unresolved and reconcile its exact evidence; never replay under a new key. See [lifecycle and recovery](references/relay-lifecycle.md).
-- Inspect stays read-only. Edit authority comes from the current request. Preserve unrelated dirty work, credentials, native history and running executions. No publication, deployment, messages or unrelated work beyond the owner's authorization. A worker must never recursively call the bridge.
-- Browser/desktop work uses official tools available in the executing turn and normal permission checks. Missing tools or actual denial leave an explicit gap; continue independent work. No automatic desktop-chat transfer, provider installation, browser identity copying or raw CDP/Playwright. Read [browser control](references/browser-control.md) for that work.
-- Follow the owner's practical-verification rule: no generated tests, fixtures, mock/QA harnesses or automatic e2e without explicit current authorization. Use real output/behavior and minimal useful syntax/build checks; preserve required protections and minimize CI.
-- Keep source/Git on F:. Operational state, releases, caches, builds, temporary files, reports and backups belong on H:. Preserve platform-required application state. Leave the independent quota collector and its schedule untouched; never consume a reset or activate a Goal just to keep working.
-- Worker, host and plugin source, publication and live activation are separate. Use the owning repository's existing pipeline and external one-shot runbook, preserving active native executions. Update the existing private plugin; preserve its identity, audience, App binding and `.app.json` metadata exactly.
+- Start a distinct outcome with start_task. Use continue_task for feedback, verification or repair in the same saved thread. If starting from an explicitly selected saved thread ID, pass it to start_task. An optional work_key describes work without choosing the thread.
+- During execution, use follow_up_task on the observed active_turn_id. Queue ordinary follow-up for Codex to consume when ready. Steer only to correct the current turn. Observe the operation acknowledgement and the source task's turn evidence.
+- With explicit owner authorization, use a native Goal when the outcome needs durable, iterative completion. Use set_goal, get_goal and clear_goal on the selected task. Codex owns scheduling and lifecycle. An active Goal can continue after a turn. A saved Goal can be set paused and activated when the authorized outcome is live. Do not activate Goals on unrelated threads or just to keep working.
+- Request gpt-6.2-sol/xhigh for new work and verify returned model and effort. Use get_task for meaningful progress, exact native turns, genuine questions and terminal evidence. Forward actual owner answers with respond_to_task.
+- Evaluate the deliverable against acceptance. A task or control receipt shows native execution or acknowledgement. Product-quality evidence comes from the actual result. Record accepted, needs_rework or abandoned only from the owner's explicit verdict on the correct task generation.
 
-The PC must be awake, online and signed in. Native execution uses the existing ChatGPT subscription; no OpenAI API key is required. Missing tools/access remain stated limitations, never a promise of an automatic later handoff or wake-up.
+Preserve exact request identity. Retry identical inputs with the same request_key and reconcile uncertain delivery before any new request. Preserve current authorization, private data, history and active work. Inspect stays read-only. Never recursively call the bridge. Browser work requires its official tools and permission checks. Keep source on F: and runtime/artifacts on H:.
+
+Use [lifecycle and recovery](references/relay-lifecycle.md) for a protocol error or release, [browser control](references/browser-control.md) for browser work and [activity routing](references/activity-routing.md) when model or allowance evidence matters.

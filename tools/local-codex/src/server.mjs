@@ -5,6 +5,7 @@ import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {z} from 'zod';
 import {VERSION,config,project,digest,read,write,taskDir,task,view,health,launch} from './common.mjs';
+import {controlDeliverySchema,deliverNativeControl} from './native-controls.mjs';
 import {history} from './codex-history.mjs';
 
 const worker=path.join(path.dirname(fileURLToPath(import.meta.url)),'worker.mjs');
@@ -45,6 +46,7 @@ register('get_task','Observe progress, human questions and actual terminal recei
 register('codex_history','Read explicitly selected native history without inference. No desktop handoff or remote pairing is supported.',{action:z.enum(['list','read']),args:z.object({project:z.string().optional(),thread_id:z.string().uuid().optional(),query:z.string().max(200).optional(),archived:z.boolean().optional(),cursor:z.string().max(4000).optional(),limit:z.number().int().min(1).max(20).optional()}).strict()},true,({action,args})=>{
   if(action==='read'&&!args.thread_id)throw Error('A selected native thread ID is required.');return history(action,args);
 });
+register('native_control','Deliver an explicitly scoped native Goal operation or exact-turn follow-up once.',controlDeliverySchema,false,deliverNativeControl);
 register('respond_to_task','Forward the human answer to a pending question or explicit approval decision.',{task_id:id,request_id:z.string(),decision:z.enum(['approve','decline']).optional(),answers:z.record(z.string(),z.array(z.string())).optional()},false,args=>{
   const job=view(task(args.task_id)),pending=job.pending.find(item=>item.id===args.request_id),responseFile=path.join(taskDir(job.id),`response-${digest(args.request_id)}.json`);
   if(fs.existsSync(responseFile)){const previous=read(responseFile);if(previous.decision!==args.decision||JSON.stringify(previous.answers)!==JSON.stringify(args.answers))throw Error('This human request already has a different response.');return {task_id:job.id,accepted:true};}

@@ -8,11 +8,24 @@ import {modelSelection,requireModel,verifyModel} from './model-policy.mjs';
 import {harnessPolicy} from './harness-policy.mjs';
 import {createTelemetry,archiveRun} from './telemetry.mjs';
 import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execution-policy.mjs';
+import {attachNativeControls} from './native-controls.mjs';
 import {browserContextPreflight,browserContextInstructions} from './browser-context.mjs';
 
 const id=process.argv[2],directory=taskDir(id),file=path.join(directory,'task.json');
 let job=task(id),proc,timer,closed=false,sequence=0,cancelling=false,telemetry;
-const requests=new Map(),waiting=new Map();
+const requests=new Map(),waiting=new Map(),terminalTurns=new Map();
+const nativeControls=attachNativeControls({directory,job,rpc,save,settle});
+function settle(){
+  if(!terminalTurns.has(job.turnId)||nativeControls.observing())return;
+  const receipts=[...terminalTurns.values()];
+  const outcome=receipts.findLast(turn=>turn.status!=='completed')||receipts.at(-1);
+  const messages=job.messages.filter(item=>item.turnId===outcome.id);
+  if(outcome.id!==job.turnId&&!job.observedTurns?.some(turn=>turn.turn_id===outcome.id)){
+    job.observedTurns=[{turn_id:outcome.id,status:outcome.status},...(job.observedTurns||[]).slice(-19)];
+  }
+  job.final=messages.findLast(item=>item.phase==='final_answer')?.text||messages.at(-1)?.text||'';
+  finish(outcome.status,outcome.error?.message,{source:'turn/completed',threadId:job.threadId,turnId:outcome.id,status:outcome.status});
+}
 function save(){job.updatedAt=new Date().toISOString();if(telemetry)job.telemetry=telemetry.snapshot();write(file,job);}
 function send(message){if(!proc?.stdin.writable)throw Error('Native Codex connection is unavailable.');proc.stdin.write(JSON.stringify(message)+'\n');}
 function rpc(method,params){return new Promise((resolve,reject)=>{const requestId=++sequence;requests.set(requestId,{resolve,reject});try{send({id:requestId,method,params});}catch(error){requests.delete(requestId);reject(error);}});}
@@ -56,15 +69,15 @@ function notification(message){
   }
   if(p.threadId&&p.threadId!==job.threadId)return;
   if(message.method==='model/rerouted'){job.returnedModel=p.toModel||job.returnedModel;save();}
-  if(message.method==='turn/started'&&job.nativeTurnDispatchAttempted===true&&p.threadId===job.threadId&&p.turn?.id){job.turnId=p.turn.id;save();}
+  nativeControls.event(message);
   if(message.method==='item/completed'&&p.item?.type==='agentMessage'){
     const item={id:p.item.id,phase:p.item.phase||null,text:p.item.text,turnId:p.turnId};
     if(!job.messages.some(existing=>existing.id===item.id))job.messages.push(item);
     if(item.phase==='final_answer')job.final=item.text;save();
   }
-  if(message.method==='turn/completed'&&p.threadId===job.threadId&&job.turnId===p.turn?.id&&['completed','failed','interrupted'].includes(p.turn.status)){
-    if(!job.final&&p.turn.status==='completed')job.final=job.messages.filter(item=>item.turnId===p.turn.id).at(-1)?.text||'';
-    finish(p.turn.status,p.turn.error?.message,{source:'turn/completed',threadId:p.threadId,turnId:p.turn.id,status:p.turn.status});
+  if(message.method==='turn/completed'&&p.threadId===job.threadId&&job.nativeTurnDispatchAttempted&&['completed','failed','interrupted'].includes(p.turn?.status)){
+    const {id,status,error}=p.turn;
+    terminalTurns.set(id,{id,status,error});settle();
   }
   if(message.method==='error'&&!p.willRetry){job.error=p.error?.message||'Codex reported an error.';save();}
   if(message.method==='thread/tokenUsage/updated')save();
@@ -74,10 +87,11 @@ async function controls(){
   try{
     if(fs.existsSync(path.join(directory,'cancel.json'))&&!cancelling){
       cancelling=true;
-      if(job.turnId){
+      if(job.activeTurnId||job.turnId&&!terminalTurns.has(job.turnId)){
+        const turnId=job.activeTurnId||job.turnId;
         job.cancellationState='interrupt_requested';delete job.controlError;save();
         try{
-          await rpc('turn/interrupt',{threadId:job.threadId,turnId:job.turnId});
+          await rpc('turn/interrupt',{threadId:job.threadId,turnId});
           if(closed)return;
           job.cancellationState='interrupt_acknowledged';save();
         }catch(error){
@@ -97,6 +111,7 @@ async function controls(){
       const payload=message.method==='item/tool/requestUserInput'?{answers:Object.fromEntries(Object.entries(response.answers).map(([key,answers])=>[key,{answers}]))}:{decision:response.decision==='approve'?'accept':'decline'};
       send({id:message.id,result:payload});waiting.delete(requestId);telemetry?.requestClosed(requestId);job.pending=job.pending.filter(item=>item.id!==requestId);job.status=waiting.size?'waiting_for_user':'running';save();
     }
+    if(!closed)await nativeControls.service();
   }catch(error){if(!closed){job.controlError=error.message;save();}}
 }
 try{
@@ -128,11 +143,24 @@ try{
   if(continuation){
     const {thread}=await rpc('thread/read',{threadId:continuation,includeTurns:false});
     if(typeof thread?.cwd!=='string'||fs.realpathSync.native(thread.cwd).toLowerCase()!==target.path.toLowerCase())throw Error('The selected native thread belongs to a different project path. No continuation was dispatched.');
+    // Cold resume can itself execute existing native input. Do not load that
+    // input under this request's possibly different scope or execution mode.
+    const optionalControl=async(method,params)=>{
+      try{return await rpc(method,params);}
+      catch(error){if(error.code===-32601||error.code===-32600&&/goals feature is disabled|thread queue (storage is unavailable|disabled)/i.test(error.message))return null;throw error;}
+    };
+    const [goal,queue]=await Promise.all([
+      optionalControl('thread/goal/get',{threadId:continuation}),
+      optionalControl('thread/queue/list',{threadId:continuation,limit:1}),
+    ]);
+    if(goal?.goal?.status==='active'||queue?.data?.length){
+      throw Error('Native resume could dispatch a saved active Goal or queued input before this request. Resolve that pending input on the same thread before sending a new turn.');
+    }
   }
   const started=continuation?await rpc('thread/resume',{...options,threadId:continuation,excludeTurns:true}):await rpc('thread/start',{...options,serviceName:'local_codex_bridge'});
   job.returnedModel=started.model||null;job.returnedReasoningEffort=started.reasoningEffort||null;save();
   if(started.modelProvider!=='openai')throw Error('Only the signed-in ChatGPT provider is allowed.');verifyExecutionPolicy(started,permissions);verifyModel(started,selection);
-  job.threadId=started.thread.id;job.model=started.model;job.reasoningEffort=started.reasoningEffort;job.sandbox=started.sandbox;job.approvalPolicy=started.approvalPolicy;
+  job.threadId=started.thread.id;job.nativeControls=true;job.model=started.model;job.reasoningEffort=started.reasoningEffort;job.sandbox=started.sandbox;job.approvalPolicy=started.approvalPolicy;
   if(continuation){
     const injected=await rpc('thread/inject_items',{threadId:job.threadId,items:[{type:'message',role:'developer',content:[{type:'input_text',text:instructions}]}]});
     if(!injected||typeof injected!=='object'||Array.isArray(injected))throw Error('Codex did not acknowledge current scope instructions. No turn was started.');
@@ -141,8 +169,10 @@ try{
   if(!continuation&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
   if(closed)process.exit(0);
   // Durable marker must precede the native write. A lost response stays unknown.
-  job.nativeTurnDispatchAttempted=true;job.nativeDispatchAttemptedAt=new Date().toISOString();save();
+  job.nativeTurnDispatchAttempted=true;job.nativeDispatchAttemptedAt=new Date().toISOString();write(file,job,{durable:true});
   const turn=await rpc('turn/start',{threadId:job.threadId,model:selection.model,effort:selection.effort,input:[{type:'text',text:job.prompt}]});
   if(typeof turn?.turn?.id!=='string'||job.turnId&&job.turnId!==turn.turn.id)throw Error('Native turn identity is unresolved; preserve it for reconciliation.');
-  job.turnId=turn.turn.id;save();
+  job.turnId=turn.turn.id;
+  if(!terminalTurns.has(job.turnId))job.activeTurnId??=job.turnId;
+  save();settle();
 }catch(error){finish(job.nativeTurnDispatchAttempted?'unknown':'failed',error.message);}

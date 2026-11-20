@@ -8,8 +8,8 @@ export function eventWakeup(){
     async wait(ms){if(pending){pending=false;return;}let timer;await new Promise(done=>{resolve=done;timer=setTimeout(done,Math.max(0,ms));});clearTimeout(timer);resolve=undefined;pending=false;},
   };
 }
-export function watchTask(directory,changed,failed){
-  const watcher=fs.watch(directory,(_event,file)=>{if(!file||file.toString()==='task.json')changed();});
+export function watchTask(directory,changed,failed,filename="task.json"){
+  const watcher=fs.watch(directory,(_event,file)=>{if(!file||file.toString()===filename)changed();});
   watcher.on('error',failed);
   return ()=>watcher.close();
 }

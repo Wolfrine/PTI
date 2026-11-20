@@ -4,7 +4,7 @@ The 0.5.0 source contract is authenticated transport -> Windows helper -> offici
 
 ## Supported scope
 
-The private owner-authenticated connection submits requests, reads progress/results/history, forwards genuine human answers and requests cancellation. New work starts in a fresh native session; explicit task/native-thread continuation is supported. Native Codex owns planning, subagents when useful, Git, integration and verification. The helper adds no module affinity/rotation, desktop handoff, resource reservations, artificial execution/capacity limits, maintenance fence or scheduler.
+The private owner-authenticated connection submits requests, reads progress/results/history, forwards genuine human answers and requests cancellation. Use the selected native thread for the same outcome and start fresh for a distinct outcome. Native Goal and live input controls require the matching helper and official desktop Codex 0.169.1 or later. Goal activation and in-flight follow-ups use the owning bridge worker. Saved Goal reads, pause/set and clear use native app-server without resuming. Desktop-owned active turns are outside that live worker connection. Native Codex owns planning, subagents when useful, Git, integration and verification. The helper adds no module affinity/rotation, desktop handoff, resource reservations, artificial execution/capacity limits, maintenance fence or scheduler.
 
 Inspect remains read-only. Edit applies only to the owner's current task. Private transport and native Full Access do not authorize unrelated changes, publication, messages, authentication extraction or browser-policy bypass. Native account, model, writer and permission constraints remain real.
 

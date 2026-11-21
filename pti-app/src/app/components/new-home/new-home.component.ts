@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { afterNextRender, Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NewResourceGlanceComponent } from '../new-resource-glance/new-resource-glance.component';
@@ -34,7 +34,7 @@ const RECENT_STORAGE_KEY = 'pti.home.recent.v1';
   templateUrl: './new-home.component.html',
   styleUrl: './new-home.component.scss',
 })
-export class NewHomeComponent implements OnInit {
+export class NewHomeComponent implements OnInit, AfterViewInit {
   @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
   @ViewChild('appDirectory') appDirectory?: ElementRef<HTMLElement>;
   @ViewChild('livingHorizonFrame') livingHorizonFrame?: ElementRef<HTMLIFrameElement>;
@@ -77,12 +77,12 @@ export class NewHomeComponent implements OnInit {
   pinnedIds: string[] = [...PINNED_DEFAULTS];
   recentIds: string[] = [];
 
-  constructor(private readonly router: Router, @Inject(PLATFORM_ID) private readonly platformId: object) {
-    afterNextRender(() => {
-      if (window.location.hash === '#local-companions') {
-        this.localCompanions?.nativeElement.scrollIntoView({ block: 'start' });
-      }
-    });
+  constructor(private readonly router: Router, @Inject(PLATFORM_ID) private readonly platformId: object) {}
+
+  ngAfterViewInit(): void {
+    if (isPlatformBrowser(this.platformId) && window.location.hash === '#local-companions') {
+      this.localCompanions?.nativeElement.scrollIntoView({ block: 'start' });
+    }
   }
 
   ngOnInit(): void {

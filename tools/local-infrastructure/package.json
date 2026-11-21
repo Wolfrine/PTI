@@ -1,0 +1,7 @@
+{
+  "name": "pti-local-infrastructure",
+  "private": true,
+  "dependencies": {
+    "google-auth-library": "10.9.1"
+  }
+}

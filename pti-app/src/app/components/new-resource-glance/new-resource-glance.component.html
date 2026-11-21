@@ -1,7 +1,10 @@
 <section class="resource-pulse" aria-labelledby="resource-pulse-heading">
   <header class="pulse-heading">
     <div class="heading-copy"><p class="pulse-kicker">BEHIND YOUR WORK</p><h2 id="resource-pulse-heading">Resource pulse</h2></div>
-    <a class="usage-link" [routerLink]="['/new-resource-usage', 'codex']">Explore usage <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+    <nav class="pulse-links" aria-label="Resource details">
+      <a class="usage-link" routerLink="/new-local-infrastructure">Local infrastructure</a>
+      <a class="usage-link" [routerLink]="['/new-resource-usage', 'codex']">Explore usage <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+    </nav>
   </header>
 
   <div class="pulse-deck" aria-label="Development resource summaries">

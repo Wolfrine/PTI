@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import { afterNextRender, Component, ElementRef, HostListener, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NewResourceGlanceComponent } from '../new-resource-glance/new-resource-glance.component';
@@ -38,6 +38,7 @@ export class NewHomeComponent implements OnInit {
   @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
   @ViewChild('appDirectory') appDirectory?: ElementRef<HTMLElement>;
   @ViewChild('livingHorizonFrame') livingHorizonFrame?: ElementRef<HTMLIFrameElement>;
+  @ViewChild('localCompanions') localCompanions?: ElementRef<HTMLElement>;
 
   // Curated launcher entries only. Private tools are intentionally excluded from all surfaces.
   readonly apps: readonly HubApp[] = [
@@ -76,7 +77,13 @@ export class NewHomeComponent implements OnInit {
   pinnedIds: string[] = [...PINNED_DEFAULTS];
   recentIds: string[] = [];
 
-  constructor(private readonly router: Router, @Inject(PLATFORM_ID) private readonly platformId: object) {}
+  constructor(private readonly router: Router, @Inject(PLATFORM_ID) private readonly platformId: object) {
+    afterNextRender(() => {
+      if (window.location.hash === '#local-companions') {
+        this.localCompanions?.nativeElement.scrollIntoView({ block: 'start' });
+      }
+    });
+  }
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;

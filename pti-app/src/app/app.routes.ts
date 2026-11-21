@@ -40,6 +40,12 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
+        path: 'new-local-infrastructure',
+        title: 'Local infrastructure · PTI',
+        loadComponent: () => import('./components/new-local-infrastructure/new-local-infrastructure.component').then(m => m.NewLocalInfrastructureComponent),
+        canActivate: [AuthGuard],
+    },
+    {
         path: 'domains',
         component: ManageDomainsComponent,
         canActivate: [AuthGuard],

@@ -3,6 +3,7 @@
 .pulse-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:11px}
 .pulse-kicker{font-size:10px;font-weight:750;letter-spacing:.18em;color:#896c5e;margin-bottom:5px}
 .pulse-heading h2{font:700 23px/1.16 Georgia,serif;letter-spacing:-.04em;color:#28231f}
+.pulse-links{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;column-gap:15px}
 .usage-link{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;color:#a84e44;text-decoration:none;font-size:12px;font-weight:750;padding:7px 2px;border-radius:4px}.usage-link mat-icon{font-size:16px;width:16px;height:16px}
 .usage-link:hover{text-decoration:underline;text-underline-offset:3px}
 .pulse-deck{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #e5dfd6;border-radius:15px;background:#fffdfa;box-shadow:0 4px 13px rgba(59,45,33,.025);overflow:hidden}
@@ -64,4 +65,9 @@
   .billing-missing{font-size:11px}
 }
 @media(max-width:370px){.pulse-instrument{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media(max-width:420px){
+  .pulse-links{column-gap:8px}
+  .pulse-links .usage-link{font-size:11px}
+  .pulse-links .usage-link mat-icon{width:13px;height:13px;font-size:13px}
+}
 @media(prefers-reduced-motion:reduce){.pulse-instrument,.signal-track span{transition:none}}

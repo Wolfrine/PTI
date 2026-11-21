@@ -77,3 +77,11 @@ body {
         margin: 0;
     }
 }
+
+html:has(app-new-local-infrastructure) {
+    margin-bottom: 0;
+}
+
+body:has(app-new-local-infrastructure) {
+    padding: 0;
+}

@@ -1,0 +1,232 @@
+<main class="infrastructure">
+  <header class="topbar">
+    <a routerLink="/home" class="brand" aria-label="PTI Home">
+      <span class="brand-mark"><img src="/icons/pti-mark.svg" alt="" width="23" height="23"></span>
+      <strong>PTI</strong>
+    </a>
+    <span class="crumb">YOUR SPACE <span aria-hidden="true">/</span> RESOURCES</span>
+    <a routerLink="/home" class="text-link home-link"><mat-icon aria-hidden="true">arrow_back</mat-icon> Back home</a>
+  </header>
+
+  <div class="content">
+    <div class="intro">
+      <div>
+        <h1>Local infrastructure</h1>
+        <p>Your home PC and the services quietly working behind your projects</p>
+      </div>
+      @if (snapshot(); as reading) {
+        <div class="freshness">
+          <span class="signal" [attr.data-tone]="freshness().tone">{{ freshness().label }}</span>
+          <time [attr.datetime]="dateTime(reading.collectedAt)" [attr.title]="reading.collectedAt | date:'medium'">
+            {{ age(reading.collectedAt) }}
+          </time>
+        </div>
+      }
+    </div>
+
+    <nav class="tabs" aria-label="Local infrastructure">
+      @for (item of tabs; track item.key) {
+        <a routerLink="/new-local-infrastructure" [queryParams]="item.query"
+          [attr.aria-current]="tab() === item.key ? 'page' : null">
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+
+    @if (!snapshot()) {
+      <section class="panel empty" aria-labelledby="empty-heading" role="status">
+        <h2 id="empty-heading">{{ empty().heading }}</h2>
+        <p>{{ empty().detail }}</p>
+      </section>
+    } @else {
+      @if (freshness().note; as note) {
+        <p class="reading-note">{{ note }}</p>
+      }
+
+      @switch (tab()) {
+        @case ('overview') {
+          <div class="overview">
+            <div class="column">
+              <section class="panel" aria-labelledby="workstation-heading">
+                <header class="panel-header">
+                  <h2 id="workstation-heading">Windows workstation</h2>
+                </header>
+                <dl class="metrics">
+                  @for (metric of metrics(); track metric.label) {
+                    <div class="metric">
+                      <dt>{{ metric.label }}</dt>
+                      <dd>
+                        @if (metric.value !== null) {
+                          <div class="metric-number">
+                            <strong>{{ metric.value }}</strong>
+                            @if (metric.total) { <span> / {{ metric.total }}</span> }
+                          </div>
+                        } @else {
+                          <span class="muted">Unavailable</span>
+                        }
+                        @if (metric.percent !== null) {
+                          <div class="track" aria-hidden="true"><span [style.width.%]="metric.percent"></span></div>
+                        }
+                      </dd>
+                    </div>
+                  }
+                </dl>
+              </section>
+
+              <ng-container [ngTemplateOutlet]="workerPanel" />
+            </div>
+
+            <div class="column">
+              <section class="panel" aria-labelledby="system-heading">
+                <header class="panel-header">
+                  <h2 id="system-heading">System</h2>
+                </header>
+                <dl class="system-rows">
+                  @for (row of systemRows(); track row.label) {
+                    <div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>
+                  }
+                </dl>
+              </section>
+
+              <ng-container [ngTemplateOutlet]="activityPanel" />
+            </div>
+          </div>
+        }
+        @case ('workers') {
+          <ng-container [ngTemplateOutlet]="workerPanel" />
+        }
+        @case ('activity') {
+          <ng-container [ngTemplateOutlet]="activityPanel" />
+          @if (recentSamples().length) {
+            <section class="panel sample-panel" aria-labelledby="samples-heading">
+              <header class="panel-header"><h2 id="samples-heading">Recorded samples</h2></header>
+              <table class="samples" aria-labelledby="samples-heading">
+                <thead><tr><th scope="col">Time</th><th scope="col">CPU</th><th scope="col">GPU</th><th scope="col">Memory</th></tr></thead>
+                <tbody>
+                  @for (sample of recentSamples(); track sample.at) {
+                    <tr>
+                      <td><time [attr.datetime]="dateTime(sample.at)">{{ sample.at | date:'shortTime' }}</time></td>
+                      @for (value of [sample.cpuPercent, sample.gpuPercent, sample.memoryPercent]; track $index) {
+                        <td>
+                          @if (value !== null) { {{ percentage(value) }} }
+                          @else { <span aria-hidden="true">—</span><span class="sr-only">Unavailable</span> }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </section>
+          }
+        }
+      }
+    }
+  </div>
+</main>
+
+<ng-template #workerPanel>
+  <section class="panel" aria-labelledby="workers-heading">
+    <header class="panel-header worker-header">
+      <h2 id="workers-heading">Local workers</h2>
+      @if (workers().length) {
+        <div class="filters" role="group" aria-label="Filter workers">
+          <button type="button" [attr.aria-pressed]="workerFilter() === 'all'" (click)="workerFilter.set('all')">All</button>
+          <button type="button" [attr.aria-pressed]="workerFilter() === 'attention'" (click)="workerFilter.set('attention')">Needs attention</button>
+        </div>
+      }
+    </header>
+
+    @for (worker of visibleWorkers(); track worker.id) {
+      <details class="worker">
+        <summary>
+          <span class="worker-name">
+            <strong>{{ worker.name }}</strong>
+            @if (worker.purpose) { <span>{{ worker.purpose }}</span> }
+          </span>
+          <span class="worker-state">
+            <span class="signal" [attr.data-tone]="worker.tone">{{ worker.label }}</span>
+            @if (worker.conditionLabel) { <span class="condition">{{ worker.conditionLabel }}</span> }
+            @if (worker.lastSeenAt !== null) {
+              <time [attr.datetime]="dateTime(worker.lastSeenAt)" [attr.title]="worker.lastSeenAt | date:'medium'">
+                <span class="sr-only">Last seen </span>{{ worker.seen }}
+              </time>
+            } @else {
+              <span>{{ worker.seen }}</span>
+            }
+          </span>
+          <mat-icon class="chevron" aria-hidden="true">expand_more</mat-icon>
+        </summary>
+
+        <div class="worker-detail">
+          <dl class="evidence">
+            <div><dt>Evidence</dt><dd>{{ worker.evidenceLabel }}</dd></div>
+            @if (worker.lastSeenAt !== null) {
+              <div><dt>Last seen</dt><dd><time [attr.datetime]="dateTime(worker.lastSeenAt)">{{ worker.lastSeenAt | date:'medium' }}</time></dd></div>
+            }
+            <div><dt>Queued jobs</dt><dd>{{ worker.queued ?? 'Unavailable' }}</dd></div>
+            <div><dt>Running jobs</dt><dd>{{ worker.running ?? 'Unavailable' }}</dd></div>
+          </dl>
+          @if (worker.components.length) {
+            <h3>Components at last check</h3>
+            <dl class="worker-components">
+              @for (component of worker.components; track component.id) {
+                <div><dt>{{ component.name }}</dt><dd>{{ component.label }}</dd></div>
+              }
+            </dl>
+          }
+          @if (worker.homeControl) {
+            <a class="text-link" routerLink="/home" fragment="local-companions">Companion controls on Home <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+          }
+        </div>
+      </details>
+    } @empty {
+      <p class="panel-message">
+        {{ workers().length ? 'No workers need attention in this reading.' : 'No workers were reported in this reading.' }}
+      </p>
+    }
+
+    @if (tab() === 'overview' && workers().length > visibleWorkers().length) {
+      <div class="panel-footer">
+        <a class="text-link" routerLink="/new-local-infrastructure" [queryParams]="{ tab: 'workers' }"
+          (click)="workerFilter.set('all')">View all workers <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<ng-template #activityPanel>
+  <section class="panel activity-panel" aria-labelledby="activity-heading">
+    <header class="panel-header activity-header">
+      <h2 id="activity-heading">Activity snapshot</h2>
+      <span>Last hour</span>
+    </header>
+    @if (hasChartValues()) {
+      <div class="spark-charts">
+        @for (metric of charts(); track metric.key) {
+          <figure class="spark">
+            <figcaption>
+              <span>{{ metric.label }}</span>
+              <span>
+                <strong>{{ metric.latest ?? 'Unavailable' }}</strong>
+                @if (metric.oldAt !== null) {
+                  <time class="muted" [attr.datetime]="dateTime(metric.oldAt)" [attr.title]="metric.oldAt | date:'medium'"> · {{ age(metric.oldAt) }}</time>
+                }
+              </span>
+            </figcaption>
+            @if (metric.count) {
+              <svg viewBox="0 0 300 40" preserveAspectRatio="none" role="img"
+                [attr.aria-label]="metric.label + ' over the last hour. ' + metric.count + (metric.count === 1 ? ' recorded value.' : ' recorded values.')">
+                <path class="guide" d="M3 3H297 M3 20H297 M3 37H297" />
+                @for (line of metric.lines; track $index) { <polyline [attr.points]="line" /> }
+                @for (dot of metric.dots; track $index) { <path class="point" [attr.d]="'M' + dot.x + ' ' + dot.y + 'v.01'" /> }
+              </svg>
+            }
+          </figure>
+        }
+        <div class="chart-axis" aria-hidden="true"><span>60m ago</span><span>30m ago</span><span>Now</span></div>
+      </div>
+    } @else {
+      <p class="panel-message">No CPU, GPU or memory readings in the last hour.</p>
+    }
+  </section>
+</ng-template>

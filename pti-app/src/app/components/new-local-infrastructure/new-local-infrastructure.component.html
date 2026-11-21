@@ -71,6 +71,32 @@
                     </div>
                   }
                 </dl>
+                <section class="drive-section" aria-labelledby="drives-heading">
+                  <h3 id="drives-heading">Fixed drives</h3>
+                  <dl class="metrics">
+                    @for (drive of drives(); track drive.letter) {
+                      <div class="metric drive-metric" [attr.data-severity]="drive.severity">
+                        <dt>
+                          <strong>{{ drive.letter }}:</strong>
+                          @if (drive.severity !== 'normal') {
+                            <span>{{ drive.severity === 'critical' ? 'Critical' : 'Attention' }}</span>
+                          }
+                        </dt>
+                        <dd>
+                          <div class="drive-usage"><strong>{{ drive.percent | number:'1.0-1' }}%</strong> used</div>
+                          <div class="track" aria-hidden="true"><span [style.width.%]="drive.percent"></span></div>
+                          <div class="muted drive-space">
+                            <div>{{ formatBytes(drive.capacity.usedBytes) }} of {{ formatBytes(drive.capacity.totalBytes) }}</div>
+                            <div><strong>{{ formatBytes(drive.freeBytes) }}</strong> free</div>
+                          </div>
+                        </dd>
+                      </div>
+                    }
+                  </dl>
+                  @if (!drives().length) {
+                    <p class="muted">Drive capacity readings unavailable.</p>
+                  }
+                </section>
               </section>
 
               <ng-container [ngTemplateOutlet]="workerPanel" />

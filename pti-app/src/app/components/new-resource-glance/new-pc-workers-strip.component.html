@@ -1,0 +1,71 @@
+<section class="pc-strip" aria-labelledby="pc-strip-heading">
+  <div class="pc-identity">
+    <span class="pc-icon" aria-hidden="true"><mat-icon>desktop_windows</mat-icon></span>
+    <div>
+      <h3 id="pc-strip-heading">PC &amp; workers</h3>
+      <p class="pc-freshness">
+        <span class="pc-state" [attr.data-state]="status()">{{ status() }}</span>
+        @if (collectedAt(); as at) {
+          <time [attr.datetime]="dateTime(at)" [attr.title]="at | date:'medium'">
+            <span class="pc-sr-only">Reading from </span>{{ at | date:'MMM d, HH:mm' }}
+          </time>
+        }
+      </p>
+    </div>
+  </div>
+
+  <dl class="pc-compute" aria-label="PC usage">
+    @for (metric of metrics(); track metric.label) {
+      <div>
+        <dt>{{ metric.label }}</dt>
+        <dd>
+          @if (metric.percent !== null) {
+            {{ metric.percent | number:'1.0-0' }}%
+          } @else {
+            <span aria-hidden="true">—</span><span class="pc-sr-only">Unavailable</span>
+          }
+        </dd>
+      </div>
+    }
+  </dl>
+
+  <div class="pc-workers">
+    <p class="pc-group-title">
+      <strong>Workers</strong>
+      @if (workerTotal(); as total) {
+        <span>{{ total }} total{{ status() === 'Stale' ? ' at last reading' : '' }}</span>
+      }
+    </p>
+    @if (workerCounts(); as counts) {
+      <ul class="pc-readings" aria-label="Worker statuses">
+        <li><strong>{{ counts.available }}</strong> available</li>
+        <li><strong>{{ counts.idle }}</strong> idle</li>
+        <li><strong>{{ counts.working }}</strong> working</li>
+        @if (counts.offline > 0) { <li><strong>{{ counts.offline }}</strong> offline</li> }
+        @if (counts.unknown > 0) { <li><strong>{{ counts.unknown }}</strong> unknown</li> }
+      </ul>
+    } @else {
+      <p class="pc-context">{{ workerTotal() === 0 ? 'No workers reported' : 'Current status unknown' }}</p>
+    }
+  </div>
+
+  <div class="pc-drive">
+    @if (drive(); as drive) {
+      <p class="pc-group-title">
+        <strong>{{ drive.letter }}: drive</strong>
+        <span class="pc-drive-status" [attr.data-severity]="drive.severity">{{ driveLabels[drive.severity] }}</span>
+      </p>
+      <p class="pc-readings">
+        <span>{{ drive.percent | number:'1.0-1' }}% used</span>
+        <span>{{ formatBytes(drive.freeBytes) }} free</span>
+      </p>
+    } @else {
+      <p class="pc-group-title"><strong>Drives</strong></p>
+      <p class="pc-context">Capacity unknown</p>
+    }
+  </div>
+
+  <a class="pc-link" routerLink="/new-local-infrastructure" aria-label="Open local infrastructure details">
+    Details <mat-icon aria-hidden="true">north_east</mat-icon>
+  </a>
+</section>

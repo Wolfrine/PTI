@@ -1,9 +1,16 @@
-import { DatePipe, NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
+import { DatePipe, DecimalPipe, NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { fromEvent, map, merge, of, timer } from 'rxjs';
+import {
+  capacityPercent,
+  driveHealth,
+  formatBytes,
+  hasCurrentWorkerSighting,
+  localInfrastructureFreshnessMs,
+} from '../../services/local-infrastructure-presentation';
 import {
   Capacity,
   InfrastructureSample,
@@ -93,7 +100,7 @@ const chartMetrics: readonly { key: HistoryMetric; label: string }[] = [
 const minute = 60_000;
 const chartWindow = 60 * minute;
 const maximumChartGap = 8 * minute;
-const overdueAfter = 12 * minute;
+const overdueAfter = localInfrastructureFreshnessMs;
 const oldAfter = 20 * minute;
 const overviewWorkerLimit = 9;
 const integer = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
@@ -117,7 +124,7 @@ function capacityMetric(label: string, capacity: Capacity | null): Metric {
     label,
     value: capacityNumber.format(capacity.usedBytes / divisor),
     total: `${capacityNumber.format(capacity.totalBytes / divisor)} ${units[unit]}`,
-    percent: 100 * capacity.usedBytes / capacity.totalBytes,
+    percent: capacityPercent(capacity),
   };
 }
 
@@ -181,7 +188,7 @@ function chart(values: InfrastructureSample[], key: HistoryMetric, now: number) 
 @Component({
   selector: 'app-new-local-infrastructure',
   standalone: true,
-  imports: [DatePipe, MatIconModule, NgTemplateOutlet, RouterLink],
+  imports: [DatePipe, DecimalPipe, MatIconModule, NgTemplateOutlet, RouterLink],
   templateUrl: './new-local-infrastructure.component.html',
   styleUrl: './new-local-infrastructure.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -256,10 +263,10 @@ export class NewLocalInfrastructureComponent {
       capacityMetric('RAM', system.memory),
       { label: 'NVIDIA GPU', value: percentage(system.gpuPercent), percent: system.gpuPercent },
       capacityMetric('VRAM', system.vram),
-      capacityMetric('F: drive', system.disks.F),
-      capacityMetric('H: drive', system.disks.H),
     ];
   });
+  readonly drives = computed(() => driveHealth(this.snapshot()?.workstation.disks ?? {}));
+  readonly formatBytes = formatBytes;
 
   readonly systemRows = computed(() => {
     const system = this.snapshot()?.workstation;
@@ -332,8 +339,7 @@ export class NewLocalInfrastructureComponent {
   private workerStatus(worker: LocalWorker): { label: string; tone: Tone; needsAttention: boolean } {
     if (worker.status === 'unknown') return { label: 'Unknown', tone: 'neutral', needsAttention: true };
     const active = worker.status !== 'offline';
-    const sightingOverdue = worker.lastSeenAt === null || this.readingClock() - worker.lastSeenAt >= overdueAfter;
-    const lastReport = this.observation() !== 'current' || (active && sightingOverdue);
+    const lastReport = this.observation() !== 'current' || (active && !hasCurrentWorkerSighting(worker, this.readingClock()));
     const needsAttention = !!worker.condition || lastReport || !active;
     if (lastReport) return { label: `Last reported: ${statusLabels[worker.status].toLowerCase()}`, tone: 'neutral', needsAttention };
     return { label: statusLabels[worker.status], tone: needsAttention ? 'attention' : 'online', needsAttention };

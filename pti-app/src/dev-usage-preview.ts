@@ -8,6 +8,7 @@ import { CodexUsageService, UsageState } from './app/services/codex-usage.servic
 import { PlatformUsageService, PlatformUsageState } from './app/services/platform-usage.service';
 import { GtopHostService, GtopHostReading, GtopHostStatus } from './app/services/gtop-host.service';
 import { OnePieceHostService, OnePieceHostReading, OnePieceHostStatus } from './app/services/one-piece-host.service';
+import { LocalInfrastructureService } from './app/services/local-infrastructure.service';
 
 const query = new URLSearchParams(location.search);
 const fixture = query.get('state') ?? 'fresh';
@@ -35,6 +36,7 @@ const platformReading: PlatformUsageState = {
   status: 'ready', fromCache: platformFixture === 'cached',
   reading: {
     collectedAt: new Date(now - (platformFixture === 'stale' ? 26 * 3600000 : 20 * 60000)).toISOString(),
+    cloudBilling: null,
     github: {
       status: 'ok', period: '2026-10', billedActionsMinutes: 41, billedActionsUsd: 0.32,
       workflowRuns24h: 5, failedRuns24h: 1, workflowRepoScope: 'Wolfrine/PTI',
@@ -127,5 +129,6 @@ class UsagePreviewComponent { readonly state = fixture; readonly platform = plat
 bootstrapApplication(UsagePreviewComponent, {
   providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } },
     { provide: PlatformUsageService, useValue: { watch: () => of(platformReading) } },
+    { provide: LocalInfrastructureService, useValue: { loadOnce: () => of({ status: 'unconnected', fromCache: false }) } },
     { provide: GtopHostService, useValue: hostPreview }, { provide: OnePieceHostService, useValue: onePiecePreview }],
 }).catch(error => console.error(error));

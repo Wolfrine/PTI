@@ -28,14 +28,19 @@ function Get-NetworkRate {
   } catch { return $null }
 }
 
-function Get-DiskCapacity($letter) {
+function Get-LocalDiskCapacities {
+  $disks = @{}
   try {
-    $drive = [IO.DriveInfo]::new("${letter}:\")
-    if ($drive.IsReady -and $drive.DriveType -eq 'Fixed') {
-      return @{ totalBytes = $drive.TotalSize; usedBytes = $drive.TotalSize - $drive.TotalFreeSpace }
+    $volumes = Get-CimInstance -ClassName Win32_Volume -Filter "DriveType = 3 AND DriveLetter IS NOT NULL" `
+      -Property DriveLetter,Capacity,FreeSpace -OperationTimeoutSec 6
+    foreach ($volume in $volumes) {
+      if ($volume.DriveLetter -notmatch '^[A-Z]:$' -or $null -eq $volume.Capacity -or $null -eq $volume.FreeSpace) { continue }
+      if ($volume.Capacity -le 0 -or $volume.FreeSpace -gt $volume.Capacity) { continue }
+      $letter = $volume.DriveLetter.Substring(0, 1).ToUpperInvariant()
+      $disks[$letter] = @{ totalBytes = $volume.Capacity; usedBytes = $volume.Capacity - $volume.FreeSpace }
     }
   } catch {}
-  return $null
+  return $disks
 }
 
 function Read-Status($path) {
@@ -189,4 +194,4 @@ if ($ops) {
 }
 
 $workers = @($relay, $usage, $assistant, $checking, $initiator, $velum, $taleweald, $blinkit, $onePiece, $ops, $android | Where-Object { $null -ne $_ })
-@{ disks = @{ F = Get-DiskCapacity 'F'; H = Get-DiskCapacity 'H' }; network = Get-NetworkRate; workers = $workers } | ConvertTo-Json -Depth 7 -Compress
+@{ disks = Get-LocalDiskCapacities; network = Get-NetworkRate; workers = $workers } | ConvertTo-Json -Depth 7 -Compress

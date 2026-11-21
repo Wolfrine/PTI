@@ -1,13 +1,16 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, NgZone, PLATFORM_ID, inject } from '@angular/core';
 import { Firestore, doc, onSnapshot } from '@angular/fire/firestore';
-import { Observable, distinctUntilChanged, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, distinctUntilChanged, map, of, switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
 
 export interface Capacity {
   usedBytes: number;
   totalBytes: number;
 }
+
+export type DriveLetter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M'
+  | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z';
 
 export type WorkerStatus = 'available' | 'idle' | 'working' | 'offline' | 'unknown';
 export type WorkerEvidence = 'health' | 'heartbeat' | 'process' | 'task' | 'missing' | 'unavailable';
@@ -38,7 +41,7 @@ export interface LocalInfrastructureSnapshot {
     memory: Capacity | null;
     gpuPercent: number | null;
     vram: Capacity | null;
-    disks: { F: Capacity | null; H: Capacity | null };
+    disks: Partial<Record<DriveLetter, Capacity>>;
     uptimeSeconds: number | null;
     cpuTemperatureC: number | null;
     gpuTemperatureC: number | null;
@@ -51,6 +54,8 @@ export interface LocalInfrastructureSnapshot {
 export type LocalInfrastructureState =
   | { status: 'ready'; snapshot: LocalInfrastructureSnapshot; fromCache: boolean }
   | { status: 'loading' | 'unconnected' | 'unavailable'; fromCache: boolean };
+
+const documentPath = (uid: string) => ['users', uid, 'resourceUsage', 'local-infrastructure'] as const;
 
 const workerStatuses: readonly WorkerStatus[] = ['available', 'idle', 'working', 'offline', 'unknown'];
 const workerEvidence: readonly WorkerEvidence[] = ['health', 'heartbeat', 'process', 'task', 'missing', 'unavailable'];
@@ -81,6 +86,16 @@ function readCapacity(value: unknown): Capacity | null {
   const totalBytes = numberInRange(data['totalBytes'], 1);
   const usedBytes = numberInRange(data['usedBytes'], 0, totalBytes ?? 0);
   return totalBytes === null || usedBytes === null ? null : { usedBytes, totalBytes };
+}
+
+function readDisks(value: unknown): LocalInfrastructureSnapshot['workstation']['disks'] {
+  const disks: LocalInfrastructureSnapshot['workstation']['disks'] = {};
+  for (const [letter, entry] of Object.entries(record(value))) {
+    if (!/^[A-Z]$/.test(letter)) continue;
+    const capacity = readCapacity(entry);
+    if (capacity) disks[letter as DriveLetter] = capacity;
+  }
+  return disks;
 }
 
 function readNetwork(value: unknown): LocalInfrastructureSnapshot['workstation']['network'] {
@@ -135,7 +150,6 @@ function readSnapshot(value: unknown): LocalInfrastructureSnapshot | null {
       !Array.isArray(data['workers']) || !Array.isArray(data['history'])) return null;
 
   const system = data['workstation'];
-  const disks = record(system['disks']);
   const workers = new Map<string, LocalWorker>();
   const history = new Map<number, InfrastructureSample>();
 
@@ -164,7 +178,7 @@ function readSnapshot(value: unknown): LocalInfrastructureSnapshot | null {
       memory: readCapacity(system['memory']),
       gpuPercent: percent(system['gpuPercent']),
       vram: readCapacity(system['vram']),
-      disks: { F: readCapacity(disks['F']), H: readCapacity(disks['H']) },
+      disks: readDisks(system['disks']),
       uptimeSeconds: numberInRange(system['uptimeSeconds'], 0),
       cpuTemperatureC: numberInRange(system['cpuTemperatureC'], -100, 200),
       gpuTemperatureC: numberInRange(system['gpuTemperatureC'], -100, 200),
@@ -175,12 +189,36 @@ function readSnapshot(value: unknown): LocalInfrastructureSnapshot | null {
   };
 }
 
+function documentState(snapshot: { exists(): boolean; data(): unknown }, fromCache: boolean): LocalInfrastructureState {
+  if (!snapshot.exists()) return { status: fromCache ? 'loading' : 'unconnected', fromCache };
+  const reading = readSnapshot(snapshot.data());
+  return reading
+    ? { status: 'ready', snapshot: reading, fromCache }
+    : { status: 'unavailable', fromCache };
+}
+
 @Injectable({ providedIn: 'root' })
 export class LocalInfrastructureService {
   private readonly firestore = inject(Firestore);
   private readonly auth = inject(AuthService);
   private readonly zone = inject(NgZone);
   private readonly platform = inject(PLATFORM_ID);
+
+  loadOnce(): Observable<LocalInfrastructureState> {
+    if (!isPlatformBrowser(this.platform)) return of({ status: 'loading', fromCache: false });
+
+    return this.auth.user$.pipe(
+      take(1),
+      switchMap(async (user): Promise<LocalInfrastructureState> => {
+        if (!user?.uid) return { status: 'unconnected', fromCache: false };
+        // Lite uses a server-only document read with the same Firebase app and its auth session.
+        const lite = await import('firebase/firestore/lite');
+        const ref = lite.doc(lite.getFirestore(this.firestore.app), ...documentPath(user.uid));
+        return documentState(await lite.getDoc(ref), false);
+      }),
+      catchError(() => of<LocalInfrastructureState>({ status: 'unavailable', fromCache: false })),
+    );
+  }
 
   watch(): Observable<LocalInfrastructureState> {
     if (!isPlatformBrowser(this.platform)) return of({ status: 'loading', fromCache: false });
@@ -192,15 +230,10 @@ export class LocalInfrastructureService {
         if (!uid) return of<LocalInfrastructureState>({ status: 'unconnected', fromCache: false });
         return new Observable<LocalInfrastructureState>(subscriber => {
           subscriber.next({ status: 'loading', fromCache: false });
-          const ref = doc(this.firestore, 'users', uid, 'resourceUsage', 'local-infrastructure');
+          const ref = doc(this.firestore, ...documentPath(uid));
           return onSnapshot(ref, { includeMetadataChanges: true }, snapshot => this.zone.run(() => {
             const fromCache = snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites;
-            if (!snapshot.exists()) {
-              subscriber.next({ status: fromCache ? 'loading' : 'unconnected', fromCache });
-              return;
-            }
-            const reading = readSnapshot(snapshot.data());
-            subscriber.next(reading ? { status: 'ready', snapshot: reading, fromCache } : { status: 'unavailable', fromCache });
+            subscriber.next(documentState(snapshot, fromCache));
           }), () => this.zone.run(() => subscriber.next({ status: 'unavailable', fromCache: false })));
         });
       }),

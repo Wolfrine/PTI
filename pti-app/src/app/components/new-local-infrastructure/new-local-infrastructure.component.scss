@@ -67,7 +67,7 @@ h1 { font-size: clamp(31px, 4.2vw, 49px); line-height: 1.06; letter-spacing: -.0
 .panel-header { display: flex; align-items: center; justify-content: space-between; column-gap: 11px; margin-bottom: 12px; }
 h2 { font-size: 23px; line-height: 1.17; letter-spacing: -.025em; }
 .empty p, .panel-message { margin-top: 7px; color: var(--muted); }
-.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px 15px; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px 15px; }
 .metric { min-width: 0; padding: 9px 0 8px; border-top: 1px solid var(--line); }
 .metric dt { font-size: 12px; font-weight: 700; color: var(--muted); }
 .metric dd { margin-top: 5px; }
@@ -76,6 +76,19 @@ h2 { font-size: 23px; line-height: 1.17; letter-spacing: -.025em; }
 .metric-number span { color: var(--muted); font-size: 12px; }
 .track { height: 5px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: #eee8df; }
 .track span { display: block; height: 100%; border-radius: inherit; background: #b26358; }
+.drive-section { margin-top: 11px; }
+.drive-section h3 { margin-bottom: 7px; font-size: 13px; }
+.drive-metric { --drive: #547058; }
+.drive-metric[data-severity="warning"] { --drive: #895b22; }
+.drive-metric[data-severity="critical"] { --drive: #a34b42; }
+.drive-metric dt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 7px; }
+.drive-metric dt strong { color: var(--ink); font-size: 14px; }
+.drive-metric dt span { color: var(--drive); }
+.drive-metric .track { margin-top: 5px; }
+.drive-metric .track span { background: var(--drive); }
+.drive-usage { font-size: 12px; }
+.drive-usage strong { font-size: 16px; }
+.drive-space { margin-top: 5px; }
 .system-rows > div, .worker-components > div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); }
 .system-rows dt, .worker-components dt, .evidence dt { color: var(--muted); }
 .system-rows dd, .worker-components dd { font-weight: 700; text-align: right; }
@@ -148,7 +161,7 @@ h2 { font-size: 23px; line-height: 1.17; letter-spacing: -.025em; }
   .intro p { font-size: 14px; }
   .freshness { justify-content: start; }
   .panel { padding: 14px; }
-  .metrics { gap: 7px 12px; }
+  .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 12px; }
   .tabs { margin-top: 15px; }
 }
 

@@ -23,6 +23,16 @@ function capacity(value) {
   return totalBytes !== null && usedBytes !== null ? { usedBytes, totalBytes } : null;
 }
 
+function diskCapacities(disks) {
+  const result = {};
+  for (const [letter, value] of Object.entries(disks ?? {})) {
+    if (!/^[A-Z]$/.test(letter)) continue;
+    const reading = capacity(value);
+    if (reading) result[letter] = reading;
+  }
+  return result;
+}
+
 function cpuCounters() {
   return os.cpus().reduce(({ idle, total }, { times }) => ({
     idle: idle + times.idle,
@@ -74,7 +84,7 @@ async function sample() {
     collectedAt: Date.now(),
     workstation: {
       cpuPercent, memory, ...gpu,
-      disks: { F: capacity(native.disks?.F), H: capacity(native.disks?.H) },
+      disks: diskCapacities(native.disks),
       uptimeSeconds: bounded(Math.floor(os.uptime())),
       cpuTemperatureC: null,
       network: receivedBytesPerSecond === null || sentBytesPerSecond === null ? null : { receivedBytesPerSecond, sentBytesPerSecond },

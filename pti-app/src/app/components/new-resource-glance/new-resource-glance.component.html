@@ -2,7 +2,6 @@
   <header class="pulse-heading">
     <div class="heading-copy"><p class="pulse-kicker">BEHIND YOUR WORK</p><h2 id="resource-pulse-heading">Resource pulse</h2></div>
     <nav class="pulse-links" aria-label="Resource details">
-      <a class="usage-link" routerLink="/new-local-infrastructure">Local infrastructure</a>
       <a class="usage-link" [routerLink]="['/new-resource-usage', 'codex']">Explore usage <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
     </nav>
   </header>
@@ -36,5 +35,8 @@
     <ng-template #billingNotConnected><span class="billing-missing">{{ billingStatus }}</span></ng-template>
     <mat-icon class="billing-arrow" aria-hidden="true">north_east</mat-icon>
   </a>
+
+  <app-new-pc-workers-strip [state]="local" [now]="now" [offline]="offline" />
+
   <p class="pulse-provenance">{{ githubCoverage }} <span aria-hidden="true">·</span> {{ firebaseReporting }} <span aria-hidden="true">·</span> Figures show reported sources only</p>
 </section>

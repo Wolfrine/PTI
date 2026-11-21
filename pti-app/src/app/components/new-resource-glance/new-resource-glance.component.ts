@@ -4,8 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CodexUsageService, UsageState, UsageWindow } from '../../services/codex-usage.service';
+import { LocalInfrastructureService, LocalInfrastructureState } from '../../services/local-infrastructure.service';
 import { CloudBillingReading, PlatformUsageReading, PlatformUsageService, PlatformUsageState } from '../../services/platform-usage.service';
 import { readingStale, resetLabel, windowLabel } from '../new-codex-usage/new-codex-usage.component';
+import { NewPcWorkersStripComponent } from './new-pc-workers-strip.component';
 
 interface FirebaseQuotaPeak {
   percent: number;
@@ -20,13 +22,14 @@ const PLATFORM_STALE_MS = 24 * 60 * 60 * 1000;
 @Component({
   selector: 'app-new-resource-glance',
   standalone: true,
-  imports: [CommonModule, MatIconModule, RouterLink],
+  imports: [CommonModule, MatIconModule, RouterLink, NewPcWorkersStripComponent],
   templateUrl: './new-resource-glance.component.html',
   styleUrl: './new-resource-glance.component.scss',
 })
 export class NewResourceGlanceComponent implements OnInit, OnDestroy {
   codex: UsageState = { status: 'loading', reading: null, fromCache: false };
   platform: PlatformUsageState = { status: 'loading', reading: null, fromCache: false };
+  local: LocalInfrastructureState = { status: 'loading', fromCache: false };
   now = Date.now();
   offline = false;
   private readonly subscriptions = new Subscription();
@@ -36,6 +39,7 @@ export class NewResourceGlanceComponent implements OnInit, OnDestroy {
   constructor(
     private readonly codexUsage: CodexUsageService,
     private readonly platformUsage: PlatformUsageService,
+    private readonly localInfrastructure: LocalInfrastructureService,
     @Inject(PLATFORM_ID) private readonly platformId: object,
   ) {}
 
@@ -44,6 +48,7 @@ export class NewResourceGlanceComponent implements OnInit, OnDestroy {
     this.connectivity();
     this.subscriptions.add(this.codexUsage.watch().subscribe(state => { this.codex = state; this.now = Date.now(); }));
     this.subscriptions.add(this.platformUsage.watch().subscribe(state => { this.platform = state; this.now = Date.now(); }));
+    this.subscriptions.add(this.localInfrastructure.loadOnce().subscribe(state => { this.local = state; this.now = Date.now(); }));
     this.clock = setInterval(() => { this.now = Date.now(); }, 60_000);
     window.addEventListener('online', this.connectivity);
     window.addEventListener('offline', this.connectivity);

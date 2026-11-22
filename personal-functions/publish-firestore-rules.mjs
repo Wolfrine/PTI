@@ -7,15 +7,15 @@ if(!reviewed||!/^projects\/pti-app-2ab59\/rulesets\/[A-Za-z0-9_-]+$/.test(review
 const scope=process.env.PTI_RULES_RELEASE_SCOPE || 'shared';
 if(!['shared','finance'].includes(scope))throw new Error('Unknown shared rules release scope.');
 const require=createRequire(new URL('../tools/pti-mcp/package.json',import.meta.url));
-const {initializeApp,applicationDefault}=require('firebase-admin/app');
-const app=initializeApp({credential:applicationDefault(),projectId:'pti-app-2ab59'});
+const {GoogleAuth}=require('google-auth-library');
+const client=await new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']}).getClient();
 const project='pti-app-2ab59',api='https://firebaserules.googleapis.com/v1';
-const token=(await app.options.credential.getAccessToken()).access_token;
 async function request(url,method='GET',data){
- const response=await fetch(url,{method,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(30000)});
- const body=await response.json();
- if(!response.ok)throw new Error(`${method} ${new URL(url).hostname}: ${response.status} ${body.error?.message||''}`);
- return body;
+ try{
+  return (await client.request({url,method,data,timeout:30000,retry:false})).data;
+ }catch(error){
+  throw new Error(`${method} ${new URL(url).hostname}: ${error.response?.status||error.code||'unavailable'} ${error.response?.data?.error?.message||''}`);
+ }
 }
 const source=await readFile('personal-harness/firestore.rules','utf8');
 const releaseUrl=`${api}/projects/${project}/releases/cloud.firestore`;

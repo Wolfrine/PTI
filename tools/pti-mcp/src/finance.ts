@@ -9,6 +9,7 @@ import {
 } from './finance-contract.js';
 import { commitScan, correctEvent, financeContext, ingestMail } from './finance-ledger.js';
 import { reconcileMonth } from './finance-projection.js';
+import { getAnalysisSource, publishMonthlyAnalysis, publishMonthlyAnalysisInput } from './finance-analysis.js';
 
 const readOnly = { readOnlyHint: true, destructiveHint: false };
 const write = { readOnlyHint: false, destructiveHint: false, idempotentHint: true };
@@ -44,10 +45,20 @@ export function registerFinanceTools(server: McpServer, db: Firestore, context: 
   }, input => call(() => ingestMail(root, input)));
   server.registerTool('finance_reconcile_month', {
     title: 'Reconcile a PTI Finance month',
-    description: 'Publish the versioned comparison between canonical events and the selected monthly projection. Reconciliation confirms arithmetic consistency for captured rows.',
+    description: 'Reconcile captured ledger arithmetic and return the exact analysisSource binding for finance_publish_monthly_analysis.',
     inputSchema: z.object({ month: monthKey }).strict(),
     annotations: write,
-  }, ({ month }) => call(async () => ({ ok: true, month, report: await reconcileMonth(root, month, actor) })));
+  }, ({ month }) => call(async () => {
+    const report = await reconcileMonth(root, month, actor);
+    const analysisSource = await getAnalysisSource(root, month, report.reportVersion);
+    return { ok: true, month, report, analysisSource };
+  }));
+  server.registerTool('finance_publish_monthly_analysis', {
+    title: 'Publish a PTI Finance monthly analysis',
+    description: 'Publish private, evidence-bound monthly findings and coverage gaps. Pass the exact analysisSource from finance_reconcile_month as source, select structured findings, and optionally cite source-window IDs from the same month. The service renders prose and calculates figures. Replay the same source and semantic selections to retrieve the original immutable analysis.',
+    inputSchema: publishMonthlyAnalysisInput,
+    annotations: write,
+  }, input => call(() => publishMonthlyAnalysis(root, input)));
   server.registerTool('finance_commit_scan', {
     title: 'Record a bounded Finance Gmail scan',
     description: 'Record an immutable processed window. Only a complete, contiguous scan with compare-and-set cursor evidence may advance the watermark.',

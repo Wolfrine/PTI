@@ -1,23 +1,9 @@
 // Prepare a normalized PTI MCP request in the authenticated Gmail worker.
 // Keep Gmail bodies, addresses and attachment bytes in the worker's memory.
-const HDFC_DOMAINS = new Set(['hdfcbank.net', 'hdfcbank.com', 'hdfcbank.bank.in']);
+import { verifiedFinanceGmailSender } from './finance-gmail-source.mjs';
+
 const DEBIT = /(?:Rs\.?|INR)\s*([\d,]+\.\d{2})\s+has been debited from account\s+\*{2,}(\d{4})\s+to VPA\s+\S+\s+on\s+(\d{2})-(\d{2})-(\d{2})\.?\s+Your UPI transaction reference number is\s+(\d{10,16})(?=[.\s]|$)/i;
 const PAISA_LIMIT = 100000000000;
-
-function headers(message) {
-  return new Map((message?.payload?.headers ?? []).map(({name, value}) => [name.toLowerCase(), value]));
-}
-
-function senderDomain(value) {
-  return /@([a-z\d.-]+)>?\s*$/i.exec(value ?? '')?.[1].toLowerCase();
-}
-
-function dmarcMatches(value, domain) {
-  return String(value ?? '').split(';').some(part => {
-    const matches = /\bdmarc=pass\b.*\bheader\.from=([\w.-]+)/i.exec(part);
-    return matches?.[1].toLowerCase() === domain;
-  });
-}
 
 function paisa(digits) {
   if (!/^(?:\d+|\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})*,\d{3})\.\d{2}$/.test(digits)) return null;
@@ -26,9 +12,7 @@ function paisa(digits) {
 }
 
 export function normalizeHdfcUpiDebit(message, householdSavingsAliases, window) {
-  const field = headers(message);
-  const domain = senderDomain(field.get('from'));
-  if (!HDFC_DOMAINS.has(domain) || !dmarcMatches(field.get('authentication-results'), domain)) return null;
+  if (verifiedFinanceGmailSender(message)?.source !== 'hdfc') return null;
   const received = new Date(Number(message.internal_date));
   if (Number.isNaN(received.getTime()) || !/^[a-z\d]{10,64}$/i.test(message.id ?? '')) return null;
   const match = DEBIT.exec(String(message.snippet ?? ''));

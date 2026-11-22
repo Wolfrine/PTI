@@ -415,6 +415,7 @@ export async function financeContext(root: DocumentReference, input: ContextInpu
   const name = { overview: 'months', sources: 'sourceStatus', source_windows: 'sourceWindows', transactions: 'transactions', reviews: 'reviews', balances: 'balances', recurring: 'recurring' }[section];
   let query: FirebaseFirestore.Query = root.collection(name);
   if (month && ['transactions', 'reviews'].includes(section)) query = query.where('month', '==', month);
+  if (month && section === 'source_windows') query = query.where('months', 'array-contains', month);
   const descending = section === 'overview';
   query = query.orderBy(FieldPath.documentId(), descending ? 'desc' : 'asc');
   if (after) query = query.startAfter(after);

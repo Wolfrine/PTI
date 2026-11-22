@@ -1,5 +1,6 @@
 import { FieldPath, type DocumentReference, type Transaction } from 'firebase-admin/firestore';
 import { FinanceError, fingerprint, type Entry, type Coverage, type SourceType } from './finance-contract.js';
+import type { MonthlyAnalysis } from './finance-analysis.js';
 
 export interface LedgerEvent {
   id: string;
@@ -44,7 +45,7 @@ export function blankMonthly(month: string) {
       reportVersion: number; transactionCount: number },
   };
 }
-export type Monthly = ReturnType<typeof blankMonthly>;
+export type Monthly = ReturnType<typeof blankMonthly> & { analysisVersion?: number; monthlyAnalysis?: MonthlyAnalysis };
 
 function sum(value: number, delta: number) {
   if (!Number.isSafeInteger(value + delta)) throw new FinanceError('reconciliation_limit');
@@ -116,10 +117,12 @@ export function versionMonth(month: Monthly, now: string) {
   month.version++;
   month.updatedAt = now;
   month.reconciliation = null;
+  delete month.monthlyAnalysis;
 }
 
 export function aggregateFingerprint(month: Monthly) {
-  return fingerprint(figures.map(key => month[key]), month.counts,
+  const { transactions, review, pending, excluded } = month.counts;
+  return fingerprint(figures.map(key => month[key]), [transactions, review, pending, excluded],
     Object.entries(month.categories).sort(([first], [second]) => first.localeCompare(second)));
 }
 
@@ -195,7 +198,7 @@ export async function reconcileMonth(root: DocumentReference, month: string, act
     const status = aggregateFingerprint(current) === aggregateFingerprint(recomputed) ? 'balanced' : 'repaired';
     const reconciliation = { status, reconciledAt, reportVersion, transactionCount: recomputed.counts.transactions } as const;
     const next = { ...recomputed, version: reportVersion, updatedAt: reconciledAt, coverage: current.coverage, reconciliation };
-    tx.set(monthRef, next);
+    tx.set(monthRef, current.analysisVersion === undefined ? next : { ...next, analysisVersion: current.analysisVersion });
     tx.create(root.collection('reports').doc(fingerprint(month, reportVersion)), { ...next, actor });
     return reconciliation;
   });

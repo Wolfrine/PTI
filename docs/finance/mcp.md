@@ -4,10 +4,11 @@ Finance uses the existing account-scoped PTI MCP at **https://pti-firestore-mcp-
 
 | Tool | Inputs and durable result |
 | --- | --- |
-| **finance_context** | Optional month (YYYY-MM), section, limit (1–60), and after cursor. Sections are overview, transactions, reviews, sources, source_windows, balances, recurring and operations. Transactions and reviews require a month. A missing summary is unavailable. Operations returns the Gmail scan status and cursor. The operations section accepts an optional Gmail messageId and returns its current intake edition and next part. |
+| **finance_context** | Optional month (YYYY-MM), section, limit (1–60), and after cursor. Sections are overview, transactions, reviews, sources, source_windows, balances, recurring and operations. Transactions and reviews require a month. Source windows honor the month when provided. A missing summary is unavailable. Operations returns the Gmail scan status and cursor. The operations section accepts an optional Gmail messageId and returns its current intake edition and next part. |
 | **finance_ingest_email** | One sanitized Gmail envelope with immutable messageId, receivedAt, normalized source and sourceType plus ownerScope, parserVersion, coverage, optional inclusive period and up to 20 entries and 10 stocks per part. The response includes per-part outcomes, finalized status and exact replay acknowledgment. |
 | **finance_commit_scan** | Immutable bounded Gmail run with runId, inclusive local window, backfill or daily mode, complete/partial/failed status and actual processing counts. Optional nextCursor and required matching expectedCursor advance the date watermark only after a complete scan of a contiguous or overlapping window. A partial scan leaves the cursor in place. |
-| **finance_reconcile_month** | One calendar month. Compares the captured canonical event arithmetic with the projection, writes an immutable report version and returns balanced or repaired. An open intake, concurrent revision, oversized month or missing month yields an explicit error. |
+| **finance_reconcile_month** | One calendar month. Compares the captured canonical event arithmetic with the projection, writes an immutable report version and returns balanced or repaired. The additive `analysisSource` field binds publication to the current immutable report and month revision. An open intake, concurrent revision, oversized month or missing month yields an explicit error. |
+| **finance_publish_monthly_analysis** | Publishes a private narrative from the exact `analysisSource`, one to eight typed finding selectors, and up to eight optional source-window IDs. The service validates citations and derives all figures, prose and coverage gaps. A replay returns the original immutable version. |
 | **finance_correct_event** | Owner-directed requestId, eventId, expectedRevision and reason with a classification, category, posted/excluded decision or matching duplicateOf link. Updates the event and affected projection in one transaction and writes an immutable revision. Exact request replay returns the original result. |
 
 ## Source identification and intake
@@ -31,5 +32,27 @@ Amounts are integer INR paisa. The month's transactions count includes all proje
 Balances report a stock as of a date. Cash closing and available balances, card amounts due, outstanding loan principal and investment market values use separate bases. Outstanding principal requires a confirmed bank statement with an explicit principal balance. Latest projections are per account alias, stock kind and basis. A bank alert must explicitly identify an available balance. Never add closing and available balances for the same account. Recurring evidence is an observed mandate or a possible subscription from a classified posting. It does not predict a future debit.
 
 Source status describes the latest processed message with aggregate evidence counts. Source windows preserve the asserted dates and missing-document status of each finalized message. Month coverage describes captured inputs and preserves the gaps, including in-progress intake. A complete scan acknowledges the bounded Gmail search and processing. An arithmetic reconciliation checks the captured ledger against itself and does not establish an issuer balance match or whole-household completeness.
+
+## Monthly analysis publication
+
+The existing monthly job can call `finance_reconcile_month` for the previous India calendar month. Keep its `analysisSource` object exactly as returned. It contains `month`, `ledgerVersion`, `reportVersion`, `reportId` and `sourceDigest`. If the month is missing, record it as unavailable and stop the publication attempt. For `intake_in_progress` or `revision_conflict`, reread and reconcile after intake settles. Do not carry old citations over to a new report without rereading their evidence.
+
+Use `finance_context` with that month and `section` set to `overview`, `source_windows`, or `transactions` to inspect the captured scope and select evidence. Pass the reconciliation binding to `finance_publish_monthly_analysis` as `source`. Its `findings` array accepts the following structured selectors.
+
+| `code` | Additional fields and reported figures |
+| --- | --- |
+| `income` | Captured earned income, interest and reimbursements |
+| `spending` | Captured gross spending, refunds and net spending |
+| `cashflow` | Posted cash-account inflow, outflow and net movement |
+| `financing` | Separate cash transfer legs, card settlements, loan draws and principal repayments |
+| `investments` | Captured contributions and withdrawals |
+| `category_share` | A supported `category` such as `groceries`. The share uses captured gross spending as its denominator. |
+| `spend_group` | `eventIds` of two to eight distinct posted expense or fee events from the same month. The service reads the canonical IDs, calculates their total and reports the share of gross spending. The request can cite up to twelve distinct event IDs across all findings. |
+
+Optional `sourceWindowIds` must come from `finance_context` for the exact month. The stored citation includes the opaque ID, source type, coverage status, last update and issuer-confirmed dates when available. A window can be associated with a month through a known row date or received date even when its issuer period is unknown. The service checks window and event citations atomically against the bound report and month and records cited event revisions. Publication accepts no authored narrative, item names, account identifiers, raw mail, attachment bytes or personal data.
+
+The response includes `analysisId`, `analysis`, `replay` and `current`. Read back `finance_context` with `section: overview` and the same month. Its `summary.monthlyAnalysis` should match the returned analysis version, ledger version and report version when `current` is true. Finding and citation order and repeated selectors are normalized for replay. The same selections and source binding always return the original version, even after that version has been replaced or invalidated. In that case `current` is false. Different evidence or findings get a new analysis version. Publication never advances the ledger version.
+
+The browser reads the current narrative from the existing owner-readable `months` document. The narrative is cleared when the ledger or associated source coverage changes. The immutable receipt remains in the server-only `monthlyAnalyses` collection. A `null` figure means unknown, including an individual gross measure with no relevant posted activity. A zero can describe a net total from captured movements or a category with no expenses within observed gross spending. Even where captured figures are available, coverage can remain partial and whole-household completeness remains unknown.
 
 The browser submits a correction to **https://pti-firestore-mcp-185802494856.asia-south1.run.app/finance/correct** with POST, Content-Type application/json and Authorization Bearer set to the current Firebase ID token. The response gives the new revision. A revision conflict requires a read of the latest event before the user retries. Keep the same request ID and payload for transport retries after an uncertain response.

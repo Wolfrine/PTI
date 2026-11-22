@@ -10,7 +10,7 @@ import { transform } from 'esbuild';
 const canonical='https://pti-app-2ab59-one-piece.web.app';
 const returnSource=await readFile(new URL('../../../pti-app/src/app/services/login-return.ts',import.meta.url),'utf8');
 const returns=await transform(returnSource,{loader:'ts',format:'esm'});
-const {safeLoginReturn,onePieceLoginAlias,navigateAfterLogin}=await import(`data:text/javascript;base64,${Buffer.from(returns.code).toString('base64')}`);
+const {safeLoginReturn,onePieceLoginAlias,siblingLoginAlias,navigateAfterLogin}=await import(`data:text/javascript;base64,${Buffer.from(returns.code).toString('base64')}`);
 
 test('old PTI login links go directly to the native app without carrying credentials',()=>{
  const raw='/one-piece/watch?episode=one-piece-1001&from=continue&range=1001&token=secret&ticket=secret#player';
@@ -31,7 +31,7 @@ test('current PTI login stays available and legacy family handoff happens before
  const compiled=await transform(source.replace(/^import .*;\r?\n/gm,''),{loader:'ts',format:'cjs',target:'es2022'});
  for(const [redirect,expected] of [['/one-piece/?episode=500#player','alias'],['/home','pti']]){
   const calls=[],module={exports:{}};
-  vm.runInNewContext(compiled.code,{module,exports:module.exports,Component:()=>type=>type,CommonModule:Symbol('common'),DestroyRef:Symbol('destroy'),inject:()=>({}),takeUntilDestroyed:()=>source=>source,onePieceLoginAlias,safeLoginReturn,navigateAfterLogin,window:{location:{replace:url=>calls.push(['replace',url])}}});
+  vm.runInNewContext(compiled.code,{module,exports:module.exports,Component:()=>type=>type,CommonModule:Symbol('common'),DestroyRef:Symbol('destroy'),inject:()=>({}),takeUntilDestroyed:()=>source=>source,siblingLoginAlias,safeLoginReturn,navigateAfterLogin,window:{location:{replace:url=>calls.push(['replace',url])}}});
   const auth={getUser:()=>{calls.push(['getUser']);const user={subscribe:handler=>handler(null),pipe:operator=>operator(user)};return user;},initGoogleOneTap:()=>calls.push(['google'])};
   new module.exports.LoginComponent(auth,{}, {snapshot:{queryParamMap:{get:()=>redirect}}}).ngOnInit();
   if(expected==='alias')assert.deepEqual(calls,[['replace',`${canonical}/one-piece/?episode=500#player`]]);
@@ -47,7 +47,7 @@ test('PTI root keeps its update banner and suppresses only the old family-login 
  const compiled=await transform(source.replace(/^import .*;\r?\n/gm,''),{loader:'ts',format:'cjs',target:'es2022'});
  for(const [pathname,search,timers] of [['/login','?redirect=%2Fone-piece%2F%3Fepisode%3D500',0],['/','?redirect=%2Fone-piece%2F',0],['/login','?redirect=%2Fhome',1],['/home','?redirect=%2Fone-piece%2F',1]]){
   const scheduled=[],module={exports:{}};
-  vm.runInNewContext(compiled.code,{module,exports:module.exports,Component:()=>type=>type,RouterOutlet:Symbol('router'),NgIf:Symbol('if'),onePieceLoginAlias,URLSearchParams,setTimeout:callback=>scheduled.push(callback),window:{location:{pathname,search}}});
+  vm.runInNewContext(compiled.code,{module,exports:module.exports,Component:()=>type=>type,RouterOutlet:Symbol('router'),NgIf:Symbol('if'),siblingLoginAlias,URLSearchParams,setTimeout:callback=>scheduled.push(callback),window:{location:{pathname,search}}});
   const component=new module.exports.AppComponent({}, {events:{subscribe:()=>{}}}, {isEnabled:false});
   component.ngOnInit();assert.equal(scheduled.length,timers,pathname+search);assert.equal(component.appName,'PTI');
  }

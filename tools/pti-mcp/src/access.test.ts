@@ -13,7 +13,7 @@ describe('Shared PTI account boundary', () => {
   });
   it('discovers registered apps without misrepresenting browser/Drive data', () => {
     const apps = appCatalog('owner');
-    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'venture', 'food', 'tracker', 'atlas', 'velum']);
+    expect(apps.map(x => x.id)).toEqual(['pti', 'luminary', 'personal', 'sefpo', 'venture', 'finance', 'food', 'tracker', 'atlas', 'velum']);
     expect(apps.find(x => x.id === 'velum')?.access).toBe('read-write-prompts-only');
     expect(apps.find(x => x.id === 'velum')?.root).toBe('users/owner/velumPromptData/workspace');
     expect(apps.find(x => x.id === 'velum')?.notes).toContain('browser-local');

@@ -12,6 +12,11 @@ on:
         description: 'Exact production ruleset name reviewed and reconciled into this source'
         type: string
         required: true
+      change_scope:
+        description: 'Publish the full reviewed source or only the Finance boundary'
+        type: choice
+        options: [shared, finance]
+        default: shared
 
 permissions:
   contents: read
@@ -55,9 +60,10 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firestore-rules-credential.json
           REVIEWED_LIVE_RULESET: ${{ inputs.reviewed_live_ruleset }}
+          PTI_RULES_RELEASE_SCOPE: ${{ inputs.change_scope }}
         run: |
           set -euo pipefail
-          npm ci --prefix personal-functions --omit=dev --ignore-scripts --no-audit --no-fund
+          npm ci --prefix tools/pti-mcp --omit=dev --ignore-scripts --no-audit --no-fund
           node personal-functions/publish-firestore-rules.mjs
       - name: Remove temporary credential
         if: always()

@@ -17,7 +17,21 @@ service cloud.firestore {
   }
   match /users/{uid} {
    allow read, write: if interactiveUser();
-    match /{collection}/{document=**} { allow read, write: if collection != 'atlasData' && collection != 'intelligenceData' && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'resourceUsage' && collection != 'velumStudio' && interactiveUser(); }
+    match /{collection}/{document=**} { allow read, write: if collection != 'atlasData' && collection != 'intelligenceData' && collection != 'personalData' && collection != 'sefpoData' && collection != 'foodData' && collection != 'financeData' && collection != 'ventureData' && collection != 'trackerData' && collection != 'weddingData' && collection != 'onePieceData' && collection != 'codexProjects' && collection != 'resourceUsage' && collection != 'velumStudio' && interactiveUser(); }
+  }
+  // Finance audit, envelopes and writes are reserved for the verified owner service.
+  match /users/{uid}/financeData/workspace {
+   function financeOwner() {
+    return owner(uid) && uid == '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2'
+      && request.auth.token.firebase.sign_in_provider == 'google.com'
+      && request.auth.token.email_verified == true && request.auth.token.email == 'schttewary@gmail.com';
+   }
+   allow get: if financeOwner();
+   allow list, write: if false;
+   match /{collection}/{id} {
+    allow get, list: if financeOwner() && collection in ['months','transactions','reviews','balances','recurring','sourceStatus','sourceWindows','scanStatus'];
+    allow write: if false;
+   }
   }
   // Private Studio drafts, reference inputs, thumbnails and explicit Drive save receipts.
   match /users/{uid}/velumStudio/workspace {

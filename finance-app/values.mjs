@@ -29,6 +29,7 @@ const monthFormatter = new Intl.DateTimeFormat('en-IN', { month: 'long', year: '
 const shortMonthFormatter = new Intl.DateTimeFormat('en-IN', { month: 'short', timeZone: 'UTC' });
 const dayFormatter = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: zone });
 const momentFormatter = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: zone });
+const indiaDate = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: zone });
 const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
 export const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => replacements[character]);
@@ -38,6 +39,7 @@ export const pretty = (value) => {
 };
 export const monthValid = (month) => /^20\d{2}-(0[1-9]|1[0-2])$/.test(month ?? '');
 export const amountValid = Number.isSafeInteger;
+export const stableId = (id) => typeof id === 'string' && /^[a-f0-9]{64}$/.test(id);
 export function money(paisa) {
   if (!amountValid(paisa)) return 'Unavailable';
   const whole = Math.trunc(paisa / 100);
@@ -62,9 +64,17 @@ export function date(value, withTime = false) {
   return Number.isFinite(parsed.getTime()) ? (withTime ? momentFormatter : dayFormatter).format(parsed) : 'Unavailable';
 }
 
-export function currentMonth() {
-  const parts = new Intl.DateTimeFormat('en-IN', { year: 'numeric', month: '2-digit', timeZone: zone }).formatToParts();
-  return `${parts.find((part) => part.type === 'year').value}-${parts.find((part) => part.type === 'month').value}`;
+export function currentDate() {
+  const parts = Object.fromEntries(indiaDate.formatToParts().map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+export const currentMonth = () => currentDate().slice(0, 7);
+
+export function dateValid(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 export function monthFrom(month, offset = 0) {
@@ -73,13 +83,64 @@ export function monthFrom(month, offset = 0) {
 }
 
 export function monthLabel(month, short = false) {
-  return monthValid(month) ? (short ? shortMonthFormatter : monthFormatter).format(new Date(`${month}-01T00:00:00Z`)) : 'Unavailable';
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(month ?? '')
+    ? (short ? shortMonthFormatter : monthFormatter).format(new Date(`${month}-01T00:00:00Z`))
+    : 'Unavailable';
+}
+
+export function calendarPeriod(month) {
+  const [year, index] = month.split('-').map(Number);
+  return { from: `${month}-01`, to: new Date(Date.UTC(year, index, 0)).toISOString().slice(0, 10) };
+}
+
+function dateInMonth(month, day) {
+  const lastDay = Number(calendarPeriod(month).to.slice(8));
+  return `${month}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
+}
+
+export function historyPeriod(month, through) {
+  const to = through ?? dateInMonth(month, Number(currentDate().slice(8)));
+  const firstMonth = monthFrom(month, -36);
+  const from = dateInMonth(firstMonth, Number(to.slice(8)));
+  const buckets = Array.from({ length: 37 }, (_, offset) => {
+    const key = monthFrom(firstMonth, offset);
+    const calendar = calendarPeriod(key);
+    const start = from > calendar.from ? from : calendar.from;
+    const end = to < calendar.to ? to : calendar.to;
+    return { month: key, from: start, to: end, clipped: start !== calendar.from || end !== calendar.to };
+  });
+  return { from, to, buckets };
 }
 
 export function routeFrom(hash, fallbackMonth) {
   const [view, search] = hash.replace(/^#\/?/, '').split('?', 2);
-  const requestedMonth = new URLSearchParams(search).get('month');
-  return { view: Object.hasOwn(views, view) ? view : 'overview', month: monthValid(requestedMonth) ? requestedMonth : fallbackMonth };
+  const params = new URLSearchParams(search);
+  const requestedMonth = params.get('month');
+  const month = monthValid(requestedMonth) ? requestedMonth : fallbackMonth;
+  const route = { view: Object.hasOwn(views, view) ? view : 'overview', month };
+  const through = params.get('through');
+  if (route.view === 'overview') {
+    if (dateValid(through) && through.startsWith(`${month}-`)) route.through = through;
+    const bucket = params.get('bucket');
+    if (monthValid(bucket)) route.bucket = bucket;
+  }
+  if (['transactions', 'sources'].includes(route.view)) {
+    const from = params.get('from');
+    const to = params.get('to');
+    const back = params.get('historyThrough');
+    if (dateValid(from) && dateValid(to) && from.startsWith(`${month}-`) && to.startsWith(`${month}-`) && from <= to) {
+      route.period = { from, to };
+    }
+    if (route.period && dateValid(back) && monthValid(back.slice(0, 7))) route.historyThrough = back;
+    const reference = params.get(route.view === 'sources' ? 'window' : 'entry');
+    if (params.get('report') === 'monthly') {
+      route.fromReport = true;
+      if (stableId(reference)) route.reference = reference;
+      const revision = params.get('revision');
+      if (/^[1-9]\d*$/.test(revision ?? '') && amountValid(Number(revision))) route.referenceRevision = Number(revision);
+    }
+  }
+  return route;
 }
 
 export const href = (view, month) => `#${view}?month=${month}`;
@@ -96,5 +157,6 @@ export function filtersFrom(hash, route) {
     status: ['posted', 'pending', 'review', 'excluded'].includes(status) ? status : '',
     spending: params.get('scope') === 'spending',
     cash: params.get('scope') === 'cash',
+    cashOutflow: params.get('scope') === 'cash-outflow',
   };
 }

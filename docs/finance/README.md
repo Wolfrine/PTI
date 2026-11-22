@@ -6,11 +6,11 @@ The application uses the dedicated Finance Hosting site, Firebase Google sign-in
 
 | Phase | Evidence and remaining gate |
 | --- | --- |
-| 1. Discovery and coverage | Authenticated Gmail searches observed bank, card, CDSL and merchant sources. Five real UPI alerts passed canonical normalization. Four supported PDF parts failed extraction. See [Gmail intake](gmail.md). |
+| 1. Discovery and coverage | 2,231 HDFC candidates indexed across 37 months. Five real UPI alerts passed normalization. Five actual HDFC, CDSL and Groww PDFs recovered through raw Gmail MIME declared encryption. Posting rows and household statement coverage remain unavailable. See [Gmail intake](gmail.md). |
 | 2. Central design and UX | Three structural directions reviewed against Central, PTI Home and product references. Monthly statement selected. Authenticated desktop and mobile renders and critique cycles remain open. See [design](design.md). |
 | 3. Ledger and reconciliation | Owner rules, immutable intake, revisioned entries and monthly projections shipped. The review exclusion was verified in memory with the five real alerts. Authenticated intake, replay and issuer reconciliation remain open. See [MCP contract](mcp.md). |
 | 4. Production application | Finance Hosting and the PTI Home bundles were verified live. The official browser host was unavailable. The owner sign-in, navigation, corrections and desktop/mobile layouts still need browser inspection. |
-| 5. Gmail and monthly automation | The authenticated PTI app catalog lists the five Finance methods. This native connection's callable tool list has yet to refresh. No Gmail rows, monthly closes or schedules were published as of the release check. |
+| 5. Gmail and monthly automation | The existing hourly Gmail Intake and monthly Review schedules are recorded in `automationReceipts`. First successful authenticated runs and ledger and monthly-analysis readback remain open. |
 | 6. Independent audit and release | The independent source review led to fixes in cross-source deduplication, legacy endpoint isolation, navigation, and partial-month amounts. Remaining gates are authenticated read/write/replay, statement-level coverage and rendered verification. |
 
 ## Release
@@ -29,3 +29,9 @@ On 22 November 2026, the shared rules check passed for `cf3624f69b931e124648c9e4
 - Read-only Firestore aggregate queries found zero transactions and zero month documents. All 37 touched calendar month buckets remain uncovered. The browser host error and callable-tool inventory gap leave live owner/outsider behavior, importing a real message, replaying it, producing a month report and scheduling both jobs open.
 
 For a local Finance build, run `node finance-app/scripts/build.mjs --out H:/Workspace/Builds/PTI/finance-production`. Keep cloud rule release, Hosting asset identity, tool discovery, recorded data and actual browser verification as distinct evidence in the project checkpoint.
+
+## History and monthly analysis
+
+Overview uses the selected India-local ending date to calculate a 36-month window. The original 22 November 2023 through 22 November 2026 window yields 37 buckets including the two clipped November boundaries. The app makes one bounded range query of calendar projections and uses bounded posted-ledger evidence for clipped date amounts. The selected bucket links to the ledger and source coverage for its dates. The chart and date list show the recorded earned income, cash outflow and net cash movement with unsupported values unavailable. Gmail search inventory alone supplies no chart amounts.
+
+Reports reads the current analysis from the existing owner-readable month projection. `finance_publish_monthly_analysis` binds each version to the exact reconciled report and validates cited records against that month. It generates prose from selected finance measures and authorized ledger evidence. The immutable analysis remains auditable when new evidence supersedes its projection. See the exact [MCP publication contract](mcp.md).

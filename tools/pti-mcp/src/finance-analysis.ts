@@ -137,6 +137,8 @@ async function getSourceWindows(tx: Transaction, root: DocumentReference, month:
     const dates = period.nullable().safeParse(data.period ?? null);
     const updated = z.iso.datetime().safeParse(data.updatedAt);
     if (!type.success || !status.success || !dates.success || !updated.success) throw new FinanceError('invalid_request');
+    if (dates.data && (dates.data.from.slice(0, 7) > month || dates.data.to.slice(0, 7) < month))
+      throw new FinanceError('invalid_request');
     return { id: doc.id, sourceType: type.data, status: status.data, period: dates.data, updatedAt: updated.data };
   });
 }

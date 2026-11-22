@@ -1,5 +1,6 @@
 import { PAGE_SIZE } from './finance-data.mjs';
-import { amountValid, categories, count, date, escape, href, kinds, money, monthFrom, monthLabel, monthValid, pretty, signed, views } from './values.mjs';
+import { historyView } from './history.mjs';
+import { amountValid, categories, count, date, escape, href, kinds, money, monthFrom, monthLabel, monthValid, pretty, signed, stableId, views } from './values.mjs';
 
 const statusLabel = {
   observed: 'Observed coverage', partial: 'Partial coverage', balanced: 'Ledger totals checked', repaired: 'Ledger totals repaired',
@@ -59,7 +60,12 @@ export function heading(route, monthly) {
     <button type="submit" class="button">Go</button>
     ${monthValid(monthFrom(route.month, 1)) ? `<a class="period-arrow" aria-label="Next month" href="${href(route.view, monthFrom(route.month, 1))}">›</a>` : ''}
   </form>` : '';
-  return `<header class="page-heading"><div class="heading-main"><h1>${view.title}</h1>${view.month ? `<span class="period-label">${monthLabel(route.month)}</span>` : ''}</div>${period}</header>` + (view.month && coverage ? `<div class="scope-line">${pill(coverage)}<span>Ledger updated ${date(monthly.updatedAt, true)}</span>${route.view === 'sources' ? '' : action('sources', route.month, 'View coverage')}</div>` : '');
+  const back = route.historyThrough ? `<a class="text-link" href="${href('overview', route.historyThrough.slice(0, 7))}&through=${route.historyThrough}&bucket=${route.month}">Back to history</a>` : '';
+  const returnLink = route.fromReport ? `<div class="scope-line">${action('reports', route.month, 'Back to monthly report')}</div>` : '';
+  const range = route.period ? `<div class="scope-line"><strong>${datesOf(route.period)} · Inclusive dates</strong>${back}</div>` : '';
+  const sourceLink = route.view === 'sources' || route.period ? '' : action('sources', route.month, 'View coverage');
+  const monthCoverage = view.month && coverage ? `<div class="scope-line">${route.period ? '<span>Calendar month</span>' : ''}${pill(coverage)}<span>Ledger updated ${date(monthly.updatedAt, true)}</span>${sourceLink}</div>` : '';
+  return `<header class="page-heading"><div class="heading-main"><h1>${view.title}</h1>${view.month ? `<span class="period-label">${monthLabel(route.month)}</span>` : ''}</div>${period}</header>${returnLink}${range}${monthCoverage}`;
 }
 
 function metrics(monthly) {
@@ -69,22 +75,6 @@ function metrics(monthly) {
     <div class="metric spent"><dt>Net expenses</dt><dd>${money(totals?.netSpendPaisa)}</dd></div>
     <div class="metric net"><dt>Net cash flow</dt><dd>${money(totals?.cashflowPaisa)}</dd></div>
   </dl>`;
-}
-
-function cashFlow(history, month) {
-  if (!history.ok) return error('Cash flow history');
-  const rows = history.data;
-  const flows = rows.map((row) => ({ ...row, totals: summary(row.data) }));
-  const observed = flows.filter(({ totals }) => amountValid(totals?.inflowPaisa) || amountValid(totals?.outflowPaisa));
-  if (!observed.length) return empty('Cash flow history is unavailable.', 'This chart uses posted cash-account movements.');
-  const maximum = Math.max(1, ...observed.flatMap(({ totals }) => [totals.inflowPaisa, totals.outflowPaisa]).filter(amountValid));
-  const bars = (data, name, type) => amountValid(data)
-    ? `<div class="bar ${type}"><meter min="0" max="${maximum}" value="${Math.max(0, data)}" aria-label="${name}" aria-valuetext="${money(data)}"></meter><span>${signed(data, type === 'earned' ? 'credit' : 'debit')}</span></div>`
-    : '<div class="bar">Unavailable</div>';
-  return `<div class="chart-key"><span class="spent">Cash outflow</span><span class="earned">Cash inflow</span></div>
-    <ul class="flow-list">${flows.map(({ month: rowMonth, data, totals }) => `<li class="flow-row${rowMonth === month ? ' current' : ''}">
-      <a class="flow-month" href="${href('transactions', rowMonth)}&scope=cash" aria-label="Cash transactions for ${monthLabel(rowMonth)}">${monthLabel(rowMonth, true)}<span>${data?.coverage?.status === 'partial' ? 'Partial' : ''}</span></a>
-      <div class="paired-bars">${amountValid(totals?.inflowPaisa) || amountValid(totals?.outflowPaisa) ? bars(totals.outflowPaisa, 'Cash outflow', 'spent') + bars(totals.inflowPaisa, 'Cash inflow', 'earned') : '<p>Unavailable</p>'}</div></li>`).join('')}</ul>`;
 }
 
 function spending(monthly, month) {
@@ -128,11 +118,11 @@ function overview(route, result) {
   const recent = result.rows.data?.list.filter((row) => row.status === 'posted').slice(0, 6);
   const recentBody = result.rows.ok ? ledgerRows(recent, { emptyTitle: 'No posted entries among the transactions loaded for this overview.' }) : error('Transactions');
   return `${result.month.ok ? coverageNote(monthly, month) : error('Monthly totals')}${metrics(monthly)}
+    ${panel('Income and cash flow history', historyView(route, result), action('reports', month, 'Monthly report'), 'history-panel')}
     <div class="overview-grid">
-      ${panel('Cash flow', cashFlow(result.history, month), action('reports', month, 'Reports'))}
+      ${panel('Recent posted transactions', recentBody, action('transactions', month, 'All transactions'))}
       ${panel('Spending by category', spending(monthly, month), '', 'spend-panel')}
     </div>
-    ${panel('Recent posted transactions', recentBody, action('transactions', month, 'All transactions'))}
     <div class="overview-grid followups">${panel('Recurring items', recurring(result.recurring))}${panel('Review queue', `<p class="review-summary">${reviewCopy}</p>`, action('review', month, 'Open review'))}</div>`;
 }
 
@@ -140,12 +130,18 @@ function ledgerFilter(route, filters) {
   if (route.view !== 'transactions') return '';
   const categoryOptions = [['', 'All categories'], ...categories.map((category) => [category, pretty(category)])];
   const kindOptions = [['', 'All types'], ...Object.entries(kinds)];
-  const scope = filters.spending ? 'spending' : filters.cash ? 'cash' : '';
-  const scopeDescription = filters.spending ? 'Showing expenses and fees.' : filters.cash ? 'Showing posted cash-account movements.' : '';
-  return `${scopeDescription ? `<p class="muted">${scopeDescription}</p>` : ''}<form id="ledger-filter" class="ledger-filter">${scope ? `<input name="scope" type="hidden" value="${scope}">` : ''}<label>Category<select name="category">${optionList(categoryOptions, filters.category)}</select></label>
+  const scope = filters.spending ? 'spending' : filters.cashOutflow ? 'cash-outflow' : filters.cash ? 'cash' : '';
+  const scopeDescription = filters.spending ? 'Showing expenses and fees.' : filters.cashOutflow ? 'Showing posted cash account debits.' : filters.cash ? 'Showing posted cash account movements.' : '';
+  const scopeFields = route.period ? `<input name="from" type="hidden" value="${route.period.from}"><input name="to" type="hidden" value="${route.period.to}">` : '';
+  const historyField = route.historyThrough ? `<input name="historyThrough" type="hidden" value="${route.historyThrough}">` : '';
+  const reportField = route.fromReport ? '<input name="report" type="hidden" value="monthly">' : '';
+  const clearHref = href('transactions', route.month) + (route.fromReport ? '&report=monthly' : '')
+    + (route.period ? `&from=${route.period.from}&to=${route.period.to}` : '')
+    + (route.historyThrough ? `&historyThrough=${route.historyThrough}` : '');
+  return `${scopeDescription ? `<p class="muted">${scopeDescription}</p>` : ''}<form id="ledger-filter" class="ledger-filter">${scopeFields}${historyField}${reportField}${scope ? `<input name="scope" type="hidden" value="${scope}">` : ''}<label>Category<select name="category">${optionList(categoryOptions, filters.category)}</select></label>
     <label>Type<select name="kind">${optionList(kindOptions, filters.kind)}</select></label>
     <label>Status<select name="status">${optionList([['', 'All statuses'], ['posted', 'Posted'], ['pending', 'Pending'], ['review', 'Needs review'], ['excluded', 'Excluded']], filters.status)}</select></label>
-    <div class="filter-actions"><button class="button" type="submit">Apply</button>${filters.category || filters.kind || filters.status || scope ? action('transactions', route.month, 'Clear filters') : ''}</div></form>`;
+    <div class="filter-actions"><button class="button" type="submit">Apply</button>${filters.category || filters.kind || filters.status || scope ? `<a class="text-link" href="${clearHref}">Clear filters</a>` : ''}</div></form>`;
 }
 
 function transactionView(route, result, filters, pageState) {
@@ -157,12 +153,13 @@ function transactionView(route, result, filters, pageState) {
     && (!filters.kind || item.kind === filters.kind) && (!filters.status || item.status === filters.status)
     && (!filters.spending || (item.status === 'posted' && ['spend', 'fee'].includes(item.kind)))
     && (!filters.cash || (item.status === 'posted' && item.accountKind === 'cash'))
+    && (!filters.cashOutflow || (item.status === 'posted' && item.accountKind === 'cash' && item.direction === 'debit'))
     && (!review || item.status === 'open'));
   const context = review ? 'Open reviews' : 'Ledger entries';
   const labelCount = `${count(list.length)} shown from ${count(rows.list.length)} loaded ${review ? 'review records' : 'transactions'}.`;
   const next = rows.more ? `<button type="button" class="button" data-more${pageState.loading ? ' disabled' : ''}>${pageState.loading ? 'Loading…' : `Load ${PAGE_SIZE} more`}</button>` : '';
-  const filterNote = filters.category || filters.kind || filters.status || filters.spending || filters.cash ? ' Filters apply to loaded entries.' : '';
-  const rowState = rows.more || rows.list.length ? 'No matches in the loaded entries.' : review ? 'No review records returned for this month.' : 'No transactions returned for this month.';
+  const filterNote = filters.category || filters.kind || filters.status || filters.spending || filters.cash || filters.cashOutflow ? ' Filters apply to loaded entries.' : '';
+  const rowState = rows.more || rows.list.length ? 'No matches in the loaded entries.' : review ? 'No review records returned for this month.' : route.period ? 'No transactions returned for these dates.' : 'No transactions returned for this month.';
   return panel(context, `${ledgerFilter(route, filters)}<p class="result-count" role="status">${labelCount}${filterNote}</p>
     ${ledgerRows(list, { review, emptyTitle: rowState })}
     ${next ? `<div class="list-footer">${next}${pageState.error ? '<p role="alert">More entries could not load. Try again.</p>' : ''}</div>` : ''}`);
@@ -188,6 +185,42 @@ function incomeView(route, result) {
     ${panel('Interest entries', '<p class="muted">Interest is shown separately from earned income.</p>', `<a class="text-link" href="${href('transactions', route.month)}&kind=interest&status=posted">View entries ↗</a>`)}`;
 }
 
+function analysisNarrative(month) {
+  const analysis = month?.monthlyAnalysis;
+  if (!analysis) return empty('No analysis has been published for this month.');
+  if (analysis.month !== month.month || !amountValid(analysis.ledgerVersion) || !amountValid(analysis.reportVersion)
+    || analysis.ledgerVersion !== month.version || analysis.reportVersion !== month.reconciliation?.reportVersion) {
+    return empty('Analysis is awaiting the current ledger version.');
+  }
+  const headline = typeof analysis.headline === 'string' && analysis.headline.trim() ? `<p class="report-headline">${escape(analysis.headline)}</p>` : '';
+  const readable = (items) => (Array.isArray(items) ? items : []).filter((item) => typeof item?.text === 'string' && item.text.trim());
+  const findingLinks = (finding) => {
+    if (categories.includes(finding.category)) {
+      return `<div class="history-links"><a class="text-link" href="${categoryHref(finding.category, month.month)}&report=monthly">View ${escape(pretty(finding.category).toLowerCase())} entries</a></div>`;
+    }
+    const citations = (Array.isArray(finding.eventRevisions) ? finding.eventRevisions : [])
+      .filter((entry) => stableId(entry?.eventId) && amountValid(entry.revision) && entry.revision > 0);
+    const links = citations.length ? citations : (Array.isArray(finding.eventIds) ? finding.eventIds : [])
+      .filter(stableId).map((eventId) => ({ eventId }));
+    const hrefBase = `${href('transactions', month.month)}&report=monthly`;
+    return links.length ? `<div class="history-links">${links.map(({ eventId, revision }, index) =>
+      `<a class="text-link" href="${hrefBase}&entry=${eventId}${revision ? `&revision=${revision}` : ''}">Ledger entry ${index + 1}</a>`).join('')}</div>` : '';
+  };
+  const findings = readable(analysis.findings).map((finding) => `<li>${escape(finding.text)}${findingLinks(finding)}</li>`).join('');
+  const gaps = readable(analysis.coverage?.gaps).map((gap) => `<li>${escape(gap.text)}</li>`).join('');
+  const windows = (Array.isArray(analysis.sourceWindows) ? analysis.sourceWindows : []).filter((source) => stableId(source?.id));
+  if (!headline && !findings && !gaps) return empty('The published analysis has no readable findings.');
+  return `<div class="report-narrative">
+    ${headline}
+    <p class="muted">Published ${date(analysis.publishedAt, true)} · Analysis v${count(analysis.version)} · Reconciled report v${count(analysis.reportVersion)} · Ledger v${count(analysis.ledgerVersion)}</p>
+    ${findings ? `<h3>Findings</h3><ul>${findings}</ul>` : ''}
+    ${gaps ? `<h3>Coverage and gaps</h3><ul>${gaps}</ul>` : ''}
+    ${windows.length ? `<h3>Cited source windows</h3><ul>${windows.map((source) =>
+      `<li><a class="text-link" href="${href('sources', month.month)}&report=monthly&window=${source.id}">${label(source.sourceType)} · ${source.period ? datesOf(source.period) : 'Dates unavailable'}</a>
+        <span class="muted"> · ${label(source.status)}</span></li>`).join('')}</ul>` : ''}
+  </div>`;
+}
+
 function reports(route, result) {
   const month = result.month.data;
   const totals = summary(month);
@@ -202,6 +235,7 @@ function reports(route, result) {
     ${field('Loan proceeds', money(totals?.loanDrawPaisa))}${field('Loan repayments', money(totals?.loanRepaymentPaisa))}
   </dl>`;
   return `${result.month.ok ? coverageNote(month, route.month) : error('Monthly report')}
+    ${panel('Monthly analysis', result.month.ok ? analysisNarrative(month) : error('Monthly analysis'), action('sources', route.month, 'Inspect coverage'))}
     ${panel('Income and expenses', report, action('transactions', route.month, 'Inspect entries'))}
     ${panel('Ledger totals check', reconciliation ? `<dl class="facts">${field('Status', label(reconciliation.status))}${field('Checked at', date(reconciliation.reconciledAt, true))}${field('Version', value(reconciliation.reportVersion))}${field('Transaction count', count(reconciliation.transactionCount))}</dl><p class="muted following">This check compares report totals with captured ledger entries. See Sources for statement and import coverage.</p>` : empty('No current totals check is available.'), action('sources', route.month, 'View coverage'))}`;
 }
@@ -210,13 +244,38 @@ function datesOf(period) {
   return period?.from && period?.to ? `${date(period.from)} – ${date(period.to)}` : 'Unavailable';
 }
 
+function sourceWindowList(windows) {
+  return `<ul class="source-list">${windows.map((source) =>
+    `<li><div class="source-title"><strong>${value(source.source)}</strong>${pill(source.status)}</div>
+    <dl class="facts source-facts">${field('Source type', label(source.sourceType))}${field('Source period', source.period ? datesOf(source.period) : 'Dates unavailable')}
+    ${field('Received', date(source.receivedAt, true))}</dl></li>`).join('')}</ul>`;
+}
+
+function reportReference(route, result) {
+  const source = route.view === 'sources';
+  const title = source ? 'Cited source window' : 'Cited ledger entry';
+  if (!result.reference.ok) return panel(title, error(title));
+  const record = result.reference.data;
+  const belongs = source ? Array.isArray(record?.months) && record.months.includes(route.month) : record?.month === route.month;
+  if (!belongs) return panel(title, empty('The cited record is unavailable for this month.'));
+  if (source) return panel(title, sourceWindowList([record]));
+  const revision = route.referenceRevision;
+  const caption = revision ? `<p class="muted following">Cited ledger revision ${count(revision)}.${revision !== record.revision ? ` Showing the current revision ${count(record.revision)}.` : ''}</p>` : '';
+  return panel(title, ledgerRows([record]) + caption);
+}
+
 function sources(route, result) {
   const coverage = result.month.data?.coverage;
   const monthEvidence = coverage ? `<dl class="facts">${field('Coverage', pill(coverage.status))}${field('Input records', count(coverage.inputCount))}${field('In progress', count(coverage.inProgressCount))}${field('Partial', count(coverage.partialCount))}${field('Locked', count(coverage.lockedCount))}${field('Unparsed', count(coverage.unparsedCount))}${field('Excluded', count(coverage.excludedCount))}</dl>` : empty('No coverage record exists for this month.');
   const sourceRows = result.sources.ok ? result.sources.data.list : [];
   const sourceEvidence = !result.sources.ok ? error('Source status') : sourceRows.length ? `<ul class="source-list">${sourceRows.map((source) => `<li><div class="source-title"><strong>${value(source.source)}</strong>${pill(source.status, source.status === 'observed' ? 'Latest processed' : undefined)}</div><dl class="facts source-facts">${field('Source type', label(source.sourceType))}${field('Last received', date(source.lastReceivedAt, true))}${field('Last processed', date(source.lastProcessedAt, true))}${field('Last observed period', datesOf(source.lastObservedPeriod))}${field('Source records', count(source.inputCount))}${field('Locked', count(source.lockedCount))}${field('Unparsed', count(source.unparsedCount))}${field('Excluded', count(source.excludedCount))}${field('Partial', count(source.partialCount))}</dl></li>`).join('')}</ul>` : empty('No source status has been recorded.');
-  const windows = [...(result.windows.data?.list ?? [])].sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)));
-  const windowEvidence = !result.windows.ok ? error('Source windows') : windows.length ? `<ul class="source-list">${windows.map((source) => `<li><div class="source-title"><strong>${value(source.source)}</strong>${pill(source.status)}</div><dl class="facts source-facts">${field('Source type', label(source.sourceType))}${field('Source period', datesOf(source.period))}${field('Received', date(source.receivedAt, true))}</dl></li>`).join('')}</ul>` : empty('No source period records were returned for this month.');
+  const monthWindows = [...(result.windows.data?.list ?? [])].sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)));
+  const dated = (source) => Boolean(source.period?.from && source.period?.to);
+  const windows = route.period ? monthWindows.filter((source) => dated(source)
+    && source.period.from <= route.period.to && source.period.to >= route.period.from) : monthWindows;
+  const undated = route.period ? monthWindows.filter((source) => !dated(source)) : [];
+  const noWindows = route.period ? 'No recorded source windows overlap these dates in the records loaded.' : 'No source period records were returned for this month.';
+  const windowEvidence = !result.windows.ok ? error('Source windows') : windows.length ? sourceWindowList(windows) : empty(noWindows);
   const historic = '<p class="muted">The historical import requested 22 November 2023 through 22 November 2026 inclusive, in India local time. It spans 37 calendar months, with both boundary months partial by date.</p>';
   const scan = result.scan.data?.lastScan;
   const scanEvidence = !result.scan.ok ? error('Automation status') : scan ? `<dl class="facts">
@@ -226,10 +285,12 @@ function sources(route, result) {
   return `${panel(monthLabel(route.month) + ' coverage', result.month.ok ? monthEvidence : error('Coverage'), action('reports', route.month, 'Monthly report'))}
     ${panel('Historical import period', historic)}${panel('Gmail automation health', scanEvidence)}
     ${panel('Source status', sourceEvidence + (result.sources.data?.more ? '<p class="muted">Showing a bounded selection of 100 sources.</p>' : ''))}
-    ${panel('Source windows for this month', windowEvidence + (result.windows.data?.more ? '<p class="muted">Showing a bounded selection of 100 source windows.</p>' : ''))}`;
+    ${panel(route.period ? 'Source windows overlapping these dates' : 'Source windows for this month', windowEvidence + (result.windows.data?.more ? '<p class="muted">Showing a bounded selection of 100 source windows for the calendar month.</p>' : ''))}
+    ${undated.length ? panel('Month-linked sources with dates unavailable', sourceWindowList(undated)) : ''}`;
 }
 
 export function render(route, result, filters, pageState) {
+  if (route.reference) return reportReference(route, result);
   switch (route.view) {
     case 'overview': return overview(route, result);
     case 'transactions':

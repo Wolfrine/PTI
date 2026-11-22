@@ -1,6 +1,7 @@
 import { connectFinance } from './finance-data.mjs';
-import { currentMonth, filtersFrom, href, monthFrom, monthValid, routeFrom } from './values.mjs';
+import { calendarPeriod, currentMonth, dateValid, filtersFrom, historyPeriod, href, monthValid, routeFrom } from './values.mjs';
 import { details, heading, navigation, render } from './views.mjs';
+import { historyDetails, historyRows } from './history.mjs';
 
 const byId = (id) => document.getElementById(id);
 const gate = byId('gate');
@@ -29,6 +30,7 @@ let saving = false;
 let decisionToken = null;
 let correctionController;
 const pageState = { loading: false, error: false };
+const EDGE_LIMIT = 500;
 
 function showGate(message, options = {}) {
   gateMessage.textContent = message;
@@ -122,6 +124,11 @@ function renderView() {
   if (!owner || !result) return;
   viewHeading.innerHTML = heading(route, result.month?.data);
   content.innerHTML = render(route, result, filters, pageState);
+  const currentMark = content.querySelector('.history-mark[aria-pressed="true"]');
+  if (currentMark) {
+    const plot = content.querySelector('.history-scroll');
+    plot.scrollLeft = currentMark.offsetLeft - (plot.clientWidth - currentMark.offsetWidth) / 2;
+  }
   content.setAttribute('aria-busy', 'false');
 }
 
@@ -132,6 +139,8 @@ async function loadView({ moveFocus = false } = {}) {
   route = routeFrom(location.hash, route.month);
   filters = filtersFrom(location.hash, route);
   const { view, month } = route;
+  const period = route.period ?? calendarPeriod(month);
+  if (view === 'overview') route.history = historyPeriod(month, route.through);
   result = null;
   pageState.loading = false;
   pageState.error = false;
@@ -145,19 +154,20 @@ async function loadView({ moveFocus = false } = {}) {
   const tasks = {};
   const readMonth = (entryMonth) => api.detail(uid, 'months', entryMonth);
   if (['overview', 'income', 'reports', 'sources', 'transactions', 'review'].includes(view)) tasks.month = readMonth(month);
-  if (['overview', 'transactions', 'review'].includes(view)) {
-    tasks.rows = api.page(uid, view === 'review' ? 'reviews' : 'transactions', month, null);
+  if (route.reference) tasks.reference = api.detail(uid, view === 'sources' ? 'sourceWindows' : 'transactions', route.reference);
+  if (!route.reference && ['overview', 'transactions', 'review'].includes(view)) {
+    tasks.rows = api.page(uid, view === 'review' ? 'reviews' : 'transactions', period, null);
   }
   if (view === 'overview') {
-    const months = [-5, -4, -3, -2, -1, 0].map((offset) => monthFrom(month, offset)).filter(monthValid);
-    tasks.history = Promise.all(months.map(async (entryMonth) => ({
-      month: entryMonth,
-      data: await (entryMonth === month ? tasks.month : readMonth(entryMonth)),
-    })));
+    const { buckets } = route.history;
+    tasks.history = api.monthRange(uid, buckets[0].month, buckets.at(-1).month);
+    for (const bucket of buckets.filter((entry) => entry.clipped)) {
+      tasks[`edge:${bucket.month}`] = api.page(uid, 'transactions', bucket, null, EDGE_LIMIT);
+    }
     tasks.recurring = api.collection(uid, 'recurring', 'lastOccurredOn');
   }
   if (['accounts', 'investments', 'debts'].includes(view)) tasks.balances = api.collection(uid, 'balances');
-  if (view === 'sources') {
+  if (view === 'sources' && !route.reference) {
     tasks.sources = api.collection(uid, 'sourceStatus');
     tasks.scan = api.detail(uid, 'scanStatus', 'gmail');
     tasks.windows = api.sourceWindows(uid, month);
@@ -181,7 +191,8 @@ async function loadMore() {
   pageState.error = false;
   renderView();
   const current = result.rows.data;
-  const next = await capture(api.page(uid, route.view === 'review' ? 'reviews' : 'transactions', route.month, current.cursor));
+  const period = route.period ?? calendarPeriod(route.month);
+  const next = await capture(api.page(uid, route.view === 'review' ? 'reviews' : 'transactions', period, current.cursor));
   if (!active(version, uid)) return;
   if (next.error === 'permission-denied' || next.error === 'unauthenticated') {
     suspendAccess();
@@ -203,7 +214,10 @@ function dialogMessage(title, message) {
 }
 
 async function openEntry(id) {
-  if (!owner || dialog.open || !result?.rows?.data?.list.some((row) => (row.eventId ?? row.id) === id)) return;
+  if (!owner || dialog.open) return;
+  const fromList = result?.rows?.data?.list.some((row) => (row.eventId ?? row.id) === id);
+  const fromReport = route.view === 'transactions' && result?.reference?.data?.id === id && result.reference.data.month === route.month;
+  if (!fromList && !fromReport) return;
   const version = ++detailVersion;
   const uid = owner.uid;
   dialogMessage('Transaction details', 'Loading source and classification…');
@@ -341,6 +355,12 @@ byId('page').addEventListener('click', (event) => {
   if (button?.hasAttribute('data-refresh')) void loadView();
   if (button?.hasAttribute('data-more')) void loadMore();
   if (button?.dataset.entry) void openEntry(button.dataset.entry);
+  if (button?.dataset.historyMonth && route.history && result?.history?.ok) {
+    const selected = historyRows(route.history, result).find((bucket) => bucket.month === button.dataset.historyMonth);
+    if (!selected) return;
+    for (const mark of content.querySelectorAll('[data-history-month]')) mark.setAttribute('aria-pressed', String(mark === button));
+    byId('history-detail').innerHTML = historyDetails(selected, route.history.to);
+  }
 });
 
 byId('page').addEventListener('submit', (event) => {
@@ -348,6 +368,10 @@ byId('page').addEventListener('submit', (event) => {
   const form = event.target;
   const fields = new FormData(form);
   if (form.id === 'period-form' && monthValid(fields.get('month'))) go(route.view, fields.get('month'));
+  if (form.id === 'history-form') {
+    const through = fields.get('through');
+    if (dateValid(through) && through.startsWith(`${route.month}-`)) go('overview', route.month, `&through=${through}`);
+  }
   if (form.id === 'ledger-filter') {
     const params = new URLSearchParams([...fields].filter(([, value]) => value !== ''));
     go('transactions', route.month, params.size ? `&${params}` : '');

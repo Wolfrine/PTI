@@ -36,6 +36,12 @@ export async function connectFinance() {
     async detail(uid, name, id) {
       return fromDocument(await store.getDocFromServer(store.doc(collection(uid, name), id)));
     },
+    async monthRange(uid, from, to) {
+      const snapshot = await rows(uid, 'months',
+        store.orderBy(store.documentId()), store.startAt(from), store.endAt(to), store.limit(37),
+      );
+      return snapshot.map(fromDocument);
+    },
     async collection(uid, name, latestBy) {
       const order = latestBy ? [store.orderBy(latestBy, 'desc')] : [];
       const snapshot = await rows(uid, name, ...order, store.limit(LIMIT + 1));
@@ -45,10 +51,10 @@ export async function connectFinance() {
       const snapshot = await rows(uid, 'sourceWindows', store.where('months', 'array-contains', month), store.limit(LIMIT + 1));
       return { list: snapshot.slice(0, LIMIT).map(fromDocument), more: snapshot.length > LIMIT };
     },
-    async page(uid, name, month, cursor, pageSize = PAGE_SIZE) {
+    async page(uid, name, period, cursor, pageSize = PAGE_SIZE) {
       const snapshot = await rows(uid, name,
-        store.where('occurredOn', '>=', `${month}-01`),
-        store.where('occurredOn', '<=', `${month}-31`),
+        store.where('occurredOn', '>=', period.from),
+        store.where('occurredOn', '<=', period.to),
         store.orderBy('occurredOn', 'desc'),
         ...(cursor ? [store.startAfter(cursor)] : []),
         store.limit(pageSize + 1),

@@ -12,6 +12,7 @@ personal-activation-report.json
 food-qa/
 
 .morsel-dist/
+.finance-dist/
 
 venture-lab/tests/node_modules/
 tools/pti-mcp/node_modules

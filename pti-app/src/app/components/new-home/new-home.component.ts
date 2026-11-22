@@ -44,6 +44,7 @@ export class NewHomeComponent implements OnInit, AfterViewInit {
   readonly apps: readonly HubApp[] = [
     { id: 'tracker', name: 'Self-Tracking', shortName: 'Tracker', description: 'Track outcomes and the progress behind them', icon: 'task_alt', category: 'Productivity', tone: 'mint', href: 'https://pti-app-2ab59-tracker.web.app/', external: true },
     { id: 'morsel', name: 'Morsel', shortName: 'Morsel', description: 'Your food memories and next meal', icon: 'restaurant_menu', category: 'Personal', tone: 'amber', href: 'https://pti-app-2ab59-morsel.web.app/', external: true },
+    { id: 'finance', name: 'Finance', shortName: 'Finance', description: 'Spending, income and the evidence behind your ledger', icon: 'account_balance_wallet', category: 'Personal', tone: 'teal', href: 'https://pti-app-2ab59-finance.web.app/', external: true },
     { id: 'venture', name: 'Venture', shortName: 'Venture', description: 'Explore ideas, experiments and opportunities', icon: 'insights', category: 'Ideas', tone: 'blue', href: 'https://pti-app-2ab59-venture.web.app/', external: true },
     { id: 'personal', name: 'Personal', shortName: 'Personal', description: 'Your daily intelligence and discoveries', icon: 'auto_stories', category: 'Personal', tone: 'violet', href: 'https://pti-app-2ab59-personal.web.app/', external: true },
     { id: 'luminary', name: 'Luminary', shortName: 'Luminary', description: 'Observe, reflect and understand patterns', icon: 'wb_sunny', category: 'Knowledge', tone: 'sun', href: 'https://pti-app-2ab59-luminary.web.app/', external: true },

@@ -2,6 +2,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createMcpServer } from './index.js';
 import { createHttpApp } from './http-app.js';
+import { financeRoot } from './finance-contract.js';
+import { correctEvent } from './finance-ledger.js';
 import { FirestoreAuthStore } from './auth-store.js';
 import { PtiOAuthProvider } from './oauth.js';
 import { CodexRelay, FirestoreRelayStore } from './local-codex.js';
@@ -17,12 +19,13 @@ const checkUser = async (uid: string, authenticatedAt: number) => {
 };
 const provider = new PtiOAuthProvider(new FirestoreAuthStore(db), origin, checkUser);
 const app = createHttpApp({ provider, createServer: createMcpServer,
+  correctFinance: (uid, input) => correctEvent(db.doc(financeRoot(uid)), input, 'Finance owner browser'),
   onProtocolRejection:event=>console.warn(JSON.stringify(event)),
   codex: new CodexRelay(new FirestoreRelayStore(db)),
   verifyIdentity: async token => {
     const identity = await auth.verifyIdToken(token, true);
     if (!identity.email_verified || !identity.email) throw new Error('Verified Google identity required.');
-    return { uid: identity.uid, email: identity.email, authenticatedAt: identity.auth_time };
+    return { uid: identity.uid, email: identity.email, authenticatedAt: identity.auth_time, signInProvider: identity.firebase.sign_in_provider };
   },
   firebaseConfig: { apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs', authDomain: 'pti-app-2ab59.firebaseapp.com', projectId: 'pti-app-2ab59', appId: '1:185802494856:web:5e9777771492528c6e203d' },
 });

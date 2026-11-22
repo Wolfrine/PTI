@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { SwUpdate } from '@angular/service-worker';
-import { onePieceLoginAlias } from './services/login-return';
+import { siblingLoginAlias } from './services/login-return';
 import { RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -31,10 +31,10 @@ export class AppComponent implements OnInit {
             });
             void this.updates.checkForUpdate().catch(() => undefined);
         }
-        const familyAlias = typeof window !== 'undefined'
+        const siblingAlias = typeof window !== 'undefined'
             && ['/', '/login'].includes(window.location.pathname)
-            && onePieceLoginAlias(new URLSearchParams(window.location.search).get('redirect'));
-        if (!familyAlias) {
+            && siblingLoginAlias(new URLSearchParams(window.location.search).get('redirect'));
+        if (!siblingAlias) {
             setTimeout(() => {
                 this.authService.initGoogleOneTap(); // ✅ Delayed execution to avoid conflicts
                 this.authService.checkUserSession();

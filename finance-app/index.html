@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#f8f6f1">
+  <title>Finance · PTI</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#page" hidden>Skip to content</a>
+  <main id="gate" class="gate" aria-labelledby="gate-heading">
+    <section class="gate-inner">
+      <a class="back-link" href="https://pti-app-2ab59.web.app/home">← PTI Home</a>
+      <div class="gate-title">
+        <span class="pti-mark" aria-hidden="true">PTI</span>
+        <h1 id="gate-heading">Finance</h1>
+      </div>
+      <p id="gate-message" role="status">Connecting to PTI…</p>
+      <button type="button" id="sign-in" class="button primary" hidden>Continue with Google</button>
+      <button type="button" id="retry-access" class="button primary" hidden>Retry connection</button>
+      <button type="button" id="gate-sign-out" class="button" hidden>Sign out</button>
+      <noscript><p>Enable JavaScript to sign in and open your ledger.</p></noscript>
+    </section>
+  </main>
+  <div id="workspace" class="workspace" hidden>
+    <aside class="rail" aria-label="Finance navigation">
+      <div class="brand"><span class="pti-mark" aria-hidden="true">PTI</span><span>Finance</span></div>
+      <button type="button" class="button menu-toggle" id="menu-toggle" aria-controls="finance-nav" aria-expanded="false">Menu</button>
+      <nav id="finance-nav" aria-label="Finance"></nav>
+      <div class="rail-foot"><a href="https://pti-app-2ab59.web.app/home">← PTI Home</a><button type="button" id="sign-out" class="plain">Sign out</button></div>
+    </aside>
+    <main id="page" class="page" tabindex="-1">
+      <p id="notice" class="notice" role="status" hidden></p>
+      <div id="view-heading"></div>
+      <div id="view-content" aria-busy="true"></div>
+    </main>
+  </div>
+  <dialog id="transaction-dialog" aria-labelledby="detail-heading"></dialog>
+</body>
+</html>

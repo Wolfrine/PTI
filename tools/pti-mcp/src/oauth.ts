@@ -9,7 +9,7 @@ import { type AuthStore, type RecordValue, secret, digest, now } from './auth-st
 export const MCP_SCOPE = 'pti:apps';
 export const CODEX_SCOPE = 'local-codex:jobs';
 const ACCESS_SECONDS = 3600;
-export type UserIdentity = { uid: string; email: string; authenticatedAt: number };
+export type UserIdentity = { uid: string; email: string; authenticatedAt: number; signInProvider?: string };
 export type CheckUser = (uid: string, authenticatedAt: number) => Promise<void>;
 // Only durable connection/refresh records can explicitly opt out of expiry.
 // Browser requests, authorization codes and access tokens always expire.

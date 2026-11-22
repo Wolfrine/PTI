@@ -8,6 +8,8 @@ import {JSONRPCMessageSchema,isInitializeRequest,SUPPORTED_PROTOCOL_VERSIONS} fr
 import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE, type UserIdentity } from './oauth.js';
 import { CodexRelay, createCodexServer, heartbeatSchema, workerPollSchema, workerSyncSchema, workerControlSchema, workerReportSchema, OWNER } from './local-codex.js';
 import { morselBlinkitRouter } from './morsel-blinkit-http.js';
+import { financeCorrectionRouter } from './finance.js';
+import type { CorrectionInput } from './finance-contract.js';
 
 function escape(value: string) { return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]!)); }
 export function protocolRejectionReason(error:Error) {
@@ -29,6 +31,7 @@ export function createHttpApp(options: {
   createServer: (context: { uid: string; email: string; actor: string; taskReference: string; transport: string }) => McpServer;
   firebaseConfig: Record<string, string>;
   codex?: CodexRelay;
+  correctFinance?: (uid: string, input: CorrectionInput) => Promise<{ ok: boolean; eventId: string; revision: number }>;
   onProtocolRejection?: (event:{event:'mcp_protocol_rejected';route:'local-codex';reason:string;stage:'preflight'|'transport'})=>void;
 }) {
   const { provider } = options;
@@ -42,6 +45,9 @@ export function createHttpApp(options: {
   });
   app.get('/health', (_req,res) => res.json({ service:'pti-firestore-mcp', version:'0.2.0', status:'ok' }));
   app.use('/morsel/blinkit',morselBlinkitRouter({verifyIdentity:options.verifyIdentity,checkUser:provider.checkUser,createServer:options.createServer}));
+  if (options.correctFinance) app.use('/finance/correct', financeCorrectionRouter({
+    verifyIdentity: options.verifyIdentity, checkUser: provider.checkUser, correct: options.correctFinance,
+  }));
   app.use(mcpAuthRouter({ provider, issuerUrl:new URL(provider.origin), resourceServerUrl:new URL(provider.resource),
     scopesSupported:[MCP_SCOPE,CODEX_SCOPE], resourceName:'PTI Firestore', clientRegistrationOptions:{clientSecretExpirySeconds:0} }));
   app.get('/consent', async (req,res) => {

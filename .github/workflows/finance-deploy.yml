@@ -1,0 +1,86 @@
+name: PTI Finance Hosting
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'finance-app/**'
+      - 'firebase.finance.json'
+      - '.github/workflows/finance-deploy.yml'
+      - 'tools/pti-mcp/scripts/configure-finance-auth.mjs'
+      - 'tools/pti-mcp/scripts/configure-morsel-auth.mjs'
+      - 'food-app/firebase-config.mjs'
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Full main-branch commit SHA to publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pti-finance-hosting
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Wolfrine/PTI' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FIREBASE_PROJECT_ID: pti-app-2ab59
+      FINANCE_SITE_ID: pti-app-2ab59-finance
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Confirm exact release revision
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build Finance Hosting assets
+        run: node finance-app/scripts/build.mjs --out .finance-dist
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          token_format: access_token
+      - name: Authorize only the two Finance domains and browser referrers
+        env:
+          ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
+        run: node tools/pti-mcp/scripts/configure-finance-auth.mjs
+      - name: Publish only the dedicated Finance site
+        run: |
+          set -euo pipefail
+          npm install -g firebase-tools@15.34.0 --no-audit --no-fund
+          if ! firebase hosting:sites:get "$FINANCE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive >/dev/null 2>&1; then
+            firebase hosting:sites:create "$FINANCE_SITE_ID" --project "$FIREBASE_PROJECT_ID" --non-interactive
+          fi
+          firebase deploy --config firebase.finance.json --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive
+      - name: Verify exact deployed assets and private page headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin="https://$FINANCE_SITE_ID.web.app"
+          live="$RUNNER_TEMP/pti-finance-live"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if curl --fail --silent --show-error --max-time 15 -D "$live.headers" \
+              "$origin/?release=$GITHUB_SHA&attempt=$attempt" -o "$live" && cmp -s .finance-dist/index.html "$live"; then
+              break
+            fi
+            sleep 4
+          done
+          cmp .finance-dist/index.html "$live"
+          grep -iEq '^cache-control:.*no-store' "$live.headers"
+          grep -iEq '^content-security-policy:.*frame-ancestors .none.' "$live.headers"
+          while IFS= read -r -d '' asset; do
+            relative="${asset#.finance-dist/}"
+            curl --fail --silent --show-error --max-time 15 "$origin/$relative?release=$GITHUB_SHA" -o "$live.asset"
+            cmp "$asset" "$live.asset"
+          done < <(find .finance-dist -type f ! -name index.html -print0)
+          echo "Verified Finance Hosting $GITHUB_SHA at $origin" >> "$GITHUB_STEP_SUMMARY"

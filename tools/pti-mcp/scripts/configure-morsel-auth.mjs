@@ -1,6 +1,7 @@
 import {pathToFileURL} from 'node:url';
 import {firebaseConfig} from '../../../food-app/firebase-config.mjs';
 export const morselReferrer='https://pti-app-2ab59-morsel.web.app/*';
+const financeReferrers=['https://pti-app-2ab59-finance.web.app/*','https://pti-app-2ab59-finance.firebaseapp.com/*'];
 const prefix='projects/185802494856/locations/global/keys/';
 const stable=v=>JSON.stringify(v,(_,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.entries(x).sort(([a],[b])=>a.localeCompare(b))):x);
 export function validateBrowserKey(key){
@@ -9,7 +10,13 @@ export function validateBrowserKey(key){
  const targets=r.apiTargets||[];
  if(targets.length&&['identitytoolkit.googleapis.com','securetoken.googleapis.com'].some(service=>!targets.some(t=>t.service===service&&!t.methods?.length)))throw Error('Existing browser key lacks Firebase Auth API targets; source-key selection requires review. API scope unchanged.');
 }
-export async function configureMorselAuth({accessToken,fetchImpl=fetch,pause=ms=>new Promise(r=>setTimeout(r,ms)),publicKey=firebaseConfig.apiKey}){
+export async function configureMorselAuth(options){
+ return configurePtiBrowserAuth(options,[morselReferrer],'Morsel');
+}
+export async function configureFinanceBrowserAuth(options){
+ return configurePtiBrowserAuth(options,financeReferrers,'Finance');
+}
+async function configurePtiBrowserAuth({accessToken,fetchImpl=fetch,pause=ms=>new Promise(r=>setTimeout(r,ms)),publicKey=firebaseConfig.apiKey},referrers,app){
  if(!accessToken)throw Error('Use the existing release identity; no alternate credential is accepted.');
  const call=async(resource,options={},operation='apikeys.keys.get')=>{
   const response=await fetchImpl('https://apikeys.googleapis.com/v2/'+resource,{...options,redirect:'error',signal:AbortSignal.timeout(20000),headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'}});
@@ -19,7 +26,11 @@ export async function configureMorselAuth({accessToken,fetchImpl=fetch,pause=ms=
  if(!lookup.name?.startsWith(prefix))throw Error('Source browser key is outside the authorized project.');
  const before=await call(lookup.name);validateBrowserKey(before);
  const original=structuredClone(before.restrictions),refs=original.browserKeyRestrictions.allowedReferrers,required=[...refs];
- if(!required.includes(morselReferrer))required.push(morselReferrer);let changed=false;
+ if(app==='Finance'&&original.apiTargets?.length&&!original.apiTargets.some(target=>target.service==='firestore.googleapis.com')){
+  throw Error('Existing browser key lacks the Firestore API target. Finance leaves the key API restrictions intact.');
+ }
+ for(const referrer of referrers)if(!required.includes(referrer))required.push(referrer);
+ let changed=false;
  if(required.length!==refs.length){
   const latest=await call(before.name);if(latest.etag!==before.etag||stable(latest.restrictions)!==stable(original))throw Error('Browser key changed during inspection; no update made. Rerun against the current configuration.');
   const restrictions={...original,browserKeyRestrictions:{allowedReferrers:required}};
@@ -31,13 +42,15 @@ export async function configureMorselAuth({accessToken,fetchImpl=fetch,pause=ms=
  }
  const verified=await call(before.name);validateBrowserKey(verified);
  if(stable(verified.restrictions.apiTargets||[])!==stable(original.apiTargets||[])||stable([...verified.restrictions.browserKeyRestrictions.allowedReferrers].sort())!==stable([...required].sort()))throw Error('Browser-key readback differs from the exact scoped update.');
- let accepted=false,status;
- for(let i=0;i<12;i++){
-  const response=await fetchImpl('https://securetoken.googleapis.com/v1/token?key='+encodeURIComponent(publicKey),{method:'POST',redirect:'error',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/x-www-form-urlencoded',Referer:'https://pti-app-2ab59-morsel.web.app/'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:'morsel-referrer-probe-invalid'})});
-  status=response.status;const body=await response.json();accepted=status===400&&['INVALID_REFRESH_TOKEN','INVALID_GRANT'].includes(body.error?.message);
-  if(accepted)break;if(i<11)await pause(5000);
+ for(const referrer of referrers){
+  let accepted=false,status;
+  for(let i=0;i<12;i++){
+   const response=await fetchImpl('https://securetoken.googleapis.com/v1/token?key='+encodeURIComponent(publicKey),{method:'POST',redirect:'error',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/x-www-form-urlencoded',Referer:referrer.slice(0,-1)},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:`${app.toLowerCase()}-referrer-probe-invalid`})});
+   status=response.status;const body=await response.json();accepted=status===400&&['INVALID_REFRESH_TOKEN','INVALID_GRANT'].includes(body.error?.message);
+   if(accepted)break;if(i<11)await pause(5000);
+  }
+  if(!accepted)throw Error(`${app} browser-origin Firebase Auth probe failed (HTTP ${status}). Referrer configuration is not accepted.`);
  }
- if(!accepted)throw Error(`Morsel browser-origin Firebase Auth probe failed (HTTP ${status}). Referrer configuration is not accepted.`);
- return {keyResource:before.name,changed,addedReferrerCount:required.length-refs.length,preservedReferrerCount:refs.length,apiTargetsUnchanged:true,probe:'Morsel Referer reached Firebase; invalid refresh credential rejected as expected',ownerBrowserLoginVerified:false};
+ return {keyResource:before.name,changed,addedReferrerCount:required.length-refs.length,preservedReferrerCount:refs.length,apiTargetsUnchanged:true,probe:`${app} Referer reached Firebase; invalid refresh credential rejected as expected`,ownerBrowserLoginVerified:false};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){try{console.log(JSON.stringify(await configureMorselAuth({accessToken:process.env.ACCESS_TOKEN})));}catch(error){console.error(error.message);process.exitCode=1;}}

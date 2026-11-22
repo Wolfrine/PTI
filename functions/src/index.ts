@@ -8,6 +8,10 @@ export { onePieceHost } from './one-piece-host';
 export { velumDrive } from './velum-drive';
 
 const app = express();
+app.use((_request, response, next) => {
+    response.setHeader('X-PTI-MCP-Finance-Boundary', 'denied');
+    next();
+});
 app.use(express.json({ limit: '1mb' }));
 
 const db = admin.firestore();
@@ -549,15 +553,15 @@ function parseApiKeys(raw?: string): string[] {
 }
 
 function usersCodexProjectsPath(uid: string): string {
-    return `users/${uid}/codexProjects`;
+    return assertCollectionPath(`users/${uid}/codexProjects`);
 }
 
 function actionsPath(uid: string, projectId: string): string {
-    return `${usersCodexProjectsPath(uid)}/${projectId}/actionItems`;
+    return assertCollectionPath(`${usersCodexProjectsPath(uid)}/${projectId}/actionItems`);
 }
 
 function actionsDocumentPath(uid: string, projectId: string, actionId: string): string {
-    return `${actionsPath(uid, projectId)}/${actionId}`;
+    return assertDocumentPath(`${actionsPath(uid, projectId)}/${actionId}`);
 }
 
 function assertCollectionPath(path: string): string {
@@ -580,8 +584,12 @@ function assertDocumentPath(path: string): string {
 
 function normalizePath(path: string): string {
     const normalized = path.trim().replace(/^\/+|\/+$/g, '');
-    if (normalized.split('/').filter(Boolean)[0] === '_velumDrivePrivate') {
+    const segments = splitPath(normalized);
+    if (segments[0] === '_velumDrivePrivate') {
         throw new McpValidationError(-32602, 'Server credential paths are not available through MCP.');
+    }
+    if (segments[0] === 'users' && segments[2] === 'financeData') {
+        throw new McpValidationError(-32602, 'Finance records require the account-scoped PTI Finance MCP tools.');
     }
     return normalized;
 }
@@ -668,7 +676,7 @@ async function createDocument(
     docId?: string,
 ) {
     const collectionRef = db.collection(collectionPath);
-    const docRef = docId ? collectionRef.doc(docId) : collectionRef.doc();
+    const docRef = docId ? db.doc(assertDocumentPath(`${collectionRef.path}/${docId}`)) : collectionRef.doc();
     await docRef.set(data);
     const snapshot = await docRef.get();
     return {
@@ -729,7 +737,7 @@ async function batchWrite(writes: Array<Record<string, unknown>>) {
         switch (operation) {
             case 'create': {
                 const collectionRef = db.collection(assertCollectionPath(path));
-                const ref = docId ? collectionRef.doc(docId) : collectionRef.doc();
+                const ref = docId ? db.doc(assertDocumentPath(`${collectionRef.path}/${docId}`)) : collectionRef.doc();
                 batch.create(ref, data);
                 operations.push({ operation, path: ref.path });
                 break;

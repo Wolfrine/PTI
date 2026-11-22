@@ -2,6 +2,8 @@
 // Sibling PWAs need a document navigation; PTI routes stay in Angular.
 export type LoginReturn = { path: string; fullPage: boolean };
 
+const financePath = /^\/finance(?:\/(overview|transactions|accounts|income|investments|debts|reports|review|sources))?\/?$/;
+
 export function safeLoginReturn(raw: string | null | undefined): LoginReturn {
   const fallback = { path: '/home', fullPage: false };
   if (!raw || raw.length > 2048 || !raw.startsWith('/') || raw.startsWith('//') || /[\\\u0000-\u0020\u007f]/.test(raw)) return fallback;
@@ -13,7 +15,7 @@ export function safeLoginReturn(raw: string | null | undefined): LoginReturn {
   const pathname = decodeURIComponent(rawPath);
   if (/[?#]/.test(pathname)) return fallback;
   if (pathname.startsWith('//') || pathname.split('/').some(part => part === '.' || part === '..') || /%2f|%5c/i.test(raw.split(/[?#]/, 1)[0])) return fallback;
-  const sibling = /^\/one-piece(?:\/[^?#]*)?$/.test(pathname);
+  const sibling = /^\/one-piece(?:\/[^?#]*)?$/.test(pathname) || financePath.test(pathname);
   if (/^\/(?:dashboard|new-dashboard|codex-command(?:\/projects\/[^/?#]+)?)\/?$/.test(pathname)) return fallback;
   const angular = /^\/(?:home|intelligence|domains(?:\/[^/?#]+)?|activities|new-local-infrastructure)\/?$/.test(pathname);
   if (!sibling && !angular) return fallback;
@@ -22,8 +24,21 @@ export function safeLoginReturn(raw: string | null | undefined): LoginReturn {
 
 export function navigateAfterLogin(raw: string | null | undefined, router: { navigateByUrl(url: string): unknown }, location: Pick<Location, 'assign'> = window.location): void {
   const target = safeLoginReturn(raw);
-  if (target.fullPage) location.assign(onePieceEntry(target.path));
+  if (target.fullPage) location.assign(siblingLoginAlias(target.path) ?? '/home');
   else router.navigateByUrl(target.path);
+}
+
+export function siblingLoginAlias(raw: string | null | undefined): string | null {
+  const target = safeLoginReturn(raw);
+  if (!target.fullPage) return null;
+  const source = new URL(target.path, 'https://pti.invalid');
+  const finance = financePath.exec(decodeURIComponent(source.pathname));
+  if (!finance) return onePieceLoginAlias(raw);
+  const destination = new URL('https://pti-app-2ab59-finance.web.app/');
+  const month = source.searchParams.get('month');
+  const range = /^20\d{2}-(0[1-9]|1[0-2])$/.test(month ?? '') ? `?month=${month}` : '';
+  if (finance[1] || range) destination.hash = (finance[1] ?? 'overview') + range;
+  return destination.href;
 }
 
 // Legacy PTI /login bookmarks go directly to the one native One Piece sign-in.
@@ -32,6 +47,7 @@ export function onePieceLoginAlias(raw: string | null | undefined): string | nul
   const target = safeLoginReturn(raw);
   if (!target.fullPage) return null;
   const source = new URL(target.path, 'https://pti.invalid');
+  if (!/^\/one-piece(?:\/[^?#]*)?$/.test(decodeURIComponent(source.pathname))) return null;
   const destination = new URL('/one-piece/', 'https://pti-app-2ab59-one-piece.web.app');
   const episode = source.searchParams.get('episode') ?? source.pathname.match(/\/watch\/(\d{1,4}|one-piece-\d{4})$/)?.[1];
   if (/^(?:\d{1,4}|one-piece-\d{4})$/.test(episode ?? '')) {

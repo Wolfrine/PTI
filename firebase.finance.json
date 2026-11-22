@@ -1,0 +1,20 @@
+{
+  "hosting": {
+    "site": "pti-app-2ab59-finance",
+    "public": ".finance-dist",
+    "ignore": ["firebase.finance.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+          { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://pti-app-2ab59.firebaseapp.com https://pti-firestore-mcp-185802494856.asia-south1.run.app; frame-src https://pti-app-2ab59.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'" }
+        ]
+      }
+    ]
+  }
+}

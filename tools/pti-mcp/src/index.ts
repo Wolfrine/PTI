@@ -5,6 +5,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { assertPath, assertUser, assertWritablePath } from "./access.js";
 import { appCatalog } from "./apps.js";
 import { registerFoodTools } from "./food.js";
+import { registerFinanceTools } from "./finance.js";
 import { registerBlinkitTools } from "./blinkit.js";
 import {createPaymentEvent,eventPath} from './blinkit-events.js';
 import { registerPersonalTools } from "./personal.js";
@@ -42,7 +43,7 @@ const message = (value: string) => ({
   content: [{ type: "text" as const, text: value }],
 });
 
-function assertDocumentPath(value: string): string { return assertPath(value, 'document', context.uid); }
+function assertDocumentPath(value: string, operation = 'get'): string { return assertPath(value, 'document', context.uid, operation); }
 function assertWritableDocumentPath(value: string,operation='update'): string { return assertWritablePath(value, 'document', context.uid,operation); }
 function assertCollectionPath(value: string): string { return assertPath(value, 'collection', context.uid); }
 function assertUid(value: string): string { return assertUser(value, context.uid); }
@@ -154,7 +155,7 @@ server.registerTool(
   async ({ documentPath }) => {
     if (!documentPath && context.uid) return json([`users/${context.uid}`]);
     const collections = documentPath
-      ? await db.doc(assertDocumentPath(documentPath)).listCollections()
+      ? await db.doc(assertDocumentPath(documentPath, 'list')).listCollections()
       : await db.listCollections();
     return json(collections.map((item: any) => item.path).filter((path: string) => { try { assertCollectionPath(path); return true; } catch { return false; } }));
   },
@@ -281,7 +282,7 @@ server.registerTool(
     const batch = db.batch();
     const before: Record<string, unknown> = {};
     for (const item of writes) {
-      const path = assertWritableDocumentPath(item.path);
+      const path = assertWritableDocumentPath(item.path, 'batch');
       const ref = db.doc(path);
       before[path] = await snapshot(path);
       if (item.operation === "create") batch.create(ref, item.data);
@@ -311,7 +312,7 @@ server.registerTool(
     annotations: destructive,
   },
   async (input) => {
-    const path = assertWritableDocumentPath(input.path);
+    const path = assertWritableDocumentPath(input.path, 'delete');
     if (input.confirmation !== `DELETE ${path}`) throw new Error(`Confirmation must be "DELETE ${path}".`);
     const before = await snapshot(path);
     if (!before) throw new Error("Document not found.");
@@ -661,6 +662,7 @@ server.registerTool("pti_app_context", {
 });
 registerPersonalTools(server, db, context.uid, audit);
 registerFoodTools(server, db, context.uid);
+registerFinanceTools(server, db, context);
 registerBlinkitTools(server, db, context.uid);
 registerVentureTools(server, db, context.uid);
 registerAtlasTools(server, db, context.uid, taskReference);

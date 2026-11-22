@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { navigateAfterLogin, safeLoginReturn, onePieceLoginAlias } from '../../services/login-return';
+import { navigateAfterLogin, safeLoginReturn, siblingLoginAlias } from '../../services/login-return';
 
 @Component({
     selector: 'app-login',
@@ -22,9 +22,9 @@ export class LoginComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        const onePiece = onePieceLoginAlias(this.route.snapshot.queryParamMap.get('redirect'));
-        if (onePiece && typeof window !== 'undefined') {
-            window.location.replace(onePiece);
+        const sibling = siblingLoginAlias(this.route.snapshot.queryParamMap.get('redirect'));
+        if (sibling && typeof window !== 'undefined') {
+            window.location.replace(sibling);
             return;
         }
         this.authService.getUser().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {

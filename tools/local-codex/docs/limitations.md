@@ -19,7 +19,7 @@ Inspect remains read-only. Edit applies only to the owner's current task. Privat
 
 ## Browser, audio and devices
 
-Use official tools available in the executing native turn and their normal entry/permission checks. Missing official tools or actual denials leave the requested browser/desktop verification unavailable. Continue independent work and name the exact gap. The transport performs no automatic desktop-chat transfer and supplies no independent Chrome provider.
+Use official tools available in the executing native turn and their normal entry/permission checks. Missing official tools or actual denials leave the requested browser/desktop verification unavailable. Continue independent work and name the exact gap. The owner permits an explicitly requested PC browser action to run in a designated desktop executor and return its result to the originating ChatGPT conversation. The installed transport has no operation that delivers this handoff. Its native message queue accepts general prompts for a thread. A queued message or desktop link is insufficient evidence of browser execution.
 
 No raw CDP/Playwright, browser identity/pipe copying, credential recovery or alternate-controller retry of a denied action. Navigation, a build or an old screenshot does not establish visual acceptance, real authenticated flow, audible behavior or physical-device operation. Those require actual observed use in the intended environment.
 

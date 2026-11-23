@@ -6,6 +6,10 @@ import { assertPath, assertUser, assertWritablePath } from "./access.js";
 import { appCatalog } from "./apps.js";
 import { registerFoodTools } from "./food.js";
 import { registerFinanceTools } from "./finance.js";
+import { financeOwner, financeRoot, ingestInput, scanInput, monthKey } from "./finance-contract.js";
+import { ingestMail, commitScan } from "./finance-ledger.js";
+import { reconcileMonth } from "./finance-projection.js";
+import { getAnalysisSource, publishMonthlyAnalysis, publishMonthlyAnalysisInput } from "./finance-analysis.js";
 import { registerBlinkitTools } from "./blinkit.js";
 import {createPaymentEvent,eventPath} from './blinkit-events.js';
 import { registerPersonalTools } from "./personal.js";
@@ -213,6 +217,45 @@ server.registerTool(
   },
 );
 
+// Compatibility for PTI connections whose cached tool manifest predates Finance.
+// These create-only virtual paths dispatch to the same validated, idempotent
+// Finance operations. They never persist arbitrary command or ledger documents.
+async function financeCommand(path: string, data: Record<string, unknown>): Promise<unknown | null> {
+  if (!context.uid || !financeOwner(context.uid, context.email)) return null;
+  const prefix = `users/${context.uid}/financeData/workspace/`;
+  if (!path.startsWith(prefix)) return null;
+  const pieces = path.slice(prefix.length).split('/');
+  if (pieces.length !== 2) throw new Error('Unsupported Finance command.');
+  const [operation, id] = pieces;
+  const ledger = db.doc(financeRoot(context.uid));
+  if (operation === 'mcpIntake') {
+    const value = ingestInput.parse(data);
+    if (id !== `${value.messageId}-e${value.edition}-p${value.part}`)
+      throw new Error('Finance command identity mismatch.');
+    return { operation: 'finance_ingest_email', ...await ingestMail(ledger, value) };
+  }
+  if (operation === 'mcpScans') {
+    const value = scanInput.parse(data);
+    if (id !== value.runId) throw new Error('Finance command identity mismatch.');
+    return { operation: 'finance_commit_scan', ...await commitScan(ledger, value) };
+  }
+  if (operation === 'mcpClosures') {
+    const value = monthKey.parse(data.month);
+    if (Object.keys(data).length !== 1 || value !== id)
+      throw new Error('Finance command identity mismatch.');
+    const report = await reconcileMonth(ledger, value, actor);
+    return { ok: true, operation: 'finance_reconcile_month', month: value, report,
+      analysisSource: await getAnalysisSource(ledger, value, report.reportVersion) };
+  }
+  if (operation === 'mcpAnalysis') {
+    const value = publishMonthlyAnalysisInput.parse(data);
+    if (id !== `${value.source.month}-v${value.source.reportVersion}`)
+      throw new Error('Finance command identity mismatch.');
+    return { operation: 'finance_publish_monthly_analysis', ...await publishMonthlyAnalysis(ledger, value) };
+  }
+  throw new Error('Unsupported Finance command.');
+}
+
 server.registerTool(
   "firestore_create_document",
   {
@@ -226,6 +269,9 @@ server.registerTool(
   },
   async (input) => {
     const path = assertWritableDocumentPath(input.path,'create');
+    // Exact owner, path identity and strict normalized schema are enforced
+    // before calling canonical Finance ingestion/reconciliation.
+    if (path.includes('/financeData/workspace/')) return json(await financeCommand(path,input.data));
     if(eventPath(path))return json(await createPaymentEvent(db,path,input.data,context.uid));
     await db.doc(path).create({
       ...input.data,

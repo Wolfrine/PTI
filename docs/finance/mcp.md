@@ -11,6 +11,23 @@ Finance uses the existing account-scoped PTI MCP at **https://pti-firestore-mcp-
 | **finance_publish_monthly_analysis** | Publishes a private narrative from the exact `analysisSource`, one to eight typed finding selectors, and up to eight optional source-window IDs. The service validates citations and derives all figures, prose and coverage gaps. A replay returns the original immutable version. |
 | **finance_correct_event** | Owner-directed requestId, eventId, expectedRevision and reason with a classification, category, posted/excluded decision or matching duplicateOf link. Updates the event and affected projection in one transaction and writes an immutable revision. Exact request replay returns the original result. |
 
+## Existing PTI tools: Finance compatibility without a tool refresh
+
+A connected ChatGPT session may retain the PTI Apps tool manifest created before Finance existed. The original code blocked generic reads as well as writes, making Finance unreachable. The compatibility bridge now permits owner-only **bounded projection reads** and validated Finance operations through the already-available `firestore_create_document` tool. This does not grant raw ledger writes.
+
+These are *virtual create-only paths*: a call returns a canonical Finance operation receipt, **not** a document created at that path.
+
+| Path under `users/{uid}/financeData/workspace/` | Required `data` and server action |
+| --- | --- |
+| `mcpIntake/{messageId}-e{edition}-p{part}` | Exact sanitized `finance_ingest_email` envelope. The authoritative `ingestMail` performs transactional deduplication and updates canonical projections. The defaults for edition/part are 1. |
+| `mcpScans/{runId}` | Exact `finance_commit_scan` payload; only true complete, contiguous windows advance the cursor. |
+| `mcpClosures/{YYYY-MM}` | `{month: 'YYYY-MM'}`. The canonical month reconciliation returns its report and `analysisSource`. |
+| `mcpAnalysis/{YYYY-MM}-v{reportVersion}` | Exact `finance_publish_monthly_analysis` evidence-bound source and findings. |
+
+For verification, `firestore_get_document` and bounded `firestore_query` now allow account-scoped reads of `projects`, `months`, `transactions`, `reviews`, `balances`, `recurring`, `sourceStatus`, `sourceWindows`, `scanStatus`, `scanRuns`, `reports`, `monthlyAnalyses`, `mailPartReceipts`, `mailProgress`, `sourceAudits` and `sourceIndexes`. Canonical events, source envelopes, physical rows, financial identity indexes, raw revisions and unrelated data are still inaccessible through generic Finance paths. Generic batch writes, deletion, and direct transaction/month creates are prohibited. The existing Finance project checkpoint remains the only updatable Finance document through generic tools.
+
+The bridge requires both the authenticated owner UID and verified email, exact path-to-payload identity and the original strict Finance validation contract. Never send email bodies, attachments, account numbers, passwords or card data. The operation response and a subsequent projection readback establish success; submitting a virtual command alone does not.
+
 ## Source identification and intake
 
 The Gmail worker verifies sender authentication and household scope before calling intake. Accept an institution only with evidence for its sender and instrument. An approved opaque or masked alias can include four trailing digits. An explicit confirmed scope attests that the evidence belongs to the household. Uncertain or excluded evidence may only produce excluded metadata. Use the bank_alert, bank_statement, card_alert, card_statement, merchant_receipt, investment_statement, mandate or other source type and a short institution slug.

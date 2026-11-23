@@ -5,7 +5,7 @@ description: Give one native Codex lead an authorized local outcome and continue
 
 # Local Codex
 
-Use the private connection when work or verification needs this PC. Check bridge_status and select the authorized checkout with list_projects. Find the existing task or thread for the same outcome before starting fresh.
+When acceptance needs the PC browser, read [browser control](references/browser-control.md) before dispatch. Use the requesting chat’s authorized PC browser for browser-only work when available. Honor requests to exercise a particular native thread or executor. Use the private connection for work that needs the local checkout or native Codex. Check bridge_status and select the authorized checkout with list_projects. Find the existing task or thread for the same outcome before starting fresh.
 
 Give the lead one compact contract:
 

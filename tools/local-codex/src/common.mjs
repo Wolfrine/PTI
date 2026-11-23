@@ -68,8 +68,14 @@ export function alive(pid) {
   try { process.kill(pid, 0); return true; } catch { return false; }
 }
 export function supportsNativeControls(version) {
-  const [, major, minor, patch]=/^codex-cli (\d+)\.(\d+)\.(\d+)(?:\s|$)/.exec(version)||[];
-  return Number(major)>0||Number(minor)>169||Number(minor)===169&&Number(patch)>=1;
+  if (typeof version !== 'string') return false;
+  const match = /^codex-cli (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(version.trim());
+  if (!match) return false;
+  const [, major, minor, patch, prerelease] = match;
+  if (prerelease?.split('.').some(identifier => /^0\d+$/.test(identifier))) return false;
+  // SemVer orders a prerelease below its own stable version.
+  return Number(major) > 0 || Number(minor) > 169 ||
+    (Number(minor) === 169 && (Number(patch) > 1 || (patch === '1' && !prerelease)));
 }
 export function runtime() {
   const configured = config().codexPath;

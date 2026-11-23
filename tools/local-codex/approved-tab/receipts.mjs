@@ -3,7 +3,7 @@ import path from 'node:path';
 import {createHash, randomUUID} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
-import {pageUrl} from './scope.mjs';
+import {pageUrl, matchesPage} from './scope.mjs';
 
 const bridge = 'H:/LocalCodexBridge';
 const folder = path.join(bridge, 'approved-tab', 'requests');
@@ -103,9 +103,9 @@ export function decide(message) {
   if (message.action==='decline') entry={kind:'declined'};
   else {
     const p=message.page;
-    if (!p || pageUrl(p.url)!==state.url || typeof p.title!=='string' ||
+    if (!p || !matchesPage(p.url,state.url) || typeof p.title!=='string' ||
         !Array.isArray(p.headings) || p.headings.length>16 || p.headings.some(h=>typeof h!=='string'||h.length>240)) throw Error('This tab does not match the approved request.');
-    const page={url:state.url,title:p.title.slice(0,240),headings:p.headings,observedAt:new Date().toISOString()};
+    const page={url:pageUrl(p.url),title:p.title.slice(0,240),headings:p.headings,observedAt:new Date().toISOString()};
     if (state.linkText) {
       const link=message.link;
       if (!link || link.text!==state.linkText || pageUrl(link.url)!==link.url) throw Error('The requested visible link was not available on this page.');

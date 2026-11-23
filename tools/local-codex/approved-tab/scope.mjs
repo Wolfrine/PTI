@@ -3,6 +3,7 @@ export const origins = new Set([
   'http://localhost:4173',
   'https://taleweald.firebaseapp.com',
   'https://example.com',
+  'https://iana.org',
   'https://www.iana.org',
 ]);
 
@@ -13,4 +14,11 @@ export function pageUrl(value) {
   }
   url.hash = '';
   return url.href;
+}
+
+export function matchesPage(actual, requested) {
+  const observed = pageUrl(actual);
+  return observed === requested ||
+    (requested === 'https://iana.org/help/example-domains' &&
+     observed === 'https://www.iana.org/help/example-domains');
 }

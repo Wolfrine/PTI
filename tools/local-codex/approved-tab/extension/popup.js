@@ -1,4 +1,4 @@
-import {pageUrl} from './scope.mjs';
+import {pageUrl, matchesPage} from './scope.mjs';
 const host='com.pti.local_codex.tab_share';
 const el=id=>document.getElementById(id);
 const status=message=>{el('status').textContent=message;};
@@ -11,11 +11,11 @@ async function native(message) {
 function messageText(e){return e?.message || String(e);}
 function request(){return requests.find(r=>r.id===el('requests').value);}
 async function selectedTab(){return (await chrome.tabs.query({active:true,currentWindow:true}))[0];}
-function samePage(url,expected){try{return pageUrl(url)===expected;}catch{return false;}}
+function samePage(url,expected){try{return matchesPage(url,expected);}catch{return false;}}
 
 async function inspect(tab, req) {
   const [frame]=await chrome.scripting.executeScript({
-    target:{tabId:tab.id},args:[req.url,req.linkText],
+    target:{tabId:tab.id},args:[pageUrl(tab.url),req.linkText],
     func:(expected,label)=>{
       const url=new URL(location.href);url.hash='';
       if(url.href!==expected)throw Error('The page changed before it could be shared.');

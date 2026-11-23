@@ -234,6 +234,30 @@ async function financeCommand(path: string, data: Record<string, unknown>): Prom
       throw new Error('Finance command identity mismatch.');
     return { operation: 'finance_ingest_email', ...await ingestMail(ledger, value) };
   }
+  if (operation === 'mcpBatchIntake') {
+    const request = z.object({
+      runId: z.string().regex(/^[A-Za-z0-9_-]{8,96}$/),
+      envelopes: z.array(ingestInput).min(1).max(20),
+    }).strict().parse(data);
+    if (id !== request.runId || new Set(request.envelopes.map(item => item.messageId)).size !== request.envelopes.length)
+      throw new Error('Finance batch identity mismatch.');
+    const receipts: Array<Record<string, unknown>> = [];
+    // Each envelope is its own atomic, idempotent ledger operation. An
+    // interrupted batch reports its exact point of failure; repeat the *same*
+    // request and already committed envelopes replay without double counting.
+    for (const envelope of request.envelopes) {
+      try {
+        const receipt = await ingestMail(ledger, envelope);
+        receipts.push({ messageId: envelope.messageId, ...receipt });
+      } catch (error) {
+        return { ok: false, operation: 'finance_batch_ingest', runId: request.runId,
+          completed: receipts.length, receipts, failedMessageId: envelope.messageId,
+          error: error instanceof Error && 'code' in error ? String(error.code) : 'intake_failed' };
+      }
+    }
+    return { ok: true, operation: 'finance_batch_ingest', runId: request.runId,
+      completed: receipts.length, receipts };
+  }
   if (operation === 'mcpScans') {
     const value = scanInput.parse(data);
     if (id !== value.runId) throw new Error('Finance command identity mismatch.');

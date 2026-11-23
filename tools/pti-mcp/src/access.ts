@@ -5,7 +5,7 @@ const financeReadable = new Set([
   'sourceStatus', 'sourceWindows', 'scanStatus', 'scanRuns', 'reports', 'monthlyAnalyses',
   'mailPartReceipts', 'mailProgress', 'sourceAudits', 'sourceIndexes',
 ]);
-const financeCommands = new Set(['mcpIntake', 'mcpScans', 'mcpClosures', 'mcpAnalysis']);
+const financeCommands = new Set(['mcpIntake', 'mcpBatchIntake', 'mcpScans', 'mcpClosures', 'mcpAnalysis']);
 
 export function assertUser(value: string, owner?: string): string {
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(value)) throw new Error('Invalid Firebase uid.');

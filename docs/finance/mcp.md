@@ -20,6 +20,7 @@ These are *virtual create-only paths*: a call returns a canonical Finance operat
 | Path under `users/{uid}/financeData/workspace/` | Required `data` and server action |
 | --- | --- |
 | `mcpIntake/{messageId}-e{edition}-p{part}` | Exact sanitized `finance_ingest_email` envelope. The authoritative `ingestMail` performs transactional deduplication and updates canonical projections. The defaults for edition/part are 1. |
+| `mcpBatchIntake/{runId}` | Strict `{runId, envelopes:[...]}` with 1–20 distinct canonical `finance_ingest_email` payloads. Each envelope runs the same atomic ingestion path; a partial batch returns completed receipts and the exact failed message ID for safe replay. This is not a raw Firestore batch. |
 | `mcpScans/{runId}` | Exact `finance_commit_scan` payload; only true complete, contiguous windows advance the cursor. |
 | `mcpClosures/{YYYY-MM}` | `{month: 'YYYY-MM'}`. The canonical month reconciliation returns its report and `analysisSource`. |
 | `mcpAnalysis/{YYYY-MM}-v{reportVersion}` | Exact `finance_publish_monthly_analysis` evidence-bound source and findings. |

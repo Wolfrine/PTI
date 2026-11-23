@@ -5,7 +5,7 @@ description: Give one native Codex lead an authorized local outcome and continue
 
 # Local Codex
 
-When acceptance needs the PC browser, read [browser control](references/browser-control.md) before dispatch. Use the requesting chat’s authorized PC browser for browser-only work when available. Honor requests to exercise a particular native thread or executor. Use the private connection for work that needs the local checkout or native Codex. Check bridge_status and select the authorized checkout with list_projects. Find the existing task or thread for the same outcome before starting fresh.
+When acceptance needs the PC browser, read [browser control](references/browser-control.md) before dispatch. When the owner asks to use Local Codex for Chrome, dispatch the browser step through the private connection. Ask the native worker to use pti_owner_tab.request_page and read_result for the exact page and optional visible link. Relay the actual result in the originating chat. For a direct caller-side browser request, use its connected browser when available. Honor requests to exercise a particular native thread or executor. Use the private connection for work that needs the local checkout or native Codex. Check bridge_status and select the authorized checkout with list_projects. Find the existing task or thread for the same outcome before starting fresh.
 
 Give the lead one compact contract:
 

@@ -2,6 +2,10 @@
 
 Use official browser/Computer Use tools available in the executing native turn. Enter through their documented normal entry point and permission checks. Runtime Full Access, installed Chrome, extension health, a connected relay or environment metadata alone does not establish browser control.
 
+## Browser requests through Local Codex
+
+For an explicitly requested PC Chrome check through the private connection, send the exact URL and optional visible link label to the native task. The independent PTI Owner Chrome integration exposes `pti_owner_tab.request_page` and `pti_owner_tab.read_result` on configured workers. Use inspect for sharing a page and edit for an authorized link navigation. The returned request ID identifies the page request. While it is pending, explain the exact Chrome popup step and keep the original native thread and receipt ID. A continuation can read the receipt on that thread. Report a decline or unavailable site exactly. Only `complete` includes the actual approved page observation. Return that observation through `get_task` to the originating chat. Never switch providers after an actual site or action denial.
+
 ## Choose where the browser step will run
 
 Local Codex starts or resumes a standalone app-server. Opening a new thread or granting Full Access supplies no desktop browser connection. When the owner specifically asks whether that worker can browse, exercise its official tool once and report the worker's own result.
@@ -20,4 +24,4 @@ When only an app-owned continuation can perform the check, finish the relay turn
 4. Observe the actual target and requested behavior. Login, 404, expired access and capture failure are specific findings. Navigation, a build, a heartbeat or a source patch alone does not establish visual, gameplay, audio, device or authenticated-flow acceptance.
 5. Return real artifacts through their owning tool when possible. Textual history can omit screenshots, attachments and tool output. If an artifact cannot be retrieved or inspected, report that evidence gap.
 
-PTI Owner Chrome, the interactive-QA broker and desktop-chat handoff are retired from the 0.5.0 execution path. Their old decision records preserve historical evidence and do not grant current access. Browser availability is optional to transport operation; a task whose acceptance requires browsing remains unverified until that real check is performed.
+The old debugger-based PTI Owner Chrome provider, interactive-QA broker and general desktop-chat handoff are retired. The independent, owner-approved tab-sharing integration above uses Chrome Native Messaging. Their old decision records preserve historical evidence and do not grant current access. Browser availability is optional to transport operation; a task whose acceptance requires browsing remains unverified until that real check is performed.

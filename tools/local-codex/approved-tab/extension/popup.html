@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PTI Owner Chrome</title>
+<link rel="stylesheet" href="popup.css"><script type="module" src="popup.js"></script></head>
+<body><main><h1>Share a tab with Local Codex</h1>
+<p id="status" role="status">Checking for browser requests…</p>
+<section id="panel" hidden><label for="requests">Request</label><select id="requests"></select>
+<p id="url"></p><p id="link"></p><button id="open" hidden>Open requested page</button>
+<div id="preview" hidden><h2>ChatGPT will receive</h2><strong id="title"></strong><ul id="headings"></ul><p id="destination"></p></div>
+<div class="actions"><button id="share" hidden>Share with ChatGPT</button><button id="decline" class="secondary">Decline</button></div>
+</section><button class="secondary" id="refresh">Refresh</button></main></body></html>

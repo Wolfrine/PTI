@@ -1,0 +1,16 @@
+* { box-sizing: border-box; }
+:root { color-scheme: light dark; font: 14px/1.45 "Segoe UI",system-ui,sans-serif; }
+body { margin: 0; width: 350px; max-width: 100vw; }
+main { padding: 18px; }
+h1 { font-size: 19px; line-height: 1.2; margin: 0 0 12px; }
+h2, label { display: block; font-size: 14px; font-weight: 650; margin: 10px 0 5px; }
+p, ul { margin: 7px 0 12px; overflow-wrap: anywhere; }
+ul { padding-inline-start: 20px; max-height: 140px; overflow: auto; }
+select, button { font: inherit; border-radius: 6px; padding: 7px 10px; }
+select { width: 100%; }
+button { border: 1px solid transparent; background: #13559b; color: white; cursor: pointer; }
+button.secondary { border-color: GrayText; background: transparent; color: CanvasText; }
+button:focus-visible, select:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+button:disabled { opacity: .55; cursor: default; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+[hidden] { display: none !important; }

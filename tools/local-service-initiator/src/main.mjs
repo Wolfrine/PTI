@@ -3,7 +3,6 @@ import path from 'node:path';
 import {validateSettings,Initiator,VERSION} from './core.mjs';
 import {WorkerHost,unprotect,readJson,atomicJson,pause} from './windows.mjs';
 import {OnePieceHost,OnePieceSupervisor,ONE_PIECE_GATEWAY,ONE_PIECE_CHECK_MS,onePiecePollBody} from './one-piece.mjs';
-import {GtopSupervisor,LOCAL_CHECK_MS} from './supervision.mjs';
 
 const settings=validateSettings(await readJson(process.argv[2]));
 await mkdir(settings.stateDirectory,{recursive:true});
@@ -26,13 +25,7 @@ async function workerToken() {
   })().finally(()=>{refreshing=undefined;});
   return refreshing;
 }
-let gtopRemoteCalls=0;
-async function poll(body) { const bearer=await workerToken();gtopRemoteCalls++;return json(settings.gateway+'/worker/service/poll',body,{Authorization:'Bearer '+bearer}); }
 const host=new WorkerHost(settings,process.argv[2]);
-const attemptFile=path.join(settings.stateDirectory,'attempt.json');
-const initiator=new Initiator({api:poll,read:()=>readJson(attemptFile),write:value=>atomicJson(attemptFile,value),start:()=>host.start(),workerRunning:async exact=>(await host.observe(exact)).state==='running'});
-const supervisionFile=path.join(settings.stateDirectory,'gtop-supervision.json');
-const supervisor=new GtopSupervisor({host,poll:()=>initiator.tick(),read:()=>readJson(supervisionFile),write:value=>atomicJson(supervisionFile,value)});
 const onePieceHost=settings.onePieceEnabled===true?new OnePieceHost(host):null;
 const onePieceAttempt=path.join(settings.stateDirectory,'one-piece-attempt.json');
 let onePieceRemoteCalls=0;
@@ -67,11 +60,6 @@ const onePieceSupervisor=onePiece?new OnePieceSupervisor({ready:()=>onePieceHost
 }}):null;
 let stopping=false;
 process.on('SIGINT',()=>stopping=true);process.on('SIGTERM',()=>stopping=true);
-async function gtopTick(){
-  const status={version:VERSION,pid:process.pid,...await supervisor.tick()};
-  status.counters.remoteCalls=gtopRemoteCalls;status.counters.identityChecks=host.identityChecks;
-  await atomicJson(path.join(settings.stateDirectory,'status.json'),status);
-}
 async function onePieceTick(){
   if(!onePieceSupervisor)return;
   const status={version:VERSION,pid:process.pid,...await onePieceSupervisor.tick()};
@@ -84,7 +72,8 @@ async function loop(tick){
     await pause(ONE_PIECE_CHECK_MS);
   }
 }
-// Independent timers: either service can be starting or unavailable without
-// starving the other's heartbeat or control mailbox.
-async function supervise(){while(!stopping){try{await gtopTick();}catch{/* Fail closed on local state failure. */}await pause(LOCAL_CHECK_MS);}}
-await Promise.all([supervise(),...(onePiece?[loop(onePieceTick)]:[])]);
+// The native Papers host owns its lifecycle. Never query the retired mailbox.
+await atomicJson(path.join(settings.stateDirectory,'status.json'),{
+  version:VERSION,pid:process.pid,checkedAt:new Date().toISOString(),gtopPolling:'retired',counters:{remoteCalls:0},
+}).catch(()=>{/* A local receipt failure must not stop One Piece. */});
+if(onePiece)await loop(onePieceTick);

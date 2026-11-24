@@ -20,7 +20,11 @@ const profile=z.object({
 type Profile=z.output<typeof profile>;
 const empty:Profile={incomePaisa:null,essentialsPaisa:null,discretionaryPaisa:null,commitmentsPaisa:null,reservePaisa:null,extraCashPaisa:null,dueBeforeIncomePaisa:null,nextIncomeOn:null,goals:[],bills:[],scenarios:[]};
 const persisted=z.object({revision:z.number().int().nonnegative(),profile,updatedAt:z.string()}).strict();
-const input=z.discriminatedUnion('action',[z.object({action:z.literal('read')}).strict(),z.object({action:z.literal('save'),expectedRevision:z.number().int().nonnegative(),profile}).strict()]);
+const publicationId=z.string().regex(/^[a-z][a-z0-9-]{7,79}$/);
+const input=z.discriminatedUnion('action',[
+ z.object({action:z.literal('read'),publicationId:publicationId.optional()}).strict(),
+ z.object({action:z.literal('save'),expectedRevision:z.number().int().nonnegative(),profile}).strict(),
+]);
 type Input=z.output<typeof input>;
 const statement=z.object({
  month:z.string().regex(/^20\d{2}-(0[1-9]|1[0-2])$/),from:z.iso.date(),to:z.iso.date(),rows:z.number().int().nonnegative(),
@@ -28,11 +32,12 @@ const statement=z.object({
  account:z.string().regex(/^[a-z][a-z0-9_-]{1,47}$/).refine(v=>!/\d{5}/.test(v)),sourceWindowId:z.string().regex(/^[a-f0-9]{64}$/)
 }).strict().refine(v=>v.from<=v.to&&v.from.startsWith(v.month)&&v.to.startsWith(v.month)&&v.openingPaisa-v.debitPaisa+v.creditPaisa===v.closingPaisa);
 
-async function context(root:DocumentReference){
- const [saved,checkpoint,publications,months,balances]=await Promise.all([
+async function context(root:DocumentReference,requestedId?:string){
+ const [saved,checkpoint,publications,months,balances,selected]=await Promise.all([
   root.collection('planning').doc('profile').get(),root.collection('projects').doc('pti-finance-v1').get(),
   root.collection('publications').orderBy('publishedAt','desc').limit(50).get(),
   root.collection('months').limit(60).get(),root.collection('balances').limit(40).get(),
+  requestedId?root.collection('publications').doc(requestedId).get():Promise.resolve(null),
  ]);
  const plan=saved.exists?persisted.parse(saved.data()):{revision:0,profile:empty,updatedAt:''};
  const raw:unknown=checkpoint.get('statementCashEvidence.facts');
@@ -51,10 +56,11 @@ async function context(root:DocumentReference){
  const monthly=months.docs.map(d=>({...d.data(),id:d.id}));
  const currentBalances=balances.docs.map(d=>({...d.data(),id:d.id}));
  return {ok:true,...plan,statementFacts,publications:publications.docs.map(d=>d.data()),
-  financialEvidence:financialEvidenceModel(monthly,currentBalances,statementFacts,indiaDate(new Date().toISOString()))};
+  financialEvidence:financialEvidenceModel(monthly,currentBalances,statementFacts,indiaDate(new Date().toISOString())),
+  selectedPublication:requestedId?(selected?.exists?selected.data():null):null};
 }
 export async function financePlanning(root:DocumentReference,request:Input){
- if(request.action==='read')return context(root);
+ if(request.action==='read')return context(root,request.publicationId);
  const ref=root.collection('planning').doc('profile');
  await root.firestore.runTransaction(async tx=>{
   const existing=await tx.get(ref);

@@ -78,16 +78,26 @@ function attachEvidence(before: LedgerEvent, candidate: LedgerEvent, message: st
   const preferred = candidate.accountKind && (!before.accountKind || ranks[candidate.sourceType] > ranks[before.sourceType]) &&
     (!matchesPending || incomingIsStatement) ? candidate : before;
   const competing = before.status !== 'posted' && preferred.status === 'posted' && competingPosted;
-  const nextStatus = before.ownerCorrected || (before.status === 'posted' && preferred.status === 'pending') ? before.status
+  // A statement row whose purpose is still unknown can substantiate the same
+  // completed movement, but must not erase a previously evidenced classification
+  // from an authenticated bank alert. A genuine competing posted row still
+  // stays in review rather than being silently counted twice.
+  const preserveSupportedPosting = !before.ownerCorrected && before.status === 'posted' &&
+    before.kind !== 'unknown' && candidate.kind === 'unknown' &&
+    preferred === candidate && !competing;
+  const nextStatus = preserveSupportedPosting ? 'posted'
+    : before.ownerCorrected || (before.status === 'posted' && preferred.status === 'pending') ? before.status
     : competing ? 'review' : preferred.status;
   return {
     ...preferred, id: before.id, status: nextStatus,
-    kind: before.ownerCorrected ? before.kind : preferred.kind, ownerCorrected: before.ownerCorrected,
+    kind: before.ownerCorrected || preserveSupportedPosting ? before.kind : preferred.kind,
+    ownerCorrected: before.ownerCorrected,
     duplicateOf: before.duplicateOf, category: before.ownerCorrected ? before.category : preferred.category || before.category || candidate.category,
     merchant: preferred.merchant || before.merchant || candidate.merchant,
     evidenceCount: before.evidenceCount + 1, sourceTypes: [...new Set([...before.sourceTypes, candidate.sourceType])],
     evidenceMessages: [...before.evidenceMessages, message], revision: before.revision + 1,
-    reviewReason: before.ownerCorrected ? before.reviewReason : competing ? 'possible_duplicate' : preferred.reviewReason, updatedAt: now,
+    reviewReason: before.ownerCorrected ? before.reviewReason : preserveSupportedPosting ? null
+      : competing ? 'possible_duplicate' : preferred.reviewReason, updatedAt: now,
   };
 }
 

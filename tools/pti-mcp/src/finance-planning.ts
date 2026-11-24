@@ -3,6 +3,8 @@ import { z } from 'zod';
 import type { DocumentReference } from 'firebase-admin/firestore';
 import type { CheckUser, UserIdentity } from './oauth.js';
 import { financeOwner, FinanceError } from './finance-contract.js';
+import { indiaDate } from './finance-contract.js';
+import { financialEvidenceModel } from './finance-evidence.js';
 
 const amount=z.number().int().min(0).max(100_000_000_000_000);
 const signedAmount=z.number().int().min(-100_000_000_000_000).max(100_000_000_000_000);
@@ -27,7 +29,11 @@ const statement=z.object({
 }).strict().refine(v=>v.from<=v.to&&v.from.startsWith(v.month)&&v.to.startsWith(v.month)&&v.openingPaisa-v.debitPaisa+v.creditPaisa===v.closingPaisa);
 
 async function context(root:DocumentReference){
- const [saved,checkpoint,publications]=await Promise.all([root.collection('planning').doc('profile').get(),root.collection('projects').doc('pti-finance-v1').get(),root.collection('publications').orderBy('publishedAt','desc').limit(50).get()]);
+ const [saved,checkpoint,publications,months,balances]=await Promise.all([
+  root.collection('planning').doc('profile').get(),root.collection('projects').doc('pti-finance-v1').get(),
+  root.collection('publications').orderBy('publishedAt','desc').limit(50).get(),
+  root.collection('months').limit(60).get(),root.collection('balances').limit(40).get(),
+ ]);
  const plan=saved.exists?persisted.parse(saved.data()):{revision:0,profile:empty,updatedAt:''};
  const raw:unknown=checkpoint.get('statementCashEvidence.facts');
  const facts=(Array.isArray(raw)?raw.slice(0,120):[]).flatMap(v=>{const x=statement.safeParse(v);return x.success?[x.data]:[]});
@@ -41,7 +47,11 @@ async function context(root:DocumentReference){
   const id=fact.account+'|'+fact.month,prior=unique.get(id);
   if(!prior||fact.from<prior.from||(fact.from===prior.from&&fact.to>prior.to))unique.set(id,fact);
  }
- return {ok:true,...plan,statementFacts:[...unique.values()].sort((a,b)=>a.month.localeCompare(b.month)),publications:publications.docs.map(d=>d.data())};
+ const statementFacts=[...unique.values()].sort((a,b)=>a.month.localeCompare(b.month));
+ const monthly=months.docs.map(d=>({...d.data(),id:d.id}));
+ const currentBalances=balances.docs.map(d=>({...d.data(),id:d.id}));
+ return {ok:true,...plan,statementFacts,publications:publications.docs.map(d=>d.data()),
+  financialEvidence:financialEvidenceModel(monthly,currentBalances,statementFacts,indiaDate(new Date().toISOString()))};
 }
 export async function financePlanning(root:DocumentReference,request:Input){
  if(request.action==='read')return context(root);

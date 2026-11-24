@@ -8,4 +8,4 @@ export const firebaseConfig = {
   appId: '1:185802494856:web:5e9777771492528c6e203d',
 };
 
-export const correctionUrl = 'https://pti-firestore-mcp-185802494856.asia-south1.run.app/finance/correct';
+export const planningUrl = 'https://pti-firestore-mcp-185802494856.asia-south1.run.app/finance/planning';

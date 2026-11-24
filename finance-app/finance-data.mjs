@@ -1,7 +1,22 @@
-import { correctionUrl, firebaseConfig } from './firebase-config.mjs';
+import { firebaseConfig, planningUrl } from './firebase-config.mjs';
+import { dateValid } from './values.mjs';
 
 export const PAGE_SIZE = 25;
 const LIMIT = 100;
+
+export function readFinancialEvidence(planning) {
+  if (!planning?.ok) return { ok: false, data: null, error: planning?.error ?? 'read_failed' };
+  const evidence = planning.data?.financialEvidence;
+  if (evidence == null) return { ok: false, data: null, error: 'not_available' };
+  const position = evidence.position;
+  if (evidence.schemaVersion !== 1 || !dateValid(evidence.asOf) || !Array.isArray(evidence.ledgerMonths)
+    || !Array.isArray(position?.cashSnapshots) || !Array.isArray(position?.investmentSnapshots)
+    || !Array.isArray(position?.debtSnapshots) || !Array.isArray(evidence.quality?.findings)
+    || !Array.isArray(evidence.quality?.missingDimensions)) {
+    return { ok: false, data: null, error: 'unsupported_response' };
+  }
+  return { ok: true, data: evidence };
+}
 
 export async function connectFinance() {
   const [firebase, identity, store] = await Promise.all([
@@ -22,6 +37,22 @@ export async function connectFinance() {
   async function rows(uid, name, ...constraints) {
     const snapshot = await store.getDocsFromServer(store.query(collection(uid, name), ...constraints));
     return snapshot.docs;
+  }
+
+  async function planningRequest(user, options) {
+    const response = await fetch(planningUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'read', ...options }),
+      credentials: 'omit',
+      cache: 'no-store',
+      signal: AbortSignal.timeout(12000),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.ok !== true) {
+      throw Object.assign(new Error('Finance publications and evidence could not load.'), { code: data?.error?.code });
+    }
+    return data;
   }
 
   return {
@@ -63,29 +94,22 @@ export async function connectFinance() {
       const page = snapshot.slice(0, pageSize);
       return { list: page.map(fromDocument), cursor: page.at(-1), more: snapshot.length > pageSize };
     },
-    async planning(user, request) {
-      const response=await fetch(correctionUrl.replace(/\/correct$/, '/planning'),{
-        method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},
-        body:JSON.stringify(request),credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(20000)
-      });
-      const data=await response.json().catch(()=>null);
-      if(!response.ok||data?.ok!==true)throw Object.assign(new Error('Planning could not be confirmed.'),{code:data?.error?.code});
-      return data;
-    },
-    async correct(user, decision, signal) {
-      const response = await fetch(correctionUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(decision),
-        credentials: 'omit',
-        cache: 'no-store',
-        signal,
-      });
-      const result = await response.json().catch(() => null);
-      if (!response.ok || result?.ok !== true) {
-        throw Object.assign(new Error('The correction was not confirmed.'), { code: result?.error?.code });
+    async planning(user, { includeEvidence = true, publicationId } = {}) {
+      if (includeEvidence && !publicationId) return planningRequest(user, {});
+      try {
+        return await planningRequest(user, { includeEvidence: includeEvidence ? undefined : false, publicationId });
+      } catch (error) {
+        if (error.code !== 'invalid_request') throw error;
       }
-      return result;
+      // During rollout, an older revision may support ID lookup but not the evidence switch.
+      if (!includeEvidence && publicationId) {
+        try {
+          return await planningRequest(user, { publicationId });
+        } catch (error) {
+          if (error.code !== 'invalid_request') throw error;
+        }
+      }
+      return planningRequest(user, {});
     },
   };
 }

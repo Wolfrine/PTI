@@ -11,10 +11,12 @@ export const kinds = {
 };
 
 export const views = {
-  today: { title: 'Your money, your decisions', nav: 'Today', icon: 'overview' },
-  decisions: { title: 'Decisions and plans', nav: 'Decisions', icon: 'review' },
-  library: { title: 'Your finance library', nav: 'Library', icon: 'reports' },
-  overview: { title: 'Monthly overview', nav: 'Monthly history', icon: 'overview', month: true },
+  today: { title: 'Today', nav: 'Today' },
+  decisions: { title: 'Decisions, plans and goals', nav: 'Decisions' },
+  library: { title: 'Publications', nav: 'Publications' },
+  overview: { title: 'Monthly history', nav: 'Monthly history', month: true },
+  position: { title: 'Financial position', nav: 'Position', month: true },
+  evidence: { title: 'Evidence', nav: 'Evidence', month: true },
   transactions: { title: 'Transactions', nav: 'Transactions', icon: 'transactions', month: true },
   review: { title: 'Needs review', nav: 'Review', icon: 'review', month: true },
   accounts: { title: 'Accounts', nav: 'Accounts', icon: 'accounts' },
@@ -43,11 +45,19 @@ export const pretty = (value) => {
 export const monthValid = (month) => /^20\d{2}-(0[1-9]|1[0-2])$/.test(month ?? '');
 export const amountValid = Number.isSafeInteger;
 export const stableId = (id) => typeof id === 'string' && /^[a-f0-9]{64}$/.test(id);
+export const publicationIdValid = (id) => typeof id === 'string' && /^[a-z][a-z0-9-]{7,79}$/.test(id);
+export const publicationKinds = ['report', 'decision', 'plan', 'insight', 'tracking'];
 export function money(paisa) {
   if (!amountValid(paisa)) return 'Unavailable';
   const whole = Math.trunc(paisa / 100);
   const fraction = String(Math.abs(paisa % 100)).padStart(2, '0');
   return india.formatToParts(whole).map((part) => part.type === 'fraction' ? fraction : part.value).join('');
+}
+
+export function earnedIncomeLabel(month, amount) {
+  if (amountValid(amount) && amount > 0) return money(amount);
+  if (month && amountValid(month.earnedIncomePaisa) && month.earnedIncomePaisa === 0) return 'No earned income recorded';
+  return 'Unknown';
 }
 export const signed = (paisa, direction) => {
   if (!amountValid(paisa)) return 'Unavailable';
@@ -121,28 +131,50 @@ export function routeFrom(hash, fallbackMonth) {
   const requestedMonth = params.get('month');
   const month = monthValid(requestedMonth) ? requestedMonth : fallbackMonth;
   const route = { view: Object.hasOwn(views, view) ? view : 'today', month };
-  if(route.view==='library'){const doc=params.get('doc');if(typeof doc==='string'&&/^[a-z][a-z0-9-]{7,79}$/.test(doc))route.publication=doc;}
+  if (route.view === 'library') {
+    const doc = params.get('doc');
+    const kind = params.get('kind');
+    if (publicationIdValid(doc)) route.publication = doc;
+    if (publicationKinds.includes(kind)) route.publicationKind = kind;
+  }
+  if (route.view === 'position') {
+    const kind = params.get('kind');
+    if (['cash', 'investment', 'debt'].includes(kind)) route.positionKind = kind;
+  }
+  const publication = params.get('publication');
+  if (['reports', 'sources'].includes(route.view) && publicationIdValid(publication)) route.fromPublication = publication;
   const through = params.get('through');
   if (route.view === 'overview') {
     if (dateValid(through) && through.startsWith(`${month}-`)) route.through = through;
     const bucket = params.get('bucket');
     if (monthValid(bucket)) route.bucket = bucket;
+    const measure = params.get('measure');
+    route.historyMode = ['posted', 'statements'].includes(measure) ? measure : 'classified';
+    const account = params.get('account');
+    if (route.historyMode === 'statements' && /^[a-z][a-z0-9_-]{1,47}$/.test(account ?? '')) route.historyAccount = account;
   }
-  if (['transactions', 'sources'].includes(route.view)) {
+  if (['transactions', 'sources', 'reports'].includes(route.view)) {
     const from = params.get('from');
     const to = params.get('to');
     const back = params.get('historyThrough');
-    if (dateValid(from) && dateValid(to) && from.startsWith(`${month}-`) && to.startsWith(`${month}-`) && from <= to) {
+    if (route.view !== 'reports' && dateValid(from) && dateValid(to) && from.startsWith(`${month}-`) && to.startsWith(`${month}-`) && from <= to) {
       route.period = { from, to };
     }
-    if (route.period && dateValid(back) && monthValid(back.slice(0, 7))) route.historyThrough = back;
+    if (dateValid(back) && monthValid(back.slice(0, 7)) && (route.period || route.view !== 'transactions')) {
+      route.historyThrough = back;
+      const measure = params.get('measure');
+      const account = params.get('account');
+      if (['posted', 'statements'].includes(measure)) route.historyReturnMode = measure;
+      if (route.historyReturnMode === 'statements' && /^[a-z][a-z0-9_-]{1,47}$/.test(account ?? '')) route.historyReturnAccount = account;
+    }
     const reference = params.get(route.view === 'sources' ? 'window' : 'entry');
-    if (params.get('report') === 'monthly') {
+    if (route.view !== 'reports' && params.get('report') === 'monthly') {
       route.fromReport = true;
       if (stableId(reference)) route.reference = reference;
       const revision = params.get('revision');
       if (/^[1-9]\d*$/.test(revision ?? '') && amountValid(Number(revision))) route.referenceRevision = Number(revision);
     }
+    if (route.view === 'sources' && stableId(reference)) route.reference = reference;
   }
   return route;
 }
@@ -162,5 +194,6 @@ export function filtersFrom(hash, route) {
     spending: params.get('scope') === 'spending',
     cash: params.get('scope') === 'cash',
     cashOutflow: params.get('scope') === 'cash-outflow',
+    cashInflow: params.get('scope') === 'cash-inflow',
   };
 }

@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const source = fileURLToPath(new URL('../', import.meta.url));
-const assets = ['index.html', 'styles.css', 'app.mjs', 'views.mjs', 'values.mjs', 'history.mjs', 'decisions.mjs', 'finance-data.mjs', 'firebase-config.mjs'];
+const assets = ['index.html', 'styles.css', 'history.css', 'app.mjs', 'views.mjs', 'values.mjs', 'history.mjs', 'decisions.mjs', 'finance-data.mjs', 'firebase-config.mjs'];
 const [flag, target, ...extra] = process.argv.slice(2);
 if (flag !== '--out' || !target || extra.length) throw new Error('Usage: node finance-app/scripts/build.mjs --out <dedicated-output-directory>');
 const output = path.resolve(target);

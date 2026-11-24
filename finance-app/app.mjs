@@ -1,7 +1,6 @@
-import { connectFinance } from './finance-data.mjs';
-import { calendarPeriod, currentMonth, filtersFrom, historyPeriod, monthFrom, routeFrom } from './values.mjs';
+import { connectFinance, readFinancialEvidence } from './finance-data.mjs';
+import { calendarPeriod, currentMonth, filtersFrom, historyPeriod, routeFrom, views } from './values.mjs';
 import { details, heading, navigation, render } from './views.mjs';
-import { historyDetails, historyRows } from './history.mjs';
 import { renderDecisionWorkspace } from './decisions.mjs';
 
 const byId = (id) => document.getElementById(id);
@@ -29,6 +28,9 @@ let dialogEntry = null;
 let detailVersion = 0;
 const pageState = { loading: false, error: false };
 const EDGE_LIMIT = 500;
+const positionViews = ['position', 'accounts', 'investments', 'debts'];
+const briefingViews = ['today', 'decisions', 'library', ...positionViews];
+const accessErrors = new Set(['permission-denied', 'unauthenticated', 'owner_authorization_required', 'sign_in_required']);
 
 function showGate(message, options = {}) {
   gateMessage.textContent = message;
@@ -62,7 +64,7 @@ function clearWorkspace() {
 
 function suspendAccess() {
   clearWorkspace();
-  showGate('Finance could not confirm access to the ledger. Retry the connection or sign out.', { retry: true });
+  showGate('Finance could not confirm private access. Retry the connection or sign out.', { retry: true });
 }
 
 async function identify(user) {
@@ -70,7 +72,7 @@ async function identify(user) {
   identity = user;
   clearWorkspace();
   if (!user) {
-    showGate('Sign in to open your private ledger.', { signIn: true });
+    showGate('Sign in to open your private Finance workspace.', { signIn: true });
     return;
   }
   if (!user.emailVerified || !user.providerData.some((provider) => provider.providerId === 'google.com')) {
@@ -106,7 +108,7 @@ async function capture(promise) {
   try {
     return { ok: true, data: await promise };
   } catch (error) {
-    return { ok: false, error: error.code };
+    return { ok: false, error: error?.code ?? 'read_failed' };
   }
 }
 
@@ -117,12 +119,8 @@ function active(version, uid) {
 function renderView() {
   if (!owner || !result) return;
   viewHeading.innerHTML = heading(route, result.month?.data);
-  content.innerHTML = ['today','decisions','library'].includes(route.view) ? renderDecisionWorkspace(route,result) : render(route,result,filters,pageState);
-  const currentMark = content.querySelector('.history-mark[aria-pressed="true"]');
-  if (currentMark) {
-    const plot = content.querySelector('.history-scroll');
-    plot.scrollLeft = currentMark.offsetLeft - (plot.clientWidth - currentMark.offsetWidth) / 2;
-  }
+  content.innerHTML = briefingViews.includes(route.view)
+    ? renderDecisionWorkspace(route, result) : render(route, result, filters, pageState);
   content.setAttribute('aria-busy', 'false');
 }
 
@@ -130,41 +128,70 @@ async function loadView({ moveFocus = false } = {}) {
   if (!owner) return;
   const version = ++viewVersion;
   const uid = owner.uid;
+  const previousRoute = route;
   route = routeFrom(location.hash, route.month);
   filters = filtersFrom(location.hash, route);
   const { view, month } = route;
   const period = route.period ?? calendarPeriod(month);
   if (view === 'overview') route.history = historyPeriod(month, route.through);
+  if (moveFocus && result && route.history && previousRoute.history?.to === route.history.to
+    && (previousRoute.historyMode === 'statements') === (route.historyMode === 'statements')) {
+    renderView();
+    const selected = route.bucket && route.bucket !== previousRoute.bucket ? byId('history-selected-month') : null;
+    (selected ?? byId('page')).focus();
+    return;
+  }
   result = null;
   pageState.loading = false;
   pageState.error = false;
   viewHeading.innerHTML = heading(route);
+  document.title = `${views[view].title} · Finance · PTI`;
   byId('finance-nav').innerHTML = navigation(route);
   menu.setAttribute('aria-expanded', 'false');
   content.setAttribute('aria-busy', 'true');
-  content.innerHTML = '<div class="surface loading" role="status">Loading ledger…</div>';
+  content.innerHTML = `<div class="surface loading" role="status">Loading ${views[view].nav.toLowerCase()}…</div>`;
   if (moveFocus) byId('page').focus();
 
   const tasks = {};
+  const statementHistory = view === 'overview' && route.historyMode === 'statements';
+  const needsPosition = view === 'today' || positionViews.includes(view);
   const readMonth = (entryMonth) => api.detail(uid, 'months', entryMonth);
-  if(['today','decisions','library'].includes(view)){
-    tasks.planning=api.planning(owner,{action:'read'});
-    if(view!=='library'){tasks.decisionMonths=api.monthRange(uid,monthFrom(currentMonth(),-12),currentMonth());tasks.balances=api.collection(uid,'balances');}
+  if (briefingViews.includes(view) || statementHistory) {
+    const planning = await capture(api.planning(owner, {
+      includeEvidence: needsPosition || statementHistory,
+      publicationId: route.publication,
+    }));
+    if (!active(version, uid)) return;
+    if (accessErrors.has(planning.error)) {
+      suspendAccess();
+      return;
+    }
+    const financialEvidence = readFinancialEvidence(planning);
+    result = { planning, financialEvidence };
+    if (needsPosition) {
+      const positionMonth = view === 'today' ? currentMonth() : month;
+      if (!financialEvidence.ok) tasks.balances = api.collection(uid, 'balances');
+      // The selected month contains investment movements and loan proceeds omitted by the current evidence model.
+      if (view !== 'today' || !financialEvidence.data?.ledgerMonths.some((entry) => entry?.month === positionMonth)) {
+        tasks.month = readMonth(positionMonth);
+      }
+    }
   }
-  if (['overview', 'income', 'reports', 'sources', 'transactions', 'review'].includes(view)) tasks.month = readMonth(month);
+  if (!route.reference && ['evidence', 'income', 'reports', 'sources', 'transactions', 'review'].includes(view)) {
+    tasks.month = readMonth(month);
+  }
   if (route.reference) tasks.reference = api.detail(uid, view === 'sources' ? 'sourceWindows' : 'transactions', route.reference);
-  if (!route.reference && ['overview', 'transactions', 'review'].includes(view)) {
+  if (!route.reference && ['transactions', 'review'].includes(view)) {
     tasks.rows = api.page(uid, view === 'review' ? 'reviews' : 'transactions', period, null);
   }
-  if (view === 'overview') {
+  if (view === 'overview' && !statementHistory) {
     const { buckets } = route.history;
     tasks.history = api.monthRange(uid, buckets[0].month, buckets.at(-1).month);
     for (const bucket of buckets.filter((entry) => entry.clipped)) {
       tasks[`edge:${bucket.month}`] = api.page(uid, 'transactions', bucket, null, EDGE_LIMIT);
     }
-    tasks.recurring = api.collection(uid, 'recurring', 'lastOccurredOn');
   }
-  if (['accounts', 'investments', 'debts'].includes(view)) tasks.balances = api.collection(uid, 'balances');
+  if (view === 'evidence') tasks.recurring = api.collection(uid, 'recurring', 'lastOccurredOn');
   if (view === 'sources' && !route.reference) {
     tasks.sources = api.collection(uid, 'sourceStatus');
     tasks.scan = api.detail(uid, 'scanStatus', 'gmail');
@@ -173,11 +200,11 @@ async function loadView({ moveFocus = false } = {}) {
 
   const captured = await Promise.all(Object.entries(tasks).map(async ([name, task]) => [name, await capture(task)]));
   if (!active(version, uid)) return;
-  if (captured.some(([, read]) => read.error === 'permission-denied' || read.error === 'unauthenticated' || read.error === 'owner_authorization_required' || read.error === 'sign_in_required')) {
+  if (captured.some(([, read]) => accessErrors.has(read.error))) {
     suspendAccess();
     return;
   }
-  result = Object.fromEntries(captured);
+  result = { ...result, ...Object.fromEntries(captured) };
   renderView();
 }
 
@@ -192,7 +219,7 @@ async function loadMore() {
   const period = route.period ?? calendarPeriod(route.month);
   const next = await capture(api.page(uid, route.view === 'review' ? 'reviews' : 'transactions', period, current.cursor));
   if (!active(version, uid)) return;
-  if (next.error === 'permission-denied' || next.error === 'unauthenticated') {
+  if (accessErrors.has(next.error)) {
     suspendAccess();
     return;
   }
@@ -222,7 +249,7 @@ async function openEntry(id) {
   dialog.showModal();
   const entry = await capture(api.detail(uid, 'transactions', id));
   if (version !== detailVersion || !dialog.open || uid !== owner?.uid) return;
-  if (entry.error === 'permission-denied' || entry.error === 'unauthenticated') {
+  if (accessErrors.has(entry.error)) {
     suspendAccess();
     return;
   }
@@ -280,12 +307,7 @@ byId('page').addEventListener('click', (event) => {
   if (button?.hasAttribute('data-refresh')) void loadView();
   if (button?.hasAttribute('data-more')) void loadMore();
   if (button?.dataset.entry) void openEntry(button.dataset.entry);
-  if (button?.dataset.historyMonth && route.history && result?.history?.ok) {
-    const selected = historyRows(route.history, result).find((bucket) => bucket.month === button.dataset.historyMonth);
-    if (!selected) return;
-    for (const mark of content.querySelectorAll('[data-history-month]')) mark.setAttribute('aria-pressed', String(mark === button));
-    byId('history-detail').innerHTML = historyDetails(selected, route.history.to);
-  }
+  if (button?.hasAttribute('data-history-list')) byId('history-month-list')?.focus();
 });
 
 dialog.addEventListener('click',event=>{if(event.target.closest('[data-close-dialog]'))dialog.close();});

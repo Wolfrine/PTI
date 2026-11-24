@@ -1,16 +1,20 @@
 import { PAGE_SIZE } from './finance-data.mjs';
 import { historyView } from './history.mjs';
-import { amountValid, categories, count, date, escape, href, kinds, money, monthFrom, monthLabel, monthValid, pretty, signed, stableId, views } from './values.mjs';
+import { amountValid, categories, count, currentMonth, date, earnedIncomeLabel, escape, href, kinds, money, monthFrom, monthLabel, monthValid, pretty, signed, stableId, views } from './values.mjs';
 
 const statusLabel = {
-  observed: 'Observed coverage', partial: 'Partial coverage', balanced: 'Ledger totals checked', repaired: 'Ledger totals repaired',
+  observed: 'Source records observed', partial: 'Partial coverage', balanced: 'Ledger totals checked', repaired: 'Ledger totals repaired',
   open: 'Open', resolved: 'Resolved', posted: 'Posted', pending: 'Pending', review: 'Needs review', excluded: 'Excluded',
 };
-const value = (input) => escape(input === '' || input == null ? 'Unavailable' : input);
+const value = (input) => typeof input === 'string' && input.trim() || amountValid(input) ? escape(input) : 'Unknown';
 const label = (input) => escape(statusLabel[input] ?? pretty(input));
 const kindLabel = (kind) => escape(kinds[kind] ?? pretty(kind));
 const statusTone = (status) => ['observed', 'balanced', 'repaired'].includes(status) ? 'ok' : ['partial', 'review', 'open', 'pending'].includes(status) ? 'attention' : '';
 const pill = (status, text) => `<span class="pill ${statusTone(status)}">${text ?? label(status)}</span>`;
+const hasCoverage = (coverage) => amountValid(coverage?.inputCount) && coverage.inputCount > 0;
+const coveragePill = (coverage) => coverage?.inProgressCount > 0 ? pill('pending', 'Intake in progress')
+  : hasCoverage(coverage) && ['partial', 'observed'].includes(coverage.status) ? pill(coverage.status)
+    : pill('', 'Source coverage unknown');
 const action = (view, month, text) => `<a class="text-link" href="${href(view, month)}">${text} <span aria-hidden="true">↗</span></a>`;
 const categoryHref = (category, month) => `${href('transactions', month)}&category=${encodeURIComponent(category)}&status=posted&scope=spending`;
 const empty = (title, copy = '') => `<div class="empty"><p><strong>${title}</strong></p>${copy ? `<p>${copy}</p>` : ''}</div>`;
@@ -19,7 +23,8 @@ const field = (name, text) => `<div><dt>${name}</dt><dd>${text}</dd></div>`;
 
 function summary(data) {
   const counts = data?.counts;
-  if (!data?.coverage?.status || !counts || !(counts.transactions - counts.review - counts.pending - counts.excluded > 0)) return null;
+  if (!counts || ![counts.transactions, counts.review, counts.pending, counts.excluded].every(amountValid)
+    || counts.transactions - counts.review - counts.pending - counts.excluded <= 0) return null;
   // No source-period completeness assertion exists for an aggregate. A computed gross zero can simply mean no captured rows of that type.
   const reported = (key) => amountValid(data[key]) && data[key] !== 0 ? data[key] : undefined;
   const cashObserved = data.inflowPaisa > 0 || data.outflowPaisa > 0;
@@ -36,43 +41,49 @@ function summary(data) {
   };
 }
 
+const primaryViews = ['today', 'library', 'overview', 'position', 'evidence'];
+const evidenceViews = ['evidence', 'transactions', 'review', 'reports', 'sources', 'income'];
+const positionViews = ['position', 'accounts', 'investments', 'debts'];
+
 function panel(title, body, link = '', extra = '') {
   return `<section class="surface ${extra}"><header class="section-heading"><h2>${title}</h2>${link}</header>${body}</section>`;
 }
 
 export function navigation(route) {
-  const groups = [
-    ['today', 'library', 'decisions'],
-    ['overview', 'transactions', 'review'],
-    ['accounts', 'income', 'investments', 'debts'],
-    ['reports', 'sources'],
-  ];
-  return groups.map((group) => `<div class="nav-group">${group.map((name) => `<a href="${href(name, route.month)}"${route.view === name ? ' aria-current="page"' : ''}>${views[name].nav}</a>`).join('')}</div>`).join('');
+  const current = evidenceViews.includes(route.view) ? 'evidence' : positionViews.includes(route.view) ? 'position'
+    : route.view === 'decisions' ? 'library' : route.view;
+  return `<div class="nav-group">${primaryViews.map((name) => `<a href="${href(name, name === 'today' ? currentMonth() : route.month)}"${current === name ? ` aria-current="${route.view === name ? 'page' : 'true'}"` : ''}>${views[name].nav}</a>`).join('')}</div>`;
+}
+
+function evidenceNavigation(route) {
+  const sections = [['evidence', 'Overview'], ['transactions', 'Transactions'], ['review', 'Review'], ['reports', 'Monthly report'], ['sources', 'Sources']];
+  return `<nav class="ledger-links section-nav" aria-label="Evidence views">${sections.map(([view, title]) =>
+    `<a class="ledger-link" href="${href(view, route.month)}"${view === route.view ? ' aria-current="page"' : ''}>${title}</a>`).join('')}</nav>`;
 }
 
 export function heading(route, monthly) {
   const view = views[route.view];
   const coverage = monthly?.coverage?.status;
-  const period=view.month?`<nav class="period" aria-label="Reporting period">
-   ${monthValid(monthFrom(route.month,-1))?`<a class="period-arrow" aria-label="Previous month" href="${href(route.view,monthFrom(route.month,-1))}">‹</a>`:''}
+  const historyScope = route.view === 'overview' && route.historyMode !== 'classified'
+    ? `&measure=${route.historyMode}${route.historyAccount ? `&account=${route.historyAccount}` : ''}` : '';
+  const periodLink = (offset) => `${href(route.view, monthFrom(route.month, offset))}${historyScope}${route.positionKind ? `&kind=${route.positionKind}` : ''}`;
+  const latestMonth = currentMonth();
+  const period=view.month?`<nav class="period" aria-label="${route.view === 'position' ? 'Ledger activity month' : 'Reporting period'}">
+   ${monthValid(monthFrom(route.month,-1))?`<a class="period-arrow" aria-label="Previous month" href="${escape(periodLink(-1))}">‹</a>`:''}
    <strong class="period-title">${monthLabel(route.month)}</strong>
-   ${monthValid(monthFrom(route.month,1))?`<a class="period-arrow" aria-label="Next month" href="${href(route.view,monthFrom(route.month,1))}">›</a>`:''}
+   ${route.month < latestMonth && monthValid(monthFrom(route.month,1))?`<a class="period-arrow" aria-label="Next month" href="${escape(periodLink(1))}">›</a>`:''}
   </nav>`:'';
-  const back = route.historyThrough ? `<a class="text-link" href="${href('overview', route.historyThrough.slice(0, 7))}&through=${route.historyThrough}&bucket=${route.month}">Back to history</a>` : '';
-  const returnLink = route.fromReport ? `<div class="scope-line">${action('reports', route.month, 'Back to monthly report')}</div>` : '';
-  const range = route.period ? `<div class="scope-line"><strong>${datesOf(route.period)} · Inclusive dates</strong>${back}</div>` : '';
-  const sourceLink = route.view === 'sources' || route.period ? '' : action('sources', route.month, 'View coverage');
-  const monthCoverage = view.month && coverage ? `<div class="scope-line">${route.period ? '<span>Calendar month</span>' : ''}${pill(coverage)}<span>Ledger updated ${date(monthly.updatedAt, true)}</span>${sourceLink}</div>` : '';
-  return `<header class="page-heading"><div class="heading-main"><h1>${view.title}</h1>${view.month ? `<span class="period-label">${monthLabel(route.month)}</span>` : ''}</div>${period}</header>${returnLink}${range}${monthCoverage}`;
-}
-
-function metrics(monthly) {
-  const totals = summary(monthly);
-  return `<dl class="metrics" aria-label="Monthly totals in Indian rupees">
-    <div class="metric earned"><dt>Earned income</dt><dd>${money(totals?.earnedIncomePaisa)}</dd></div>
-    <div class="metric spent"><dt>Net expenses</dt><dd>${money(totals?.netSpendPaisa)}</dd></div>
-    <div class="metric net"><dt>Net cash flow</dt><dd>${money(totals?.cashflowPaisa)}</dd></div>
-  </dl>`;
+  const returnScope = route.historyReturnMode ? `&measure=${route.historyReturnMode}` : '';
+  const returnAccount = route.historyReturnAccount ? `&account=${route.historyReturnAccount}` : '';
+  const back = route.historyThrough ? `<a class="text-link" href="${href('overview', route.historyThrough.slice(0, 7))}&through=${route.historyThrough}&bucket=${route.month}${returnScope}${returnAccount}">Back to history</a>` : '';
+  const publicationBack = route.fromPublication ? `<a class="text-link" href="${href('library', route.month)}&doc=${route.fromPublication}">Back to publication</a>` : '';
+  const reportBack = route.fromReport ? action('reports', route.month, 'Back to monthly report') : '';
+  const returnLink = back || publicationBack || reportBack ? `<div class="scope-line">${back}${publicationBack}${reportBack}</div>` : '';
+  const range = route.period ? `<div class="scope-line"><strong>${datesOf(route.period)} · Inclusive dates</strong></div>` : '';
+  const monthCoverage = ['review', 'transactions'].includes(route.view) && coverage && !route.reference
+    ? `<div class="scope-line">${route.period ? '<span>Calendar-month coverage</span>' : ''}${coveragePill(monthly.coverage)}<span>Ledger updated ${date(monthly.updatedAt, true)}</span></div>` : '';
+  const hasEvidenceNav = evidenceViews.includes(route.view);
+  return `<header class="page-heading"><div class="heading-main"><h1>${view.title}</h1></div>${route.reference ? '' : period}</header>${hasEvidenceNav ? evidenceNavigation(route) : ''}${returnLink}${range}${monthCoverage}`;
 }
 
 function spending(monthly, month) {
@@ -93,10 +104,11 @@ function ledgerRows(list, options = {}) {
 }
 
 function coverageNote(monthly, month) {
-  if (!monthly) return `<div class="callout"><p><strong>Monthly coverage is unavailable.</strong> ${action('sources', month, 'Inspect sources')}</p></div>`;
-  if (monthly.coverage?.status === 'partial') return `<div class="callout"><p><strong>Partial coverage.</strong> Shown totals cover processed records. ${action('sources', month, 'Inspect coverage')}</p></div>`;
-  if (monthly.coverage?.status === 'observed') return '<div class="callout neutral"><p>Totals reflect source records observed for this month.</p></div>';
-  return '<div class="callout"><p>Coverage status is unavailable for this report.</p></div>';
+  if (!monthly) return `<div class="callout"><p><strong>No monthly ledger projection returned.</strong> ${action('sources', month, 'Inspect sources')}</p></div>`;
+  if (monthly.coverage?.inProgressCount > 0) return `<div class="callout"><p><strong>Intake in progress.</strong> Recorded totals can change as inputs are processed. ${action('sources', month, 'Inspect coverage')}</p></div>`;
+  if (hasCoverage(monthly.coverage) && monthly.coverage.status === 'partial') return `<div class="callout"><p><strong>Partial coverage.</strong> Shown totals cover processed records. ${action('sources', month, 'Inspect coverage')}</p></div>`;
+  if (hasCoverage(monthly.coverage) && monthly.coverage.status === 'observed') return '<div class="callout neutral"><p>Totals reflect source records observed for this month.</p></div>';
+  return `<div class="callout"><p><strong>Source coverage unknown.</strong> ${action('sources', month, 'Inspect sources')}</p></div>`;
 }
 
 function recurring(result) {
@@ -108,28 +120,39 @@ function recurring(result) {
     + (result.data.more ? '<p class="muted">Showing the latest 100 records.</p>' : '');
 }
 
-function overview(route, result) {
+function evidence(route, result) {
   const month = route.month;
-  const monthly = result.month.data;
+  const monthly = result.month?.data;
   const review = monthly?.counts?.review;
-  const reviewCopy = Number.isSafeInteger(review) ? `${count(review)} ${review === 1 ? 'item' : 'items'} to review` : 'Review count unavailable';
-  const recent = result.rows.data?.list.filter((row) => row.status === 'posted').slice(0, 6);
-  const recentBody = result.rows.ok ? ledgerRows(recent, { emptyTitle: 'No posted entries among the transactions loaded for this overview.' }) : error('Transactions');
-  return `${result.month.ok ? coverageNote(monthly, month) : error('Monthly totals')}${metrics(monthly)}
-    ${panel('Income and cash flow history', historyView(route, result), action('reports', month, 'Monthly report'), 'history-panel')}
+  const reviewCopy = amountValid(review) && review >= 0
+    ? `<p class="review-summary">${review > 0 ? `${count(review)} ${review === 1 ? 'entry needs' : 'entries need'} classification or review.` : 'No review entries counted in this projection.'}</p>`
+    : '<p class="review-summary">Review count is unknown for this month.</p>';
+  const total = monthly?.counts?.transactions;
+  const transactions = amountValid(total) && total >= 0
+    ? `${count(total)} captured ${total === 1 ? 'entry' : 'entries'} in the monthly projection.` : 'Open the ledger to inspect the entries returned for this month.';
+  const updated = monthly?.updatedAt ? `<p class="muted following">Projection updated ${date(monthly.updatedAt, true)}.</p>` : '';
+  return `<p class="decision-intro">Trace a figure to its entries, check what the sources cover, and see which movements are still under review.</p>
+    ${result.month.ok ? coverageNote(monthly, month) : error('Monthly projection')}
     <div class="overview-grid">
-      ${panel('Recent posted transactions', recentBody, action('transactions', month, 'All transactions'))}
-      ${panel('Spending by category', spending(monthly, month), '', 'spend-panel')}
+      ${panel('Captured ledger', `<p>${transactions}</p>${updated}`, action('transactions', month, 'Browse transactions'))}
+      ${panel('Review queue', reviewCopy, action('review', month, 'Inspect review items'))}
+      ${panel('Monthly report', '<p>Read the published analysis, the ledger totals it used, and its cited evidence.</p>', action('reports', month, 'Open report'))}
+      ${panel('Source coverage', '<p>Check statement periods, import status, and gaps in the recorded evidence.</p>', action('sources', month, 'Inspect sources'))}
     </div>
-    <div class="overview-grid followups">${panel('Recurring items', recurring(result.recurring))}${panel('Review queue', `<p class="review-summary">${reviewCopy}</p>`, action('review', month, 'Open review'))}</div>`;
+    ${panel('Recurring evidence', recurring(result.recurring))}`;
 }
 
 function ledgerFilter(route,filters){
  if(route.view!=='transactions')return '';
- const base=href('transactions',route.month),keep=(route.period?`&from=${route.period.from}&to=${route.period.to}`:'')+(route.historyThrough?`&historyThrough=${route.historyThrough}`:'')+(route.fromReport?'&report=monthly':'');
- const tabs=[['All',base+keep,!filters.spending&&!filters.cash&&!filters.kind&&!filters.status&&!filters.category],
+ const base = href('transactions', route.month);
+ const keep = (route.period ? `&from=${route.period.from}&to=${route.period.to}` : '')
+   + (route.historyThrough ? `&historyThrough=${route.historyThrough}` : '')
+   + (route.historyReturnMode ? `&measure=${route.historyReturnMode}` : '')
+   + (route.historyReturnAccount ? `&account=${route.historyReturnAccount}` : '')
+   + (route.fromReport ? '&report=monthly' : '');
+ const tabs=[['All',base+keep,!filters.spending&&!filters.cash&&!filters.cashOutflow&&!filters.cashInflow&&!filters.kind&&!filters.status&&!filters.category],
   ['Expenses',base+keep+'&scope=spending',filters.spending],['Income',base+keep+'&kind=earned_income&status=posted',filters.kind==='earned_income'],
-  ['Cash movement',base+keep+'&scope=cash',filters.cash],['Unclassified',base+keep+'&kind=unknown',filters.kind==='unknown']];
+  ['Posted cash',base+keep+'&scope=cash',filters.cash||filters.cashInflow||filters.cashOutflow],['Unclassified',base+keep+'&kind=unknown',filters.kind==='unknown']];
  return '<nav class="ledger-links" aria-label="Ledger views">'+tabs.map(([label,url,active])=>'<a class="ledger-link" href="'+escape(url)+'"'+(active?' aria-current="true"':'')+'>'+label+'</a>').join('')+'</nav>';
 }
 
@@ -143,30 +166,27 @@ function transactionView(route, result, filters, pageState) {
     && (!filters.spending || (item.status === 'posted' && ['spend', 'fee'].includes(item.kind)))
     && (!filters.cash || (item.status === 'posted' && item.accountKind === 'cash'))
     && (!filters.cashOutflow || (item.status === 'posted' && item.accountKind === 'cash' && item.direction === 'debit'))
+    && (!filters.cashInflow || (item.status === 'posted' && item.accountKind === 'cash' && item.direction === 'credit'))
     && (!review || item.status === 'open'));
   const context = review ? 'Open reviews' : 'Ledger entries';
   const labelCount = `${count(list.length)} shown from ${count(rows.list.length)} loaded ${review ? 'review records' : 'transactions'}.`;
   const next = rows.more ? `<button type="button" class="button" data-more${pageState.loading ? ' disabled' : ''}>${pageState.loading ? 'Loading…' : `Load ${PAGE_SIZE} more`}</button>` : '';
-  const filterNote = filters.category || filters.kind || filters.status || filters.spending || filters.cash || filters.cashOutflow ? ' Filters apply to loaded entries.' : '';
+  const scope = filters.cashInflow ? 'Posted cash credits.' : filters.cashOutflow ? 'Posted cash debits.' : filters.cash ? 'Posted cash-account movements.'
+    : filters.spending ? 'Posted expenses and fees.' : filters.kind ? `${kinds[filters.kind]}${filters.status === 'posted' ? ' · Posted' : ''}.` : '';
+  const filterNote = filters.category || filters.kind || filters.status || filters.spending || filters.cash || filters.cashOutflow || filters.cashInflow ? ' Filters apply to loaded entries.' : '';
   const rowState = rows.more || rows.list.length ? 'No matches in the loaded entries.' : review ? 'No review records returned for this month.' : route.period ? 'No transactions returned for these dates.' : 'No transactions returned for this month.';
-  return panel(context, `${ledgerFilter(route, filters)}<p class="result-count" role="status">${labelCount}${filterNote}</p>
+  return panel(context, `${ledgerFilter(route, filters)}<p class="result-count" role="status">${scope ? `${escape(scope)} ` : ''}${labelCount}${filterNote}</p>
     ${ledgerRows(list, { review, emptyTitle: rowState })}
     ${next ? `<div class="list-footer">${next}${pageState.error ? '<p role="alert">More entries could not load. Try again.</p>' : ''}</div>` : ''}`);
 }
 
-function balances(result, kind) {
-  if (!result.ok) return error('Balance snapshots');
-  const rows = result.data.list.filter((row) => !kind || row.kind === kind);
-  if (!rows.length) return empty('No balance snapshots are available.', 'Balances appear when a source reports them.');
-  return `<ul class="compact-list snapshots">${rows.map((row) => `<li><div><strong>${value(row.account)}</strong><small>${label(row.basis)} · ${value(row.source)}</small></div><div><strong class="number">${money(row.amountPaisa)}</strong><small>As of ${date(row.asOf)}</small></div></li>`).join('')}</ul>${result.data.more ? '<p class="muted">Showing the first 100 source records.</p>' : ''}`;
-}
-
 function incomeView(route, result) {
+  if (!result.month.ok) return panel('Classified income', error('Income totals'));
   const month = result.month.data;
   const totals = summary(month);
-  return `${result.month.ok ? coverageNote(month, route.month) : error('Income totals')}
+  return `${coverageNote(month, route.month)}
     <dl class="metrics" aria-label="Monthly income in Indian rupees">
-      <div class="metric earned"><dt>Earned income</dt><dd>${money(totals?.earnedIncomePaisa)}</dd></div>
+      <div class="metric earned"><dt>Earned income</dt><dd>${earnedIncomeLabel(month, totals?.earnedIncomePaisa)}</dd></div>
       <div class="metric"><dt>Reimbursements</dt><dd>${money(totals?.reimbursementPaisa)}</dd></div>
       <div class="metric"><dt>Interest</dt><dd>${money(totals?.otherIncomePaisa)}</dd></div>
     </dl>${panel('Earned income entries', '<p class="muted">Open the month ledger with the earned-income filter applied.</p>', `<a class="text-link" href="${href('transactions', route.month)}&kind=earned_income&status=posted">View entries ↗</a>`)}
@@ -175,17 +195,20 @@ function incomeView(route, result) {
 }
 
 function analysisNarrative(month) {
-  const analysis = month?.monthlyAnalysis;
-  if (!analysis) return empty('No analysis has been published for this month.');
-  if (analysis.month !== month.month || !amountValid(analysis.ledgerVersion) || !amountValid(analysis.reportVersion)
-    || analysis.ledgerVersion !== month.version || analysis.reportVersion !== month.reconciliation?.reportVersion) {
-    return empty('Analysis is awaiting the current ledger version.');
-  }
+  const validVersion = (analysis) => analysis?.month === month.month
+    && [analysis.version, analysis.ledgerVersion, analysis.reportVersion].every((version) => amountValid(version) && version > 0);
+  const published = month.monthlyAnalysis;
+  const current = validVersion(published) && published.ledgerVersion === month.version
+    && published.reportVersion === month.reconciliation?.reportVersion && ['balanced', 'repaired'].includes(month.reconciliation?.status);
+  const prior = validVersion(month.lastPublishedAnalysis) ? month.lastPublishedAnalysis : validVersion(published) ? published : null;
+  const analysis = current ? published : prior;
+  if (!analysis) return empty('No analysis is available for this month.');
+  const age = current ? '' : `<div class="callout"><p><strong>Outdated analysis.</strong> These findings describe ledger version ${count(analysis.ledgerVersion)} and have not been verified against the current ledger. Links to ledger entries may show later revisions.</p></div>`;
   const headline = typeof analysis.headline === 'string' && analysis.headline.trim() ? `<p class="report-headline">${escape(analysis.headline)}</p>` : '';
   const readable = (items) => (Array.isArray(items) ? items : []).filter((item) => typeof item?.text === 'string' && item.text.trim());
   const findingLinks = (finding) => {
     if (categories.includes(finding.category)) {
-      return `<div class="history-links"><a class="text-link" href="${categoryHref(finding.category, month.month)}&report=monthly">View ${escape(pretty(finding.category).toLowerCase())} entries</a></div>`;
+      return `<div class="history-links"><a class="text-link" href="${categoryHref(finding.category, month.month)}&report=monthly">View ${current ? '' : 'current '}${escape(pretty(finding.category).toLowerCase())} entries</a></div>`;
     }
     const citations = (Array.isArray(finding.eventRevisions) ? finding.eventRevisions : [])
       .filter((entry) => stableId(entry?.eventId) && amountValid(entry.revision) && entry.revision > 0);
@@ -200,6 +223,7 @@ function analysisNarrative(month) {
   const windows = (Array.isArray(analysis.sourceWindows) ? analysis.sourceWindows : []).filter((source) => stableId(source?.id));
   if (!headline && !findings && !gaps) return empty('The published analysis has no readable findings.');
   return `<div class="report-narrative">
+    ${age}
     ${headline}
     <p class="muted">Published ${date(analysis.publishedAt, true)} · Analysis v${count(analysis.version)} · Reconciled report v${count(analysis.reportVersion)} · Ledger v${count(analysis.ledgerVersion)}</p>
     ${findings ? `<h3>Findings</h3><ul>${findings}</ul>` : ''}
@@ -211,21 +235,30 @@ function analysisNarrative(month) {
 }
 
 function reports(route, result) {
+  if (!result.month.ok) return panel('Monthly report', error('Monthly report'));
   const month = result.month.data;
+  if (!month) return panel('Monthly report', empty('No report record for this month.', 'Open source coverage or browse another month.'), action('sources', route.month, 'Inspect coverage'));
   const totals = summary(month);
-  const reconciliation = month?.reconciliation;
+  const reconciliation = month.reconciliation?.reportVersion === month.version ? month.reconciliation : null;
   const report = `<dl class="facts">
-    ${field('Earned income', money(totals?.earnedIncomePaisa))}${field('Gross expenses', money(totals?.spendPaisa))}
-    ${field('Refunds', money(totals?.refundPaisa))}${field('Net expenses', money(totals?.netSpendPaisa))}
-    ${field('Cash inflow', money(totals?.inflowPaisa))}${field('Cash outflow', money(totals?.outflowPaisa))}
-    ${field('Net cash flow', money(totals?.cashflowPaisa))}${field('Reimbursements', money(totals?.reimbursementPaisa))}
+    ${field('Earned income', earnedIncomeLabel(month, totals?.earnedIncomePaisa))}${field('Gross classified spending', money(totals?.spendPaisa))}
+    ${field('Refunds', money(totals?.refundPaisa))}${field('Net classified spending', money(totals?.netSpendPaisa))}
+    ${field('Reimbursements', money(totals?.reimbursementPaisa))}${field('Interest', money(totals?.otherIncomePaisa))}
     ${field('Internal transfers', money(totals?.internalTransferPaisa))}${field('Card settlements', money(totals?.cardSettlementPaisa))}
     ${field('Investment contributions', money(totals?.investmentContributionPaisa))}${field('Investment withdrawals', money(totals?.investmentWithdrawalPaisa))}
     ${field('Loan proceeds', money(totals?.loanDrawPaisa))}${field('Loan repayments', money(totals?.loanRepaymentPaisa))}
   </dl>`;
-  return `${result.month.ok ? coverageNote(month, route.month) : error('Monthly report')}
-    ${panel('Monthly analysis', result.month.ok ? analysisNarrative(month) : error('Monthly analysis'), action('sources', route.month, 'Inspect coverage'))}
-    ${panel('Income and expenses', report, action('transactions', route.month, 'Inspect entries'))}
+  const cash = `<dl class="facts">
+    ${field('Posted credits', money(totals?.inflowPaisa))}${field('Posted debits', money(totals?.outflowPaisa))}
+    ${field('Net posted movement', money(totals?.cashflowPaisa))}
+  </dl><p class="muted following">Cash-account entries already posted in the captured ledger. Statement movements can include transfers and entries still under review.</p>`;
+  const statementLink = `<a class="text-link" href="${href('overview', route.month)}&measure=statements&bucket=${route.month}">View bank statement movements</a>`;
+  return `${coverageNote(month, route.month)}
+    ${route.fromPublication ? '<p class="muted following">This is the current monthly ledger report for the cited month.</p>' : ''}
+    ${panel('Monthly analysis', analysisNarrative(month), action('sources', route.month, 'Inspect coverage'))}
+    ${panel('Classified ledger activity', report, action('transactions', route.month, 'Inspect entries'))}
+    ${panel('Posted cash-account movements', cash, statementLink)}
+    ${panel('Classified spending by category', spending(month, route.month))}
     ${panel('Ledger totals check', reconciliation ? `<dl class="facts">${field('Status', label(reconciliation.status))}${field('Checked at', date(reconciliation.reconciledAt, true))}${field('Version', value(reconciliation.reportVersion))}${field('Transaction count', count(reconciliation.transactionCount))}</dl><p class="muted following">This check compares report totals with captured ledger entries. See Sources for statement and import coverage.</p>` : empty('No current totals check is available.'), action('sources', route.month, 'View coverage'))}`;
 }
 
@@ -245,7 +278,7 @@ function reportReference(route, result) {
   const title = source ? 'Cited source window' : 'Cited ledger entry';
   if (!result.reference.ok) return panel(title, error(title));
   const record = result.reference.data;
-  const belongs = source ? Array.isArray(record?.months) && record.months.includes(route.month) : record?.month === route.month;
+  const belongs = source ? record && (!route.fromReport || (Array.isArray(record.months) && record.months.includes(route.month))) : record?.month === route.month;
   if (!belongs) return panel(title, empty('The cited record is unavailable for this month.'));
   if (source) return panel(title, sourceWindowList([record]));
   const revision = route.referenceRevision;
@@ -255,7 +288,7 @@ function reportReference(route, result) {
 
 function sources(route, result) {
   const coverage = result.month.data?.coverage;
-  const monthEvidence = coverage ? `<dl class="facts">${field('Coverage', pill(coverage.status))}${field('Input records', count(coverage.inputCount))}${field('In progress', count(coverage.inProgressCount))}${field('Partial', count(coverage.partialCount))}${field('Locked', count(coverage.lockedCount))}${field('Unparsed', count(coverage.unparsedCount))}${field('Excluded', count(coverage.excludedCount))}</dl>` : empty('No coverage record exists for this month.');
+  const monthEvidence = coverage ? `<dl class="facts">${field('Coverage', coveragePill(coverage))}${field('Input records', count(coverage.inputCount))}${field('In progress', count(coverage.inProgressCount))}${field('Partial', count(coverage.partialCount))}${field('Locked', count(coverage.lockedCount))}${field('Unparsed', count(coverage.unparsedCount))}${field('Excluded', count(coverage.excludedCount))}</dl>` : empty('No coverage record exists for this month.');
   const sourceRows = result.sources.ok ? result.sources.data.list : [];
   const sourceEvidence = !result.sources.ok ? error('Source status') : sourceRows.length ? `<ul class="source-list">${sourceRows.map((source) => `<li><div class="source-title"><strong>${value(source.source)}</strong>${pill(source.status, source.status === 'observed' ? 'Latest processed' : undefined)}</div><dl class="facts source-facts">${field('Source type', label(source.sourceType))}${field('Last received', date(source.lastReceivedAt, true))}${field('Last processed', date(source.lastProcessedAt, true))}${field('Last observed period', datesOf(source.lastObservedPeriod))}${field('Source records', count(source.inputCount))}${field('Locked', count(source.lockedCount))}${field('Unparsed', count(source.unparsedCount))}${field('Excluded', count(source.excludedCount))}${field('Partial', count(source.partialCount))}</dl></li>`).join('')}</ul>` : empty('No source status has been recorded.');
   const monthWindows = [...(result.windows.data?.list ?? [])].sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)));
@@ -281,13 +314,11 @@ function sources(route, result) {
 export function render(route, result, filters, pageState) {
   if (route.reference) return reportReference(route, result);
   switch (route.view) {
-    case 'overview': return overview(route, result);
+    case 'overview': return panel('History by month', historyView(route, result), '', 'history-panel');
+    case 'evidence': return evidence(route, result);
     case 'transactions':
     case 'review': return transactionView(route, result, filters, pageState);
     case 'income': return incomeView(route, result);
-    case 'accounts': return panel('Balance snapshots', balances(result.balances));
-    case 'investments': return panel('Investment snapshots', balances(result.balances, 'investment'), `<a class="text-link" href="${href('transactions', route.month)}&kind=investment_contribution&status=posted">Contributions ↗</a>`);
-    case 'debts': return panel('Debt snapshots', balances(result.balances, 'debt'), `<a class="text-link" href="${href('transactions', route.month)}&kind=loan_repayment&status=posted">Loan repayments ↗</a>`);
     case 'reports': return reports(route, result);
     case 'sources': return sources(route, result);
   }

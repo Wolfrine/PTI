@@ -45,7 +45,9 @@ export function blankMonthly(month: string) {
       reportVersion: number; transactionCount: number },
   };
 }
-export type Monthly = ReturnType<typeof blankMonthly> & { analysisVersion?: number; monthlyAnalysis?: MonthlyAnalysis };
+export type Monthly = ReturnType<typeof blankMonthly> & {
+ analysisVersion?: number; monthlyAnalysis?: MonthlyAnalysis; lastPublishedAnalysis?: MonthlyAnalysis;
+};
 
 function sum(value: number, delta: number) {
   if (!Number.isSafeInteger(value + delta)) throw new FinanceError('reconciliation_limit');
@@ -117,6 +119,10 @@ export function versionMonth(month: Monthly, now: string) {
   month.version++;
   month.updatedAt = now;
   month.reconciliation = null;
+  // Ingestion invalidates the current analysis. Preserve its dated evidence for
+  // a clearly labeled "last published" view rather than silently discarding it.
+  // The previous version MUST NOT be presented as current.
+  if (month.monthlyAnalysis) month.lastPublishedAnalysis = month.monthlyAnalysis;
   delete month.monthlyAnalysis;
 }
 
@@ -197,7 +203,9 @@ export async function reconcileMonth(root: DocumentReference, month: string, act
     const reconciledAt = new Date().toISOString(), reportVersion = current.version + 1;
     const status = aggregateFingerprint(current) === aggregateFingerprint(recomputed) ? 'balanced' : 'repaired';
     const reconciliation = { status, reconciledAt, reportVersion, transactionCount: recomputed.counts.transactions } as const;
-    const next = { ...recomputed, version: reportVersion, updatedAt: reconciledAt, coverage: current.coverage, reconciliation };
+    const previousAnalysis = current.lastPublishedAnalysis || current.monthlyAnalysis;
+    const next = { ...recomputed, version: reportVersion, updatedAt: reconciledAt, coverage: current.coverage, reconciliation,
+      ...(previousAnalysis ? { lastPublishedAnalysis: previousAnalysis } : {}) };
     tx.set(monthRef, current.analysisVersion === undefined ? next : { ...next, analysisVersion: current.analysisVersion });
     tx.create(root.collection('reports').doc(fingerprint(month, reportVersion)), { ...next, actor });
     return reconciliation;

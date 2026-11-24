@@ -48,7 +48,7 @@ export class NewResourceGlanceComponent implements OnInit, OnDestroy {
     this.connectivity();
     this.subscriptions.add(this.codexUsage.watch().subscribe(state => { this.codex = state; this.now = Date.now(); }));
     this.subscriptions.add(this.platformUsage.watch().subscribe(state => { this.platform = state; this.now = Date.now(); }));
-    this.subscriptions.add(this.localInfrastructure.loadOnce().subscribe(state => { this.local = state; this.now = Date.now(); }));
+    this.subscriptions.add(this.localInfrastructure.watchHome().subscribe(state => { this.local = state; this.now = Date.now(); }));
     this.clock = setInterval(() => { this.now = Date.now(); }, 60_000);
     window.addEventListener('online', this.connectivity);
     window.addEventListener('offline', this.connectivity);

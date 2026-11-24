@@ -6,7 +6,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { NewHomeComponent } from './app/components/new-home/new-home.component';
 import { CodexUsageService, UsageState } from './app/services/codex-usage.service';
 import { PlatformUsageService, PlatformUsageState } from './app/services/platform-usage.service';
-import { GtopHostService, GtopHostReading, GtopHostStatus } from './app/services/gtop-host.service';
+import { GtopHostService, GtopHostReading } from './app/services/gtop-host.service';
 import { OnePieceHostService, OnePieceHostReading, OnePieceHostStatus } from './app/services/one-piece-host.service';
 import { LocalInfrastructureService } from './app/services/local-infrastructure.service';
 
@@ -83,23 +83,12 @@ if (['loading', 'unconnected', 'error'].includes(platformFixture)) {
   platformReading.reading = null;
 }
 const hostFixture = query.get('host') ?? 'offline';
-const hostService: GtopHostStatus = {
-  workerId: 'sachit-windows', state: hostFixture === 'ready' || hostFixture === 'idle' ? 'ready' : hostFixture === 'starting' ? 'starting' : hostFixture === 'failed' ? 'failed' : hostFixture === 'starter-offline' ? 'starter_offline' : 'offline',
-  starter: { state: hostFixture === 'starter-offline' ? 'offline' : 'online', lastSeenAt: success },
-  worker: { state: ['ready', 'idle'].includes(hostFixture) ? 'ready' : 'offline', modelReady: hostFixture === 'ready', lastSeenAt: success },
-  request: null, canStart: ['offline', 'failed'].includes(hostFixture),
+const hostReadings: Record<string, GtopHostReading> = {
+  ready: 'available', idle: 'available', loading: 'loading', offline: 'offline',
+  error: 'unavailable', stale: 'stale', working: 'working',
 };
-const hostReading = new BehaviorSubject<GtopHostReading>({ status: hostFixture === 'hidden' ? 'hidden' : hostFixture === 'loading' ? 'loading' : hostFixture === 'error' ? 'unavailable' : 'ready', service: ['hidden', 'loading', 'error'].includes(hostFixture) ? null : hostService, checkedAt: success });
-const hostPreview = {
-  watch: () => hostReading.asObservable(),
-  refresh: async () => hostReading.value,
-  start: async () => {
-    const next: GtopHostReading = { status: 'ready', service: { ...hostService, state: 'starting', canStart: false }, checkedAt: new Date().toISOString() };
-    hostReading.next(next);
-    setTimeout(() => hostReading.next({ ...next, service: { ...hostService, state: 'ready', canStart: false, worker: { ...hostService.worker, state: 'ready', modelReady: false } } }), 8000);
-    return next;
-  },
-};
+const hostPreview = { watch: () => of(hostReadings[hostFixture] ?? 'hidden') };
+
 const onePieceFixture = query.get('onePiece') ?? 'hidden';
 const onePieceService: OnePieceHostStatus = {
   workerId: 'sachit-windows',
@@ -129,6 +118,6 @@ class UsagePreviewComponent { readonly state = fixture; readonly platform = plat
 bootstrapApplication(UsagePreviewComponent, {
   providers: [provideRouter([]), { provide: CodexUsageService, useValue: { watch: () => of(reading) } },
     { provide: PlatformUsageService, useValue: { watch: () => of(platformReading) } },
-    { provide: LocalInfrastructureService, useValue: { loadOnce: () => of({ status: 'unconnected', fromCache: false }) } },
+    { provide: LocalInfrastructureService, useValue: { watchHome: () => of({ status: 'unconnected', fromCache: false }) } },
     { provide: GtopHostService, useValue: hostPreview }, { provide: OnePieceHostService, useValue: onePiecePreview }],
 }).catch(error => console.error(error));

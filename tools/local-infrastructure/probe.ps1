@@ -106,7 +106,9 @@ $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
 
 $relay = Get-Worker 'local-codex' 'PTI Local Codex Relay' (Test-Process '^node\.exe$' '[\\/]LocalCodexBridge[\\/].*relay\.mjs')
 $usage = Get-Worker 'codex-usage' 'PTI Codex Usage Monitor' $null $true
-$assistant = Get-Worker 'gt-papers' 'PTI GT Papers Host' (Test-Process '^node\.exe$' '[\\/]gtop-assistant[\\/]src[\\/]main\.ts')
+$papersRuntime = 'H:\Workspace\Runtimes\GTOP\paper-assistant\production\codex-native\runtime'
+$papersProcess = Find-Process '^node\.exe$' '[\\/]gtop-assistant[\\/]src[\\/]main\.ts.+[\\/]GTOP[\\/]paper-assistant[\\/]production[\\/]codex-native[\\/]paper-runtime\.json'
+$assistant = Get-Worker 'gt-papers' 'PTI GT Papers Host' $(if ($processesKnown) { [bool]$papersProcess })
 $checkingProcess = Find-Process '^node\.exe$' '[\\/]GTOP[\\/]grading[\\/]releases[\\/][a-f0-9]{40}[\\/].*[\\/]src[\\/]checking-worker\.ts'
 $checking = Get-Worker 'gt-checking' 'GTOP Paper Checking' $(if ($processesKnown) { [bool]$checkingProcess })
 $initiator = Get-Worker 'service-initiator' 'PTI Local Service Initiator' (Test-Process '^node\.exe$' 'local-service-initiator[\\/].*\.(?:mjs|cjs)')
@@ -128,22 +130,28 @@ if ($usageEvent.event -eq 'published' -and ($usageEvent.allowance -eq 'ok' -or $
   Set-WorkerStatus $usage (Get-Epoch $usageEvent.at) 'available' 'heartbeat' 720000
 }
 
-$initiatorStatus = Read-Status 'F:\Workspace\Support\PTI\local-service-initiator\data\status.json'
-if ($initiatorStatus.state -eq 'ready') {
-  Set-WorkerStatus $initiator (Get-Epoch $initiatorStatus.lastPollAt) 'available' 'heartbeat'
-}
-
-$hostAt = Get-Epoch $initiatorStatus.checkedAt
-if (!$assistant -and $initiator -and $hostAt -and $now - $hostAt -le 180000 -and $initiatorStatus.localState -in @('running', 'stopped')) {
+# Native transport is recorded after the gateway heartbeat succeeds. Bind both
+# receipts to the live native process before reporting dispatch readiness.
+$papersRecord = Read-Status (Join-Path $papersRuntime 'process.json')
+$papersHealth = Read-Status (Join-Path $papersRuntime 'worker-health.json')
+$papersTransport = Read-Status (Join-Path $papersRuntime 'transport.json')
+if (!$assistant -and $papersRecord.pid -gt 0) {
   $assistant = @{ id = 'gt-papers'; status = 'unknown'; evidence = 'unavailable'; lastSeenAt = $null; queued = $null; running = $null; components = @() }
 }
-if ($initiatorStatus.workerRunning -eq $true -and $initiatorStatus.workerHealthy -eq $true) {
-  Set-WorkerStatus $assistant $hostAt 'available' 'health'
-} elseif ($assistant -and $initiatorStatus.localState -eq 'stopped' -and $hostAt -and $now - $hostAt -le 180000) {
-  $assistant.status = 'offline'
-  $assistant.evidence = 'missing'
+if ($assistant) {
+  $healthAt = Get-Epoch $papersHealth.checkedAt
+  $transportAt = Get-Epoch $papersTransport.checkedAt
+  $startedAt = Get-Epoch $papersRecord.startedAt
+  if ($papersProcess -and $papersRecord.pid -eq $papersProcess.ProcessId -and $papersHealth.pid -eq $papersProcess.ProcessId -and
+      $startedAt -and $healthAt -ge $startedAt -and $transportAt -ge $startedAt -and $now - $healthAt -lt 90000 -and
+      $papersHealth.provider -eq 'codex' -and $papersHealth.available -eq $true -and $papersTransport.listenerReady -eq $true) {
+    $status = if ($papersTransport.turnBusy -eq $true -or $papersTransport.paperBusy -eq $true) { 'working' } else { 'available' }
+    Set-WorkerStatus $assistant $transportAt $status 'heartbeat' 90000
+  } elseif ($processesKnown -and !$papersProcess -and $papersRecord.pid -gt 0) {
+    $assistant.status = 'offline'
+    $assistant.evidence = 'missing'
+  }
 }
-if ($assistant) { $assistant.components = @(@{ id = 'ollama-gt'; observed = $null }) }
 
 $checkingStatus = Read-Status 'H:\Workspace\Runtimes\GTOP\grading\production\checking-status.json'
 if ($checkingProcess -and $checkingStatus.pid -eq $checkingProcess.ProcessId -and $checkingStatus.connected -eq $true) {
@@ -176,6 +184,9 @@ if ($blinkitStatus.morselBridgeReady -eq $true) {
 }
 
 $onePieceStatus = Read-Status 'F:\Workspace\Support\PTI\local-service-initiator\data\one-piece-status.json'
+if ($onePieceStatus -and !$onePieceStatus.errorCode) {
+  Set-WorkerStatus $initiator (Get-Epoch $onePieceStatus.lastPollAt) 'available' 'heartbeat'
+}
 if ($onePieceStatus.companionReady -eq $true) {
   Set-WorkerStatus $onePiece (Get-Epoch $onePieceStatus.checkedAt) 'available' 'health'
 }

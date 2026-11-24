@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, NgZone, PLATFORM_ID, inject } from '@angular/core';
 import { Firestore, doc, onSnapshot } from '@angular/fire/firestore';
-import { Observable, catchError, distinctUntilChanged, map, of, switchMap, take } from 'rxjs';
+import { Observable, catchError, distinctUntilChanged, map, of, shareReplay, switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
 
 export interface Capacity {
@@ -54,6 +54,8 @@ export interface LocalInfrastructureSnapshot {
 export type LocalInfrastructureState =
   | { status: 'ready'; snapshot: LocalInfrastructureSnapshot; fromCache: boolean }
   | { status: 'loading' | 'unconnected' | 'unavailable'; fromCache: boolean };
+
+export const PTI_INFRASTRUCTURE_OWNER = '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2';
 
 const documentPath = (uid: string) => ['users', uid, 'resourceUsage', 'local-infrastructure'] as const;
 
@@ -204,7 +206,7 @@ export class LocalInfrastructureService {
   private readonly zone = inject(NgZone);
   private readonly platform = inject(PLATFORM_ID);
 
-  loadOnce(): Observable<LocalInfrastructureState> {
+  private loadOnce(): Observable<LocalInfrastructureState> {
     if (!isPlatformBrowser(this.platform)) return of({ status: 'loading', fromCache: false });
 
     return this.auth.user$.pipe(
@@ -220,10 +222,20 @@ export class LocalInfrastructureService {
     );
   }
 
-  watch(): Observable<LocalInfrastructureState> {
+  watchHome(): Observable<LocalInfrastructureState> {
     if (!isPlatformBrowser(this.platform)) return of({ status: 'loading', fromCache: false });
-
     return this.auth.user$.pipe(
+      map(user => user?.uid as string | undefined),
+      distinctUntilChanged(),
+      switchMap(uid => uid === PTI_INFRASTRUCTURE_OWNER ? this.watch() : this.loadOnce()),
+    );
+  }
+
+  watch(): Observable<LocalInfrastructureState> {
+    return isPlatformBrowser(this.platform) ? this.snapshot$ : of({ status: 'loading', fromCache: false });
+  }
+
+  private readonly snapshot$ = this.auth.user$.pipe(
       map(user => user?.uid as string | undefined),
       distinctUntilChanged(),
       switchMap(uid => {
@@ -237,6 +249,6 @@ export class LocalInfrastructureService {
           }), () => this.zone.run(() => subscriber.next({ status: 'unavailable', fromCache: false })));
         });
       }),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
-  }
 }

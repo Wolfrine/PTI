@@ -12,7 +12,8 @@ export const kinds = {
 
 export const views = {
   today: { title: 'Your money, your decisions', nav: 'Today', icon: 'overview' },
-  decisions: { title: 'Decision studio', nav: 'Decision studio', icon: 'review' },
+  decisions: { title: 'Decisions and plans', nav: 'Decisions', icon: 'review' },
+  library: { title: 'Your finance library', nav: 'Library', icon: 'reports' },
   overview: { title: 'Monthly overview', nav: 'Monthly history', icon: 'overview', month: true },
   transactions: { title: 'Transactions', nav: 'Transactions', icon: 'transactions', month: true },
   review: { title: 'Needs review', nav: 'Review', icon: 'review', month: true },
@@ -120,6 +121,7 @@ export function routeFrom(hash, fallbackMonth) {
   const requestedMonth = params.get('month');
   const month = monthValid(requestedMonth) ? requestedMonth : fallbackMonth;
   const route = { view: Object.hasOwn(views, view) ? view : 'today', month };
+  if(route.view==='library'){const doc=params.get('doc');if(typeof doc==='string'&&/^[a-z][a-z0-9-]{7,79}$/.test(doc))route.publication=doc;}
   const through = params.get('through');
   if (route.view === 'overview') {
     if (dateValid(through) && through.startsWith(`${month}-`)) route.through = through;

@@ -126,14 +126,7 @@ function chartRow(row, scale, current, index, length) {
 
 export function historyView(route, result) {
   const period = route.history;
-  const month = calendarPeriod(route.month);
-  const overview = `<div class="history-heading">
-    <div><p class="history-range">${dateSpan(period)}</p><p class="muted">36 months · Inclusive dates · India time</p></div>
-    <form id="history-form" class="history-form">
-      <label>History end date <input type="date" name="through" min="${month.from}" max="${month.to}" value="${period.to}" required></label>
-      <button type="submit" class="button">Update</button>
-    </form>
-  </div>`;
+  const overview=`<div class="history-heading"><div><p class="history-range">${dateSpan(period)}</p><p class="muted">36 months · India time · availability varies by source</p></div></div>`;
   if (!result.history.ok) return overview + '<div class="empty" role="alert"><p><strong>Monthly history could not load.</strong></p><button type="button" class="button" data-refresh>Retry</button></div>';
 
   const rows = historyRows(period, result);

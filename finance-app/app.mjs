@@ -1,8 +1,8 @@
 import { connectFinance } from './finance-data.mjs';
-import { calendarPeriod, currentMonth, dateValid, filtersFrom, historyPeriod, href, monthFrom, monthValid, routeFrom } from './values.mjs';
+import { calendarPeriod, currentMonth, filtersFrom, historyPeriod, monthFrom, routeFrom } from './values.mjs';
 import { details, heading, navigation, render } from './views.mjs';
 import { historyDetails, historyRows } from './history.mjs';
-import { decisionModel, renderDecisionWorkspace, scenarioFromForm, compareScenario, planningChange } from './decisions.mjs';
+import { renderDecisionWorkspace } from './decisions.mjs';
 
 const byId = (id) => document.getElementById(id);
 const gate = byId('gate');
@@ -27,9 +27,6 @@ let filters = filtersFrom(location.hash, route);
 let result;
 let dialogEntry = null;
 let detailVersion = 0;
-let saving = false;
-let decisionToken = null;
-let correctionController;
 const pageState = { loading: false, error: false };
 const EDGE_LIMIT = 500;
 
@@ -54,10 +51,6 @@ function clearWorkspace() {
   ++detailVersion;
   owner = null;
   result = null;
-  correctionController?.abort();
-  correctionController = undefined;
-  saving = false;
-  decisionToken = null;
   dialogEntry = null;
   dialog.close();
   dialog.replaceChildren();
@@ -124,7 +117,7 @@ function active(version, uid) {
 function renderView() {
   if (!owner || !result) return;
   viewHeading.innerHTML = heading(route, result.month?.data);
-  content.innerHTML = ['today','decisions'].includes(route.view) ? renderDecisionWorkspace(route,result) : render(route,result,filters,pageState);
+  content.innerHTML = ['today','decisions','library'].includes(route.view) ? renderDecisionWorkspace(route,result) : render(route,result,filters,pageState);
   const currentMark = content.querySelector('.history-mark[aria-pressed="true"]');
   if (currentMark) {
     const plot = content.querySelector('.history-scroll');
@@ -154,11 +147,9 @@ async function loadView({ moveFocus = false } = {}) {
 
   const tasks = {};
   const readMonth = (entryMonth) => api.detail(uid, 'months', entryMonth);
-  if (['today','decisions'].includes(view)) {
-    const now=currentMonth();
-    tasks.decisionMonths=api.monthRange(uid,monthFrom(now,-12),now);
-    tasks.balances=api.collection(uid,'balances');
+  if(['today','decisions','library'].includes(view)){
     tasks.planning=api.planning(owner,{action:'read'});
+    if(view!=='library'){tasks.decisionMonths=api.monthRange(uid,monthFrom(currentMonth(),-12),currentMonth());tasks.balances=api.collection(uid,'balances');}
   }
   if (['overview', 'income', 'reports', 'sources', 'transactions', 'review'].includes(view)) tasks.month = readMonth(month);
   if (route.reference) tasks.reference = api.detail(uid, view === 'sources' ? 'sourceWindows' : 'transactions', route.reference);
@@ -217,7 +208,7 @@ async function loadMore() {
 
 function dialogMessage(title, message) {
   // Both strings are internal status messages.
-  dialog.innerHTML = `<div class="dialog-heading"><h2 id="detail-heading">${title}</h2><form method="dialog"><button type="submit" class="button">Close</button></form></div><p role="status">${message}</p>`;
+  dialog.innerHTML = `<div class="dialog-heading"><h2 id="detail-heading">${title}</h2><button type="button" class="button" data-close-dialog>Close</button></div><p role="status">${message}</p>`;
 }
 
 async function openEntry(id) {
@@ -240,81 +231,8 @@ async function openEntry(id) {
     return;
   }
   dialogEntry = entry.data;
-  dialog.innerHTML = details(dialogEntry, Number.isSafeInteger(dialogEntry.revision));
+  dialog.innerHTML = details(dialogEntry);
   dialog.querySelector('button').focus({ preventScroll: true });
-}
-
-async function correct(form) {
-  if (saving || !owner || !dialogEntry) return;
-  const message = form.querySelector('.form-message');
-  const fields = new FormData(form);
-  const reason = fields.get('reason').trim();
-  if (!reason) {
-    message.textContent = 'Enter a reason for the correction.';
-    form.elements.reason.focus();
-    return;
-  }
-  if (/[\p{Cc}\p{Cf}@<>]|\d{5}|https?:/iu.test(reason)) {
-    message.textContent = 'Use a single short reason without email addresses, links or account numbers.';
-    form.elements.reason.focus();
-    return;
-  }
-  const category = fields.get('category');
-  const decision = {
-    eventId: dialogEntry.id,
-    expectedRevision: dialogEntry.revision,
-    kind: fields.get('kind'),
-    status: fields.get('status'),
-    reason,
-    ...(category ? { category } : {}),
-  };
-  const signature = JSON.stringify(decision);
-  // A network interruption can happen after the server commits. Retry the same decision with its original request ID.
-  if (signature !== decisionToken?.signature) decisionToken = { signature, id: crypto.randomUUID() };
-  const uid = owner.uid;
-  const abort = new AbortController();
-  correctionController = abort;
-  const timeout = setTimeout(() => abort.abort(), 20_000);
-  const submit = form.querySelector('button[type="submit"]');
-  saving = true;
-  submit.disabled = true;
-  message.textContent = 'Saving correction…';
-  try {
-    await api.correct(owner, { requestId: decisionToken.id, ...decision }, abort.signal);
-    if (uid !== owner?.uid) return;
-    decisionToken = null;
-    dialog.close();
-    announce('Correction saved. Reloading ledger records and totals…');
-    await loadView();
-    if (uid === owner?.uid) announce(Object.values(result ?? {}).every((read) => read.ok) ? 'Correction saved. The ledger has been refreshed.' : 'Correction saved. Part of the updated ledger could not load.');
-  } catch (error) {
-    if (uid !== owner?.uid) return;
-    if (error.code === 'revision_conflict') {
-      decisionToken = null;
-      dialog.close();
-      announce('This entry changed before the correction saved. The ledger is reloading. Review the latest entry before making another change.');
-      await loadView();
-    } else if (error.code === 'owner_authorization_required' || error.code === 'sign_in_required') {
-      suspendAccess();
-    } else {
-      message.textContent = error.code === 'invalid_request' ? 'The ledger rejected this classification. Check the type, category and reason.'
-        : error.code === 'not_found' ? 'This entry is no longer available.'
-          : 'Save could not be confirmed. Retry the same correction to check its result.';
-    }
-  } finally {
-    clearTimeout(timeout);
-    if (correctionController === abort) {
-      correctionController = undefined;
-      saving = false;
-      submit.disabled = false;
-    }
-  }
-}
-
-function go(view, month, search = '') {
-  const target = href(view, month) + search;
-  if (location.hash === target) void loadView();
-  else location.hash = target;
 }
 
 authButton.addEventListener('click', async () => {
@@ -370,54 +288,7 @@ byId('page').addEventListener('click', (event) => {
   }
 });
 
-let planningBusy=false;
-async function savePlanning(form,submitter){
-  if(planningBusy||!owner||!result)return;
-  const status=form.querySelector('.form-message');
-  let profile;
-  try{profile=planningChange(form,submitter,decisionModel(result));if(!profile)return;}
-  catch(error){if(status)status.textContent=error.message;return;}
-  const who=owner,version=viewVersion,expectedRevision=result.planning.data.revision;
-  planningBusy=true;const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
-  if(status)status.textContent='Saving privately…';
-  try{const saved=await api.planning(who,{action:'save',expectedRevision,profile});
-    if(!active(version,who.uid))return;result.planning={ok:true,data:saved};renderView();announce('Your financial plan was saved.');
-  }catch(error){
-    if(!active(version,who.uid))return;
-    if(error.code==='revision_conflict'){await loadView();announce('The plan changed elsewhere. Review the latest version before retrying.');}
-    else if(error.code==='owner_authorization_required'||error.code==='sign_in_required')suspendAccess();
-    else if(status)status.textContent='Save could not be confirmed. Reload before retrying.';
-  }finally{planningBusy=false;buttons.forEach(b=>b.disabled=false);}
-}
-byId('page').addEventListener('input',event=>{
-  const form=event.target.closest('#decision-scenario');
-  if(form&&result&&owner){const preview=byId('decision-comparison');if(preview)preview.innerHTML=compareScenario(decisionModel(result),scenarioFromForm(form));}
-});
-byId('page').addEventListener('submit', (event) => {
-  event.preventDefault();
-  const form = event.target;
-  if(form.matches('#decision-profile,#decision-goal,#decision-bill,#decision-scenario,.goal-update,.bill-update,.scenario-update')){void savePlanning(form,event.submitter);return;}
-  const fields = new FormData(form);
-  if (form.id === 'period-form' && monthValid(fields.get('month'))) go(route.view, fields.get('month'));
-  if (form.id === 'history-form') {
-    const through = fields.get('through');
-    if (dateValid(through) && through.startsWith(`${route.month}-`)) go('overview', route.month, `&through=${through}`);
-  }
-  if (form.id === 'ledger-filter') {
-    const params = new URLSearchParams([...fields].filter(([, value]) => value !== ''));
-    go('transactions', route.month, params.size ? `&${params}` : '');
-  }
-});
-
-dialog.addEventListener('submit', (event) => {
-  if (event.target.id === 'correction-form') {
-    event.preventDefault();
-    void correct(event.target);
-  } else if (saving) {
-    event.preventDefault();
-  }
-});
-dialog.addEventListener('cancel', (event) => { if (saving) event.preventDefault(); });
+dialog.addEventListener('click',event=>{if(event.target.closest('[data-close-dialog]'))dialog.close();});
 dialog.addEventListener('close', () => {
   ++detailVersion;
   dialogEntry = null;

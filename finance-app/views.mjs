@@ -16,7 +16,6 @@ const categoryHref = (category, month) => `${href('transactions', month)}&catego
 const empty = (title, copy = '') => `<div class="empty"><p><strong>${title}</strong></p>${copy ? `<p>${copy}</p>` : ''}</div>`;
 const error = (section) => `<div class="empty" role="alert"><p><strong>${section} could not load.</strong></p><button type="button" class="button" data-refresh>Retry</button></div>`;
 const field = (name, text) => `<div><dt>${name}</dt><dd>${text}</dd></div>`;
-const optionList = (items, current = '') => items.map(([key, name]) => `<option value="${escape(key)}"${key === current ? ' selected' : ''}>${escape(name)}</option>`).join('');
 
 function summary(data) {
   const counts = data?.counts;
@@ -43,7 +42,7 @@ function panel(title, body, link = '', extra = '') {
 
 export function navigation(route) {
   const groups = [
-    ['today', 'decisions'],
+    ['today', 'library', 'decisions'],
     ['overview', 'transactions', 'review'],
     ['accounts', 'income', 'investments', 'debts'],
     ['reports', 'sources'],
@@ -54,13 +53,11 @@ export function navigation(route) {
 export function heading(route, monthly) {
   const view = views[route.view];
   const coverage = monthly?.coverage?.status;
-  const period = view.month ? `<form class="period" id="period-form">
-    ${monthValid(monthFrom(route.month, -1)) ? `<a class="period-arrow" aria-label="Previous month" href="${href(route.view, monthFrom(route.month, -1))}">‹</a>` : ''}
-    <label for="period-month" class="sr-only">Reporting month</label>
-    <input id="period-month" type="month" name="month" value="${route.month}" min="2000-01" max="2099-12" required>
-    <button type="submit" class="button">Go</button>
-    ${monthValid(monthFrom(route.month, 1)) ? `<a class="period-arrow" aria-label="Next month" href="${href(route.view, monthFrom(route.month, 1))}">›</a>` : ''}
-  </form>` : '';
+  const period=view.month?`<nav class="period" aria-label="Reporting period">
+   ${monthValid(monthFrom(route.month,-1))?`<a class="period-arrow" aria-label="Previous month" href="${href(route.view,monthFrom(route.month,-1))}">‹</a>`:''}
+   <strong class="period-title">${monthLabel(route.month)}</strong>
+   ${monthValid(monthFrom(route.month,1))?`<a class="period-arrow" aria-label="Next month" href="${href(route.view,monthFrom(route.month,1))}">›</a>`:''}
+  </nav>`:'';
   const back = route.historyThrough ? `<a class="text-link" href="${href('overview', route.historyThrough.slice(0, 7))}&through=${route.historyThrough}&bucket=${route.month}">Back to history</a>` : '';
   const returnLink = route.fromReport ? `<div class="scope-line">${action('reports', route.month, 'Back to monthly report')}</div>` : '';
   const range = route.period ? `<div class="scope-line"><strong>${datesOf(route.period)} · Inclusive dates</strong>${back}</div>` : '';
@@ -127,22 +124,13 @@ function overview(route, result) {
     <div class="overview-grid followups">${panel('Recurring items', recurring(result.recurring))}${panel('Review queue', `<p class="review-summary">${reviewCopy}</p>`, action('review', month, 'Open review'))}</div>`;
 }
 
-function ledgerFilter(route, filters) {
-  if (route.view !== 'transactions') return '';
-  const categoryOptions = [['', 'All categories'], ...categories.map((category) => [category, pretty(category)])];
-  const kindOptions = [['', 'All types'], ...Object.entries(kinds)];
-  const scope = filters.spending ? 'spending' : filters.cashOutflow ? 'cash-outflow' : filters.cash ? 'cash' : '';
-  const scopeDescription = filters.spending ? 'Showing expenses and fees.' : filters.cashOutflow ? 'Showing posted cash account debits.' : filters.cash ? 'Showing posted cash account movements.' : '';
-  const scopeFields = route.period ? `<input name="from" type="hidden" value="${route.period.from}"><input name="to" type="hidden" value="${route.period.to}">` : '';
-  const historyField = route.historyThrough ? `<input name="historyThrough" type="hidden" value="${route.historyThrough}">` : '';
-  const reportField = route.fromReport ? '<input name="report" type="hidden" value="monthly">' : '';
-  const clearHref = href('transactions', route.month) + (route.fromReport ? '&report=monthly' : '')
-    + (route.period ? `&from=${route.period.from}&to=${route.period.to}` : '')
-    + (route.historyThrough ? `&historyThrough=${route.historyThrough}` : '');
-  return `${scopeDescription ? `<p class="muted">${scopeDescription}</p>` : ''}<form id="ledger-filter" class="ledger-filter">${scopeFields}${historyField}${reportField}${scope ? `<input name="scope" type="hidden" value="${scope}">` : ''}<label>Category<select name="category">${optionList(categoryOptions, filters.category)}</select></label>
-    <label>Type<select name="kind">${optionList(kindOptions, filters.kind)}</select></label>
-    <label>Status<select name="status">${optionList([['', 'All statuses'], ['posted', 'Posted'], ['pending', 'Pending'], ['review', 'Needs review'], ['excluded', 'Excluded']], filters.status)}</select></label>
-    <div class="filter-actions"><button class="button" type="submit">Apply</button>${filters.category || filters.kind || filters.status || scope ? `<a class="text-link" href="${clearHref}">Clear filters</a>` : ''}</div></form>`;
+function ledgerFilter(route,filters){
+ if(route.view!=='transactions')return '';
+ const base=href('transactions',route.month),keep=(route.period?`&from=${route.period.from}&to=${route.period.to}`:'')+(route.historyThrough?`&historyThrough=${route.historyThrough}`:'')+(route.fromReport?'&report=monthly':'');
+ const tabs=[['All',base+keep,!filters.spending&&!filters.cash&&!filters.kind&&!filters.status&&!filters.category],
+  ['Expenses',base+keep+'&scope=spending',filters.spending],['Income',base+keep+'&kind=earned_income&status=posted',filters.kind==='earned_income'],
+  ['Cash movement',base+keep+'&scope=cash',filters.cash],['Unclassified',base+keep+'&kind=unknown',filters.kind==='unknown']];
+ return '<nav class="ledger-links" aria-label="Ledger views">'+tabs.map(([label,url,active])=>'<a class="ledger-link" href="'+escape(url)+'"'+(active?' aria-current="true"':'')+'>'+label+'</a>').join('')+'</nav>';
 }
 
 function transactionView(route, result, filters, pageState) {
@@ -305,20 +293,14 @@ export function render(route, result, filters, pageState) {
   }
 }
 
-export function details(row, editable) {
-  const creditKinds = ['earned_income', 'refund', 'reimbursement', 'investment_withdrawal', 'interest', 'loan_draw'];
-  const debitKinds = ['spend', 'investment_contribution', 'fee', 'loan_repayment'];
-  const forbidden = row.direction === 'credit' ? debitKinds : creditKinds;
-  const classifications = Object.entries(kinds).filter(([key]) => key === row.kind
-    || (!forbidden.includes(key) && (!key.startsWith('loan_') || row.accountKind === 'cash')));
-  return `<div class="dialog-heading"><div><h2 id="detail-heading">${row.merchant ? value(row.merchant) : kindLabel(row.kind)}</h2><p class="detail-amount number">${signed(row.amountPaisa, row.direction)}</p></div><form method="dialog"><button class="button" type="submit">Close</button></form></div>
-    <dl class="facts dialog-facts">${field('Date', date(row.occurredOn))}${field('Account', value(row.account))}${field('Type', kindLabel(row.kind))}${field('Category', label(row.category))}${field('Status', label(row.status))}${row.reviewReason ? field('Review reason', label(row.reviewReason)) : ''}${field('Source', value(row.source))}${field('Source type', label(row.sourceType))}${field('Ledger revision', count(row.revision))}${field('Updated at', date(row.updatedAt, true))}</dl>
-    ${editable ? `<form id="correction-form" class="correction-form"><h3>Correct this entry</h3>
-      <label>Classification<select name="kind">${optionList(classifications, row.kind)}</select></label>
-      <label>Category<select name="category">${optionList([['', 'Keep current category'], ...categories.map((category) => [category, pretty(category)])], row.category)}</select></label>
-      <label>Decision<select name="status">${optionList([['posted', 'Post as classified'], ['excluded', 'Exclude from ledger totals']], row.status === 'excluded' ? 'excluded' : 'posted')}</select></label>
-      <label>Reason<textarea name="reason" required maxlength="100" rows="2" aria-describedby="correction-help"></textarea></label>
-      <p class="muted" id="correction-help">Use a short reason without account numbers, email addresses or links.</p>
-      <button class="button primary" type="submit">Save correction</button><p class="form-message" role="status"></p>
-    </form>` : ''}`;
+export function details(row){
+ return `<div class="dialog-heading"><div><h2 id="detail-heading">${row.merchant?value(row.merchant):kindLabel(row.kind)}</h2><p class="detail-amount number">${signed(row.amountPaisa,row.direction)}</p></div>
+ <button type="button" class="button" data-close-dialog>Close</button></div>
+ <dl class="facts dialog-facts">
+ ${field('Date',date(row.occurredOn))}${field('Account',value(row.account))}
+ ${field('Type',kindLabel(row.kind))}${field('Category',label(row.category))}
+ ${field('Status',label(row.status))}${row.reviewReason?field('Review reason',label(row.reviewReason)):''}
+ ${field('Source',value(row.source))}${field('Source type',label(row.sourceType))}
+ ${field('Ledger revision',count(row.revision))}${field('Updated at',date(row.updatedAt,true))}
+ </dl><p class="muted following">Read-only evidence. Any correction is handled here in the Finance project and verified through PTI MCP.</p>`;
 }

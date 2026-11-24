@@ -1,11 +1,11 @@
-import { amountValid, calendarPeriod, count, currentDate, date, dateValid, escape, href, money, monthLabel, monthValid, signed, stableId } from './values.mjs';
+import { amountValid, calendarPeriod, count, currentDate, date, dateValid, escape, href, money, monthLabel, monthValid, noEarnedIncomeRecorded, signed, stableId } from './values.mjs';
 
 const modes = {
   classified: {
     title: 'Income and spending',
     note: 'Posted earned income and gross classified spending, including fees. Refunds are shown separately in the ledger.',
     series: [
-      { key: 'earned', label: 'Earned income', absent: 'No earned income recorded', filter: 'kind=earned_income', plot: 1 },
+      { key: 'earned', label: 'Earned income', absent: noEarnedIncomeRecorded, filter: 'kind=earned_income', plot: 1 },
       { key: 'spending', label: 'Gross classified spending', absent: 'No spending recorded', filter: 'scope=spending', plot: -1 },
     ],
   },

@@ -54,9 +54,11 @@ export function money(paisa) {
   return india.formatToParts(whole).map((part) => part.type === 'fraction' ? fraction : part.value).join('');
 }
 
+export const noEarnedIncomeRecorded = 'No earned income recorded in captured entries';
+
 export function earnedIncomeLabel(month, amount) {
   if (amountValid(amount) && amount > 0) return money(amount);
-  if (month && amountValid(month.earnedIncomePaisa) && month.earnedIncomePaisa === 0) return 'No earned income recorded';
+  if (month?.earnedIncomePaisa === 0) return noEarnedIncomeRecorded;
   return 'Unknown';
 }
 export const signed = (paisa, direction) => {

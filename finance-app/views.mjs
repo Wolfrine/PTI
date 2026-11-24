@@ -199,11 +199,18 @@ function analysisNarrative(month) {
     && [analysis.version, analysis.ledgerVersion, analysis.reportVersion].every((version) => amountValid(version) && version > 0);
   const published = month.monthlyAnalysis;
   const current = validVersion(published) && published.ledgerVersion === month.version
+    && published.reportVersion === month.version
     && published.reportVersion === month.reconciliation?.reportVersion && ['balanced', 'repaired'].includes(month.reconciliation?.status);
   const prior = validVersion(month.lastPublishedAnalysis) ? month.lastPublishedAnalysis : validVersion(published) ? published : null;
   const analysis = current ? published : prior;
   if (!analysis) return empty('No analysis is available for this month.');
-  const age = current ? '' : `<div class="callout"><p><strong>Outdated analysis.</strong> These findings describe ledger version ${count(analysis.ledgerVersion)} and have not been verified against the current ledger. Links to ledger entries may show later revisions.</p></div>`;
+  const publishedAt = date(analysis.publishedAt, true);
+  if (!current && publishedAt === 'Unavailable') return empty('No dated analysis is available for this month.');
+  const age = current ? '' : `<div class="callout">
+    <p><strong>Outdated — ledger changed</strong></p>
+    <p>Originally published ${publishedAt} · Ledger version ${count(analysis.ledgerVersion)}</p>
+    <p>These findings reflect the earlier ledger. Linked entries may show later revisions.</p>
+  </div>`;
   const headline = typeof analysis.headline === 'string' && analysis.headline.trim() ? `<p class="report-headline">${escape(analysis.headline)}</p>` : '';
   const readable = (items) => (Array.isArray(items) ? items : []).filter((item) => typeof item?.text === 'string' && item.text.trim());
   const findingLinks = (finding) => {
@@ -225,7 +232,7 @@ function analysisNarrative(month) {
   return `<div class="report-narrative">
     ${age}
     ${headline}
-    <p class="muted">Published ${date(analysis.publishedAt, true)} · Analysis v${count(analysis.version)} · Reconciled report v${count(analysis.reportVersion)} · Ledger v${count(analysis.ledgerVersion)}</p>
+    <p class="muted">${current ? `Published ${publishedAt} · ` : ''}Analysis v${count(analysis.version)} · Reconciled report v${count(analysis.reportVersion)}${current ? ` · Ledger v${count(analysis.ledgerVersion)}` : ''}</p>
     ${findings ? `<h3>Findings</h3><ul>${findings}</ul>` : ''}
     ${gaps ? `<h3>Coverage and gaps</h3><ul>${gaps}</ul>` : ''}
     ${windows.length ? `<h3>Cited source windows</h3><ul>${windows.map((source) =>

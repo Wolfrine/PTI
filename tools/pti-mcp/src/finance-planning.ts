@@ -22,7 +22,7 @@ const empty:Profile={incomePaisa:null,essentialsPaisa:null,discretionaryPaisa:nu
 const persisted=z.object({revision:z.number().int().nonnegative(),profile,updatedAt:z.string()}).strict();
 const publicationId=z.string().regex(/^[a-z][a-z0-9-]{7,79}$/);
 const input=z.discriminatedUnion('action',[
- z.object({action:z.literal('read'),publicationId:publicationId.optional()}).strict(),
+ z.object({action:z.literal('read'),publicationId:publicationId.optional(),includeEvidence:z.boolean().optional()}).strict(),
  z.object({action:z.literal('save'),expectedRevision:z.number().int().nonnegative(),profile}).strict(),
 ]);
 type Input=z.output<typeof input>;
@@ -32,16 +32,17 @@ const statement=z.object({
  account:z.string().regex(/^[a-z][a-z0-9_-]{1,47}$/).refine(v=>!/\d{5}/.test(v)),sourceWindowId:z.string().regex(/^[a-f0-9]{64}$/)
 }).strict().refine(v=>v.from<=v.to&&v.from.startsWith(v.month)&&v.to.startsWith(v.month)&&v.openingPaisa-v.debitPaisa+v.creditPaisa===v.closingPaisa);
 
-async function context(root:DocumentReference,requestedId?:string){
+async function context(root:DocumentReference,requestedId?:string,includeEvidence=true){
  const [saved,checkpoint,publications,months,balances,selected]=await Promise.all([
   root.collection('planning').doc('profile').get(),root.collection('projects').doc('pti-finance-v1').get(),
   root.collection('publications').orderBy('publishedAt','desc').limit(50).get(),
-  root.collection('months').limit(60).get(),root.collection('balances').limit(40).get(),
+  includeEvidence?root.collection('months').limit(60).get():Promise.resolve(null),
+  includeEvidence?root.collection('balances').limit(40).get():Promise.resolve(null),
   requestedId?root.collection('publications').doc(requestedId).get():Promise.resolve(null),
  ]);
  const plan=saved.exists?persisted.parse(saved.data()):{revision:0,profile:empty,updatedAt:''};
  const raw:unknown=checkpoint.get('statementCashEvidence.facts');
- const facts=(Array.isArray(raw)?raw.slice(0,120):[]).flatMap(v=>{const x=statement.safeParse(v);return x.success?[x.data]:[]});
+ const facts=(includeEvidence&&Array.isArray(raw)?raw.slice(0,120):[]).flatMap(v=>{const x=statement.safeParse(v);return x.success?[x.data]:[]});
  const ids=[...new Set(facts.map(v=>v.sourceWindowId))];
  const docs=ids.length?await root.firestore.getAll(...ids.map(v=>root.collection('sourceWindows').doc(v))):[];
  const windows=new Map(docs.map(v=>[v.id,v.data()]));
@@ -53,14 +54,14 @@ async function context(root:DocumentReference,requestedId?:string){
   if(!prior||fact.from<prior.from||(fact.from===prior.from&&fact.to>prior.to))unique.set(id,fact);
  }
  const statementFacts=[...unique.values()].sort((a,b)=>a.month.localeCompare(b.month));
- const monthly=months.docs.map(d=>({...d.data(),id:d.id}));
- const currentBalances=balances.docs.map(d=>({...d.data(),id:d.id}));
+ const monthly=months?.docs.map(d=>({...d.data(),id:d.id}))||[];
+ const currentBalances=balances?.docs.map(d=>({...d.data(),id:d.id}))||[];
  return {ok:true,...plan,statementFacts,publications:publications.docs.map(d=>d.data()),
-  financialEvidence:financialEvidenceModel(monthly,currentBalances,statementFacts,indiaDate(new Date().toISOString())),
+  financialEvidence:includeEvidence?financialEvidenceModel(monthly,currentBalances,statementFacts,indiaDate(new Date().toISOString())):null,
   selectedPublication:requestedId?(selected?.exists?selected.data():null):null};
 }
 export async function financePlanning(root:DocumentReference,request:Input){
- if(request.action==='read')return context(root,request.publicationId);
+ if(request.action==='read')return context(root,request.publicationId,request.includeEvidence!==false);
  const ref=root.collection('planning').doc('profile');
  await root.firestore.runTransaction(async tx=>{
   const existing=await tx.get(ref);

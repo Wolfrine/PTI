@@ -10,6 +10,7 @@ import {
 import { commitScan, correctEvent, financeContext, ingestMail } from './finance-ledger.js';
 import { reconcileMonth } from './finance-projection.js';
 import { getAnalysisSource, publishMonthlyAnalysis, publishMonthlyAnalysisInput } from './finance-analysis.js';
+import { publicationInput, publishFinancePublication } from './finance-publications.js';
 
 const readOnly = { readOnlyHint: true, destructiveHint: false };
 const write = { readOnlyHint: false, destructiveHint: false, idempotentHint: true };
@@ -59,6 +60,12 @@ export function registerFinanceTools(server: McpServer, db: Firestore, context: 
     inputSchema: publishMonthlyAnalysisInput,
     annotations: write,
   }, input => call(() => publishMonthlyAnalysis(root, input)));
+  server.registerTool('finance_publish_publication', {
+    title: 'Publish Finance project report, plan, decision or insight',
+    description: 'Persist one immutable, cited, owner-only Finance publication created from an authorized Finance project discussion. Use a new ID and supersedes for revisions. No site forms or raw bank identifiers.',
+    inputSchema: publicationInput,
+    annotations: write,
+  }, input => call(() => publishFinancePublication(root,input)));
   server.registerTool('finance_commit_scan', {
     title: 'Record a bounded Finance Gmail scan',
     description: 'Record an immutable processed window. Only a complete, contiguous scan with compare-and-set cursor evidence may advance the watermark.',

@@ -11,6 +11,14 @@ Finance uses the existing account-scoped PTI MCP at **https://pti-firestore-mcp-
 | **finance_publish_monthly_analysis** | Publishes a private narrative from the exact `analysisSource`, one to eight typed finding selectors, and up to eight optional source-window IDs. The service validates citations and derives all figures, prose and coverage gaps. A replay returns the original immutable version. |
 | **finance_correct_event** | Owner-directed requestId, eventId, expectedRevision and reason with a classification, category, posted/excluded decision or matching duplicateOf link. Updates the event and affected projection in one transaction and writes an immutable revision. Exact request replay returns the original result. |
 
+## Finance Project → Presentation Layer: publishing contract
+
+The Finance app is **read-only** apart from private Google authentication and normal navigation. Final reports, decisions, scenarios, goals, findings, and watchpoints are composed through the ChatGPT Finance project, reviewed for factual support, and published by the authenticated owner-scoped PTI MCP. Do not add in-app editing, purchase/loan forms, filters, goal forms, or category-correction forms.
+
+Use specialized `finance_publish_publication` or the already-connected generic `firestore_create_document` virtual command at `users/{uid}/financeData/workspace/mcpPublication/{publicationId}`. The `data` payload must match `publicationInput` in `tools/pti-mcp/src/finance-publications.ts`: id, kind (report/decision/plan/insight/tracking), status (published/provisional/watching/resolved), topic, title, summary, asOf, 1–10 headed points, and 1–12 sources. Sources may cite an existing ledger month, existing source window, or dated Finance project discussion. These references are checked for existence when ledger-backed. The immutable document is stored in `publications/{id}`; same payload replay is safe, a changed payload with the same ID is refused, and revisions use a new ID with `supersedes`. Do not fabricate figures or source links.
+
+The owner-authenticated Finance planning/read endpoint also returns at most 50 recent publication cards. Firestore rules for canonical source records are unchanged; publications stay private, service-mediated and do not add public access or listeners. The old plan records remain readable for historical continuity, without data entry in the app. No new automations are created.
+
 ## Existing PTI tools: Finance compatibility without a tool refresh
 
 A connected ChatGPT session may retain the PTI Apps tool manifest created before Finance existed. The original code blocked generic reads as well as writes, making Finance unreachable. The compatibility bridge now permits owner-only **bounded projection reads** and validated Finance operations through the already-available `firestore_create_document` tool. This does not grant raw ledger writes.

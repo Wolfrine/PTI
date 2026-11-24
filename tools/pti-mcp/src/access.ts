@@ -3,9 +3,9 @@ import { FINANCE_CHECKPOINT, FINANCE_OWNER } from './finance-contract.js';
 const financeReadable = new Set([
   'projects', 'months', 'transactions', 'reviews', 'balances', 'recurring',
   'sourceStatus', 'sourceWindows', 'scanStatus', 'scanRuns', 'reports', 'monthlyAnalyses',
-  'mailPartReceipts', 'mailProgress', 'sourceAudits', 'sourceIndexes', 'planning',
+  'mailPartReceipts', 'mailProgress', 'sourceAudits', 'sourceIndexes', 'planning', 'publications',
 ]);
-const financeCommands = new Set(['mcpIntake', 'mcpBatchIntake', 'mcpScans', 'mcpClosures', 'mcpAnalysis']);
+const financeCommands = new Set(['mcpIntake', 'mcpBatchIntake', 'mcpScans', 'mcpClosures', 'mcpAnalysis', 'mcpPublication']);
 
 export function assertUser(value: string, owner?: string): string {
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(value)) throw new Error('Invalid Firebase uid.');

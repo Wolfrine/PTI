@@ -10,6 +10,7 @@ import { financeOwner, financeRoot, ingestInput, scanInput, monthKey } from "./f
 import { ingestMail, commitScan } from "./finance-ledger.js";
 import { reconcileMonth } from "./finance-projection.js";
 import { getAnalysisSource, publishMonthlyAnalysis, publishMonthlyAnalysisInput } from "./finance-analysis.js";
+import { publicationInput, publishFinancePublication } from './finance-publications.js';
 import { registerBlinkitTools } from "./blinkit.js";
 import {createPaymentEvent,eventPath} from './blinkit-events.js';
 import { registerPersonalTools } from "./personal.js";
@@ -257,6 +258,11 @@ async function financeCommand(path: string, data: Record<string, unknown>): Prom
     }
     return { ok: true, operation: 'finance_batch_ingest', runId: request.runId,
       completed: receipts.length, receipts };
+  }
+  if (operation === 'mcpPublication') {
+    const value=publicationInput.parse(data);
+    if(id!==value.id)throw new Error('Finance publication identity mismatch.');
+    return {operation:'finance_publish_publication',...await publishFinancePublication(ledger,value)};
   }
   if (operation === 'mcpScans') {
     const value = scanInput.parse(data);

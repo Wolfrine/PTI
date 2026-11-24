@@ -11,7 +11,9 @@ export async function connectFinance() {
   ]);
   const app = firebase.initializeApp(firebaseConfig);
   const auth = identity.getAuth(app);
-  await identity.setPersistence(auth, identity.browserSessionPersistence);
+  // Persist the verified Google session, not financial documents. Explicit sign-out still clears identity.
+  try { await identity.setPersistence(auth, identity.browserLocalPersistence); }
+  catch { await identity.setPersistence(auth, identity.browserSessionPersistence); }
   const firestore = store.initializeFirestore(app, { localCache: store.memoryLocalCache() });
   const workspace = (uid) => store.doc(firestore, 'users', uid, 'financeData', 'workspace');
   const collection = (uid, name) => store.collection(workspace(uid), name);
@@ -26,7 +28,6 @@ export async function connectFinance() {
     watchIdentity(callback) { return identity.onAuthStateChanged(auth, callback); },
     async signIn() {
       const google = new identity.GoogleAuthProvider();
-      google.setCustomParameters({ prompt: 'select_account' });
       await identity.signInWithPopup(auth, google);
     },
     signOut() { return identity.signOut(auth); },
@@ -61,6 +62,15 @@ export async function connectFinance() {
       );
       const page = snapshot.slice(0, pageSize);
       return { list: page.map(fromDocument), cursor: page.at(-1), more: snapshot.length > pageSize };
+    },
+    async planning(user, request) {
+      const response=await fetch(correctionUrl.replace(/\/correct$/, '/planning'),{
+        method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},
+        body:JSON.stringify(request),credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(20000)
+      });
+      const data=await response.json().catch(()=>null);
+      if(!response.ok||data?.ok!==true)throw Object.assign(new Error('Planning could not be confirmed.'),{code:data?.error?.code});
+      return data;
     },
     async correct(user, decision, signal) {
       const response = await fetch(correctionUrl, {

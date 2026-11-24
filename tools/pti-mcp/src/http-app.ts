@@ -9,6 +9,7 @@ import { PtiOAuthProvider, MCP_SCOPE, CODEX_SCOPE, type UserIdentity } from './o
 import { CodexRelay, createCodexServer, heartbeatSchema, workerPollSchema, workerSyncSchema, workerControlSchema, workerReportSchema, OWNER } from './local-codex.js';
 import { morselBlinkitRouter } from './morsel-blinkit-http.js';
 import { financeCorrectionRouter } from './finance.js';
+import { financePlanningRouter } from './finance-planning.js';
 import type { CorrectionInput } from './finance-contract.js';
 
 function escape(value: string) { return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]!)); }
@@ -32,6 +33,7 @@ export function createHttpApp(options: {
   firebaseConfig: Record<string, string>;
   codex?: CodexRelay;
   correctFinance?: (uid: string, input: CorrectionInput) => Promise<{ ok: boolean; eventId: string; revision: number }>;
+  planFinance?: Parameters<typeof financePlanningRouter>[0]['operate'];
   onProtocolRejection?: (event:{event:'mcp_protocol_rejected';route:'local-codex';reason:string;stage:'preflight'|'transport'})=>void;
 }) {
   const { provider } = options;
@@ -48,6 +50,7 @@ export function createHttpApp(options: {
   if (options.correctFinance) app.use('/finance/correct', financeCorrectionRouter({
     verifyIdentity: options.verifyIdentity, checkUser: provider.checkUser, correct: options.correctFinance,
   }));
+  if(options.planFinance)app.use('/finance/planning',financePlanningRouter({verifyIdentity:options.verifyIdentity,checkUser:provider.checkUser,operate:options.planFinance}));
   app.use(mcpAuthRouter({ provider, issuerUrl:new URL(provider.origin), resourceServerUrl:new URL(provider.resource),
     scopesSupported:[MCP_SCOPE,CODEX_SCOPE], resourceName:'PTI Firestore', clientRegistrationOptions:{clientSecretExpirySeconds:0} }));
   app.get('/consent', async (req,res) => {

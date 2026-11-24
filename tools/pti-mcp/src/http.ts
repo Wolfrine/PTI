@@ -4,6 +4,7 @@ import { createMcpServer } from './index.js';
 import { createHttpApp } from './http-app.js';
 import { financeRoot } from './finance-contract.js';
 import { correctEvent } from './finance-ledger.js';
+import { financePlanning } from './finance-planning.js';
 import { FirestoreAuthStore } from './auth-store.js';
 import { PtiOAuthProvider } from './oauth.js';
 import { CodexRelay, FirestoreRelayStore } from './local-codex.js';
@@ -20,6 +21,7 @@ const checkUser = async (uid: string, authenticatedAt: number) => {
 const provider = new PtiOAuthProvider(new FirestoreAuthStore(db), origin, checkUser);
 const app = createHttpApp({ provider, createServer: createMcpServer,
   correctFinance: (uid, input) => correctEvent(db.doc(financeRoot(uid)), input, 'Finance owner browser'),
+  planFinance: (uid,input) => financePlanning(db.doc(financeRoot(uid)),input),
   onProtocolRejection:event=>console.warn(JSON.stringify(event)),
   codex: new CodexRelay(new FirestoreRelayStore(db)),
   verifyIdentity: async token => {

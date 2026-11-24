@@ -43,6 +43,7 @@ function panel(title, body, link = '', extra = '') {
 
 export function navigation(route) {
   const groups = [
+    ['today', 'decisions'],
     ['overview', 'transactions', 'review'],
     ['accounts', 'income', 'investments', 'debts'],
     ['reports', 'sources'],

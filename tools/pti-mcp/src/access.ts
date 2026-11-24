@@ -3,7 +3,7 @@ import { FINANCE_CHECKPOINT, FINANCE_OWNER } from './finance-contract.js';
 const financeReadable = new Set([
   'projects', 'months', 'transactions', 'reviews', 'balances', 'recurring',
   'sourceStatus', 'sourceWindows', 'scanStatus', 'scanRuns', 'reports', 'monthlyAnalyses',
-  'mailPartReceipts', 'mailProgress', 'sourceAudits', 'sourceIndexes',
+  'mailPartReceipts', 'mailProgress', 'sourceAudits', 'sourceIndexes', 'planning',
 ]);
 const financeCommands = new Set(['mcpIntake', 'mcpBatchIntake', 'mcpScans', 'mcpClosures', 'mcpAnalysis']);
 

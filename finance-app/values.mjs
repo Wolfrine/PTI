@@ -11,7 +11,9 @@ export const kinds = {
 };
 
 export const views = {
-  overview: { title: 'Monthly overview', nav: 'Overview', icon: 'overview', month: true },
+  today: { title: 'Your money, your decisions', nav: 'Today', icon: 'overview' },
+  decisions: { title: 'Decision studio', nav: 'Decision studio', icon: 'review' },
+  overview: { title: 'Monthly overview', nav: 'Monthly history', icon: 'overview', month: true },
   transactions: { title: 'Transactions', nav: 'Transactions', icon: 'transactions', month: true },
   review: { title: 'Needs review', nav: 'Review', icon: 'review', month: true },
   accounts: { title: 'Accounts', nav: 'Accounts', icon: 'accounts' },
@@ -117,7 +119,7 @@ export function routeFrom(hash, fallbackMonth) {
   const params = new URLSearchParams(search);
   const requestedMonth = params.get('month');
   const month = monthValid(requestedMonth) ? requestedMonth : fallbackMonth;
-  const route = { view: Object.hasOwn(views, view) ? view : 'overview', month };
+  const route = { view: Object.hasOwn(views, view) ? view : 'today', month };
   const through = params.get('through');
   if (route.view === 'overview') {
     if (dateValid(through) && through.startsWith(`${month}-`)) route.through = through;

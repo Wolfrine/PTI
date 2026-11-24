@@ -1,7 +1,8 @@
 import { connectFinance } from './finance-data.mjs';
-import { calendarPeriod, currentMonth, dateValid, filtersFrom, historyPeriod, href, monthValid, routeFrom } from './values.mjs';
+import { calendarPeriod, currentMonth, dateValid, filtersFrom, historyPeriod, href, monthFrom, monthValid, routeFrom } from './values.mjs';
 import { details, heading, navigation, render } from './views.mjs';
 import { historyDetails, historyRows } from './history.mjs';
+import { decisionModel, renderDecisionWorkspace, scenarioFromForm, compareScenario, planningChange } from './decisions.mjs';
 
 const byId = (id) => document.getElementById(id);
 const gate = byId('gate');
@@ -123,7 +124,7 @@ function active(version, uid) {
 function renderView() {
   if (!owner || !result) return;
   viewHeading.innerHTML = heading(route, result.month?.data);
-  content.innerHTML = render(route, result, filters, pageState);
+  content.innerHTML = ['today','decisions'].includes(route.view) ? renderDecisionWorkspace(route,result) : render(route,result,filters,pageState);
   const currentMark = content.querySelector('.history-mark[aria-pressed="true"]');
   if (currentMark) {
     const plot = content.querySelector('.history-scroll');
@@ -153,6 +154,12 @@ async function loadView({ moveFocus = false } = {}) {
 
   const tasks = {};
   const readMonth = (entryMonth) => api.detail(uid, 'months', entryMonth);
+  if (['today','decisions'].includes(view)) {
+    const now=currentMonth();
+    tasks.decisionMonths=api.monthRange(uid,monthFrom(now,-12),now);
+    tasks.balances=api.collection(uid,'balances');
+    tasks.planning=api.planning(owner,{action:'read'});
+  }
   if (['overview', 'income', 'reports', 'sources', 'transactions', 'review'].includes(view)) tasks.month = readMonth(month);
   if (route.reference) tasks.reference = api.detail(uid, view === 'sources' ? 'sourceWindows' : 'transactions', route.reference);
   if (!route.reference && ['overview', 'transactions', 'review'].includes(view)) {
@@ -175,7 +182,7 @@ async function loadView({ moveFocus = false } = {}) {
 
   const captured = await Promise.all(Object.entries(tasks).map(async ([name, task]) => [name, await capture(task)]));
   if (!active(version, uid)) return;
-  if (captured.some(([, read]) => read.error === 'permission-denied' || read.error === 'unauthenticated')) {
+  if (captured.some(([, read]) => read.error === 'permission-denied' || read.error === 'unauthenticated' || read.error === 'owner_authorization_required' || read.error === 'sign_in_required')) {
     suspendAccess();
     return;
   }
@@ -363,9 +370,33 @@ byId('page').addEventListener('click', (event) => {
   }
 });
 
+let planningBusy=false;
+async function savePlanning(form,submitter){
+  if(planningBusy||!owner||!result)return;
+  const status=form.querySelector('.form-message');
+  let profile;
+  try{profile=planningChange(form,submitter,decisionModel(result));if(!profile)return;}
+  catch(error){if(status)status.textContent=error.message;return;}
+  const who=owner,version=viewVersion,expectedRevision=result.planning.data.revision;
+  planningBusy=true;const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+  if(status)status.textContent='Saving privately…';
+  try{const saved=await api.planning(who,{action:'save',expectedRevision,profile});
+    if(!active(version,who.uid))return;result.planning={ok:true,data:saved};renderView();announce('Your financial plan was saved.');
+  }catch(error){
+    if(!active(version,who.uid))return;
+    if(error.code==='revision_conflict'){await loadView();announce('The plan changed elsewhere. Review the latest version before retrying.');}
+    else if(error.code==='owner_authorization_required'||error.code==='sign_in_required')suspendAccess();
+    else if(status)status.textContent='Save could not be confirmed. Reload before retrying.';
+  }finally{planningBusy=false;buttons.forEach(b=>b.disabled=false);}
+}
+byId('page').addEventListener('input',event=>{
+  const form=event.target.closest('#decision-scenario');
+  if(form&&result&&owner){const preview=byId('decision-comparison');if(preview)preview.innerHTML=compareScenario(decisionModel(result),scenarioFromForm(form));}
+});
 byId('page').addEventListener('submit', (event) => {
   event.preventDefault();
   const form = event.target;
+  if(form.matches('#decision-profile,#decision-goal,#decision-bill,#decision-scenario,.goal-update,.bill-update,.scenario-update')){void savePlanning(form,event.submitter);return;}
   const fields = new FormData(form);
   if (form.id === 'period-form' && monthValid(fields.get('month'))) go(route.view, fields.get('month'));
   if (form.id === 'history-form') {

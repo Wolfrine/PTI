@@ -38,6 +38,7 @@ jobs:
             esac
           done < "$RUNNER_TEMP/pti-release-paths"
           echo "local_codex_only=$([[ $seen == true ]] && echo "$only" || echo false)" >> "$GITHUB_OUTPUT"
+          printf '%s\n' '[Cloud cost rule and spend forecast](https://github.com/Wolfrine/PTI/blob/main/docs/cloud-cost-rule.md)' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@v4
         with:
           node-version: 22

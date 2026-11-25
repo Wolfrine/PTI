@@ -20,6 +20,8 @@ Hosting transfer, Cloud Storage, Functions totals and actual Google Cloud billin
 
 ## Connecting actual Google Cloud charges
 
+Follow the [owner-wide cloud cost rule](cloud-cost-rule.md) before proposing a paid export or expanding collection. Present the forecast before requesting approval.
+
 1. As a billing-account administrator, enable **Standard usage cost export** under Google Cloud Console → Billing → Billing export, choosing a BigQuery dataset. This is an explicit Google Cloud setup decision: BigQuery storage and query usage may be chargeable. Do not create a dataset just for the PTI code release without owner approval. See [Google's setup instructions](https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery-setup).
 2. Enable the BigQuery API on the chosen query project if needed. Grant the existing PTI collector service account **BigQuery Job User** on that project and **BigQuery Data Viewer** on the export dataset. This is separate from the current Firestore/Monitoring grants.
 3. Add `billingExport` to the existing owner-only `users/{ownerUid}/resourceUsage/config` document, without removing any existing registry fields:

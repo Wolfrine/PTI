@@ -48,9 +48,9 @@ service cloud.firestore {
    function turboReady(deviceUid) {
     let status = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/status/pc).data;
     let binding = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/devices/$(deviceUid)).data;
-    return status.deviceUid == deviceUid && status.version == '2.3.2'
-     && turboModel() in status.installed && turboModel() in status.capabilities.referenceModels
-     && binding.deviceUid == deviceUid && binding.status == 'approved';
+    return binding != null && binding.deviceUid == deviceUid && binding.status == 'approved'
+     && status != null && status.deviceUid == deviceUid && status.version == '2.3.2'
+     && turboModel() in status.installed && turboModel() in status.capabilities.referenceModels;
    }
    function instant(t) { return t is int && t > 0 && t <= request.time.toMillis() + 300000; }
    // Current measurements only. No arbitrary telemetry, identifiers or history.

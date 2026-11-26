@@ -2,7 +2,7 @@ import {after,beforeEach,test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
-import {makeJob} from '../../velum-gallery/studio-contract.mjs';
+import {makeJob,MODEL_IDS,QWEN_TURBO_WORKER_VERSION} from '../../velum-gallery/studio-contract.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
 import {workerCapabilities} from './engine-profile.mjs';
 const require=createRequire(new URL('../../apps/one-piece/package.json',import.meta.url));
@@ -25,12 +25,11 @@ async function seed(){
 test('released worker heartbeat version and exact capabilities are accepted together',async()=>{
  await seed();
  const {version}=JSON.parse(await readFile(new URL('./package.json',import.meta.url),'utf8'));
- const source=await readFile(new URL('./worker.mjs',import.meta.url),'utf8');
- assert.ok(source.includes(`const VERSION='${version}';`),'runtime and package release versions agree');
- const installed=['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15','qwen-image-2.1'];
+ assert.equal(version,QWEN_TURBO_WORKER_VERSION,'runtime and package release versions agree');
+ const installed=MODEL_IDS;
  const heartbeat={deviceUid:PC_DEVICE_UID,version,updatedAt:Date.now(),installed,state:'idle',activeJob:'',capabilities:workerCapabilities(installed,true)};
  for(const state of ['idle','running','offline'])await assertSucceeds(setDoc(ref(device(),'status/pc'),{...heartbeat,state}));
- for(const value of [{...heartbeat,version:'2.3.2'},{...heartbeat,capabilities:{...heartbeat.capabilities,qwenMaxReferences:11}},{...heartbeat,capabilities:{...heartbeat.capabilities,recoveryControl:'yes'}},{...heartbeat,capabilities:{...heartbeat.capabilities,promptSchema:5}}])await assertFails(setDoc(ref(device(),'status/pc'),value));
+ for(const value of [{...heartbeat,version:'2.3.3'},{...heartbeat,capabilities:{...heartbeat.capabilities,qwenMaxReferences:11}},{...heartbeat,capabilities:{...heartbeat.capabilities,recoveryControl:'yes'}},{...heartbeat,capabilities:{...heartbeat.capabilities,promptSchema:5}}])await assertFails(setDoc(ref(device(),'status/pc'),value));
  await assertFails(setDoc(ref(db(),'status/pc'),heartbeat));
 });
 test('approved worker current resources and all exact stages fit ten-reference expression budget',async()=>{

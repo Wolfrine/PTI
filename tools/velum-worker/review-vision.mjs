@@ -33,6 +33,18 @@ export async function reviewVisionInstalled() {
   } catch { return false; }
 }
 
+export async function reviewVisionVersion() {
+  if (!await reviewVisionInstalled()) return 0;
+  try {
+    const marker = await readFile(path.join(setup.root, 'review-v2.enabled'), 'utf8');
+    if (marker.trim() === 'review-v2') return 2;
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  // The installed worker can restart while the existing rules still allow v1 only.
+  return 1;
+}
+
 function observe(role, images, instruction, profile, signal) {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {

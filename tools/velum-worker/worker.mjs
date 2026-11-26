@@ -15,8 +15,8 @@ import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
 import {engineProfile,qwenInstalled,qwenTurboInstalled,workerCapabilities} from './engine-profile.mjs';
 import {QWEN_MODEL,QWEN_TURBO_MODEL,QWEN_TURBO_WORKER_VERSION,isQwenModel,validateJob} from '../../velum-gallery/studio-contract.mjs';
 import {LiveProgress} from './live-progress.mjs';
-import {reviewVision,reviewVisionInstalled} from './review-vision.mjs';
-import {isVisionReviewJob} from '../../velum-gallery/auto-review-store.mjs';
+import {reviewVision,reviewVisionVersion} from './review-vision.mjs';
+import {isVisionReviewJob,isConfiguredVisionReviewJob} from '../../velum-gallery/auto-review-store.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -151,13 +151,13 @@ async function main(){
  const lock=await acquireWorkerLock(lockPath,fileURLToPath(import.meta.url));
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
- let installed=[],visionInstalled=false,version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
+ let installed=[],visionProtocol=0,version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,autoReviewVision:visionInstalled,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,autoReviewVision:Boolean(visionProtocol),visionProtocol,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:{...workerCapabilities(installed,recoveryInstalled),...(visionInstalled?{autoReviewVision:2}:{})}});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:{...workerCapabilities(installed,recoveryInstalled),...(visionProtocol?{autoReviewVision:visionProtocol}:{})}});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{
@@ -275,7 +275,7 @@ async function main(){
  process.on('SIGINT',stop);process.on('SIGTERM',stop);
  try{
   installed=await installedModels();
-  visionInstalled=await reviewVisionInstalled();
+  visionProtocol=await reviewVisionVersion().catch(()=>0);
   if(installed.includes(QWEN_TURBO_MODEL))version=QWEN_TURBO_WORKER_VERSION;
   await local({state:'restoring-device',installed});
   let checking=false;
@@ -311,7 +311,7 @@ async function main(){
        if(stopping)break;await approved();
        if(!runnable(item.job)){await fail(item,'expired');continue;}
        if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
-       if(isVisionReviewJob(item.id)&&!visionInstalled){await fail(item,'model-unavailable');continue;}
+       if(isVisionReviewJob(item.id)&&visionProtocol<(isConfiguredVisionReviewJob(item.id)?2:1)){await fail(item,'model-unavailable');continue;}
        const claim={status:'running',workerId:queue.session.uid,startedAt:Date.now()};
        try{await queue.write(`jobs/${item.id}`,claim,{updateTime:item.updateTime});item.job={...item.job,...claim};}
        catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}

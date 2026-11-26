@@ -314,7 +314,7 @@ class EventStore {
 const store = new EventStore();
 
 const statsControl = window.__velumStats?.connect({
-  getCollection: () => galleryLocked ? null : { ids: [...imageMap.keys()], state: galleryListingState },
+  getCollection: () => galleryLocked || !auth.currentUser ? null : { ids: [...imageMap.keys()], state: galleryListingState },
   openMedia: id => openInDrift(id, { fromStats: true })
 });
 function notifyStats() { statsControl?.update(); }

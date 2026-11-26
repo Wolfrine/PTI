@@ -1,9 +1,11 @@
 const FINISHED = new Set(['accepted', 'rejected', 'closed']);
 export const INITIAL_REVIEW_MODEL = 'qwen-image-2.1-turbo';
-export const isReviewJob = id => /^review-(?:v[12]-)?[a-f0-9]{32}$/.test(id || '');
+export const isReviewFeedbackJob = id => /^feedback-review-v2-[a-f0-9]{32}$/.test(id || '');
+export const isReviewJob = id => /^review-(?:v[12]-)?[a-f0-9]{32}$/.test(id || '') || isReviewFeedbackJob(id);
 export const isVisionReviewJob = id => /^review-v[12]-[a-f0-9]{32}$/.test(id || '');
 export const isConfiguredVisionReviewJob = id => /^review-v2-[a-f0-9]{32}$/.test(id || '');
 export const REVIEW_POOL_LIMIT = 6;
+export const REVIEW_BATCH_LIMIT = 3;
 export const reviewFinished = run => FINISHED.has(run?.phase);
 export const reviewId = () => crypto.randomUUID().replaceAll('-', '');
 
@@ -48,10 +50,15 @@ export function createReviewStore({ sdk, db, workspace, check }) {
   async function load() {
     const activation = await read(control('activation'));
     if (!Number.isInteger(activation?.maxRuns)) return null;
-    const [current, settings, prompt] = await Promise.all([read(control('current')), read(control('settings')), read(control('prompt'))]);
+    const [current, settings, prompt, batch] = await Promise.all(
+      [read(control('current')), read(control('settings')), read(control('prompt')), read(control('batch'))]);
     const run = current ? await read(runRef(current.runId)) : null;
     if (current && !run) throw new Error('The current review record is unavailable. Refresh before starting another run.');
-    return { activation, settings, prompt, current, run };
+    const runs = batch ? (await Promise.all(batch.ids.map(async id => {
+      const item = await read(runRef(id));
+      return item && { ...item, id };
+    }))).filter(Boolean) : [];
+    return { activation, settings, prompt, current, run, batch, runs };
   }
 
   async function start(id, job, run) {
@@ -60,8 +67,14 @@ export function createReviewStore({ sdk, db, workspace, check }) {
       const active = pointer ? await txRead(tx, runRef(pointer.runId)) : null;
       const settings = await txRead(tx, control('settings'));
       const prompt = await txRead(tx, control('prompt'));
+      const batch = await txRead(tx, control('batch'));
       if (active && pointer.runId === id) return;
-      if (pointer && !reviewFinished(active)) throw new Error('Finish the current review before starting another edit.');
+      if (batch?.id !== run.batchId || batch.state !== 'active' || !batch.ids.includes(id)) {
+        throw new Error('The batch authorization expired, paused, or changed.');
+      }
+      if (pointer && pointer.batchId !== run.batchId && !reviewFinished(active)) {
+        throw new Error('Finish the current review before starting another batch.');
+      }
       const selection = job.references[0].source.id + ':' + run.sourceVersion;
       if (settings?.id !== run.configId || settings.model !== job.model || settings.seed !== job.prompt ||
           !settings.sources.includes(selection) || prompt?.id !== job.review.configId ||
@@ -70,7 +83,7 @@ export function createReviewStore({ sdk, db, workspace, check }) {
       }
       tx.set(jobRef(id), job);
       tx.set(runRef(id), run);
-      tx.set(control('current'), { runId: id, started: (pointer?.started || 0) + 1 });
+      tx.set(control('current'), { runId: id, batchId: run.batchId, started: (pointer?.started || 0) + 1 });
     });
     check();
   }
@@ -128,6 +141,28 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     return read(runRef(id));
   }
 
+  async function controlBatch(expected, state) {
+    await transact(async tx => {
+      const batch = await txRead(tx, control('batch'));
+      if (batch?.id !== expected || batch.state === 'stopped' || !['active','paused','stopped'].includes(state)) {
+        throw new Error('The batch changed. Refresh Auto Review.');
+      }
+      const jobs = await Promise.all(batch.ids.map(id => txRead(tx, jobRef(id))));
+      const runs = state === 'stopped' ? await Promise.all(batch.ids.map(id => txRead(tx, runRef(id)))) : [];
+      tx.update(control('batch'), {state, changedAt:Date.now()});
+      for (const [index, id] of batch.ids.entries()) {
+        const job = jobs[index];
+        if (state === 'paused' && job?.status === 'queued') tx.update(jobRef(id), {status:'paused'});
+        if (state === 'active' && job?.status === 'paused') tx.update(jobRef(id), {status:'queued'});
+        if (state === 'stopped' && ['queued','paused','uploading'].includes(job?.status)) {
+          tx.update(jobRef(id), {status:'cancelled'});
+          if (runs[index]?.phase === 'pending') tx.update(runRef(id), {phase:'closed',finishedAt:Date.now()});
+        }
+      }
+    });
+    return read(control('batch'));
+  }
+
   async function approveConfiguration(configuration, baseId) {
     const value = revision(reviewId(), 'configuration', { ...configuration, previous: baseId });
     await transact(async tx => {
@@ -165,6 +200,22 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     return read(runRef(id));
   }
 
+  async function rejectAndCompare(run, job, update) {
+    const target = runRef(run.id), followup = jobRef('feedback-' + run.id);
+    await transact(async tx => {
+      const current = await txRead(tx,target);
+      const existing = await txRead(tx,followup);
+      if(existing&&current?.phase==='rejected')return;
+      if(current?.phase!=='staged'||current.batchId!==run.batchId||job.status!=='completed')
+        throw new Error('This result changed. Refresh its review.');
+      const now=Date.now();
+      tx.update(target,update);
+      tx.set(followup,{recordType:'review-feedback',reviewJobId:run.id,deviceUid:job.deviceUid,
+        status:'queued',createdAt:now,expiresAt:now+86400000,feedback:update.note,reason:update.reason});
+    });
+    return read(target);
+  }
+
   async function listRuns(cursor) {
     check();
     const page = await getDocsFromServer(query(collection(db, ...workspace, 'autoReviewRuns'),
@@ -173,8 +224,9 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     return { records: page.docs.map(item => ({ ...item.data(), id: item.id })), cursor: page.size === 12 ? page.docs.at(-1) : null };
   }
 
-  return { load, start, queue, transition, closeFailed, approveConfiguration, approvePrompt, saveLearning, listRuns,
+  return { load, start, queue, transition, closeFailed, controlBatch, approveConfiguration, approvePrompt, saveLearning, rejectAndCompare, listRuns,
     job: async id => ({ ...await read(jobRef(id)), id }), run: id => read(runRef(id)),
+    feedback: id => read(jobRef('feedback-' + id)),
     vision: id => isVisionReviewJob(id) ? read(ref('autoReviewVision', id)) : Promise.resolve(null),
     readRevision: id => id ? read(ref('autoReviewRevisions', id)) : Promise.resolve(null),
     async chunks(id, source = false) {

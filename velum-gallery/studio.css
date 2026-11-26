@@ -285,7 +285,9 @@
 .studio-auto-review details { border-top: 1px solid #49303e; }
 .studio-auto-review summary { cursor: pointer; min-height: 44px; padding: 11px 0; }
 .studio-auto-review details[open] { padding-bottom: 12px; }
-.studio-auto-review .review-history ol { display: grid; gap: 6px; list-style: none; padding: 0; }
+.studio-auto-review :is(.review-history, .review-queue) ol { display: grid; gap: 6px; list-style: none; padding: 0; }
+.studio-auto-review .review-queue button[aria-current="true"] { border-color: #e4c0d6; }
+.studio-auto-review .review-followup:empty { display: none; }
 @media (min-width: 720px) {
   .studio-auto-review .review-workspace:has(.review-canvas:not([hidden])) { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
 }

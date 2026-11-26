@@ -301,6 +301,21 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
     finally{controllers.delete(controller);signal?.removeEventListener('abort',cancel);}
   }
   const review=createAutoReviewDrive({readRequest,manageRequest,getOperationGuard,readBoundedImage,verifyOriginal,save,listReferences:library.listReferences});
+  review.authorizeBatch=async (batch,signal)=>{
+    const active=getOperationGuard();
+    active();
+    const token=await auth.currentUser.getIdToken();
+    active();
+    const response=await fetch('/api/drive/review-authorize',{method:'POST',redirect:'error',cache:'no-store',
+      signal:AbortSignal.any([signal,AbortSignal.timeout(45000)]),headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
+      body:JSON.stringify(batch)});
+    active();
+    const data=await response.json().catch(()=>null);
+    if(!response.ok||data?.authorized!==true)throw Object.assign(new Error(data?.code==='drive/review-folder-grant'?
+      'Authorize the exact private staging folder before starting the batch.':`The Drive connection could not authorize the batch (${data?.code||response.status}).`),{code:data?.code});
+    if(!Number.isSafeInteger(data.expiresAt)||data.expiresAt<=Date.now())throw new Error('Batch authorization expired. Refresh Auto Review.');
+    return data.expiresAt;
+  };
   review.grantStage=async (run,signal)=>{
     const id=await review.stageFolder(signal,run.stageFolderId);
     const selected=await pick({folderId:id,signal});

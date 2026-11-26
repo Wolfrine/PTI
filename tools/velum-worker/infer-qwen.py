@@ -5,13 +5,14 @@ Importing this file performs no filesystem mutation, model import or inference.
 """
 import gc, hashlib, json, os, sys, threading, time
 from pathlib import Path
+from qwen_paths import output_root
 from inference_contract import validate_request, QWEN_MODEL
 from qwen_diagnostics import Diagnostics, SamplingProgress, collect, encoder_threads, GIB, TIMEOUT_SECONDS
 from qwen_cache_policy import configure_cache
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
-OUT = HERE / '.runtime/qwen21'
+OUT = output_root()
 ENGINE = Path(r'H:\AI-ImageGen\velum-qwen21-research-20261103')
 RUNTIME = Path(r'F:\Workspace\Support\LocalCodexBridge\scratch\qwen21-quality-20261103\ComfyUI')
 REVISION = '426f5eea52a7ece1dd599fff4cb6cd1f352ddd24'
@@ -127,6 +128,10 @@ def main():
     prompt = validate_request(job)
     if job['model'] != QWEN_MODEL:
         raise ValueError('invalid-model')
+    # A stale parent profile must fail before model loading or output creation.
+    configured_parent = os.environ.get('VELUM_QWEN_OUTPUT_ROOT')
+    if configured_parent is not None and Path(configured_parent) != OUT:
+        raise ValueError('qwen-output-path-mismatch')
     check_assets()
     OUT.mkdir(parents=True,exist_ok=True)
     import msvcrt

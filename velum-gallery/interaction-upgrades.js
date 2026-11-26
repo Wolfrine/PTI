@@ -7,13 +7,12 @@
   let driftDuration = 15000;
   let optionsOpen = false;
   const TOUCH_GRACE = 8000;
-  const CONTROLS_VISIBLE_MS = 4500;
   const SCALE_EPSILON = 0.025;
 
   let nextAutoToken = -700001;
   let manualPause = false;
   let resumeHandle = null;
-  let controlsHandle = null;
+  let fullImmersion = false;
   let auto = {
     token: null,
     nativeId: null,
@@ -93,6 +92,21 @@
     #velumAutoTimer .fill{display:block;width:100%;height:100%;transform-origin:left center;background:rgba(244,231,235,.74);transform:scaleX(1);transition:transform .08s linear}
     #velumAutoTimer.paused .fill{background:rgba(214,178,162,.82)}
 
+    /* Explicit two-state immersion; only the privacy exit remains visible.
+       Keep dialogs and the PIN/connection gates independent of viewer chrome. */
+    body.velum-drift-immersive.velum-full-immersion .bottom-nav,
+    body.velum-drift-immersive.velum-full-immersion .library-tools-drift,
+    body.velum-drift-immersive.velum-full-immersion #velumAutoTimer,
+    body.velum-drift-immersive.velum-full-immersion #velumHardRefresh,
+    body.velum-drift-immersive.velum-full-immersion .library-action-notice,
+    body.velum-drift-immersive.velum-full-immersion #toast{display:none!important}
+    body.velum-drift-immersive.velum-full-immersion .topbar{background:transparent!important;pointer-events:none!important}
+    body.velum-drift-immersive.velum-full-immersion .topbar .brand,
+    body.velum-drift-immersive.velum-full-immersion .topbar .top-actions > :not(#exitBtn){display:none!important}
+    body.velum-drift-immersive.velum-full-immersion .topbar .top-actions{margin-left:auto;padding:0!important;border:0!important;background:transparent!important;backdrop-filter:none!important;pointer-events:none!important}
+    body.velum-drift-immersive.velum-full-immersion #exitBtn{pointer-events:auto!important;background:transparent!important;opacity:.66}
+    body.velum-drift-immersive.velum-full-immersion #exitBtn:is(:hover,:focus-visible,:active){opacity:1}
+
     #driftStage.velum-inspecting{cursor:grabbing}
     @media (max-width:420px){#velumHardRefresh{width:34px;padding:0;justify-content:center}#velumHardRefresh span{display:none}}
     @media (min-width:720px){#velumHardRefresh{right:calc(50% - 250px)}}
@@ -133,18 +147,29 @@
   }
 
   function syncImmersiveClass() {
-    document.body.classList.toggle('velum-drift-immersive', driftVisible());
-    if (!driftVisible()) document.body.classList.remove('velum-controls-visible');
+    const visible = driftVisible();
+    if (!visible) fullImmersion = false;
+    document.body.classList.toggle('velum-drift-immersive', visible);
+    document.body.classList.toggle('velum-full-immersion', visible && fullImmersion);
+    document.body.classList.toggle('velum-controls-visible', visible && !fullImmersion);
+  }
+
+  function setFullImmersion(value) {
+    if (!driftVisible()) return false;
+    fullImmersion = Boolean(value);
+    const video = driftMedia?.querySelector('.single-wrap:not(.drift-outgoing) video');
+    if (video) video.controls = !fullImmersion;
+    paintTimer();
+    return fullImmersion;
   }
 
   function showControls() {
-    if (!driftVisible()) return;
-    document.body.classList.add('velum-controls-visible');
-    if (controlsHandle !== null) nativeClearTimeout(controlsHandle);
-    controlsHandle = nativeSetTimeout(() => {
-      controlsHandle = null;
-      document.body.classList.remove('velum-controls-visible');
-    }, CONTROLS_VISIBLE_MS);
+    return setFullImmersion(false);
+  }
+
+  function toggleImmersion() {
+    if (!driftVisible() || optionsOpen || document.querySelector('dialog[open]')) return fullImmersion;
+    return setFullImmersion(!fullImmersion);
   }
 
   function mediaReady() {
@@ -163,7 +188,7 @@
         toggle.setAttribute('aria-pressed', String(manualPause));
       }
     }
-    if (!auto.callback || !driftVisible()) {
+    if (!auto.callback || !driftVisible() || fullImmersion) {
       timer.classList.remove('visible');
       timer.tabIndex = -1;
       return;
@@ -347,6 +372,17 @@
     else if (driftVisible() && isDefaultView() && !manualPause) resumeAuto({ delay: TOUCH_GRACE });
   }, true);
 
+  window.addEventListener('velum:lock', () => {
+    fullImmersion = false;
+    syncImmersiveClass();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key.toLowerCase() !== 'i' || event.repeat || event.ctrlKey || event.metaKey || event.altKey ||
+        event.target?.closest?.('input,textarea,select,button,[contenteditable="true"]') ||
+        !driftVisible() || optionsOpen || document.querySelector('dialog[open]')) return;
+    event.preventDefault();
+    toggleImmersion();
+  });
   nativeSetTimeout(syncImmersiveClass, 0);
 
   window.__velumInteraction = {
@@ -365,6 +401,7 @@
     clearAdvance: cancelAuto,
     gestureState,
     showControls,
+    toggleImmersion,
     getTimerState: () => ({ running: auto.running, remaining: auto.remaining, manualPause })
   };
 })();

@@ -288,6 +288,9 @@
 .studio-auto-review :is(.review-history, .review-queue) ol { display: grid; gap: 6px; list-style: none; padding: 0; }
 .studio-auto-review .review-queue button[aria-current="true"] { border-color: #e4c0d6; }
 .studio-auto-review .review-followup:empty { display: none; }
+.studio-auto-review .review-prompt-parts { display: grid; gap: 12px; }
+.studio-auto-review .review-prompt-parts dt { font-weight: 600; }
+.studio-auto-review .review-prompt-parts dd { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (min-width: 720px) {
   .studio-auto-review .review-workspace:has(.review-canvas:not([hidden])) { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
 }

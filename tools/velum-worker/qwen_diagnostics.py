@@ -17,7 +17,7 @@ STARTUP_RAM_FLOOR_BYTES = 6*GIB
 RUNTIME_RAM_FLOOR_BYTES = 5*GIB
 
 
-def evaluate(sample, startup=False):
+def evaluate(sample, startup=False, *, drive_original=False):
     """Every predicate carries its actual reading, comparison and limit."""
     def check(name, actual, operator, threshold, passed):
         return dict(predicate=name, actual=actual, operator=operator,
@@ -36,6 +36,8 @@ def evaluate(sample, startup=False):
         ('vram-used', 'vramUsedMiB', '<=', 7500, lambda a,b:a<=b),
         ('gpu-temperature', 'gpuTempC', '<', 78, lambda a,b:a<b),
     ):
+        if drive_original and name in ('ram-available', 'disk-f-free'):
+            continue
         checks.append(reading(name, value.get(field), operator, limit, compare))
     for name, query in sample.get('queries', {}).items():
         if query.get('required', True) is False:
@@ -46,7 +48,7 @@ def evaluate(sample, startup=False):
 
 
 def collect(psutil, parent_pid, parent_created, started, *, now=time.monotonic,
-            execute=subprocess.check_output, cuda=None, clock=time.perf_counter):
+            execute=subprocess.check_output, cuda=None, clock=time.perf_counter, drive_original=False):
     observed = dict(elapsedSeconds=round(now()-started, 3))
     queries = {}
     def query(name, operation, required=True):
@@ -82,8 +84,9 @@ def collect(psutil, parent_pid, parent_created, started, *, now=time.monotonic,
             raise ValueError('invalid-gpu-reading')
         observed.update(vramUsedMiB=values[0], gpuTempC=values[1])
     query('parent', parent)
-    query('ram', ram)
-    query('disk-f', lambda: observed.update(diskFreeFBytes=psutil.disk_usage('F:\\').free))
+    query('ram', ram, required=not drive_original)
+    if not drive_original:
+        query('disk-f', lambda: observed.update(diskFreeFBytes=psutil.disk_usage('F:\\').free))
     query('disk-h', lambda: observed.update(diskFreeHBytes=psutil.disk_usage('H:\\').free))
     query('gpu', gpu)
     def process():
@@ -101,8 +104,9 @@ def collect(psutil, parent_pid, parent_created, started, *, now=time.monotonic,
 
 
 class Diagnostics:
-    def __init__(self, directory, started, emit=lambda **value:None, now=time.monotonic):
+    def __init__(self, directory, started, emit=lambda **value:None, now=time.monotonic, *, drive_original=False):
         self.directory, self.started, self.emit, self.now = directory, started, emit, now
+        self.drive_original = drive_original
         self.lock = threading.RLock()
         self.stage = 'preparing'
         self.stages = []
@@ -127,7 +131,7 @@ class Diagnostics:
 
     def observe(self, sample, startup=False):
         with self.lock:
-            sample = {**sample, **evaluate(sample, startup)}
+            sample = {**sample, **evaluate(sample, startup, drive_original=self.drive_original)}
             for key in ('vramUsedMiB', 'gpuTempC', 'cudaPeakAllocatedBytes', 'cudaPeakReservedBytes'):
                 value = sample['observed'].get(key)
                 if value is not None:

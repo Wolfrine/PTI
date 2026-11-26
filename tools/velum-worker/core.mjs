@@ -6,8 +6,8 @@ export const WEIGHTS={
   'realvis-dynamic':['checkpoints/RealVisXL_V5.0_fp16.safetensors'],
   'realistic-sd15':['checkpoints/Realistic_Vision_V6.0_NV_B1_fp16.safetensors','vae/vae-ft-mse-840000-ema-pruned.safetensors'],
 };
-export function runnable(job,now=Date.now()) {
-  try { validateJob(job); return job.status==='queued' && job.createdAt<=now+30000 && job.expiresAt>now; }
+export function runnable(job,now=Date.now(),options) {
+  try { validateJob(job,options); return job.status==='queued' && job.createdAt<=now+30000 && job.expiresAt>now; }
   catch { return false; }
 }
 export function encode(value) {

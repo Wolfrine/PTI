@@ -2,6 +2,7 @@
 import base64
 import ctypes as c
 from ctypes import wintypes as w
+import io
 import json
 import msvcrt
 import os
@@ -90,7 +91,7 @@ def available(role):
                 for item in SPEC[role]["files"]))
 
 
-def guard(parent_pid, parent_created, start=False):
+def guard(parent_pid, parent_created, start=False, *, drive_original=False):
     if parent_pid and (not psutil.pid_exists(parent_pid) or
                        abs(psutil.Process(parent_pid).create_time() - parent_created) > 0.05):
         raise RuntimeError("vision-parent-exited")
@@ -101,12 +102,14 @@ def guard(parent_pid, parent_created, start=False):
         memory, temperature = map(int, gpu)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         raise RuntimeError("resource-guard") from error
-    if (psutil.virtual_memory().available < (6 if start else 5) * GIB or memory > 7500 or temperature >= 78 or
-            shutil.disk_usage("H:/").free < 20 * GIB or shutil.disk_usage("F:/").free < 10 * GIB):
+    if memory > 7500 or temperature >= 78 or shutil.disk_usage("H:/").free < 20 * GIB:
+        raise RuntimeError("resource-guard")
+    if not drive_original and (psutil.virtual_memory().available < (6 if start else 5) * GIB or
+                               shutil.disk_usage("F:/").free < 10 * GIB):
         raise RuntimeError("resource-guard")
 
 
-def image_part(filename):
+def image_part(filename, *, drive_original=False):
     source = Path(filename)
     if not 100 <= source.stat().st_size <= 7_200_000:
         raise RuntimeError("invalid-output")
@@ -117,6 +120,13 @@ def image_part(filename):
         mime = "image/jpeg"
     else:
         raise RuntimeError("invalid-output")
+    if drive_original:
+        from PIL import Image
+        with Image.open(io.BytesIO(data)) as original:
+            if (original.format != {"image/png": "PNG", "image/jpeg": "JPEG"}[mime]
+                    or max(original.size) > 8192 or original.width * original.height > 24000000
+                    or getattr(original, 'n_frames', 1) != 1):
+                raise RuntimeError("invalid-output")
     return {"type": "image_url", "image_url": {
         "url": "data:" + mime + ";base64," + base64.b64encode(data).decode("ascii")}}
 
@@ -134,6 +144,7 @@ def invoke(options):
     if not available(role):
         raise RuntimeError("vision-model-unavailable")
     parent_pid = options.get("parentPid")
+    drive_original = options.get("driveOriginal") is True
     parent_created = psutil.Process(parent_pid).create_time() if parent_pid else None
     # On Windows the venv redirector is between Node and the interpreter.
     if parent_pid and not any(parent.pid == parent_pid for parent in psutil.Process().parents()):
@@ -142,7 +153,8 @@ def invoke(options):
     state.mkdir(exist_ok=True)
     env = {key: value for key, value in os.environ.items()
            if key.upper() not in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY")}
-    env.update({"TEMP": str(state), "TMP": str(state), "CUDA_CACHE_DISABLE": "1",
+    env.update({"TEMP": str(state), "TMP": str(state), "TMPDIR": str(state),
+                "CUDA_CACHE_DISABLE": "1", "CUDA_CACHE_PATH": str(state), "XDG_CACHE_HOME": str(state),
                 "HF_HOME": str(state), "HF_HUB_OFFLINE": "1", "NO_PROXY": "127.0.0.1"})
     model, projector = [str(ROOT / "models" / item["file"]) for item in SPEC[role]["files"]]
     with LOCK.open("rb") as lock:
@@ -150,7 +162,7 @@ def invoke(options):
             msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
         except OSError as error:
             raise RuntimeError("resource-guard") from error
-        guard(parent_pid, parent_created, start=True)
+        guard(parent_pid, parent_created, start=True, drive_original=drive_original)
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
@@ -159,13 +171,16 @@ def invoke(options):
                    "--host", "127.0.0.1", "--port", str(port), "--api-key", token,
                    "-ngl", "99", "-c", "4096", "-t", "4", "--parallel", "1", "--image-max-tokens", "900",
                    "--no-webui", "--no-warmup"]
+        # Direct loading lets the 4B model start within the existing watchdog on the review PC.
+        if drive_original and role == "compare":
+            command.extend(("--load-mode", "none"))
         server = OwnedServer(command, env)
         try:
             deadline = time.monotonic() + CALL_SECONDS
             while True:
                 if server.process.poll() is not None or time.monotonic() >= deadline:
                     raise RuntimeError("vision-runtime-unavailable")
-                guard(parent_pid, parent_created)
+                guard(parent_pid, parent_created, drive_original=drive_original)
                 try:
                     if request(port, token, "/health", timeout=1).get("status") == "ok":
                         break
@@ -175,7 +190,7 @@ def invoke(options):
             if options.get("probe"):
                 return {"model": SPEC[role]["id"], "status": "ready"}
             content = [{"type": "text", "text": options["instruction"]}]
-            content.extend(image_part(filename) for filename in options["images"])
+            content.extend(image_part(filename, drive_original=drive_original) for filename in options["images"])
             body = {"messages": [{"role": "user", "content": content}], "temperature": 0,
                     "max_tokens": 512, "stream": False, "response_format": {"type": "json_object"}}
             # The request runs concurrently with the resource/parent watchdog.
@@ -185,7 +200,7 @@ def invoke(options):
                 completion = pool.submit(request, port, token, "/v1/chat/completions", body,
                                          max(1, deadline - time.monotonic()))
                 while time.monotonic() < deadline:
-                    guard(parent_pid, parent_created)
+                    guard(parent_pid, parent_created, drive_original=drive_original)
                     try:
                         result = completion.result(timeout=2)
                         return json.loads(result["choices"][0]["message"]["content"])

@@ -4,23 +4,37 @@ from pathlib import Path
 from PIL import Image, ImageOps
 
 MAX_PIXELS = 1048576
+MAX_ORIGINAL_REVIEW_PIXELS = 24000000
 MAX_QWEN_OUTPUT_PIXELS = 1150000
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 warnings.simplefilter('error', Image.DecompressionBombWarning)
 
-def read_reference(path, manifest, inference_pixels=262144):
+def read_reference(path, manifest, inference_pixels=262144, *, drive_original=False):
     file = Path(path)
-    if file.stat().st_size != manifest['bytes'] or not 100 <= manifest['bytes'] <= 2097152:
+    byte_limit = 7200000 if drive_original else 2097152
+    edge_limit = 8192 if drive_original else 1024
+    pixel_limit = MAX_ORIGINAL_REVIEW_PIXELS if drive_original else MAX_PIXELS
+    if file.stat().st_size != manifest['bytes'] or not 100 <= manifest['bytes'] <= byte_limit:
         raise ValueError('invalid-reference')
     data = file.read_bytes()
     if hashlib.sha256(data).hexdigest() != manifest['sha256']:
         raise ValueError('invalid-reference')
     expected = {'image/png':'PNG', 'image/jpeg':'JPEG'}[manifest['mime']]
-    with Image.open(io.BytesIO(data)) as image:
-        if image.format != expected or image.size != (manifest['width'], manifest['height']) or max(image.size) > 1024 or image.width*image.height > MAX_PIXELS or getattr(image, 'n_frames', 1) != 1:
-            raise ValueError('invalid-reference')
-        image.load()
-        image = ImageOps.exif_transpose(image).convert('RGB')
+    previous_limit = Image.MAX_IMAGE_PIXELS
+    try:
+        Image.MAX_IMAGE_PIXELS = pixel_limit
+        with Image.open(io.BytesIO(data)) as image:
+            size = (manifest['width'], manifest['height'])
+            if image.format != expected or max(image.size) > edge_limit or image.width*image.height > pixel_limit or getattr(image, 'n_frames', 1) != 1:
+                raise ValueError('invalid-reference')
+            if not drive_original and image.size != size:
+                raise ValueError('invalid-reference')
+            image.load()
+            image = ImageOps.exif_transpose(image).convert('RGB')
+            if drive_original and image.size != size:
+                raise ValueError('invalid-reference')
+    finally:
+        Image.MAX_IMAGE_PIXELS = previous_limit
     # Fixed safe reference token budget; source bytes remain untouched on H.
     if inference_pixels is None:
         return image

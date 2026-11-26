@@ -17,7 +17,8 @@ import {engineProfile,qwenInstalled,qwenTurboInstalled,workerCapabilities} from 
 import {QWEN_MODEL,QWEN_TURBO_MODEL,QWEN_TURBO_WORKER_VERSION,isQwenModel,validateJob} from '../../velum-gallery/studio-contract.mjs';
 import {LiveProgress} from './live-progress.mjs';
 import {reviewVision,reviewVisionVersion} from './review-vision.mjs';
-import {isVisionReviewJob,isConfiguredVisionReviewJob,isReviewFeedbackJob} from '../../velum-gallery/auto-review-store.mjs';
+import {isVisionReviewJob,isConfiguredVisionReviewJob,isReviewFeedbackJob,isOriginalReviewJob} from '../../velum-gallery/auto-review-store.mjs';
+import {readLocalReviewSource} from './local-review-source.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -102,23 +103,25 @@ async function installedModels(){
  }
  await stat(PYTHON);return installed;
 }
-async function loadThumbnail(directory,metadata){
+async function loadThumbnail(directory,metadata,python=PYTHON){
  let thumbnail=metadata.thumbnail;
  try{await stat(path.join(directory,'thumbnail.jpg'));}catch(error){if(error.code==='ENOENT')thumbnail=null;else throw error;}
- if(!thumbnail)thumbnail=JSON.parse(execFileSync(PYTHON,['-B',path.join(HERE,'media.py'),'thumbnail',directory],{windowsHide:true,encoding:'utf8',timeout:15000}));
+ if(!thumbnail)thumbnail=JSON.parse(execFileSync(python,['-B',path.join(HERE,'media.py'),'thumbnail',directory],{windowsHide:true,encoding:'utf8',timeout:15000}));
  return {...thumbnail,bytes:await readFile(path.join(directory,'thumbnail.jpg'))};
 }
 export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={}){
  // No shell, client-supplied path, ComfyUI port, network-capable model process or warmup.
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
- validateJob(job);
- const profile=engineProfile(job.model);
+ const driveOriginal=isOriginalReviewJob(id);
+ validateJob(job,{driveOriginal});
+ const profile=engineProfile(job.model,{driveOriginal});
  const logs=isVisionReviewJob(id)?path.join(profile.outputRoot,id,'inputs','review','logs'):path.join(profile.outputRoot,'logs');
  await mkdir(logs,{recursive:true});
  const parentCreated=execFileSync(profile.python,['-B','-c',`import psutil; print(psutil.Process(${process.pid}).create_time())`],{windowsHide:true,encoding:'utf8',timeout:15000}).trim();
  return new Promise((resolve,reject)=>{
-  const child=spawn(profile.python,['-B',profile.script],{cwd:HERE,windowsHide:true,shell:false,
-   env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated,...(isQwenModel(job.model)?{VELUM_QWEN_OUTPUT_ROOT:profile.outputRoot}:{})},stdio:['pipe','pipe','pipe']});
+  const child=spawn(profile.python,['-B',profile.script],{cwd:driveOriginal?logs:HERE,windowsHide:true,shell:false,
+   env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated,
+    ...(driveOriginal?{TEMP:logs,TMP:logs,TMPDIR:logs}:{}),...(isQwenModel(job.model)?{VELUM_QWEN_OUTPUT_ROOT:profile.outputRoot}:{})},stdio:['pipe','pipe','pipe']});
   const abort=()=>child.kill();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
   let buffer='',diagnostic='',failure='inference-failed',saved=false,guardEvents=[];
   const timer=setTimeout(()=>{failure='resource-guard';guardEvents.push({event:'guard-trip',failed:['parent-timeout'],timeoutMs:profile.parentTimeoutMs});child.kill();},profile.parentTimeoutMs);
@@ -164,10 +167,11 @@ async function main(){
  const load=async (id,job)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-output');
   try{
-   const output=path.join(engineProfile(job?.model).outputRoot,id),bytes=await readFile(path.join(output,'image.png'));
+   const profile=engineProfile(job?.model,{driveOriginal:isOriginalReviewJob(id)});
+   const output=path.join(profile.outputRoot,id),bytes=await readFile(path.join(output,'image.png'));
    const metadata=JSON.parse(await readFile(path.join(output,'result.json'),'utf8')),payload=imagePayload(bytes);
    if(payload.result.sha256!==metadata.sha256)throw new Error('invalid-output');
-   return {...payload,metadata,thumbnail:await loadThumbnail(output,metadata)};
+   return {...payload,metadata,thumbnail:await loadThumbnail(output,metadata,isOriginalReviewJob(id)?profile.python:PYTHON)};
   }catch(error){if(error.code==='ENOENT')return null;throw error;}
  };
  const upload=async(item,output,vision)=>{
@@ -286,6 +290,18 @@ async function main(){
      const directory=path.join(root,item.id);
      await mkdir(directory,{recursive:true});secureDirectory(directory);
     }
+    if(isOriginalReviewJob(item.id)){
+     await approved();
+     try{
+      const response=await fetch('https://pti-app-2ab59-velum.web.app/api/drive/review-source',{
+       method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${await queue.token()}`},
+       body:JSON.stringify({id:item.id}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(45000)])
+      });
+      if(!response.ok){await response.body?.cancel();throw new Error('invalid-reference');}
+      if((await response.json()).verified!==true)throw new Error('invalid-reference');
+     }catch{controller.signal.throwIfAborted();throw new Error('invalid-reference');}
+     return readLocalReviewSource(item.id,item.job.references[0],{outputRoot:root,signal:controller.signal});
+    }
     return downloadReferences(item.id,item.job,{root,approved,fetchManifest:async reference=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}`);return decode({mapValue:{fields:response.value.fields}});
    },fetchChunk:async(reference,index)=>{
@@ -305,7 +321,7 @@ async function main(){
   if(!isConfiguredVisionReviewJob(referenceId)||item.id!=='feedback-'+referenceId||
     item.job.recordType!=='review-feedback'||typeof item.job.feedback!=='string')return;
   if(!resumed){
-   if(visionProtocol<3||item.job.expiresAt<=Date.now()){
+   if(visionProtocol<(isOriginalReviewJob(referenceId)?4:3)||item.job.expiresAt<=Date.now()){
     await queue.write(relative,{status:'failed',finishedAt:Date.now()},{updateTime:item.updateTime});return;
    }
    const claim={status:'running',startedAt:Date.now(),workerId:queue.session.uid};
@@ -368,9 +384,10 @@ async function main(){
       for(const item of await queue.jobs('queued')){
        if(stopping)break;await approved();
        if(isReviewFeedbackJob(item.id)){await runFeedback(item,false);continue;}
-       if(!runnable(item.job)||(item.job.batchId&&item.job.batchExpiresAt<=Date.now())){await fail(item,'expired');continue;}
+       if(!runnable(item.job,Date.now(),{driveOriginal:isOriginalReviewJob(item.id)})||
+        (item.job.batchId&&item.job.batchExpiresAt<=Date.now())){await fail(item,'expired');continue;}
        if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
-       if(isVisionReviewJob(item.id)&&visionProtocol<(item.job.batchId?3:isConfiguredVisionReviewJob(item.id)?2:1)){await fail(item,'model-unavailable');continue;}
+       if(isVisionReviewJob(item.id)&&visionProtocol<(isOriginalReviewJob(item.id)?4:item.job.batchId?3:isConfiguredVisionReviewJob(item.id)?2:1)){await fail(item,'model-unavailable');continue;}
        const claim={status:'running',workerId:queue.session.uid,startedAt:Date.now()};
        try{await queue.write(`jobs/${item.id}`,claim,{updateTime:item.updateTime});item.job={...item.job,...claim};}
        catch(error){

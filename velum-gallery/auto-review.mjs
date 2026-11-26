@@ -3,11 +3,11 @@ const local = name => {
   url.search = new URL(import.meta.url).search;
   return import(url.href);
 };
-const [{ createReviewStore, INITIAL_REVIEW_MODEL, REVIEW_POOL_LIMIT, REVIEW_BATCH_LIMIT, isVisionReviewJob, isConfiguredVisionReviewJob, reviewFinished, reviewId, selectReviewSource },
+const [{ createReviewStore, INITIAL_REVIEW_MODEL, REVIEW_SOURCE_SCOPE, REVIEW_GUIDANCE_SCOPE, REVIEW_BATCH_LIMIT, isVisionReviewJob, isConfiguredVisionReviewJob, isOriginalReviewJob, reviewFinished, reviewId },
   { MODELS, deviceCanQueue, modelReferenceLimit, makeJob, workerOnline },
-  { prepareReference, decodeReference }, { createReferencePicker }, { formatJobStatus }] = await Promise.all([
+  { prepareReference, decodeReference }, { formatJobStatus }] = await Promise.all([
   local('./auto-review-store.mjs'), local('./studio-contract.mjs'), local('./studio-reference.mjs'),
-  local('./studio-reference-picker.mjs'), local('./studio-view.mjs')
+  local('./studio-view.mjs')
 ]);
 
 const failure = {
@@ -54,16 +54,20 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
             <h3>Start an approved batch</h3>
             <p class="review-seed"></p>
             <p class="review-model studio-hint"></p>
-            <label>Maximum edits <select class="studio-input" name="count"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+            <label>Batch size <input class="studio-input" name="count" type="number" inputmode="numeric" min="1" step="1" value="1" required /></label>
+            <p class="review-quota studio-hint"></p>
             <button type="submit" class="review-primary">Prepare and start batch</button>
             <button type="button" data-review="grant-batch" hidden>Authorize staging folder</button>
           </form>
           <section class="review-run" hidden aria-label="Current edit">
             <h3 class="review-run-title"></h3>
-            <p class="review-intent"></p>
+            <div><span class="studio-hint">Editing seed</span><p class="review-intent"></p></div>
             <p class="review-run-model studio-hint"></p>
             <details class="review-vision" hidden><summary>Local vision analysis</summary>
-              <p class="review-edit-prompt"></p><p class="review-observation"></p>
+              <dl class="review-prompt-parts">
+                <div class="review-description" hidden><dt>Vision 1 addition</dt><dd class="review-addition"></dd></div>
+                <div><dt>Final edit prompt</dt><dd class="review-edit-prompt"></dd></div>
+              </dl><p class="review-observation"></p>
               <button type="button" data-review="use-proposal" hidden>Edit proposed improvement</button>
               <p class="review-followup"></p>
             </details>
@@ -72,14 +76,15 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
               <button type="button" data-review="discard" hidden>Close incomplete run</button>
               <button type="button" data-review="result" hidden>Load review</button>
               <button type="button" data-review="grant" hidden>Grant staging folder</button>
+              <button type="button" data-review="grant-target" hidden>Authorize acceptance folder</button>
               <button type="button" data-review="accept" class="review-primary" hidden>Accept to Drift</button>
               <button type="button" data-review="reject" aria-expanded="false" hidden>Not Okay…</button>
               <button type="button" data-review="next" hidden>Prepare another batch</button>
             </div>
             <form class="review-rejection" hidden>
-              <label>Reason <select class="studio-input" name="reason">${Object.entries(failure).map(([id, [label]]) =>
+              <label>Reason (optional) <select class="studio-input" name="reason"><option value="other">No reason selected</option>${Object.entries(failure).filter(([id])=>id!=='other').map(([id, [label]]) =>
                 `<option value="${id}">${label}</option>`).join('')}</select></label>
-              <label>What did you observe? <textarea class="studio-input" name="note" rows="3" maxlength="2000" required></textarea></label>
+              <label>Feedback (optional) <textarea class="studio-input" name="note" rows="3" maxlength="2000"></textarea></label>
               <button type="submit">Confirm rejection</button>
             </form>
             <form class="review-learning" hidden>
@@ -108,15 +113,14 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
           <form><label>Model <select class="studio-input" name="model">${MODELS.map(model =>
             `<option value="${model.id}">${model.label}</option>`).join('')}</select></label>
             <label>Editing seed <textarea class="studio-input" name="seed" rows="4" maxlength="800" required autocomplete="off" spellcheck="false"></textarea></label>
-            <button type="button" data-review="sources">Choose authorized sources</button>
-            <p class="review-sources studio-hint"></p>
-            <label class="review-confirm"><input type="checkbox" name="consent" required /> I authorize these source versions and this non-intimate edit seed. Any people shown are consenting adults.</label>
+            <p class="studio-hint">Auto Review selects eligible originals directly from Private and References.</p>
+            <label class="review-confirm"><input type="checkbox" name="consent" required /> I authorize this non-intimate edit on eligible images in those folders that I have permission to edit. Any people used are consenting adults.</label>
             <p class="review-config studio-hint"></p>
             <button type="submit">Approve configuration</button></form>
         </details>
-        <details class="review-prompt-settings"><summary>Prompt construction</summary>
+        <details class="review-prompt-settings"><summary>Descriptive guidance</summary>
           <form><label>Guidance for Vision Model 1
-            <textarea class="studio-input" name="guidance" rows="3" maxlength="400" required autocomplete="off">Use one concise imperative sentence. Preserve visible details outside the requested edit.</textarea>
+            <textarea class="studio-input" name="guidance" rows="3" maxlength="400" required autocomplete="off">Describe only visible details that help locate the approved edit.</textarea>
           </label><p class="studio-hint">Guidance controls how the edit prompt is phrased. The approved editing seed supplies the edit.</p>
           <button type="submit">Approve prompt guidance</button></form>
         </details>
@@ -136,13 +140,11 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
   const settingsForm = $('.review-settings form');
   const promptForm = $('.review-prompt-settings form');
   const compare = $('[data-compare-original]');
-  const picker = createReferencePicker({ drive: { listReferences: options => drive.review.listSources(options) },
-    fixedFolder: 'references' });
-  let session, store, record, current, run, job, approvedLearning, vision, draftSources = [], resultUrl = '', compareSource = '';
-  let newEdit = false, historyView = false, cursor, attempted = '', busy = false, grantNeeded = false, grantBatchFolder = '';
+  let session, store, record, current, run, job, approvedLearning, vision, resultUrl = '', compareSource = '';
+  let newEdit = false, historyView = false, cursor, attempted = '', busy = false, grantNeeded = false, grantBatchFolder = '', grantTarget = '';
   let feedbackJob, queueSignature = '';
   const completedRuns = new Set();
-  const readyModel = (id, version = 3) => {
+  const readyModel = (id, version = 4) => {
     const { studio } = context();
     return studio.connected && !studio.liveCached && studio.worker?.capabilities?.promptSchema === 4 && workerOnline(studio.worker) &&
       (!version || Number(studio.worker.capabilities.autoReviewVision) >= version) &&
@@ -164,11 +166,9 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
   function clear() {
     session?.abort();
     session = store = record = current = run = job = approvedLearning = vision = cursor = null;
-    draftSources = [];
     feedbackJob = null;
-    grantBatchFolder = queueSignature = '';
+    grantBatchFolder = grantTarget = queueSignature = '';
     completedRuns.clear();
-    picker.clear();
     clearComparison();
     attempted = '';
     newEdit = historyView = busy = grantNeeded = false;
@@ -180,7 +180,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     rejectForm.hidden = true;
     action('reject').setAttribute('aria-expanded', 'false');
     $('.review-intent').textContent = '';
-    for (const field of ['.review-seed', '.review-edit-prompt', '.review-observation', '.review-sources']) $(field).textContent = '';
+    for (const field of ['.review-seed', '.review-edit-prompt', '.review-observation', '.review-addition', '.review-followup']) $(field).textContent = '';
     $('.review-approved').textContent = '';
     $('.review-analysis').textContent = '';
     $('.review-history ol').replaceChildren();
@@ -194,7 +194,9 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     $('.review-content').hidden = !record;
     if (!record) return;
     const canStart = !busy && admissionOpen() && readyModel(model()) && !context().studioBusy;
-    const exhausted = (record.current?.started || 0) >= record.activation.maxRuns;
+    const remaining = Math.min(REVIEW_BATCH_LIMIT, record.activation.maxRuns-(record.current?.started||0));
+    const exhausted = remaining<=0;
+    $('.review-quota').textContent=admissionOpen()?`Operational limit · ${Math.max(0,remaining)} edits available in the next batch.`:'';
     const staged = run?.phase === 'staged';
     const accepting = run?.phase === 'accepting';
     const pending = run?.phase === 'pending';
@@ -226,16 +228,19 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     $('.review-run').hidden = starting || !run;
     $('.review-canvas').hidden = !ready;
     compare.hidden = !ready;
-    $('.review-seed').textContent = record.settings?.seed || 'Approve a seed and source pool to begin.';
+    $('.review-seed').textContent = record.settings?.seed || 'Approve an editing seed to begin.';
     $('.review-model').textContent = !admissionOpen() ? 'The approved admission window has ended.' : exhausted ? 'The approved run limit has been reached.' :
       `${modelName(model())}${!readyModel(model()) ? ' · Awaiting a fresh, approved PC capability' :
-        !record.prompt ? ' · Approve prompt guidance below' : ''}`;
-    startForm.querySelector('button[type="submit"]').disabled = !canStart || exhausted || !record.settings?.sources?.length || !record.prompt;
+        record.prompt?.scope!==REVIEW_GUIDANCE_SCOPE ? ' · Approve descriptive guidance below' : ''}`;
+    startForm.querySelector('button[type="submit"]').disabled = !canStart || exhausted || record.settings?.sourceScope!==REVIEW_SOURCE_SCOPE || record.prompt?.scope!==REVIEW_GUIDANCE_SCOPE;
+    const original=isOriginalReviewJob(run?.id);
     $('.review-run-title').textContent = ({ pending: 'Editing', staged: 'Ready for review', accepting: 'Finishing acceptance',
-      accepted: 'Accepted into Private', rejected: 'Rejected', closed: 'Closed' })[run?.phase] || '';
+      accepted: original?'Accepted into Auto Generated':'Accepted into Private', rejected: 'Rejected', closed: 'Closed' })[run?.phase] || '';
     $('.review-intent').textContent = job?.prompt || '';
     $('.review-vision').hidden = !vision;
-    $('.review-edit-prompt').textContent = vision ? 'Edit prompt · ' + vision.prompt : '';
+    $('.review-description').hidden=vision?.schema!==2;
+    $('.review-addition').textContent=vision?.schema===2?(vision.addition||'No addition'):'';
+    $('.review-edit-prompt').textContent = vision?.prompt || '';
     $('.review-observation').textContent = vision ? (vision.state === 'ready' ? vision.observation : 'Local comparison was unavailable. Review the image yourself.') : '';
     action('use-proposal').hidden = run?.batchId ? !feedbackJob?.improvement?.guidance : !vision?.nextSeed || !admissionOpen();
     $('.review-followup').textContent=feedbackJob?.improvement?.observation||
@@ -248,22 +253,21 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     action('result').hidden = !complete || !(pending || staged && !resultUrl);
     action('result').textContent = pending ? 'Recover Drive staging' : 'Load review';
     action('grant').hidden = !pending || !complete || !grantNeeded;
+    action('grant-target').hidden=!accepting||!grantTarget;
     action('accept').hidden = !ready && !accepting;
-    action('accept').textContent = accepting ? 'Finish moving into Private' : 'Accept to Drift';
+    action('accept').textContent = accepting ? `Finish moving into ${original?'Auto Generated':'Private'}` : 'Accept to Drift';
     action('reject').hidden = !ready;
     if (!ready) rejectForm.hidden = true;
     action('next').hidden = !reviewFinished(current) || !batchSettled || starting || exhausted;
     learningForm.hidden = !['accepted', 'rejected'].includes(run?.phase);
-    $('.review-analysis').textContent = run?.phase === 'rejected' ? `${failure[run.reason][0]} · ${run.note}\n${run.analysis}` : '';
+    $('.review-analysis').textContent = run?.phase === 'rejected' ? [run.reason==='other'?'':failure[run.reason]?.[0],run.note,run.analysis].filter(Boolean).join('\n') : '';
     $('.review-approved').hidden = !approvedLearning;
     $('.review-approved').textContent = approvedLearning ? `Approved guidance\n${approvedLearning.text}` : '';
     action('use-learning').hidden = !approvedLearning;
-    $('.review-config').textContent = record.settings?.sources?.length ? `Approved for later runs · ${modelName(model())} · ${record.settings.sources.length} sources` : `Default · ${modelName(model())}`;
-    $('.review-sources').textContent = draftSources.length ? `${draftSources.length} exact source versions in this configuration` : 'Choose up to six eligible images from Private/References.';
+    $('.review-config').textContent = record.settings?.sourceScope===REVIEW_SOURCE_SCOPE ? `Approved for later runs · ${modelName(model())}` : `Approve automatic selection · ${modelName(model())}`;
     settingsForm.elements.model.value ||= model();
     for (const button of dialog.querySelectorAll('.review-run button, .review-queue button, .review-secondary button, .review-start [data-review="grant-batch"]')) button.disabled = busy;
-    action('sources').disabled = busy || !admissionOpen();
-    settingsForm.querySelector('[type="submit"]').disabled = busy || !admissionOpen() || !draftSources.length || !readyModel(settingsForm.elements.model.value);
+    settingsForm.querySelector('[type="submit"]').disabled = busy || !admissionOpen() || !readyModel(settingsForm.elements.model.value);
     promptForm.querySelector('button').disabled = busy;
     compareSync();
   }
@@ -277,6 +281,8 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     catch (error) {
       if (active === session) {
         if (error.code === 'drive/review-folder-grant') grantNeeded = true;
+        if (error.code === 'drive/review-private-grant') grantTarget='private';
+        if (error.code === 'drive/review-generated-grant') grantTarget='generated';
         status(error.code === 'permission-denied' ? 'Auto Review is unavailable for this session or its approved limit has changed.' :
           error.message || 'The action could not be confirmed. Refresh before retrying.');
       }
@@ -302,6 +308,8 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     if (receipt?.outputSha256 !== job.result.sha256 || receipt.sourceSha256 !== job.references[0].sha256) {
       throw new Error('The local vision record does not match this source and output.');
     }
+    if(isOriginalReviewJob(job.id)&&(receipt.schema!==2||receipt.seed!==job.prompt||typeof receipt.addition!=='string'||
+      receipt.prompt!==(receipt.addition?`${job.prompt}\n\n${receipt.addition}`:job.prompt)))throw new Error('The local prompt does not match the approved editing seed.');
     return receipt;
   }
 
@@ -315,9 +323,8 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     settingsForm.elements.model.value = model();
     settingsForm.elements.seed.value = record.settings?.seed || '';
     settingsForm.elements.consent.checked = false;
-    draftSources = [...(record.settings?.sources || [])];
     promptForm.reset();
-    if (record.prompt) promptForm.elements.guidance.value = record.prompt.guidance;
+    if (record.prompt?.scope===REVIEW_GUIDANCE_SCOPE) promptForm.elements.guidance.value = record.prompt.guidance;
     current = record.run;
     const first=record.runs.find(item=>item.phase==='staged')||record.runs.find(item=>!reviewFinished(item));
     if(first)await inspectRun(first.id,first,active);
@@ -325,69 +332,48 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     else status('');
   }
 
-  async function chooseSources(active) {
-    await drive.authorize();
-    verifySession(active);
-    const files = await picker.choose({ limit: REVIEW_POOL_LIMIT });
-    verifySession(active);
-    if (!files.length) return;
-    const sources = await drive.review.authorizeSources(files.map(file => file.id), active.signal);
-    verifySession(active);
-    draftSources = sources;
-    settingsForm.elements.consent.checked = false;
-    status('');
-  }
-
   async function submit(active) {
     const configuration = record?.settings;
     const promptConfig = record?.prompt;
-    if (!configuration?.sources?.length || !promptConfig || !admissionOpen() || !readyModel(model()) || context().studioBusy) return;
+    if (configuration?.sourceScope!==REVIEW_SOURCE_SCOPE || promptConfig?.scope!==REVIEW_GUIDANCE_SCOPE || !admissionOpen() || !readyModel(model()) || context().studioBusy) return;
+    const count=startForm.elements.count.valueAsNumber;
+    const offset=record.current?.started||0;
+    const maximum=Math.min(REVIEW_BATCH_LIMIT,record.activation.maxRuns-offset);
+    if(!Number.isSafeInteger(count)||count<1||count>maximum)throw new Error(`Enter a whole batch size from 1 to ${maximum}.`);
     await drive.authorize();
     verifySession(active);
-    status('Selecting an eligible approved source…');
-    const {model: approvedModel, seed: intent, sources} = configuration;
+    status('Selecting eligible original files…');
+    const {model: approvedModel, seed: intent} = configuration;
     const signal = AbortSignal.any([active.signal, AbortSignal.timeout(150000)]);
+    const candidates=await drive.review.listOriginals({count,offset,signal});
+    if(candidates.length!==count)throw new Error(`Found ${candidates.length} eligible originals in the discovery window. Choose a smaller batch.`);
+    verifySession(active);
     const stageFolderId = await drive.review.stageFolder(signal);
-    const count=Math.min(Number(startForm.elements.count.value),REVIEW_BATCH_LIMIT,sources.length,
-      record.activation.maxRuns-(record.current?.started||0));
-    if(count<1)throw new Error('The approved run limit has been reached.');
-    const offset=(record.current?.started||0)%sources.length;
-    const remaining=[...sources.slice(offset),...sources.slice(0,offset)];
-    const prepared=[];
-    for(let index=0;index<count&&remaining.length;index++){
-      const actual=await selectReviewSource(remaining,0,(id,version)=>drive.review.loadSource(id,signal,version));
-      if(!actual)break;
-      const source=await prepareReference(actual.blob,actual.source);
-      URL.revokeObjectURL(source.url);
-      verifySession(active);
-      prepared.push({source,version:actual.version,id:`review-v2-${reviewId()}`});
-      remaining.splice(0,remaining.findIndex(entry=>entry.startsWith(actual.source.id+':'))+1);
-    }
-    if(!prepared.length)throw new Error('All approved sources changed or are unavailable. Approve a fresh source pool.');
+    const prepared=candidates.map(item=>({...item,id:`review-v3-${reviewId()}`}));
     if (!readyModel(approvedModel) || context().studioBusy) throw new Error('The PC is busy or its approved model is unavailable.');
     const batchId=reviewId(),ids=prepared.map(item=>item.id);
+    const originals=prepared.map(({reference,version})=>({id:reference.source.id,parentId:reference.source.parentId,version,sha256:reference.sha256}));
     let expiresAt;
-    try{expiresAt=await drive.review.authorizeBatch({id:batchId,ids,folder:stageFolderId},active.signal);}
+    try{expiresAt=await drive.review.authorizeBatch({id:batchId,ids,folder:stageFolderId,originals},active.signal);}
     catch(error){if(error.code==='drive/review-folder-grant')grantBatchFolder=stageFolderId;throw error;}
     grantBatchFolder='';
     newEdit = false;
     vision = null;
     record.batch={id:batchId,folder:stageFolderId,ids,state:'active',expiresAt};
     record.runs=[];
-    for(const {id,source,version} of prepared){
+    for(const {id,reference,version} of prepared){
       verifySession(active);
-      const request={...makeJob({model:approvedModel,prompt:intent,effectivePrompt:intent,consent:true,
-        seed:crypto.getRandomValues(new Uint32Array(1))[0]&0x7fffffff,references:[{...source.manifest,index:0}]}),batchId,batchExpiresAt:expiresAt,
+      const request={...makeJob({model:approvedModel,prompt:intent,effectivePrompt:intent,consent:true,driveOriginal:true,
+        seed:crypto.getRandomValues(new Uint32Array(1))[0]&0x7fffffff,references:[reference]}),batchId,batchExpiresAt:expiresAt,
         review:{configId:promptConfig.id,seedId:configuration.id,promptGuidance:promptConfig.guidance}};
       const agreement={createdAt:request.createdAt,phase:'pending',configId:configuration.id,sourceVersion:version,nonIntimate:true,stageFolderId,batchId};
       await store.start(id,request,agreement);
       current=run={...agreement,id};
       job={...request,id};
-      record.runs.push({...run,jobStatus:'uploading'});
+      record.runs.push({...run,jobStatus:'queued'});
       record.current={runId:id,batchId,started:(record.current?.started||0)+1};
       render();
-      status(`Transferring source ${record.runs.length} of ${prepared.length}…`);
-      await store.queue(id,request,source.chunks);
+      status(`Queued ${record.runs.length} of ${prepared.length} edits…`);
     }
     await reload(active);
     status(`${prepared.length} approved edits queued. The PC and Drive can finish them while Studio is closed.`);
@@ -420,7 +406,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     let blob;
     if (run.phase === 'pending') {
       if(run.batchId&&!reconnect)throw new Error('The PC has not confirmed private staging for this item.');
-      if(run.batchId)await drive.review.checkSource(job.references[0].source.id,run.sourceVersion,signal);
+      if(run.batchId)await drive.review.checkSource(job.references[0].source.id,run.sourceVersion,signal,job.references[0].source.parentId);
       status('Verifying the edit before private staging…');
       blob = await decodeResult(job.result, await store.chunks(run.id));
       verifySession(active);
@@ -435,7 +421,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     if (run.phase !== 'staged') return;
     const [stagedImage, source] = await Promise.all([
       blob || drive.review.readStaged(run, job, signal),
-      decodeReference(job.references[0], await store.chunks(run.id, true))
+      reviewOriginal(run,job,signal)
     ]);
     verifySession(active);
     compareSource = URL.createObjectURL(source);
@@ -443,6 +429,12 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     compare.dataset.compareOriginal = run.id;
     compare.querySelector('img').src = resultUrl;
     status('Staged privately in Drive. Hold the image to peek at the source, or tap to switch.');
+  }
+
+  async function reviewOriginal(item,request,signal) {
+    const reference=request.references[0];
+    return isOriginalReviewJob(item.id)?drive.review.readOriginal(reference,item.sourceVersion,signal):
+      decodeReference(reference,await store.chunks(item.id,true));
   }
 
   async function grantStage(active) {
@@ -479,25 +471,38 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
       run = { ...await store.transition(run.id, 'staged', { phase: 'accepting' }), id: run.id };
       if(run.id===record.current?.runId)current=run;
     }
-    if (run.phase === 'accepted') { clearComparison(); status('Accepted into Private. Sync the gallery to see it in Drift.'); return; }
+    const destination=isOriginalReviewJob(run.id)?'Auto Generated':'Private';
+    if (run.phase === 'accepted') { clearComparison(); status(`Accepted into ${destination}. Sync the gallery to see it in Drift and Browse.`); return; }
     render();
     status('Finishing the same Drive move…');
     await drive.review.accept(run, job, AbortSignal.any([active.signal, AbortSignal.timeout(120000)]));
     verifySession(active);
+    grantTarget='';
     run = { ...await store.transition(run.id, 'accepting', { phase: 'accepted', finishedAt: Date.now() }), id: run.id };
     if(run.id===record.current?.runId)current=run;
     record.runs=record.runs.map(item=>item.id===run.id?run:item);
     clearComparison();
     learningForm.elements.learning.value = run.draft || vision?.learning || '';
-    status('Drive verified the same PNG directly in Private. Sync the gallery to see it in Drift.');
+    status(`Drive verified the same PNG in ${destination}. Sync the gallery to see it in Drift and Browse.`);
+  }
+
+  async function grantAcceptance(active) {
+    await drive.authorize();
+    verifySession(active);
+    dialog.close();dialog.show();
+    try{await drive.review.grantGenerated(grantTarget,active.signal);}
+    finally{if(session===active&&dialog.open){dialog.close();dialog.showModal();}}
+    verifySession(active);
+    grantTarget='';
+    await accept(active);
   }
 
   async function reject(active) {
     const reason = rejectForm.elements.reason.value;
     const note = rejectForm.elements.note.value.trim();
-    if (!note) throw new Error('Describe what you observed before rejecting.');
+    if (!note&&!isOriginalReviewJob(run.id)) throw new Error('Describe what you observed before rejecting this earlier edit.');
     const analysis = vision?.observation || (isVisionReviewJob(run.id) ? 'Local comparison was unavailable.' : failure[reason][1]);
-    const draft = [note, vision?.learning || (!isVisionReviewJob(run.id) ? failure[reason][1] : '')].filter(Boolean).join('\n\n');
+    const draft = [note, vision?.learning || (!isVisionReviewJob(run.id) ? failure[reason][1] : '')].filter(Boolean).join('\n\n')||analysis;
     const update={phase:'rejected',finishedAt:Date.now(),reason,note,analysis,draft,learningId:''};
     run={...(run.batchId ? await store.rejectAndCompare(run,job,update) : await store.transition(run.id,'staged',update)),id:run.id};
     if(run.id===record.current?.runId)current=run;
@@ -506,7 +511,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     verifySession(active);
     clearComparison();
     learningForm.elements.learning.value = run.draft;
-    status(run.batchId?'Marked Not Okay. Vision Model 2 will use your feedback to draft a prompt improvement.':
+    status(run.batchId?'Marked Not Okay. Vision Model 2 will draft descriptive guidance for review.':
       'Rejected. The image stays in private staging.');
   }
 
@@ -570,8 +575,8 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
       return;
     }
     const handlers = {
-      sources: chooseSources, resume, accept, load: reload, result: active => showResult(active, true),
-      grant: grantStage,'grant-batch':grantBatch,
+      resume, accept, load: reload, result: active => showResult(active, true),
+      grant: grantStage,'grant-batch':grantBatch,'grant-target':grantAcceptance,
       pause: async()=>{await store.controlBatch(record.batch.id,'paused');await reload(session);},
       'resume-batch':async()=>{await store.controlBatch(record.batch.id,'active');await reload(session);},
       stop:async()=>{await store.controlBatch(record.batch.id,'stopped');await reload(session);},
@@ -625,9 +630,9 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     if (event.target === settingsForm) {
       const requested = settingsForm.elements.model.value;
       const seed = settingsForm.elements.seed.value;
-      if (!readyModel(requested) || !settingsForm.elements.consent.checked || !draftSources.length || !seed.trim()) return;
+      if (!readyModel(requested) || !settingsForm.elements.consent.checked || !seed.trim()) return;
       void withAction(async () => {
-        record.settings = await store.approveConfiguration({model: requested, seed, sources: [...draftSources]}, record.settings?.id || '');
+        record.settings = await store.approveConfiguration({model: requested, seed, sourceScope:REVIEW_SOURCE_SCOPE}, record.settings?.id || '');
         settingsForm.elements.consent.checked = false;
         $('.review-settings').open = false;
         status('Configuration approved for future runs.');
@@ -636,7 +641,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     if (event.target === promptForm) {
       const guidance = promptForm.elements.guidance.value;
       if (!record || !guidance.trim() || guidance.length > 400) return;
-      if (guidance === record.prompt?.guidance) { status('This prompt guidance is already approved.'); return; }
+      if (record.prompt?.scope===REVIEW_GUIDANCE_SCOPE&&guidance === record.prompt.guidance) { status('This descriptive guidance is already approved.'); return; }
       void withAction(async () => {
         record.prompt = await store.approvePrompt(guidance, record.prompt?.id || '');
         $('.review-prompt-settings').open = false;
@@ -696,7 +701,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     async loadOriginal() {
       const active = session;
       const id = run.id;
-      const blob = await decodeReference(job.references[0], await store.chunks(id, true));
+      const blob = await reviewOriginal(run,job,active.signal);
       verifySession(active);
       if (run.id !== id || !resultUrl || compareSource) return;
       compareSource = URL.createObjectURL(blob);

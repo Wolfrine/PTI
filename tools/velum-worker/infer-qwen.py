@@ -3,7 +3,7 @@
 No server, downloads, warm model, prompt enhancer or alternative-model fallback.
 Importing this file performs no filesystem mutation, model import or inference.
 """
-import gc, hashlib, json, os, sys, threading, time
+import gc, hashlib, json, os, re, sys, threading, time
 from pathlib import Path
 from qwen_paths import output_root
 from inference_contract import validate_request, QWEN_MODEL, QWEN_TURBO_MODEL
@@ -97,12 +97,12 @@ def offline_guard():
             raise PermissionError('output-path-denied')
     sys.addaudithook(audit)
 
-def guard():
+def guard(drive_original):
     global REASON
     import psutil, _thread
     while not STOP.wait(1):
         try:
-            if not observe_resources():
+            if not observe_resources(drive_original=drive_original):
                 continue
         except Exception as error:
             # Evidence persistence/collection failures remain fail-closed. The
@@ -116,13 +116,13 @@ def guard():
             os._exit(3)
         return
 
-def observe_resources(startup=False):
+def observe_resources(startup=False, *, drive_original=False):
     import psutil
     torch = sys.modules.get('torch')
     cuda = getattr(torch,'cuda',None)
     cuda = cuda if callable(getattr(cuda,'is_initialized',None)) and cuda.is_initialized() else None
     return DIAGNOSTICS.observe(collect(psutil,int(os.environ['VELUM_PARENT_PID']),
-        float(os.environ['VELUM_PARENT_CREATED']),START,cuda=cuda),startup=startup)
+        float(os.environ['VELUM_PARENT_CREATED']),START,cuda=cuda,drive_original=drive_original),startup=startup)
 
 def main():
     global START, MM, WORK, DIAGNOSTICS
@@ -131,6 +131,7 @@ def main():
     job, identifier = request['job'], request['id']
     if not isinstance(identifier,str) or not 1 <= len(identifier) <= 80 or not all(c.isascii() and (c.isalnum() or c in '_-') for c in identifier):
         raise ValueError('invalid-job')
+    drive_original = re.fullmatch(r'review-v3-[a-f0-9]{32}', identifier) is not None
     prompt = validate_request(job)
     if job['model'] not in DIFFUSION:
         raise ValueError('invalid-model')
@@ -152,24 +153,24 @@ def main():
     if any(file.name != 'inputs' for file in work.iterdir()):
         raise ValueError('existing-job-output')
     WORK = work
-    DIAGNOSTICS = Diagnostics(work, START, emit)
+    DIAGNOSTICS = Diagnostics(work, START, emit, drive_original=drive_original)
     DIAGNOSTICS.transition('preparing')
     from media import read_reference, read_qwen_output, thumbnail
     references = job['references']
     source_images = []
     for index, manifest in enumerate(references):
         extension = 'png' if manifest['mime'] == 'image/png' else 'jpg'
-        source_images.append(read_reference(work/'inputs'/f'{index}.{extension}',manifest,inference_pixels=None))
+        source_images.append(read_reference(work/'inputs'/f'{index}.{extension}',manifest,inference_pixels=None,drive_original=drive_original))
     with (work/'inference-started.json').open('x',encoding='utf-8') as marker:
         json.dump(dict(jobId=identifier,model=job['model'],prompt=job['prompt'],effectivePrompt=prompt,
                        pose=job.get('pose'),seed=job['seed'],references=references),marker,ensure_ascii=False)
     configure_environment()
     offline_guard()
     import psutil
-    if observe_resources(startup=True):
+    if observe_resources(startup=True, drive_original=drive_original):
         raise RuntimeError('resource-guard')
     psutil.Process().nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
-    threading.Thread(target=guard,daemon=True).start()
+    threading.Thread(target=guard,args=(drive_original,),daemon=True).start()
     sys.path.insert(0,str(RUNTIME))
     sys.argv = ['velum-qwen-offline','--base-directory',str(OUT/'comfy-data'),
         '--disable-all-custom-nodes','--disable-api-nodes','--lowvram','--disable-dynamic-vram',
@@ -198,7 +199,7 @@ def main():
                 raise InterruptedError(REASON)
             if DIAGNOSTICS.stage in ('loading-diffusion','sampling'):
                 if not sampling_progress.started and value > 0:
-                    if observe_resources():
+                    if observe_resources(drive_original=drive_original):
                         raise RuntimeError('resource-guard')
                 sampling_progress(value,total)
         comfy.utils.set_progress_bar_global_hook(progress)

@@ -1,5 +1,5 @@
 """One offline inference; disposable process, no ComfyUI listener or prompt rewriting."""
-import os, sys, json, time, gc, threading, subprocess, hashlib
+import os, sys, json, time, gc, threading, subprocess, hashlib, re
 from pathlib import Path
 sys.dont_write_bytecode = True
 DATA = Path(r'H:\AI-ImageGen\portrait-pilot')
@@ -15,14 +15,14 @@ WORK = None
 def emit(**value):
     print(json.dumps(value), flush=True)
 
-def guard():
+def guard(drive_original):
     global REASON
     import psutil, _thread
     while not STOP.wait(1):
         try:
             parent = psutil.Process(int(os.environ['VELUM_PARENT_PID']))
             bad = parent.create_time() != float(os.environ['VELUM_PARENT_CREATED'])
-            bad |= psutil.virtual_memory().available < 5*GIB or psutil.disk_usage('H:\\').free < 20*GIB
+            bad |= (not drive_original and psutil.virtual_memory().available < 5*GIB) or psutil.disk_usage('H:\\').free < 20*GIB
             bad |= time.monotonic()-START > 1800
             raw = subprocess.check_output(['nvidia-smi', '--query-gpu=memory.used,temperature.gpu', '--format=csv,noheader,nounits'],
                 creationflags=subprocess.CREATE_NO_WINDOW, text=True, timeout=5)
@@ -46,6 +46,7 @@ def main():
     job, jid = request['job'], request['id']
     if not 1 <= len(jid) <= 80 or not all(c.isascii() and (c.isalnum() or c in '_-') for c in jid):
         raise ValueError('invalid-job')
+    drive_original = re.fullmatch(r'review-v3-[a-f0-9]{32}', jid) is not None
     from inference_contract import validate_request, QWEN_MODELS
     effective_prompt = validate_request(job)
     references = job.get('references', [])
@@ -70,7 +71,7 @@ def main():
         if manifest.get('index') != index:
             raise ValueError('invalid-reference')
         extension = 'png' if manifest['mime'] == 'image/png' else 'jpg'
-        source_images.append(read_reference(work/'inputs'/f'{index}.{extension}', manifest))
+        source_images.append(read_reference(work/'inputs'/f'{index}.{extension}', manifest, drive_original=drive_original))
     with (work/'inference-started.json').open('x', encoding='utf-8') as marker:
         json.dump(dict(jobId=jid, prompt=job['prompt'], effectivePrompt=effective_prompt, pose=job.get('pose'), seed=job['seed'], references=references), marker, ensure_ascii=False)
     for key, relative in {'TEMP':'tmp', 'TMP':'tmp', 'TMPDIR':'tmp', 'HF_HOME':'cache/hf', 'TORCH_HOME':'cache/torch',
@@ -97,10 +98,10 @@ def main():
             raise PermissionError('output-path-denied')
     sys.addaudithook(audit)
     import psutil
-    if psutil.virtual_memory().available < 6*GIB:
+    if not drive_original and psutil.virtual_memory().available < 6*GIB:
         raise RuntimeError('resource-guard')
     psutil.Process().nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
-    threading.Thread(target=guard, daemon=True).start()
+    threading.Thread(target=guard, args=(drive_original,), daemon=True).start()
     sys.path.insert(0, str(RUNTIME))
     sys.argv = ['velum-offline', '--base-directory', str(DATA), '--disable-all-custom-nodes', '--disable-api-nodes',
         '--lowvram', '--reserve-vram', '2.5', '--disable-async-offload', '--disable-pinned-memory', '--cache-none',

@@ -1,24 +1,15 @@
 const FINISHED = new Set(['accepted', 'rejected', 'closed']);
 export const INITIAL_REVIEW_MODEL = 'qwen-image-2.1-turbo';
-export const isReviewFeedbackJob = id => /^feedback-review-v2-[a-f0-9]{32}$/.test(id || '');
-export const isReviewJob = id => /^review-(?:v[12]-)?[a-f0-9]{32}$/.test(id || '') || isReviewFeedbackJob(id);
-export const isVisionReviewJob = id => /^review-v[12]-[a-f0-9]{32}$/.test(id || '');
-export const isConfiguredVisionReviewJob = id => /^review-v2-[a-f0-9]{32}$/.test(id || '');
-export const REVIEW_POOL_LIMIT = 6;
+export const isReviewFeedbackJob = id => /^feedback-review-v[23]-[a-f0-9]{32}$/.test(id || '');
+export const isReviewJob = id => /^review-(?:v[123]-)?[a-f0-9]{32}$/.test(id || '') || isReviewFeedbackJob(id);
+export const isVisionReviewJob = id => /^review-v[123]-[a-f0-9]{32}$/.test(id || '');
+export const isConfiguredVisionReviewJob = id => /^review-v[23]-[a-f0-9]{32}$/.test(id || '');
+export const isOriginalReviewJob = id => /^review-v3-[a-f0-9]{32}$/.test(id || '');
+export const REVIEW_SOURCE_SCOPE = 'private-and-references';
+export const REVIEW_GUIDANCE_SCOPE = 'visible-description';
 export const REVIEW_BATCH_LIMIT = 3;
 export const reviewFinished = run => FINISHED.has(run?.phase);
 export const reviewId = () => crypto.randomUUID().replaceAll('-', '');
-
-export async function selectReviewSource(sources, started, readEligible) {
-  if (!Array.isArray(sources) || !sources.length || sources.length > REVIEW_POOL_LIMIT) return null;
-  const offset = started % sources.length;
-  for (const entry of [...sources.slice(offset), ...sources.slice(0, offset)]) {
-    const [id, version] = entry.split(':');
-    try { return await readEligible(id, version); }
-    catch (error) { if (error.code !== 'drive/review-source-ineligible' && error.status !== 404) throw error; }
-  }
-  return null;
-}
 
 export function createReviewStore({ sdk, db, workspace, check }) {
   const { collection, doc, getDocFromServer, getDocsFromServer, limit, orderBy, query,
@@ -56,7 +47,9 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     if (current && !run) throw new Error('The current review record is unavailable. Refresh before starting another run.');
     const runs = batch ? (await Promise.all(batch.ids.map(async id => {
       const item = await read(runRef(id));
-      return item && { ...item, id };
+      if(!item)return null;
+      const queued=await read(jobRef(id));
+      return { ...item, id, jobStatus:queued?.status };
     }))).filter(Boolean) : [];
     return { activation, settings, prompt, current, run, batch, runs };
   }
@@ -75,9 +68,8 @@ export function createReviewStore({ sdk, db, workspace, check }) {
       if (pointer && pointer.batchId !== run.batchId && !reviewFinished(active)) {
         throw new Error('Finish the current review before starting another batch.');
       }
-      const selection = job.references[0].source.id + ':' + run.sourceVersion;
       if (settings?.id !== run.configId || settings.model !== job.model || settings.seed !== job.prompt ||
-          !settings.sources.includes(selection) || prompt?.id !== job.review.configId ||
+          settings.sourceScope !== REVIEW_SOURCE_SCOPE || prompt?.scope !== REVIEW_GUIDANCE_SCOPE || prompt.id !== job.review.configId ||
           prompt.guidance !== job.review.promptGuidance || settings.id !== job.review.seedId) {
         throw new Error('The approved seed or prompt configuration changed. Refresh Auto Review.');
       }
@@ -176,15 +168,15 @@ export function createReviewStore({ sdk, db, workspace, check }) {
   }
 
   async function approvePrompt(guidance, baseId) {
-    const value = revision(reviewId(), 'prompt', { guidance, previous: baseId });
+    const value = revision(reviewId(), 'prompt', { guidance, scope:REVIEW_GUIDANCE_SCOPE, previous: baseId });
     await transact(async tx => {
       const pointer = await txRead(tx, control('prompt'));
       if ((pointer?.id || '') !== baseId) throw new Error('A newer prompt configuration was approved. Refresh Auto Review.');
       tx.set(ref('autoReviewRevisions', value.id), value);
-      tx.set(control('prompt'), { id: value.id, guidance });
+      tx.set(control('prompt'), { id: value.id, guidance, scope:REVIEW_GUIDANCE_SCOPE });
     });
     check();
-    return { id: value.id, guidance };
+    return { id: value.id, guidance, scope:REVIEW_GUIDANCE_SCOPE };
   }
 
   async function saveLearning(id, draft, base, approve) {

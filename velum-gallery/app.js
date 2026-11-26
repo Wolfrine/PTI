@@ -996,18 +996,9 @@ const gestures = createDriftGestures({
   },
   onHoldCancel: cancelHeart,
   onTap: () => {
-    const video = displayedVideo();
-    if (video) {
-      // Native transport/sound controls remain accessible without a Focus screen.
-      video.controls = true;
-      if (video.paused) video.play().catch(() => {});
-      else video.pause();
-      clearTimeout(video._velumHideControls);
-      video._velumHideControls = setTimeout(() => {
-        if (!video.paused && video.isConnected) video.controls = false;
-      }, 6000);
-    }
-    window.__velumInteraction?.showControls?.();
+    // Tap toggles only viewer chrome. Native video controls reappear when the
+    // viewer controls are restored; playback itself is not changed by the tap.
+    window.__velumInteraction?.toggleImmersion?.();
   },
   onState: state => window.__velumInteraction?.gestureState?.(state)
 });

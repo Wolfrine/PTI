@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {velumOnly} from './velum-rules-scope.mjs';
 
 const reviewed=process.env.REVIEWED_LIVE_RULESET;
+const reviewedUpdateTime=process.env.REVIEWED_LIVE_RULESET_UPDATE_TIME;
 if(!reviewed||!/^projects\/pti-app-2ab59\/rulesets\/[A-Za-z0-9_-]+$/.test(reviewed))throw new Error('Supply the exact live ruleset name reviewed before this release.');
 const scope=process.env.PTI_RULES_RELEASE_SCOPE || 'shared';
 if(!['shared','finance','velum'].includes(scope))throw new Error('Unknown shared rules release scope.');
@@ -21,7 +22,7 @@ async function request(url,method='GET',data){
 const source=await readFile('personal-harness/firestore.rules','utf8');
 const releaseUrl=`${api}/projects/${project}/releases/cloud.firestore`;
 const release=await request(releaseUrl);
-if(release.rulesetName!==reviewed)throw new Error('Production policy changed after review; no update made.');
+if(release.rulesetName!==reviewed||(reviewedUpdateTime&&release.updateTime!==reviewedUpdateTime))throw new Error('Production policy changed after review; no update made.');
 const live=await request(`${api}/${release.rulesetName}`);
 if(live.source?.files?.length!==1)throw new Error('Unexpected multi-file production rules; review this rules release.');
 const current=live.source.files[0].content;
@@ -30,9 +31,12 @@ if(current===target){
  console.log('Shared Firestore policy is already live.');
 }else{
  const next=await request(`${api}/projects/${project}/rulesets`,'POST',{source:{files:[{name:'firestore.rules',content:target}]}});
- if((await request(releaseUrl)).rulesetName!==release.rulesetName)throw new Error('Rules changed while preparing this release; no update made.');
+ const before=await request(releaseUrl);
+ if(before.rulesetName!==release.rulesetName||before.updateTime!==release.updateTime)throw new Error('Rules changed while preparing this release; no update made.');
  await request(releaseUrl,'PATCH',{release:{name:release.name,rulesetName:next.name},updateMask:'rulesetName'});
  if((await request(releaseUrl)).rulesetName!==next.name)throw new Error('Shared rules release readback did not match the published ruleset.');
+ const active=await request(`${api}/${next.name}`);
+ if(active.source?.files?.length!==1||active.source.files[0].content!==target)throw new Error('Active rules content did not match the reviewed release.');
  console.log(`Published Firestore policy (${scope}) ${next.name}.`);
 }
 

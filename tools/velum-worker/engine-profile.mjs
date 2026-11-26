@@ -1,6 +1,7 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {stat,readFile} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
 import {QWEN_MODEL,MODEL_REFERENCE_LIMITS} from '../../velum-gallery/studio-contract.mjs';
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 export const QWEN_ENGINE='H:\\AI-ImageGen\\velum-qwen21-research-20261103';
@@ -11,13 +12,25 @@ export const QWEN_WEIGHTS=Object.freeze({
  'text_encoders/qwen3vl_8b_w4a8.safetensors':6312105364,
  'vae/qwen_image_2.1_vae_bf16.safetensors':675509688,
 });
+// The worker, Python adapter and thumbnail CLI share this tracked path contract.
+export const QWEN_OUTPUT_ROOT=(()=>{
+ try{
+  const {outputRoot}=JSON.parse(readFileSync(new URL('./qwen-paths.json',import.meta.url),'utf8'));
+  if(typeof outputRoot!=='string'||!path.win32.isAbsolute(outputRoot)||path.win32.parse(outputRoot).root.toLowerCase()!=='h:\\'||path.win32.normalize(outputRoot)!==outputRoot)return null;
+  return outputRoot;
+ }catch{return null;}
+})();
 export function engineProfile(model){
- if(model===QWEN_MODEL)return {python:path.join(QWEN_ENGINE,'venv','Scripts','python.exe'),script:path.join(HERE,'infer-qwen.py'),outputRoot:'H:\\Workspace\\Generated\\Velum\\qwen21',timeoutMs:7200000,parentTimeoutMs:7230000};
+ if(model===QWEN_MODEL){
+  if(!QWEN_OUTPUT_ROOT)throw new Error('model-unavailable');
+  return {python:path.join(QWEN_ENGINE,'venv','Scripts','python.exe'),script:path.join(HERE,'infer-qwen.py'),outputRoot:QWEN_OUTPUT_ROOT,timeoutMs:7200000,parentTimeoutMs:7230000};
+ }
  return {python:'F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe',script:path.join(HERE,'infer.py'),outputRoot:'H:\\AI-ImageGen\\portrait-pilot\\velum-studio',timeoutMs:1800000,parentTimeoutMs:1830000};
 }
 // Presence/size/runtime-source checks only. No imports, downloads or GPU loads.
 export async function qwenInstalled({statFile=stat,read=readFile}={}){
  try{
+  if(!QWEN_OUTPUT_ROOT||!(await statFile(path.win32.parse(QWEN_OUTPUT_ROOT).root)).isDirectory())return false;
   for(const [relative,bytes] of Object.entries(QWEN_WEIGHTS)){
    const file=await statFile(path.join(QWEN_ENGINE,'models',relative));if(!file.isFile()||file.size!==bytes)return false;
   }

@@ -1,10 +1,22 @@
 const FINISHED = new Set(['accepted', 'rejected', 'closed']);
 export const INITIAL_REVIEW_MODEL = 'qwen-image-2.1-turbo';
-export const isReviewJob = id => /^review-(?:v1-)?[a-f0-9]{32}$/.test(id || '');
-export const isVisionReviewJob = id => /^review-v1-[a-f0-9]{32}$/.test(id || '');
+export const isReviewJob = id => /^review-(?:v[12]-)?[a-f0-9]{32}$/.test(id || '');
+export const isVisionReviewJob = id => /^review-v[12]-[a-f0-9]{32}$/.test(id || '');
+export const isConfiguredVisionReviewJob = id => /^review-v2-[a-f0-9]{32}$/.test(id || '');
 export const REVIEW_POOL_LIMIT = 6;
 export const reviewFinished = run => FINISHED.has(run?.phase);
 export const reviewId = () => crypto.randomUUID().replaceAll('-', '');
+
+export async function selectReviewSource(sources, started, readEligible) {
+  if (!Array.isArray(sources) || !sources.length || sources.length > REVIEW_POOL_LIMIT) return null;
+  const offset = started % sources.length;
+  for (const entry of [...sources.slice(offset), ...sources.slice(0, offset)]) {
+    const [id, version] = entry.split(':');
+    try { return await readEligible(id, version); }
+    catch (error) { if (error.code !== 'drive/review-source-ineligible' && error.status !== 404) throw error; }
+  }
+  return null;
+}
 
 export function createReviewStore({ sdk, db, workspace, check }) {
   const { collection, doc, getDocFromServer, getDocsFromServer, limit, orderBy, query,
@@ -36,10 +48,10 @@ export function createReviewStore({ sdk, db, workspace, check }) {
   async function load() {
     const activation = await read(control('activation'));
     if (!Number.isInteger(activation?.maxRuns)) return null;
-    const [current, settings] = await Promise.all([read(control('current')), read(control('settings'))]);
+    const [current, settings, prompt] = await Promise.all([read(control('current')), read(control('settings')), read(control('prompt'))]);
     const run = current ? await read(runRef(current.runId)) : null;
     if (current && !run) throw new Error('The current review record is unavailable. Refresh before starting another run.');
-    return { activation, settings, current, run };
+    return { activation, settings, prompt, current, run };
   }
 
   async function start(id, job, run) {
@@ -47,12 +59,14 @@ export function createReviewStore({ sdk, db, workspace, check }) {
       const pointer = await txRead(tx, control('current'));
       const active = pointer ? await txRead(tx, runRef(pointer.runId)) : null;
       const settings = await txRead(tx, control('settings'));
+      const prompt = await txRead(tx, control('prompt'));
       if (active && pointer.runId === id) return;
       if (pointer && !reviewFinished(active)) throw new Error('Finish the current review before starting another edit.');
       const selection = job.references[0].source.id + ':' + run.sourceVersion;
       if (settings?.id !== run.configId || settings.model !== job.model || settings.seed !== job.prompt ||
-          !settings.sources.includes(selection)) {
-        throw new Error('The approved configuration changed. Refresh Auto Review.');
+          !settings.sources.includes(selection) || prompt?.id !== job.review.configId ||
+          prompt.guidance !== job.review.promptGuidance || settings.id !== job.review.seedId) {
+        throw new Error('The approved seed or prompt configuration changed. Refresh Auto Review.');
       }
       tx.set(jobRef(id), job);
       tx.set(runRef(id), run);
@@ -126,6 +140,18 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     return { id: value.id, ...configuration };
   }
 
+  async function approvePrompt(guidance, baseId) {
+    const value = revision(reviewId(), 'prompt', { guidance, previous: baseId });
+    await transact(async tx => {
+      const pointer = await txRead(tx, control('prompt'));
+      if ((pointer?.id || '') !== baseId) throw new Error('A newer prompt configuration was approved. Refresh Auto Review.');
+      tx.set(ref('autoReviewRevisions', value.id), value);
+      tx.set(control('prompt'), { id: value.id, guidance });
+    });
+    check();
+    return { id: value.id, guidance };
+  }
+
   async function saveLearning(id, draft, base, approve) {
     const value = approve ? revision(reviewId(), 'learning', { runId: id, text: draft, previous: base.learningId || '' }) : null;
     await transact(async tx => {
@@ -147,7 +173,7 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     return { records: page.docs.map(item => ({ ...item.data(), id: item.id })), cursor: page.size === 12 ? page.docs.at(-1) : null };
   }
 
-  return { load, start, queue, transition, closeFailed, approveConfiguration, saveLearning, listRuns,
+  return { load, start, queue, transition, closeFailed, approveConfiguration, approvePrompt, saveLearning, listRuns,
     job: async id => ({ ...await read(jobRef(id)), id }), run: id => read(runRef(id)),
     vision: id => isVisionReviewJob(id) ? read(ref('autoReviewVision', id)) : Promise.resolve(null),
     readRevision: id => id ? read(ref('autoReviewRevisions', id)) : Promise.resolve(null),

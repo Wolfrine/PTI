@@ -135,7 +135,8 @@ def invoke(options):
         raise RuntimeError("vision-model-unavailable")
     parent_pid = options.get("parentPid")
     parent_created = psutil.Process(parent_pid).create_time() if parent_pid else None
-    if parent_pid and parent_pid != os.getppid():
+    # On Windows the venv redirector is between Node and the interpreter.
+    if parent_pid and not any(parent.pid == parent_pid for parent in psutil.Process().parents()):
         raise RuntimeError("vision-parent-exited")
     state = ROOT / "work"
     state.mkdir(exist_ok=True)

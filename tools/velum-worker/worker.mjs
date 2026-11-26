@@ -112,7 +112,7 @@ export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={})
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
  validateJob(job);
  const profile=engineProfile(job.model);
- const logs=isVisionReviewJob(id)?path.join(profile.outputRoot,id,'logs'):path.join(profile.outputRoot,'logs');
+ const logs=isVisionReviewJob(id)?path.join(profile.outputRoot,id,'inputs','review','logs'):path.join(profile.outputRoot,'logs');
  await mkdir(logs,{recursive:true});
  const parentCreated=execFileSync(profile.python,['-B','-c',`import psutil; print(psutil.Process(${process.pid}).create_time())`],{windowsHide:true,encoding:'utf8',timeout:15000}).trim();
  return new Promise((resolve,reject)=>{
@@ -157,7 +157,7 @@ async function main(){
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
  const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,autoReviewVision:visionInstalled,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:{...workerCapabilities(installed,recoveryInstalled),...(visionInstalled?{autoReviewVision:1}:{})}});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:{...workerCapabilities(installed,recoveryInstalled),...(visionInstalled?{autoReviewVision:2}:{})}});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{
@@ -232,9 +232,21 @@ async function main(){
    await queue.write(`jobs/${item.id}`,{progress:value},{updateTime:current.value.updateTime});
   }});
   try{
-   const vision=reviewVision(item,controller.signal);
-   await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload:(item,output)=>upload(item,output,vision),fail,approved,
-   claimed:async()=>{const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});if(response.status===404)return false;return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid);},
+   const claim=async()=>{
+    const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});
+    if(response.status===404)return null;
+    return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid)?response.value:null;
+   };
+   const reviewFailure=async(item,error)=>{
+    await progress.stop();
+    const current=await claim();
+    if(current)await queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()},{updateTime:current.updateTime});
+   };
+   let vision;
+   try{vision=reviewVision(item,controller.signal);}
+   catch(error){if(error.message!=='invalid-reference')throw error;await reviewFailure(item,error.message);return;}
+   await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload:(item,output)=>upload(item,output,vision),
+   fail:vision?reviewFailure:fail,approved,claimed:async()=>Boolean(await claim()),
    canResumeInference:async()=>{
     if(!installed.includes(item.job.model)||!item.job.references?.length)return false;
     try{await stat(path.join(engineProfile(item.job.model).outputRoot,item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
@@ -253,7 +265,7 @@ async function main(){
    }});},infer:async()=>{
    void progress.stage(vision?'encoding-prompt':'loading-model');
    const execution=vision?await vision.executionJob(true):item.job;
-   if(vision){controller.signal.throwIfAborted();await approved();}
+   if(vision){controller.signal.throwIfAborted();await approved();if(!await claim())return;}
    await infer(item.id,execution,value=>progress.counter(value),{signal:controller.signal,onEvent:event=>{
     if(event.event==='stage')void progress.stage(event.stage);
    }});

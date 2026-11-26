@@ -34,11 +34,13 @@ export function driveResponseError(response,action){
 }
 async function json(response,message){if(!response.ok)throw driveResponseError(response,message);return response.json();}
 export function createDriveLibrary({readRequest,writeRequest,moveRequest,moveStatusRequest,grantFile,grantFolder,getOperationGuard=()=>()=>{}}){
- async function listReferences({folder='all',search='',cursor='',signal}={}){
-  const params=new URLSearchParams({q:libraryQuery({folder,search}),fields:'nextPageToken,files(id,name,mimeType,parents,thumbnailLink,size,modifiedTime)',pageSize:'60',orderBy:'modifiedTime desc'});
+ async function listReferences({folder='all',search='',cursor='',signal,privateOnly=false}={}){
+  const privacyFields=privateOnly?',ownedByMe,shared,trashed':'';
+  const params=new URLSearchParams({q:libraryQuery({folder,search}),fields:`nextPageToken,files(id,name,mimeType,parents,thumbnailLink,size,modifiedTime${privacyFields})`,pageSize:'60',orderBy:'modifiedTime desc'});
   if(cursor)params.set('pageToken',cursor);
   const data=await json(await readRequest(`${API}/files?${params}`,{signal}),'Could not load references');
-  return {files:(data.files||[]).map(libraryFile),cursor:data.nextPageToken||''};
+  const files=(data.files||[]).filter(file=>!privateOnly||(file.ownedByMe===true&&file.shared===false&&file.trashed===false&&file.parents?.length===1&&file.parents[0]===REFERENCES_FOLDER_ID));
+  return {files:files.map(libraryFile),cursor:data.nextPageToken||''};
  }
  async function metadata(file,signal){return json(await readRequest(`${API}/files/${id(file.id||file)}?fields=id,name,mimeType,parents,trashed,ownedByMe,thumbnailLink,size,capabilities(canMoveItemWithinDrive,canTrash,canUntrash)`,{signal}),'Could not verify image');}
  function verifyImage(actual,file,{allowTrashed=false}={}){

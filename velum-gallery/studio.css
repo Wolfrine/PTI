@@ -226,3 +226,71 @@
 .studio-stage-durations strong{font-weight:400;color:#e2c0d2;font-variant-numeric:tabular-nums}
 .studio-stage-empty{font-size:10px;line-height:1.6;color:#b48ba1;margin:0 0 13px}
 @media(max-width:719px){#studioView .studio-live-progress{padding:16px 16px 0;margin-bottom:14px;width:100%}.studio-progress-head h2{font-size:23px}.studio-progress-status,.studio-progress-details summary{font-size:12px}.studio-progress-resources dd{font-size:13px}.studio-progress-freshness,.studio-resource-heading,.studio-progress-resources dt{font-size:11px}}
+
+.studio-auto-review {
+  width: min(960px, calc(100% - 24px));
+  max-height: calc(100dvh - 28px);
+  padding: 0 20px 18px;
+  overflow: auto;
+  scroll-padding-top: 78px;
+}
+.studio-auto-review .review-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  background: #1a1118;
+  border-bottom: 1px solid #49303e;
+  padding: 10px 0;
+}
+.studio-auto-review h2 { margin: 4px 0; }
+.studio-auto-review h3 { font: 400 22px/1.2 Georgia, serif; margin: 0; }
+.studio-auto-review :is(.review-start, .review-run, form) { display: grid; gap: 12px; min-width: 0; }
+.studio-auto-review :is(label, summary) { line-height: 1.5; font-size: 14px; }
+.studio-auto-review label:not(.review-confirm) { display: grid; gap: 6px; }
+.studio-auto-review :is(textarea, select) { width: 100%; min-width: 0; font-size: 16px; }
+.studio-auto-review textarea { resize: vertical; }
+.studio-auto-review .review-confirm { display: flex; align-items: flex-start; gap: 10px; }
+.studio-auto-review .review-confirm input { flex: none; width: 20px; height: 20px; accent-color: #d5b1c9; }
+.studio-auto-review .review-workspace { display: grid; gap: 20px; }
+.studio-auto-review .review-controls { align-self: start; min-width: 0; }
+.studio-auto-review .review-status { color: #dbbfd0; line-height: 1.5; margin: 12px 0 16px; }
+.studio-auto-review .review-status:empty { margin: 12px 0 0; }
+.studio-auto-review .review-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.studio-auto-review .review-content button:not(.studio-image-compare) {
+  width: fit-content; max-width: 100%; min-height: 44px; padding: 8px 14px;
+  border: 1px solid #735267; border-radius: 7px; color: #eedde8;
+}
+.studio-auto-review .review-actions button { min-height: 44px; }
+.studio-auto-review .review-content button.review-primary { background: #e4c0d6; border-color: #e4c0d6; color: #20101a; }
+.studio-auto-review button:disabled { opacity: .55; }
+.studio-auto-review .review-canvas { min-width: 0; background: #100b0e; border-radius: 12px; overflow: hidden; }
+.studio-auto-review .studio-image-compare { display: block; width: 100%; touch-action: pan-y; }
+.studio-auto-review .studio-compare-frame { position: relative; display: block; width: 100%; }
+.studio-auto-review :is(.review-source, .studio-compare-frame > img) {
+  display: block; width: 100%; height: min(50dvh, 500px); object-fit: contain;
+  user-select: none; -webkit-touch-callout: none;
+}
+.studio-auto-review .studio-compare-frame .studio-compare-source { position: absolute; inset: 0; background: #100b0e; }
+.studio-auto-review .studio-compare-cue { display: block; padding: 9px 12px; font-size: 13px; color: #e4c8d9; }
+.studio-auto-review :is(.review-intent, .review-analysis, .review-approved, .review-filename) {
+  white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; margin: 0;
+}
+.studio-auto-review .review-intent { max-height: 14rem; overflow-y: auto; }
+.studio-auto-review .review-secondary { margin-top: 20px; }
+.studio-auto-review details { border-top: 1px solid #49303e; }
+.studio-auto-review summary { cursor: pointer; min-height: 44px; padding: 11px 0; }
+.studio-auto-review details[open] { padding-bottom: 12px; }
+.studio-auto-review .review-history ol { display: grid; gap: 6px; list-style: none; padding: 0; }
+@media (min-width: 720px) {
+  .studio-auto-review .review-workspace:has(.review-canvas:not([hidden])) { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+}
+@media (max-width: 719px) {
+  .studio-auto-review { padding-inline: 12px; max-height: calc(100dvh - 22px); }
+  .studio-auto-review h2 { font-size: 24px; }
+  .studio-auto-review :is(.review-source, .studio-compare-frame > img) { height: min(42dvh, 400px); }
+}

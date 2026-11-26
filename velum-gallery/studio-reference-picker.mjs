@@ -4,7 +4,7 @@ const imageURL = value => /^(https?:|blob:|data:image\/)/i.test(String(value || 
 const metadata = file => ({id:String(file.id),name:String(file.name || 'Untitled image'),thumbnailLink:imageURL(file.thumbnailLink),folderId:String(file.folderId || ''),folderLabel:String(file.folderLabel || 'Drive'),mimeType:String(file.mimeType || '')});
 let nextPicker = 0;
 
-export function createReferencePicker({drive}) {
+export function createReferencePicker({drive,fixedFolder=''}) {
   if (typeof drive?.listReferences !== 'function') throw new Error('Reference browsing is unavailable.');
   let dialog, resolveChoice, request, epoch=0, searchTimer, recents=[], state;
 
@@ -75,10 +75,11 @@ export function createReferencePicker({drive}) {
   async function choose({limit,selectedIds=[]}={}) {
     close();
     if(!Number.isSafeInteger(limit)||limit<1)return [];
-    state={limit,excluded:new Set(selectedIds),selected:[],files:[],cursor:'',folder:'all',search:'',loading:false,error:'',preview:null};
+    state={limit,excluded:new Set(selectedIds),selected:[],files:[],cursor:'',folder:fixedFolder||'all',search:'',loading:false,error:'',preview:null};
     const id=`studioReferencePicker${++nextPicker}`;
     dialog=document.createElement('dialog');dialog.className='studio-dialog studio-reference-picker';dialog.setAttribute('aria-labelledby',id+'Heading');
     dialog.innerHTML=`<header class="studio-picker-header"><div><span class="studio-eyebrow">Private references</span><h2 id="${id}Heading">Choose references</h2></div><div class="studio-picker-privacy"><button type="button" class="studio-dialog-exit" data-picker-quick-exit>Quick exit</button><button type="button" class="studio-picker-close" data-picker-close aria-label="Close reference picker">Close <span aria-hidden="true">×</span></button></div></header><section class="studio-picker-browser"><nav class="studio-picker-breadcrumb" data-picker-breadcrumb aria-label="Current folder">Drive / All images</nav><div class="studio-picker-filters" role="group" aria-label="Reference folders">${[['all','All'],['private','Private'],['references','References'],['recent','Recent']].map(([value,label])=>`<button type="button" data-picker-folder="${value}" aria-pressed="${value==='all'}">${label}</button>`).join('')}</div><label class="studio-picker-search"><span class="sr-only">Search reference names</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" data-picker-search placeholder="Search image names" autocomplete="off"/></label><div class="studio-picker-content"><section class="studio-picker-results" aria-label="Available reference images"><p class="studio-picker-loading" data-picker-loading role="status">Opening your references…</p><div class="studio-picker-error" data-picker-error hidden><h3>References couldn’t load.</h3><p data-picker-error-text></p><button type="button" data-picker-retry>Try again</button></div><div class="studio-picker-empty" data-picker-empty hidden></div><div class="studio-picker-grid" data-picker-grid></div><button type="button" class="studio-picker-more" data-picker-more hidden>Load more images</button></section><aside class="studio-picker-preview" data-picker-preview-panel aria-label="Reference preview" aria-live="polite"></aside></div><section class="studio-picker-selection"><h3 data-picker-selected-heading hidden>Selected · model order</h3><ol data-picker-selected></ol></section></section><footer class="studio-picker-footer"><div><span class="studio-picker-count-row"><strong data-picker-count>0 / ${limit} selected</strong><button type="button" data-picker-review hidden>Review order</button></span><span data-picker-status role="status">Select images in model order.</span></div><button type="button" class="studio-picker-confirm" data-picker-confirm disabled>Add references</button></footer>`;
+    if(fixedFolder)dialog.querySelector('.studio-picker-filters').remove();
     document.body.append(dialog);renderPreview(null);renderSelection();
     const choice=new Promise(resolve=>{resolveChoice=resolve;});
     dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
@@ -88,7 +89,7 @@ export function createReferencePicker({drive}) {
       const selectionHadFocus=Boolean(button.closest('[data-picker-selection]'));
       if(button.hasAttribute('data-picker-close'))return close();
       if(button.hasAttribute('data-picker-quick-exit')){clear();window.dispatchEvent(new CustomEvent('velum:quick-exit'));return;}
-      if(button.hasAttribute('data-picker-folder')){state.folder=button.dataset.pickerFolder;return void load();}
+      if(!fixedFolder&&button.hasAttribute('data-picker-folder')){state.folder=button.dataset.pickerFolder;return void load();}
       if(button.hasAttribute('data-picker-retry'))return void load();
       if(button.hasAttribute('data-picker-more'))return void load(true);
       if(button.hasAttribute('data-picker-review')){dialog.querySelector('[data-picker-selected-heading]').scrollIntoView({block:'start',behavior:'instant'});dialog.querySelector('[data-picker-selected] button:not(:disabled)')?.focus({preventScroll:true});return;}

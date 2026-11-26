@@ -290,6 +290,114 @@ service cloud.firestore {
        && instant(request.resource.data.attemptedAt)
        && request.resource.data.attemptedAt >= request.time.toMillis() - 300000);
     }
+   // Auto Review runs only within an explicit owner-administered usage window.
+   function reviewPath(collection, id) {
+    return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/$(collection)/$(id);
+   }
+   function reviewJob(id) { return id.matches('review-[a-f0-9]{32}'); }
+   function reviewRevisionId(id) { return id is string && id.matches('[a-f0-9]{32}'); }
+   function reviewDriveId(id) { return id is string && id.matches('[A-Za-z0-9_-]{8,160}'); }
+   function reviewActivation() { return get(reviewPath('autoReviewControl','activation')).data; }
+   function reviewEnabled() {
+    let a = reviewActivation();
+    return a != null && a.until is int && a.until > request.time.toMillis() && a.maxRuns is int && a.maxRuns > 0;
+   }
+   function reviewTerminal(d) { return d.phase in ['accepted','rejected','closed']; }
+   function reviewLinked(id) {
+    return getAfter(reviewPath('autoReviewControl','current')).data.runId == id;
+   }
+   function reviewSettings(modelId, id) {
+    let path = reviewPath('autoReviewControl','settings');
+    return exists(path) ? get(path).data.id == id && get(path).data.model == modelId : id == '' && modelId == turboModel();
+   }
+   function reviewWorker(d) {
+    let status = get(reviewPath('status','pc')).data;
+    let device = get(reviewPath('devices',d.deviceUid)).data;
+    return status != null && device != null && device.deviceUid == d.deviceUid && device.status == 'approved'
+     && status.deviceUid == d.deviceUid && status.version in ['2.3.0','2.3.1','2.3.2']
+     && status.state in ['idle','running'] && status.updatedAt >= request.time.toMillis() - 90000
+     && status.updatedAt <= request.time.toMillis() + 30000 && d.model in status.installed
+     && status.capabilities.promptSchema == 4 && d.model in status.capabilities.referenceModels;
+   }
+   function reviewJobAdmission(id, d) {
+    let run = getAfter(reviewPath('autoReviewRuns',id)).data;
+    return reviewEnabled() && reviewLinked(id) && run.nonIntimate == true && run.createdAt == d.createdAt
+     && run.phase == 'pending' && d.schemaVersion == 4 && d.status == 'uploading' && d.references.size() == 1
+     && d.references[0].source.kind == 'drive' && d.effectivePrompt == d.prompt && !('pose' in d)
+     && d.parentJobId == '' && reviewSettings(d.model,run.configId) && reviewWorker(d);
+   }
+   match /autoReviewControl/{key} {
+    function nextRun(d, count) {
+     return d.keys().hasOnly(['runId','started']) && d.runId is string && reviewJob(d.runId)
+      && d.started == count && d.started <= reviewActivation().maxRuns
+      && !exists(reviewPath('autoReviewRuns',d.runId)) && existsAfter(reviewPath('autoReviewRuns',d.runId));
+    }
+    function nextSettings(d, previous) {
+     let approved = getAfter(reviewPath('autoReviewRevisions',d.id)).data;
+     return d.keys().hasOnly(['id','model']) && reviewRevisionId(d.id) && model(d.model)
+      && !exists(reviewPath('autoReviewRevisions',d.id)) && approved.kind == 'configuration'
+      && approved.model == d.model && approved.previous == previous;
+    }
+    allow get: if studioOwner() && key in ['activation','current','settings'];
+    allow create: if studioOwner() && reviewEnabled() &&
+     ((key == 'current' && nextRun(request.resource.data,1)) || (key == 'settings' && nextSettings(request.resource.data,'')));
+    allow update: if studioOwner() && reviewEnabled() &&
+     ((key == 'current' && reviewTerminal(get(reviewPath('autoReviewRuns',resource.data.runId)).data)
+       && nextRun(request.resource.data,resource.data.started + 1)) ||
+      (key == 'settings' && nextSettings(request.resource.data,resource.data.id)));
+   }
+   match /autoReviewRuns/{id} {
+    function reviewRun(d) {
+     let requestJob = getAfter(reviewPath('jobs',id)).data;
+     return d.keys().hasOnly(['phase','createdAt','configId','sourceVersion','nonIntimate','stageFolderId'])
+      && d.phase == 'pending' && d.nonIntimate == true && d.createdAt == requestJob.createdAt
+      && requestJob.status == 'uploading' && !exists(reviewPath('jobs',id))
+      && (d.configId == '' || reviewRevisionId(d.configId))
+      && d.sourceVersion is string && d.sourceVersion.matches('[0-9]{1,24}') && reviewDriveId(d.stageFolderId);
+    }
+    function textLength(t, size) { return t is string && t.size() > 0 && t.size() <= size; }
+    function changed(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function closeRun(d) {
+     let p = getAfter(reviewPath('jobs',id)).data;
+     return d.phase == 'closed' && changed(['phase','finishedAt']) && instant(d.finishedAt)
+      && (p.status in ['failed','cancelled','expired','completed'] || (p.status == 'queued' && p.expiresAt <= request.time.toMillis()));
+    }
+    function rejectRun(d) {
+     return d.phase == 'rejected' && changed(['phase','finishedAt','reason','note','analysis','draft','learningId'])
+      && instant(d.finishedAt) && d.reason in ['intent','preservation','artifact','scope','other']
+      && textLength(d.note,2000) && textLength(d.analysis,800) && textLength(d.draft,3000) && d.learningId == '';
+    }
+    function approveLearning(d) {
+     let revision = getAfter(reviewPath('autoReviewRevisions',d.learningId)).data;
+     return reviewRevisionId(d.learningId) && !exists(reviewPath('autoReviewRevisions',d.learningId))
+      && revision.kind == 'learning' && revision.runId == id && revision.text == d.draft && revision.previous == resource.data.learningId;
+    }
+    function reviewChange(d) {
+     return (resource.data.phase == 'pending' && reviewLinked(id) && (closeRun(d) ||
+       (d.phase == 'staged' && changed(['phase','fileId']) && reviewDriveId(d.fileId)
+        && get(reviewPath('jobs',id)).data.status == 'completed' && get(reviewPath('uploads',id)).data.fileId == d.fileId))) ||
+      (resource.data.phase == 'staged' && reviewLinked(id) && ((d.phase == 'accepting' && changed(['phase'])) || rejectRun(d))) ||
+      (resource.data.phase == 'accepting' && reviewLinked(id) && d.phase == 'accepted' && changed(['phase','finishedAt']) && instant(d.finishedAt)) ||
+      (resource.data.phase == 'rejected' && changed(['draft','learningId']) && textLength(d.draft,3000)
+       && (d.learningId == resource.data.learningId || approveLearning(d)));
+    }
+    allow get: if studioOwner();
+    allow list: if studioOwner() && request.query.limit <= 12;
+    allow create: if studioOwner() && reviewEnabled() && reviewJob(id) && reviewLinked(id) && reviewRun(request.resource.data);
+    allow update: if studioOwner() && reviewChange(request.resource.data);
+   }
+   match /autoReviewRevisions/{id} {
+    function reviewRevision(d) {
+     return d.id == id && (d.previous == '' || reviewRevisionId(d.previous)) && instant(d.approvedAt)
+      && ((d.kind == 'configuration' && d.keys().hasOnly(['id','kind','model','previous','approvedAt']) && model(d.model)
+        && getAfter(reviewPath('autoReviewControl','settings')).data.id == id)
+       || (d.kind == 'learning' && d.keys().hasOnly(['id','kind','runId','text','previous','approvedAt'])
+        && d.runId is string && reviewJob(d.runId) && d.text is string && d.text.size() > 0 && d.text.size() <= 3000
+        && getAfter(reviewPath('autoReviewRuns',d.runId)).data.learningId == id));
+    }
+    allow get: if studioOwner();
+    allow create: if studioOwner() && reviewRevisionId(id) && reviewRevision(request.resource.data);
+   }
    match /jobs/{id} {
     // Only the approved pinned PC may import the four cataloged historical outputs.
     allow create: if studioDevice() && historicalRecord(id,request.resource.data) && request.resource.data.importState == 'staging';
@@ -300,6 +408,7 @@ service cloud.firestore {
     allow read: if studioOwner() || (studioDevice() && resource.data.deviceUid == request.auth.uid);
     allow delete: if studioOwner();
     allow create: if studioOwner() && id.matches('[A-Za-z0-9_-]{1,80}') && job(request.resource.data)
+     && (!reviewJob(id) || reviewJobAdmission(id,request.resource.data))
      && (request.resource.data.model != turboModel() || turboReady(request.resource.data.deviceUid))
      && request.resource.data.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent','references','parentJobId','inputsReady','effectivePrompt','pose'])
      && ((request.resource.data.schemaVersion == 2 && !request.resource.data.keys().hasAny(['references','parentJobId','inputsReady']) && request.resource.data.status == 'queued')
@@ -312,6 +421,7 @@ service cloud.firestore {
      && completeInput(id,resource.data.references[0]) && (resource.data.references.size() < 2 || completeInput(id,resource.data.references[1]));
     // Ten ready records, rather than up to fifty chunk reads in one request.
     allow update: if studioOwner() && resource.data.schemaVersion == 4 && resource.data.status == 'uploading'
+     && (!reviewJob(id) || (reviewEnabled() && reviewLinked(id) && reviewWorker(resource.data)))
      && resource.data.inputsReady == false && request.resource.data.inputsReady == true && request.resource.data.status == 'queued'
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','inputsReady'])
      && resource.data.expiresAt > request.time.toMillis() && allReady(id,resource.data)
@@ -361,6 +471,7 @@ service cloud.firestore {
      function parent() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data; }
      allow read: if studioOwner() || (studioDevice() && parent().deviceUid == request.auth.uid);
      allow create: if studioOwner() && parent().schemaVersion == 4 && parent().status == 'uploading' && parent().inputsReady == false
+      && (!reviewJob(id) || reviewEnabled())
       && parent().expiresAt > request.time.toMillis() && inputId in ['0','1','2','3','4','5','6','7','8','9'] && int(inputId) < parent().references.size()
       && request.resource.data == {'index':int(inputId),'sha256':parent().references[int(inputId)].sha256,'bytes':parent().references[int(inputId)].bytes,'chunks':parent().references[int(inputId)].chunks}
       && reference(parent().references[int(inputId)],int(inputId)) && completeInput(id,parent().references[int(inputId)]);
@@ -370,6 +481,7 @@ service cloud.firestore {
      function parent() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data; }
      allow read: if studioOwner() || (studioDevice() && parent().deviceUid == request.auth.uid);
      allow create: if studioOwner() && parent().schemaVersion in [3,4] && parent().status == 'uploading' && parent().inputsReady == false
+      && (!reviewJob(id) || reviewEnabled())
       && parent().expiresAt > request.time.toMillis() && inputId in ['0','1','2','3','4','5','6','7','8','9'] && int(inputId) < parent().references.size()
       && request.resource.data.keys().hasOnly(['index','data']) && request.resource.data.index is int && request.resource.data.index >= 0
       && request.resource.data.index < parent().references[int(inputId)].chunks && chunkId == string(request.resource.data.index)
@@ -409,7 +521,7 @@ service cloud.firestore {
    match /saves/{jobId} {
     function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
     allow read: if studioOwner();
-    allow create: if studioOwner() && readyCreation(original())
+    allow create: if studioOwner() && !reviewJob(jobId) && readyCreation(original())
      && request.resource.data.keys().hasOnly(['jobId','fileId','name','webViewLink','savedAt','mime','sha256','bytes','folderId'])
      && request.resource.data.jobId == jobId && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
      && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
@@ -425,6 +537,7 @@ service cloud.firestore {
     function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
     allow read: if studioOwner();
     allow create: if studioOwner() && readyCreation(original())
+     && (!reviewJob(jobId) || (reviewLinked(jobId) && get(reviewPath('autoReviewRuns',jobId)).data.phase == 'pending'))
      && request.resource.data.keys().hasOnly(['jobId','fileId','sha256','bytes','createdAt']) && request.resource.data.jobId == jobId
      && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
      && request.resource.data.sha256 == original().result.sha256 && request.resource.data.bytes == original().result.bytes && instant(request.resource.data.createdAt);

@@ -280,6 +280,13 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   if(busy)return Promise.resolve();
   if(resuming?.generation===moveSession)return resuming.promise;
   const receipt=readReceipt();if(!receipt)return Promise.resolve();
+  // A confirmed move receipt is an Undo entitlement, not a new success event.
+  // Keep Undo available across reloads without replaying "Moved to References".
+  if(receipt.phase==='confirmed'){
+   recovery=receipt.record;
+   showRecovery();
+   return Promise.resolve();
+  }
   if(!canRead()){offerReconnect(receipt);return Promise.resolve();}
   const generation=moveSession;setBusy(true);
   const promise=reconcileReceipt(receipt,generation,{continueAction:consumeConnectResume(receipt)}).catch(error=>{

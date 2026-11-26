@@ -72,10 +72,16 @@ def thumbnail(image, directory):
 
 if __name__ == '__main__':
     directory = Path(sys.argv[2]).resolve()
-    roots = (Path(r'H:\AI-ImageGen\portrait-pilot\velum-studio').resolve(), Path(__file__).resolve().parent/'.runtime/qwen21')
-    if directory.parent not in roots or sys.argv[1] != 'thumbnail':
+    legacy_root = Path(r'H:\AI-ImageGen\portrait-pilot\velum-studio').resolve()
+    if sys.argv[1] != 'thumbnail':
         raise ValueError('output-path-denied')
-    source = read_qwen_output(directory/'image.png') if directory.parent == roots[1] else Image.open(directory/'image.png')
+    if directory.parent == legacy_root:
+        source = Image.open(directory/'image.png')
+    else:
+        from qwen_paths import output_root
+        if directory.parent != output_root().resolve():
+            raise ValueError('output-path-denied')
+        source = read_qwen_output(directory/'image.png')
     with source:
         source.load()
         print(json.dumps(thumbnail(source, directory)))

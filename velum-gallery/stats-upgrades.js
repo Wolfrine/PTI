@@ -11,7 +11,12 @@
   ];
   let selectedRange = localStorage.getItem('velum-stats-range') || '7d';
   let renderToken = 0;
+  let privacyEpoch = 0;
   let dbPromise = null;
+  let getCollection = () => null;
+  let openMedia = () => false;
+  let favoriteKind = 'liked';
+  let returnTarget = null;
 
   const style = document.createElement('style');
   style.textContent = `
@@ -118,10 +123,6 @@
     if (key === 'today') return startOfToday();
     const option = RANGE_OPTIONS.find(r => r.key === key);
     return !option || option.ms === Infinity ? 0 : Date.now() - option.ms;
-  }
-
-  function currentMediaIds() {
-    return [...document.querySelectorAll('#browseGrid [data-id]')].map(img => img.dataset.id).filter(Boolean);
   }
 
   function shortHash(value) {
@@ -267,12 +268,14 @@
     return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(Number(value) || 0);
   }
 
-  function buildSnapshot(all, key = selectedRange) {
+  function buildSnapshot(all, key = selectedRange, collection = getCollection()) {
     const from = rangeStart(key);
     const filtered = all.filter(e => (Number(e.at) || 0) >= from);
     const allMedia = mediaStats(all);
     const rangeMedia = mediaStats(filtered);
-    const ids = currentMediaIds();
+    const ids = new Set(collection?.ids || []);
+    const complete = collection?.state === 'complete';
+    const seenInCollection = [...ids].filter(id => allMedia.get(id)?.views > 0).length;
     const seenAll = new Set([...allMedia.entries()].filter(([, s]) => s.views > 0).map(([id]) => id));
     const seenRange = new Set([...rangeMedia.entries()].filter(([, s]) => s.views > 0).map(([id]) => id));
     const rangeSessions = sessions(filtered);
@@ -289,7 +292,8 @@
     return {
       key, from, filtered, allMedia, rangeMedia, ids, seenAll, seenRange, rangeSessions,
       trackedMs, views, up, down, affectionHolds, affectionDurationMs, unique, averageDwell,
-      coverage: ids.length ? Math.min(100, seenAll.size / ids.length * 100) : 0
+      listingState: collection?.state || 'idle', complete, seenInCollection,
+      coverage: complete && ids.size ? seenInCollection / ids.size * 100 : null
     };
   }
 
@@ -317,11 +321,19 @@
   }
 
   function renderCoverage(snapshot) {
-    const total = snapshot.ids.length;
-    const seen = Math.min(total || snapshot.seenAll.size, snapshot.seenAll.size);
-    const never = Math.max(0, total - seen);
-    const frequent = [...snapshot.allMedia.values()].filter(s => s.views >= 5).length;
-    const once = [...snapshot.allMedia.values()].filter(s => s.views === 1).length;
+    if (!snapshot.complete || !snapshot.ids.size) {
+      const message = snapshot.complete ? 'Private and References are empty.'
+        : snapshot.listingState === 'partial' ? 'Use Sync to finish reading the collection.'
+        : snapshot.listingState === 'loading' ? 'Reading the full collection from Drive…'
+        : 'Connect Drive to see collection coverage.';
+      return `<section class="stats-section"><div class="stats-section-head"><h2>Collection</h2></div><p class="media-empty">${message}</p></section>`;
+    }
+    const total = snapshot.ids.size;
+    const seen = snapshot.seenInCollection;
+    const never = total - seen;
+    const views = [...snapshot.ids].map(id => snapshot.allMedia.get(id)?.views || 0);
+    const frequent = views.filter(count => count >= 5).length;
+    const once = views.filter(count => count === 1).length;
     return `<section class="stats-section"><div class="stats-section-head"><h2>Collection</h2><span>All-time exploration</span></div><div class="coverage-row"><div class="coverage-main"><strong>${formatNumber(seen)} / ${formatNumber(total)}</strong><span>media seen</span></div><div class="coverage-ring" style="--p:${snapshot.coverage.toFixed(2)}"><b>${Math.round(snapshot.coverage)}%</b></div></div><div class="coverage-track"><i style="width:${snapshot.coverage}%"></i></div><div class="coverage-meta"><div><strong>${formatNumber(never)}</strong><span>Unseen</span></div><div><strong>${formatNumber(once)}</strong><span>Once</span></div><div><strong>${formatNumber(frequent)}</strong><span>5+ views</span></div></div></section>`;
   }
 
@@ -338,8 +350,8 @@
   }
 
   function rankedMedia(snapshot, kind) {
-    let arr = [...snapshot.allMedia.values()].filter(s =>
-      s.views || s.affectionHolds || s.up || s.down || s.pairUp || s.pairDown);
+    let arr = [...snapshot.allMedia.values()].filter(s => snapshot.ids.has(s.id) &&
+      (s.views || s.affectionHolds || s.up || s.down || s.pairUp || s.pairDown));
     if (kind === 'revisited') arr.sort((a, b) => b.views - a.views || b.dwell - a.dwell);
     else if (kind === 'dwell') arr.sort((a, b) => b.dwell - a.dwell || b.views - a.views);
     else if (kind === 'quiet') arr = arr.filter(s =>
@@ -358,30 +370,44 @@
     if (!list) return;
     const items = rankedMedia(snapshot, kind);
     if (!items.length) {
-      list.innerHTML = '<div class="media-empty">Not enough activity for this category yet.</div>';
+      list.innerHTML = `<div class="media-empty">${snapshot.complete ? 'No available media in this category yet.' :
+        'Favorites appear as Drive media becomes available.'}</div>`;
       return;
     }
     list.innerHTML = items.map((s, i) => `<button class="media-row" data-media="${s.id.replace(/"/g, '&quot;')}"><span class="media-rank">${i + 1}</span><span class="media-copy"><strong>${alias(s.id)}</strong><span>${mediaSubline(s)}</span></span><span class="media-value">${mediaMetric(kind, s)}</span></button>`).join('');
     list.querySelectorAll('.media-row').forEach(row => row.addEventListener('click', () => {
       const id = row.dataset.media;
-      const tileImage = [...document.querySelectorAll('#browseGrid [data-id]')].find(img => img.dataset.id === id);
-      const tile = tileImage?.closest('.tile');
-      if (tile) tile.click();
-      addLocalEvent({ type: 'interaction', action: 'stats-open-media', imageIds: id ? [id] : [] });
+      const scroll = statsView.scrollTop;
+      if (!openMedia(id)) { renderStats(); return; }
+      returnTarget = { id, scroll };
+      addLocalEvent({ type: 'interaction', action: 'stats-open-media', imageIds: [id] });
     }));
   }
 
   async function renderStats() {
+    if (!statsView.classList.contains('active') || !getCollection()) return;
     const token = ++renderToken;
-    body.innerHTML = '<div class="stats-section"><div class="media-empty">Reading local activity…</div></div>';
+    if (!body.childElementCount) body.innerHTML = '<div class="stats-section"><div class="media-empty">Reading local activity…</div></div>';
     const all = await allEvents();
-    if (token !== renderToken) return;
-    const snapshot = buildSnapshot(all);
+    const collection = getCollection();
+    if (token !== renderToken || !statsView.classList.contains('active') || !collection) return;
+    const snapshot = buildSnapshot(all, selectedRange, collection);
+    const scroll = statsView.scrollTop;
     const sessionDurations = snapshot.rangeSessions.map(s => s.duration);
     const avgSession = sessionDurations.length ? sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length : 0;
-    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(formatDuration(snapshot.affectionDurationMs), 'Time expressed', `${snapshot.affectionHolds} holds · ${snapshot.up} legacy likes`)}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(`${Math.round(snapshot.coverage)}%`, 'Collection explored', `${formatNumber(snapshot.seenAll.size)} seen all-time`)}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
-    paintMediaList(snapshot, 'liked');
+    const coverage = snapshot.coverage === null ? '—' : `${Math.round(snapshot.coverage)}%`;
+    body.innerHTML = `<div class="stats-summary">${card(formatDuration(snapshot.trackedMs), 'Tracked viewing', 'Drift dwell time')}${card(formatNumber(snapshot.rangeSessions.length), 'Sessions', avgSession ? `${formatDuration(avgSession)} average` : '')}${card(formatNumber(snapshot.views), 'Media views', `${formatNumber(snapshot.unique)} unique`)}${card(formatDuration(snapshot.affectionDurationMs), 'Time expressed', `${snapshot.affectionHolds} holds · ${snapshot.up} legacy likes`)}${card(formatDuration(snapshot.averageDwell), 'Average dwell', 'Per completed Drift view')}${card(coverage, 'Collection explored', snapshot.complete ? `${formatNumber(snapshot.seenInCollection)} seen in the collection` : '')}</div>${renderActivity(snapshot)}${renderCoverage(snapshot)}${renderFavorites(snapshot)}`;
+    paintMediaList(snapshot, favoriteKind);
+    body.querySelectorAll('.favorite-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.fav === favoriteKind));
+    statsView.scrollTop = returnTarget?.scroll ?? scroll;
+    if (returnTarget) {
+      const row = [...body.querySelectorAll('.media-row')].find(item => item.dataset.media === returnTarget.id);
+      const focus = row || body.querySelector('.favorite-tab.active');
+      focus?.focus({ preventScroll: true });
+      returnTarget = null;
+    }
     body.querySelectorAll('.favorite-tab').forEach(tab => tab.addEventListener('click', () => {
+      favoriteKind = tab.dataset.fav;
       body.querySelectorAll('.favorite-tab').forEach(t => t.classList.toggle('active', t === tab));
       paintMediaList(snapshot, tab.dataset.fav);
     }));
@@ -421,10 +447,11 @@
       generatedAt: new Date().toISOString(),
       selectedRange,
       collection: {
-        total: allSnapshot.ids.length,
-        seenAllTime: allSnapshot.seenAll.size,
-        coveragePct: Number(allSnapshot.coverage.toFixed(2)),
-        neverSeen: Math.max(0, allSnapshot.ids.length - allSnapshot.seenAll.size)
+        status: allSnapshot.listingState,
+        total: allSnapshot.complete ? allSnapshot.ids.size : null,
+        seenAllTime: allSnapshot.complete ? allSnapshot.seenInCollection : null,
+        coveragePct: allSnapshot.coverage === null ? null : Number(allSnapshot.coverage.toFixed(2)),
+        neverSeen: allSnapshot.complete ? allSnapshot.ids.size - allSnapshot.seenInCollection : null
       },
       selected: {
         trackedMs: Math.round(snapshot.trackedMs),
@@ -458,11 +485,13 @@
     return `VELUM_STATE_V2\n${JSON.stringify(state)}`;
   }
 
-  async function copyText(text) {
+  async function copyText(text, isCurrent) {
+    if (!isCurrent()) return false;
     try {
       await navigator.clipboard.writeText(text);
       return true;
     } catch {
+      if (!isCurrent()) return false;
       const ta = document.createElement('textarea');
       ta.value = text;
       ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
@@ -475,6 +504,10 @@
   }
 
   copyBtn.addEventListener('click', async () => {
+    if (!getCollection()) return;
+    const epoch = privacyEpoch;
+    const isCurrent = () => epoch === privacyEpoch &&
+      statsView.classList.contains('active') && Boolean(getCollection());
     copyBtn.disabled = true;
     const label = copyBtn.querySelector('span');
     const original = label.textContent;
@@ -482,11 +515,13 @@
     try {
       await addLocalEvent({ type: 'interaction', action: 'copy-state' });
       const state = await buildCopyState();
-      const ok = await copyText(state);
+      const ok = await copyText(state, isCurrent);
+      if (!isCurrent()) return;
       label.textContent = ok ? 'Copied' : 'Copy failed';
       copyBtn.classList.toggle('copied', ok);
     } finally {
       setTimeout(() => {
+        if (epoch !== privacyEpoch) return;
         label.textContent = original;
         copyBtn.classList.remove('copied');
         copyBtn.disabled = false;
@@ -494,26 +529,31 @@
     }
   });
 
-  statsNav.addEventListener('click', event => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const browse = document.querySelector('.nav-item[data-view="browse"]');
-    if (document.querySelector('#driftView.active') && browse) browse.click();
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el === statsNav));
-    document.querySelector('#driftView')?.classList.remove('active');
-    document.querySelector('#browseView')?.classList.remove('active');
-    document.querySelector('#studioView')?.classList.remove('active');
-    statsView.classList.add('active');
-    addLocalEvent({ type: 'interaction', action: 'nav-stats' });
-    renderStats();
-  }, true);
-
-  nav.querySelectorAll('.nav-item:not([data-view="stats"])').forEach(button => button.addEventListener('click', () => {
-    statsView.classList.remove('active');
+  nav.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => {
     addLocalEvent({ type: 'interaction', action: `nav-${button.dataset.view || 'unknown'}` });
   }, true));
 
   const pointerStarts = new Map();
+  function clearStats() {
+    renderToken++;
+    privacyEpoch++;
+    returnTarget = null;
+    pointerStarts.clear();
+    body.replaceChildren();
+    copyBtn.querySelector('span').textContent = 'Copy state';
+    copyBtn.classList.remove('copied');
+    copyBtn.disabled = false;
+    statsView.scrollTop = 0;
+  }
+  window.addEventListener('velum:collection-changed', renderStats);
+  window.addEventListener('velum:collection-cleared', clearStats);
+  window.__velumStats = {
+    connect({ getCollection: collection, openMedia: open }) {
+      getCollection = collection;
+      openMedia = open;
+      return { update: renderStats, clear: clearStats };
+    }
+  };
   window.addEventListener('pointerdown', event => {
     if (!event.target?.closest?.('#driftStage')) return;
     pointerStarts.set(event.pointerId, { x: event.clientX, y: event.clientY, at: performance.now() });

@@ -219,12 +219,13 @@ const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.
    imageMap=new Map(images.map(item=>[item.id,item]));
    if(initializedGallery)renderBrowse({ preservePage: true });
    const selected=currentMediaItem();
-   if(!selected||!matchesGalleryFilter(selected)){
+   if(!selected||(!current.direct&&!matchesGalleryFilter(selected))){
      const next=chooseMoment();
      if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>showToast(error.message));}
      else{renderSerial++;current={type:'single',ids:[]};driftMedia.replaceChildren();window.__velumInteraction?.clearAdvance?.();}
    }
    libraryControls.update();
+   window.dispatchEvent(new Event('velum:collection-changed'));
  }
 
 });
@@ -287,6 +288,13 @@ class EventStore {
 }
 const store = new EventStore();
 await store.init();
+
+window.__velumStats?.connect({
+  getCollection: () => galleryLocked || !auth.currentUser ? null : {
+    ids: [...imageMap.keys()], state: galleryListingState
+  },
+  openMedia: id => openInDrift(id, { fromStats: true })
+});
 
 function tokenProbablyFresh() {
   return access.has([DRIVE_READ_SCOPE]);
@@ -372,6 +380,7 @@ function clearGallerySession({clearAccess=true}={}){
   gallerySync?.controller.abort();
   gallerySync = null;
   galleryListingState = 'idle';
+  window.dispatchEvent(new Event('velum:collection-cleared'));
   if (pendingDiscoveryBase) discovered = pendingDiscoveryBase;
   pendingDiscoveryBase = null;
   syncBtn.disabled = false;
@@ -480,6 +489,7 @@ async function syncDrive({ initial = false } = {}) {
   syncBtn.disabled = true;
   syncLabel.textContent = 'Syncing';
   updateBrowseStatus();
+  window.dispatchEvent(new Event('velum:collection-changed'));
   if (initial && !initializedGallery && !$('#studioView').classList.contains('active')) {
     authGate.classList.add('open');
     setAuthMessage('Opening collection', 'Reading Private and References folder metadata.', 'Media remains in Google Drive.');
@@ -540,6 +550,7 @@ async function syncDrive({ initial = false } = {}) {
         }
       }
       updateBrowseStatus();
+      if (complete) window.dispatchEvent(new Event('velum:collection-changed'));
       if (complete) showToast(`${images.length} media synced`);
     }
     return true;
@@ -561,6 +572,7 @@ async function syncDrive({ initial = false } = {}) {
       syncBtn.disabled = false;
       syncLabel.textContent = 'Sync';
       updateBrowseStatus();
+      window.dispatchEvent(new Event('velum:collection-changed'));
     }
   }
 }
@@ -634,7 +646,7 @@ function reconcileGallerySelection() {
   history.forEach((moment, index) => {
     const ids = moment.ids.filter(id => {
       const item = imageMap.get(id);
-      return item && matchesGalleryFilter(item);
+      return item && (moment.direct || matchesGalleryFilter(item));
     });
     if (!ids.length) return;
     retained.push({ ...moment, ids });
@@ -644,7 +656,7 @@ function reconcileGallerySelection() {
   historyIndex = retainedIndex;
 
   const selected = currentMediaItem();
-  if (!selected || !matchesGalleryFilter(selected)) {
+  if (!selected || (!current.direct && !matchesGalleryFilter(selected))) {
     finalizeView(false);
     renderSerial++;
     current = { type: 'single', ids: [] };
@@ -690,7 +702,7 @@ async function renderMoment(moment, { record = true } = {}) {
   const id = moment.ids[0];
   const meta = imageById(id);
   if (!meta) return;
-  current = { type: 'single', ids: [id] };
+  current = moment;
   libraryControls.update();
   const serial = ++renderSerial;
 
@@ -1102,10 +1114,11 @@ browseNext.onclick = () => changeBrowsePage(1);
 sortSelect.onchange = renderBrowse;
 
 function activateView(view, { incoming = false } = {}) {
+  if (galleryLocked || (view === 'stats' && !auth.currentUser)) return;
   const browse = view === 'browse';
   const drift = view === 'drift';
   const studio = view === 'studio';
-  if (!studio && !initializedGallery && !tokenProbablyFresh()) {
+  if (!studio && view !== 'stats' && !initializedGallery && !tokenProbablyFresh()) {
     pendingGalleryView = view;
     authGate.classList.add('open');
     setAuthMessage('Private collection', 'Reconnect Drive to open your gallery.', 'Studio uses your owner sign-in separately.');
@@ -1131,18 +1144,23 @@ function activateView(view, { incoming = false } = {}) {
     if (video) video.play().catch(() => {});
     else scheduleAdvance();
   }
+  if (view === 'stats') window.dispatchEvent(new Event('velum:collection-changed'));
 }
 document.querySelectorAll('.nav-item').forEach(btn =>
   btn.addEventListener('click', () => activateView(btn.dataset.view)));
 
-function openInDrift(id) {
-  if (!imageById(id)) return;
-  const moment = { type: 'single', ids: [id] };
+function openInDrift(id, { fromStats = false } = {}) {
+  if (galleryLocked || !auth.currentUser || !imageById(id)) return false;
+  const moment = { type: 'single', ids: [id], direct: fromStats };
   history = history.slice(0, historyIndex + 1);
   history.push(moment);
   historyIndex = history.length - 1;
   activateView('drift', { incoming: true });
-  renderMoment(moment);
+  const generation = galleryEpoch;
+  void renderMoment(moment).catch(() => {
+    if (generation === galleryEpoch && current.ids[0] === id) showToast('Could not open this media. Swipe to try another.');
+  });
+  return true;
 }
 
 function quickExit(){window.dispatchEvent(new Event('velum:lock'));$('#neutralScreen').classList.add('open');}

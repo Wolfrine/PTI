@@ -13,9 +13,9 @@ on:
         type: string
         required: true
       change_scope:
-        description: 'Publish the full reviewed source or only the Finance boundary'
+        description: 'Publish the full reviewed source or a single reviewed app boundary'
         type: choice
-        options: [shared, finance]
+        options: [shared, finance, velum]
         default: shared
 
 permissions:

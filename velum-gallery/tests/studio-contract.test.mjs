@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeJob,validateJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,MODEL_IDS,JOB_TTL,modelReferenceLimit,QWEN_MODEL,composeEffectivePrompt} from '../studio-contract.mjs';
+import {makeJob,validateJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,MODEL_IDS,JOB_TTL,modelReferenceLimit,QWEN_MODEL,QWEN_TURBO_MODEL,isQwenModel,composeEffectivePrompt} from '../studio-contract.mjs';
 import {PC_DEVICE_UID} from '../device-config.mjs';
 import {readFile} from 'node:fs/promises';
 import {workerCapabilities} from '../../tools/velum-worker/engine-profile.mjs';
@@ -13,7 +13,7 @@ test('current worker release stays online and permits every installed model, ref
  const status={deviceUid:PC_DEVICE_UID,version,state:'idle',activeJob:'',updatedAt:now,installed:MODEL_IDS,capabilities:workerCapabilities(MODEL_IDS,true)};
  assert.equal(workerOnline(status,now),true);assert.equal(supportsRecovery(status),true);
  for(const model of MODEL_IDS){assert.equal(deviceCanQueue(binding,status,model),true,model);assert.equal(modelReferenceLimit(status,model),model===QWEN_MODEL?10:model==='flux2-klein-fp8'?2:1);}
- const unknown={...status,version:'2.3.2'};assert.equal(workerOnline(unknown,now),false);assert.equal(supportsRecovery(unknown),false);
+ const unknown={...status,version:'2.3.3'};assert.equal(workerOnline(unknown,now),false);assert.equal(supportsRecovery(unknown),false);
  for(const model of MODEL_IDS)assert.equal(deviceCanQueue(binding,unknown,model),false);
 });
 test('raw wording and whitespace survive submission exactly',()=>{
@@ -22,8 +22,8 @@ test('raw wording and whitespace survive submission exactly',()=>{
   assert.equal(job.schemaVersion,2); assert.equal(job.deviceUid,PC_DEVICE_UID); assert.equal(JOB_TTL,604800000);
   assert.equal(job.negative,undefined); assert.equal(job.enhancedPrompt,undefined);
 });
-test('only five installed architectures and bounded explicit settings are accepted',()=>{
-  assert.equal(MODEL_IDS.length,5);
+test('only six installed model options and bounded explicit settings are accepted',()=>{
+  assert.equal(MODEL_IDS.length,6);
   for(const model of MODEL_IDS) assert.equal(makeJob({...input,model}).model,model);
   for(const invalid of [{model:'remote'},{prompt:' '},{prompt:'a'.repeat(6001)},{seed:-1},{seed:1.2},{consent:false}]) assert.throws(()=>makeJob({...input,...invalid}));
   assert.throws(()=>validateJob({...makeJob(input),width:2048}));
@@ -45,8 +45,9 @@ test('capability heartbeat gates edit models without breaking old FLUX worker',(
  assert.equal(modelReferenceLimit(legacy,'realvis-dynamic'),0);
  const updated={version:'2.1.0',capabilities:{referenceModels:MODEL_IDS}};
  assert.equal(modelReferenceLimit(updated,'flux2-klein-fp8'),2);
- for(const model of MODEL_IDS.filter(id=>id!=='flux2-klein-fp8'&&id!==QWEN_MODEL))assert.equal(modelReferenceLimit(updated,model),1);
+ for(const model of MODEL_IDS.filter(id=>id!=='flux2-klein-fp8'&&!isQwenModel(id)))assert.equal(modelReferenceLimit(updated,model),1);
  assert.equal(modelReferenceLimit(updated,QWEN_MODEL),0);
+ assert.equal(modelReferenceLimit(updated,QWEN_TURBO_MODEL),0);
  const qwen={version:'2.3.0',capabilities:{referenceModels:MODEL_IDS,qwenMaxReferences:10}};
  assert.equal(modelReferenceLimit(qwen,QWEN_MODEL),10);
  assert.equal(modelReferenceLimit({...qwen,capabilities:{...qwen.capabilities,qwenMaxReferences:16}},QWEN_MODEL),0);

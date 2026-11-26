@@ -1,6 +1,10 @@
 const deviceModule = new URL('./device-config.mjs', import.meta.url);
 deviceModule.search = new URL(import.meta.url).search;
 const { PC_DEVICE_UID } = await import(deviceModule.href);
+export const QWEN_MODEL='qwen-image-2.1';
+export const QWEN_TURBO_MODEL='qwen-image-2.1-turbo';
+export const QWEN_TURBO_WORKER_VERSION='2.3.2';
+export const isQwenModel=model=>model===QWEN_MODEL||model===QWEN_TURBO_MODEL;
 
 // Validate the owner's words; never rewrite or enhance them.
 export const MODELS = Object.freeze([
@@ -8,15 +12,21 @@ export const MODELS = Object.freeze([
   {id:'flux2-klein-fp8',label:'FLUX.2 Klein 4B',hint:'4 steps · quickest iteration · prompt following'},
   {id:'realvis-dynamic',label:'RealVisXL 5',hint:'28 steps · photographic finish · heavier'},
   {id:'realistic-sd15',label:'Realistic Vision 6',hint:'28 steps · lighter fallback · less detail'},
-  {id:'qwen-image-2.1',label:'Qwen-Image 2.1',hint:'40 steps · up to 10 image inputs · longer renders'},
+  {id:QWEN_MODEL,label:'Qwen-Image 2.1',hint:'40 steps · up to 10 image inputs · longer renders'},
+  {id:QWEN_TURBO_MODEL,label:'Qwen-Image 2.1 Turbo',hint:'8 steps · text or one reference · research and evaluation only'},
 ]);
 export const MODEL_IDS = MODELS.map(model=>model.id);
-export const QWEN_MODEL='qwen-image-2.1';
-export const WORKER_VERSIONS=Object.freeze(['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1']);
-const QWEN_WORKER_VERSIONS=Object.freeze(['2.3.0','2.3.1']);
-export const MODEL_REFERENCE_LIMITS = Object.freeze({'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1,[QWEN_MODEL]:10});
+const QWEN_WORKER_VERSIONS=Object.freeze(['2.3.0','2.3.1',QWEN_TURBO_WORKER_VERSION]);
+export const WORKER_VERSIONS=Object.freeze(['2.0.0','2.1.0','2.2.0',...QWEN_WORKER_VERSIONS]);
+export const MODEL_REFERENCE_LIMITS = Object.freeze({'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1,[QWEN_MODEL]:10,[QWEN_TURBO_MODEL]:1});
+export function workerHasModel(status,model) {
+ if(status?.deviceUid!==PC_DEVICE_UID||!WORKER_VERSIONS.includes(status.version)||!MODEL_IDS.includes(model)||!status.installed?.includes(model))return false;
+ if(model===QWEN_TURBO_MODEL)return status.version===QWEN_TURBO_WORKER_VERSION&&status.capabilities?.referenceModels?.includes(model)&&status.capabilities?.referenceLimits?.[model]===MODEL_REFERENCE_LIMITS[model];
+ return model!==QWEN_MODEL||QWEN_WORKER_VERSIONS.includes(status.version);
+}
 export function modelReferenceLimit(status,model) {
  if(!MODEL_REFERENCE_LIMITS[model])return 0;
+ if(model===QWEN_TURBO_MODEL)return workerHasModel(status,model)?MODEL_REFERENCE_LIMITS[model]:0;
  if(model===QWEN_MODEL)return QWEN_WORKER_VERSIONS.includes(status?.version)&&status?.capabilities?.referenceModels?.includes(model)&&status?.capabilities?.qwenMaxReferences===10?10:0;
  if(['2.1.0','2.2.0',...QWEN_WORKER_VERSIONS].includes(status?.version)&&status?.capabilities?.referenceModels?.includes(model))return MODEL_REFERENCE_LIMITS[model];
  return status?.version==='2.0.0'&&model==='flux2-klein-fp8'&&status?.capabilities?.referenceModel===model&&status?.capabilities?.maxReferences===2?2:0;
@@ -37,7 +47,7 @@ export function validateReference(reference,index) {
 // a reference to fit a different output canvas.
 const roundEven=value=>{const floor=Math.floor(value),fraction=value-floor;return fraction===.5?(floor%2?floor+1:floor):Math.round(value);};
 export function jobDimensions(model,references=[]) {
- if(model===QWEN_MODEL&&references.length){
+ if(isQwenModel(model)&&references.length){
   const ratio=references[0].width/references[0].height;
   return {width:Math.max(32,roundEven(Math.sqrt(1048576*ratio)/32)*32),height:Math.max(32,roundEven(Math.sqrt(1048576/ratio)/32)*32)};
  }
@@ -55,7 +65,7 @@ export function validatePose(pose,references) {
  return pose;
 }
 export function validateJob(job) {
-  if (!job || ![2,3,4].includes(job.schemaVersion) || job.recordType!==undefined || job.deviceUid!==PC_DEVICE_UID || !MODEL_IDS.includes(job.model) || (job.model===QWEN_MODEL&&job.schemaVersion!==4)) throw new Error('Choose a verified local model on your approved PC.');
+  if (!job || ![2,3,4].includes(job.schemaVersion) || job.recordType!==undefined || job.deviceUid!==PC_DEVICE_UID || !MODEL_IDS.includes(job.model) || (isQwenModel(job.model)&&job.schemaVersion!==4)) throw new Error('Choose a verified local model on your approved PC.');
   if (typeof job.prompt!=='string' || !job.prompt.trim() || job.prompt.length>6000) throw new Error('Enter a prompt of 1–6,000 characters.');
   if (!Number.isSafeInteger(job.seed) || job.seed<0 || job.seed>2147483647) throw new Error('Seed must be between 0 and 2147483647.');
   let referenced=false;
@@ -74,7 +84,7 @@ export function validateJob(job) {
    else if(job.references.some(reference=>reference.role==='pose'))throw new Error('Pose reference has no lineage.');
    const hashes=new Set(),driveIds=new Set();
    for(const reference of job.references){
-    if(job.model===QWEN_MODEL&&(reference.width>reference.height*8||reference.height>reference.width*8))throw new Error('Qwen references need an aspect ratio between 1:8 and 8:1.');
+    if(isQwenModel(job.model)&&(reference.width>reference.height*8||reference.height>reference.width*8))throw new Error('Qwen references need an aspect ratio between 1:8 and 8:1.');
     if(hashes.has(reference.sha256)||(reference.source.kind==='drive'&&reference.source.id&&driveIds.has(reference.source.id)))throw new Error('Choose distinct reference images.');
     hashes.add(reference.sha256);if(reference.source.kind==='drive'&&reference.source.id)driveIds.add(reference.source.id);
    }
@@ -85,7 +95,7 @@ export function validateJob(job) {
   return job;
 }
 export function makeJob({model,prompt,seed,consent,references=[],parentJobId='',effectivePrompt,pose}, now=Date.now()) {
-  const referenced=references.length>0, explicit=model===QWEN_MODEL||effectivePrompt!==undefined||pose!==undefined,modern=explicit||referenced||Boolean(parentJobId);
+  const referenced=references.length>0, explicit=isQwenModel(model)||effectivePrompt!==undefined||pose!==undefined,modern=explicit||referenced||Boolean(parentJobId);
   return validateJob({schemaVersion:explicit?4:modern?3:2,deviceUid:PC_DEVICE_UID,model,prompt,seed,...jobDimensions(model,references),status:referenced?'uploading':'queued',createdAt:now,expiresAt:now+JOB_TTL,consent,...(modern?{references:structuredClone(references),parentJobId,inputsReady:!referenced}:{}),...(explicit?{effectivePrompt:effectivePrompt??composeEffectivePrompt(prompt,pose),...(pose===undefined?{}:{pose:structuredClone(pose)})}:{})});
 }
 export function deviceApproved(binding) {
@@ -96,7 +106,7 @@ export function devicePending(binding,now=Date.now()) {
 }
 export function deviceCanQueue(binding,status,model) {
   // The last verified installation survives a stale heartbeat. Work waits in Firestore.
- return Boolean(deviceApproved(binding) && status?.deviceUid===PC_DEVICE_UID && WORKER_VERSIONS.includes(status.version) && MODEL_IDS.includes(model) && (model!==QWEN_MODEL||QWEN_WORKER_VERSIONS.includes(status.version)) && status.installed?.includes(model));
+ return deviceApproved(binding)&&workerHasModel(status,model);
 }
 export function workerOnline(status,now=Date.now()) {
  return Boolean(status?.deviceUid===PC_DEVICE_UID && WORKER_VERSIONS.includes(status.version) && ['idle','running'].includes(status.state) && Number.isFinite(status.updatedAt) && now-status.updatedAt>=-30000 && now-status.updatedAt<90000);

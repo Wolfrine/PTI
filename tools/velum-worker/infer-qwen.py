@@ -6,7 +6,7 @@ Importing this file performs no filesystem mutation, model import or inference.
 import gc, hashlib, json, os, sys, threading, time
 from pathlib import Path
 from qwen_paths import output_root
-from inference_contract import validate_request, QWEN_MODEL
+from inference_contract import validate_request, QWEN_MODEL, QWEN_TURBO_MODEL
 from qwen_diagnostics import Diagnostics, SamplingProgress, collect, encoder_threads, GIB, TIMEOUT_SECONDS
 from qwen_cache_policy import configure_cache
 
@@ -17,11 +17,16 @@ ENGINE = Path(r'H:\AI-ImageGen\velum-qwen21-research-20261103')
 RUNTIME = Path(r'F:\Workspace\Support\LocalCodexBridge\scratch\qwen21-quality-20261103\ComfyUI')
 REVISION = '426f5eea52a7ece1dd599fff4cb6cd1f352ddd24'
 LOCK = Path(r'H:\AI-ImageGen\portrait-pilot\velum-studio\inference.lock')
-WEIGHTS = {
-    'diffusion_models/qwen_image_2.1_int8_convrot.safetensors':7256783064,
+DIFFUSION = {
+    QWEN_MODEL: ('qwen_image_2.1_int8_convrot.safetensors', 7256783064),
+    QWEN_TURBO_MODEL: ('qwen_image_2.1_turbo_int8_convrot.safetensors', 7256787829),
+}
+SHARED_WEIGHTS = {
     'text_encoders/qwen3vl_8b_w4a8.safetensors':6312105364,
     'vae/qwen_image_2.1_vae_bf16.safetensors':675509688,
 }
+# Qwen model_index.json supplies the first eight values. The Comfy-Org templates append zero.
+TURBO_SIGMAS = (1.0, 0.978453, 0.95418, 0.926626, 0.89508, 0.845148, 0.704534, 0.414568, 0.0)
 STOP = threading.Event()
 START = None
 MM = None
@@ -32,8 +37,9 @@ DIAGNOSTICS = None
 def emit(**value):
     print(json.dumps(value), flush=True)
 
-def check_assets():
-    for relative, size in WEIGHTS.items():
+def check_assets(diffusion_file, diffusion_bytes):
+    weights = {**SHARED_WEIGHTS, f'diffusion_models/{diffusion_file}': diffusion_bytes}
+    for relative, size in weights.items():
         if (ENGINE/'models'/relative).stat().st_size != size:
             raise ValueError('model-unavailable')
     head = (RUNTIME/'.git/HEAD').read_text().strip()
@@ -126,13 +132,15 @@ def main():
     if not isinstance(identifier,str) or not 1 <= len(identifier) <= 80 or not all(c.isascii() and (c.isalnum() or c in '_-') for c in identifier):
         raise ValueError('invalid-job')
     prompt = validate_request(job)
-    if job['model'] != QWEN_MODEL:
+    if job['model'] not in DIFFUSION:
         raise ValueError('invalid-model')
+    turbo = job['model'] == QWEN_TURBO_MODEL
+    diffusion_file, diffusion_bytes = DIFFUSION[job['model']]
     # A stale parent profile must fail before model loading or output creation.
     configured_parent = os.environ.get('VELUM_QWEN_OUTPUT_ROOT')
     if configured_parent is not None and Path(configured_parent) != OUT:
         raise ValueError('qwen-output-path-mismatch')
-    check_assets()
+    check_assets(diffusion_file, diffusion_bytes)
     OUT.mkdir(parents=True,exist_ok=True)
     import msvcrt
     # Same existing cross-checkout GPU mutex. The H asset/runtime tree is read-only.
@@ -201,6 +209,7 @@ def main():
             class LazyClip:
                 inner = None
                 passes = 0
+                positive_conditioning = None
                 def tokenize(self,*args,**kwargs):
                     if self.inner is None:
                         stage('encoding-prompt')
@@ -208,12 +217,18 @@ def main():
                         assert_encoder(self.inner)
                     return self.inner.tokenize(*args,**kwargs)
                 def encode_from_tokens_scheduled(self,*args,**kwargs):
+                    # The pinned native node calls positive then negative. Turbo uses a
+                    # positive-only guider at CFG 1, so avoid a second CPU vision pass.
+                    if turbo and self.positive_conditioning is not None:
+                        return self.positive_conditioning
                     before = time.monotonic()
                     pass_index = self.passes
                     self.passes += 1
                     result = self.inner.encode_from_tokens_scheduled(*args,**kwargs)
                     DIAGNOSTICS.write('encoder-pass',passIndex=pass_index,
                         secondsInPass=round(time.monotonic()-before,3))
+                    if turbo:
+                        self.positive_conditioning = result
                     return result
             clip = LazyClip()
             positive,negative,latent = encode_native(TextEncodeQwenImage21,clip,vae,prompt,tensors)
@@ -232,7 +247,7 @@ def main():
             mm.soft_empty_cache()
             stage('loading-diffusion')
             torch.cuda.reset_peak_memory_stats()
-            model = nodes.UNETLoader().load_unet('qwen_image_2.1_int8_convrot.safetensors','default')[0]
+            model = nodes.UNETLoader().load_unet(diffusion_file,'default')[0]
             assert_diffusion(model)
             dtype = str(model.model.get_dtype())
             model,cache_plan = configure_cache(model,positive,node=QwenImage21Cache,
@@ -240,7 +255,17 @@ def main():
                 element_bytes=torch.empty((),dtype=model.model.get_dtype_inference()).element_size(),
                 diagnostics=DIAGNOSTICS)
             DIAGNOSTICS.write('first-step-preparation')
-            samples = nodes.KSampler().sample(model,job['seed'],40,1.,'euler','simple',positive,negative,latent,denoise=1.)[0]
+            if turbo:
+                from comfy_extras.nodes_custom_sampler import (BasicGuider, KSamplerSelect,
+                    RandomNoise, SamplerCustomAdvanced)
+                sigmas = torch.tensor(TURBO_SIGMAS,dtype=torch.float32)
+                noise = RandomNoise.execute(job['seed'])[0]
+                guider = BasicGuider.execute(model,positive)[0]
+                sampler = KSamplerSelect.execute('euler')[0]
+                samples = SamplerCustomAdvanced.execute(noise,guider,sampler,sigmas,latent)[0]
+                del guider
+            else:
+                samples = nodes.KSampler().sample(model,job['seed'],40,1.,'euler','simple',positive,negative,latent,denoise=1.)[0]
             mm.unload_all_models()
             del model,positive,negative,latent
             gc.collect()
@@ -256,7 +281,8 @@ def main():
             if image.size != (job['width'],job['height']):
                 raise RuntimeError('invalid-output')
             settings = dict(model=job['model'],seed=job['seed'],width=image.width,height=image.height,
-                steps=40,cfg=1.,sampler='euler',scheduler='simple',negativePrompt='',denoise=1.,
+                steps=len(TURBO_SIGMAS)-1 if turbo else 40,cfg=1.,sampler='euler',
+                scheduler='manual-sigmas' if turbo else 'simple',negativePrompt='',denoise=1.,
                 referenceMethod='qwen21-native-multireference',referenceCount=len(references),
                 referencePixels=[dict(width=source.width,height=source.height) for source in source_images],
                 referenceResolution=1024,encoderDevice='cpu',vaeDevice='cpu',vaePrecision='fp32',
@@ -265,6 +291,9 @@ def main():
                 encoderThreads=threads,
                 encoderClass=encoder_class,diffusionClass='QwenImage21Transformer2DModel',
                 runtimeRevision=REVISION,timeoutSeconds=TIMEOUT_SECONDS,batchSize=1)
+            if turbo:
+                settings.update(sigmas=TURBO_SIGMAS,diffusionCheckpoint=diffusion_file,
+                                conditioning='positive-only')
             provenance = dict(prompt=job['prompt'],effectivePrompt=prompt,settings=settings,
                 parentJobId=job['parentJobId'],references=references)
             if 'pose' in job:

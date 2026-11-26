@@ -1,11 +1,12 @@
 // Explicit, reviewed publication of the shared Firestore policy. Never run from Hosting.
 import {createRequire} from 'node:module';
 import {readFile} from 'node:fs/promises';
+import {velumOnly} from './velum-rules-scope.mjs';
 
 const reviewed=process.env.REVIEWED_LIVE_RULESET;
 if(!reviewed||!/^projects\/pti-app-2ab59\/rulesets\/[A-Za-z0-9_-]+$/.test(reviewed))throw new Error('Supply the exact live ruleset name reviewed before this release.');
 const scope=process.env.PTI_RULES_RELEASE_SCOPE || 'shared';
-if(!['shared','finance'].includes(scope))throw new Error('Unknown shared rules release scope.');
+if(!['shared','finance','velum'].includes(scope))throw new Error('Unknown shared rules release scope.');
 const require=createRequire(new URL('../tools/pti-mcp/package.json',import.meta.url));
 const {GoogleAuth}=require('google-auth-library');
 const client=await new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']}).getClient();
@@ -24,7 +25,7 @@ if(release.rulesetName!==reviewed)throw new Error('Production policy changed aft
 const live=await request(`${api}/${release.rulesetName}`);
 if(live.source?.files?.length!==1)throw new Error('Unexpected multi-file production rules; review this rules release.');
 const current=live.source.files[0].content;
-const target=scope==='finance'?financeOnly(current,source):source;
+const target=scope==='velum'?velumOnly(current,source):scope==='finance'?financeOnly(current,source):source;
 if(current===target){
  console.log('Shared Firestore policy is already live.');
 }else{

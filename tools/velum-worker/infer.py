@@ -46,10 +46,10 @@ def main():
     job, jid = request['job'], request['id']
     if not 1 <= len(jid) <= 80 or not all(c.isascii() and (c.isalnum() or c in '_-') for c in jid):
         raise ValueError('invalid-job')
-    from inference_contract import validate_request, QWEN_MODEL
+    from inference_contract import validate_request, QWEN_MODELS
     effective_prompt = validate_request(job)
     references = job.get('references', [])
-    if job['model'] == QWEN_MODEL:
+    if job['model'] in QWEN_MODELS:
         raise ValueError('invalid-job')
     OUT.mkdir(parents=True, exist_ok=True)
     # An OS lock is shared by every Studio inference process, including other checkouts.

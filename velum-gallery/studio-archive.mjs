@@ -1,3 +1,7 @@
+const contractUrl=new URL('./studio-contract.mjs',import.meta.url);
+contractUrl.search=new URL(import.meta.url).search;
+const {isQwenModel}=await import(contractUrl.href);
+
 export const ARCHIVE_PAGE_SIZE = 36;
 export const ARCHIVE_FILTERS = ['all', 'kept', 'saved', 'drafts', 'removed'];
 // Historical records share the archive/transport, never the executable job contract.
@@ -22,7 +26,7 @@ export function creationLocation(job, save, {remoteVerified=false,remoteError=fa
   if(job?.recordType==='drive-acceptance')return {localPath:'',metadataPath:'',local:'Actual PC inference recorded in the private Drive manifest; PC file availability not checked',remote:remoteVerified?'Private Drive original SHA-256 verified':remoteError?'Drive original unavailable or integrity check failed':'Drive manifest loaded; original bytes await verification',drive:'Existing original on private Google Drive'};
   const complete = creationReady(job), historical = historicalCreation(job);
   const remote = complete && job.result?.chunks > 0;
-  const expectedRoot=job?.model==='qwen-image-2.1'?'H:\\Workspace\\Generated\\Velum\\qwen21':'H:\\AI-ImageGen\\portrait-pilot\\velum-studio';
+  const expectedRoot=isQwenModel(job?.model)?'H:\\Workspace\\Generated\\Velum\\qwen21':'H:\\AI-ImageGen\\portrait-pilot\\velum-studio';
   const expectedPath=historical?job.result?.localPath||'':complete?(job.result?.localPath||`${expectedRoot}\\${job.id}\\image.png`):'';
   const recorded=complete&&job.result?.localPath===expectedPath;
   return {

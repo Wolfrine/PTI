@@ -1,8 +1,9 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {stat,readFile} from 'node:fs/promises';
-import {readFileSync} from 'node:fs';
-import {QWEN_MODEL,MODEL_REFERENCE_LIMITS} from '../../velum-gallery/studio-contract.mjs';
+import {createReadStream,readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {QWEN_MODEL,QWEN_TURBO_MODEL,isQwenModel,MODEL_REFERENCE_LIMITS} from '../../velum-gallery/studio-contract.mjs';
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 export const QWEN_ENGINE='H:\\AI-ImageGen\\velum-qwen21-research-20261103';
 export const QWEN_RUNTIME='F:\\Workspace\\Support\\LocalCodexBridge\\scratch\\qwen21-quality-20261103\\ComfyUI';
@@ -12,6 +13,8 @@ export const QWEN_WEIGHTS=Object.freeze({
  'text_encoders/qwen3vl_8b_w4a8.safetensors':6312105364,
  'vae/qwen_image_2.1_vae_bf16.safetensors':675509688,
 });
+const TURBO_WEIGHT='diffusion_models/qwen_image_2.1_turbo_int8_convrot.safetensors';
+const TURBO_SHA256='8144a0182964aa8403ad6dbc011db837304167d235161b9aabaa8532e967314c';
 // The worker, Python adapter and thumbnail CLI share this tracked path contract.
 export const QWEN_OUTPUT_ROOT=(()=>{
  try{
@@ -21,7 +24,7 @@ export const QWEN_OUTPUT_ROOT=(()=>{
  }catch{return null;}
 })();
 export function engineProfile(model){
- if(model===QWEN_MODEL){
+ if(isQwenModel(model)){
   if(!QWEN_OUTPUT_ROOT)throw new Error('model-unavailable');
   return {python:path.join(QWEN_ENGINE,'venv','Scripts','python.exe'),script:path.join(HERE,'infer-qwen.py'),outputRoot:QWEN_OUTPUT_ROOT,timeoutMs:7200000,parentTimeoutMs:7230000};
  }
@@ -44,6 +47,19 @@ export async function qwenInstalled({statFile=stat,read=readFile}={}){
   return true;
  }catch{return false;}
 }
+export async function qwenTurboInstalled(){
+ // Opt in only after the compatibility and license gates for this device are met.
+ try{
+  if(!QWEN_OUTPUT_ROOT||(await readFile(path.join(QWEN_OUTPUT_ROOT,'turbo-evaluation.enabled'),'utf8')).trim()!==QWEN_TURBO_MODEL)return false;
+  const filename=path.join(QWEN_ENGINE,'models',TURBO_WEIGHT),info=await stat(filename);
+  if(!info.isFile()||info.size!==7256787829)return false;
+  const hash=createHash('sha256');
+  for await(const chunk of createReadStream(filename))hash.update(chunk);
+  return hash.digest('hex')===TURBO_SHA256;
+ }catch{return false;}
+}
 export function workerCapabilities(installed,recoveryControl){
- return {referenceModel:'flux2-klein-fp8',maxReferences:2,referenceModels:['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4',...(installed.includes(QWEN_MODEL)?[QWEN_MODEL]:[])],referenceOutputWidth:512,referenceOutputHeight:768,recoveryControl,qwenMaxReferences:10,promptSchema:4,referenceLimits:MODEL_REFERENCE_LIMITS};
+ const references={...MODEL_REFERENCE_LIMITS};
+ if(!installed.includes(QWEN_TURBO_MODEL))delete references[QWEN_TURBO_MODEL];
+ return {referenceModel:'flux2-klein-fp8',maxReferences:2,referenceModels:Object.keys(references).filter(model=>installed.includes(model)),referenceOutputWidth:512,referenceOutputHeight:768,recoveryControl,qwenMaxReferences:10,promptSchema:4,referenceLimits:references};
 }

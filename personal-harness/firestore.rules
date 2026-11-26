@@ -41,7 +41,17 @@ service cloud.firestore {
     && request.auth.uid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && request.auth.token.get('firebase',{}).get('sign_in_provider','') == 'anonymous'; }
    function studioDevice() { return pinnedDevice()
     && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/devices/$(request.auth.uid)).data.status == 'approved'; }
-   function model(id) { return id in ['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15','qwen-image-2.1']; }
+   function turboModel() { return 'qwen-image-2.1-turbo'; }
+   function qwenModel(id) { return id in ['qwen-image-2.1',turboModel()]; }
+   function baseModels() { return ['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15','qwen-image-2.1']; }
+   function model(id) { return id in baseModels() || id == turboModel(); }
+   function turboReady(deviceUid) {
+    let status = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/status/pc).data;
+    let binding = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/devices/$(deviceUid)).data;
+    return status.deviceUid == deviceUid && status.version == '2.3.2'
+     && turboModel() in status.installed && turboModel() in status.capabilities.referenceModels
+     && binding.deviceUid == deviceUid && binding.status == 'approved';
+   }
    function instant(t) { return t is int && t > 0 && t <= request.time.toMillis() + 300000; }
    // Current measurements only. No arbitrary telemetry, identifiers or history.
    function studioStage(s) { return s in ['preparing','loading-model','encoding-references','encoding-prompt','loading-diffusion','sampling','decoding','publishing']; }
@@ -139,13 +149,13 @@ service cloud.firestore {
    function job(d) { return d.schemaVersion in [2,3,4] && !('recordType' in d) && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && model(d.model) && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 6000
     && d.seed is int && d.seed >= 0 && d.seed <= 2147483647 && d.consent == true
     && instant(d.createdAt) && d.expiresAt == d.createdAt + 604800000
-    && (d.schemaVersion == 4 || (d.model != 'qwen-image-2.1' && !d.keys().hasAny(['effectivePrompt','pose'])))
+    && (d.schemaVersion == 4 || (!qwenModel(d.model) && !d.keys().hasAny(['effectivePrompt','pose'])))
     && ((d.schemaVersion == 2 && d.width == 768 && d.height == 1024)
      || (d.schemaVersion in [3,4] && modern(d)
       && (d.schemaVersion != 4 || (d.effectivePrompt is string && d.effectivePrompt.size() <= 8000 && pose(d)))
       && ((d.references.size() == 0 && d.width == 768 && d.height == 1024)
-       || (d.references.size() > 0 && ((d.model != 'qwen-image-2.1' && d.width == 512 && d.height == 768)
-        || (d.model == 'qwen-image-2.1' && d.width is int && d.height is int && d.width >= 32 && d.width <= 3072
+       || (d.references.size() > 0 && ((!qwenModel(d.model) && d.width == 512 && d.height == 768)
+        || (qwenModel(d.model) && d.width is int && d.height is int && d.width >= 32 && d.width <= 3072
          && d.height >= 32 && d.height <= 3072 && d.width % 32 == 0 && d.height % 32 == 0
          && d.width*d.height >= 950000 && d.width*d.height <= 1150000)))))); }
    function completeInput(id,r) {
@@ -227,19 +237,34 @@ service cloud.firestore {
     allow delete: if false;
    }
    match /status/pc {
+    function newerQwen(version) { return version in ['2.3.0','2.3.1','2.3.2']; }
+    function approvedModels(d) {
+     return d.installed is list && (d.version == '2.3.2'
+      ? (d.installed.size() <= 6 && d.installed.hasOnly(baseModels().concat([turboModel()]))
+        && d.installed.hasAll(['qwen-image-2.1',turboModel()]) && 'capabilities' in d)
+      : (d.installed.size() <= 5 && d.installed.hasOnly(baseModels())));
+    }
+    function qwenCapabilities(d) {
+     let c = d.capabilities;
+     let limits = {'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1,'qwen-image-2.1':10};
+     return c.referenceModels.hasOnly(d.installed) && c.qwenMaxReferences == 10 && c.promptSchema == 4
+      && (d.version == '2.3.2'
+       ? (turboModel() in c.referenceModels && c.referenceLimits.diff(limits).affectedKeys().hasOnly([turboModel()])
+         && c.referenceLimits.get(turboModel(),0) == 1)
+       : c.referenceLimits == limits);
+    }
     allow read: if studioOwner() || studioDevice();
     allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version','capabilities'])
      && request.resource.data.deviceUid == request.auth.uid
-     && instant(request.resource.data.updatedAt) && request.resource.data.installed is list && request.resource.data.installed.size() <= 5
-     && request.resource.data.installed.hasOnly(['zimage-nvfp4','flux2-klein-fp8','realvis-dynamic','realistic-sd15','qwen-image-2.1'])
+     && instant(request.resource.data.updatedAt) && approvedModels(request.resource.data)
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
-      && request.resource.data.version in ['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1']
+      && request.resource.data.version in ['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1','2.3.2']
       && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight','recoveryControl','qwenMaxReferences','promptSchema','referenceLimits'])
       && request.resource.data.capabilities.referenceModel == 'flux2-klein-fp8' && request.resource.data.capabilities.maxReferences == 2
       && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768
       && (request.resource.data.version == '2.0.0' ? !('referenceModels' in request.resource.data.capabilities) :
-        ('referenceModels' in request.resource.data.capabilities && (request.resource.data.version in ['2.3.0','2.3.1'] ? (request.resource.data.capabilities.referenceModels.hasOnly(request.resource.data.installed) && request.resource.data.capabilities.qwenMaxReferences == 10 && request.resource.data.capabilities.promptSchema == 4 && request.resource.data.capabilities.referenceLimits == {'flux2-klein-fp8':2,'realvis-dynamic':1,'realistic-sd15':1,'zimage-nvfp4':1,'qwen-image-2.1':10}) : request.resource.data.capabilities.referenceModels == ['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'])))
-       && (request.resource.data.version in ['2.2.0','2.3.0','2.3.1'] ? ('recoveryControl' in request.resource.data.capabilities && request.resource.data.capabilities.recoveryControl is bool)
+        ('referenceModels' in request.resource.data.capabilities && (newerQwen(request.resource.data.version) ? qwenCapabilities(request.resource.data) : request.resource.data.capabilities.referenceModels == ['flux2-klein-fp8','realvis-dynamic','realistic-sd15','zimage-nvfp4'])))
+       && (request.resource.data.version in ['2.2.0','2.3.0','2.3.1','2.3.2'] ? ('recoveryControl' in request.resource.data.capabilities && request.resource.data.capabilities.recoveryControl is bool)
         : !('recoveryControl' in request.resource.data.capabilities))));
     allow delete: if studioOwner();
    }
@@ -275,6 +300,7 @@ service cloud.firestore {
     allow read: if studioOwner() || (studioDevice() && resource.data.deviceUid == request.auth.uid);
     allow delete: if studioOwner();
     allow create: if studioOwner() && id.matches('[A-Za-z0-9_-]{1,80}') && job(request.resource.data)
+     && (request.resource.data.model != turboModel() || turboReady(request.resource.data.deviceUid))
      && request.resource.data.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent','references','parentJobId','inputsReady','effectivePrompt','pose'])
      && ((request.resource.data.schemaVersion == 2 && !request.resource.data.keys().hasAny(['references','parentJobId','inputsReady']) && request.resource.data.status == 'queued')
       || (request.resource.data.schemaVersion in [3,4] && ((request.resource.data.references.size() > 0 && request.resource.data.status == 'uploading' && request.resource.data.inputsReady == false)
@@ -288,7 +314,8 @@ service cloud.firestore {
     allow update: if studioOwner() && resource.data.schemaVersion == 4 && resource.data.status == 'uploading'
      && resource.data.inputsReady == false && request.resource.data.inputsReady == true && request.resource.data.status == 'queued'
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','inputsReady'])
-     && resource.data.expiresAt > request.time.toMillis() && allReady(id,resource.data);
+     && resource.data.expiresAt > request.time.toMillis() && allReady(id,resource.data)
+     && (resource.data.model != turboModel() || turboReady(resource.data.deviceUid));
     // Abandon an incomplete transfer without deleting any input bytes or originals.
     allow update: if studioOwner() && resource.data.status == 'uploading' && resource.data.schemaVersion in [3,4]
      && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);

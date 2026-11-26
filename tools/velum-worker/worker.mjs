@@ -12,8 +12,8 @@ import {downloadReferences,thumbnailPayload} from './reference-input.mjs';
 import {ThumbnailBackfill} from './thumbnail-backfill.mjs';
 import {pendingRecovery} from '../../velum-gallery/studio-recovery.mjs';
 import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
-import {engineProfile,qwenInstalled,workerCapabilities} from './engine-profile.mjs';
-import {QWEN_MODEL,validateJob} from '../../velum-gallery/studio-contract.mjs';
+import {engineProfile,qwenInstalled,qwenTurboInstalled,workerCapabilities} from './engine-profile.mjs';
+import {QWEN_MODEL,QWEN_TURBO_MODEL,QWEN_TURBO_WORKER_VERSION,isQwenModel,validateJob} from '../../velum-gallery/studio-contract.mjs';
 import {LiveProgress} from './live-progress.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
@@ -22,7 +22,7 @@ const DATA='H:\\AI-ImageGen\\portrait-pilot';
 const PYTHON='F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe';
 const BASE=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const ROOT=`users/${OWNER_UID}/velumStudio/workspace`;
-const VERSION='2.3.1';
+const BASE_WORKER_VERSION='2.3.1';
 const EXPECTED_BYTES={
  'z_image_turbo_nvfp4.safetensors':4509509600,'flux-2-klein-4b-fp8.safetensors':4070624520,
  'RealVisXL_V5.0_fp16.safetensors':6938065488,'Realistic_Vision_V6.0_NV_B1_fp16.safetensors':2132625894,
@@ -93,7 +93,10 @@ async function installedModels(){
   const valid=await Promise.all(files.map(async file=>{try{const info=await stat(path.join(DATA,'models',file));return info.isFile()&&info.size===EXPECTED_BYTES[path.basename(file)];}catch{return false;}}));
   if(valid.every(Boolean))installed.push(id);
  }
- if(await qwenInstalled())installed.push(QWEN_MODEL);
+ if(await qwenInstalled()){
+  installed.push(QWEN_MODEL);
+  if(await qwenTurboInstalled())installed.push(QWEN_TURBO_MODEL);
+ }
  await stat(PYTHON);return installed;
 }
 async function loadThumbnail(directory,metadata){
@@ -111,7 +114,7 @@ export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={})
  const parentCreated=execFileSync(profile.python,['-B','-c',`import psutil; print(psutil.Process(${process.pid}).create_time())`],{windowsHide:true,encoding:'utf8',timeout:15000}).trim();
  return new Promise((resolve,reject)=>{
   const child=spawn(profile.python,['-B',profile.script],{cwd:HERE,windowsHide:true,shell:false,
-   env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated,...(job.model===QWEN_MODEL?{VELUM_QWEN_OUTPUT_ROOT:profile.outputRoot}:{})},stdio:['pipe','pipe','pipe']});
+   env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated,...(isQwenModel(job.model)?{VELUM_QWEN_OUTPUT_ROOT:profile.outputRoot}:{})},stdio:['pipe','pipe','pipe']});
   const abort=()=>child.kill();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
   let buffer='',diagnostic='',failure='inference-failed',saved=false,guardEvents=[];
   const timer=setTimeout(()=>{failure='resource-guard';guardEvents.push({event:'guard-trip',failed:['parent-timeout'],timeoutMs:profile.parentTimeoutMs});child.kill();},profile.parentTimeoutMs);
@@ -145,13 +148,13 @@ async function main(){
  const lock=await acquireWorkerLock(lockPath,fileURLToPath(import.meta.url));
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
- let installed=[],queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
+ let installed=[],version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version:VERSION,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version:VERSION,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{
@@ -183,7 +186,7 @@ async function main(){
   // Shared production rules allow this field to be omitted and still require
   // the verified result identity. Qwen's migrated H: path is retained in its
   // local result.json; do not publish the retired F: path or change shared rules.
-  const reportedPath=expected.model===QWEN_MODEL?{}:{localPath:path.join(engineProfile(expected.model).outputRoot,item.id,'image.png')};
+  const reportedPath=isQwenModel(expected.model)?{}:{localPath:path.join(engineProfile(expected.model).outputRoot,item.id,'image.png')};
   await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,...reportedPath}});
  };
  const backfill=new ThumbnailBackfill(path.join(STATE,'thumbnail-backfill.json'),{
@@ -217,7 +220,7 @@ async function main(){
   try{await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload,fail,approved,
    claimed:async()=>{const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});if(response.status===404)return false;return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid);},
    canResumeInference:async()=>{
-    if(!item.job.references?.length)return false;
+    if(!installed.includes(item.job.model)||!item.job.references?.length)return false;
     try{await stat(path.join(engineProfile(item.job.model).outputRoot,item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
    },
    prepare:async()=>{await progress.start();return downloadReferences(item.id,item.job,{root:engineProfile(item.job.model).outputRoot,approved,fetchManifest:async reference=>{
@@ -235,6 +238,7 @@ async function main(){
  process.on('SIGINT',stop);process.on('SIGTERM',stop);
  try{
   installed=await installedModels();
+  if(installed.includes(QWEN_TURBO_MODEL))version=QWEN_TURBO_WORKER_VERSION;
   await local({state:'restoring-device',installed});
   let checking=false;
   heartbeat=setInterval(async()=>{

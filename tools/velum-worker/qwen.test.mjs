@@ -3,19 +3,19 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import {makeJob,QWEN_MODEL,MODEL_IDS} from '../../velum-gallery/studio-contract.mjs';
+import {makeJob,QWEN_MODEL,isQwenModel,MODEL_IDS} from '../../velum-gallery/studio-contract.mjs';
 import {engineProfile,qwenInstalled,QWEN_WEIGHTS,QWEN_REVISION,workerCapabilities} from './engine-profile.mjs';
 import {downloadReferences} from './reference-input.mjs';
 
-test('only Qwen selects its isolated installed interpreter, adapter, F output and longer bounded timeout',()=>{
+test('Qwen models select their isolated interpreter, adapter, H output and longer bounded timeout',()=>{
  const qwen=engineProfile(QWEN_MODEL),legacy=engineProfile('realvis-dynamic');
- assert.match(qwen.python,/velum-qwen21-research-20261103/);assert.match(qwen.script,/infer-qwen.py$/);assert.match(qwen.outputRoot,/[\\/]velum-worker[\\/]\.runtime[\\/]qwen21$/);if(process.platform==='win32')assert.match(qwen.outputRoot,/^[Ff]:/);
+ assert.match(qwen.python,/velum-qwen21-research-20261103/);assert.match(qwen.script,/infer-qwen.py$/);assert.match(qwen.outputRoot,/^H:[\\/]Workspace[\\/]Generated[\\/]Velum[\\/]qwen21$/);
  assert.equal(qwen.timeoutMs,7200000);assert.equal(qwen.parentTimeoutMs,7230000);
- for(const model of MODEL_IDS.filter(model=>model!==QWEN_MODEL))assert.deepEqual(engineProfile(model),legacy);
+ for(const model of MODEL_IDS)assert.deepEqual(engineProfile(model),isQwenModel(model)?qwen:legacy);
  assert.equal(legacy.timeoutMs,1800000);assert.equal(legacy.parentTimeoutMs,1830000);
 });
 test('Qwen installation detection fails closed for missing/changed weights, runtime revision or native node',async()=>{
- const statFile=async filename=>({isFile:()=>true,size:Object.entries(QWEN_WEIGHTS).find(([relative])=>filename.endsWith(relative.replaceAll('/',path.sep)))?.[1]??0});
+ const statFile=async filename=>({isDirectory:()=>true,isFile:()=>true,size:Object.entries(QWEN_WEIGHTS).find(([relative])=>filename.endsWith(relative.replaceAll('/',path.sep)))?.[1]??0});
  const read=async filename=>filename.endsWith('HEAD')?QWEN_REVISION:'class TextEncodeQwenImage21(\nclass QwenImage21Cache(';
  assert.equal(await qwenInstalled({statFile,read}),true);
  assert.equal(await qwenInstalled({statFile:async()=>({isFile:()=>true,size:1}),read}),false);

@@ -2,10 +2,13 @@
 import math
 
 QWEN_MODEL = 'qwen-image-2.1'
-REFERENCE_CAPS = {'flux2-klein-fp8':2, 'realvis-dynamic':1, 'realistic-sd15':1, 'zimage-nvfp4':1, QWEN_MODEL:10}
+QWEN_TURBO_MODEL = 'qwen-image-2.1-turbo'
+QWEN_MODELS = frozenset((QWEN_MODEL, QWEN_TURBO_MODEL))
+REFERENCE_CAPS = {'flux2-klein-fp8':2, 'realvis-dynamic':1, 'realistic-sd15':1, 'zimage-nvfp4':1,
+                  QWEN_MODEL:10, QWEN_TURBO_MODEL:1}
 
 def dimensions(model, references):
-    if model == QWEN_MODEL and references:
+    if model in QWEN_MODELS and references:
         ratio = references[0]['width'] / references[0]['height']
         return (max(32, round(math.sqrt(1048576*ratio)/32)*32), max(32, round(math.sqrt(1048576/ratio)/32)*32))
     return (512, 768) if references else (768, 1024)
@@ -15,7 +18,7 @@ def validate_request(job):
     references = job.get('references', [])
     if model not in REFERENCE_CAPS or schema not in (2,3,4) or job.get('recordType') is not None:
         raise ValueError('invalid-job')
-    if model == QWEN_MODEL and schema != 4:
+    if model in QWEN_MODELS and schema != 4:
         raise ValueError('invalid-job')
     if not isinstance(references, list) or len(references) > REFERENCE_CAPS[model]:
         raise ValueError('invalid-reference')
@@ -37,7 +40,7 @@ def validate_request(job):
         if schema < 4 and 'role' in reference:
             raise ValueError('invalid-reference')
         if schema == 4:
-            if model == QWEN_MODEL and (reference['width'] > reference['height']*8 or reference['height'] > reference['width']*8):
+            if model in QWEN_MODELS and (reference['width'] > reference['height']*8 or reference['height'] > reference['width']*8):
                 raise ValueError('invalid-reference-aspect-ratio')
             digest, source = reference.get('sha256'), reference.get('source', {})
             drive_id = source.get('id') if source.get('kind') == 'drive' else None

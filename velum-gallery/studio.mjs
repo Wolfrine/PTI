@@ -20,13 +20,14 @@ export async function decodeResult(result,chunks){
   const bytes=new Uint8Array(parts.reduce((total,part)=>total+part.length,0));let offset=0;parts.forEach(part=>{bytes.set(part,offset);offset+=part.length;});if(bytes.length!==result.bytes||[137,80,78,71,13,10,26,10].some((value,index)=>bytes[index]!==value))throw new Error('Image size or format mismatch');const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(value=>value.toString(16).padStart(2,'0')).join('');if(digest!==result.sha256)throw new Error('Image integrity check failed');return new Blob([bytes],{type:'image/png'});
 }
 
-export async function mountStudio({app,auth,drive}){
+export async function mountStudio({app,auth,drive,canStart=()=>true}){
   const root=document.querySelector('#studioView');if(!root)return;
   if(root.studioController)return root.studioController;
   renderStudioShell(root);
   const sdk=await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js');
   const {getFirestore,doc,collection,query,where,orderBy,limit,startAfter,documentId,getDoc,getDocs,setDoc,updateDoc,deleteDoc}=sdk;
   const {onAuthStateChanged}=await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js');
+  if(!canStart())return;
   if(!drive)throw new Error('Studio Drive integration is unavailable. Refresh Velum.');
   const referencePicker=createReferencePicker({drive});
   const db=getFirestore(app);

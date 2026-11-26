@@ -1,5 +1,14 @@
 const PIN_KEY = 'velum-pin-v1';
 const PIN_ITERATIONS = 180000;
+let pinPrompt = null;
+let pinGeneration = 0;
+document.documentElement.dataset.velumLocked = 'true';
+const markLocked = () => {
+  document.documentElement.dataset.velumLocked = 'true';
+  pinGeneration++;
+};
+window.addEventListener('pagehide', markLocked);
+window.addEventListener('velum:lock', markLocked);
 
 function bytesToBase64(bytes) {
   let binary = '';
@@ -90,6 +99,7 @@ function pinCardMarkup(setup) {
 }
 
 function showPinGate({ setup = false } = {}) {
+  if (pinPrompt) return pinPrompt;
   const overlay = ensurePinOverlay();
   overlay.style.display = 'grid';
   overlay.innerHTML = pinCardMarkup(setup);
@@ -99,8 +109,9 @@ function showPinGate({ setup = false } = {}) {
   const status = document.getElementById('velumPinStatus');
   setTimeout(() => input?.focus(), 60);
 
-  return new Promise(resolve => {
+  pinPrompt = new Promise(resolve => {
     const submit = async () => {
+      if (button.disabled) return;
       const pin = (input.value || '').trim();
       if (!/^\d{4,8}$/.test(pin)) {
         status.textContent = 'Use 4–8 digits.';
@@ -108,6 +119,7 @@ function showPinGate({ setup = false } = {}) {
         return;
       }
       button.disabled = true;
+      const generation = pinGeneration;
       status.textContent = setup ? 'Securing this device…' : 'Checking…';
       if (setup) {
         if (pin !== (confirm?.value || '').trim()) {
@@ -116,7 +128,13 @@ function showPinGate({ setup = false } = {}) {
           confirm?.focus();
           return;
         }
-        await createPin(pin);
+        try {
+          await createPin(pin);
+        } catch {
+          status.textContent = 'Could not save your PIN on this device.';
+          button.disabled = false;
+          return;
+        }
       } else if (!await verifyPin(pin)) {
         status.textContent = 'Incorrect PIN.';
         input.value = '';
@@ -124,26 +142,46 @@ function showPinGate({ setup = false } = {}) {
         input.focus();
         return;
       }
+      if (generation !== pinGeneration) {
+        input.value = '';
+        if (confirm) confirm.value = '';
+        button.disabled = false;
+        status.textContent = 'Enter your PIN again.';
+        return;
+      }
+      input.value = '';
+      if (confirm) confirm.value = '';
+      document.documentElement.dataset.velumLocked = 'false';
+      if (!setup) performance.mark('velum:pin-accepted');
       overlay.style.display = 'none';
       resolve(true);
     };
-    button.addEventListener('click', submit);
+    const timedSubmit = () => {
+      if (!setup && !button.disabled && /^\d{4,8}$/.test(input.value.trim())) {
+        performance.clearMarks('velum:pin-submitted');
+        performance.clearMarks('velum:pin-accepted');
+        performance.clearMeasures('velum:pin-to-drift');
+        performance.mark('velum:pin-submitted');
+      }
+      void submit();
+    };
+    button.addEventListener('click', timedSubmit);
     [input, confirm].filter(Boolean).forEach(el => el.addEventListener('keydown', e => {
-      if (e.key === 'Enter') submit();
+      if (e.key === 'Enter') timedSubmit();
     }));
   });
+  return pinPrompt.finally(() => { pinPrompt = null; });
 }
 
 async function bootGallery() {
   const hasPin = Boolean(localStorage.getItem(PIN_KEY));
-  await showPinGate({ setup: !hasPin });
-  const appModule = new URL('./app.js', import.meta.url);
-  appModule.search = new URL(import.meta.url).search;
-  await import(appModule.href);
   window.addEventListener('velum:request-unlock',async()=>{
     window.dispatchEvent(new Event('velum:lock'));
     await showPinGate({setup:false});
     window.dispatchEvent(new Event('velum:unlock'));
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) window.dispatchEvent(new Event('velum:request-unlock'));
   });
 
   const returnBtn = document.getElementById('returnBtn');
@@ -157,6 +195,10 @@ async function bootGallery() {
       window.dispatchEvent(new Event('velum:unlock'));
     }, true);
   }
+  await showPinGate({ setup: !hasPin });
+  const appModule = new URL('./app.js', import.meta.url);
+  appModule.search = new URL(import.meta.url).search;
+  await import(appModule.href);
 }
 
 bootGallery().catch(error => {

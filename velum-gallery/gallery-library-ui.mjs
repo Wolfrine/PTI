@@ -70,13 +70,44 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const drift=selector==='#driftView',key=drift?'drift':'browse';
   const region=document.createElement('div');region.className=`library-tools ${drift?'library-tools-drift':'library-tools-browse'} collapsed`;
   const icon=drift?'···':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4"/></svg>';
-   region.innerHTML=`<button type="button" class="library-tools-toggle" aria-expanded="false" aria-label="${drift?'Collection options':'Choose collection'}" aria-controls="${key}LibraryOptions">${icon}</button>${drift?'<button type="button" class="library-detail-shortcut" data-details aria-label="Image details" title="Image details">ⓘ</button>':''}<div id="${key}LibraryOptions" class="library-tools-content"><label>Collection <select aria-label="${drift?'Drift':'Browse'} folder"><option value="all">All</option><option value="private">Private</option><option value="references">References</option></select></label>${drift?'<span data-folder-label></span>':''}<button type="button" data-recovery hidden>Undo last action</button></div>`;
+  const preferences = drift ? `
+   <label>Drift mode <select id="driftModeSelect"><option value="adaptive">Adaptive</option><option value="shuffle">Shuffle</option><option value="unseen">Unseen first</option></select></label>
+   <label>Viewing interval <select id="driftIntervalSelect"><option value="15">15 seconds</option><option value="30">30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds</option></select></label>
+   <label>Background <select id="driftBackgroundSelect"><option value="ambient">Ambient</option><option value="black">Pure black</option></select></label>
+   <button type="button" id="driftTimerToggle" aria-pressed="false">Pause auto-advance</button>
+   <span data-folder-label></span>` : `
+   <label>Columns <select id="browseColumnsSelect"><option value="auto">Automatic</option><option value="2">2 columns</option><option value="3">3 columns</option><option value="4">4 columns</option><option value="5">5 columns</option></select></label>`;
+  region.innerHTML=`<button type="button" class="library-tools-toggle" aria-expanded="false" aria-label="${drift?'Drift options':'Browse options'}" aria-controls="${key}LibraryOptions">${icon}</button>${drift?'<button type="button" class="library-detail-shortcut" data-details aria-label="Image details" title="Image details">ⓘ</button>':''}<div id="${key}LibraryOptions" class="library-tools-content"><label>Collection <select data-library-filter aria-label="${drift?'Drift':'Browse'} folder"><option value="all">All</option><option value="private">Private</option><option value="references">References</option></select></label>${preferences}<button type="button" data-recovery hidden>Undo last action</button></div>`;
   const surface=document.querySelector(selector),heading=surface?.querySelector('.browse-head');if(heading)heading.append(region);else surface?.append(region);regions.push(region);
-  const toggle=region.querySelector('.library-tools-toggle');toggle.addEventListener('click',()=>{const expanded=region.classList.toggle('collapsed')===false;toggle.setAttribute('aria-expanded',String(expanded));});
-  region.querySelector('select').addEventListener('change',event=>{filter=event.target.value;regions.forEach(item=>item.querySelector('select').value=filter);onFilter(filter);region.classList.add('collapsed');toggle.setAttribute('aria-expanded','false');});
-  region.querySelector('[data-details]')?.addEventListener('click',()=>open(current()));
+  const toggle=region.querySelector('.library-tools-toggle');
+  toggle.addEventListener('click', () => setExpanded(region, region.classList.contains('collapsed')));
+  region.addEventListener('keydown', event => {
+   if (event.key !== 'Escape' || region.classList.contains('collapsed')) return;
+   setExpanded(region, false);
+   toggle.focus();
+  });
+  region.querySelector('[data-library-filter]').addEventListener('change', event => {
+   filter = event.target.value;
+   regions.forEach(item => { item.querySelector('[data-library-filter]').value = filter; });
+   onFilter(filter);
+   setExpanded(region, false);
+   toggle.focus({ preventScroll: true });
+  });
+  region.querySelector('[data-details]')?.addEventListener('click', () => {
+   setExpanded(region, false);
+   void open(current());
+  });
   region.querySelector('[data-recovery]').addEventListener('click',undo);
  }
+ function setExpanded(region, open) {
+  if (region.classList.contains('collapsed') === !open) return;
+  region.classList.toggle('collapsed', !open);
+  region.querySelector('.library-tools-toggle').setAttribute('aria-expanded', String(open));
+  if (region.classList.contains('library-tools-drift')) {
+   window.dispatchEvent(new CustomEvent('velum:drift-options', { detail: { open } }));
+  }
+ }
+ function closeOptions() { regions.forEach(region => setExpanded(region, false)); }
   function showRecovery(){regions.forEach(region=>{const button=region.querySelector('[data-recovery]');button.hidden=!recovery;button.disabled=busy;});notice.querySelectorAll('button:not([data-action-dismiss])').forEach(button=>button.disabled=busy);}
   function showNotice(value,{undoable=false,reconnectable=false,receipt=null,reconnectLabel='Reconnect Drive'}={}){
    reconnectable=reconnectable&&validReceipt(receipt)&&matchesReceipt(receipt);offeredReceipt=reconnectable?receipt:null;
@@ -84,7 +115,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
    for(const surface of [notice,dialog]){const button=surface.querySelector('[data-reconnect]');if(button){button.hidden=!reconnectable;button.disabled=busy;button.textContent=reconnectLabel;}}
    message(value);showRecovery();
   }
-  function closeDetail(){epoch++;active=null;if(dialog.open)dialog.close();dialog.replaceChildren();for(const region of regions){region.classList.add('collapsed');region.querySelector('.library-tools-toggle')?.setAttribute('aria-expanded','false');}}
+  function closeDetail(){epoch++;active=null;if(dialog.open)dialog.close();dialog.replaceChildren();closeOptions();}
   function clear({preserveResume=false}={}){if(!preserveResume)clearConnectResume();moveSession++;recovery=null;offeredReceipt=null;busy=false;notice.hidden=true;closeDetail();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent='';});showRecovery();}
  function message(value){const output=dialog.querySelector('[role=status]');if(output)output.textContent=value;}
   function setBusy(value){busy=value;dialog.querySelectorAll('button:not([data-close]):not([data-exit])').forEach(button=>button.disabled=value);document.querySelectorAll('.tile-quick-move').forEach(button=>button.disabled=value);showRecovery();}
@@ -342,6 +373,6 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
  });
   dialog.addEventListener('cancel',event=>{event.preventDefault();closeDetail();});
  window.addEventListener('velum:lock',clear);window.addEventListener('pagehide',()=>clear({preserveResume:true}));
-  return {open,move:moveQuick,clear,resume,update(){const file=current();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent=file?.folderLabel||'';});},get filter(){return filter;},get busy(){return busy;}};
+  return {open,move:moveQuick,clear,resume,closeOptions,update(){const file=current();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent=file?.folderLabel||'';});},get filter(){return filter;},get busy(){return busy;}};
 }
 

@@ -2,19 +2,6 @@ import { chooseFeedImage, reconcileDiscovery } from './feed.mjs';
 import { affectionScore, totalAffectionMs, isQuickSkip } from './affection.mjs';
 import { createHeartEffects } from './heart-effects.mjs';
 import { createDriftGestures } from './drift-gestures.mjs';
-const studioModule = new URL('./studio.mjs', import.meta.url);
-studioModule.search = new URL(import.meta.url).search;
-const { mountStudio } = await import(studioModule.href);
-const driveModule = new URL('./studio-drive.mjs', import.meta.url);
-driveModule.search = new URL(import.meta.url).search;
-const { createStudioDrive,readBoundedImage,createDriveAccess,DRIVE_READ_SCOPE } = await import(driveModule.href);
-const libraryModule=new URL('./drive-library.mjs',import.meta.url);libraryModule.search=new URL(import.meta.url).search;
-const {libraryQuery,libraryFile,PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID}=await import(libraryModule.href);
-const libraryUiModule=new URL('./gallery-library-ui.mjs',import.meta.url);libraryUiModule.search=new URL(import.meta.url).search;
-const {mountGalleryLibrary}=await import(libraryUiModule.href);
-const tokenModule = new URL('./google-drive-token.mjs', import.meta.url);
-tokenModule.search = new URL(import.meta.url).search;
-const {createGoogleDriveTokenRequest, preloadGoogleIdentityServices} = await import(tokenModule.href);
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
   getAuth,
@@ -24,7 +11,6 @@ import {
   browserLocalPersistence,
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,doc,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyAFXtWCXQgR8Sn2H0ZWqJx_sdPM4ujO2Zs',
@@ -40,7 +26,23 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
-await setPersistence(auth, browserLocalPersistence).catch(() => {});
+const localModule = relative => {
+  const url = new URL(relative, import.meta.url);
+  url.search = new URL(import.meta.url).search;
+  return import(url.href);
+};
+const [
+  { createStudioDrive, readBoundedImage, createDriveAccess, DRIVE_READ_SCOPE },
+  { libraryQuery, libraryFile, PRIVATE_FOLDER_ID, REFERENCES_FOLDER_ID },
+  { mountGalleryLibrary },
+  { createGoogleDriveTokenRequest, preloadGoogleIdentityServices }
+] = await Promise.all([
+  localModule('./studio-drive.mjs'),
+  localModule('./drive-library.mjs'),
+  localModule('./gallery-library-ui.mjs'),
+  localModule('./google-drive-token.mjs'),
+  setPersistence(auth, browserLocalPersistence).catch(() => {})
+]);
 
 const $ = s => document.querySelector(s);
 const authGate = $('#authGate');
@@ -110,7 +112,7 @@ browsePagination.append(browseStatus, browsePageActions);
 browseGrid.after(browsePagination);
 
 let galleryEpoch = 0;
-let galleryLocked = false;
+let galleryLocked = document.documentElement.dataset.velumLocked !== 'false';
 let galleryRevision = 0;
 let galleryOwner = auth.currentUser?.uid || '';
 const galleryRequests = new Set();
@@ -138,11 +140,16 @@ let browseObserver = null;
 let browseState = null;
 let browseRenderVersion = 0;
 let gallerySync = null;
+let galleryRestore = null;
 let galleryListingState = 'idle';
 let initializedGallery = false;
 let connectingDrive = false;
 let pendingGalleryView = '';
 let renderSerial = 0;
+let pendingMediaId = '';
+let driftPreferencesOpen = false;
+let optionsPausedVideo = null;
+let studioMount = null;
 let access;
 const tokenRequests = createGoogleDriveTokenRequest({
   auth,
@@ -173,6 +180,8 @@ const studioDrive = createStudioDrive({auth,access,apiKey:FIREBASE_CONFIG.apiKey
   reserve: async (job,candidate) => {
     const uid=auth.currentUser?.uid;
     if(uid!=='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2')throw new Error('Owner sign-in is required.');
+    const { getFirestore, doc, runTransaction } = await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js');
+    if (galleryLocked || auth.currentUser?.uid !== uid) throw new Error('Unlock Velum to save to Drive.');
     const db=getFirestore(app),ref=doc(db,`users/${uid}/velumStudio/workspace/uploads/${job.id}`);
     return runTransaction(db,async tx=>{
       const snapshot=await tx.get(ref);
@@ -191,20 +200,36 @@ studioDrive.setGalleryProvider({list:()=>images.filter(item=>item.kind==='image'
   if(imageById(id)?.size>16*1024*1024)throw new Error('Choose a reference smaller than 16 MB.');
   return readDrive(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`,{signal},readBoundedImage);
 }});
-mountStudio({ app, auth, drive:studioDrive }).catch(() => {
-  const studio = document.querySelector('#studioView');
-  if (studio) studio.textContent = 'Studio could not load. Reconnect and refresh Velum.';
-});
+function openStudio() {
+  if (studioMount) return;
+  const generation = galleryEpoch;
+  const canStart = () => generation === galleryEpoch && !galleryLocked;
+  studioMount = localModule('./studio.mjs')
+    .then(({ mountStudio }) => canStart() && mountStudio({ app, auth, drive: studioDrive, canStart }))
+    .then(controller => { if (!controller) studioMount = null; })
+    .catch(() => {
+      studioMount = null;
+      if (canStart()) $('#studioView').textContent = 'Studio could not load. Reconnect and refresh Velum.';
+    });
+}
 window.addEventListener('velum:lock',clearGallerySession);
-window.addEventListener('velum:unlock',()=>{galleryLocked=false;void restoreGalleryConnection();});
-window.addEventListener('pagehide',()=>clearGallerySession({clearAccess:false}));
-window.addEventListener('pageshow',event=>{
-  if(!event.persisted)return;
-  // A BFCache return must pass the same local PIN gate as an ordinary reload.
-  window.dispatchEvent(new CustomEvent('velum:request-unlock'));
+window.addEventListener('velum:unlock', () => {
+  galleryLocked = false;
+  activateView('drift', { incoming: true, awaitingConnection: true });
+  void restoreGalleryConnection();
 });
+window.addEventListener('pagehide',()=>clearGallerySession({clearAccess:false}));
 const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.connect({management:true}),current:currentMediaItem,getUrl:ensureObjectUrl,getOwner:()=>auth.currentUser?.uid||'',canRead:()=>access.has([DRIVE_READ_SCOPE])&&!galleryLocked,
- onFilter:()=>{history=[];historyIndex=-1;renderBrowse();const next=chooseMoment();if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>{if(!galleryLocked)showToast(error.message);});}else{renderSerial++;current={type:'single',ids:[]};window.__velumInteraction?.clearAdvance?.();driftMedia.replaceChildren();showToast('No media in this folder. Choose All or Sync.');}},
+ onFilter: () => {
+   history = [];
+   historyIndex = -1;
+   clearDriftFrame();
+   if (driftActive()) startGalleryMoment();
+   renderBrowse();
+   if (galleryListingState === 'complete' && !images.some(matchesGalleryFilter)) {
+     showToast('No media in this folder. Choose All or Sync.');
+   }
+ },
  onChanged:({kind,file,id})=>{
    galleryRevision++;
    if(kind==='trash')images=images.filter(item=>item.id!==id);
@@ -218,20 +243,19 @@ const libraryControls=mountGalleryLibrary({drive:studioDrive,connect:()=>access.
    }
    imageMap=new Map(images.map(item=>[item.id,item]));
    if(initializedGallery)renderBrowse({ preservePage: true });
-   const selected=currentMediaItem();
-   if(!selected||(!current.direct&&!matchesGalleryFilter(selected))){
-     const next=chooseMoment();
-     if(next){history=[next];historyIndex=0;void renderMoment(next).catch(error=>showToast(error.message));}
-     else{renderSerial++;current={type:'single',ids:[]};driftMedia.replaceChildren();window.__velumInteraction?.clearAdvance?.();}
-   }
+   reconcileGallerySelection();
+   notifyStats();
    libraryControls.update();
-   window.dispatchEvent(new Event('velum:collection-changed'));
  }
 
 });
 
 class EventStore {
-  constructor() { this.db = null; this.memory = []; }
+  constructor() {
+    this.db = null;
+    this.memory = [];
+    this.ready = this.init().catch(() => {});
+  }
   async init() {
     await new Promise(resolve => {
       const req = indexedDB.open('velum-local', 1);
@@ -242,7 +266,7 @@ class EventStore {
       req.onsuccess = () => { this.db = req.result; resolve(); };
       req.onerror = () => resolve();
     });
-    this.memory = await this.all();
+    this.memory = (await this.all()).concat(this.memory);
   }
   async all() {
     if (!this.db) return [];
@@ -256,6 +280,7 @@ class EventStore {
   async add(event) {
     const e = { ...event, at: Date.now() };
     this.memory.push(e);
+    await this.ready;
     if (this.db) {
       const tx = this.db.transaction('events', 'readwrite');
       tx.objectStore('events').add(e);
@@ -287,13 +312,69 @@ class EventStore {
   }
 }
 const store = new EventStore();
-await store.init();
 
-window.__velumStats?.connect({
-  getCollection: () => galleryLocked || !auth.currentUser ? null : {
-    ids: [...imageMap.keys()], state: galleryListingState
-  },
+const statsControl = window.__velumStats?.connect({
+  getCollection: () => galleryLocked ? null : { ids: [...imageMap.keys()], state: galleryListingState },
   openMedia: id => openInDrift(id, { fromStats: true })
+});
+function notifyStats() { statsControl?.update(); }
+
+function readPreference(key, allowed, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    if (allowed.includes(value)) return value;
+  } catch {}
+  return fallback;
+}
+
+function writePreference(key, value) {
+  try { localStorage.setItem(key, value); } catch {}
+}
+
+const driftModeKey = 'velum-drift-mode';
+const intervalKey = 'velum-drift-interval';
+const backgroundKey = 'velum-drift-background';
+const columnsKey = 'velum-browse-columns';
+const modeSelect = $('#driftModeSelect');
+const intervalSelect = $('#driftIntervalSelect');
+const backgroundSelect = $('#driftBackgroundSelect');
+const columnsSelect = $('#browseColumnsSelect');
+function setPreference(select, key, fallback, apply = () => {}) {
+  select.value = readPreference(key, Array.from(select.options, option => option.value), fallback);
+  apply(select.value);
+  select.addEventListener('change', () => {
+    writePreference(key, select.value);
+    apply(select.value);
+  });
+}
+setPreference(modeSelect, driftModeKey, 'adaptive');
+setPreference(intervalSelect, intervalKey, '15', value => {
+  window.__velumInteraction?.setDuration?.(Number(value) * 1000);
+});
+setPreference(backgroundSelect, backgroundKey, 'ambient', value => {
+  driftStage.classList.toggle('drift-black', value === 'black');
+});
+setPreference(columnsSelect, columnsKey, 'auto', value => {
+  const anchor = visibleBrowseAnchor(browseState);
+  browseGrid.dataset.columns = value;
+  if (anchor) {
+    const tile = [...browseGrid.querySelectorAll('[data-id]')]
+      .find(media => media.dataset.id === anchor.id)?.closest('.tile');
+    if (tile) browseView.scrollTop += tile.getBoundingClientRect().top - browseView.getBoundingClientRect().top - anchor.offset;
+  }
+});
+window.addEventListener('velum:drift-options', event => {
+  driftPreferencesOpen = event.detail.open;
+  window.__velumInteraction?.setOptionsOpen?.(driftPreferencesOpen);
+  if (driftPreferencesOpen) {
+    const video = displayedVideo();
+    optionsPausedVideo = video && !video.paused ? video : null;
+    optionsPausedVideo?.pause();
+  } else {
+    const video = optionsPausedVideo;
+    optionsPausedVideo = null;
+    if (video && video === displayedVideo() && driftActive()) void video.play().catch(() => {});
+  }
 });
 
 function tokenProbablyFresh() {
@@ -377,15 +458,14 @@ syncBtn.addEventListener('click', async () => {
 function clearGallerySession({clearAccess=true}={}){
   galleryLocked=true;
   galleryEpoch++;
+  galleryRestore = null;
   gallerySync?.controller.abort();
   gallerySync = null;
   galleryListingState = 'idle';
-  window.dispatchEvent(new Event('velum:collection-cleared'));
   if (pendingDiscoveryBase) discovered = pendingDiscoveryBase;
   pendingDiscoveryBase = null;
   syncBtn.disabled = false;
   syncLabel.textContent = 'Sync';
-  renderSerial++;
   for(const controller of galleryRequests)controller.abort();
   galleryRequests.clear();
   studioDrive.clear({clearAccess});
@@ -394,7 +474,7 @@ function clearGallerySession({clearAccess=true}={}){
   imageMap.clear();
   history=[];
   historyIndex=-1;
-  current={type:'single',ids:[]};
+  clearDriftFrame({ record: false });
   initializedGallery=false;
   browseObserver?.disconnect();
   browseRenderVersion++;
@@ -402,10 +482,7 @@ function clearGallerySession({clearAccess=true}={}){
   browseGrid.replaceChildren();
   browseStatus.textContent = '';
   browsePagination.hidden = true;
-  driftMedia.querySelectorAll('video').forEach(video=>video.pause());
-  driftMedia.replaceChildren();
-  ambientLayers.forEach(layer=>layer.style.backgroundImage='');
-  window.__velumInteraction?.clearAdvance?.();
+  statsControl?.clear();
 }
 
 async function readDrive(url,options={},parse=response=>response.json()){
@@ -417,7 +494,7 @@ async function readDrive(url,options={},parse=response=>response.json()){
   if(options.signal?.aborted)controller.abort();
   galleryRequests.add(controller);
   try{
-    const response=await access.request(url,{...options,signal:controller.signal},[DRIVE_READ_SCOPE]);
+    const response=await access.request(url,{...options,cache:'no-store',signal:controller.signal},[DRIVE_READ_SCOPE]);
     if(!response.ok)throw new Error(`Google Drive request failed (${response.status}). Reconnect or retry.`);
     const value=await parse(response);
     if(generation!==galleryEpoch||galleryLocked||owner!==auth.currentUser?.uid)throw new Error('Velum session changed. Reconnect after unlocking.');
@@ -489,7 +566,7 @@ async function syncDrive({ initial = false } = {}) {
   syncBtn.disabled = true;
   syncLabel.textContent = 'Syncing';
   updateBrowseStatus();
-  window.dispatchEvent(new Event('velum:collection-changed'));
+  notifyStats();
   if (initial && !initializedGallery && !$('#studioView').classList.contains('active')) {
     authGate.classList.add('open');
     setAuthMessage('Opening collection', 'Reading Private and References folder metadata.', 'Media remains in Google Drive.');
@@ -504,17 +581,11 @@ async function syncDrive({ initial = false } = {}) {
       }
       galleryListingState = complete ? 'complete' : 'loading';
       if (complete && !items.length) {
-        finalizeView(false);
-        renderSerial++;
+        clearDriftFrame();
         images = [];
         imageMap.clear();
         history = [];
         historyIndex = -1;
-        current = { type: 'single', ids: [] };
-        window.__velumInteraction?.clearAdvance?.();
-        driftMedia.querySelectorAll('video').forEach(video => video.pause());
-        driftMedia.replaceChildren();
-        ambientLayers.forEach(layer => { layer.style.backgroundImage = ''; });
         revokeObjectUrls();
         rememberDiscovery([], { prior: discoveryBase });
         pendingDiscoveryBase = null;
@@ -540,7 +611,7 @@ async function syncDrive({ initial = false } = {}) {
         if (complete && initializedGallery) reconcileGallerySelection();
         if (!initializedGallery) initGallery();
         else {
-          if (!current.ids.length) startGalleryMoment();
+          if (!current.ids.length && !pendingMediaId && !history.length) startGalleryMoment();
           renderBrowse({ preservePage: true });
         }
         if (pendingGalleryView) {
@@ -550,8 +621,11 @@ async function syncDrive({ initial = false } = {}) {
         }
       }
       updateBrowseStatus();
-      if (complete) window.dispatchEvent(new Event('velum:collection-changed'));
-      if (complete) showToast(`${images.length} media synced`);
+      if (complete) {
+        notifyStats();
+        if (driftActive() && !images.some(matchesGalleryFilter)) showToast('No media in this folder. Choose All or Sync.');
+        if (!initial) showToast(`${images.length} media synced`);
+      }
     }
     return true;
   } catch (error) {
@@ -572,13 +646,14 @@ async function syncDrive({ initial = false } = {}) {
       syncBtn.disabled = false;
       syncLabel.textContent = 'Sync';
       updateBrowseStatus();
-      window.dispatchEvent(new Event('velum:collection-changed'));
+      notifyStats();
     }
   }
 }
 
 function protectedMediaIds() {
   const protectedIds = new Set(current.ids || []);
+  if (pendingMediaId) protectedIds.add(pendingMediaId);
   document.querySelectorAll('[data-full-media-id]').forEach(el => {
     if (el.dataset.fullMediaId) protectedIds.add(el.dataset.fullMediaId);
   });
@@ -603,6 +678,7 @@ function trimMediaCache() {
 }
 
 async function ensureObjectUrl(id) {
+  if (galleryLocked) throw new Error('Velum is locked.');
   if (!imageMap.has(id)) throw new Error('This media is no longer in the collection. Sync before opening it.');
   const cached = objectUrls.get(id);
   if (cached) {
@@ -613,6 +689,8 @@ async function ensureObjectUrl(id) {
   const blob=await readDrive(`${DRIVE_API}/files/${encodeURIComponent(id)}?alt=media`,{},response=>response.blob());
   if(generation!==galleryEpoch||galleryLocked)throw new Error('Velum is locked.');
   if (!imageMap.has(id)) throw new Error('This media left the collection while loading.');
+  const existing = objectUrls.get(id);
+  if (existing) return existing.url;
   const url = URL.createObjectURL(blob);
   objectUrls.set(id, { url, bytes: blob.size || 0, lastUsed: Date.now() });
   trimMediaCache();
@@ -635,9 +713,33 @@ function imageById(id) { return imageMap.get(id); }
 function isVideoMedia(item) { return item?.kind === 'video'; }
 function isGifMedia(item) { return item?.kind === 'gif'; }
 function currentMediaItem() { return current.ids.length ? imageById(current.ids[0]) : null; }
+function displayedVideo() { return driftMedia.querySelector('.single-wrap:not(.drift-outgoing) .drift-video'); }
 function matchesGalleryFilter(item) {
   const filter = libraryControls.filter;
   return filter === 'all' || item.folderId === (filter === 'private' ? PRIVATE_FOLDER_ID : REFERENCES_FOLDER_ID);
+}
+
+function driftActive() {
+  return !galleryLocked && !document.hidden &&
+    $('#driftView').classList.contains('active') &&
+    !authGate.classList.contains('open') &&
+    !$('#neutralScreen').classList.contains('open');
+}
+
+function clearDriftFrame({ record = true } = {}) {
+  if (record) finalizeView(false);
+  viewStarted = 0;
+  renderSerial++;
+  pendingMediaId = '';
+  current = { type: 'single', ids: [] };
+  window.__velumInteraction?.clearAdvance?.();
+  driftMedia.querySelectorAll('video').forEach(video => video.pause());
+  driftMedia.replaceChildren();
+  ambientLayers.forEach(layer => {
+    layer.style.backgroundImage = '';
+    layer.classList.remove('active');
+  });
+  ambientActive = -1;
 }
 
 function reconcileGallerySelection() {
@@ -656,24 +758,13 @@ function reconcileGallerySelection() {
   historyIndex = retainedIndex;
 
   const selected = currentMediaItem();
-  if (!selected || (!current.direct && !matchesGalleryFilter(selected))) {
-    finalizeView(false);
+  if (pendingMediaId && !imageMap.has(pendingMediaId)) {
     renderSerial++;
-    current = { type: 'single', ids: [] };
-    window.__velumInteraction?.clearAdvance?.();
-    driftMedia.querySelectorAll('video').forEach(video => video.pause());
-    driftMedia.replaceChildren();
-    ambientLayers.forEach(layer => { layer.style.backgroundImage = ''; });
-    const next = chooseMoment();
-    if (next) {
-      history = history.slice(0, historyIndex + 1);
-      history.push(next);
-      historyIndex = history.length - 1;
-      const generation = galleryEpoch;
-      void renderMoment(next).catch(error => {
-        if (generation === galleryEpoch && !galleryLocked && current.ids[0] === next.ids[0]) showToast(error.message || 'Could not open this media.');
-      });
-    }
+    pendingMediaId = '';
+  }
+  if (!selected || (!current.direct && !matchesGalleryFilter(selected))) {
+    if (current.ids.length) clearDriftFrame();
+    if (!pendingMediaId) startGalleryMoment();
   }
   for (const [id, entry] of objectUrls) {
     if (!imageMap.has(id)) {
@@ -684,11 +775,27 @@ function reconcileGallerySelection() {
   libraryControls.update();
 }
 
-function chooseMoment() {
+function chooseMoment({ opening = false } = {}) {
   // Build an exposure-aware feed; recent picks are excluded where possible.
   const recentIds = history.slice(-6).flatMap(h => h.ids);
-  const candidates = images.filter(matchesGalleryFilter);
-  if(!candidates.length)return null;
+  let candidates = images.filter(matchesGalleryFilter);
+  if (!candidates.length) return null;
+  if (opening) {
+    const stills = candidates.filter(item => item.kind === 'image');
+    if (stills.length) candidates = stills;
+    else if (galleryListingState === 'loading') return null;
+  }
+  const mode = opening ? 'shuffle' : modeSelect.value;
+  if (mode === 'unseen') {
+    const unseen = candidates.filter(item => store.stats(item.id).views === 0);
+    if (unseen.length) candidates = unseen;
+  }
+  if (mode !== 'adaptive') {
+    const fresh = candidates.filter(item => !recentIds.includes(item.id));
+    if (fresh.length) candidates = fresh;
+    const item = candidates[Math.floor(Math.random() * candidates.length)];
+    return { type: 'single', ids: [item.id] };
+  }
   const item = chooseFeedImage(candidates, {
     getStats: id => store.stats(id),
     discovered,
@@ -698,73 +805,109 @@ function chooseMoment() {
 }
 
 async function renderMoment(moment, { record = true } = {}) {
-  finalizeView(false);
   const id = moment.ids[0];
   const meta = imageById(id);
-  if (!meta) return;
-  current = moment;
-  libraryControls.update();
+  if (!meta || !driftActive()) return;
+  const generation = galleryEpoch;
+  const owner = auth.currentUser?.uid;
   const serial = ++renderSerial;
-
+  const isCurrent = () => serial === renderSerial && generation === galleryEpoch &&
+    owner === auth.currentUser?.uid && driftActive() && imageById(id) &&
+    (moment.direct || matchesGalleryFilter(imageById(id)));
+  pendingMediaId = id;
   window.__velumInteraction?.clearAdvance?.();
-  driftMedia.querySelectorAll('video').forEach(video => video.pause());
-  const firstUrl = await ensureObjectUrl(id);
-  if (serial !== renderSerial) return;
-
-  driftMedia.innerHTML = '';
   const wrap = document.createElement('div');
   wrap.className = 'single-wrap';
+  let firstUrl, video;
+  try {
+    firstUrl = await ensureObjectUrl(id);
+    if (!isCurrent()) return;
+    if (isVideoMedia(meta)) {
+      video = document.createElement('video');
+      video.className = 'drift-video';
+      video.dataset.fullMediaId = id;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.disablePictureInPicture = true;
+      video.setAttribute('aria-label', 'Private gallery video');
+      video.src = firstUrl;
+      wrap.append(video);
+    } else {
+      const img = document.createElement('img');
+      img.className = isGifMedia(meta) ? 'drift-image drift-gif' : 'drift-image';
+      img.dataset.fullMediaId = id;
+      img.alt = '';
+      img.draggable = false;
+      img.src = firstUrl;
+      await img.decode();
+      const ratio = img.naturalWidth / img.naturalHeight;
+      if (Math.abs(Math.log(ratio / (innerWidth / innerHeight))) > .55) img.classList.add('contained');
+      wrap.append(img);
+    }
+    if (!isCurrent()) return;
+  } catch {
+    if (isCurrent()) showToast('Could not open this media. Swipe to try another.');
+    return;
+  } finally {
+    if (serial === renderSerial) pendingMediaId = '';
+  }
 
-  if (isVideoMedia(meta)) {
-    const video = document.createElement('video');
-    video.className = 'drift-video';
-    video.dataset.fullMediaId = id;
-    video.src = firstUrl;
-    video.muted = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.preload = 'auto';
-    video.controls = false;
-    video.disablePictureInPicture = true;
-    video.setAttribute('aria-label', 'Private gallery video');
+  finalizeView(false);
+  gestures.reset();
+  heartEffects.reset();
+  driftMedia.querySelector('.drift-outgoing')?.remove();
+  const outgoing = driftMedia.firstElementChild;
+  if (outgoing) {
+    outgoing.querySelector('video')?.pause();
+    outgoing.classList.remove('drift-arriving');
+    outgoing.classList.add('drift-outgoing');
+    outgoing.inert = true;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) outgoing.remove();
+    else {
+      wrap.classList.add('drift-arriving');
+      setTimeout(() => outgoing.remove(), 240);
+    }
+  }
+  current = moment;
+  driftMedia.prepend(wrap);
+  libraryControls.update();
+  if (video) {
     video.addEventListener('playing', () => {
       store.add({ type: 'interaction', action: 'drift-video-play', imageIds: [id] });
     }, { once: true });
     video.addEventListener('ended', () => {
-      if (current.ids[0] !== id || !driftMedia.contains(video)) return;
+      if (current.ids[0] !== id || !driftActive() || pendingMediaId ||
+          driftMedia.firstElementChild !== wrap) return;
       store.add({ type: 'interaction', action: 'drift-video-complete', imageIds: [id] });
       finalizeView(false);
       goNext();
     }, { once: true });
-    wrap.append(video);
-    driftMedia.append(wrap);
     setVideoAmbient(video, id, serial);
     video.play().catch(() => window.__velumInteraction?.showControls?.());
   } else {
     showAmbient(firstUrl);
-    const img = document.createElement('img');
-    img.className = 'drift-image';
-    img.dataset.fullMediaId = id;
-    if (isGifMedia(meta)) img.classList.add('drift-gif');
-    img.alt = '';
-    img.draggable = false;
-    img.src = firstUrl;
-    if (meta.width && meta.height) {
-      const ratio = meta.width / meta.height;
-      const screen = innerWidth / innerHeight;
-      if (Math.abs(Math.log(ratio / screen)) > .55) img.classList.add('contained');
-    }
-    wrap.append(img);
-    driftMedia.append(wrap);
+    markFirstImage(wrap, isCurrent);
   }
 
-  gestures.reset();
-  heartEffects.reset();
   trimMediaCache();
   if (record) store.add({ type: 'impression', imageIds: [id], ms: 0, mode: 'drift' });
   viewStarted = Date.now();
   scheduleAdvance();
   requestWake();
+}
+function markFirstImage(frame, isCurrent) {
+  if (!performance.getEntriesByName('velum:pin-accepted').length ||
+      performance.getEntriesByName('velum:pin-to-drift').length) return;
+  const opening = performance.getEntriesByName('velum:pin-accepted').at(-1).startTime;
+  const gateAnimations = authGate.getAnimations().map(animation => animation.finished);
+  void Promise.allSettled(gateAnimations).then(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!isCurrent() || !frame.isConnected ||
+          performance.getEntriesByName('velum:pin-accepted').at(-1)?.startTime !== opening) return;
+      performance.measure('velum:pin-to-drift', 'velum:pin-submitted');
+    }));
+  });
 }
 function pushNext() {
   const m = chooseMoment();
@@ -824,18 +967,15 @@ function cancelHeart() {
 
 const gestures = createDriftGestures({
   stage: driftStage,
-  getImage: () => driftMedia.querySelector('.drift-image'),
-  isActive: () => initializedGallery &&
-    $('#driftView').classList.contains('active') &&
-    !authGate.classList.contains('open') &&
-    !$('#neutralScreen').classList.contains('open'),
+  getImage: () => driftMedia.querySelector('.single-wrap:not(.drift-outgoing) .drift-image'),
+  isActive: () => initializedGallery && driftActive() && !driftPreferencesOpen,
   onNext: () => goNext(),
   onPrev: () => goPrev(),
   onHoldStart: ({ x, y }) => {
     // Tie the reaction to the actually displayed image, not a pending Drive fetch.
     heldMediaId = driftMedia.querySelector('[data-full-media-id]')?.dataset.fullMediaId || null;
     if (!heldMediaId) return;
-    const video = driftMedia.querySelector('.drift-video');
+    const video = displayedVideo();
     holdPausedVideo = video && !video.paused ? video : null;
     holdPausedVideo?.pause();
     heartEffects.start({ x, y });
@@ -856,7 +996,7 @@ const gestures = createDriftGestures({
   },
   onHoldCancel: cancelHeart,
   onTap: () => {
-    const video = driftMedia.querySelector('.drift-video');
+    const video = displayedVideo();
     if (video) {
       // Native transport/sound controls remain accessible without a Focus screen.
       video.controls = true;
@@ -1113,16 +1253,16 @@ browsePrevious.onclick = () => changeBrowsePage(-1);
 browseNext.onclick = () => changeBrowsePage(1);
 sortSelect.onchange = renderBrowse;
 
-function activateView(view, { incoming = false } = {}) {
-  if (galleryLocked || (view === 'stats' && !auth.currentUser)) return;
+function activateView(view, { incoming = false, awaitingConnection = false } = {}) {
+  if (galleryLocked || (view === 'stats' && !auth.currentUser)) return false;
   const browse = view === 'browse';
   const drift = view === 'drift';
   const studio = view === 'studio';
-  if (!studio && view !== 'stats' && !initializedGallery && !tokenProbablyFresh()) {
+  if (!studio && view !== 'stats' && !awaitingConnection && !initializedGallery && !tokenProbablyFresh()) {
     pendingGalleryView = view;
     authGate.classList.add('open');
     setAuthMessage('Private collection', 'Reconnect Drive to open your gallery.', 'Studio uses your owner sign-in separately.');
-    return;
+    return false;
   }
   document.querySelectorAll('.nav-item').forEach(btn =>
     btn.classList.toggle('active', btn.dataset.view === view));
@@ -1130,36 +1270,37 @@ function activateView(view, { incoming = false } = {}) {
   $('#browseView').classList.toggle('active', browse);
   $('#studioView')?.classList.toggle('active', studio);
   $('#statsView')?.classList.toggle('active', view === 'stats');
-  if (studio && auth.currentUser) authGate.classList.remove('open');
+  if (studio) {
+    if (auth.currentUser) authGate.classList.remove('open');
+    openStudio();
+  }
   if (!drift) {
+    renderSerial++;
+    pendingMediaId = '';
     finalizeView(false);
     window.__velumInteraction?.clearAdvance?.();
-    driftMedia.querySelector('.drift-video')?.pause();
+    displayedVideo()?.pause();
+    libraryControls.closeOptions();
     gestures.fit();
     if (browse) renderBrowse();
   } else if (!incoming && initializedGallery) {
     gestures.fit();
-    viewStarted = Date.now();
-    const video = driftMedia.querySelector('.drift-video');
-    if (video) video.play().catch(() => {});
-    else scheduleAdvance();
+    resumeDrift();
   }
-  if (view === 'stats') window.dispatchEvent(new Event('velum:collection-changed'));
+  if (view === 'stats') notifyStats();
+  return true;
 }
 document.querySelectorAll('.nav-item').forEach(btn =>
   btn.addEventListener('click', () => activateView(btn.dataset.view)));
 
 function openInDrift(id, { fromStats = false } = {}) {
-  if (galleryLocked || !auth.currentUser || !imageById(id)) return false;
+  if (!imageById(id) || galleryLocked || !auth.currentUser) return false;
+  if (!activateView('drift', { incoming: true })) return false;
   const moment = { type: 'single', ids: [id], direct: fromStats };
   history = history.slice(0, historyIndex + 1);
   history.push(moment);
   historyIndex = history.length - 1;
-  activateView('drift', { incoming: true });
-  const generation = galleryEpoch;
-  void renderMoment(moment).catch(() => {
-    if (generation === galleryEpoch && current.ids[0] === id) showToast('Could not open this media. Swipe to try another.');
-  });
+  void renderMoment(moment);
   return true;
 }
 
@@ -1170,27 +1311,36 @@ $('#returnBtn').onclick = () => $('#neutralScreen').classList.remove('open');
 $('#brandBtn').onclick = quickExit;
 
 document.addEventListener('visibilitychange', () => {
-  const video = driftMedia.querySelector('.drift-video');
+  const video = displayedVideo();
   if (document.hidden) {
     window.__velumInteraction?.clearAdvance?.();
     video?.pause();
     finalizeView(false);
-  } else if ($('#driftView').classList.contains('active') && initializedGallery) {
-    viewStarted = Date.now();
-    if (video) video.play().catch(() => {});
-    else scheduleAdvance();
+  } else if (driftActive() && initializedGallery) {
+    if (!pendingMediaId) resumeDrift();
   }
 });
 
+function resumeDrift() {
+  if (!current.ids.length) {
+    const pending = history[historyIndex];
+    if (pending && imageById(pending.ids[0])) void renderMoment(pending);
+    else startGalleryMoment();
+    return;
+  }
+  viewStarted ||= Date.now();
+  const video = displayedVideo();
+  if (video && !driftPreferencesOpen) video.play().catch(() => {});
+  else scheduleAdvance();
+}
+
 function startGalleryMoment() {
-  const moment = chooseMoment();
+  if (!driftActive()) return;
+  const moment = chooseMoment({ opening: !history.length });
   if (!moment) return;
   history = [moment];
   historyIndex = 0;
-  const generation = galleryEpoch;
-  void renderMoment(moment).catch(error => {
-    if (generation === galleryEpoch && !galleryLocked) showToast(error.message || 'Could not open this media.');
-  });
+  void renderMoment(moment);
 }
 
 function initGallery() {
@@ -1198,14 +1348,23 @@ function initGallery() {
   initializedGallery = true;
   startGalleryMoment();
   renderBrowse();
-  showToast(galleryListingState === 'loading' ? 'Drive connected · Reading collection…' : `${images.length} media · Drive connected`);
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 
-async function restoreGalleryConnection(){
+function restoreGalleryConnection(){
   if(galleryLocked||!auth.currentUser)return;
   const generation=galleryEpoch;
+  const owner = auth.currentUser.uid;
+  if (galleryRestore?.generation === generation && galleryRestore.owner === owner) return galleryRestore.promise;
+  const promise = restoreCurrentGallery(generation).finally(() => {
+    if (galleryRestore?.promise === promise) galleryRestore = null;
+  });
+  galleryRestore = { generation, owner, promise };
+  return promise;
+}
+
+async function restoreCurrentGallery(generation) {
   try{
     await access.restore();
     if(generation!==galleryEpoch||galleryLocked)return;

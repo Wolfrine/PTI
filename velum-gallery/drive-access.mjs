@@ -582,7 +582,8 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     const version = authorizationVersion;
     const requestedDisconnectGeneration = disconnectGeneration();
     const promise = (async () => {
-      if (backend) await ready;
+      // A saved server connection can be checked by its authenticated session endpoint.
+      if (backend && !serverMode) await ready;
       check(generation, owner.googleUid);
       checkDisconnectGeneration(requestedDisconnectGeneration);
       if (connecting?.generation === generation) return connecting.promise.then(() => has(), () => false);

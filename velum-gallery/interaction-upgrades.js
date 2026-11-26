@@ -4,7 +4,8 @@
   const nativeRAF = window.requestAnimationFrame.bind(window);
   const nativeCAF = window.cancelAnimationFrame.bind(window);
 
-  const DRIFT_DURATION = 15000;
+  let driftDuration = 15000;
+  let optionsOpen = false;
   const TOUCH_GRACE = 8000;
   const CONTROLS_VISIBLE_MS = 4500;
   const SCALE_EPSILON = 0.025;
@@ -36,9 +37,14 @@
     #driftView .pair-pane img{width:100%!important;height:100%!important;object-fit:cover!important}
 
     .topbar,.bottom-nav,#velumHardRefresh{transition:opacity .32s ease,transform .32s ease!important}
-    body.velum-drift-immersive:not(.velum-controls-visible) .topbar,
+    body.velum-drift-immersive:not(.velum-controls-visible) .topbar:not(:focus-within) .brand,
+    body.velum-drift-immersive:not(.velum-controls-visible) .topbar:not(:focus-within) .top-actions > :not(#exitBtn),
     body.velum-drift-immersive:not(.velum-controls-visible) #velumHardRefresh{opacity:0!important;pointer-events:none!important}
-    body.velum-drift-immersive:not(.velum-controls-visible) .topbar{transform:translateY(-10px)!important}
+    body.velum-drift-immersive:not(.velum-controls-visible) .topbar{background:transparent!important;pointer-events:none}
+    body.velum-drift-immersive:not(.velum-controls-visible) .top-actions{gap:5px}
+    body.velum-drift-immersive #exitBtn{width:44px!important;height:44px!important;pointer-events:auto!important}
+    body.velum-drift-immersive:not(.velum-controls-visible) #exitBtn{background:#100a10a8}
+    html[data-velum-locked="true"] #velumHardRefresh{visibility:hidden}
 
     /* Primary navigation remains available even in immersive Drift. */
     body.velum-drift-immersive .bottom-nav{
@@ -73,7 +79,7 @@
     body.velum-drift-immersive.velum-controls-visible .top-actions{pointer-events:auto!important;display:flex!important;align-items:center!important;gap:5px!important;padding:4px!important;border-radius:999px!important;background:rgba(10,7,8,.36)!important;border:1px solid rgba(255,255,255,.08)!important;backdrop-filter:blur(18px)!important}
     body.velum-drift-immersive.velum-controls-visible .top-actions .sync-btn{height:32px!important;min-width:38px!important;padding:0 9px!important;border-radius:999px!important;background:rgba(255,255,255,.06)!important;font-size:10px!important;line-height:32px!important}
     body.velum-drift-immersive.velum-controls-visible .top-actions .private-dot{display:none!important}
-    body.velum-drift-immersive.velum-controls-visible #exitBtn{width:32px!important;height:32px!important;background:rgba(255,255,255,.06)!important}
+    body.velum-drift-immersive.velum-controls-visible #exitBtn{background:rgba(255,255,255,.06)!important}
 
     body.velum-drift-immersive.velum-controls-visible .bottom-nav{opacity:1!important;pointer-events:auto!important;transform:none!important;height:calc(76px + env(safe-area-inset-bottom,0px))!important;padding-bottom:calc(17px + env(safe-area-inset-bottom,0px))!important;gap:46px!important;background:linear-gradient(to top,rgba(7,5,6,.82) 35%,rgba(7,5,6,0))!important}
     #velumHardRefresh{position:fixed;z-index:2100;right:12px;bottom:calc(15px + env(safe-area-inset-bottom,0px));height:34px;padding:0 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(13,10,11,.62);color:rgba(255,255,255,.72);backdrop-filter:blur(16px);font:500 9px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:5px;opacity:.78;touch-action:manipulation}
@@ -81,7 +87,7 @@
     #velumHardRefresh svg{width:13px;height:13px;stroke-width:1.9}
     body.velum-drift-immersive.velum-controls-visible #velumHardRefresh{opacity:1!important;pointer-events:auto!important;transform:none!important}
 
-    #velumAutoTimer{position:fixed;z-index:64;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);height:16px;border:0;background:transparent;padding:0;opacity:0;pointer-events:none;transition:opacity .25s;touch-action:manipulation}
+    #velumAutoTimer{position:fixed;z-index:121;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);height:16px;border:0;background:transparent;padding:0;opacity:0;pointer-events:none;transition:opacity .25s;touch-action:manipulation}
     #velumAutoTimer.visible{opacity:.72;pointer-events:auto}
     #velumAutoTimer .track{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.12);overflow:hidden}
     #velumAutoTimer .fill{display:block;width:100%;height:100%;transform-origin:left center;background:rgba(244,231,235,.74);transform:scaleX(1);transition:transform .08s linear}
@@ -119,7 +125,7 @@
   function driftVisible() {
     const pin = document.getElementById('velumPinGate');
     return Boolean(
-      driftView?.classList.contains('active') &&
+      driftView?.classList.contains('active') && document.documentElement.dataset.velumLocked !== 'true' &&
       !neutralScreen?.classList.contains('open') &&
       (!pin || pin.style.display === 'none') &&
       !authGate?.classList.contains('open')
@@ -142,16 +148,27 @@
   }
 
   function mediaReady() {
-    const media = [...(driftMedia?.querySelectorAll('img') || [])];
-    return media.length > 0 && media.every(img => img.complete && img.naturalWidth > 0);
+    const image = driftMedia?.querySelector('.single-wrap:not(.drift-outgoing) img');
+    return image?.complete && image.naturalWidth > 0;
   }
 
   function paintTimer() {
     syncImmersiveClass();
+    const toggle = document.getElementById('driftTimerToggle');
+    if (toggle) {
+      toggle.disabled = !auto.callback;
+      const label = manualPause ? 'Resume auto-advance' : 'Pause auto-advance';
+      if (toggle.textContent !== label) toggle.textContent = label;
+      if (toggle.getAttribute('aria-pressed') !== String(manualPause)) {
+        toggle.setAttribute('aria-pressed', String(manualPause));
+      }
+    }
     if (!auto.callback || !driftVisible()) {
       timer.classList.remove('visible');
+      timer.tabIndex = -1;
       return;
     }
+    timer.tabIndex = 0;
     timer.classList.add('visible');
     const elapsed = auto.running ? performance.now() - auto.startedAt : 0;
     const remaining = Math.max(0, auto.running ? auto.remaining - elapsed : auto.remaining);
@@ -193,35 +210,9 @@
     if (typeof callback === 'function') callback(...args);
   }
 
-  function waitForMediaThenStart(token) {
-    if (auto.token !== token || manualPause) return;
-    if (mediaReady()) {
-      startAuto();
-      return;
-    }
-    const media = [...(driftMedia?.querySelectorAll('img') || [])];
-    if (!media.length) {
-      nativeSetTimeout(() => waitForMediaThenStart(token), 60);
-      return;
-    }
-    const retry = () => {
-      if (auto.token === token && !auto.running && !manualPause && mediaReady()) startAuto();
-    };
-    media.forEach(img => {
-      if (!img.complete || !img.naturalWidth) {
-        img.addEventListener('load', retry, { once: true });
-        img.addEventListener('error', retry, { once: true });
-      }
-    });
-  }
-
   function startAuto() {
-    if (!auto.callback || auto.remaining <= 0 || manualPause || auto.running) {
-      paintTimer();
-      return;
-    }
-    if (!mediaReady()) {
-      waitForMediaThenStart(auto.token);
+    if (!auto.callback || auto.remaining <= 0 || manualPause || auto.running || optionsOpen ||
+        document.hidden || !driftVisible() || !isDefaultView() || !mediaReady()) {
       paintTimer();
       return;
     }
@@ -243,15 +234,14 @@
       nativeId: null,
       callback,
       args,
-      total: DRIFT_DURATION,
-      remaining: DRIFT_DURATION,
+      total: driftDuration,
+      remaining: driftDuration,
       startedAt: 0,
       running: false,
       reason: '',
       raf: null
     };
-    if (!manualPause) waitForMediaThenStart(token);
-    else paintTimer();
+    startAuto();
     return token;
   }
 
@@ -286,12 +276,16 @@
     else run();
   }
 
-  timer.addEventListener('click', event => {
+  function toggleTimer(event) {
     event.preventDefault();
     event.stopPropagation();
     if (!auto.callback) return;
-    if (auto.running) pauseAuto('manual', true);
-    else resumeAuto({ force: true });
+    if (manualPause) resumeAuto({ force: true });
+    else pauseAuto('manual', true);
+  }
+  timer.addEventListener('click', toggleTimer);
+  document.addEventListener('click', event => {
+    if (event.target.id === 'driftTimerToggle') toggleTimer(event);
   });
 
   refreshBtn.addEventListener('click', async event => {
@@ -359,6 +353,15 @@
     pause: () => pauseAuto('manual', true),
     resume: () => resumeAuto({ force: true }),
     scheduleAdvance: callback => scheduleAuto(callback, []),
+    setDuration: duration => {
+      driftDuration = duration;
+      if (auto.callback) scheduleAuto(auto.callback, auto.args);
+    },
+    setOptionsOpen: open => {
+      optionsOpen = open;
+      if (open) pauseAuto('options');
+      else resumeAuto({ delay: TOUCH_GRACE });
+    },
     clearAdvance: cancelAuto,
     gestureState,
     showControls,

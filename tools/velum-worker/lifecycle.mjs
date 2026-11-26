@@ -19,7 +19,7 @@ export async function finishClaimed(item,{resumed=false,load,infer,upload,fail,a
   try{await prepare(item);}catch(error){if(error.message==='invalid-reference'){await fail(item,error.message);return;}throw error;}
   if(!await claimed(item))return;
   try{await infer(item);output=await load(item.id);if(!output)throw new Error('invalid-output');}
-  catch(error){await fail(item,['resource-guard','invalid-output','output-too-large'].includes(error.message)?error.message:'inference-failed');return;}
+  catch(error){await fail(item,['resource-guard','invalid-reference','invalid-output','output-too-large'].includes(error.message)?error.message:'inference-failed');return;}
  }
  await approved();
  if(!await claimed(item))return;

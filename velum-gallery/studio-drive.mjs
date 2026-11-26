@@ -5,6 +5,8 @@ const creationsUrl=new URL('./drive-creations.mjs',import.meta.url);creationsUrl
 const {loadDriveCreations}=await import(creationsUrl.href);
 const reviewUrl=new URL('./auto-review-drive.mjs',import.meta.url);reviewUrl.search=new URL(import.meta.url).search;
 const {createAutoReviewDrive}=await import(reviewUrl.href);
+const storeUrl=new URL('./auto-review-store.mjs',import.meta.url);storeUrl.search=reviewUrl.search;
+const {isReviewJob}=await import(storeUrl.href);
 const accessUrl=new URL('./drive-access.mjs',import.meta.url);accessUrl.search=new URL(import.meta.url).search;
 const {createDriveAccess,CONNECT_SCOPES,DRIVE_FILE_SCOPE,DRIVE_READ_SCOPE,DRIVE_METADATA_SCOPE}=await import(accessUrl.href);
 export {createDriveAccess,CONNECT_SCOPES,DRIVE_FILE_SCOPE,DRIVE_READ_SCOPE,DRIVE_METADATA_SCOPE};
@@ -74,7 +76,7 @@ export function createDriveTransport({request,readRequest,manageRequest,reserve,
     check();
     if(!/^[\w-]{1,80}$/.test(job.id))throw new Error('Invalid creation ID.');
     const key=PREFIX+job.id;
-    if(Boolean(reviewTarget)!==/^review-[a-f0-9]{32}$/.test(job.id))throw new Error('Open this result in Auto Review to use its private Drive workflow.');
+    if(Boolean(reviewTarget)!==isReviewJob(job.id))throw new Error('Open this result in Auto Review to use its private Drive workflow.');
     const destination=reviewTarget?.id||PRIVATE_FOLDER_ID;
     let state;try{state=JSON.parse(storage?.getItem(key)||'null');}catch{}
     if(state && (state.sha256!==job.result.sha256 || !/^[\w-]{8,160}$/.test(state.id)))throw new Error('Upload identity does not match this creation.');

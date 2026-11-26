@@ -64,7 +64,7 @@ export function createAutoReviewDrive({ readRequest, manageRequest, getOperation
     if (file.id !== id || !isPrivate(file) || !onlyParent(file, REFERENCES_FOLDER_ID) ||
       !['image/png', 'image/jpeg'].includes(file.mimeType) || !/^\d+$/.test(file.version || '') ||
       !Number.isInteger(Number(file.size)) || Number(file.size) < 24 || Number(file.size) > 16 * 1024 * 1024) {
-      throw new Error('Choose an unshared owner image directly in Private/References.');
+      throw Object.assign(new Error('The source is no longer an unshared owner image in Private/References.'), {code: 'drive/review-source-ineligible'});
     }
     return file;
   }
@@ -99,12 +99,23 @@ export function createAutoReviewDrive({ readRequest, manageRequest, getOperation
       await verifyReferences(operation(readRequest, options.signal));
       return listReferences({ ...options, folder: 'references', privateOnly: true });
     },
-    async loadSource(id, signal) {
+    async authorizeSources(ids, signal) {
+      const send = operation(readRequest, signal);
+      await verifyReferences(send);
+      const files = await Promise.all(ids.map(id => sourceMetadata(send, id)));
+      return files.map(file => file.id + ':' + file.version);
+    },
+    async loadSource(id, signal, expectedVersion) {
       const send = operation(readRequest, signal);
       await verifyReferences(send);
       const file = await sourceMetadata(send, id);
+      if (expectedVersion && file.version !== expectedVersion) {
+        throw Object.assign(new Error('The approved source version changed.'), {code: 'drive/review-source-ineligible'});
+      }
       const blob = await readBoundedImage(await send(`files/${id}?alt=media`));
-      if ((await sourceMetadata(send, id)).version !== file.version) throw new Error('The source changed while loading. Choose it again.');
+      if ((await sourceMetadata(send, id)).version !== file.version) {
+        throw Object.assign(new Error('The source changed while loading.'), {code: 'drive/review-source-ineligible'});
+      }
       return { blob, version: file.version, source: { kind: 'drive', id, name: (file.name || 'Reference').slice(0, 160) } };
     },
     async checkSource(id, version, signal) {

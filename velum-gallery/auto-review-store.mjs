@@ -1,6 +1,8 @@
 const FINISHED = new Set(['accepted', 'rejected', 'closed']);
 export const INITIAL_REVIEW_MODEL = 'qwen-image-2.1-turbo';
-export const isReviewJob = id => /^review-[a-f0-9]{32}$/.test(id || '');
+export const isReviewJob = id => /^review-(?:v1-)?[a-f0-9]{32}$/.test(id || '');
+export const isVisionReviewJob = id => /^review-v1-[a-f0-9]{32}$/.test(id || '');
+export const REVIEW_POOL_LIMIT = 6;
 export const reviewFinished = run => FINISHED.has(run?.phase);
 export const reviewId = () => crypto.randomUUID().replaceAll('-', '');
 
@@ -47,8 +49,10 @@ export function createReviewStore({ sdk, db, workspace, check }) {
       const settings = await txRead(tx, control('settings'));
       if (active && pointer.runId === id) return;
       if (pointer && !reviewFinished(active)) throw new Error('Finish the current review before starting another edit.');
-      if ((settings?.id || '') !== run.configId || (settings?.model || INITIAL_REVIEW_MODEL) !== job.model) {
-        throw new Error('The approved model changed. Reopen Auto Review to load the latest revision.');
+      const selection = job.references[0].source.id + ':' + run.sourceVersion;
+      if (settings?.id !== run.configId || settings.model !== job.model || settings.seed !== job.prompt ||
+          !settings.sources.includes(selection)) {
+        throw new Error('The approved configuration changed. Refresh Auto Review.');
       }
       tx.set(jobRef(id), job);
       tx.set(runRef(id), run);
@@ -110,23 +114,23 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     return read(runRef(id));
   }
 
-  async function approveModel(model, baseId) {
-    const value = revision(reviewId(), 'configuration', { model, previous: baseId });
+  async function approveConfiguration(configuration, baseId) {
+    const value = revision(reviewId(), 'configuration', { ...configuration, previous: baseId });
     await transact(async tx => {
       const settings = await txRead(tx, control('settings'));
-      if ((settings?.id || '') !== baseId) throw new Error('A newer model revision was approved. Reopen Auto Review.');
+      if ((settings?.id || '') !== baseId) throw new Error('A newer configuration was approved. Refresh Auto Review.');
       tx.set(ref('autoReviewRevisions', value.id), value);
-      tx.set(control('settings'), { id: value.id, model });
+      tx.set(control('settings'), { id: value.id, ...configuration });
     });
     check();
-    return { id: value.id, model };
+    return { id: value.id, ...configuration };
   }
 
   async function saveLearning(id, draft, base, approve) {
-    const value = approve ? revision(reviewId(), 'learning', { runId: id, text: draft, previous: base.learningId }) : null;
+    const value = approve ? revision(reviewId(), 'learning', { runId: id, text: draft, previous: base.learningId || '' }) : null;
     await transact(async tx => {
       const current = await txRead(tx, runRef(id));
-      if (current?.phase !== 'rejected' || current.learningId !== base.learningId || current.draft !== base.draft) {
+      if (!['rejected', 'accepted'].includes(current?.phase) || current.learningId !== base.learningId || current.draft !== base.draft) {
         throw new Error('Learning changed in another session. Reload the rejected run.');
       }
       if (value) tx.set(ref('autoReviewRevisions', value.id), value);
@@ -143,8 +147,9 @@ export function createReviewStore({ sdk, db, workspace, check }) {
     return { records: page.docs.map(item => ({ ...item.data(), id: item.id })), cursor: page.size === 12 ? page.docs.at(-1) : null };
   }
 
-  return { load, start, queue, transition, closeFailed, approveModel, saveLearning, listRuns,
+  return { load, start, queue, transition, closeFailed, approveConfiguration, saveLearning, listRuns,
     job: async id => ({ ...await read(jobRef(id)), id }), run: id => read(runRef(id)),
+    vision: id => isVisionReviewJob(id) ? read(ref('autoReviewVision', id)) : Promise.resolve(null),
     readRevision: id => id ? read(ref('autoReviewRevisions', id)) : Promise.resolve(null),
     async chunks(id, source = false) {
       check();

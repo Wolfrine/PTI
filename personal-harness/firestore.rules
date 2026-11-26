@@ -259,7 +259,9 @@ service cloud.firestore {
      && instant(request.resource.data.updatedAt) && approvedModels(request.resource.data)
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
       && request.resource.data.version in ['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1','2.3.2']
-      && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight','recoveryControl','qwenMaxReferences','promptSchema','referenceLimits'])
+      && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight','recoveryControl','qwenMaxReferences','promptSchema','referenceLimits','autoReviewVision'])
+      && (!('autoReviewVision' in request.resource.data.capabilities) ||
+       (request.resource.data.version in ['2.3.1','2.3.2'] && request.resource.data.capabilities.autoReviewVision == 1))
       && request.resource.data.capabilities.referenceModel == 'flux2-klein-fp8' && request.resource.data.capabilities.maxReferences == 2
       && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768
       && (request.resource.data.version == '2.0.0' ? !('referenceModels' in request.resource.data.capabilities) :
@@ -294,7 +296,8 @@ service cloud.firestore {
    function reviewPath(collection, id) {
     return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/$(collection)/$(id);
    }
-   function reviewJob(id) { return id.matches('review-[a-f0-9]{32}'); }
+   function reviewJob(id) { return id.matches('review-(v1-)?[a-f0-9]{32}'); }
+   function visionReviewJob(id) { return id.matches('review-v1-[a-f0-9]{32}'); }
    function reviewRevisionId(id) { return id is string && id.matches('[a-f0-9]{32}'); }
    function reviewDriveId(id) { return id is string && id.matches('[A-Za-z0-9_-]{8,160}'); }
    function reviewActivation() { return get(reviewPath('autoReviewControl','activation')).data; }
@@ -306,25 +309,35 @@ service cloud.firestore {
    function reviewLinked(id) {
     return getAfter(reviewPath('autoReviewControl','current')).data.runId == id;
    }
-   function reviewSettings(modelId, id) {
-    let path = reviewPath('autoReviewControl','settings');
-    return exists(path) ? get(path).data.id == id && get(path).data.model == modelId : id == '' && modelId == turboModel();
+   function reviewSettings(d, run) {
+    let settings = get(reviewPath('autoReviewControl','settings')).data;
+    return settings.id == run.configId && settings.model == d.model && settings.seed == d.prompt
+     && settings.sources.hasAny([d.references[0].source.id + ':' + run.sourceVersion]);
    }
-   function reviewWorker(d) {
+   function reviewSource(value) { return value is string && value.matches('[A-Za-z0-9_-]{8,160}:[0-9]{1,24}'); }
+   function reviewConfiguration(d) {
+    let s = d.sources;
+    return model(d.model) && d.seed is string && d.seed.size() > 0 && d.seed.size() <= 800
+     && s is list && s.size() >= 1 && s.size() <= 6 && s.toSet().size() == s.size()
+     && reviewSource(s[0]) && (s.size() < 2 || reviewSource(s[1])) && (s.size() < 3 || reviewSource(s[2]))
+     && (s.size() < 4 || reviewSource(s[3])) && (s.size() < 5 || reviewSource(s[4])) && (s.size() < 6 || reviewSource(s[5]));
+   }
+   function reviewWorker(d, id) {
     let status = get(reviewPath('status','pc')).data;
     let device = get(reviewPath('devices',d.deviceUid)).data;
     return status != null && device != null && device.deviceUid == d.deviceUid && device.status == 'approved'
      && status.deviceUid == d.deviceUid && status.version in ['2.3.0','2.3.1','2.3.2']
      && status.state in ['idle','running'] && status.updatedAt >= request.time.toMillis() - 90000
      && status.updatedAt <= request.time.toMillis() + 30000 && d.model in status.installed
-     && status.capabilities.promptSchema == 4 && d.model in status.capabilities.referenceModels;
+     && status.capabilities.promptSchema == 4 && d.model in status.capabilities.referenceModels
+     && (!visionReviewJob(id) || status.capabilities.get('autoReviewVision',0) == 1);
    }
    function reviewJobAdmission(id, d) {
     let run = getAfter(reviewPath('autoReviewRuns',id)).data;
-    return reviewEnabled() && reviewLinked(id) && run.nonIntimate == true && run.createdAt == d.createdAt
+    return visionReviewJob(id) && reviewEnabled() && reviewLinked(id) && run.nonIntimate == true && run.createdAt == d.createdAt
      && run.phase == 'pending' && d.schemaVersion == 4 && d.status == 'uploading' && d.references.size() == 1
      && d.references[0].source.kind == 'drive' && d.effectivePrompt == d.prompt && !('pose' in d)
-     && d.parentJobId == '' && reviewSettings(d.model,run.configId) && reviewWorker(d);
+     && d.parentJobId == '' && reviewSettings(d,run) && reviewWorker(d,id);
    }
    match /autoReviewControl/{key} {
     function nextRun(d, count) {
@@ -334,9 +347,9 @@ service cloud.firestore {
     }
     function nextSettings(d, previous) {
      let approved = getAfter(reviewPath('autoReviewRevisions',d.id)).data;
-     return d.keys().hasOnly(['id','model']) && reviewRevisionId(d.id) && model(d.model)
+     return d.keys().hasOnly(['id','model','seed','sources']) && reviewRevisionId(d.id) && reviewConfiguration(d)
       && !exists(reviewPath('autoReviewRevisions',d.id)) && approved.kind == 'configuration'
-      && approved.model == d.model && approved.previous == previous;
+      && approved.model == d.model && approved.seed == d.seed && approved.sources == d.sources && approved.previous == previous;
     }
     allow get: if studioOwner() && key in ['activation','current','settings'];
     allow create: if studioOwner() && reviewEnabled() &&
@@ -370,7 +383,7 @@ service cloud.firestore {
     function approveLearning(d) {
      let revision = getAfter(reviewPath('autoReviewRevisions',d.learningId)).data;
      return reviewRevisionId(d.learningId) && !exists(reviewPath('autoReviewRevisions',d.learningId))
-      && revision.kind == 'learning' && revision.runId == id && revision.text == d.draft && revision.previous == resource.data.learningId;
+      && revision.kind == 'learning' && revision.runId == id && revision.text == d.draft && revision.previous == resource.data.get('learningId','');
     }
     function reviewChange(d) {
      return (resource.data.phase == 'pending' && reviewLinked(id) && (closeRun(d) ||
@@ -378,18 +391,18 @@ service cloud.firestore {
         && get(reviewPath('jobs',id)).data.status == 'completed' && get(reviewPath('uploads',id)).data.fileId == d.fileId))) ||
       (resource.data.phase == 'staged' && reviewLinked(id) && ((d.phase == 'accepting' && changed(['phase'])) || rejectRun(d))) ||
       (resource.data.phase == 'accepting' && reviewLinked(id) && d.phase == 'accepted' && changed(['phase','finishedAt']) && instant(d.finishedAt)) ||
-      (resource.data.phase == 'rejected' && changed(['draft','learningId']) && textLength(d.draft,3000)
-       && (d.learningId == resource.data.learningId || approveLearning(d)));
+      (resource.data.phase in ['accepted','rejected'] && changed(['draft','learningId']) && textLength(d.draft,3000)
+       && (d.get('learningId','') == resource.data.get('learningId','') || approveLearning(d)));
     }
     allow get: if studioOwner();
     allow list: if studioOwner() && request.query.limit <= 12;
-    allow create: if studioOwner() && reviewEnabled() && reviewJob(id) && reviewLinked(id) && reviewRun(request.resource.data);
+    allow create: if studioOwner() && reviewEnabled() && visionReviewJob(id) && reviewLinked(id) && reviewRun(request.resource.data);
     allow update: if studioOwner() && reviewChange(request.resource.data);
    }
    match /autoReviewRevisions/{id} {
     function reviewRevision(d) {
      return d.id == id && (d.previous == '' || reviewRevisionId(d.previous)) && instant(d.approvedAt)
-      && ((d.kind == 'configuration' && d.keys().hasOnly(['id','kind','model','previous','approvedAt']) && model(d.model)
+      && ((d.kind == 'configuration' && d.keys().hasOnly(['id','kind','model','seed','sources','previous','approvedAt']) && reviewConfiguration(d)
         && getAfter(reviewPath('autoReviewControl','settings')).data.id == id)
        || (d.kind == 'learning' && d.keys().hasOnly(['id','kind','runId','text','previous','approvedAt'])
         && d.runId is string && reviewJob(d.runId) && d.text is string && d.text.size() > 0 && d.text.size() <= 3000
@@ -397,6 +410,25 @@ service cloud.firestore {
     }
     allow get: if studioOwner();
     allow create: if studioOwner() && reviewRevisionId(id) && reviewRevision(request.resource.data);
+   }
+   match /autoReviewVision/{id} {
+    function reviewing() {
+     let j = get(reviewPath('jobs',id)).data;
+     return visionReviewJob(id) && studioDevice() && j.deviceUid == request.auth.uid && j.workerId == request.auth.uid && j.status == 'running';
+    }
+    function validVision(d) {
+     return d.keys().hasOnly(['schema','promptModel','comparisonModel','prompt','sourceSha256','outputSha256','state','observation','learning','nextSeed'])
+      && d.schema == 1 && d.promptModel == 'qwen3-vl-2b-instruct' && d.comparisonModel == 'qwen3-vl-4b-instruct'
+      && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 420
+      && get(reviewPath('jobs',id)).data.references[0].sha256 == d.sourceSha256
+      && d.outputSha256 is string && d.outputSha256.matches('[a-f0-9]{64}')
+      && d.observation is string && d.observation.size() <= 700 && d.learning is string && d.learning.size() <= 800
+      && d.nextSeed is string && d.nextSeed.size() <= 800
+      && ((d.state == 'ready' && d.observation.size() > 0 && d.learning.size() > 0 && d.nextSeed.size() > 0)
+       || (d.state == 'unavailable' && d.observation == '' && d.learning == '' && d.nextSeed == ''));
+    }
+    allow get: if studioOwner() || reviewing();
+    allow create: if reviewing() && validVision(request.resource.data);
    }
    match /jobs/{id} {
     // Only the approved pinned PC may import the four cataloged historical outputs.
@@ -421,7 +453,7 @@ service cloud.firestore {
      && completeInput(id,resource.data.references[0]) && (resource.data.references.size() < 2 || completeInput(id,resource.data.references[1]));
     // Ten ready records, rather than up to fifty chunk reads in one request.
     allow update: if studioOwner() && resource.data.schemaVersion == 4 && resource.data.status == 'uploading'
-     && (!reviewJob(id) || (reviewEnabled() && reviewLinked(id) && reviewWorker(resource.data)))
+     && (!reviewJob(id) || (reviewEnabled() && reviewLinked(id) && reviewWorker(resource.data,id)))
      && resource.data.inputsReady == false && request.resource.data.inputsReady == true && request.resource.data.status == 'queued'
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','inputsReady'])
      && resource.data.expiresAt > request.time.toMillis() && allReady(id,resource.data)
@@ -445,11 +477,15 @@ service cloud.firestore {
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startedAt','finishedAt','workerId','progress','result','error'])
      && ((resource.data.status == 'queued' && request.resource.data.status in ['running','failed'])
       || (resource.data.status == 'running' && request.resource.data.status in ['running','completed','failed']))
+     && (!visionReviewJob(id) || resource.data.status != 'queued' || request.resource.data.status != 'running'
+      || get(reviewPath('status','pc')).data.capabilities.get('autoReviewVision',0) == 1)
      && (request.resource.data.status != 'running' || (request.resource.data.workerId == request.auth.uid
       && (resource.data.status != 'queued' || resource.data.expiresAt > request.time.toMillis())))
      && request.resource.data.get('error','') in ['', 'expired','interrupted','resource-guard','inference-failed','invalid-output','output-too-large','model-unavailable','invalid-input','invalid-reference']
      && (request.resource.data.get('progress',{}) == resource.data.get('progress',{})
       || (resource.data.status == 'queued' && studioProgress()))
+     && (!visionReviewJob(id) || request.resource.data.status != 'completed'
+      || get(reviewPath('autoReviewVision',id)).data.outputSha256 == request.resource.data.result.sha256)
      && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds','localPath','referenceMethod'])
      && (!('localPath' in request.resource.data.get('result',{})) || (request.resource.data.result.localPath == 'H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\' + id + '\\image.png' || (resource.data.model == 'qwen-image-2.1' && request.resource.data.result.localPath == 'F:\\Workspace\\Programs\\Independent-Products\\PTI\\tools\\velum-worker\\.runtime\\qwen21\\' + id + '\\image.png')))
      && (!('referenceMethod' in request.resource.data.get('result',{})) || request.resource.data.result.referenceMethod in ['','flux2-reference-latent','vae-img2img','qwen21-native-multireference'])

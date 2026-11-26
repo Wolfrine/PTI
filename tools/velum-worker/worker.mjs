@@ -15,6 +15,8 @@ import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
 import {engineProfile,qwenInstalled,qwenTurboInstalled,workerCapabilities} from './engine-profile.mjs';
 import {QWEN_MODEL,QWEN_TURBO_MODEL,QWEN_TURBO_WORKER_VERSION,isQwenModel,validateJob} from '../../velum-gallery/studio-contract.mjs';
 import {LiveProgress} from './live-progress.mjs';
+import {reviewVision,reviewVisionInstalled} from './review-vision.mjs';
+import {isVisionReviewJob} from '../../velum-gallery/auto-review-store.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -110,7 +112,8 @@ export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={})
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
  validateJob(job);
  const profile=engineProfile(job.model);
- const logs=path.join(profile.outputRoot,'logs');await mkdir(logs,{recursive:true});
+ const logs=isVisionReviewJob(id)?path.join(profile.outputRoot,id,'logs'):path.join(profile.outputRoot,'logs');
+ await mkdir(logs,{recursive:true});
  const parentCreated=execFileSync(profile.python,['-B','-c',`import psutil; print(psutil.Process(${process.pid}).create_time())`],{windowsHide:true,encoding:'utf8',timeout:15000}).trim();
  return new Promise((resolve,reject)=>{
   const child=spawn(profile.python,['-B',profile.script],{cwd:HERE,windowsHide:true,shell:false,
@@ -148,13 +151,13 @@ async function main(){
  const lock=await acquireWorkerLock(lockPath,fileURLToPath(import.meta.url));
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
- let installed=[],version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
+ let installed=[],visionInstalled=false,version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,autoReviewVision:visionInstalled,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:{...workerCapabilities(installed,recoveryInstalled),...(visionInstalled?{autoReviewVision:1}:{})}});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{
@@ -166,11 +169,22 @@ async function main(){
    return {...payload,metadata,thumbnail:await loadThumbnail(output,metadata)};
   }catch(error){if(error.code==='ENOENT')return null;throw error;}
  };
- const upload=async(item,output)=>{
-  const expected=item.job,actual=output.metadata;
+ const upload=async(item,output,vision)=>{
+  const expected=vision?await vision.executionJob():item.job,actual=output.metadata;
   assertOutputIdentity(expected,actual);
   await progress.start();
   void progress.stage('publishing');
+  if(vision){
+   const relative=`autoReviewVision/${item.id}`;
+   const receipt=await vision.compare(output,expected.prompt);
+   await approved();
+   const prior=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
+   if(prior.status===404)await queue.write(relative,receipt,{create:true});
+   else {
+    const current=decode({mapValue:{fields:prior.value.fields}});
+    if(Object.keys(receipt).some(key=>receipt[key]!==current[key]))throw new Error('invalid-output');
+   }
+  }
   for(let index=0;index<output.chunks.length;index++){
    await approved();const relative=`jobs/${item.id}/chunks/${index}`;
    const existing=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
@@ -217,19 +231,30 @@ async function main(){
    // also refuse a terminal/replaced generation racing this compact snapshot.
    await queue.write(`jobs/${item.id}`,{progress:value},{updateTime:current.value.updateTime});
   }});
-  try{await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload,fail,approved,
+  try{
+   const vision=reviewVision(item,controller.signal);
+   await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload:(item,output)=>upload(item,output,vision),fail,approved,
    claimed:async()=>{const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});if(response.status===404)return false;return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid);},
    canResumeInference:async()=>{
     if(!installed.includes(item.job.model)||!item.job.references?.length)return false;
     try{await stat(path.join(engineProfile(item.job.model).outputRoot,item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
    },
-   prepare:async()=>{await progress.start();return downloadReferences(item.id,item.job,{root:engineProfile(item.job.model).outputRoot,approved,fetchManifest:async reference=>{
+   prepare:async()=>{
+    await progress.start();
+    const root=engineProfile(item.job.model).outputRoot;
+    if(vision){
+     const directory=path.join(root,item.id);
+     await mkdir(directory,{recursive:true});secureDirectory(directory);
+    }
+    return downloadReferences(item.id,item.job,{root,approved,fetchManifest:async reference=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}`);return decode({mapValue:{fields:response.value.fields}});
    },fetchChunk:async(reference,index)=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}/chunks/${index}`);return decode({mapValue:{fields:response.value.fields}});
    }});},infer:async()=>{
-   void progress.stage('loading-model');
-   await infer(item.id,item.job,value=>progress.counter(value),{signal:controller.signal,onEvent:event=>{
+   void progress.stage(vision?'encoding-prompt':'loading-model');
+   const execution=vision?await vision.executionJob(true):item.job;
+   if(vision){controller.signal.throwIfAborted();await approved();}
+   await infer(item.id,execution,value=>progress.counter(value),{signal:controller.signal,onEvent:event=>{
     if(event.event==='stage')void progress.stage(event.stage);
    }});
   }});}finally{await progress.stop();progress=null;activeJob='';controller=null;await publish('idle').catch(()=>{});}
@@ -238,6 +263,7 @@ async function main(){
  process.on('SIGINT',stop);process.on('SIGTERM',stop);
  try{
   installed=await installedModels();
+  visionInstalled=await reviewVisionInstalled();
   if(installed.includes(QWEN_TURBO_MODEL))version=QWEN_TURBO_WORKER_VERSION;
   await local({state:'restoring-device',installed});
   let checking=false;
@@ -273,6 +299,7 @@ async function main(){
        if(stopping)break;await approved();
        if(!runnable(item.job)){await fail(item,'expired');continue;}
        if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
+       if(isVisionReviewJob(item.id)&&!visionInstalled){await fail(item,'model-unavailable');continue;}
        const claim={status:'running',workerId:queue.session.uid,startedAt:Date.now()};
        try{await queue.write(`jobs/${item.id}`,claim,{updateTime:item.updateTime});item.job={...item.job,...claim};}
        catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}

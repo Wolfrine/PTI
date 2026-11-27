@@ -567,7 +567,11 @@ service cloud.firestore {
     function executionWrite(d,old) {
      return aeClaimed(old) && d.diff(old).affectedKeys().hasOnly(['execution','dispatch'])
       && aeExecution(d.execution,d,old.execution,batchId)
-      && d.dispatch == (d.command.revision > d.execution.commandRevision || d.execution.status in ['queued','running']);
+      && d.dispatch == (
+       d.execution.status in ['completed','stopped'] ? false :
+       d.execution.status == 'completed-with-failures'
+        ? (d.command.revision > d.execution.commandRevision && d.command.kind == 'run' && d.command.retryItemId != null)
+        : (d.command.revision > d.execution.commandRevision || d.execution.status in ['queued','running']));
     }
     allow get: if studioOwner() || (studioDevice() && aePilotBatch(batchId));
     allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 100;

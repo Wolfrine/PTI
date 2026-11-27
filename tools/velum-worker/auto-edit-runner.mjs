@@ -161,13 +161,15 @@ export class AutoEditRunner{
   }
   state.commandRevision=c.revision;state.command=c.command;state.commandRetryItemId=c.retryItemId;
   if(c.command==='stop'){
+   const active=item||state.items.find(entry=>entry.itemId===state.activeItemId)||state.items.find(entry=>!TERMINAL_ITEMS.has(entry.status));
    for(const entry of state.items)if(!TERMINAL_ITEMS.has(entry.status)){entry.status='cancelled';entry.failure={code:'owner-stopped',stage:entry.stage,uncertain:Boolean(entry.inFlight)};}
-   state.status='stopped';state.activeItemId=null;state.reason='owner-stopped';await this.persist(plan,state,item);return false;
+   state.status='stopped';state.activeItemId=null;state.reason='owner-stopped';await this.persist(plan,state,active??null);return false;
   }
   if(c.command==='pause'||signal?.aborted){
+   const active=item||state.items.find(entry=>entry.itemId===state.activeItemId)||state.items.find(entry=>!TERMINAL_ITEMS.has(entry.status));
    state.status='paused';state.reason=c.command==='pause'?'owner-paused':'execution-interrupted';state.activeItemId=null;
-   if(item&&!TERMINAL_ITEMS.has(item.status))item.status='queued';
-   await this.persist(plan,state,item);return false;
+   if(active&&!TERMINAL_ITEMS.has(active.status))active.status='queued';
+   await this.persist(plan,state,active??null);return false;
   }
   if(state.blockedRevision!==null&&c.revision<=state.blockedRevision)return false;
   state.blockedRevision=null;state.reason=null;return true;

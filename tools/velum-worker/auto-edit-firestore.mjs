@@ -37,6 +37,11 @@ function commandOf(doc){
  return c;
 }
 export function autoEditShouldDispatch(doc,execution){
+ // A command arriving after the final completed artifact cannot reopen a
+ // terminal item or cause endless redispatch. Only an explicit failed-item
+ // retry is a legal new command for completed-with-failures.
+ if(['completed','stopped'].includes(execution.status))return false;
+ if(execution.status==='completed-with-failures')return doc.command.revision>execution.commandRevision&&doc.command.kind==='run'&&doc.command.retryItemId!==null;
  return doc.command.revision>execution.commandRevision||['queued','running'].includes(execution.status);
 }
 function validateEnvelope(id,data){
@@ -169,7 +174,7 @@ export class AutoEditQueue {
 }
 // This optional listener attaches to the existing authenticated SDK instance.
 // Never start it until concrete adapters are installed and admission is enabled.
-export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admission,error}){
+export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admission,ready,error}){
  check(uid===PC_DEVICE_UID,'device-identity-mismatch');
  const {doc,onSnapshot}=sdk;
  let closed=false,queueStop=null,generation=0,pilot=null,expiry=null;
@@ -205,14 +210,15 @@ export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admiss
    const changed=c.revision!==seenRevision;
    if(changed){seenRevision=c.revision;command?.({batchId:next.batchId,kind:c.kind,revision:c.revision});}
    if(data.dispatch===true&&(changed||!wasOnline))wake();
-  },cause=>{if(!closed&&current===generation){setPilot(null);error?.(cause);}});
+  },cause=>{if(!closed&&current===generation){setPilot(null);ready?.(false);error?.(cause);}});
  }
  const stopAdmission=onSnapshot(doc(db,ROOT+'/autoEditControl/admission'),{includeMetadataChanges:true},snapshot=>{
   if(closed)return;
-  const next=!snapshot.metadata.fromCache&&snapshot.exists()?admissionOf(snapshot.data()):null;
-  setPilot(next);
- },cause=>{if(!closed){setPilot(null);error?.(cause);}});
- return ()=>{closed=true;stopAdmission();stopQueue();pilot=null;admission?.(false);};
+  const confirmed=!snapshot.metadata.fromCache;
+  const next=confirmed&&snapshot.exists()?admissionOf(snapshot.data()):null;
+  setPilot(next);ready?.(confirmed);
+ },cause=>{if(!closed){setPilot(null);ready?.(false);error?.(cause);}});
+ return ()=>{closed=true;stopAdmission();stopQueue();pilot=null;admission?.(false);ready?.(false);};
 }
 // One slice, under the existing worker lock. No independent GPU scheduler.
 export class AutoEditDispatcher{

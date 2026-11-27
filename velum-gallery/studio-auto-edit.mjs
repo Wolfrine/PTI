@@ -117,7 +117,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
  function commandButtons(){
   if(!batch||!activePilot(admission)||admission.batchId!==batchId)return '';
   const st=batch.execution?.status||'queued',pending=batch.execution?.commandRevision!==batch.command?.revision,disabled=busy||pending?'disabled':'';
-  if(TERMINAL.has(st))return '<button type="button" data-ae-action="close-admission" '+(busy?'disabled':'')+'>Close pilot admission</button>';
+  if(TERMINAL.has(st))return (st==='completed-with-failures'&&item?.status==='failed'?'<button type="button" data-ae-action="retry" '+disabled+'>Retry verified checkpoint</button>':'')+'<button type="button" data-ae-action="close-admission" '+(busy?'disabled':'')+'>Close pilot admission</button>';
   return (['queued','running'].includes(st)?'<button type="button" data-ae-action="pause" '+disabled+'>Pause after stage</button>':'')+
    (st==='paused'?'<button type="button" data-ae-action="resume" '+disabled+'>Resume</button>':'')+
    (st==='blocked'&&item?.failure?'<button type="button" data-ae-action="retry" '+disabled+'>Retry verified checkpoint</button>':'')+
@@ -133,7 +133,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   const metrics=[['CPU',number(resources?.cpuPercent,'%')],['RAM',mem(resources?.ramUsedBytes,resources?.ramTotalBytes,1073741824)],['GPU',number(resources?.gpuUtilPercent,'%')],['VRAM',mem(resources?.vramUsedMiB,resources?.vramTotalMiB,1024)],['GPU temp',number(resources?.gpuTempC,'°C')]];
   const failure=item?.failure;
   const c=batch.execution?.counts;
-  const pending=batch.execution?.commandRevision!==batch.command?.revision;
+  const pending=!TERMINAL.has(status)&&batch.execution?.commandRevision!==batch.command?.revision;
   const config=batch.plan?.config||{};
   return '<div class="ae-progress-head"><strong>'+h(status.replaceAll('-',' '))+'</strong><span>'+h(c?c.ready+' / '+c.total+' ready':'Waiting for PC claim')+'</span></div>'+
    '<p class="studio-hint">'+h(pending?'Requested '+batch.command?.kind+' · awaiting PC acknowledgement':batch.execution?.reason||LABELS[stage]||'Waiting')+'</p>'+
@@ -264,7 +264,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   await runTransaction(db,async tx=>{
    const [snap,control]=await Promise.all([tx.get(target),tx.get(ref('autoEditControl','admission'))]);check(token);
    const b=snapshotData(snap),a=snapshotData(control);
-   if(!b||!activePilot(a)||a.batchId!==selected||TERMINAL.has(b.execution?.status))throw new Error('This pilot is no longer active.');
+   if(!b||!activePilot(a)||a.batchId!==selected||(TERMINAL.has(b.execution?.status)&&!(kind==='retry'&&b.execution.status==='completed-with-failures')))throw new Error('This pilot is no longer active.');
    if(kind!=='stop'&&b.execution?.commandRevision!==b.command?.revision)throw new Error('Wait for the current command acknowledgement.');
    const retry=kind==='retry';
    tx.update(target,{command:{kind:retry?'run':kind,revision:b.command.revision+1,retryItemId:retry?ITEM:null},dispatch:true});

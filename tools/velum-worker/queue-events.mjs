@@ -52,7 +52,11 @@ export function subscribeForWork(db,uid,{sdk,changed,binding,connection,failed,a
    },error=>{if(!closed&&current===generation){online.set(status,false);report();failed(error);}}));
   }
   if(autoEdit?.enabled()){
-   try{jobStops.push(autoEdit.subscribe(db,uid,sdk));}catch(error){autoEdit.failed?.(error);}
+   try{
+    // Auto Edit errors use the existing bounded listener-reconnect path.
+    // Preserve manual job notifications rather than adding a new poller.
+    jobStops.push(autoEdit.subscribe(db,uid,sdk,failed));
+   }catch(error){autoEdit.failed?.(error);failed(error);}
   }
  };
  const stopBinding=onSnapshot(doc(db,`${root}/devices/${uid}`),{includeMetadataChanges:true},snapshot=>{

@@ -154,29 +154,30 @@ async function main(){
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
  let installed=[],version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
- let autoInstallation=null,autoDispatcher=null,autoAdmitted=false,autoConnected=false,autoPending=false,autoError='',autoAttempt=0,autoRetryAt=0;
+ let autoInstallation=null,autoDispatcher=null,autoAdmitted=false,autoConnected=false,autoListenerReady=false,autoPending=false,autoError='',autoAttempt=0,autoRetryAt=0,lastAutoReady=null;
  const autoFailure=error=>{autoError=/^[a-z0-9-]{1,80}$/.test(error?.message||'')?error.message:'auto-edit-unavailable';};
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const revoke=()=>{controller?.abort();autoDispatcher?.abort();};
  const autoNotifications={
   enabled:()=>Boolean(autoDispatcher),
-  failed:error=>{autoFailure(error);autoDispatcher?.abort();autoConnected=false;autoAdmitted=false;autoPending=false;},
-  subscribe:(db,uid,sdk)=>subscribeAutoEditQueue(db,uid,{
+  failed:error=>{autoFailure(error);autoDispatcher?.abort();autoListenerReady=false;autoConnected=false;autoAdmitted=false;autoPending=false;wakeup.wake();},
+  subscribe:(db,uid,sdk,listenerFailed)=>subscribeAutoEditQueue(db,uid,{
    sdk,wake:()=>{autoPending=true;wakeup.wake();},
    command:value=>autoDispatcher?.command(value),
    connected:value=>{autoConnected=value;if(!value)autoDispatcher?.abort();},
    admission:value=>{autoAdmitted=value;if(!value){autoPending=false;autoDispatcher?.abort();}},
-   error:error=>autoNotifications.failed(error)
+   ready:value=>{const changed=autoListenerReady!==value;autoListenerReady=value;if(value)autoError='';if(changed)wakeup.wake();},
+   error:error=>{autoNotifications.failed(error);listenerFailed?.(error);}
   })
  };
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:revoke,autoEdit:autoNotifications});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
  const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,autoEdit:{configured:Boolean(autoInstallation),admitted:autoAdmitted,connected:autoConnected,error:autoError},...values}));
- const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
+ const publish=async(state)=>{await local({state,activeJob,installed});const ready=Boolean(autoDispatcher&&autoListenerReady&&!autoError);if(queue&&(Date.now()-lastPublish>=60000||lastState!==state||lastAutoReady!==ready)){
   const updatedAt=Date.now();
   // Match the heartbeat timestamp; old/manual-only workers cannot leave a
   // stale readiness marker behind when they refresh the same status record.
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt,installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled),autoEditReadyAt:autoDispatcher&&!autoError?updatedAt:null});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt,installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled),autoEditReadyAt:ready?updatedAt:null});lastPublish=Date.now();lastState=state;lastAutoReady=ready;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{

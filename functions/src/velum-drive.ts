@@ -711,10 +711,14 @@ async function autoAssigned(intent:AutoMetadataIntent){
   return {admission:admission.data(),binding:binding.data(),batch:batch.data(),item:item.data()};
  });
  const {admission,binding,batch,item}=result;
- if(admission?.version!==1||admission.enabled!==true||binding?.status!=='approved'||binding.deviceUid!==AUTO_DEVICE)throw new DriveError(403,'drive/auto-edit-admission-closed');
+ if(admission?.version!==1||admission.enabled!==true||admission.mode!=='pilot'||admission.batchId!==intent.batchId
+  ||!Number.isSafeInteger(admission.expiresAt)||admission.expiresAt<=Date.now()||!autoDriveId(admission.sourceFileId)
+  ||binding?.status!=='approved'||binding.deviceUid!==AUTO_DEVICE)throw new DriveError(403,'drive/auto-edit-admission-closed');
  if(!batch||!item||batch.schemaVersion!==1||batch.deviceUid!==AUTO_DEVICE||batch.claim?.deviceUid!==AUTO_DEVICE||
   !autoHash(batch.planHash)||batch.claim.planHash!==batch.planHash||batch.plan?.batchId!==intent.batchId||
-  batch.plan?.deviceUid!==AUTO_DEVICE||batch.plan?.config?.consent!==true||batch.command?.kind!=='run'||
+  batch.plan?.deviceUid!==AUTO_DEVICE||batch.plan?.config?.consent!==true||batch.plan.config.batchSize!==1||
+  batch.plan.config.model!=='qwen-image-2.1-turbo'||batch.plan.items?.length!==1||batch.plan.items[0].source?.fileId!==admission.sourceFileId
+  ||batch.command?.kind!=='run'||
   batch.execution?.status!=='running'||batch.execution.activeItemId!==intent.itemId||
   batch.execution.commandRevision!==batch.command.revision||batch.execution.publicationRevision!==item.publicationRevision||
   item.status!=='running'||item.itemId!==intent.itemId||item.inFlight?.stage!==item.stage||!autoStages.includes(item.stage))throw new DriveError(403,'drive/auto-edit-claim-required');

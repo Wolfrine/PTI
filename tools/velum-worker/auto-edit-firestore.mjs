@@ -4,14 +4,13 @@ import {isDeepStrictEqual} from 'node:util';
 import {encode,decode} from './core.mjs';
 import {OWNER_UID,PROJECT} from './session.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
-import {validateAutoEditPlan,autoEditPlanHash,isAutoId,isHash} from './auto-edit-contract.mjs';
+import {validateAutoEditPlan,autoEditPlanHash,AUTO_EDIT_MODELS,isAutoId,isDriveId,isHash} from './auto-edit-contract.mjs';
 import {AutoEditFault,AutoEditJournal,AutoEditRunner} from './auto-edit-runner.mjs';
 import {ResourceSampler} from './resources.mjs';
 
 const ROOT='users/'+OWNER_UID+'/velumStudio/workspace';
 const DOCUMENTS='projects/'+PROJECT+'/databases/(default)/documents/';
 const COLLECTION='autoBatches';
-const MAX_READY=8;
 const TELEMETRY_MS=25000;
 const STATES=new Set(['queued','running','paused','blocked','completed','completed-with-failures','stopped']);
 const COMMANDS=new Set(['run','pause','stop']);
@@ -20,6 +19,15 @@ const check=(ok,code)=>{if(!ok)throw new AutoEditFault(code)};
 const unwrap=document=>decode({mapValue:{fields:document.fields}});
 const pathFor=id=>{check(isAutoId(id),'invalid-batch-id');return COLLECTION+'/'+id};
 const remoteRevision=doc=>doc.execution?.publicationRevision??0;
+function pilotOf(value,now=Date.now()){
+ return value?.version===1&&value.enabled===true&&value.mode==='pilot'&&isAutoId(value.batchId)&&isDriveId(value.sourceFileId)
+  &&Number.isSafeInteger(value.expiresAt)&&value.expiresAt>now&&value.expiresAt<=now+10800000
+  ? {batchId:value.batchId,sourceFileId:value.sourceFileId,expiresAt:value.expiresAt}:null;
+}
+function matchesPilot(pilot,plan){
+ return Boolean(pilot&&plan?.batchId===pilot.batchId&&plan.config?.batchSize===1&&plan.config?.model===AUTO_EDIT_MODELS.image
+  &&plan.items?.length===1&&plan.items[0].source?.authorized===true&&plan.items[0].source.fileId===pilot.sourceFileId);
+}
 function commandOf(doc){
  const c=doc.command;
  check(c&&COMMANDS.has(c.kind)&&Number.isSafeInteger(c.revision)&&c.revision>=0&&(c.retryItemId===null||(c.kind==='run'&&/^item-\d{3}$/.test(c.retryItemId))),'invalid-batch-command');
@@ -48,20 +56,19 @@ export class AutoEditQueue {
  async admission(){
   check(this.uid===PC_DEVICE_UID,'device-identity-mismatch');
   const r=await this.queue.request(ROOT+'/autoEditControl/admission',{allow:[404]});
-  if(r.status===404)return false;
-  const data=unwrap(r.value);return data.version===1&&data.enabled===true;
+  if(r.status===404)return null;
+  return pilotOf(unwrap(r.value));
  }
- async ready(){
-  check(this.uid===PC_DEVICE_UID,'device-identity-mismatch');
-  const result=await this.queue.request(ROOT+':runQuery',{method:'POST',value:{structuredQuery:{
-   from:[{collectionId:COLLECTION}],where:{compositeFilter:{op:'AND',filters:[
-    {fieldFilter:{field:{fieldPath:'deviceUid'},op:'EQUAL',value:encode(this.uid)}},
-    {fieldFilter:{field:{fieldPath:'dispatch'},op:'EQUAL',value:encode(true)}}
-   ]}},limit:MAX_READY}}});
-  return (result.value??[]).filter(row=>row.document).map(({document})=>({id:document.name.split('/').at(-1),updateTime:document.updateTime,data:unwrap(document)})).sort((a,b)=>a.data.createdAt-b.data.createdAt);
+ async ready(pilot){
+  if(!pilot)return [];
+  const row=await this.read(pilot.batchId);
+  if(!row||row.data.dispatch!==true)return [];
+  check(matchesPilot(pilot,validateEnvelope(row.id,row.data)),'auto-edit-pilot-mismatch');
+  return [row];
  }
- async reserve(row){
+ async reserve(row,pilot){
   const plan=validateEnvelope(row.id,row.data);
+  check(matchesPilot(pilot,plan),'auto-edit-pilot-mismatch');
   check(row.data.dispatch===true,'batch-not-dispatchable');
   if(row.data.claim===null){
    try{await this.queue.write(pathFor(row.id),{claim:{deviceUid:this.uid,planHash:row.data.planHash,claimedAt:Date.now()}},{updateTime:row.updateTime});}
@@ -76,8 +83,9 @@ export class AutoEditQueue {
  async claim({batchId,deviceUid,planHash,publicationRevision}){
   check(deviceUid===this.uid&&this.uid===PC_DEVICE_UID,'claim-lost');
   const [current,admitted]=await Promise.all([this.read(batchId),this.admission()]);
-  check(admitted,'auto-edit-admission-closed');
+  check(admitted?.batchId===batchId,'auto-edit-admission-closed');
   check(current&&current.data.deviceUid===deviceUid&&current.data.planHash===planHash&&current.data.claim?.deviceUid===deviceUid&&current.data.claim.planHash===planHash,'claim-lost');
+  check(matchesPilot(admitted,current.data.plan),'auto-edit-pilot-mismatch');
   // Missing/behind-cloud journal is not permission to run inference again.
   check(Number.isSafeInteger(publicationRevision)&&remoteRevision(current.data)<=publicationRevision,'local-journal-behind-cloud');
   const c=commandOf(current.data);
@@ -129,37 +137,41 @@ export class AutoEditQueue {
 // Never start it until concrete adapters are installed and admission is enabled.
 export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admission,error}){
  check(uid===PC_DEVICE_UID,'device-identity-mismatch');
- const {doc,collection,query,where,limit,onSnapshot}=sdk;
- let closed=false,queueStop=null,generation=0,admitted=false;
+ const {doc,onSnapshot}=sdk;
+ let closed=false,queueStop=null,generation=0,pilot=null,expiry=null;
  function stopQueue(){
-  generation++;queueStop?.();queueStop=null;connected?.(false);
+  generation++;queueStop?.();queueStop=null;
+  clearTimeout(expiry);expiry=null;
+  connected?.(false);
  }
- function startQueue(){
+ function setPilot(next){
+  if(isDeepStrictEqual(pilot,next))return;
+  stopQueue();pilot=next;admission?.(Boolean(next));
+  if(!next)return;
   const current=++generation;
-  let seen=new Map(),online=false;
-  const target=query(collection(db,ROOT+'/'+COLLECTION),where('deviceUid','==',uid),where('dispatch','==',true),limit(MAX_READY));
+  expiry=setTimeout(()=>{
+   if(!closed&&current===generation)setPilot(null);
+  },Math.max(0,next.expiresAt-Date.now()));
+  let seenRevision=null,online=false;
+  // Listen to the exact admitted batch, not the full queue.
+  const target=doc(db,ROOT+'/'+pathFor(next.batchId));
   queueStop=onSnapshot(target,{includeMetadataChanges:true},snapshot=>{
-   if(closed||current!==generation||!admitted)return;
+   if(closed||current!==generation||!pilot)return;
    const wasOnline=online;online=!snapshot.metadata.fromCache;connected?.(online);
-   if(!online)return;
-   const next=new Map();let changed=!wasOnline;
-   for(const entry of snapshot.docs){
-    const c=entry.data().command;
-    if(!c||!COMMANDS.has(c.kind)||!Number.isSafeInteger(c.revision))continue;
-    next.set(entry.id,c.revision);
-    if(seen.get(entry.id)!==c.revision){changed=true;command?.({batchId:entry.id,kind:c.kind,revision:c.revision});}
-   }
-   seen=next;if(changed&&next.size)wake();
-  },cause=>{if(!closed&&current===generation){stopQueue();admitted=false;admission?.(false);error?.(cause);}});
+   if(!online||!snapshot.exists())return;
+   const data=snapshot.data(),c=data.command;
+   if(!c||!COMMANDS.has(c.kind)||!Number.isSafeInteger(c.revision)||!matchesPilot(pilot,data.plan))return;
+   const changed=c.revision!==seenRevision;
+   if(changed){seenRevision=c.revision;command?.({batchId:next.batchId,kind:c.kind,revision:c.revision});}
+   if(data.dispatch===true&&(changed||!wasOnline))wake();
+  },cause=>{if(!closed&&current===generation){setPilot(null);error?.(cause);}});
  }
  const stopAdmission=onSnapshot(doc(db,ROOT+'/autoEditControl/admission'),{includeMetadataChanges:true},snapshot=>{
   if(closed)return;
-  const next=!snapshot.metadata.fromCache&&snapshot.exists()&&snapshot.data().version===1&&snapshot.data().enabled===true;
-  if(next===admitted)return;
-  admitted=next;admission?.(next);
-  if(next)startQueue();else stopQueue();
- },cause=>{if(!closed){admitted=false;stopQueue();admission?.(false);error?.(cause);}});
- return ()=>{closed=true;admitted=false;stopAdmission();stopQueue();admission?.(false);};
+  const next=!snapshot.metadata.fromCache&&snapshot.exists()?pilotOf(snapshot.data()):null;
+  setPilot(next);
+ },cause=>{if(!closed){setPilot(null);error?.(cause);}});
+ return ()=>{closed=true;stopAdmission();stopQueue();pilot=null;admission?.(false);};
 }
 // One slice, under the existing worker lock. No independent GPU scheduler.
 export class AutoEditDispatcher{
@@ -171,10 +183,12 @@ export class AutoEditDispatcher{
  abort(){this.active?.controller.abort();}
  async runOne({signal}={}){
   check(!this.active,'auto-dispatch-already-running');
-  if(signal?.aborted||!await this.store.admission())return {ran:false,needsMore:false};
-  const rows=await this.store.ready();let reservation=null;
+  if(signal?.aborted)return {ran:false,needsMore:false};
+  const pilot=await this.store.admission();
+  if(!pilot)return {ran:false,needsMore:false};
+  const rows=await this.store.ready(pilot);let reservation=null;
   for(const row of rows){
-   try{reservation=await this.store.reserve(row);break;}
+   try{reservation=await this.store.reserve(row,pilot);break;}
    catch(cause){if(!['batch-not-dispatchable','invalid-auto-edit-plan','batch-plan-mismatch','invalid-batch-command','invalid-batch-claim','invalid-batch-execution'].includes(cause?.message))throw cause;this.onError(cause,row.id);}
   }
   if(!reservation)return {ran:false,needsMore:false};

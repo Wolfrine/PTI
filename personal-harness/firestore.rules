@@ -404,9 +404,26 @@ service cloud.firestore {
    function aeInt(v,lo,hi) { return v is int && v >= lo && v <= hi; }
    function aeState(s) { return s in ['queued','running','paused','blocked','completed','completed-with-failures','stopped']; }
    function aeStage(s) { return s in ['source','vision1','prompt','edit','vision2','delivery','review-ready']; }
-   function aeAdmitted() {
-    let d = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
-    return d != null && d.version == 1 && d.enabled == true;
+   // First release admits only one explicitly selected pilot image and one
+   // immutable batch ID. Normal batch admission stays closed until separately released.
+   function aePilotControl(c) {
+    return c is map && c.version == 1 && c.enabled == true
+     && c.mode == 'pilot' && aeId(c.batchId) && c.sourceFileId is string
+     && c.sourceFileId.matches('[A-Za-z0-9_-]{8,160}')
+     && c.expiresAt is int && c.expiresAt > request.time.toMillis();
+   }
+   // The admitted device may observe this exact document even before the owner
+   // creates it. This avoids a denied not-found snapshot during pilot setup.
+   function aePilotBatch(id) {
+    let c = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
+    return aePilotControl(c) && c.batchId == id;
+   }
+   function aeAdmitted(id,d) {
+    let c = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
+    return aePilotControl(c) && c.batchId == id
+     && d.plan.config.batchSize == 1 && d.plan.config.model == turboModel()
+     && d.plan.items.size() == 1 && d.plan.items[0].source.authorized == true
+     && d.plan.items[0].source.fileId == c.sourceFileId;
    }
    function aeCommand(c) {
     return c is map && c.keys().hasOnly(['kind','revision','retryItemId'])
@@ -449,8 +466,14 @@ service cloud.firestore {
    match /autoEditControl/admission {
     allow get: if studioOwner() || studioDevice();
     allow list, delete: if false;
-    allow create, update: if studioOwner() && request.resource.data.keys().hasOnly(['version','enabled','updatedAt'])
-     && request.resource.data.version == 1 && request.resource.data.enabled is bool && instant(request.resource.data.updatedAt);
+    function validControl(c) {
+     return c.version == 1 && c.enabled is bool && instant(c.updatedAt)
+      && (c.enabled == false
+       ? c.keys().hasOnly(['version','enabled','updatedAt'])
+       : (c.keys().hasOnly(['version','enabled','updatedAt','mode','batchId','sourceFileId','expiresAt'])
+        && aePilotControl(c) && c.expiresAt <= request.time.toMillis() + 10800000));
+    }
+    allow create, update: if studioOwner() && validControl(request.resource.data);
    }
    match /autoBatches/{batchId} {
     function batchPath() { return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(batchId); }
@@ -482,11 +505,12 @@ service cloud.firestore {
       && aeExecution(d.execution,d,old.execution,batchId)
       && d.dispatch == (d.command.revision > d.execution.commandRevision || d.execution.status in ['queued','running']);
     }
-    allow get: if studioOwner() || aeAssigned(resource.data);
-    allow list: if (studioOwner() || aeAssigned(resource.data)) && request.query.limit != null && request.query.limit <= 100;
-    allow create: if studioOwner() && aeAdmitted() && validNew(request.resource.data);
+    allow get: if studioOwner() || (studioDevice() && aePilotBatch(batchId));
+    allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 100;
+    allow create: if studioOwner() && validNew(request.resource.data) && aeAdmitted(batchId,request.resource.data);
     allow update: if (studioOwner() && ownerCommand(request.resource.data,resource.data))
-     || (aeAssigned(resource.data) && (claimOnce(request.resource.data,resource.data) || executionWrite(request.resource.data,resource.data)));
+     || (aeAssigned(resource.data) && aeAdmitted(batchId,resource.data)
+      && (claimOnce(request.resource.data,resource.data) || executionWrite(request.resource.data,resource.data)));
     allow delete: if false;
     function artifact(a) {
      return a == null || (a is map && a.keys().hasOnly(['mime','bytes','sha256','width','height'])
@@ -535,7 +559,7 @@ service cloud.firestore {
      let before = parent();
      let after = nextParent();
      let previous = before.execution == null ? 0 : before.execution.publicationRevision;
-     return aeClaimed(before) && after.execution != null && after.execution.publicationRevision == previous+1
+     return aeClaimed(before) && aeAdmitted(batchId,before) && after.execution != null && after.execution.publicationRevision == previous+1
       && i.publicationRevision == after.execution.publicationRevision && itemShape(i,after,itemId);
     }
     match /items/{itemId} {
@@ -558,8 +582,8 @@ service cloud.firestore {
      }
      allow get: if studioOwner() || aeAssigned(parent());
      allow list, delete: if false;
-     allow create: if aeClaimed(parent()) && validSample(request.resource.data,parent());
-     allow update: if aeClaimed(parent()) && validSample(request.resource.data,parent())
+     allow create: if aeClaimed(parent()) && aeAdmitted(batchId,parent()) && validSample(request.resource.data,parent());
+     allow update: if aeClaimed(parent()) && aeAdmitted(batchId,parent()) && validSample(request.resource.data,parent())
       && request.resource.data.progress.updatedAt >= resource.data.progress.updatedAt;
     }
    }

@@ -277,17 +277,39 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
          !/^[a-f0-9]{64}$/.test(value.sha256Checksum||''))throw new Error('Choose a private, owned PNG or JPEG with a verified checksum.');
       return value;
     },
-    async readAutoEditImage({fileId,folderId,sha256},{signal}={}){
+    startAutoEditBatch(data){return access.autoEditBatch('auto-edit-batch',data);},
+    renewAutoEditBatch(data){return access.autoEditBatch('auto-edit-renew',data);},
+    async readAutoEditThumbnail(image,{signal}={}){
+      const guard=getOperationGuard(),maxBytes=5*1024*1024;
+      const blob=await this.readAutoEditImage(image,{signal,maxBytes});
+      if(!blob||blob.type!=='image/png')return null;
+      const header=new DataView(await blob.slice(0,24).arrayBuffer());
+      if(header.byteLength<24||header.getUint32(0)!==0x89504e47||header.getUint32(12)!==0x49484452)return null;
+      const width=header.getUint32(16),height=header.getUint32(20);
+      if(!width||!height||width*height>16*1024*1024)return null;
+      const scale=Math.min(1,400/Math.max(width,height));
+      const bitmap=await createImageBitmap(blob,{resizeWidth:Math.max(1,Math.round(width*scale)),resizeHeight:Math.max(1,Math.round(height*scale))});
+      try{
+        guard();signal?.throwIfAborted();
+        const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+        const context=canvas.getContext('2d');if(!context)return null;
+        context.drawImage(bitmap,0,0);
+        const thumbnail=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.8));
+        guard();signal?.throwIfAborted();return thumbnail;
+      }finally{bitmap.close();}
+    },
+    async readAutoEditImage({fileId,folderId,sha256},{signal,maxBytes=64*1024*1024}={}){
       const generation=epoch,guard=getOperationGuard(),controller=new AbortController(),cancel=()=>controller.abort();
       controllers.add(controller);signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)controller.abort();
       try{
         const file=await this.autoEditMetadata(fileId,{signal:controller.signal});
         if(file.parents[0]!==folderId||file.sha256Checksum!==sha256)throw new Error('The recorded image has changed.');
+        if(Number(file.size)>maxBytes)return null;
         const response=await readRequest(API+'/files/'+encodeURIComponent(fileId)+'?alt=media',{signal:controller.signal});
         if(!response.ok)throw driveResponseError(response,'Could not load image');
         const reader=response.body?.getReader();if(!reader)throw new Error('Missing image response.');
         let size=0;const parts=[];
-        try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>Number(file.size)||size>64*1024*1024)throw new Error('Image exceeds its verified size.');parts.push(value);}}
+        try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>Number(file.size)||size>maxBytes)throw new Error('Image exceeds its verified size.');parts.push(value);}}
         finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
         if(size!==Number(file.size))throw new Error('Image size mismatch.');
         const blob=new Blob(parts,{type:file.mimeType}),bytes=await blob.arrayBuffer();

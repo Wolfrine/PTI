@@ -763,7 +763,9 @@ function currentMediaItem() { return current.ids.length ? imageById(current.ids[
 function displayedVideo() { return driftMedia.querySelector('.single-wrap:not(.drift-outgoing) .drift-video'); }
 function matchesGalleryFilter(item) {
   const filter = libraryControls.filter;
-  return filter === 'all' || item.folderId === (filter === 'private' ? PRIVATE_FOLDER_ID : REFERENCES_FOLDER_ID);
+  return filter === 'all' || (filter === 'private'
+    ? item.folderId === PRIVATE_FOLDER_ID || item.folderLabel === 'Auto Generated'
+    : item.folderId === REFERENCES_FOLDER_ID);
 }
 
 function driftActive() {

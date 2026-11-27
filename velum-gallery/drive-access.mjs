@@ -121,12 +121,17 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
           'drive/folder-not-manageable':'Google Drive has not allowed access to both exact library folders.',
           'drive/file-not-movable':'Google Drive has not allowed this image to move.',
           'drive/google-rejected':'Google Drive did not allow this move. The saved action can be checked safely.',
-          'drive/browser-scope-rejected':'Google returned unexpected gallery permissions. The token was not accepted.'
+          'drive/browser-scope-rejected':'Google returned unexpected gallery permissions. The token was not accepted.',
+          'drive/auto-edit-insufficient-stock':'There are fewer eligible images for this instruction version.',
+          'drive/auto-edit-pc-not-ready':'The PC is not ready for Auto Edit batches.',
+          'drive/auto-edit-admission-in-use':'Finish or close the current Auto Edit window first.',
+          'drive/auto-edit-catalog-timeout':'Drive could not finish checking eligible originals. Try again.'
         };
         throw Object.assign(new Error(messages[value.code]||`Drive could not complete this ${['move','auto-edit-review'].includes(path)?'move':'connection'} (${response.status}).`),{
           code:value.code||'drive/unavailable',status:response.status,stage:path==='move'?'Move was not confirmed':path,
           phase:value.phase==='pending'?'pending':undefined,
-          receiptId:/^[a-f0-9]{64}$/.test(value.receiptId||'')?value.receiptId:undefined
+          receiptId:/^[a-f0-9]{64}$/.test(value.receiptId||'')?value.receiptId:undefined,
+          eligibleCount:Number.isInteger(value.eligibleCount)&&value.eligibleCount>=0&&value.eligibleCount<=100?value.eligibleCount:undefined
         });
       }
       return value;
@@ -543,6 +548,11 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     const result=await serverRequest('auto-edit-review',generation,data);
     check(generation,owner.googleUid);return result;
   }
+  async function autoEditBatch(path,data){
+    const generation=epoch,owner=identity();
+    await ensure([DRIVE_READ_SCOPE]);check(generation,owner.googleUid);
+    return serverRequest(path,generation,data);
+  }
   async function moveStatus(data){
     const generation=epoch,owner=identity();
     await ensure();check(generation,owner.googleUid);
@@ -812,7 +822,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }
   }
 
-  return {connect, ensure, restore, require, request, has, ready, handleCancelledGrant,move,moveStatus,autoEditReview,
+  return {connect, ensure, restore, require, request, has, ready, handleCancelledGrant,move,moveStatus,autoEditReview,autoEditBatch,
     getToken:require, getOperationGuard, cancelPending, clear, disconnect,
     get disconnectPending(){return disconnectPending;},
     get managementProxy(){return backend;},

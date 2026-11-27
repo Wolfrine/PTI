@@ -4,7 +4,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {encode,decode} from './core.mjs';
 import {OWNER_UID,PROJECT} from './session.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
-import {validateAutoEditPlan,autoEditPlanHash,AUTO_EDIT_MODELS,isAutoId,isDriveId,isHash} from './auto-edit-contract.mjs';
+import {validateAutoEditPlan,autoEditPlanHash,AUTO_EDIT_MODELS,AUTO_EDIT_BATCH_VERSION,AUTO_EDIT_BATCH_TTL,isAutoId,isDriveId,isHash} from './auto-edit-contract.mjs';
 import {AutoEditFault,AutoEditJournal,AutoEditRunner} from './auto-edit-runner.mjs';
 import {ResourceSampler} from './resources.mjs';
 import {learningAdmission,validateLearningRequest,reviewedEvidence,validateStoredProposal,LEARNING_ITEM} from '../../velum-gallery/auto-edit-learning-contract.mjs';
@@ -25,9 +25,16 @@ function pilotOf(value,now=Date.now()){
   &&Number.isSafeInteger(value.expiresAt)&&value.expiresAt>now&&value.expiresAt<=now+10800000
   ? {mode:'pilot',batchId:value.batchId,sourceFileId:value.sourceFileId,expiresAt:value.expiresAt}:null;
 }
-function admissionOf(value){return pilotOf(value)||learningAdmission(value);}
+function batchOf(value,now=Date.now()){
+ return value?.version===AUTO_EDIT_BATCH_VERSION&&value.enabled===true&&value.mode==='batch'&&isAutoId(value.batchId)&&isHash(value.planHash)
+  &&Number.isSafeInteger(value.expiresAt)&&value.expiresAt>now&&value.expiresAt<=now+AUTO_EDIT_BATCH_TTL
+  ? {mode:'batch',batchId:value.batchId,planHash:value.planHash,expiresAt:value.expiresAt}:null;
+}
+function admissionOf(value){return batchOf(value)||pilotOf(value)||learningAdmission(value);}
 function learningPath(id){check(isAutoId(id),'invalid-learning-id');return 'autoLearnings/'+id;}
-function matchesPilot(pilot,plan){
+function matchesAdmission(pilot,plan,planHash){
+ if(pilot?.mode==='batch')return plan?.schemaVersion===AUTO_EDIT_BATCH_VERSION&&plan?.batchId===pilot.batchId
+  &&plan.config?.model===AUTO_EDIT_MODELS.image&&planHash===pilot.planHash;
  return Boolean(pilot?.mode==='pilot'&&plan?.batchId===pilot.batchId&&plan.config?.batchSize===1&&plan.config?.model===AUTO_EDIT_MODELS.image
   &&plan.items?.length===1&&plan.items[0].source?.authorized===true&&plan.items[0].source.fileId===pilot.sourceFileId);
 }
@@ -46,7 +53,7 @@ export function autoEditShouldDispatch(doc,execution){
 }
 function validateEnvelope(id,data){
  const plan=validateAutoEditPlan(data.plan);
- check(data.schemaVersion===1&&data.deviceUid===PC_DEVICE_UID&&plan.batchId===id&&data.createdAt===plan.createdAt&&isHash(data.planHash)&&data.planHash===autoEditPlanHash(plan),'batch-plan-mismatch');
+ check(data.schemaVersion===plan.schemaVersion&&data.deviceUid===PC_DEVICE_UID&&plan.batchId===id&&data.createdAt===plan.createdAt&&isHash(data.planHash)&&data.planHash===autoEditPlanHash(plan),'batch-plan-mismatch');
  commandOf(data);
  check(data.claim===null||(data.claim?.deviceUid===PC_DEVICE_UID&&data.claim.planHash===data.planHash&&Number.isSafeInteger(data.claim.claimedAt)),'invalid-batch-claim');
  check(data.execution===null||(data.claim!==null&&data.execution?.batchId===id&&STATES.has(data.execution.status)&&Number.isSafeInteger(remoteRevision(data))&&remoteRevision(data)>0),'invalid-batch-execution');
@@ -102,15 +109,23 @@ export class AutoEditQueue {
   if(!pilot)return [];
   const row=await this.read(pilot.batchId);
   if(!row||row.data.dispatch!==true)return [];
-  check(matchesPilot(pilot,validateEnvelope(row.id,row.data)),'auto-edit-pilot-mismatch');
+  check(matchesAdmission(pilot,validateEnvelope(row.id,row.data),row.data.planHash),'auto-edit-admission-mismatch');
   return [row];
  }
  async reserve(row,pilot){
   const plan=validateEnvelope(row.id,row.data);
-  check(matchesPilot(pilot,plan),'auto-edit-pilot-mismatch');
+  check(matchesAdmission(pilot,plan,row.data.planHash),'auto-edit-admission-mismatch');
   check(row.data.dispatch===true,'batch-not-dispatchable');
   if(row.data.claim===null){
-   try{await this.queue.write(pathFor(row.id),{claim:{deviceUid:this.uid,planHash:row.data.planHash,claimedAt:Date.now()}},{updateTime:row.updateTime});}
+   const claim={deviceUid:this.uid,planHash:row.data.planHash,claimedAt:Date.now()};
+   try{
+    if(plan.schemaVersion===AUTO_EDIT_BATCH_VERSION){
+     await this.queue.request(':commit',{method:'POST',value:{writes:[{
+      update:{name:DOCUMENTS+ROOT+'/'+pathFor(row.id),fields:encode({claim}).mapValue.fields},
+      updateMask:{fieldPaths:['claim']},currentDocument:{updateTime:row.updateTime}
+     }]}});
+    }else await this.queue.write(pathFor(row.id),{claim},{updateTime:row.updateTime});
+   }
    catch(error){if(!['firebase-409','firebase-412'].includes(error.message))throw error;}
   }
   const current=await this.read(row.id);
@@ -124,7 +139,7 @@ export class AutoEditQueue {
   const [current,admitted]=await Promise.all([this.read(batchId),this.admission()]);
   check(admitted?.batchId===batchId,'auto-edit-admission-closed');
   check(current&&current.data.deviceUid===deviceUid&&current.data.planHash===planHash&&current.data.claim?.deviceUid===deviceUid&&current.data.claim.planHash===planHash,'claim-lost');
-  check(matchesPilot(admitted,current.data.plan),'auto-edit-pilot-mismatch');
+  check(matchesAdmission(admitted,current.data.plan,current.data.planHash),'auto-edit-admission-mismatch');
   // Missing/behind-cloud journal is not permission to run inference again.
   check(Number.isSafeInteger(publicationRevision)&&remoteRevision(current.data)<=publicationRevision,'local-journal-behind-cloud');
   const c=commandOf(current.data);
@@ -206,7 +221,7 @@ export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admiss
     if((data.status==='queued'&&changed)||(data.status==='running'&&!wasOnline))wake();
     return;
    }
-   if(!c||!COMMANDS.has(c.kind)||!Number.isSafeInteger(c.revision)||!matchesPilot(pilot,data.plan))return;
+   if(!c||!COMMANDS.has(c.kind)||!Number.isSafeInteger(c.revision)||!matchesAdmission(pilot,data.plan,data.planHash))return;
    const changed=c.revision!==seenRevision;
    if(changed){seenRevision=c.revision;command?.({batchId:next.batchId,kind:c.kind,revision:c.revision});}
    if(data.dispatch===true&&(changed||!wasOnline))wake();

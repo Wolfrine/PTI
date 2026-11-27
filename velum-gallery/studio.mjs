@@ -2,7 +2,7 @@
 const localModule = relative => { const url=new URL(relative,import.meta.url);url.search=new URL(import.meta.url).search;return import(url.href); };
 const {MODELS,makeJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,modelReferenceLimit,retiredReviewId}=await localModule('./studio-contract.mjs');
 const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
-const {renderStudioShell,renderStudioState,renderCreationDetails,selectedJob,pendingJob,studioBusy,formatJobStatus}=await localModule('./studio-view.mjs');
+const {renderStudioShell,renderStudioState,renderCreationDetails,selectedJob,pendingJob,studioBusy,formatJobStatus,autoEditGalleryVisible}=await localModule('./studio-view.mjs');
 const {ARCHIVE_PAGE_SIZE,archiveSource,mergeArchivePage,visibleCreations,decodeThumbnail,creationReady,historicalCreation}=await localModule('./studio-archive.mjs');
 const {prepareReference,decodeReference,MAX_REFERENCES}=await localModule('./studio-reference.mjs');
 const {makeRecoveryRequest,pendingRecovery,RECOVERY_COOLDOWN_MS,supportsRecovery}=await localModule('./studio-recovery.mjs');
@@ -60,7 +60,7 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     panel.scrollTop=scroll;setViewerDetails(panel.dataset.expanded==='true');compareController?.sync();
   };
   const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){observer.unobserve(entry.target);queueThumb(entry.target.dataset.thumb,entry.target);}}),{root,rootMargin:'200px'}):null;
-  function observeThumbs(){if(state.mode!=='creations')return;root.querySelectorAll('[data-thumb]').forEach(element=>{const id=element.dataset.thumb,record=state.archiveJobs.find(item=>item.id===id);if(historicalCreation(record)&&!creationReady(record))return;if(thumbs.has(id))paintThumb(element,thumbs.get(id));else if(!thumbMissing.has(id)){if(observer)observer.observe(element);else queueThumb(id,element);}});}
+  function observeThumbs(){if(state.mode!=='creations'||autoEditGalleryVisible(state))return;root.querySelectorAll('[data-thumb]').forEach(element=>{const id=element.dataset.thumb,record=state.archiveJobs.find(item=>item.id===id);if(historicalCreation(record)&&!creationReady(record))return;if(thumbs.has(id))paintThumb(element,thumbs.get(id));else if(!thumbMissing.has(id)){if(observer)observer.observe(element);else queueThumb(id,element);}});}
   function paintThumb(element,url){if(!element.isConnected||element.querySelector('img'))return;const image=new Image();image.src=url;image.alt='';image.loading='lazy';image.decoding='async';element.append(image);}
   function queueThumb(id,element){if(!uid||thumbPending.has(id)||thumbs.has(id)||thumbMissing.has(id))return;thumbPending.add(id);thumbQueue.push({id,element,token:epoch});drainThumbs();}
   function drainThumbs(){while(thumbActive<6&&thumbQueue.length){const item=thumbQueue.shift();thumbActive++;(async()=>{try{if(item.token!==epoch||!uid)return;const driveJob=state.driveJobs.find(job=>job.id===item.id);if(driveJob){const file=await drive.metadata(driveJob.driveOriginal.fileId);if(item.token!==epoch||!uid)return;if(file.thumbnailLink){paintThumb(item.element,file.thumbnailLink);return;}thumbMissing.add(item.id);return;}const snapshot=await getDoc(doc(db,...workspace(),'thumbs',item.id));if(!snapshot.exists()){thumbMissing.add(item.id);return;}const blob=await decodeThumbnail(snapshot.data());if(item.token!==epoch||!uid)return;const url=URL.createObjectURL(blob);thumbs.set(item.id,url);paintThumb(item.element,url);if(thumbs.size>144){const first=thumbs.keys().next().value;URL.revokeObjectURL(thumbs.get(first));thumbs.delete(first);}}catch{if(item.token===epoch)thumbMissing.add(item.id);}finally{thumbActive--;thumbPending.delete(item.id);drainThumbs();}})();}}
@@ -68,12 +68,18 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   function clearPose(){poseEpoch++;if(state.pose?.url)URL.revokeObjectURL(state.pose.url);state.pose=null;state.poseEnabled=false;state.poseLoading=false;state.poseError='';root.querySelector('#studioPoseEnabled').checked=false;}
   function clearReferences(){state.references.forEach(reference=>URL.revokeObjectURL(reference.url));state.references=[];state.parentJobId='';clearPose();}
   function clearPrivateSession({cancelDrive=true,clearAccess=true}={}){viewerReturn=null;referencePicker.clear();clearPose();state.driveJobs=[];state.driveLoading=false;pendingUpload=null;state.canRetryUpload=false;state.uploadProgress='';state.message='';state.saveMessage='';state.referencePick=false;root.querySelector('#studioReferenceSources').hidden=true;root.querySelector('#studioReferenceOpen').setAttribute('aria-expanded','false');if(cancelDrive)drive.clear({clearAccess});}
-  function switchMode(mode){state.mode=mode;draw();root.scrollTop=0;if(mode==='creations'&&!state.archiveJobs.length&&!state.archiveLoading)loadArchive(true);}
+  function switchMode(mode){
+    state.mode=mode;
+    const reset=mode==='creations'&&state.referencePick&&state.archiveFilter==='auto-edit';
+    if(reset)state.archiveFilter='all';
+    draw();root.scrollTop=0;
+    if(mode==='creations'&&!autoEditGalleryVisible(state)&&(reset||!state.archiveJobs.length)&&!state.archiveLoading)loadArchive(true);
+  }
   function showDialog(id){const dialog=root.querySelector(id);if(!dialog.open){dialog.showModal();if(id==='#studioDetailsPanel')dialog.focus({preventScroll:true});}}
   function closeDialogs(){root.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());}
   async function related(collectionName,ids){const values={};for(let index=0;index<ids.length;index+=30){const group=ids.slice(index,index+30);if(!group.length)continue;const snapshot=await getDocs(query(collection(db,...workspace(),collectionName),where(documentId(),'in',group)));snapshot.docs.forEach(item=>{values[item.id]=item.data();});}return values;}
   async function loadArchive(reset=false){
-    if(!uid||locked||state.archiveLoading)return;if(reset){archiveEpoch++;archiveCursor=null;state.archiveJobs=[];state.archiveHasMore=true;root.querySelector('#studioArchiveGrid').dataset.signature='';}if(!state.archiveHasMore)return;
+    if(!uid||locked||state.archiveLoading||autoEditGalleryVisible(state))return;if(reset){archiveEpoch++;archiveCursor=null;state.archiveJobs=[];state.archiveHasMore=true;root.querySelector('#studioArchiveGrid').dataset.signature='';}if(!state.archiveHasMore)return;
     const token=epoch,lane=archiveEpoch,source=archiveSource(state.archiveFilter);state.archiveLoading=true;state.archiveError='';draw();
     try{const constraints=[...(source.where?[where(...source.where)]:[]),orderBy(source.order,'desc'),...(archiveCursor?[startAfter(archiveCursor)]:[]),limit(ARCHIVE_PAGE_SIZE)];const snapshot=await getDocs(query(collection(db,...workspace(),source.collection),...constraints));if(token!==epoch||lane!==archiveEpoch||!uid)return;
       const records=snapshot.docs.filter(item=>!retiredReviewId(item.id));
@@ -249,7 +255,12 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     if(button.hasAttribute('data-source-reference'))await loadSourceReference(Number(button.dataset.sourceReference));
     if(button.hasAttribute('data-remove-reference')){const [reference]=state.references.splice(Number(button.dataset.removeReference),1);if(reference)URL.revokeObjectURL(reference.url);if(!state.references.length)clearPose();draw();}
     for(const [attribute,direction] of [['data-reference-up',-1],['data-reference-down',1]])if(button.hasAttribute(attribute)){const index=Number(button.getAttribute(attribute)),next=index+direction;if(next>=0&&next<state.references.length)[state.references[index],state.references[next]]=[state.references[next],state.references[index]];draw();}
-    if(button.hasAttribute('data-filter')&&button.dataset.filter!==state.archiveFilter){if(state.archiveLoading)return;state.archiveFilter=button.dataset.filter;loadArchive(true);}
+    if(button.hasAttribute('data-filter')&&button.dataset.filter!==state.archiveFilter){
+      if(state.archiveLoading||(state.referencePick&&button.dataset.filter==='auto-edit'))return;
+      state.archiveFilter=button.dataset.filter;
+      root.querySelector('#studioArchiveOptions').open=false;
+      if(autoEditGalleryVisible(state))draw();else loadArchive(true);
+    }
     if(button.id==='studioLoadMore')loadArchive();if(button.dataset.action==='undo-remove')await restoreCreation(state.lastRemovedId);if(button.dataset.creation){if(state.referencePick)await creationReference(button.dataset.creation);else await chooseJob(button.dataset.creation,true);}
     if(button.dataset.action==='details'){detailsDraw();showDialog('#studioDetailsPanel');loadResult();}
     if(button.dataset.action==='iterate'){const job=selectedJob(state);if(job&&!historicalCreation(job)){clearReferences();root.querySelector('#studioPrompt').value=job.prompt;root.querySelector('#studioSeed').value=String(job.seed);root.querySelector('#studioModel').value=job.model;state.parentJobId=job.id;state.mode='create';state.message='Original prompt and seed copied exactly. This new request has no attached references.';closeDialogs();draw();root.scrollTop=root.querySelector('#studioForm').offsetTop;root.querySelector('#studioPrompt').focus();}}
@@ -318,7 +329,8 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   });
   listen(root.querySelector('#studioDetails'),'submit',async event=>{if(event.target.id!=='studioFeedback')return;event.preventDefault();const form=event.target,output=form.querySelector('#studioFeedbackStatus'),button=form.querySelector('button[type=submit]'),data=new FormData(form);button.disabled=true;output.textContent='Saving…';try{await feedbackSave(data.get('verdict'),String(data.get('note')||''));output.textContent='Feedback saved';draw();}catch(error){output.textContent=error.message||'Not saved. Reconnect and retry.';}finally{button.disabled=false;}});
   autoEditController=mountAutoEdit(root.querySelector('#studioAutoEdit'),{sdk,db,drive,auth,
-    context:()=>({uid,locked,destroyed,visible:pageActive&&studioVisible()&&!document.hidden&&state.mode==='auto-edit',
+    openCreations:()=>{state.archiveFilter='auto-edit';state.referencePick=false;switchMode('creations');},
+    context:()=>({uid,locked,destroyed,visible:pageActive&&studioVisible()&&!document.hidden&&(state.mode==='auto-edit'||autoEditGalleryVisible(state)),surface:autoEditGalleryVisible(state)?'gallery':'run',
       worker:state.worker,binding:state.binding,busy:studioBusy(state),connected:state.connected!==false&&!state.liveCached})});
   const unsubscribeAuth=onAuthStateChanged(auth,user=>{
     if(destroyed)return;

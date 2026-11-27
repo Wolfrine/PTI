@@ -236,7 +236,8 @@ export class AutoEditRunner{
     if(c.revision<=state.commandRevision||c.retryItemId===null)return summary(plan,state,null);
    }
    if(!await this.control(plan,state,null,signal))return summary(plan,state,null);
-   const item=state.items.find(i=>!TERMINAL_ITEMS.has(i.status));
+   const ready=i=>!TERMINAL_ITEMS.has(i.status);
+   const item=state.items.find(i=>i.itemId===state.commandRetryItemId&&ready(i))??state.items.find(ready);
    if(!item){state.status=counts(state).failed?'completed-with-failures':'completed';state.activeItemId=null;await this.persist(plan,state,null);return summary(plan,state,null);}
    const spec=plan.items.find(i=>i.itemId===item.itemId),dir=await this.journal.directory(plan,item.itemId);
    state.status='running';state.activeItemId=item.itemId;item.status='running';await this.persist(plan,state,item);

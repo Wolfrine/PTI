@@ -177,7 +177,7 @@ async function main(){
   const updatedAt=Date.now();
   // Match the heartbeat timestamp; old/manual-only workers cannot leave a
   // stale readiness marker behind when they refresh the same status record.
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt,installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled),autoEditReadyAt:ready?updatedAt:null});lastPublish=Date.now();lastState=state;lastAutoReady=ready;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt,installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled),autoEditReadyAt:ready?updatedAt:null,autoEditBatchVersion:2,autoEditBatchReadyAt:ready?updatedAt:null});lastPublish=Date.now();lastState=state;lastAutoReady=ready;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{

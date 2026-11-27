@@ -88,7 +88,7 @@ export async function guardAutoEditStage({stage,model,startingInference=false,si
 // Drive metadata and authorization provider. A filename, mount path or folder
 // membership alone is not a sufficient identity/authorization receipt.
 function validateSource(source,record){
- need(source?.authorized===true&&isDriveId(source.fileId)&&Object.values(SOURCE_FOLDERS).includes(source.folderId)&&SOURCE_MIMES.has(source.mime),'invalid-source','item');
+ need(source?.authorized===true&&isDriveId(source.fileId)&&isDriveId(source.folderId)&&SOURCE_MIMES.has(source.mime),'invalid-source','item');
  need(record?.verified===true&&record.authorized===true&&record.trashed===false&&record.fileId===source.fileId&&record.folderId===source.folderId&&record.mime===source.mime,'source-authorization-or-identity-changed','item');
  need(Number.isSafeInteger(record.bytes)&&record.bytes>=16&&record.bytes<=MAX_BYTES,'invalid-source-size','item');
  const sha256=record.sha256??null,md5=record.md5??null;
@@ -165,9 +165,15 @@ export function createVerifiedOriginalReader({folders,lookup}){
  }
  const resolve=async({source,batchId,itemId,signal})=>{
   alive(signal);
-  const entry=validateSource(source,await lookup({fileId:source.fileId,folderId:source.folderId,batchId,itemId,signal}));
+  const mapped=await lookup({fileId:source.fileId,folderId:source.folderId,batchId,itemId,signal});
+  const entry=validateSource(source,mapped);
   need(typeof entry.localPath==='string','drive-file-mapping-unavailable');
-  entry.localPath=await directChild(roots.get(entry.folderId),entry.localPath);
+  const privateRoot=roots.get(SOURCE_FOLDERS.private),fixed=roots.get(entry.folderId);
+  const root=Array.isArray(mapped.ancestors)?mapped.root:fixed;
+  need(typeof root==='string'&&path.isAbsolute(root)&&(Array.isArray(mapped.ancestors)
+   ? samePath(root,privateRoot)||root.toLowerCase().startsWith(privateRoot.toLowerCase()+path.sep)
+   : fixed===root),'source-path-outside-approved-folder');
+  entry.localPath=await directChild(root,entry.localPath);
   return entry;
  };
  return {

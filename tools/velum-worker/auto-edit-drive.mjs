@@ -56,6 +56,10 @@ async function broker(queue,action,c){
  const value=await jsonResponse(response);
  if(!response.ok){
   const code=typeof value?.code==='string'&&/^drive\/[a-z0-9-]{1,70}$/.test(value.code)?value.code.replace('/','-'):'drive-metadata-rejected';
+  if(action==='source'&&(response.status===404||[
+   'drive-auto-edit-file-identity-mismatch','drive-auto-edit-source-checksum-unavailable',
+   'drive-auto-edit-source-not-authorized','drive-auto-edit-size-invalid'
+  ].includes(code)))throw new AutoEditFault(code,'item');
   throw fault(code);
  }
  return value;
@@ -182,9 +186,16 @@ export function createDriveDesktopAdapters({queue,folders,stagingRoot}){
  const reader=createVerifiedOriginalReader({folders,lookup:async c=>{
   const value=await broker(queue,'source',c);
   need(value?.fileId===c.fileId&&value.folderId===c.folderId,'drive-source-identity-mismatch');
-  const root=folders[value.folderId];need(typeof root==='string','drive-folder-mapping-required');
+  const nested=Array.isArray(value.ancestors);
+  let root=folders[value.folderId];
+  if(nested){
+   need(value.ancestors.length<=32&&(value.folderId===SOURCE_FOLDERS.private)===(value.ancestors.length===0),'drive-folder-mapping-required');
+   root=await exactDir(privateRoot);
+   for(const directory of value.ancestors)root=await exactDir(path.join(root,filename(directory)));
+  }
+  need(typeof root==='string','drive-folder-mapping-required');
   await exactDir(root);
-  return {...value,localPath:path.join(root,filename(value.name))};
+  return {...value,root,localPath:path.join(root,filename(value.name))};
  }});
  async function cloudCheck(c,paths,data){
   const value=await broker(queue,'delivery',c);

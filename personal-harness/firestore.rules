@@ -257,7 +257,11 @@ service cloud.firestore {
        : c.referenceLimits == limits);
     }
     allow read: if studioOwner() || studioDevice();
-    allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version','capabilities','autoEditReadyAt'])
+    allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version','capabilities','autoEditReadyAt','autoEditBatchVersion','autoEditBatchReadyAt'])
+     && request.resource.data.get('autoEditBatchVersion',2) == 2
+     && (!('autoEditBatchReadyAt' in request.resource.data) || request.resource.data.autoEditBatchReadyAt == null
+      || request.resource.data.autoEditBatchReadyAt == request.resource.data.updatedAt
+      || (resource != null && request.resource.data.autoEditBatchReadyAt == resource.data.get('autoEditBatchReadyAt',null)))
      && request.resource.data.deviceUid == request.auth.uid
      && (!('autoEditReadyAt' in request.resource.data) || request.resource.data.autoEditReadyAt == null
       || request.resource.data.autoEditReadyAt == request.resource.data.updatedAt
@@ -415,6 +419,12 @@ service cloud.firestore {
      && c.sourceFileId.matches('[A-Za-z0-9_-]{8,160}')
      && c.expiresAt is int && c.expiresAt > request.time.toMillis();
    }
+   function aeBatchControl(c) {
+    return c is map && c.version == 2 && c.enabled == true
+     && c.mode == 'batch' && aeId(c.batchId) && aeHash(c.planHash)
+     && c.expiresAt is int && c.expiresAt > request.time.toMillis()
+     && c.expiresAt <= request.time.toMillis() + 172800000;
+   }
    // Learning shares the existing admission listener/worker; a separate,
    // expiring owner grant permits exactly one request and its named evidence.
    function aeLearningControl(c) {
@@ -450,13 +460,16 @@ service cloud.firestore {
    // creates it. This avoids a denied not-found snapshot during pilot setup.
    function aePilotBatch(id) {
     let c = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
-    return aePilotControl(c) && c.batchId == id;
+    return (aePilotControl(c) || aeBatchControl(c)) && c.batchId == id;
    }
    function aeAdmissionMatches(c,id,d) {
-    return aePilotControl(c) && c.batchId == id
+    return c.batchId == id && (aeBatchControl(c)
+     ? d.schemaVersion == 2 && d.plan.schemaVersion == 2 && d.planHash == c.planHash && aeId(d.plan.seedVersionId)
+      && d.plan.config.model == turboModel() && aeInt(d.plan.config.batchSize,1,100) && d.plan.items.size() == d.plan.config.batchSize
+     : aePilotControl(c) && d.schemaVersion == 1
      && d.plan.config.batchSize == 1 && d.plan.config.model == turboModel()
      && d.plan.items.size() == 1 && d.plan.items[0].source.authorized == true
-     && d.plan.items[0].source.fileId == c.sourceFileId;
+     && d.plan.items[0].source.fileId == c.sourceFileId);
    }
    function aeAdmitted(id,d) {
     return aeAdmissionMatches(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data,id,d);
@@ -537,7 +550,19 @@ service cloud.firestore {
     allow create: if studioOwner() && validControl(request.resource.data)
      && (!request.resource.data.enabled || admittedRun(request.resource.data));
     allow update: if studioOwner() && validControl(request.resource.data)
-     && (!request.resource.data.enabled || (!aePilotControl(resource.data) && !aeLearningControl(resource.data) && admittedRun(request.resource.data)));
+     && (!request.resource.data.enabled || (!aePilotControl(resource.data) && !aeBatchControl(resource.data) && !aeLearningControl(resource.data) && admittedRun(request.resource.data)));
+   }
+   // Only the existing trusted Drive function creates versions and reserves
+   // originals, atomically with the exact admitted batch.
+   match /autoSeedVersions/{seedVersionId} {
+    allow get: if studioOwner();
+    allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 100;
+    allow write: if false;
+    match /sources/{sourceFileId} {
+     allow get: if studioOwner();
+     allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 100;
+     allow write: if false;
+    }
    }
    match /autoBatches/{batchId} {
     function batchPath() { return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(batchId); }
@@ -646,7 +671,11 @@ service cloud.firestore {
      let before = parent();
      let after = nextParent();
      let previous = before.execution == null ? 0 : before.execution.publicationRevision;
-     return aeClaimed(before) && aeAdmitted(batchId,before) && after.execution != null && after.execution.publicationRevision == previous+1
+     // The required parent write authorizes this claim and admission in the
+     // same atomic request. Repeating those reads here exhausts the rules
+     // expression budget when publishing real stage or receipt metadata.
+     return pinnedDevice() && before.claim.deviceUid == request.auth.uid
+      && after.execution != null && after.execution.publicationRevision == previous+1
       && i.publicationRevision == after.execution.publicationRevision && itemShape(i)
       && (old == null ? itemLineage(i,after,itemId) : !changed.hasAny(['itemId','ordinal','source','seed','model','configurationRevision']))
       && itemValues(i,old,changed);

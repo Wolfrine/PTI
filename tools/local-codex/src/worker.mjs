@@ -10,13 +10,15 @@ import {createTelemetry,archiveRun} from './telemetry.mjs';
 import {executionPolicy,verifyExecutionPolicy,workerInstructions} from './execution-policy.mjs';
 import {attachNativeControls} from './native-controls.mjs';
 import {browserContextPreflight,browserContextInstructions} from './browser-context.mjs';
+import {collaborationMode,proposedPlan,supportsNativePlan,verifyApprovedPlan} from './native-plan.mjs';
 
 const id=process.argv[2],directory=taskDir(id),file=path.join(directory,'task.json');
-let job=task(id),proc,timer,closed=false,sequence=0,cancelling=false,telemetry;
+let job=task(id),proc,timer,closed=false,sequence=0,cancelling=false,telemetry,startingGoal=false;
+const goalFirst=job.approvedGoal||job.resumeGoal;
 const requests=new Map(),waiting=new Map(),terminalTurns=new Map();
 const nativeControls=attachNativeControls({directory,job,rpc,save,settle});
 function settle(){
-  if(!terminalTurns.has(job.turnId)||nativeControls.observing())return;
+  if(startingGoal||!terminalTurns.has(job.turnId)||nativeControls.observing())return;
   const receipts=[...terminalTurns.values()];
   const outcome=receipts.findLast(turn=>turn.status!=='completed')||receipts.at(-1);
   const messages=job.messages.filter(item=>item.turnId===outcome.id);
@@ -69,7 +71,14 @@ function notification(message){
   }
   if(p.threadId&&p.threadId!==job.threadId)return;
   if(message.method==='model/rerouted'){job.returnedModel=p.toModel||job.returnedModel;save();}
+  if(message.method==='turn/started'&&p.threadId===job.threadId&&goalFirst&&job.nativeTurnDispatchAttempted&&p.turn?.id){
+    job.turnId??=p.turn.id;
+  }
   nativeControls.event(message);
+  if(message.method==='item/completed'&&p.threadId===job.threadId&&job.collaborationMode==='plan'){
+    const plan=proposedPlan(p.threadId,p.turnId,p.item);
+    if(plan){job.nativePlan=plan;save();}
+  }
   if(message.method==='item/completed'&&p.item?.type==='agentMessage'){
     const item={id:p.item.id,phase:p.item.phase||null,text:p.item.text,turnId:p.turnId};
     if(!job.messages.some(existing=>existing.id===item.id))job.messages.push(item);
@@ -101,6 +110,13 @@ async function controls(){
         }
         // Keep this delivery attempted after rejection or transport uncertainty.
         // Re-reading the same cancel marker must never resend an interrupt.
+      }
+      else if(job.goalStatus==='active'&&terminalTurns.has(job.turnId)){
+        job.cancellationState='interrupt_requested';delete job.controlError;save();
+        try{
+          const {goal}=await rpc('thread/goal/set',{threadId:job.threadId,status:'paused',origin:'user'});
+          if(!closed)nativeControls.recordGoal(goal);
+        }catch(error){if(!closed){job.controlError=error.message;job.cancellationState=typeof error.code==='number'?'interrupt_rejected':'interrupt_delivery_unknown';save();}}
       }
       else if(job.nativeTurnDispatchAttempted===false){job.cancellationState='cancelled_before_dispatch';finish('interrupted','Cancelled by the user before native turn dispatch.');return;}
       else{if(job.cancellationState!=='waiting_for_native_turn'){job.cancellationState='waiting_for_native_turn';save();}cancelling=false;}
@@ -136,6 +152,7 @@ try{
   await rpc('initialize',{clientInfo:{name:'local_codex_bridge',title:'Local Codex Bridge',version:VERSION},capabilities:{experimentalApi:true}});send({method:'initialized',params:{}});
   const account=await rpc('account/read',{refreshToken:false});if(account.account?.type!=='chatgpt')throw Error('ChatGPT subscription sign-in is required. API-key authentication is disabled.');
   await requireModel(rpc,selection);job.catalogVerifiedAt=new Date().toISOString();save();
+  if((job.collaborationMode||goalFirst)&&!await supportsNativePlan(rpc))throw Error('This Codex runtime does not expose native Plan and Default modes.');
   const permissions=executionPolicy(job.mode),policy=harnessPolicy(job,settings,selection);
   const instructions=workerInstructions(job)+' '+browserContextInstructions()+' '+policy.instructions;
   const options={cwd:job.cwd,model:selection.model,sandbox:permissions.sandbox,approvalPolicy:permissions.approvalPolicy,developerInstructions:instructions,config:{model_reasoning_effort:selection.effort,...policy.config,'plugins.local-codex@local-codex-bridge.enabled':false,'plugins.local-codex@created-by-me-remote.enabled':false}};
@@ -156,23 +173,43 @@ try{
     if(goal?.goal?.status==='active'||queue?.data?.length){
       throw Error('Native resume could dispatch a saved active Goal or queued input before this request. Resolve that pending input on the same thread before sending a new turn.');
     }
+    if(goalFirst&&!goal)throw Error('The native Goal capability could not be verified.');
+    if(job.approvedGoal)await verifyApprovedPlan(rpc,continuation,job.approvedGoal);
+    if(job.resumeGoal&&!['paused','blocked','usageLimited','budgetLimited'].includes(goal?.goal?.status))throw Error('The saved native Goal is unavailable for resume.');
+    if(job.resumeGoal&&goal.goal.tokenBudget!==null&&goal.goal.tokensUsed>=goal.goal.tokenBudget)throw Error('The native Goal budget is exhausted. An owner-authorized budget change is required before resume.');
   }
   const started=continuation?await rpc('thread/resume',{...options,threadId:continuation,excludeTurns:true}):await rpc('thread/start',{...options,serviceName:'local_codex_bridge'});
   job.returnedModel=started.model||null;job.returnedReasoningEffort=started.reasoningEffort||null;save();
   if(started.modelProvider!=='openai')throw Error('Only the signed-in ChatGPT provider is allowed.');verifyExecutionPolicy(started,permissions);verifyModel(started,selection);
   job.threadId=started.thread.id;job.nativeControls=true;job.model=started.model;job.reasoningEffort=started.reasoningEffort;job.sandbox=started.sandbox;job.approvalPolicy=started.approvalPolicy;
-  if(continuation){
-    const injected=await rpc('thread/inject_items',{threadId:job.threadId,items:[{type:'message',role:'developer',content:[{type:'input_text',text:instructions}]}]});
+  if(job.approvedGoal)await verifyApprovedPlan(rpc,job.threadId,job.approvedGoal);
+  if(goalFirst)await rpc('thread/settings/update',{threadId:job.threadId,collaborationMode:collaborationMode('default',selection)});
+  const refreshScope=continuation||job.collaborationMode==='plan';
+  if(refreshScope){
+    let currentScope=instructions;
+    if(job.approvedGoal)currentScope+=`\n\nCarry out the owner-approved plan from native turn ${job.approvedGoal.plan_turn_id}, item ${job.approvedGoal.plan_item_id}. The authorized scope and acceptance evidence are in this request:\n${job.prompt}`;
+    if(job.resumeGoal)currentScope+=`\n\nResume the existing Goal under the owner's current authorized scope:\n${job.prompt}`;
+    const injected=await rpc('thread/inject_items',{threadId:job.threadId,items:[{type:'message',role:'developer',content:[{type:'input_text',text:currentScope}]}]});
     if(!injected||typeof injected!=='object'||Array.isArray(injected))throw Error('Codex did not acknowledge current scope instructions. No turn was started.');
   }
-  job.executionPolicy={version:2,mode:job.mode,sandboxType:started.sandbox.type,approvalPolicy:started.approvalPolicy,instructionRefresh:continuation?'history-injection':'thread-start',verifiedAt:new Date().toISOString()};save();
+  job.executionPolicy={version:2,mode:job.mode,sandboxType:started.sandbox.type,approvalPolicy:started.approvalPolicy,instructionRefresh:refreshScope?'history-injection':'thread-start',verifiedAt:new Date().toISOString()};save();
   if(!continuation&&job.title)await rpc('thread/name/set',{threadId:job.threadId,name:`[${target.name}] ${job.title}`.slice(0,120)});
   if(closed)process.exit(0);
-  // Durable marker must precede the native write. A lost response stays unknown.
+  // Mark before native dispatch. An uncertain acknowledgement is never replayed.
   job.nativeTurnDispatchAttempted=true;job.nativeDispatchAttemptedAt=new Date().toISOString();write(file,job,{durable:true});
-  const turn=await rpc('turn/start',{threadId:job.threadId,model:selection.model,effort:selection.effort,input:[{type:'text',text:job.prompt}]});
-  if(typeof turn?.turn?.id!=='string'||job.turnId&&job.turnId!==turn.turn.id)throw Error('Native turn identity is unresolved; preserve it for reconciliation.');
-  job.turnId=turn.turn.id;
-  if(!terminalTurns.has(job.turnId))job.activeTurnId??=job.turnId;
+  if(goalFirst){
+    const {objective,token_budget}=job.approvedGoal||{};
+    startingGoal=true;
+    try{
+      const {goal}=await rpc('thread/goal/set',{threadId:job.threadId,status:'active',origin:'user',...(objective?{objective}:{}),...(token_budget===undefined?{}:{tokenBudget:token_budget})});
+      if(goal?.threadId!==job.threadId||objective&&goal.objective!==objective)throw Error('The native Goal acknowledgement does not match this request.');
+      if(!job.goal)nativeControls.recordGoal(goal);
+    }finally{startingGoal=false;}
+  }else{
+    const turn=await rpc('turn/start',{threadId:job.threadId,model:selection.model,effort:selection.effort,input:[{type:'text',text:job.prompt}],...(job.collaborationMode?{collaborationMode:collaborationMode(job.collaborationMode,selection)}:{})});
+    if(typeof turn?.turn?.id!=='string'||job.turnId&&job.turnId!==turn.turn.id)throw Error('Native turn identity is unresolved; preserve it for reconciliation.');
+    job.turnId=turn.turn.id;
+    if(!terminalTurns.has(job.turnId))job.activeTurnId??=job.turnId;
+  }
   save();settle();
 }catch(error){finish(job.nativeTurnDispatchAttempted?'unknown':'failed',error.message);}

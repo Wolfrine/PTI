@@ -19,12 +19,12 @@ export function createTelemetry(job, {clock = Date.now} = {}) {
   const children = new Map(), seen = new Set(), pending = new Set();
   let waitingSince = null, waitingMs = 0, approvals = 0, questions = 0;
   let commands = 0, toolCalls = 0, toolFailures = 0, modelReroutes = 0;
-  let parentUsage = null, finishedAt = null, finishedTime = null;
+  let parentUsage = null, parentTotalUsage = null, finishedAt = null, finishedTime = null;
   const runId = randomUUID();
   const generation = Number.isInteger(job.relayGeneration)&&job.relayGeneration>0?job.relayGeneration:(job.history?.length || 0) + 1;
   function child(id) {
     if (!uuid(id)) return null;
-    if (!children.has(id)) children.set(id, {threadId: id, status: 'unknown', model: null, reasoningEffort: null, selectionVerified: false, executionVerified: null, usage: null});
+    if (!children.has(id)) children.set(id, {threadId: id, status: 'unknown', model: null, reasoningEffort: null, selectionVerified: false, executionVerified: null, usage: null, totalUsage: null});
     return children.get(id) || null;
   }
   function childMetadata(id, metadata, selection, resolved) {
@@ -59,8 +59,9 @@ export function createTelemetry(job, {clock = Date.now} = {}) {
     }
     if (message.method === 'thread/tokenUsage/updated') {
       const counters = usageCounters(p.tokenUsage?.last);
-      if (p.threadId === parentId) parentUsage = counters;
-      else child(p.threadId).usage = counters;
+      const total = usageCounters(p.tokenUsage?.total);
+      if (p.threadId === parentId) {parentUsage = counters;parentTotalUsage = total ?? parentTotalUsage;}
+      else {const value=child(p.threadId);value.usage=counters;value.totalUsage=total??value.totalUsage;}
     }
     const item = p.item;
     if (item && ['item/started', 'item/completed'].includes(message.method)) {
@@ -107,7 +108,7 @@ export function createTelemetry(job, {clock = Date.now} = {}) {
     return {schemaVersion: 1, runId, generation, tokenBasis: 'latest-response', strategy: job.strategy || 'auto', purpose: job.purpose || 'work',
       startedAt: new Date(began).toISOString(), finishedAt, durationMs: finishedTime === null ? null : Math.max(0, finishedTime - began),
       waitingMs: waitingMs + (finishedTime === null || waitingSince === null ? 0 : Math.max(0, end - waitingSince)), approvals, questions, commands, toolCalls, toolFailures, modelReroutes,
-      parentUsage, usageCoverage, children: structuredClone(values), childrenSeen: values.length};
+      parentUsage, parentTotalUsage, totalTokenBasis: 'native-thread-cumulative', usageCoverage, children: structuredClone(values), childrenSeen: values.length};
   }
   return {observe, childMetadata, requestOpened, requestClosed, finish, snapshot};
 }

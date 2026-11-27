@@ -57,6 +57,7 @@ export async function deliverNativeControl(args) {
     return {status:'running'};
   }
   if(control.expectedTurnId&&(!live||job.activeTurnId!==control.expectedTurnId))return failed('The exact native turn is no longer active. Read the task and select the intended turn or continue the saved thread.');
+  if(control.action==='goal_set'&&control.status==='active'&&job.collaborationMode==='plan')return failed('Approve the completed native plan and continue that thread in execution mode to activate a Goal.');
   if(control.action==='goal_set'&&control.status==='active'&&(!live||!job.turnId))return failed('Start or continue the authorized outcome before activating its Goal. A saved Goal can be set to paused.');
   try{fs.mkdirSync(directory);}catch(error){if(error.code==='EEXIST')return uncertain;throw error;}
   const route=live?'live':'saved';
@@ -86,11 +87,15 @@ export function attachNativeControls({directory,job,rpc,save,settle}){
   let busy=false,goalStatus=null;
   const belongs=turnId=>turns.has(turnId);
   const observing=()=>busy||queued.size>0||goalStatus==='active'||!!job.activeTurnId;
+  function recordGoal(goal){
+    job.goal=goal?.threadId===job.threadId?goal:null;
+    goalStatus=job.goal?.status||null;job.goalStatus=goalStatus;save();
+  }
   function event(message){
     const {method,params:p}=message;
     if(!p||p.threadId!==job.threadId)return;
     if(method==='thread/goal/updated'||method==='thread/goal/cleared'){
-      goalStatus=p.goal?.status||null;job.goalStatus=goalStatus;save();settle();return;
+      recordGoal(p.goal);settle();return;
     }
     if(method==='turn/started'&&p.turn?.id){
       const turnId=p.turn.id;
@@ -148,7 +153,7 @@ export function attachNativeControls({directory,job,rpc,save,settle}){
           if(delivery)delivery.unknown=outcome.status==='unknown';
         }
         if(outcome.status==='completed'&&control.action.startsWith('goal_')){
-          goalStatus=outcome.result.goal?.status||null;job.goalStatus=goalStatus;save();
+          recordGoal(outcome.result.goal);
         }
         write(receipt,outcome,{durable:true});
       }
@@ -164,5 +169,5 @@ export function attachNativeControls({directory,job,rpc,save,settle}){
       }
     }finally{busy=false;settle();}
   }
-  return {event,service,observing};
+  return {event,service,observing,recordGoal};
 }

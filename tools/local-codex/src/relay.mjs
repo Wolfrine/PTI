@@ -28,6 +28,17 @@ if(restoredFromBackup) {
 }
 persist();
 let token='',until=0,client,connecting,refreshing,stopping=false,stopListener,listenerToken,listenerConnected=false,listenerError,nextSync=0,retryAt=0,retryDelay=1000,syncRequested=true,dispatchRequested=true;
+let nativePlanRuntime, nativePlan=false;
+async function discoverNativePlan(health){
+  if(!supportsNativeControls(health.codexVersion))return false;
+  const runtimeKey=health.codexPath+' '+health.codexVersion;
+  if(nativePlanRuntime!==runtimeKey){
+    try{nativePlan=(await local('native_plan_capabilities')).nativePlan===true;}
+    catch{return false;}
+    nativePlanRuntime=runtimeKey;
+  }
+  return nativePlan;
+}
 const events=eventWakeup(),watchers=new Map(),dirty=new Set(state.active.map(job=>job.id)),controlsById=new Map();
 
 const identity=job=>({id:job.id,generation:generation(job),nativeGeneration:generation(job),...(job.deliveryId?{deliveryId:job.deliveryId}:{}),...(job.lease?{lease:job.lease}:{})});
@@ -56,11 +67,14 @@ function observe(job,directory=job.localId&&taskDir(job.localId),filename='task.
   watchers.set(job.id,watchTask(directory,()=>{dirty.add(job.id);events.wake();},()=>{watchers.get(job.id)?.();watchers.delete(job.id);dirty.add(job.id);events.wake();},filename));
 }
 function snapshot(job){
+  const plan=job.nativePlan,goal=job.goal;
   const proof=job.nativeTerminal,exact=proof?.source==='turn/completed'&&proof.threadId===job.threadId&&(proof.turnId===job.turnId||job.observedTurns?.some(turn=>turn.turn_id===proof.turnId&&turn.status===proof.status))&&proof.status===job.status;
   return {status:job.status==='queued'?'running':job.status,final:job.final||null,error:job.error?.slice(0,2000)||null,messages:(job.messages||[]).slice(-10).map(message=>({text:message.text,phase:message.phase||null})),pending:job.pending||[],
     control_error:job.controlError?.slice(0,2000)||null,cancellation_state:job.cancellationState||null,
     requested_model:job.requestedModel||null,returned_model:job.returnedModel||job.model||null,requested_reasoning_effort:job.requestedReasoningEffort||null,returned_reasoning_effort:job.returnedReasoningEffort||job.reasoningEffort||null,
     ...(job.model?{model:job.model}:{}),...(job.reasoningEffort?{reasoning_effort:job.reasoningEffort}:{}),...(job.executionPolicy?{execution_policy:job.executionPolicy}:{}),...(job.telemetry?{telemetry:job.telemetry}:{}),
+    ...(plan?{native_plan:{...plan,text:plan.text.slice(0,48000),...(plan.text.length>48000?{truncated:true}:{})}}:{}),
+    ...(goal?{goal:{threadId:goal.threadId,objective:goal.objective,status:goal.status,tokenBudget:goal.tokenBudget,tokensUsed:goal.tokensUsed,timeUsedSeconds:goal.timeUsedSeconds}}:{}),
     ...(job.nativeControls?{native_controls:true,active_turn_id:job.activeTurnId||null,goal_status:job.goalStatus||null,observed_turns:job.observedTurns||[]}:{}),
     ...(job.threadId?{thread_id:job.threadId,native_thread_id:job.threadId}:{}),...(job.turnId?{native_turn_id:job.turnId}:{}),...(exact?{native_terminal_observed:true,...(proof.turnId!==job.turnId?{native_terminal_turn_id:proof.turnId}:{})}:{}),
     ...(job.nativeTurnDispatchAttempted===false&&job.nativeDeliveryAbsent?{native_delivery_absent:true}:{}),
@@ -117,7 +131,7 @@ async function service(job,controls){
       // Identity-only delivery journal: not a checkout, worker or resource lock.
       job.localDelivery={state:'attempted',localId,at:new Date().toISOString()};persist();
       try{
-        const result=await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:generation(job),...(job.title?{title:job.title}:{}),...((job.nativeThreadId||job.thread_id)?{thread_id:job.nativeThreadId||job.thread_id}:{}),...(job.model?{model:job.model}:{}),...((job.reasoningEffort||job.reasoning_effort)?{reasoning_effort:job.reasoningEffort||job.reasoning_effort}:{})});
+        const result=await local('start_task',{project:job.project,prompt:job.prompt,mode:job.mode,request_key,relay_generation:generation(job),...(job.collaboration_mode?{collaboration_mode:job.collaboration_mode}:{}),...(job.approved_goal?{approved_goal:job.approved_goal}:{}),...(job.resume_goal?{resume_goal:true}:{}),...(job.title?{title:job.title}:{}),...((job.nativeThreadId||job.thread_id)?{thread_id:job.nativeThreadId||job.thread_id}:{}),...(job.model?{model:job.model}:{}),...((job.reasoningEffort||job.reasoning_effort)?{reasoning_effort:job.reasoningEffort||job.reasoning_effort}:{})});
         job.localId=result.id;job.localDelivery.state='observed';state.localTasks||={};state.localTasks[job.id]=result.id;persist();
       }catch(error){
         if(!reconcileLocalIdentity(job)){
@@ -151,7 +165,7 @@ try{
       }
       failureStage='host_sync';
       if(syncRequested||Date.now()>=nextSync){
-        const heartbeat={instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,model:selection.model,reasoning_effort:selection.effort,runtimeRoot:home,sourceSha:sourceSha(),browser_context:browserContextReport(),nativeControls:supportsNativeControls(health.codexVersion),dispatchReady:true,projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',available:false};}})};
+        const heartbeat={instanceId:state.instanceId,authMode:'chatgpt',version:VERSION,model:selection.model,reasoning_effort:selection.effort,runtimeRoot:home,sourceSha:sourceSha(),browser_context:browserContextReport(),nativeControls:supportsNativeControls(health.codexVersion),nativePlan:await discoverNativePlan(health),dispatchReady:true,projects:Object.keys(settings.projects).map(key=>{try{return {...project(key),available:true};}catch{return {key,name:key,path:'F:/unavailable',available:false};}})};
         const dispatch=dispatchRequested;dispatchRequested=false;syncRequested=false;
         let response;try{response=await api('sync',{heartbeat,dispatch,active:state.active.map(identity)});}catch(error){syncRequested=true;dispatchRequested||=dispatch;throw error;}
         nextSync=Date.now()+(response.syncDelayMs||30000);

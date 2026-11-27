@@ -6,7 +6,7 @@ import {modelSelection} from './model-policy.mjs';
 import {browserContextPreflight} from './browser-context.mjs';
 import {storageEnvironment} from './storage.mjs';
 
-export const VERSION = '0.5.1';
+export const VERSION = '0.5.2';
 export const DEFAULT_HOME = 'H:/LocalCodexBridge';
 export const H_DRIVE_HOME = 'H:/LocalCodexBridge';
 export const LEGACY_HOME = 'F:/Workspace/Support/LocalCodexBridge';

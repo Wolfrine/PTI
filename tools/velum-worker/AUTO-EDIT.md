@@ -1,0 +1,17 @@
+# Auto Edit v1 — worker foundation
+
+This is new, isolated source code for the owner-approved automated editing and review workflow. It is not the retired Auto Review implementation and is not wired into live worker admission.
+
+- auto-edit-contract.mjs: immutable device-bound configuration, explicit authorized source set, bounded selection without replacement, numeric seeds, folder and provenance validation, exact prompt composition, vision result and staging receipt validation.
+- auto-edit-runner.mjs: one-item slices, fresh authoritative claim/command checks, stage checkpoints on H:, durable writes, resource guard callbacks, pause/stop boundaries, output hash verification, uncertain edit/delivery reconciliation, compact progress publication, and error separation.
+- No cloud credentials, cloud image chunks, new scheduled jobs, network services, model downloads, or additional package dependencies.
+
+## Integration boundaries
+
+Bind the coordinator to the current approved worker's single-device dispatcher. The dispatcher owns Firestore listeners, conditional claims and writes, cancellation propagation, manual-job fairness, actual resource checks, and device revocation. Claim returns the current approved/owned status, command and monotonically increasing revision; an optional retryItemId on a new run command authorizes retry at a safe boundary. The publisher must fence each write against the current claim and treat replay of journaled metadata as an idempotent update. Do not mark a command acknowledged merely because it has been observed. The adapters must verify the current authorization of each source and restrict access to approved original folders; they must not treat a folder location as evidence of consent. The source adapter reads original bytes and validates actual Drive identity. The editing adapter uses the selected existing local inference engine and the engine's existing consent, resource and execution requirements. Vision adapters must produce the bounded structured results defined by the contract. No new model instructions are defined here.
+
+The worker must only reconcile an interrupted edit as saved when the exact output, model/seed, original hash, effective prompt hash, engine revision, dimensions and steps are confirmed. The coordinator validates the receipt and the local PNG hash/dimensions. A not-started recovery result must be explicitly confirmed; unknown outcomes block rather than resample. A delivery adapter must reserve a stable Drive file identity before uploading, verify the destination and content hash, and return the exact existing receipt on retry; unknown outcomes block rather than repeat side effects. The current staging folder is verified; accepted-output move and Auto Generated folder provisioning are separate owner-review work.
+
+The journal stores only authorized batch metadata and original/output hashes. The original and edited image files remain in H: runtime storage; publication contains private metadata, never raw image bytes or local paths. Keep recovered artifacts until delivery/review needs are satisfied. No cleanup of private originals or staged outputs is performed by this foundation.
+
+Next: implement the authenticated Firestore adapter and current-worker dispatch binding, validate exact PC model and Drive adapter configuration, then run an authorized single-item roundtrip. Do not expose admission or activate the new workflow until those integration gates are satisfied.

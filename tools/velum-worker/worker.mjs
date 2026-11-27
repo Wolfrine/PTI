@@ -173,7 +173,10 @@ async function main(){
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
  const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,autoEdit:{configured:Boolean(autoInstallation),admitted:autoAdmitted,connected:autoConnected,error:autoError},...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
+  const updatedAt=Date.now();
+  // Match the heartbeat timestamp; old/manual-only workers cannot leave a
+  // stale readiness marker behind when they refresh the same status record.
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt,installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled),autoEditReadyAt:autoDispatcher&&!autoError?updatedAt:null});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{

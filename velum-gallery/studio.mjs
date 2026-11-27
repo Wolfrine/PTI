@@ -12,6 +12,7 @@ const {verifyOriginal}=await localModule('./studio-drive.mjs');
 const {createOriginalCompareController}=await localModule('./studio-compare.mjs');
 const {createStudioViewerController}=await localModule('./studio-viewer.mjs');
 const {createStudioLive}=await localModule('./studio-live.mjs');
+const {mountAutoEdit}=await localModule('./studio-auto-edit.mjs');
 export {renderStudioShell,renderStudioState,formatJobStatus};
 
 export async function decodeResult(result,chunks){
@@ -38,8 +39,8 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   const thumbs=new Map(),thumbMissing=new Set(),thumbQueue=[],thumbPending=new Set();
   state.referencePreviews={};state.driveJobs=[];
   const workspace=()=>['users',uid,'velumStudio','workspace'];
-  let compareController=null;
-  const draw=()=>{state.phoneOnline=navigator.onLine;renderStudioState(root,{...state,now:Date.now()});compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
+  let compareController=null,autoEditController=null;
+  const draw=()=>{state.phoneOnline=navigator.onLine;renderStudioState(root,{...state,now:Date.now()});compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();autoEditController?.sync();};
   const visibleViewerJobs=()=>visibleCreations(state.archiveJobs||[],{filter:state.archiveFilter,model:state.archiveModel,date:state.archiveDate,saves:state.saves||{},removed:state.removed||{}});
   function setViewerDetails(expanded,focus=false){
     const panel=root.querySelector('#studioDetailsPanel'),details=root.querySelector('#studioDetails'),information=details.querySelector('.studio-detail-information');
@@ -316,9 +317,13 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     finally{if(token===epoch){state.submitting=false;state.uploadProgress='';draw();syncLiveHints();}}
   });
   listen(root.querySelector('#studioDetails'),'submit',async event=>{if(event.target.id!=='studioFeedback')return;event.preventDefault();const form=event.target,output=form.querySelector('#studioFeedbackStatus'),button=form.querySelector('button[type=submit]'),data=new FormData(form);button.disabled=true;output.textContent='Saving…';try{await feedbackSave(data.get('verdict'),String(data.get('note')||''));output.textContent='Feedback saved';draw();}catch(error){output.textContent=error.message||'Not saved. Reconnect and retry.';}finally{button.disabled=false;}});
+  autoEditController=mountAutoEdit(root.querySelector('#studioAutoEdit'),{sdk,db,drive,auth,
+    context:()=>({uid,locked,destroyed,visible:pageActive&&studioVisible()&&!document.hidden&&state.mode==='auto-edit',
+      worker:state.worker,binding:state.binding,busy:studioBusy(state),connected:state.connected!==false&&!state.liveCached})});
   const unsubscribeAuth=onAuthStateChanged(auth,user=>{
     if(destroyed)return;
     if(uid&&uid===user?.uid)return;
+    autoEditController?.clear();
     const previousUid=uid;live.stop();clearInterval(tick);tick=0;epoch++;archiveEpoch++;clearTimeout(undoTimer);
     clearPrivateSession({cancelDrive:false});clearResult();clearReferences();closeDialogs();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();thumbPending.clear();uid=user?.uid||'';
     Object.assign(state,{signedIn:Boolean(uid),jobs:[],archiveJobs:[],worker:null,binding:null,bindingBusy:false,recovery:null,recoveryBusy:false,selectedId:'',message:'',submitting:false,archiveLoading:false,archiveHasMore:true,archiveError:'',saves:{},feedbackMap:{},removed:{},lastRemovedId:'',saving:false});archiveCursor=null;autoSelect=true;
@@ -326,16 +331,16 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     draw();syncLive();
   });
   listen(window,'velum:lock',()=>{
-    live.stop();clearInterval(tick);tick=0;locked=true;epoch++;archiveEpoch++;clearTimeout(undoTimer);clearPrivateSession();closeDialogs();clearResult();clearReferences();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();state.jobs=[];state.archiveJobs=[];state.selectedId='';state.feedbackMap={};state.saves={};state.removed={};state.lastRemovedId='';state.submitting=false;state.saving=false;state.archiveLoading=false;
+    autoEditController?.clear();live.stop();clearInterval(tick);tick=0;locked=true;epoch++;archiveEpoch++;clearTimeout(undoTimer);clearPrivateSession();closeDialogs();clearResult();clearReferences();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();state.jobs=[];state.archiveJobs=[];state.selectedId='';state.feedbackMap={};state.saves={};state.removed={};state.lastRemovedId='';state.submitting=false;state.saving=false;state.archiveLoading=false;
     root.querySelector('#studioPrompt').value='';root.querySelector('#studioConsent').checked=false;root.querySelector('#studioSeed').value='';root.querySelector('#studioDetails').replaceChildren();draw();
   });
   listen(window,'velum:unlock',()=>{locked=false;state.connected=navigator.onLine;draw();syncLive();});
   const onlineChanged=()=>{state.connected=navigator.onLine;draw();if(navigator.onLine)refresh();};listen(window,'online',onlineChanged);listen(window,'offline',onlineChanged);
-  listen(document,'visibilitychange',syncLive);
-  listen(window,'pagehide',()=>{live.stop();clearInterval(tick);tick=0;pageActive=false;epoch++;clearPrivateSession({clearAccess:false});clearResult();closeDialogs();});
+  listen(document,'visibilitychange',()=>{syncLive();autoEditController?.sync();});
+  listen(window,'pagehide',()=>{live.stop();clearInterval(tick);tick=0;pageActive=false;autoEditController?.clear();epoch++;clearPrivateSession({clearAccess:false});clearResult();closeDialogs();});
   listen(window,'pageshow',()=>{pageActive=true;draw();syncLive();});
-  const visibilityObserver=typeof MutationObserver==='function'?new MutationObserver(syncLive):null;
+  const visibilityObserver=typeof MutationObserver==='function'?new MutationObserver(()=>{syncLive();autoEditController?.sync();}):null;
   visibilityObserver?.observe(root,{attributes:true,attributeFilter:['class']});
-  const controller={refresh,destroy(){if(destroyed)return;live.stop();clearInterval(tick);clearTimeout(undoTimer);unsubscribeAuth();handlers.forEach(remove=>remove());visibilityObserver?.disconnect();observer?.disconnect();destroyed=true;uid='';locked=true;state.signedIn=false;epoch++;archiveEpoch++;clearPrivateSession({clearAccess:false});clearResult();clearReferences();closeDialogs();thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();root.studioController=null;}};
+  const controller={refresh,destroy(){if(destroyed)return;autoEditController?.destroy();live.stop();clearInterval(tick);clearTimeout(undoTimer);unsubscribeAuth();handlers.forEach(remove=>remove());visibilityObserver?.disconnect();observer?.disconnect();destroyed=true;uid='';locked=true;state.signedIn=false;epoch++;archiveEpoch++;clearPrivateSession({clearAccess:false});clearResult();clearReferences();closeDialogs();thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();root.studioController=null;}};
   root.studioController=controller;draw();return controller;
 }

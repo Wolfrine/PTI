@@ -122,6 +122,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
  function draw(file,url){
   dialog.innerHTML=`<header><span>Private collection</span><div><button type="button" data-close>Close</button><button type="button" data-exit>Quick exit</button></div></header><div class="library-detail-body"><img src="${escape(url)}" alt="${escape(file.name)}"/><section><h2 id="libraryDetailTitle">${escape(file.name)}</h2><p data-location>${escape(file.folderLabel||'Private')}</p><small>Drive ID <code>${escape(file.id)}</code></small><div class="library-detail-actions"><button type="button" data-move>Move to ${file.folderId===R?'Private':'References'}</button><button type="button" data-more aria-expanded="false">More ···</button><button type="button" data-trash hidden>Move to Trash…</button></div><div data-confirm hidden><h3>Move this image to Trash?</h3><p>${escape(file.name)}</p><p>You can restore it from Drive Trash or Undo. The original file ID is preserved.</p><button type="button" data-cancel>Cancel</button><button type="button" data-confirm-trash>Move to Trash</button></div><p role="status"></p><button type="button" data-undo ${recovery?'':'hidden'}>Undo last action</button><a href="https://drive.google.com/drive/trash" target="_blank" rel="noopener">Open Drive Trash ↗</a></section></div>`;
   dialog.querySelector('[data-move]').hidden=!file.mimeType?.startsWith('image/')||![P,R].includes(file.folderId);
+  dialog.querySelector('[data-more]').hidden=![P,R].includes(file.folderId);
   const button=document.createElement('button');button.type='button';button.dataset.reconnect='';button.textContent=notice.querySelector('[data-reconnect]').textContent;button.hidden=notice.querySelector('[data-reconnect]').hidden;
   dialog.querySelector('[role=status]').after(button);
  }
@@ -139,7 +140,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   if(!dialog.open||active?.id!==file.id)return;
   active={...active,...file};
   dialog.querySelector('h2').textContent=active.name;dialog.querySelector('img').alt=active.name;
-  dialog.querySelector('[data-location]').textContent=active.folderId===R?'References':'Private';
+  dialog.querySelector('[data-location]').textContent=active.folderId===R?'References':active.folderId===P?'Private':active.folderLabel||'Auto Generated';
   const move=dialog.querySelector('[data-move]');move.textContent=`Move to ${active.folderId===R?'Private':'References'}`;move.hidden=![P,R].includes(active.folderId);
   dialog.querySelector('[data-undo]').hidden=!recovery;message(text);
  }

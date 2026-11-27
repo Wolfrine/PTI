@@ -263,6 +263,41 @@ export function createStudioDrive({auth,access,reserve,apiKey,appId,storage=glob
   return {
     ...library,
     get managementProxy(){return access.managementProxy===true;},
+    async autoEditMetadata(fileId,{signal}={}){
+      owner();const guard=getOperationGuard();
+      if(!/^[\w-]{8,160}$/.test(fileId||''))throw new Error('Invalid Drive image.');
+      await access.ensure([DRIVE_READ_SCOPE]);guard();
+      const fields='id,name,mimeType,parents,ownedByMe,trashed,shared,size,sha256Checksum,md5Checksum';
+      const response=await readRequest(API+'/files/'+encodeURIComponent(fileId)+'?fields='+encodeURIComponent(fields),{signal});
+      if(!response.ok)throw driveResponseError(response,'Could not verify original');
+      const value=await response.json();guard();
+      if(value.id!==fileId||value.ownedByMe!==true||value.trashed!==false||value.shared!==false||
+         !['image/jpeg','image/png'].includes(value.mimeType)||value.parents?.length!==1||
+         !Number.isSafeInteger(Number(value.size))||Number(value.size)<16||Number(value.size)>64*1024*1024||
+         !/^[a-f0-9]{64}$/.test(value.sha256Checksum||''))throw new Error('Choose a private, owned PNG or JPEG with a verified checksum.');
+      return value;
+    },
+    async readAutoEditImage({fileId,folderId,sha256},{signal}={}){
+      const generation=epoch,guard=getOperationGuard(),controller=new AbortController(),cancel=()=>controller.abort();
+      controllers.add(controller);signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)controller.abort();
+      try{
+        const file=await this.autoEditMetadata(fileId,{signal:controller.signal});
+        if(file.parents[0]!==folderId||file.sha256Checksum!==sha256)throw new Error('The recorded image has changed.');
+        const response=await readRequest(API+'/files/'+encodeURIComponent(fileId)+'?alt=media',{signal:controller.signal});
+        if(!response.ok)throw driveResponseError(response,'Could not load image');
+        const reader=response.body?.getReader();if(!reader)throw new Error('Missing image response.');
+        let size=0;const parts=[];
+        try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>Number(file.size)||size>64*1024*1024)throw new Error('Image exceeds its verified size.');parts.push(value);}}
+        finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
+        if(size!==Number(file.size))throw new Error('Image size mismatch.');
+        const blob=new Blob(parts,{type:file.mimeType}),bytes=await blob.arrayBuffer();
+        const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');
+        if(digest!==sha256)throw new Error('Image checksum mismatch.');
+        check(generation);guard();controller.signal.throwIfAborted();return blob;
+      }finally{controllers.delete(controller);signal?.removeEventListener('abort',cancel);}
+    },
+    connectAutoEditManagement(){return access.connect({management:true});},
+    moveAutoEditReview(data){return access.autoEditReview(data);},
     async loadQualityCreations(){
       const controller=new AbortController();controllers.add(controller);
       try{return await loadDriveCreations({signal:controller.signal,

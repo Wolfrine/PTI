@@ -213,6 +213,9 @@ function openStudio() {
     });
 }
 window.addEventListener('velum:lock',clearGallerySession);
+// Accepted outputs are loaded through the regular bounded sync when the
+// gallery is opened again; never trigger a new full scan for each move.
+window.addEventListener('velum:auto-edit-accepted',()=>{galleryListingState='partial';updateBrowseStatus();});
 window.addEventListener('velum:unlock', () => {
   galleryLocked = false;
   activateView('drift', { incoming: true, awaitingConnection: true });
@@ -522,8 +525,52 @@ async function* listPrivateImages({ signal } = {}) {
       all.set(file.id, galleryMedia(file));
     }
     pageToken = data.nextPageToken || '';
-    yield { items: [...all.values()], complete: !pageToken };
+    // Show the first ordinary gallery page immediately. Resolve accepted
+    // outputs afterward, so the new private collection cannot delay startup.
+    if(pageToken||all.size)yield { items: [...all.values()], complete:false };
   } while (pageToken);
+  try{
+    const sdk=await import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js');
+    const owner=auth.currentUser?.uid,generation=galleryEpoch;
+    if(!owner||galleryLocked||signal?.aborted)throw new Error('Velum session changed.');
+    const check=()=>{if(signal?.aborted||galleryLocked||galleryEpoch!==generation||auth.currentUser?.uid!==owner)throw new Error('Velum session changed.');};
+    const db=sdk.getFirestore(app),workspace=['users',owner,'velumStudio','workspace'];
+    const pointer=await sdk.getDocFromServer(sdk.doc(db,...workspace,'autoEditControl','acceptedFolder'));check();
+    const accepted=pointer.exists()?pointer.data():null;
+    if(accepted?.version===1&&accepted.status==='ready'&&/^[\w-]{8,160}$/.test(accepted.folderId)){
+      const folderId=accepted.folderId,folder=await readDrive(DRIVE_API+'/files/'+encodeURIComponent(folderId)+'?fields=id,name,mimeType,parents,ownedByMe,trashed,shared',{signal});
+      check();
+      if(folder.id!==folderId||folder.name!=='Auto Generated'||folder.mimeType!=='application/vnd.google-apps.folder'||folder.ownedByMe!==true||folder.trashed!==false||folder.shared!==false||folder.parents?.length!==1||folder.parents[0]!==PRIVATE_FOLDER_ID)throw new Error('Accepted folder is not verified.');
+      let cursor='';
+      do{
+        const params=new URLSearchParams({q:"'"+folderId+"' in parents and trashed=false and mimeType='image/png'",spaces:'drive',pageSize:'60',fields:fields.replace('files(','files(ownedByMe,shared,trashed,sha256Checksum,'),orderBy:'createdTime desc'});
+        if(cursor)params.set('pageToken',cursor);
+        const page=await readDrive(DRIVE_API+'/files?'+params,{signal});check();
+        const candidates=(page.files||[]).filter(f=>/^[\w-]{8,160}$/.test(f.id||'')&&/^[a-f0-9]{64}$/.test(f.sha256Checksum||'')&&f.ownedByMe===true&&f.shared===false&&f.trashed===false&&f.parents?.length===1&&f.parents[0]===folderId&&f.mimeType==='image/png');
+        // One bounded query per at most 30 accepted-folder files. A manually
+        // moved, rejected or unconfirmed file is not an accepted gallery item.
+        for(let i=0;i<candidates.length;i+=30){
+          const group=candidates.slice(i,i+30);
+          const snapshot=await sdk.getDocs(sdk.query(sdk.collection(db,...workspace,'autoReviews'),sdk.where('fileId','in',group.map(f=>f.id)),sdk.limit(30)));check();
+          const records=new Map(snapshot.docs.map(r=>[r.data().fileId,r.data()]));
+          for(const f of group){
+            const r=records.get(f.id);
+            if(r?.decision==='okay'&&r.status==='accepted'&&r.parentId===folderId&&r.sha256===f.sha256Checksum&&/^[a-f0-9]{64}$/.test(r.moveReceiptId||'')){
+              all.set(f.id,galleryMedia({...f,folderId,folderLabel:'Auto Generated'}));
+            }
+          }
+        }
+        cursor=page.nextPageToken||'';
+        if(cursor&&all.size)yield {items:[...all.values()],complete:false};
+      }while(cursor);
+    }
+  }catch(error){
+    // Old releases have no owner-readable accepted folder record. Do not
+    // disrupt ordinary browsing or expose unverified accepted content.
+    if(signal?.aborted)throw error;
+    if(error?.code!=='permission-denied')console.info('Auto Generated listing unavailable; ordinary gallery remains available.');
+  }
+  yield {items:[...all.values()],complete:true};
 }
 
 function galleryMedia(file) {

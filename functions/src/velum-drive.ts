@@ -815,6 +815,180 @@ async function autoEditMetadata(req:Request,res:Response){
  res.json({status:'saved',receipt:{key:intent.batchId+'-'+intent.itemId,fileId:file.id,parentId:AUTO_STAGING,sha256:output.sha256,verified:true}});
 }
 
+
+// Owner-reviewed Auto Edit output only. This path uses the existing management
+// grant and move lease; it never exposes the server grant to the browser.
+const AUTO_ACCEPTED_NAME='Auto Generated';
+const AUTO_FOLDER_MIME='application/vnd.google-apps.folder';
+const autoAcceptedRef=()=>db().doc(AUTO_WORKSPACE+'/autoEditControl/acceptedFolder');
+async function autoFolderMetadata(token:string,id:string) {
+ const url=new URL('https://www.googleapis.com/drive/v3/files/'+id);
+ url.searchParams.set('fields','id,name,mimeType,parents,ownedByMe,trashed,shared,capabilities(canAddChildren,canRemoveChildren)');
+ return await autoGoogleJson(token,url) as AutoMetadataFile;
+}
+function checkAcceptedFolder(file:AutoMetadataFile,id:string){
+ autoPrivateChild(file,id,PRIVATE_FOLDER,AUTO_FOLDER_MIME);
+ if(file.name!==AUTO_ACCEPTED_NAME||file.capabilities?.canAddChildren!==true)throw new DriveError(403,'drive/auto-edit-accepted-folder-invalid');
+}
+async function findAcceptedFolder(token:string){
+ const url=new URL('https://www.googleapis.com/drive/v3/files');
+ url.searchParams.set('q',"'"+PRIVATE_FOLDER+"' in parents and trashed=false and name='"+AUTO_ACCEPTED_NAME+"'");
+ url.searchParams.set('fields','nextPageToken,files(id,name,mimeType,parents,ownedByMe,trashed,shared,capabilities(canAddChildren))');
+ url.searchParams.set('pageSize','2');
+ const value=await autoGoogleJson(token,url) as {files?:AutoMetadataFile[];nextPageToken?:string};
+ if(!Array.isArray(value.files)||value.nextPageToken||value.files.length>1)throw new DriveError(409,'drive/auto-edit-accepted-folder-ambiguous');
+ if(!value.files.length)return null;
+ const folder=value.files[0];
+ if(!autoDriveId(folder.id))throw new DriveError(409,'drive/auto-edit-accepted-folder-invalid');
+ checkAcceptedFolder(folder,folder.id);return folder.id;
+}
+async function autoAcceptedFolder(token:string,googleSub:string,grant:Grant,verifyOwner:()=>Promise<void>){
+ const ref=autoAcceptedRef(),initial=(await ref.get()).data();
+ if(initial&&(!autoDriveId(initial.folderId)||!['reserved','ready'].includes(initial.status)||initial.version!==1))throw new DriveError(409,'drive/auto-edit-accepted-folder-invalid');
+ const found=await findAcceptedFolder(token);
+ if(initial&&found&&initial.folderId!==found)throw new DriveError(409,'drive/auto-edit-accepted-folder-conflict');
+ if(initial?.status==='ready'&&!found)throw new DriveError(409,'drive/auto-edit-accepted-folder-missing');
+ let proposed=initial?.folderId||found;
+ if(!proposed){
+  const url=new URL('https://www.googleapis.com/drive/v3/files/generateIds');
+  url.searchParams.set('count','1');url.searchParams.set('space','drive');
+  const value=await autoGoogleJson(token,url) as {ids?:string[]};
+  if(value.ids?.length!==1||!autoDriveId(value.ids[0]))throw new DriveError(503,'drive/auto-edit-folder-reservation-failed');
+  proposed=value.ids[0];
+ }
+ await verifyOwner();
+ managementGrant(await sessionGrant('management'),googleSub,grant);
+ const folderId=await db().runTransaction(async tx=>{
+  const [saved,g,p]=await Promise.all([tx.get(ref),tx.get(grantRef('management')),tx.get(revocations('management').limit(1))]);
+  if(!p.empty)throw new DriveError(409,'drive/revocation-pending');
+  managementGrant(g.data() as Grant|undefined,googleSub,grant);
+  const existing=saved.data();
+  if(existing){
+   if(!autoDriveId(existing.folderId)||existing.version!==1||!['reserved','ready'].includes(existing.status)||(found&&existing.folderId!==found))throw new DriveError(409,'drive/auto-edit-accepted-folder-conflict');
+   return existing.folderId as string;
+  }
+  tx.create(ref,{version:1,folderId:proposed,status:'reserved',updatedAt:Date.now()});
+  return proposed as string;
+ });
+ let folder:AutoMetadataFile|undefined;
+ try{folder=await autoFolderMetadata(token,folderId);}
+ catch(error){if(!(error instanceof DriveError&&error.status===404))throw error;}
+ if(!folder){
+  if(initial?.status==='ready'||found)throw new DriveError(409,'drive/auto-edit-accepted-folder-missing');
+  // Re-check the exact name before attempting creation. Use the same reserved
+  // Drive ID after any uncertain response; never generate a second folder ID.
+  const latest=await findAcceptedFolder(token);
+  if(latest&&latest!==folderId)throw new DriveError(409,'drive/auto-edit-accepted-folder-conflict');
+  if(latest===folderId)folder=await autoFolderMetadata(token,folderId);
+  else {
+   const parent=await googleFile(token,PRIVATE_FOLDER);
+   folderAccess(parent.file,PRIVATE_FOLDER,'canAddChildren');
+   await verifyOwner();
+   managementGrant(await sessionGrant('management'),googleSub,grant);
+   const url=new URL('https://www.googleapis.com/drive/v3/files');
+   url.searchParams.set('fields','id');
+   let created;
+   try{created=await fetch(url,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({id:folderId,name:AUTO_ACCEPTED_NAME,mimeType:AUTO_FOLDER_MIME,parents:[PRIVATE_FOLDER]}),redirect:'error',signal:AbortSignal.timeout(10000)});}
+   catch{throw new DriveError(503,'drive/auto-edit-folder-create-unconfirmed');}
+   const status=created.status;await created.body?.cancel();
+   if(!created.ok&&status!==409)throw new DriveError(status>=400&&status<500?status:503,'drive/auto-edit-folder-create-rejected');
+   folder=await autoFolderMetadata(token,folderId);
+  }
+ }
+ checkAcceptedFolder(folder,folderId);
+ if(await findAcceptedFolder(token)!==folderId)throw new DriveError(409,'drive/auto-edit-accepted-folder-conflict');
+ await db().runTransaction(async tx=>{
+  const [saved,g,p]=await Promise.all([tx.get(ref),tx.get(grantRef('management')),tx.get(revocations('management').limit(1))]);
+  if(!p.empty)throw new DriveError(409,'drive/revocation-pending');
+  managementGrant(g.data() as Grant|undefined,googleSub,grant);
+  if(saved.data()?.folderId!==folderId)throw new DriveError(409,'drive/auto-edit-accepted-folder-conflict');
+  tx.update(ref,{status:'ready',updatedAt:Date.now()});
+ });
+ return folderId;
+}
+type AutoReviewRecord={version:number;batchId:string;itemId:string;decision:string;feedback:string;decidedAt:number;status:string;sourceFileId:string;fileId:string;sha256:string;parentId?:string;moveReceiptId?:string};
+async function autoReviewEvidence(batchId:string,itemId:string){
+ const root=db(),reviewRef=root.doc(AUTO_WORKSPACE+'/autoReviews/'+batchId+'-'+itemId),itemRef=root.doc(AUTO_WORKSPACE+'/autoBatches/'+batchId+'/items/'+itemId);
+ const [reviewDoc,itemDoc]=await Promise.all([reviewRef.get(),itemRef.get()]);
+ const review=reviewDoc.data() as AutoReviewRecord|undefined,item=itemDoc.data();
+ if(!review||review.version!==1||review.batchId!==batchId||review.itemId!==itemId||review.decision!=='okay'||!['accepted-pending-move','accepted'].includes(review.status)
+  ||!Number.isSafeInteger(review.decidedAt)||review.decidedAt<=0||review.decidedAt>Date.now()+300000
+  ||!autoDriveId(review.fileId)||!autoHash(review.sha256)||!item||item.status!=='review-ready'||item.receipt?.verified!==true
+  ||item.receipt.key!==batchId+'-'+itemId||item.source?.authorized!==true
+  ||item.receipt.parentId!==AUTO_STAGING||item.receipt.fileId!==review.fileId||item.receipt.sha256!==review.sha256
+  ||item.outputArtifact?.sha256!==review.sha256||item.outputArtifact?.mime!=='image/png'||item.source?.fileId!==review.sourceFileId
+  ||!Number.isSafeInteger(item.outputArtifact.bytes)||item.outputArtifact.bytes<100||item.outputArtifact.bytes>AUTO_MAX_BYTES)throw new DriveError(403,'drive/auto-edit-review-not-authorized');
+ return {review,reviewRef,itemRef,bytes:item.outputArtifact.bytes as number};
+}
+async function autoReviewFile(token:string,review:AutoReviewRecord,bytes:number,allowed:string[]){
+ const url=new URL('https://www.googleapis.com/drive/v3/files/'+review.fileId);url.searchParams.set('fields',AUTO_METADATA_FIELDS+',capabilities(canMoveItemWithinDrive)');
+ const file=await autoGoogleJson(token,url) as AutoMetadataFile;
+ const parent=file.parents?.[0];
+ if(!parent||!allowed.includes(parent))throw new DriveError(409,'drive/auto-edit-review-file-moved');
+ autoPrivateChild(file,review.fileId,parent,'image/png');
+ if(autoFileSize(file)!==bytes||file.sha256Checksum!==review.sha256)throw new DriveError(409,'drive/auto-edit-review-hash-mismatch');
+ return file;
+}
+async function autoEditReviewMove(req:Request,res:Response){
+ const identity=await owner(req),body=req.body;
+ if(!body||Object.keys(body).length!==2||!autoId(body.batchId)||!autoItemId(body.itemId))throw new DriveError(400,'drive/invalid-auto-edit-review');
+ const evidence=await autoReviewEvidence(body.batchId,body.itemId),review=evidence.review;
+ if(review.status==='accepted'){
+  if(!autoDriveId(review.parentId)||!autoHash(review.moveReceiptId))throw new DriveError(409,'drive/auto-edit-review-receipt-invalid');
+  res.json({status:'accepted',fileId:review.fileId,parentId:review.parentId,sha256:review.sha256,receiptId:review.moveReceiptId});return;
+ }
+ const cfg=await config('management'),grant=managementGrant(await sessionGrant('management'),identity.googleSub),access=await managementAccess(grant,identity.googleSub,cfg);
+ const verifyOwner=async()=>{const current=await owner(req);if(current.googleSub!==identity.googleSub)throw new DriveError(409,'drive/identity-changed');};
+ // Confirm this exact reviewed output before provisioning the accepted folder.
+ const existing=(await autoAcceptedRef().get()).data();
+ const allowed=[AUTO_STAGING,...(existing&&autoDriveId(existing.folderId)?[existing.folderId]:[])];
+ await autoReviewFile(access.accessToken,review,evidence.bytes,allowed);
+ const destination=await autoAcceptedFolder(access.accessToken,identity.googleSub,grant,verifyOwner);
+ const intent:MoveIntent={id:review.fileId,from:AUTO_STAGING,to:destination,at:review.decidedAt};
+ const {receiptId,leaseId,receipt}=await claimMove(intent,identity.googleSub,grant);
+ let uncertain=receipt.phase==='pending'||receipt.phase==='confirmed';
+ try{
+  managementGrant(await sessionGrant('management'),identity.googleSub,grant);
+  let file=await autoReviewFile(access.accessToken,review,evidence.bytes,[AUTO_STAGING,destination]);
+  let parent=file.parents![0];
+  if(parent===destination&&!['pending','confirmed'].includes(receipt.phase))throw new DriveError(409,'drive/auto-edit-review-file-moved');
+  if(parent===AUTO_STAGING){
+   if(receipt.phase==='confirmed')throw new DriveError(409,'drive/receipt-no-longer-current');
+   const staging=await autoFolderMetadata(access.accessToken,AUTO_STAGING);
+   autoPrivateChild(staging,AUTO_STAGING,PRIVATE_FOLDER,AUTO_FOLDER_MIME);
+   folderAccess(staging,AUTO_STAGING,'canRemoveChildren');
+   checkAcceptedFolder(await autoFolderMetadata(access.accessToken,destination),destination);
+   const current=await googleFile(access.accessToken,intent.id);
+   if(imageParent(current.file,intent.id)!==AUTO_STAGING||current.file.capabilities?.canMoveItemWithinDrive!==true)throw new DriveError(409,'drive/auto-edit-review-file-moved');
+   file=await autoReviewFile(access.accessToken,review,evidence.bytes,[AUTO_STAGING]);
+   await verifyOwner();
+   const latest=await autoReviewEvidence(body.batchId,body.itemId);
+   if(latest.review.status!=='accepted-pending-move'||latest.review.fileId!==review.fileId||latest.review.sha256!==review.sha256)throw new DriveError(409,'drive/auto-edit-review-changed');
+   await beginMoveWrite(intent,identity.googleSub,grant,receiptId,leaseId);uncertain=true;
+   await googleFile(access.accessToken,intent.id,'PATCH',{from:AUTO_STAGING,to:destination,etag:current.etag});
+  }
+  file=await autoReviewFile(access.accessToken,review,evidence.bytes,[destination]);
+  checkAcceptedFolder(await autoFolderMetadata(access.accessToken,destination),destination);
+  await verifyOwner();await finishMove(intent,identity.googleSub,grant,receiptId,leaseId);
+  await db().runTransaction(async tx=>{
+   const [current,item,folder,g,p]=await Promise.all([tx.get(evidence.reviewRef),tx.get(evidence.itemRef),tx.get(autoAcceptedRef()),tx.get(grantRef('management')),tx.get(revocations('management').limit(1))]);
+   if(!p.empty)throw new DriveError(409,'drive/revocation-pending');
+   managementGrant(g.data() as Grant|undefined,identity.googleSub,grant);
+   const r=current.data() as AutoReviewRecord|undefined;
+   if(!r||r.decision!=='okay'||r.fileId!==review.fileId||r.sha256!==review.sha256||r.decidedAt!==review.decidedAt||item.data()?.receipt?.fileId!==review.fileId||folder.data()?.folderId!==destination||folder.data()?.status!=='ready')throw new DriveError(409,'drive/auto-edit-review-changed');
+   if(r.status==='accepted'){
+    if(r.parentId!==destination||r.moveReceiptId!==receiptId)throw new DriveError(409,'drive/auto-edit-review-conflict');
+   }else if(r.status==='accepted-pending-move')tx.update(evidence.reviewRef,{status:'accepted',parentId:destination,moveReceiptId:receiptId,acceptedAt:Date.now()});
+   else throw new DriveError(409,'drive/auto-edit-review-changed');
+  });
+  res.json({status:'accepted',fileId:review.fileId,parentId:destination,sha256:review.sha256,receiptId});
+ }catch(error){
+  // After a possible Drive mutation keep the same lease/receipt for retry.
+  if(!uncertain)await rejectUnwrittenMove(intent,identity.googleSub,receiptId,leaseId);
+  throw error;
+ }
+}
+
 export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_SERVICE_ACCOUNT,memory:'256MiB',timeoutSeconds:60,maxInstances:2,invoker:'public',cors:false},async(req,res)=>{
  res.set({'Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Vary':'Origin, Authorization, Cookie'});
  const path=req.path.replace(/^\/api\/drive/,'');
@@ -831,6 +1005,7 @@ export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_S
   if(path==='/start')await start(req,res);
   else if(path==='/session')await session(req,res);
   else if(path==='/auto-edit-metadata')await autoEditMetadata(req,res);
+  else if(path==='/auto-edit-review')await autoEditReviewMove(req,res);
    else if(path==='/move')await move(req,res);
    else if(path==='/move-status')await moveStatus(req,res);
   else if(path==='/disconnect')await disconnect(req,res);

@@ -257,8 +257,11 @@ service cloud.firestore {
        : c.referenceLimits == limits);
     }
     allow read: if studioOwner() || studioDevice();
-    allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version','capabilities'])
+    allow create, update: if studioDevice() && request.resource.data.keys().hasOnly(['deviceUid','updatedAt','installed','state','activeJob','version','capabilities','autoEditReadyAt'])
      && request.resource.data.deviceUid == request.auth.uid
+     && (!('autoEditReadyAt' in request.resource.data) || request.resource.data.autoEditReadyAt == null
+      || request.resource.data.autoEditReadyAt == request.resource.data.updatedAt
+      || (resource != null && request.resource.data.autoEditReadyAt == resource.data.get('autoEditReadyAt',null)))
      && instant(request.resource.data.updatedAt) && approvedModels(request.resource.data)
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
       && request.resource.data.version in ['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1','2.3.2']
@@ -418,12 +421,18 @@ service cloud.firestore {
     let c = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
     return aePilotControl(c) && c.batchId == id;
    }
-   function aeAdmitted(id,d) {
-    let c = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
+   function aeAdmissionMatches(c,id,d) {
     return aePilotControl(c) && c.batchId == id
      && d.plan.config.batchSize == 1 && d.plan.config.model == turboModel()
      && d.plan.items.size() == 1 && d.plan.items[0].source.authorized == true
      && d.plan.items[0].source.fileId == c.sourceFileId;
+   }
+   function aeAdmitted(id,d) {
+    return aeAdmissionMatches(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data,id,d);
+   }
+   function aeNewAdmitted(id,d) {
+    let c = getAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
+    return aeAdmissionMatches(c,id,d);
    }
    function aeCommand(c) {
     return c is map && c.keys().hasOnly(['kind','revision','retryItemId'])
@@ -473,7 +482,18 @@ service cloud.firestore {
        : (c.keys().hasOnly(['version','enabled','updatedAt','mode','batchId','sourceFileId','expiresAt'])
         && aePilotControl(c) && c.expiresAt <= request.time.toMillis() + 10800000));
     }
-    allow create, update: if studioOwner() && validControl(request.resource.data);
+    // Owner submission creates the pilot, immutable config and admission together.
+    function pilotBatch(c) {
+     let batch = getAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(c.batchId)).data;
+     let status = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/status/pc).data;
+     return aeAdmissionMatches(c,c.batchId,batch) && batch.claim == null && batch.execution == null
+      && status.autoEditReadyAt == status.updatedAt && status.state == 'idle' && status.updatedAt >= request.time.toMillis()-90000
+      && turboReady(batch.deviceUid);
+    }
+    allow create: if studioOwner() && validControl(request.resource.data)
+     && (!request.resource.data.enabled || pilotBatch(request.resource.data));
+    allow update: if studioOwner() && validControl(request.resource.data)
+     && (!request.resource.data.enabled || (!aePilotControl(resource.data) && pilotBatch(request.resource.data)));
    }
    match /autoBatches/{batchId} {
     function batchPath() { return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(batchId); }
@@ -507,7 +527,8 @@ service cloud.firestore {
     }
     allow get: if studioOwner() || (studioDevice() && aePilotBatch(batchId));
     allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 100;
-    allow create: if studioOwner() && validNew(request.resource.data) && aeAdmitted(batchId,request.resource.data);
+    allow create: if studioOwner() && validNew(request.resource.data) && aeNewAdmitted(batchId,request.resource.data)
+     && getAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoConfigs/$(request.resource.data.plan.config.revisionId)).data.config == request.resource.data.plan.config;
     allow update: if (studioOwner() && ownerCommand(request.resource.data,resource.data))
      || (aeAssigned(resource.data) && aeAdmitted(batchId,resource.data)
       && (claimOnce(request.resource.data,resource.data) || executionWrite(request.resource.data,resource.data)));
@@ -586,6 +607,38 @@ service cloud.firestore {
      allow update: if aeClaimed(parent()) && aeAdmitted(batchId,parent()) && validSample(request.resource.data,parent())
       && request.resource.data.progress.updatedAt >= resource.data.progress.updatedAt;
     }
+   }
+
+   // Immutable configuration and explicit owner review records. Actual Drive
+   // delivery status is only changed by the existing authenticated server.
+   match /autoConfigs/{revisionId} {
+    allow get: if studioOwner();
+    allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 30;
+    allow create: if studioOwner() && aeId(revisionId)
+     && request.resource.data.keys().hasOnly(['version','revisionId','config','approvedAt'])
+     && request.resource.data.version == 1 && request.resource.data.revisionId == revisionId
+     && aeConfig(request.resource.data.config) && request.resource.data.config.revisionId == revisionId
+     && instant(request.resource.data.approvedAt);
+    allow update, delete: if false;
+   }
+   match /autoReviews/{reviewId} {
+    function validReview(r) {
+     let item = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(r.batchId)/items/$(r.itemId)).data;
+     return aeId(r.batchId) && aeItemId(r.itemId) && reviewId == r.batchId+'-'+r.itemId
+      && r.keys().hasOnly(['version','batchId','itemId','decision','feedback','decidedAt','status','sourceFileId','fileId','sha256'])
+      && r.version == 1 && item.status == 'review-ready' && item.receipt.verified == true
+      && r.sourceFileId == item.source.fileId && r.fileId == item.receipt.fileId && r.sha256 == item.receipt.sha256
+      && aeText(r.feedback,2000) && instant(r.decidedAt)
+      && ((r.decision == 'okay' && r.status == 'accepted-pending-move') || (r.decision == 'not-okay' && r.status == 'rejected'));
+    }
+    allow get: if studioOwner();
+    allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 30;
+    allow create: if studioOwner() && validReview(request.resource.data);
+    allow update, delete: if false;
+   }
+   match /autoEditControl/acceptedFolder {
+    allow get: if studioOwner();
+    allow list, write: if false;
    }
 
    match /removed/{jobId} {

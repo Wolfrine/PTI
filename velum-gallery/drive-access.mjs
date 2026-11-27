@@ -100,7 +100,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
       check(generation,owner.googleUid);
       if (!value || typeof value !== 'object' || Array.isArray(value)) throw backendError();
       if(!response.ok){
-        if(['move','move-status'].includes(path)&&active&&['drive/reconnect-required','drive/management-required','drive/connection-changed','drive/revocation-pending'].includes(value.code))active.managementReady=false;
+        if(['move','move-status','auto-edit-review'].includes(path)&&active&&['drive/reconnect-required','drive/management-required','drive/connection-changed','drive/revocation-pending'].includes(value.code))active.managementReady=false;
         const messages={
           'drive/not-configured':'Secure renewal setup is pending. A temporary Drive session is available.',
           'drive/revocation-pending':'Drive is finishing a previous disconnect. Its recovery window can take up to ten minutes.',
@@ -123,7 +123,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
           'drive/google-rejected':'Google Drive did not allow this move. The saved action can be checked safely.',
           'drive/browser-scope-rejected':'Google returned unexpected gallery permissions. The token was not accepted.'
         };
-        throw Object.assign(new Error(messages[value.code]||`Drive could not complete this ${path==='move'?'move':'connection'} (${response.status}).`),{
+        throw Object.assign(new Error(messages[value.code]||`Drive could not complete this ${['move','auto-edit-review'].includes(path)?'move':'connection'} (${response.status}).`),{
           code:value.code||'drive/unavailable',status:response.status,stage:path==='move'?'Move was not confirmed':path,
           phase:value.phase==='pending'?'pending':undefined,
           receiptId:/^[a-f0-9]{64}$/.test(value.receiptId||'')?value.receiptId:undefined
@@ -536,6 +536,13 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     return result;
   }
 
+  async function autoEditReview(data){
+    const generation=epoch,owner=identity();
+    await ensure();check(generation,owner.googleUid);
+    if(!active?.managementReady)throw Object.assign(new Error('Approve Drive management to move the accepted image.'),{code:'drive/management-required'});
+    const result=await serverRequest('auto-edit-review',generation,data);
+    check(generation,owner.googleUid);return result;
+  }
   async function moveStatus(data){
     const generation=epoch,owner=identity();
     await ensure();check(generation,owner.googleUid);
@@ -805,7 +812,7 @@ export function createDriveAccess({auth, requestAccess, signIn=requestAccess,
     }
   }
 
-  return {connect, ensure, restore, require, request, has, ready, handleCancelledGrant,move,moveStatus,
+  return {connect, ensure, restore, require, request, has, ready, handleCancelledGrant,move,moveStatus,autoEditReview,
     getToken:require, getOperationGuard, cancelPending, clear, disconnect,
     get disconnectPending(){return disconnectPending;},
     get managementProxy(){return backend;},

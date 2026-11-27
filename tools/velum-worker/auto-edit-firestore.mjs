@@ -7,6 +7,7 @@ import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
 import {validateAutoEditPlan,autoEditPlanHash,AUTO_EDIT_MODELS,isAutoId,isDriveId,isHash} from './auto-edit-contract.mjs';
 import {AutoEditFault,AutoEditJournal,AutoEditRunner} from './auto-edit-runner.mjs';
 import {ResourceSampler} from './resources.mjs';
+import {learningAdmission,validateLearningRequest,reviewedEvidence,validateStoredProposal,LEARNING_ITEM} from '../../velum-gallery/auto-edit-learning-contract.mjs';
 
 const ROOT='users/'+OWNER_UID+'/velumStudio/workspace';
 const DOCUMENTS='projects/'+PROJECT+'/databases/(default)/documents/';
@@ -14,7 +15,7 @@ const COLLECTION='autoBatches';
 const TELEMETRY_MS=25000;
 const STATES=new Set(['queued','running','paused','blocked','completed','completed-with-failures','stopped']);
 const COMMANDS=new Set(['run','pause','stop']);
-const ADAPTERS=['guard','verifySource','download','describe','edit','recoverEdit','compare','deliver','reconcileDelivery'];
+const ADAPTERS=['guard','verifySource','download','describe','edit','recoverEdit','compare','deliver','reconcileDelivery','learn'];
 const check=(ok,code)=>{if(!ok)throw new AutoEditFault(code)};
 const unwrap=document=>decode({mapValue:{fields:document.fields}});
 const pathFor=id=>{check(isAutoId(id),'invalid-batch-id');return COLLECTION+'/'+id};
@@ -22,10 +23,12 @@ const remoteRevision=doc=>doc.execution?.publicationRevision??0;
 function pilotOf(value,now=Date.now()){
  return value?.version===1&&value.enabled===true&&value.mode==='pilot'&&isAutoId(value.batchId)&&isDriveId(value.sourceFileId)
   &&Number.isSafeInteger(value.expiresAt)&&value.expiresAt>now&&value.expiresAt<=now+10800000
-  ? {batchId:value.batchId,sourceFileId:value.sourceFileId,expiresAt:value.expiresAt}:null;
+  ? {mode:'pilot',batchId:value.batchId,sourceFileId:value.sourceFileId,expiresAt:value.expiresAt}:null;
 }
+function admissionOf(value){return pilotOf(value)||learningAdmission(value);}
+function learningPath(id){check(isAutoId(id),'invalid-learning-id');return 'autoLearnings/'+id;}
 function matchesPilot(pilot,plan){
- return Boolean(pilot&&plan?.batchId===pilot.batchId&&plan.config?.batchSize===1&&plan.config?.model===AUTO_EDIT_MODELS.image
+ return Boolean(pilot?.mode==='pilot'&&plan?.batchId===pilot.batchId&&plan.config?.batchSize===1&&plan.config?.model===AUTO_EDIT_MODELS.image
   &&plan.items?.length===1&&plan.items[0].source?.authorized===true&&plan.items[0].source.fileId===pilot.sourceFileId);
 }
 function commandOf(doc){
@@ -57,7 +60,38 @@ export class AutoEditQueue {
   check(this.uid===PC_DEVICE_UID,'device-identity-mismatch');
   const r=await this.queue.request(ROOT+'/autoEditControl/admission',{allow:[404]});
   if(r.status===404)return null;
-  return pilotOf(unwrap(r.value));
+  return admissionOf(unwrap(r.value));
+ }
+ async readLearning(id){
+  check(this.uid===PC_DEVICE_UID,'device-identity-mismatch');
+  const result=await this.queue.request(ROOT+'/'+learningPath(id),{allow:[404]});
+  if(result.status===404)return null;
+  return {id,updateTime:result.value.updateTime,data:validateLearningRequest(unwrap(result.value))};
+ }
+ async checkLearning(id){
+  const admitted=await this.admission();
+  check(admitted?.mode==='learning'&&admitted.learningId===id,'learning-admission-closed');
+  const row=await this.readLearning(id);
+  check(row?.data.learningId===id&&row.data.status==='running','learning-claim-lost');
+  return row;
+ }
+ async readLearningEvidence(request){
+  const read=async relative=>{
+   const result=await this.queue.request(ROOT+'/'+relative,{allow:[404]});
+   check(result.status===200,'learning-evidence-unavailable');
+   return unwrap(result.value);
+  };
+  const configRecord=await read('autoConfigs/'+request.baseRevisionId);
+  check(configRecord?.version===1&&configRecord.revisionId===request.baseRevisionId&&configRecord.config?.revisionId===request.baseRevisionId&&configRecord.config.model===request.model,'learning-config-mismatch');
+  const config=configRecord.config,evidence=[];
+  for(const batchId of request.batchIds){
+   const [item,review]=await Promise.all([read(pathFor(batchId)+'/items/'+LEARNING_ITEM),read('autoReviews/'+batchId+'-'+LEARNING_ITEM)]);
+   evidence.push(reviewedEvidence(batchId,item,review,config));
+  }
+  return {config,evidence};
+ }
+ async writeLearning(row,fields){
+  await this.queue.write(learningPath(row.id),fields,{updateTime:row.updateTime});
  }
  async ready(pilot){
   if(!pilot)return [];
@@ -154,12 +188,19 @@ export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admiss
   },Math.max(0,next.expiresAt-Date.now()));
   let seenRevision=null,online=false;
   // Listen to the exact admitted batch, not the full queue.
-  const target=doc(db,ROOT+'/'+pathFor(next.batchId));
+  const target=doc(db,ROOT+'/'+(next.mode==='learning'?learningPath(next.learningId):pathFor(next.batchId)));
   queueStop=onSnapshot(target,{includeMetadataChanges:true},snapshot=>{
    if(closed||current!==generation||!pilot)return;
    const wasOnline=online;online=!snapshot.metadata.fromCache;connected?.(online);
    if(!online||!snapshot.exists())return;
    const data=snapshot.data(),c=data.command;
+   if(pilot.mode==='learning'){
+    if(data.learningId!==pilot.learningId)return;
+    const changed=seenRevision!==data.status;seenRevision=data.status;
+    if(data.status==='cancelled'){command?.({batchId:next.learningId,kind:'stop'});return;}
+    if((data.status==='queued'&&changed)||(data.status==='running'&&!wasOnline))wake();
+    return;
+   }
    if(!c||!COMMANDS.has(c.kind)||!Number.isSafeInteger(c.revision)||!matchesPilot(pilot,data.plan))return;
    const changed=c.revision!==seenRevision;
    if(changed){seenRevision=c.revision;command?.({batchId:next.batchId,kind:c.kind,revision:c.revision});}
@@ -168,7 +209,7 @@ export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admiss
  }
  const stopAdmission=onSnapshot(doc(db,ROOT+'/autoEditControl/admission'),{includeMetadataChanges:true},snapshot=>{
   if(closed)return;
-  const next=!snapshot.metadata.fromCache&&snapshot.exists()?pilotOf(snapshot.data()):null;
+  const next=!snapshot.metadata.fromCache&&snapshot.exists()?admissionOf(snapshot.data()):null;
   setPilot(next);
  },cause=>{if(!closed){setPilot(null);error?.(cause);}});
  return ()=>{closed=true;stopAdmission();stopQueue();pilot=null;admission?.(false);};
@@ -181,11 +222,60 @@ export class AutoEditDispatcher{
  }
  command({batchId,kind}){if(kind==='stop'&&this.active?.batchId===batchId)this.active.controller.abort();}
  abort(){this.active?.controller.abort();}
+ async runLearning(admission,signal){
+  const id=admission.learningId;
+  let row=await this.store.readLearning(id);
+  if(!row||!['queued','running'].includes(row.data.status))return {ran:false,needsMore:false};
+  check(row.id===row.data.learningId,'learning-request-mismatch');
+  // The claim is a one-shot boundary. A previous running claim after a
+  // restart is ambiguous; never repeat its model call automatically.
+  if(row.data.status==='running'){
+   const current=await this.store.checkLearning(id);
+   await this.store.writeLearning(current,{status:'failed',finishedAt:Date.now(),error:'learning-interrupted'});
+   return {ran:true,needsMore:false};
+  }
+  const controller=new AbortController(),abort=()=>controller.abort();
+  signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
+  this.active={batchId:id,controller};
+  let claimed=false;
+  const checkClaim=async()=>{
+   check(!controller.signal.aborted,'execution-interrupted');
+   await this.store.checkLearning(id);
+   check(!controller.signal.aborted,'execution-interrupted');
+   return {approved:true,owned:true,command:'run'};
+  };
+  try{
+   check(!controller.signal.aborted,'execution-interrupted');
+   await this.store.writeLearning(row,{status:'running',startedAt:Date.now()});claimed=true;
+   row=await this.store.checkLearning(id);
+   await this.onActive(id);
+   const {config,evidence}=await this.store.readLearningEvidence(row.data);
+   await this.adapters.guard({stage:'vision2',model:row.data.model,signal:controller.signal,checkClaim});
+   const proposal=validateStoredProposal(await this.adapters.learn({request:row.data,config,evidence,signal:controller.signal,checkClaim}),row.data.batchIds);
+   const current=await this.store.checkLearning(id);
+   check(!controller.signal.aborted,'execution-interrupted');
+   await this.store.writeLearning(current,{status:'proposed',finishedAt:Date.now(),proposal});
+   return {ran:true,needsMore:false};
+  }catch(error){
+   if(claimed){
+    try{
+     const current=await this.store.checkLearning(id);
+     const code=/^[a-z0-9-]{1,80}$/.test(error?.message||'')?error.message:'learning-unavailable';
+     await this.store.writeLearning(current,{status:'failed',finishedAt:Date.now(),error:code});
+    }catch{/* Expiry, cancellation or an uncertain write remains fail closed. */}
+   }else throw error;
+   return {ran:true,needsMore:false};
+  }finally{
+   controller.abort();signal?.removeEventListener('abort',abort);this.active=null;
+   await this.onActive(null);
+  }
+ }
  async runOne({signal}={}){
   check(!this.active,'auto-dispatch-already-running');
   if(signal?.aborted)return {ran:false,needsMore:false};
   const pilot=await this.store.admission();
   if(!pilot)return {ran:false,needsMore:false};
+  if(pilot.mode==='learning')return this.runLearning(pilot,signal);
   const rows=await this.store.ready(pilot);let reservation=null;
   for(const row of rows){
    try{reservation=await this.store.reserve(row,pilot);break;}

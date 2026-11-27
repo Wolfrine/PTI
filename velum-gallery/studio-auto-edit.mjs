@@ -5,6 +5,8 @@ const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
 const {deviceApproved,workerOnline,workerHasModel}=await localModule('./studio-contract.mjs');
 const {formatDuration}=await localModule('./studio-progress.mjs');
 const {createReferencePicker}=await localModule('./studio-reference-picker.mjs');
+const {revisionRecord,sameConfiguration,learningAdmission}=await localModule('./auto-edit-learning-contract.mjs');
+const {mountAutoLearning}=await localModule('./studio-auto-learning.mjs');
 const OWNER='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',ITEM='item-001',PILOT_MS=165*60*1000;
 const TERMINAL=new Set(['completed','completed-with-failures','stopped']);
 const LABELS={source:'Original · verified download',vision1:'Vision 1 · describe',prompt:'Compose instructions',edit:'Image edit · Qwen Turbo',vision2:'Vision 2 · compare',delivery:'Drive · verify staging','review-ready':'Ready for your review'};
@@ -13,7 +15,8 @@ const hex=buffer=>[...new Uint8Array(buffer)].map(x=>x.toString(16).padStart(2,'
 const id=()=>crypto.randomUUID();
 const sha=async text=>hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)));
 const snapshotData=s=>s.exists()?s.data():null;
-const activeAdmission=a=>a?.version===1&&a.enabled===true&&a.mode==='pilot'&&isAutoId(a.batchId)&&isDriveId(a.sourceFileId)&&Number.isSafeInteger(a.expiresAt)&&a.expiresAt>Date.now();
+const activePilot=a=>a?.version===1&&a.enabled===true&&a.mode==='pilot'&&isAutoId(a.batchId)&&isDriveId(a.sourceFileId)&&Number.isSafeInteger(a.expiresAt)&&a.expiresAt>Date.now();
+const activeAdmission=a=>Boolean(activePilot(a)||learningAdmission(a));
 function message(error){const code=error?.code;return code==='permission-denied'?'Auto Edit is not released for this account or the PC is not ready.':code==='drive/management-required'?'Approve Drive management, then retry the same saved review.':error?.message||'The action could not be confirmed. Refresh before retrying.';}
 function renderShell(root){
  root.innerHTML='<div class="ae-intro"><div><span class="studio-eyebrow">Private · on your PC</span><h2>Auto Edit</h2><p>Define the change once. Review each result yourself.</p></div><span class="ae-pilot-tag">Single-image pilot</span></div>'+
@@ -27,7 +30,7 @@ function renderShell(root){
  '<button type="submit" class="studio-generate" data-ae="start" disabled>Start single-image pilot</button><p class="studio-hint">One exact original and one Turbo edit. Admission expires after 165 minutes. You can leave Studio after the request is confirmed.</p></form>'+
  '<section class="ae-card"><div class="ae-heading"><div><span class="studio-eyebrow">Activity</span><h3>Batch progress</h3></div><button type="button" data-ae-action="refresh">Refresh</button></div><label class="sr-only" for="aeBatch">Choose batch</label><select class="studio-input" id="aeBatch"><option value="">No batch selected</option></select><div data-ae="progress"><p class="studio-hint">Your submitted pilot appears here.</p></div><div class="ae-actions" data-ae="controls"></div></section>'+
  '<section class="ae-card ae-review" data-ae="review" hidden><div class="ae-heading"><div><span class="studio-eyebrow">Review</span><h3>Compare the result</h3></div><span data-ae="review-state"></span></div><button type="button" data-ae-action="load-comparison">Load verified comparison</button><button type="button" class="ae-compare" data-ae="compare" hidden aria-pressed="false"><img data-ae="edited" alt="Edited result" draggable="false"/><img data-ae="before" alt="Original image" draggable="false" hidden/><span data-ae="compare-cue">Press and hold for original · tap to switch</span></button><div data-ae="comparison-status" class="studio-hint" role="status"></div><label class="studio-label">Feedback (optional)<textarea class="studio-input" data-ae="feedback" rows="3" maxlength="2000" placeholder="What worked or should be different?"></textarea></label><div class="ae-review-buttons"><button type="button" data-ae-action="reject" disabled>Not Okay</button><button type="button" data-ae-action="accept" disabled>Okay · move to Auto Generated</button></div><div data-ae="review-actions" class="ae-actions"></div></section>'+
- '<p class="ae-message" data-ae="message" role="status" aria-live="polite"></p>';
+ '<section class="ae-card ae-learning" data-ae="learning" aria-label="Learning and configurations"></section><p class="ae-message" data-ae="message" role="status" aria-live="polite"></p>';
 }
 export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
  const {doc,collection,query,orderBy,limit,getDocs,getDocFromServer,onSnapshot,runTransaction}=sdk;
@@ -35,6 +38,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
  const $=key=>root.querySelector('[data-ae="'+key+'"]'),form=root.querySelector('form'),batchSelect=root.querySelector('#aeBatch'),picker=createReferencePicker({drive});
  const workspace=()=>['users',OWNER,'velumStudio','workspace'],ref=(...parts)=>doc(db,...workspace(),...parts);
  let watching=false,generation=0,admission=null,admissionKnown=false,history=[],batchId='',batch=null,item=null,review=null,live=null,busy=false,source=null,draft=null,notice='',slots=new Map(),preview=null,previewJob='',mediaAbort=null,hold=null,pinned=false,peeking=false,skipClick=false,reviewKnown=false,destroyed=false;
+ let learningController=null;
  const listeners=[];
  const listen=(target,event,fn,opts)=>{target.addEventListener(event,fn,opts);listeners.push(()=>target.removeEventListener(event,fn,opts));};
  function authorized(){const c=context();return !destroyed&&c.uid===OWNER&&auth.currentUser?.uid===OWNER&&!c.locked&&!c.destroyed&&c.visible;}
@@ -59,6 +63,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   $('edited').removeAttribute('src');$('before').removeAttribute('src');$('compare').hidden=true;
  }
  function stop(){
+  learningController?.clear();
   generation++;watching=false;for(const key of [...slots.keys()])unwatch(key);picker.clear();releaseMedia();admissionKnown=false;reviewKnown=false;busy=false;live=null;batch=null;item=null;review=null;history=[];admission=null;batchId='';source=null;draft=null;notice='';
   form.reset();for(const el of form.elements)el.disabled=false;$('feedback').value='';$('comparison-status').textContent='';$('message').textContent='';
   $('original').textContent='No image selected';$('readiness').textContent='Reopen Auto Edit to check the PC.';$('review-state').textContent='';$('review').hidden=true;$('start').disabled=true;
@@ -82,14 +87,14 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   const token=generation;
   const result=await getDocs(query(collection(db,...workspace(),'autoBatches'),orderBy('createdAt','desc'),limit(20)));check(token);
   history=result.docs.map(s=>({id:s.id,...s.data()}));
-  if(!batchId){const next=(activeAdmission(admission)?admission.batchId:null)||history[0]?.id;if(next)selectBatch(next);}
+  if(!batchId){const next=(activePilot(admission)?admission.batchId:null)||history[0]?.id;if(next)selectBatch(next);}
   draw();
  }
  function startWatching(){
   if(watching)return;watching=true;
   watch('admission',ref('autoEditControl','admission'),v=>{
    admission=v;admissionKnown=true;
-   if(activeAdmission(v)&&!batchId)selectBatch(v.batchId);
+   if(activePilot(v)&&!batchId)selectBatch(v.batchId);
   });
   void refreshHistory().catch(e=>{if(watching){notice=message(e);draw();}});
  }
@@ -97,7 +102,8 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   const c=context();
   if(!c.connected||!navigator.onLine)return 'Reconnect to confirm the private PC state.';
   if(!admissionKnown)return 'Checking whether Auto Edit is released…';
-  if(activeAdmission(admission))return 'One-image admission is open until '+new Date(admission.expiresAt).toLocaleTimeString()+'.';
+  if(activePilot(admission))return 'One-image admission is open until '+new Date(admission.expiresAt).toLocaleTimeString()+'.';
+  if(learningAdmission(admission))return 'Local learning admission is open until '+new Date(admission.expiresAt).toLocaleTimeString()+'.';
   if(!deviceApproved(c.binding))return 'Approve your PC in Studio first.';
   if(!workerOnline(c.worker))return 'Waiting for a fresh PC heartbeat.';
   if(c.worker.autoEditReadyAt!==c.worker.updatedAt)return 'Auto Edit is not enabled on the PC. Manual Studio is separate.';
@@ -106,10 +112,10 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   return 'PC ready · choose one original and confirm its edit.';
  }
  function canStart(){
-  const c=context();return authorized()&&admissionKnown&&!activeAdmission(admission)&&navigator.onLine&&c.connected&&deviceApproved(c.binding)&&workerOnline(c.worker)&&c.worker.autoEditReadyAt===c.worker.updatedAt&&workerHasModel(c.worker,AUTO_EDIT_MODELS.image)&&c.worker.state==='idle'&&!c.busy&&!busy&&source&&form.elements.instructions.value.trim()&&form.elements.consent.checked;
+  const c=context();return authorized()&&admissionKnown&&!activeAdmission(admission)&&navigator.onLine&&c.connected&&deviceApproved(c.binding)&&workerOnline(c.worker)&&c.worker.autoEditReadyAt===c.worker.updatedAt&&workerHasModel(c.worker,AUTO_EDIT_MODELS.image)&&c.worker.state==='idle'&&!c.busy&&!busy&&!learningController?.busy&&source&&form.elements.instructions.value.trim()&&form.elements.consent.checked;
  }
  function commandButtons(){
-  if(!batch||!activeAdmission(admission)||admission.batchId!==batchId)return '';
+  if(!batch||!activePilot(admission)||admission.batchId!==batchId)return '';
   const st=batch.execution?.status||'queued',pending=batch.execution?.commandRevision!==batch.command?.revision,disabled=busy||pending?'disabled':'';
   if(TERMINAL.has(st))return '<button type="button" data-ae-action="close-admission" '+(busy?'disabled':'')+'>Close pilot admission</button>';
   return (['queued','running'].includes(st)?'<button type="button" data-ae-action="pause" '+disabled+'>Pause after stage</button>':'')+
@@ -158,8 +164,8 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   batchSelect.value=batchId;batchSelect.disabled=busy;
   updateMarkup($('progress'),progressMarkup());
   let controls=commandButtons();
-  if(admission?.enabled===true&&!activeAdmission(admission))controls+='<button type="button" data-ae-action="close-admission" '+(busy?'disabled':'')+'>Close expired admission</button>';
-  if(activeAdmission(admission)&&admission.batchId!==batchId)controls+='<button type="button" data-ae-action="current">Open active pilot</button>';
+  if(admission?.mode==='pilot'&&admission.enabled===true&&!activePilot(admission))controls+='<button type="button" data-ae-action="close-admission" '+(busy?'disabled':'')+'>Close expired admission</button>';
+  if(activePilot(admission)&&admission.batchId!==batchId)controls+='<button type="button" data-ae-action="current">Open active pilot</button>';
   updateMarkup($('controls'),controls);
   const reviewable=item?.status==='review-ready'&&item.receipt?.verified===true&&isHash(item.receipt.sha256);
   $('review').hidden=!reviewable;
@@ -176,9 +182,10 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
    updateMarkup($('review-actions'),retry?'<button type="button" data-ae-action="move" '+(busy?'disabled':'')+'>Confirm / retry same Drive move</button><button type="button" data-ae-action="connect" '+(busy?'disabled':'')+'>Connect Drive management</button>':review?.status==='accepted'?'<a target="_blank" rel="noopener noreferrer" href="https://drive.google.com/file/d/'+h(review.fileId)+'/view">Open accepted image in Drive</a>':review?.status==='rejected'?'<p class="studio-hint">Kept in Review staging. Nothing was moved or deleted.</p>':'');
   }
   $('message').textContent=notice;
+  learningController?.sync();
  }
  async function runAction(action){
-  if(busy||!authorized())return;
+  if(busy||learningController?.busy||!authorized())return;
   const token=generation;busy=true;notice='';draw();
   try{await action(token);check(token);}catch(e){if(token===generation)notice=message(e);}
   finally{if(token===generation){busy=false;draw();}}
@@ -192,15 +199,33 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   source={fileId:f.id,folderId:parent,mime:f.mimeType,sha256:f.sha256Checksum,name:f.name||'Drive original'};
   draft=null;form.elements.consent.checked=false;
  }
+ function composerConfig(){
+  return {instructions:form.elements.instructions.value,visionGuidance:form.elements.guidance.value,model:AUTO_EDIT_MODELS.image,vision1:AUTO_EDIT_MODELS.vision1,vision2:AUTO_EDIT_MODELS.vision2,sourceScope:form.elements.scope.value,batchSize:1,consent:true};
+ }
+ function loadIntoComposer(config){
+  if(draft||busy)throw new Error('Confirm or clear the pending request first.');
+  form.elements.instructions.value=config.instructions;form.elements.guidance.value=config.visionGuidance;
+  form.elements.scope.value=config.sourceScope;source=null;form.elements.consent.checked=false;
+  notice='Settings loaded. Choose and authorize a new original.';draw();
+ }
  async function submit(token){
   if(!source||!form.elements.consent.checked)throw new Error('Choose and authorize the exact original first.');
   // Recheck source metadata immediately before accepting the explicit request.
   const f=await drive.autoEditMetadata(source.fileId);check(token);
   if(f.parents[0]!==source.folderId||f.mimeType!==source.mime||f.sha256Checksum!==source.sha256)throw new Error('Original changed. Select it again.');
   if(!draft){
-   const batchId=id(),revisionId=id(),now=Date.now(),config={instructions:form.elements.instructions.value,visionGuidance:form.elements.guidance.value,model:AUTO_EDIT_MODELS.image,vision1:AUTO_EDIT_MODELS.vision1,vision2:AUTO_EDIT_MODELS.vision2,sourceScope:form.elements.scope.value,batchSize:1,revisionId,consent:true};
+   const pointer=snapshotData(await getDocFromServer(ref('autoEditControl','currentConfig')));check(token);
+   const parentRevisionId=pointer?.revisionId??null;
+   let prior=null;
+   if(parentRevisionId!==null){
+    if(!isAutoId(parentRevisionId))throw new Error('Current configuration pointer is invalid.');
+    prior=snapshotData(await getDocFromServer(ref('autoConfigs',parentRevisionId)));check(token);
+    if(prior?.revisionId!==parentRevisionId||prior.config?.revisionId!==parentRevisionId)throw new Error('Current configuration is unavailable.');
+   }
+   const reuse=Boolean(prior&&sameConfiguration(prior.config,composerConfig()));
+   const batchId=id(),revisionId=reuse?parentRevisionId:id(),now=Date.now(),config={...composerConfig(),revisionId};
    const plan=validateAutoEditPlan({schemaVersion:1,batchId,deviceUid:PC_DEVICE_UID,createdAt:now,config,items:[{itemId:ITEM,ordinal:1,source:{...source,authorized:true},seed:crypto.getRandomValues(new Uint32Array(1))[0]&0x7fffffff}]});
-   draft={plan,planHash:await sha(planJson(plan)),expiresAt:now+PILOT_MS};
+   draft={plan,planHash:await sha(planJson(plan)),expiresAt:now+PILOT_MS,parentRevisionId,reuse};
   }
   const d=draft;check(token);
   if(Date.now()-d.plan.createdAt>240000){
@@ -211,16 +236,24 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   }
   await runTransaction(db,async tx=>{
    const batchRef=ref('autoBatches',d.plan.batchId),configRef=ref('autoConfigs',d.plan.config.revisionId),admitRef=ref('autoEditControl','admission');
-   const [existing,configExists,control,status,device]=await Promise.all([tx.get(batchRef),tx.get(configRef),tx.get(admitRef),tx.get(ref('status','pc')),tx.get(ref('devices',PC_DEVICE_UID))]);
+   const pointerRef=ref('autoEditControl','currentConfig');
+   const [existing,configExists,control,status,device,pointer]=await Promise.all([tx.get(batchRef),tx.get(configRef),tx.get(admitRef),tx.get(ref('status','pc')),tx.get(ref('devices',PC_DEVICE_UID)),tx.get(pointerRef)]);
    check(token);
    if(existing.exists()){
     if(existing.data().planHash!==d.planHash)throw new Error('Request identity conflict.');
     return;
    }
-   if(configExists.exists()||activeAdmission(snapshotData(control)))throw new Error('Another pilot is already open. Check its status before submitting.');
+   if(activeAdmission(snapshotData(control)))throw new Error('Another pilot or learning request is already open.');
+   if((snapshotData(pointer)?.revisionId??null)!==d.parentRevisionId)throw new Error('Current configuration changed. Refresh before starting a new request.');
+   if(d.reuse){
+    if(!configExists.exists()||configExists.data().revisionId!==d.plan.config.revisionId||!sameConfiguration(configExists.data().config,d.plan.config))throw new Error('Approved revision changed.');
+   }else if(configExists.exists())throw new Error('Configuration revision identity conflict.');
    const pc=snapshotData(status);
    if(!deviceApproved(snapshotData(device))||!workerOnline(pc)||pc.state!=='idle'||pc.autoEditReadyAt!==pc.updatedAt||!workerHasModel(pc,AUTO_EDIT_MODELS.image))throw new Error('PC is not ready for Auto Edit.');
-   tx.set(configRef,{version:1,revisionId:d.plan.config.revisionId,config:d.plan.config,approvedAt:d.plan.createdAt});
+   if(!d.reuse){
+    tx.set(configRef,revisionRecord({config:d.plan.config,parentRevisionId:d.parentRevisionId,kind:'pilot',reason:'Owner approved settings at pilot submission.',approvedAt:d.plan.createdAt}));
+    tx.set(pointerRef,{version:1,revisionId:d.plan.config.revisionId,updatedAt:Date.now()});
+   }
    tx.set(admitRef,{version:1,enabled:true,updatedAt:Date.now(),mode:'pilot',batchId:d.plan.batchId,sourceFileId:d.plan.items[0].source.fileId,expiresAt:d.expiresAt});
    tx.set(batchRef,{schemaVersion:1,deviceUid:PC_DEVICE_UID,createdAt:d.plan.createdAt,planHash:d.planHash,plan:d.plan,command:{kind:'run',revision:0,retryItemId:null},dispatch:true,claim:null,execution:null});
   });
@@ -231,7 +264,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   await runTransaction(db,async tx=>{
    const [snap,control]=await Promise.all([tx.get(target),tx.get(ref('autoEditControl','admission'))]);check(token);
    const b=snapshotData(snap),a=snapshotData(control);
-   if(!b||!activeAdmission(a)||a.batchId!==selected||TERMINAL.has(b.execution?.status))throw new Error('This pilot is no longer active.');
+   if(!b||!activePilot(a)||a.batchId!==selected||TERMINAL.has(b.execution?.status))throw new Error('This pilot is no longer active.');
    if(kind!=='stop'&&b.execution?.commandRevision!==b.command?.revision)throw new Error('Wait for the current command acknowledgement.');
    const retry=kind==='retry';
    tx.update(target,{command:{kind:retry?'run':kind,revision:b.command.revision+1,retryItemId:retry?ITEM:null},dispatch:true});
@@ -303,7 +336,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   const action=event.target.closest('[data-ae-action]')?.dataset.aeAction;if(!action)return;
   if(action==='choose'){if(draft){notice='Refresh the pending request before choosing another original.';draw();return;}void runAction(choose);}
   else if(action==='refresh')void runAction(async token=>{await refreshHistory();check(token);if(!admissionKnown){unwatch('admission');watching=false;startWatching();}if(draft){const existing=await getDocFromServer(ref('autoBatches',draft.plan.batchId));check(token);if(existing.exists()){if(existing.data().planHash!==draft.planHash)throw new Error('Previous request identity conflict.');selectBatch(draft.plan.batchId);draft=null;form.elements.consent.checked=false;notice='Previous request confirmed.';}else if(Date.now()-draft.plan.createdAt>240000){draft=null;notice='Previous request did not start. Confirm a new request.';}}});
-  else if(action==='current'&&activeAdmission(admission)){selectBatch(admission.batchId);draw();}
+  else if(action==='current'&&activePilot(admission)){selectBatch(admission.batchId);draw();}
   else if(['pause','resume','retry','stop'].includes(action))void runAction(token=>command(action==='resume'?'run':action,token));
   else if(action==='close-admission')void runAction(closeAdmission);
   else if(action==='load-comparison')void runAction(loadComparison);
@@ -317,5 +350,6 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
  listen(window,'pointerup',endHold);listen(window,'pointercancel',event=>{skipClick=true;endHold(event);});listen(window,'blur',()=>endHold());
  listen($('compare'),'click',event=>{if(skipClick&&event.detail>0){skipClick=false;return;}skipClick=false;if(preview){pinned=!pinned;showCompare();}});
  listen($('compare'),'contextmenu',event=>event.preventDefault());
- return {sync(){if(authorized()){startWatching();draw();}else if(watching)stop();},clear:stop,destroy(){stop();destroyed=true;listeners.forEach(remove=>remove());}};
+ learningController=mountAutoLearning($('learning'),{sdk,db,auth,context,session:()=>({admission,admissionKnown,busy:busy||Boolean(draft)}),composerConfig,loadIntoComposer});
+ return {sync(){if(authorized()){startWatching();draw();}else if(watching)stop();},clear:stop,destroy(){stop();learningController?.destroy();destroyed=true;listeners.forEach(remove=>remove());}};
 }

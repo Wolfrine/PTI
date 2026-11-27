@@ -415,6 +415,37 @@ service cloud.firestore {
      && c.sourceFileId.matches('[A-Za-z0-9_-]{8,160}')
      && c.expiresAt is int && c.expiresAt > request.time.toMillis();
    }
+   // Learning shares the existing admission listener/worker; a separate,
+   // expiring owner grant permits exactly one request and its named evidence.
+   function aeLearningControl(c) {
+    return c is map && c.version == 1 && c.enabled == true && c.mode == 'learning'
+     && aeId(c.learningId) && c.expiresAt is int && c.expiresAt > request.time.toMillis();
+   }
+   function aeLearningAdmission() {
+    return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
+   }
+   function aeLearningRecord(c) {
+    return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoLearnings/$(c.learningId)).data;
+   }
+   function aeLearningDevice(id) {
+    let c = aeLearningAdmission();
+    return studioDevice() && aeLearningControl(c) && c.learningId == id;
+   }
+   function aeLearningBatch(batchId) {
+    let c = aeLearningAdmission();
+    return studioDevice() && aeLearningControl(c) && batchId in aeLearningRecord(c).batchIds;
+   }
+   function aeLearningRevision(revisionId) {
+    let c = aeLearningAdmission();
+    return studioDevice() && aeLearningControl(c) && aeLearningRecord(c).baseRevisionId == revisionId;
+   }
+   function aeLearningReview(reviewId,l) {
+    return reviewId == l.batchIds[0]+'-item-001' || (l.batchIds.size() == 2 && reviewId == l.batchIds[1]+'-item-001');
+   }
+   function aeLearningReviewDevice(reviewId) {
+    let c = aeLearningAdmission();
+    return studioDevice() && aeLearningControl(c) && aeLearningReview(reviewId,aeLearningRecord(c));
+   }
    // The admitted device may observe this exact document even before the owner
    // creates it. This avoids a denied not-found snapshot during pilot setup.
    function aePilotBatch(id) {
@@ -479,8 +510,10 @@ service cloud.firestore {
      return c.version == 1 && c.enabled is bool && instant(c.updatedAt)
       && (c.enabled == false
        ? c.keys().hasOnly(['version','enabled','updatedAt'])
-       : (c.keys().hasOnly(['version','enabled','updatedAt','mode','batchId','sourceFileId','expiresAt'])
-        && aePilotControl(c) && c.expiresAt <= request.time.toMillis() + 10800000));
+       : ((c.keys().hasOnly(['version','enabled','updatedAt','mode','batchId','sourceFileId','expiresAt'])
+         && aePilotControl(c) && c.expiresAt <= request.time.toMillis() + 10800000)
+        || (c.keys().hasOnly(['version','enabled','updatedAt','mode','learningId','expiresAt'])
+         && aeLearningControl(c) && c.expiresAt <= request.time.toMillis() + 1800000)));
     }
     // Owner submission creates the pilot, immutable config and admission together.
     function pilotBatch(c) {
@@ -490,10 +523,21 @@ service cloud.firestore {
       && status.autoEditReadyAt == status.updatedAt && status.state == 'idle' && status.updatedAt >= request.time.toMillis()-90000
       && turboReady(batch.deviceUid);
     }
+    function learningRun(c) {
+     let l = getAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoLearnings/$(c.learningId)).data;
+     let status = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/status/pc).data;
+     return l.version == 1 && l.learningId == c.learningId && l.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22'
+      && l.status == 'queued' && l.consent == true
+      && status.autoEditReadyAt == status.updatedAt && status.state == 'idle' && status.updatedAt >= request.time.toMillis()-90000
+      && turboReady(l.deviceUid);
+    }
+    function admittedRun(c) {
+     return (aePilotControl(c) && pilotBatch(c)) || (aeLearningControl(c) && learningRun(c));
+    }
     allow create: if studioOwner() && validControl(request.resource.data)
-     && (!request.resource.data.enabled || pilotBatch(request.resource.data));
+     && (!request.resource.data.enabled || admittedRun(request.resource.data));
     allow update: if studioOwner() && validControl(request.resource.data)
-     && (!request.resource.data.enabled || (!aePilotControl(resource.data) && pilotBatch(request.resource.data)));
+     && (!request.resource.data.enabled || (!aePilotControl(resource.data) && !aeLearningControl(resource.data) && admittedRun(request.resource.data)));
    }
    match /autoBatches/{batchId} {
     function batchPath() { return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(batchId); }
@@ -528,7 +572,8 @@ service cloud.firestore {
     allow get: if studioOwner() || (studioDevice() && aePilotBatch(batchId));
     allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 100;
     allow create: if studioOwner() && validNew(request.resource.data) && aeNewAdmitted(batchId,request.resource.data)
-     && getAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoConfigs/$(request.resource.data.plan.config.revisionId)).data.config == request.resource.data.plan.config;
+     && getAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoConfigs/$(request.resource.data.plan.config.revisionId)).data.config == request.resource.data.plan.config
+     && getAfter(aeCurrentConfigPath()).data.revisionId == request.resource.data.plan.config.revisionId;
     allow update: if (studioOwner() && ownerCommand(request.resource.data,resource.data))
      || (aeAssigned(resource.data) && aeAdmitted(batchId,resource.data)
       && (claimOnce(request.resource.data,resource.data) || executionWrite(request.resource.data,resource.data)));
@@ -584,8 +629,8 @@ service cloud.firestore {
       && i.publicationRevision == after.execution.publicationRevision && itemShape(i,after,itemId);
     }
     match /items/{itemId} {
-     allow get: if studioOwner() || aeAssigned(parent());
-     allow list: if (studioOwner() || aeAssigned(parent())) && request.query.limit != null && request.query.limit <= 100;
+     allow get: if studioOwner() || (aeAssigned(parent()) && aePilotBatch(batchId)) || (itemId == 'item-001' && aeLearningBatch(batchId));
+     allow list: if (studioOwner() || (aeAssigned(parent()) && aePilotBatch(batchId))) && request.query.limit != null && request.query.limit <= 100;
      allow create: if itemWrite(request.resource.data,itemId);
      allow update: if (resource.data.status != 'review-ready' || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['publicationRevision']))
       && resource.data.publicationRevision < request.resource.data.publicationRevision && itemWrite(request.resource.data,itemId);
@@ -611,15 +656,140 @@ service cloud.firestore {
 
    // Immutable configuration and explicit owner review records. Actual Drive
    // delivery status is only changed by the existing authenticated server.
-   match /autoConfigs/{revisionId} {
+   function aeCurrentConfigPath() {
+    return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/currentConfig;
+   }
+   function aeRevisionPath(id) {
+    return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoConfigs/$(id);
+   }
+   function aeLearningPath(id) {
+    return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoLearnings/$(id);
+   }
+   function aeCurrentRevision() {
+    return exists(aeCurrentConfigPath()) ? get(aeCurrentConfigPath()).data.revisionId : null;
+   }
+   match /autoEditControl/currentConfig {
+    function validPointer(p,previous) {
+     let r = getAfter(aeRevisionPath(p.revisionId)).data;
+     return p.keys().hasOnly(['version','revisionId','updatedAt']) && p.version == 1
+      && aeId(p.revisionId) && p.revisionId != previous && instant(p.updatedAt)
+      && !exists(aeRevisionPath(p.revisionId)) && r.revisionId == p.revisionId
+      && r.parentRevisionId == previous;
+    }
     allow get: if studioOwner();
+    allow list, delete: if false;
+    allow create: if studioOwner() && validPointer(request.resource.data,null);
+    allow update: if studioOwner() && validPointer(request.resource.data,resource.data.revisionId);
+   }
+   match /autoConfigs/{revisionId} {
+    function learningRevision(r) {
+     let l = getAfter(aeLearningPath(r.learningId)).data;
+     let base = get(aeRevisionPath(r.parentRevisionId)).data.config;
+     return l.status == 'proposed' && l.baseRevisionId == r.parentRevisionId
+      && l.decision.kind == 'approved' && l.decision.revisionId == revisionId
+      && r.config.diff(base).affectedKeys().hasOnly(['instructions','visionGuidance','revisionId']);
+    }
+    function restoredRevision(r) {
+     let original = get(aeRevisionPath(r.restoredFromRevisionId)).data.config;
+     return r.config.diff(original).affectedKeys().hasOnly(['revisionId']);
+    }
+    function validRevision(r) {
+     return aeId(revisionId) && r.keys().hasOnly(['version','revisionId','config','approvedAt','parentRevisionId','kind','restoredFromRevisionId','learningId','reason'])
+      && r.version == 1 && r.revisionId == revisionId && aeConfig(r.config) && r.config.revisionId == revisionId
+      && instant(r.approvedAt) && aeText(r.reason,1000) && r.parentRevisionId == aeCurrentRevision()
+      && r.parentRevisionId != revisionId && getAfter(aeCurrentConfigPath()).data.revisionId == revisionId
+      && ((r.kind in ['pilot','manual'] && r.restoredFromRevisionId == null && r.learningId == null)
+       || (r.kind == 'restore' && aeId(r.restoredFromRevisionId) && r.learningId == null && restoredRevision(r))
+       || (r.kind == 'learning' && aeId(r.learningId) && aeId(r.parentRevisionId) && r.restoredFromRevisionId == null && learningRevision(r)));
+    }
+    allow get: if studioOwner() || aeLearningRevision(revisionId);
     allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 30;
-    allow create: if studioOwner() && aeId(revisionId)
-     && request.resource.data.keys().hasOnly(['version','revisionId','config','approvedAt'])
-     && request.resource.data.version == 1 && request.resource.data.revisionId == revisionId
-     && aeConfig(request.resource.data.config) && request.resource.data.config.revisionId == revisionId
-     && instant(request.resource.data.approvedAt);
+    allow create: if studioOwner() && validRevision(request.resource.data);
     allow update, delete: if false;
+   }
+   match /autoLearnings/{learningId} {
+    function evidenceItem(batchId) {
+     return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(batchId)/items/item-001).data;
+    }
+    function evidenceReview(batchId) {
+     let id = batchId+'-item-001';
+     return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoReviews/$(id)).data;
+    }
+    function validEvidence(batchId,l) {
+     let i = evidenceItem(batchId);
+     let r = evidenceReview(batchId);
+     return aeId(batchId) && i.status == 'review-ready' && i.source.authorized == true && i.configurationRevision == l.baseRevisionId
+      && i.model == l.model && i.receipt.verified == true && aeHash(i.sourceArtifact.sha256) && aeHash(i.outputArtifact.sha256)
+      && i.receipt.sha256 == i.outputArtifact.sha256 && i.vision2 != null
+      && r.version == 1 && r.batchId == batchId && r.itemId == 'item-001' && r.fileId == i.receipt.fileId
+      && r.sourceFileId == i.source.fileId && r.sha256 == i.receipt.sha256
+      && ((r.decision == 'okay' && r.status == 'accepted') || (r.decision == 'not-okay' && r.status == 'rejected'));
+    }
+    function validNewLearning(l) {
+     let c = getAfter(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
+     return aeId(learningId) && l.keys().hasOnly(['version','learningId','deviceUid','baseRevisionId','model','batchIds','createdAt','consent','status','startedAt','finishedAt','proposal','error','decision'])
+      && l.version == 1 && l.learningId == learningId && l.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22'
+      && aeId(l.baseRevisionId) && l.baseRevisionId == aeCurrentRevision()
+      && l.model == turboModel() && l.batchIds is list && l.batchIds.size() >= 1 && l.batchIds.size() <= 2
+      && l.batchIds.toSet().size() == l.batchIds.size() && validEvidence(l.batchIds[0],l)
+      && (l.batchIds.size() == 1 || validEvidence(l.batchIds[1],l))
+      && instant(l.createdAt) && l.createdAt >= request.time.toMillis()-300000 && l.consent == true
+      && l.status == 'queued' && l.startedAt == null && l.finishedAt == null && l.proposal == null && l.error == null && l.decision == null
+      && aeLearningControl(c) && c.learningId == learningId;
+    }
+    function recommendation(r,count) {
+     return r is map && r.keys().hasOnly(['key','evidenceIndex','observation','hypothesis','confidence'])
+      && r.key in ['limit-edit-scope','preserve-composition','preserve-background','preserve-lighting','preserve-colors','avoid-artifacts','describe-composition','describe-materials','describe-lighting']
+      && aeInt(r.evidenceIndex,0,count-1) && aeText(r.observation,500) && r.observation.size() > 0
+      && aeText(r.hypothesis,500) && r.hypothesis.size() > 0 && r.confidence in ['low','medium','high'];
+    }
+    function evidenceReceipt(e,batchId) {
+     let i = evidenceItem(batchId);
+     let r = evidenceReview(batchId);
+     return e is map && e.keys().hasOnly(['batchId','reviewId','sourceHash','outputHash','decision','decidedAt'])
+      && e.batchId == batchId && e.reviewId == batchId+'-item-001' && e.sourceHash == i.sourceArtifact.sha256
+      && e.outputHash == i.receipt.sha256 && e.decision == r.decision && e.decidedAt == r.decidedAt;
+    }
+    function validProposal(p,l) {
+     let n = l.batchIds.size();
+     let rs = p.recommendations;
+     return p is map && p.keys().hasOnly(['version','model','evidenceHash','evidence','recommendations','limitations'])
+      && p.version == 1 && p.model == 'qwen3-vl-4b-instruct' && aeHash(p.evidenceHash)
+      && p.evidence is list && p.evidence.size() == n && evidenceReceipt(p.evidence[0],l.batchIds[0])
+      && (n == 1 || evidenceReceipt(p.evidence[1],l.batchIds[1]))
+      && rs is list && rs.size() <= 4 && (rs.size() < 1 || recommendation(rs[0],n)) && (rs.size() < 2 || recommendation(rs[1],n))
+      && (rs.size() < 3 || recommendation(rs[2],n)) && (rs.size() < 4 || recommendation(rs[3],n))
+      && aeText(p.limitations,1000);
+    }
+    function deviceTransition(d,old) {
+     return aeLearningDevice(learningId) && old.deviceUid == request.auth.uid
+      && ((old.status == 'queued' && d.status == 'running' && instant(d.startedAt)
+       && d.diff(old).affectedKeys().hasOnly(['status','startedAt']))
+      || (old.status == 'running' && instant(d.finishedAt) && d.finishedAt >= old.startedAt
+       && ((d.status == 'proposed' && d.error == null && validProposal(d.proposal,old)
+        && d.diff(old).affectedKeys().hasOnly(['status','finishedAt','proposal']))
+       || (d.status == 'failed' && aeText(d.error,80) && d.error.size() > 0
+        && d.diff(old).affectedKeys().hasOnly(['status','finishedAt','error'])))));
+    }
+    function ownerDecision(d,old) {
+     let decision = d.decision;
+     return old.status == 'proposed' && old.decision == null && d.diff(old).affectedKeys().hasOnly(['decision'])
+      && decision is map && decision.keys().hasOnly(['kind','revisionId','decidedAt']) && instant(decision.decidedAt)
+      && ((decision.kind == 'rejected' && decision.revisionId == null)
+       || (decision.kind == 'approved' && aeId(decision.revisionId) && old.baseRevisionId == aeCurrentRevision()
+        && getAfter(aeCurrentConfigPath()).data.revisionId == decision.revisionId
+        && getAfter(aeRevisionPath(decision.revisionId)).data.learningId == learningId));
+    }
+    function ownerCancel(d,old) {
+     return old.status in ['queued','running'] && d.status == 'cancelled' && instant(d.finishedAt)
+      && d.error == 'owner-cancelled' && d.diff(old).affectedKeys().hasOnly(['status','finishedAt','error']);
+    }
+    allow get: if studioOwner() || aeLearningDevice(learningId);
+    allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 20;
+    allow create: if studioOwner() && validNewLearning(request.resource.data);
+    allow update: if deviceTransition(request.resource.data,resource.data)
+     || (studioOwner() && (ownerDecision(request.resource.data,resource.data) || ownerCancel(request.resource.data,resource.data)));
+    allow delete: if false;
    }
    match /autoReviews/{reviewId} {
     function validReview(r) {
@@ -631,7 +801,7 @@ service cloud.firestore {
       && aeText(r.feedback,2000) && instant(r.decidedAt)
       && ((r.decision == 'okay' && r.status == 'accepted-pending-move') || (r.decision == 'not-okay' && r.status == 'rejected'));
     }
-    allow get: if studioOwner();
+    allow get: if studioOwner() || aeLearningReviewDevice(reviewId);
     allow list: if studioOwner() && request.query.limit != null && request.query.limit <= 30;
     allow create: if studioOwner() && validReview(request.resource.data);
     allow update, delete: if false;

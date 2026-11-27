@@ -29,6 +29,13 @@ SCHEMAS = {
                 'required':['addition','limitations'],'additionalProperties':False},
     'vision2': {'type':'object','properties':{'summary':{'type':'string'},'observations':{'type':'array','items':{'type':'string'}},'limitations':{'type':'string'}},
                 'required':['summary','observations','limitations'],'additionalProperties':False},
+    'learning': {'type':'object','properties':{
+        'recommendations':{'type':'array','items':{'type':'object','properties':{
+            'key':{'type':'string','enum':['limit-edit-scope','preserve-composition','preserve-background','preserve-lighting','preserve-colors','avoid-artifacts','describe-composition','describe-materials','describe-lighting']},
+            'evidenceIndex':{'type':'integer','enum':[0,1]},
+            'observation':{'type':'string'},'hypothesis':{'type':'string'},'confidence':{'type':'string','enum':['low','medium','high']}},
+            'required':['key','evidenceIndex','observation','hypothesis','confidence'],'additionalProperties':False}},
+        'limitations':{'type':'string'}},'required':['recommendations','limitations'],'additionalProperties':False},
 }
 
 def require(ok, code):
@@ -121,10 +128,11 @@ def vision(request):
     from qwen_diagnostics import collect,evaluate
     from auto_edit_lineage import worker_lineage
     stage=request.get('stage')
-    require(stage in MODELS and request.get('consent') is True,'vision-authorization-required')
+    require(stage in ('vision1','vision2','learning') and request.get('consent') is True,'vision-authorization-required')
+    model_stage='vision2' if stage=='learning' else stage
     source=local_image(request.get('sourcePath'),('source.png','source.jpg'),request.get('sourceHash'))
     files=[source]
-    if stage=='vision2':
+    if stage in ('vision2','learning'):
         edited=local_image(request.get('editedPath'),('edited.png',),request.get('outputHash'))
         require(edited.parent==source.parent,'invalid-comparison-pair')
         files.append(edited)
@@ -143,7 +151,7 @@ def vision(request):
     launcher_path=request.get('launcherPath')
     require(type(parent_created) in (int,float) and parent_created>0,'parent-identity')
     _, lineage=worker_lineage(psutil,parent_pid,launcher_path,parent_created)
-    check_assets(stage,request.get('pins'))
+    check_assets(model_stage,request.get('pins'))
     started=time.monotonic()
     def guard(startup=False):
         worker_lineage(psutil,parent_pid,launcher_path,parent_created,lineage)
@@ -166,11 +174,11 @@ def vision(request):
             grammar=work/'schema.json'
             prompt.write_text(text,encoding='utf-8')
             grammar.write_text(json.dumps(SCHEMAS[stage]),encoding='utf-8')
-            weights,projector=MODELS[stage]
+            weights,projector=MODELS[model_stage]
             argv=[str(CLI),'--model',str(VISION/'models'/weights),'--mmproj',str(VISION/'models'/projector),
                 '--image',','.join(str(f) for f in files),'--file',str(prompt),'--json-schema-file',str(grammar),
                 '--device','CUDA0','--gpu-layers','99','--load-mode','none','--ctx-size','8192','--threads','4',
-                '--image-max-tokens','1024','--n-predict','1024','--temp','0','--seed','42','--offline','--no-warmup',
+                '--image-max-tokens','1024','--n-predict','1536' if stage=='learning' else '1024','--temp','0','--seed','42','--offline','--no-warmup',
                 '--no-escape','--verbosity','0']
             # Avoid inherited llama/ggml runtime overrides. No prompt in argv.
             env={k:v for k,v in os.environ.items() if not k.upper().startswith(('LLAMA_ARG_','GGML_','MTMD_'))}

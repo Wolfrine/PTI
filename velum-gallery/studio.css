@@ -287,6 +287,13 @@
 .studio-auto-review details[open] { padding-bottom: 12px; }
 .studio-auto-review :is(.review-history, .review-queue) ol { display: grid; gap: 6px; list-style: none; padding: 0; }
 .studio-auto-review .review-queue button[aria-current="true"] { border-color: #e4c0d6; }
+.studio-auto-review .review-queue .review-queue-item { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 10px; align-items:baseline; text-align:left; width:100%; min-height:44px; padding:9px 12px; overflow-wrap:anywhere; }
+.studio-auto-review .review-queue-item:is(div) { border:1px solid #573848; border-radius:8px; }
+.studio-auto-review .review-queue-item strong { font-weight:600; color:#e4c0d6; }
+.studio-auto-review .review-queue-item small { grid-column:2; color:#c4a0b4; line-height:1.45; }
+.studio-auto-review .review-queue-item[data-issue="true"] small { color:#e2b6b6; }
+#studioView .studio-auto-review .review-job-progress { margin:0; width:100%; }
+.studio-auto-review .review-run-state { margin:0; }
 .studio-auto-review .review-followup:empty { display: none; }
 .studio-auto-review .review-prompt-parts { display: grid; gap: 12px; }
 .studio-auto-review .review-prompt-parts dt { font-weight: 600; }

@@ -55,6 +55,13 @@ service cloud.firestore {
    function instant(t) { return t is int && t > 0 && t <= request.time.toMillis() + 300000; }
    // Current measurements only. No arbitrary telemetry, identifiers or history.
    function studioStage(s) { return s in ['preparing','loading-model','encoding-references','encoding-prompt','loading-diffusion','sampling','decoding','publishing']; }
+   function reviewStage(p,id) {
+    return configuredReviewJob(id) && 'batchId' in resource.data && resource.data.workerId == request.auth.uid
+     && p.jobStartedAt == resource.data.startedAt && p.updatedAt is int && p.stageDurations is map && p.resources is map
+     && p.get('step',null) == null && p.get('total',null) == null
+     && p.stage in ['review-vision-1','review-vision-2','review-staging','review-source-changed','review-source-connection',
+       'review-vision-1-unavailable','review-stage-unconfirmed','review-stage-connection','review-stage-folder'];
+   }
    function studioDurations() {
     let d = request.resource.data.progress.stageDurations;
     let a = d.get('preparing',0);
@@ -100,7 +107,7 @@ service cloud.firestore {
      && (vu == null || (vu is number && vu >= 0 && vu <= 16777216))
      && (vu == null || vt == null || vu <= vt);
    }
-   function studioProgress() {
+   function studioProgress(id) {
     let p = request.resource.data.get('progress',{});
     let keys = p.keys();
     let s = p.get('step',null);
@@ -110,7 +117,7 @@ service cloud.firestore {
     let updatedAt = p.get('updatedAt',null);
     return p is map
      && keys.hasOnly(['step','total','stage','jobStartedAt','stageStartedAt','updatedAt','stageDurations','resources'])
-     && (!('stage' in p) || studioStage(p.stage))
+     && (!('stage' in p) || studioStage(p.stage) || reviewStage(p,id))
      && (t == null || (t is int && t >= 0 && t <= 10000))
      && (s == null || (s is int && s >= 0 && t is int && s <= t))
      && (!keys.hasAny(['jobStartedAt','stageStartedAt','updatedAt','stageDurations','resources']) || (
@@ -536,6 +543,13 @@ service cloud.firestore {
     allow create: if reviewing() && validVision(request.resource.data);
    }
    match /jobs/{id} {
+    // Keep progress validation separate so admission/completion does not
+    // revalidate the unchanged immutable request, or the whole metrics map.
+    allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress'])
+     && studioDevice() && resource.data.deviceUid == request.auth.uid
+     && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data)
+     && resource.data.status == 'running' && request.resource.data.status == 'running'
+     && studioProgress(id);
     function batchJobControl(d) {
      let batch = batchControl();
      return resource.data.diff(d).affectedKeys().hasOnly(['status'])
@@ -609,16 +623,6 @@ service cloud.firestore {
     // Abandon an incomplete transfer without deleting any input bytes or originals.
     allow update: if studioOwner() && resource.data.status == 'uploading' && resource.data.schemaVersion in [3,4]
      && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
-    // Creation validated the immutable request. Revalidating every reference on
-    // each progress/completion write exhausts the 1000-expression rules budget.
-    // The affected-key allowlist below keeps the entire request immutable.
-    // Validate expanded progress separately, so completion never pays for the
-    // immutable request AND metrics again within the 1000-expression ceiling.
-    allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid
-     && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data)
-     && resource.data.status == 'running' && request.resource.data.status == 'running'
-     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress'])
-     && studioProgress();
     allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid
      && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data) && model(resource.data.model)
      && (resource.data.schemaVersion == 2 || resource.data.inputsReady == true)
@@ -636,7 +640,7 @@ service cloud.firestore {
       && (resource.data.status != 'queued' || resource.data.expiresAt > request.time.toMillis())))
      && request.resource.data.get('error','') in ['', 'expired','interrupted','resource-guard','inference-failed','invalid-output','output-too-large','model-unavailable','invalid-input','invalid-reference']
      && (request.resource.data.get('progress',{}) == resource.data.get('progress',{})
-      || (resource.data.status == 'queued' && studioProgress()))
+      || (resource.data.status == 'queued' && studioProgress('')))
      && (!visionReviewJob(id) || request.resource.data.status != 'completed'
       || get(reviewPath('autoReviewVision',id)).data.outputSha256 == request.resource.data.result.sha256)
      && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds','localPath','referenceMethod'])

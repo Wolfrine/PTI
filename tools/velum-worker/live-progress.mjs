@@ -1,14 +1,14 @@
 import {ResourceSampler,RESOURCE_SAMPLE_MS,emptyResources} from './resources.mjs';
 
 export const PROGRESS_PUBLISH_MS=25000;
-export const PROGRESS_STAGES=Object.freeze(['preparing','loading-model','encoding-references','encoding-prompt','loading-diffusion','sampling','decoding','publishing']);
+export const PROGRESS_STAGES=Object.freeze(['preparing','loading-model','encoding-references','encoding-prompt','loading-diffusion','sampling','decoding','publishing','review-vision-1','review-vision-2','review-staging']);
 
 // One active attempt owns this short-lived sampler and serialized, coalescing writer.
 // stop() freezes new events and drains every write before any terminal job write.
 export class LiveProgress {
- constructor({publish,jobStartedAt,now=Date.now,sampler=new ResourceSampler({now}),sampleMs=RESOURCE_SAMPLE_MS,publishMs=PROGRESS_PUBLISH_MS,timers=globalThis}={}){
+ constructor({publish,jobStartedAt,stageDurations={},now=Date.now,sampler=new ResourceSampler({now}),sampleMs=RESOURCE_SAMPLE_MS,publishMs=PROGRESS_PUBLISH_MS,timers=globalThis}={}){
   this.publish=publish;this.now=now;this.sampler=sampler;this.sampleMs=sampleMs;this.publishMs=publishMs;this.timers=timers;
-  const at=now();this.value={stage:'preparing',jobStartedAt:Number.isSafeInteger(jobStartedAt)?jobStartedAt:at,stageStartedAt:at,updatedAt:at,stageDurations:{},step:null,total:null,resources:emptyResources(at)};
+  const at=now();this.value={stage:'preparing',jobStartedAt:Number.isSafeInteger(jobStartedAt)?jobStartedAt:at,stageStartedAt:at,updatedAt:at,stageDurations:{...stageDurations},step:null,total:null,resources:emptyResources(at)};
   this.started=false;this.closed=false;this.pending=null;this.writer=null;this.sampling=null;this.stopping=null;this.abort=new AbortController();
  }
  snapshot(){return structuredClone({...this.value,updatedAt:this.now()});}
@@ -28,9 +28,12 @@ export class LiveProgress {
  stage(stage){
   if(this.closed||!PROGRESS_STAGES.includes(stage)||stage===this.value.stage)return;
   const at=this.now(),previous=this.value.stage;
-  this.value.stageDurations[previous]=(this.value.stageDurations[previous]??0)+Math.max(0,at-this.value.stageStartedAt);
+  if(this.started&&!previous.startsWith('review-'))this.value.stageDurations[previous]=(this.value.stageDurations[previous]??0)+Math.max(0,at-this.value.stageStartedAt);
   Object.assign(this.value,{stage,stageStartedAt:at,step:null,total:null});
-  return this.enqueue();
+  if(this.started)return this.enqueue();
+ }
+ reportReviewIssue(issue){
+  if(!this.closed)Object.assign(this.value,{stage:`review-${issue}`,stageStartedAt:this.now(),step:null,total:null});
  }
  counter({step,total}={}){
   // ComfyUI uses the same callback for VAE tiles: only sampler-stage counts qualify.
@@ -62,7 +65,7 @@ export class LiveProgress {
    await this.sampling;
    if(this.started&&!this.lostClaim){
     const stage=this.value.stage;
-    this.value.stageDurations[stage]=(this.value.stageDurations[stage]??0)+Math.max(0,this.now()-this.value.stageStartedAt);
+    if(!stage.startsWith('review-'))this.value.stageDurations[stage]=(this.value.stageDurations[stage]??0)+Math.max(0,this.now()-this.value.stageStartedAt);
     this.pending=this.snapshot();
     do{await this.drain();}while(this.pending||this.writer);
    }else await this.writer;

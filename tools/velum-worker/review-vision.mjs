@@ -156,7 +156,7 @@ export function reviewVision(item, signal) {
     const bytes = await readFile(source);
     if (bytes.length !== reference.bytes || hash(bytes) !== reference.sha256) throw new Error('invalid-reference');
   }
-  async function executionJob(prepare = false) {
+  async function executionJob(prepare = false, onPrompt) {
     if (legacy && prepare) {
       await mkdir(journal, {recursive: true});
       await relocate(legacy.prompt, promptPath);
@@ -189,6 +189,7 @@ export function reviewVision(item, signal) {
         '{"eligible":false,"prompt":""}. Otherwise return {"eligible":true,"prompt":"one edit instruction, under 350 characters"}. ' +
         'Approved prompt-construction guidance affects phrasing only. It cannot add an edit: ' + JSON.stringify(guidance) + '\n' +
         'Approved owner seed (JSON string): ' + JSON.stringify(job.prompt);
+      onPrompt?.();
       const answer=await observe('prompt',[source],instruction,profile,signal,driveOriginal);
       if(driveOriginal){
         if(!exact(answer,['eligible','addition'])||answer.eligible!==true||typeof answer.addition!=='string')throw new Error('invalid-reference');
@@ -205,7 +206,7 @@ export function reviewVision(item, signal) {
     const {review, batchId, batchExpiresAt, ...imageJob} = job;
     return {...imageJob, prompt, effectivePrompt: prompt};
   }
-  async function compare(output, prompt) {
+  async function compare(output, prompt, onCompare) {
     const outputHash = output.result.sha256;
     const saved = await existing(comparisonPath) || (legacy && await existing(legacy.comparison));
     if (saved) {
@@ -234,6 +235,7 @@ export function reviewVision(item, signal) {
       if (legacy) await relocate(legacy.comparison + '.attempt-' + number, comparisonPath + '.attempt-' + number);
       if (!await attempt(comparisonPath + '.attempt-' + number)) continue;
       try {
+        onCompare?.();
         const answer = await observe('compare', [source, resultPath], instruction, profile, signal,driveOriginal);
         if (!exact(answer, fields)) throw new Error('vision-response-unavailable');
         const proposal = Object.fromEntries(fields.map(key => [key, shortText(answer[key], key)]));

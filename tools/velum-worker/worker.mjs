@@ -159,7 +159,7 @@ async function main(){
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,autoReviewVision:Boolean(visionProtocol),visionProtocol,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,autoReviewVision:Boolean(visionProtocol),visionProtocol,reviewProgressVersion:1,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
   await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:{...workerCapabilities(installed,recoveryInstalled),...(visionProtocol?{autoReviewVision:visionProtocol}:{})}});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
@@ -176,12 +176,13 @@ async function main(){
  };
  const upload=async(item,output,vision)=>{
   const expected=vision?await vision.executionJob():item.job,actual=output.metadata;
+  const batchedReview=vision&&item.job.batchId;
   assertOutputIdentity(expected,actual);
+  if(batchedReview&&!progress.started)progress.stage('publishing');
   await progress.start();
-  void progress.stage('publishing');
   if(vision){
    const relative=`autoReviewVision/${item.id}`;
-   const receipt=await vision.compare(output,expected.prompt);
+   const receipt=await vision.compare(output,expected.prompt,()=>progress.stage(batchedReview?'review-vision-2':'publishing'));
    await approved();
    const prior=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
    if(prior.status===404)await queue.write(relative,receipt,{create:true});
@@ -190,6 +191,7 @@ async function main(){
     if(Object.keys(receipt).some(key=>receipt[key]!==current[key]))throw new Error('invalid-output');
    }
   }
+  void progress.stage('publishing');
   for(let index=0;index<output.chunks.length;index++){
    await approved();const relative=`jobs/${item.id}/chunks/${index}`;
    const existing=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
@@ -201,15 +203,16 @@ async function main(){
   const prior=await queue.request(`${ROOT}/thumbs/${item.id}`,{allow:[404]});
   if(prior.status===404)await queue.write(`thumbs/${item.id}`,thumb,{create:true});
   else if(decode({mapValue:{fields:prior.value.fields}}).sha256!==thumb.sha256)throw new Error('invalid-output');
-  await approved();await progress.stop();
+  await approved();if(!batchedReview)await progress.stop();
   // Shared production rules allow this field to be omitted and still require
   // the verified result identity. Qwen's migrated H: path is retained in its
   // local result.json; do not publish the retired F: path or change shared rules.
   const reportedPath=isQwenModel(expected.model)?{}:{localPath:path.join(engineProfile(expected.model).outputRoot,item.id,'image.png')};
   const result={...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,...reportedPath};
-  if(vision&&item.job.batchId){
+  if(batchedReview){
    await queue.write(`jobs/${item.id}`,{result});
    const journal=path.join(engineProfile(expected.model).outputRoot,item.id,'inputs','review');
+   let staged=false,attempted=false,issue='stage-unconfirmed';
    for(const number of [1,2]){
     controller.signal.throwIfAborted();
     if(number===2){
@@ -220,18 +223,24 @@ async function main(){
     }
     try{await writeFile(path.join(journal,`drive-stage-${number}.attempt`),'',{flag:'wx'});}
     catch(error){if(error.code==='EEXIST')continue;throw error;}
+    attempted=true;
+    void progress.stage('review-staging');
     try{
      const response=await fetch('https://pti-app-2ab59-velum.web.app/api/drive/review-stage',{
       method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${await queue.token()}`},
       body:JSON.stringify({id:item.id}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(62000)])
      });
-     if(response.ok){const value=await response.json();if(value?.staged===true)break;}
-     else await response.body?.cancel();
+     const {staged:confirmed,code}=(await response.json().catch(()=>null))??{};
+     if(response.ok&&confirmed===true){staged=true;break;}
+     if(['drive/review-folder-grant','drive/connection-changed','drive/reconnect-required','drive/review-stage-not-authorized'].includes(code))issue='stage-connection';
+     else if(['drive/review-folder-changed','drive/review-private-changed'].includes(code))issue='stage-folder';
      if(response.status<500&&response.status!==429)break;
     }catch{controller.signal.throwIfAborted();}
    }
    controller.signal.throwIfAborted();
    await approved();
+   if(attempted&&!staged)progress.reportReviewIssue(issue);
+   await progress.stop();
   }
   await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result});
  };
@@ -256,7 +265,8 @@ async function main(){
  const run=async(item,resumed)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(item.id))throw new Error('invalid-job');
   activeJob=item.id;controller=new AbortController();await publish('running');
-  progress=new LiveProgress({jobStartedAt:item.job.startedAt,publish:async value=>{
+  progress=new LiveProgress({jobStartedAt:item.job.startedAt,
+   stageDurations:resumed&&item.job.batchId?item.job.progress?.stageDurations:undefined,publish:async value=>{
    const current=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});
    if(current.status===404||!ownsClaim(item,decode({mapValue:{fields:current.value.fields}}),queue.session.uid))return false;
    // Progress never writes a status. The claim read + update-time precondition
@@ -297,7 +307,12 @@ async function main(){
        method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${await queue.token()}`},
        body:JSON.stringify({id:item.id}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(45000)])
       });
-      if(!response.ok){await response.body?.cancel();throw new Error('invalid-reference');}
+      if(!response.ok){
+       const {code}=(await response.json().catch(()=>null))??{};
+       if(['drive/review-source-changed','drive/review-source-folder-changed','drive/review-private-changed'].includes(code))progress.reportReviewIssue('source-changed');
+       else if(['drive/connection-changed','drive/reconnect-required','drive/review-source-not-authorized'].includes(code))progress.reportReviewIssue('source-connection');
+       throw new Error('invalid-reference');
+      }
       if((await response.json()).verified!==true)throw new Error('invalid-reference');
      }catch{controller.signal.throwIfAborted();throw new Error('invalid-reference');}
      return readLocalReviewSource(item.id,item.job.references[0],{outputRoot:root,signal:controller.signal});
@@ -307,9 +322,20 @@ async function main(){
    },fetchChunk:async(reference,index)=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}/chunks/${index}`);return decode({mapValue:{fields:response.value.fields}});
    }});},infer:async()=>{
-   void progress.stage(vision?'encoding-prompt':'loading-model');
-   const execution=vision?await vision.executionJob(true):item.job;
-   if(vision){controller.signal.throwIfAborted();await approved();if(!await claim())return;}
+   const batchedReview=vision&&item.job.batchId;
+   if(vision&&!batchedReview)void progress.stage('encoding-prompt');
+   let execution=item.job;
+   if(vision){
+    try{execution=await vision.executionJob(true,batchedReview?()=>progress.stage('review-vision-1'):undefined);}
+    catch(error){
+     if(batchedReview&&['vision-timeout','vision-model-unavailable','vision-runtime-unavailable','vision-response-unavailable','vision-interrupted'].includes(error.message)){
+      progress.reportReviewIssue('vision-1-unavailable');
+     }
+     throw error;
+    }
+    controller.signal.throwIfAborted();await approved();if(!await claim())return;
+   }
+   if(!vision||batchedReview)void progress.stage('loading-model');
    await infer(item.id,execution,value=>progress.counter(value),{signal:controller.signal,onEvent:event=>{
     if(event.event==='stage')void progress.stage(event.stage);
    }});

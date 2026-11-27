@@ -5,9 +5,9 @@ const local = name => {
 };
 const [{ createReviewStore, INITIAL_REVIEW_MODEL, REVIEW_SOURCE_SCOPE, REVIEW_GUIDANCE_SCOPE, REVIEW_BATCH_LIMIT, isVisionReviewJob, isConfiguredVisionReviewJob, isOriginalReviewJob, reviewFinished, reviewId },
   { MODELS, deviceCanQueue, modelReferenceLimit, makeJob, workerOnline },
-  { prepareReference, decodeReference }, { formatJobStatus }] = await Promise.all([
+  { prepareReference, decodeReference }, { formatJobStatus }, { renderProgressCard, reviewItemProgress }] = await Promise.all([
   local('./auto-review-store.mjs'), local('./studio-contract.mjs'), local('./studio-reference.mjs'),
-  local('./studio-view.mjs')
+  local('./studio-view.mjs'), local('./studio-progress.mjs')
 ]);
 
 const failure = {
@@ -20,8 +20,16 @@ const failure = {
 const modelName = id => MODELS.find(model => model.id === id)?.label || 'Local model';
 const finishedJob = job => ['failed', 'cancelled', 'expired'].includes(job?.status) ||
   (['uploading', 'queued'].includes(job?.status) && job.expiresAt <= Date.now());
+const phaseOrder = { pending:0, staged:1, accepting:2, accepted:3, rejected:3, closed:3 };
+function mergeReviewPhase(previous, observed){
+  if(!observed||phaseOrder[previous?.phase]>phaseOrder[observed.phase]||
+    (reviewFinished(previous)&&previous.phase!==observed.phase))return previous;
+  const next={...previous,...observed};
+  if(previous?.learningId&&!observed.learningId){next.learningId=previous.learningId;next.draft=previous.draft;}
+  return next;
+}
 
-export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, compareSync, compareReset }) {
+export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, compareSync, compareReset, watchBatch=()=>{}, refreshBatch=()=>{} }) {
   const modes = root.querySelector('.studio-modes');
   const opener = document.createElement('button');
   opener.type = 'button';
@@ -61,6 +69,8 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
           </form>
           <section class="review-run" hidden aria-label="Current edit">
             <h3 class="review-run-title"></h3>
+            <p class="review-run-state studio-hint" hidden></p>
+            <section class="studio-live-progress review-job-progress" aria-label="Selected edit progress" hidden></section>
             <div><span class="studio-hint">Editing seed</span><p class="review-intent"></p></div>
             <p class="review-run-model studio-hint"></p>
             <details class="review-vision" hidden><summary>Local vision analysis</summary>
@@ -108,6 +118,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
             <button type="button" data-review="stop">Stop remaining</button>
           </div>
           <p class="studio-hint">The current edit may finish while the remaining items are paused or stopped.</p>
+          <p class="review-live-status studio-hint" role="status" hidden></p>
           <ol></ol>
         </section>
         <details class="review-settings"><summary>Approved seed, sources and model</summary>
@@ -144,7 +155,9 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
   let session, store, record, current, run, job, approvedLearning, vision, resultUrl = '', compareSource = '';
   let newEdit = false, historyView = false, cursor, attempted = '', busy = false, grantNeeded = false, grantBatchFolder = '', grantTarget = '';
   let feedbackJob, queueSignature = '';
-  const completedRuns = new Set();
+  let reviewJobs = new Map(), reviewFeed = null;
+  const visionReads = new Map(), observations = new Map(), deliveryReads = new Set(), confirmedDelivery = new Set();
+  let reservationExpired = false;
   const readyModel = (id, version = 4) => {
     const { studio } = context();
     return studio.connected && !studio.liveCached && studio.worker?.capabilities?.promptSchema === 4 && workerOnline(studio.worker) &&
@@ -174,10 +187,12 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
   }
   function clear() {
     session?.abort();
+    watchBatch(null);
     session = store = record = current = run = job = approvedLearning = vision = cursor = null;
     feedbackJob = null;
     grantBatchFolder = grantTarget = queueSignature = '';
-    completedRuns.clear();
+    visionReads.clear(); observations.clear(); deliveryReads.clear(); confirmedDelivery.clear(); reviewJobs.clear(); reviewFeed=null;
+    renderProgressCard($('.review-job-progress'),null);
     clearComparison();
     attempted = '';
     newEdit = historyView = busy = grantNeeded = false;
@@ -198,6 +213,48 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     action('history').textContent = 'Load history';
     action('history').hidden = false;
     status('');
+  }
+  function selectedProgress(){
+    const studio=context().studio;
+    renderProgressCard($('.review-job-progress'),job?.status==='running'?job:null,{
+      review:true, modelLabel:modelName(job?.model),online:workerOnline(studio.worker),
+      connected:studio.connected&&!reviewFeed?.failed,phoneOnline:navigator.onLine,cached:studio.liveCached||reviewFeed?.cached
+    });
+  }
+  function renderQueue(batch){
+    reservationExpired=Boolean(batch&&batch.expiresAt<=Date.now());
+    const studio=context().studio;
+    const uncertain=reviewFeed?.cached||reviewFeed?.failed||studio.liveCached||!studio.connected||!workerOnline(studio.worker);
+    const items = (batch?.ids||[]).slice(0,REVIEW_BATCH_LIMIT).map(id=>{
+      const item=record.runs.find(run=>run.id===id);
+      const request=reviewJobs.get(id)||item?.job;
+      const receipt=observations.get(id);
+      return {id,personCanOpen:Boolean(item),...reviewItemProgress({batch,run:item,job:request,receipt,feedback:reviewJobs.get(`feedback-${id}`),
+        confirmedDelivery:confirmedDelivery.has(id),uncertain})};
+    });
+    const signature=JSON.stringify(items.map(item=>[item.id,item.personCanOpen]));
+    const list=$('.review-queue ol');
+    if(queueSignature!==signature){
+      const focused=document.activeElement?.dataset.id;
+      queueSignature=signature;
+      list.replaceChildren(...items.map((item,index)=>{
+        const row=document.createElement('li'),control=document.createElement(item.personCanOpen?'button':'div');
+        control.className='review-queue-item';
+        if(item.personCanOpen){control.type='button';control.dataset.review='batch-run';control.dataset.id=item.id;}
+        const name=document.createElement('strong');name.textContent=`Edit ${index+1}`;
+        const stage=document.createElement('span'),detail=document.createElement('small');
+        control.append(name,stage,detail);row.append(control);return row;
+      }));
+      if(focused)[...list.querySelectorAll('button')].find(button=>button.dataset.id===focused)?.focus({preventScroll:true});
+    }
+    items.forEach((item,index)=>{
+      const control=list.children[index].firstElementChild;
+      if(item.personCanOpen)control.setAttribute('aria-current',String(item.id===run?.id));
+      control.dataset.issue=String(Boolean(item.issue));
+      if(control.children[1].textContent!==item.label)control.children[1].textContent=item.label;
+      if(control.children[2].textContent!==(item.detail||''))control.children[2].textContent=item.detail||'';
+      control.children[2].hidden=!item.detail;
+    });
   }
   function render() {
     $('.review-content').hidden = !record;
@@ -227,19 +284,12 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     action('resume-batch').hidden=batch?.state!=='paused'||batch.expiresAt<=Date.now();
     action('stop').hidden=batch?.state==='stopped'||batchSettled;
     action('grant-batch').hidden=!grantBatchFolder;
-    const signature=JSON.stringify(record.runs.map(item=>[item.id,item.phase,item.jobStatus,item.id===run?.id]));
-    if(queueSignature!==signature){
-      queueSignature=signature;
-      const list=$('.review-queue ol');
-      list.replaceChildren(...record.runs.map((item,index)=>{
-        const row=document.createElement('li'),control=document.createElement('button');
-        control.type='button';control.dataset.review='batch-run';control.dataset.id=item.id;
-        control.setAttribute('aria-current',item.id===run?.id?'true':'false');
-        const label={staged:'Ready to review',accepted:'Accepted',rejected:'Not Okay',closed:'Closed'}[item.phase]||
-          {running:'Editing',queued:'Waiting',paused:'Paused',uploading:'Preparing source',completed:'Staging needs attention',failed:'Edit failed'}[item.jobStatus]||'Preparing';
-        control.textContent=`Edit ${index+1} · ${label}`;row.append(control);return row;
-      }));
-    }
+    renderQueue(batch);
+    const liveNote=$('.review-live-status');
+    const note=reviewFeed?.failed?'Private progress is disconnected. Refresh Auto Review to reconnect.':
+      reviewFeed?.cached||context().studio.liveCached?'Showing last reported progress while Studio reconnects.':'';
+    if(liveNote.textContent!==note)liveNote.textContent=note;
+    liveNote.hidden=!note;
     startForm.hidden = !starting;
     $('.review-run').hidden = starting || !run;
     $('.review-canvas').hidden = !ready;
@@ -250,8 +300,11 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
         record.prompt?.scope!==REVIEW_GUIDANCE_SCOPE ? ' · Approve descriptive guidance below' : ''}`;
     startForm.querySelector('button[type="submit"]').disabled = !canStart || exhausted || record.settings?.sourceScope!==REVIEW_SOURCE_SCOPE || record.prompt?.scope!==REVIEW_GUIDANCE_SCOPE;
     const original=isOriginalReviewJob(run?.id);
-    $('.review-run-title').textContent = ({ pending: 'Editing', staged: 'Ready for review', accepting: 'Finishing acceptance',
+    const selected=reviewItemProgress({batch,run,job,receipt:vision,feedback:feedbackJob,confirmedDelivery:confirmedDelivery.has(run?.id)});
+    $('.review-run-title').textContent = ({ pending: job?.status==='running'?'Selected edit':selected.label, staged: selected.label, accepting: 'Finishing acceptance',
       accepted: original?'Accepted into Auto Generated':'Accepted into Private', rejected: 'Rejected', closed: 'Closed' })[run?.phase] || '';
+    $('.review-run-state').textContent=job?.status==='running'?'':selected.detail||'';
+    $('.review-run-state').hidden=!$('.review-run-state').textContent;
     $('.review-intent').textContent = job?.prompt || '';
     $('.review-vision').hidden = !vision;
     $('.review-description').hidden=vision?.schema!==2;
@@ -287,6 +340,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
       record.settings?.sourceScope !== REVIEW_SOURCE_SCOPE || record.prompt?.scope !== REVIEW_GUIDANCE_SCOPE || !reservationMatchesApprovals();
     settingsForm.querySelector('[type="submit"]').disabled = busy || !admissionOpen() || !readyModel(settingsForm.elements.model.value);
     promptForm.querySelector('button').disabled = busy;
+    selectedProgress();
     compareSync();
   }
 
@@ -313,22 +367,35 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     clearComparison();
     run = { ...value, id };
     [job,feedbackJob] = await Promise.all([store.job(id),value.phase==='rejected'&&value.batchId?store.feedback(id):null]);
-    vision = await verifiedVision();
+    vision = await verifiedVision(job);
     approvedLearning = await store.readRevision(run.learningId);
     verifySession(active);
     learningForm.elements.learning.value = run.draft || (run.phase === 'accepted' ? vision?.learning || '' : '');
-    status(run.phase === 'pending' ? (job.status==='paused'?'Paused before editing.':formatJobStatus(job)) : '');
+    status('');
   }
 
-  async function verifiedVision() {
-    if (!isVisionReviewJob(job?.id) || job.status !== 'completed') return null;
-    const receipt = await store.vision(job.id);
-    if (receipt?.outputSha256 !== job.result.sha256 || receipt.sourceSha256 !== job.references[0].sha256) {
-      throw new Error('The local vision record does not match this source and output.');
-    }
-    if(isOriginalReviewJob(job.id)&&(receipt.schema!==2||receipt.seed!==job.prompt||typeof receipt.addition!=='string'||
-      receipt.prompt!==(receipt.addition?`${job.prompt}\n\n${receipt.addition}`:job.prompt)))throw new Error('The local prompt does not match the approved editing seed.');
-    return receipt;
+  async function verifiedVision(candidate=job) {
+    if (!isVisionReviewJob(candidate?.id) || candidate.status !== 'completed') return null;
+    const id=candidate.id,active=session,tracked=record?.batch?.ids.includes(id);
+    if(tracked&&visionReads.has(id))return visionReads.get(id);
+    const read=store.vision(id).then(receipt=>{
+      if (receipt?.outputSha256 !== candidate.result?.sha256 || receipt?.sourceSha256 !== candidate.references?.[0]?.sha256) {
+        throw new Error('The local vision record does not match this source and output.');
+      }
+      if(isOriginalReviewJob(id)&&(receipt.schema!==2||receipt.seed!==candidate.prompt||typeof receipt.addition!=='string'||
+        receipt.prompt!==(receipt.addition?`${candidate.prompt}\n\n${receipt.addition}`:candidate.prompt)))throw new Error('The local prompt does not match the approved editing seed.');
+      if(tracked&&session===active&&record?.batch?.ids.includes(id))observations.set(id,receipt);
+      return receipt;
+    });
+    if(tracked)visionReads.set(id,read);
+    return read;
+  }
+
+  function watchCurrentBatch(){
+    const ids=record?.batch?.ids||[];
+    for(const id of visionReads.keys())if(!ids.includes(id)){visionReads.delete(id);observations.delete(id);}
+    for(const id of deliveryReads)if(!ids.includes(id)){deliveryReads.delete(id);confirmedDelivery.delete(id);}
+    watchBatch(record?ids:null);
   }
 
   async function reload(active) {
@@ -337,6 +404,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     action('reject').setAttribute('aria-expanded', 'false');
     record = await store.load();
     verifySession(active);
+    watchCurrentBatch();
     if (!record) { status('Auto Review is awaiting production activation.'); return; }
     settingsForm.elements.model.value = model();
     settingsForm.elements.seed.value = record.settings?.seed || '';
@@ -382,6 +450,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     const batch = {id:batchId,folder:stageFolderId,ids,state:'active',expiresAt,sources};
     record.batch = batch;
     record.runs=[];
+    watchCurrentBatch();
     await queuePrepared(active, prepared, batch, configuration, promptConfig);
   }
 
@@ -422,7 +491,8 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
       created++;
       current=run={...agreement,id};
       job={...request,id};
-      record.runs.push({...run,jobStatus:'queued',promptConfigId:promptConfig.id});
+      const row={...run,jobStatus:'queued',promptConfigId:promptConfig.id,job};
+      if(!record.runs.some(item=>item.id===id))record.runs.push(row);
       record.current={runId:id,batchId,started:(record.current?.started||0)+1};
       render();
       status(`Queued ${created} of ${prepared.length} edits…`);
@@ -627,7 +697,12 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
       return;
     }
     const handlers = {
-      resume, accept, load: reload, result: active => showResult(active, true), 'queue-reserved': queueReserved,
+      resume, accept, load: active=>{
+        refreshBatch();
+        for(const id of visionReads.keys())if(!observations.has(id))visionReads.delete(id);
+        for(const id of deliveryReads)if(!confirmedDelivery.has(id))deliveryReads.delete(id);
+        return reload(active);
+      }, result: active => showResult(active, true), 'queue-reserved': queueReserved,
       grant: grantStage,'grant-batch':grantBatch,'grant-target':grantAcceptance,
       pause: async()=>{await store.controlBatch(record.batch.id,'paused');await reload(session);},
       'resume-batch':async()=>{await store.controlBatch(record.batch.id,'active');await reload(session);},
@@ -707,6 +782,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
       void withAction(async () => {
         run = { ...await store.saveLearning(run.id, draft, run, approve), id: run.id };
         if (run.id === record.current?.runId) current = run;
+        record.runs=record.runs.map(item=>item.id===run.id?{...item,...run}:item);
         approvedLearning = await store.readRevision(run.learningId);
         status(approve ? 'Learning approved. It can be used to draft separate prompt guidance.' : 'Learning draft saved.');
       });
@@ -717,33 +793,64 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
   return {
     get open() { return dialog.open; },
     close() { if (dialog.open) dialog.close(); clear(); },
-    onStudioState(jobs) {
+    tick(){
+      if(!record||!session||!dialog.open||!contextReady())return;
+      if(Boolean(record.batch&&record.batch.expiresAt<=Date.now())!==reservationExpired)render();
+      else {renderQueue(record.batch);selectedProgress();}
+    },
+    onStudioState(jobs,feed) {
       opener.hidden = !context().owner;
       if (!record || !session || !contextReady()) return;
+      reviewJobs=new Map(jobs.map(item=>[item.id,item]));
+      reviewFeed=feed;
+      if(feed?.batch&&feed.batch.id===record.batch?.id)record.batch=feed.batch;
+      else if(feed?.batch&&record.batch?.id!==feed.batch.id&&!busy)status('The batch changed in another Studio session. Refresh Auto Review.');
       const latest = run && jobs.find(item => item.id === run.id);
       if(run?.phase==='rejected'&&run.batchId){
         const next=jobs.find(item=>item.id===`feedback-${run.id}`);
         if(next)feedbackJob=next;
       }
-      for(const item of record.runs){
-        const update=jobs.find(candidate=>candidate.id===item.id);
-        if(update)item.jobStatus=update.status;
-        if(update?.status==='completed'&&item.phase==='pending'&&!completedRuns.has(item.id)&&!busy){
-          completedRuns.add(item.id);
-          const id=item.id,active=session;
-          void store.run(id).then(value=>{
-            if(active!==session||!value)return;
-            const fresh={...value,id,jobStatus:update.status};
-            record.runs=record.runs.map(record=>record.id===id?fresh:record);
-            if(run?.id===id){run=fresh;job=update;status(fresh.phase==='staged'?'Ready for owner review.':'Private staging could not be confirmed.');}
+      if(!busy&&!historyView&&record.batch){
+        record.runs=record.batch.ids.flatMap(id=>{
+          const previous=record.runs.find(item=>item.id===id);
+          const observed=feed?.runs?.get(id);
+          const request=reviewJobs.get(id)||previous?.job;
+          if(observed?.batchId!==record.batch.id&&!previous)return [];
+          const value=mergeReviewPhase(previous,observed?.batchId===record.batch.id?observed:null);
+          return [{...value,id,job:request,
+            jobStatus:request?.status,promptConfigId:request?.review?.configId}];
+        });
+        const selected=record.runs.find(item=>item.id===run?.id);
+        if(selected){
+          if(selected.learningId!==run.learningId)approvedLearning=null;
+          run=selected;
+        }
+        const pointer=record.runs.find(item=>item.id===record.current?.runId);
+        if(pointer)current=pointer;
+        for(const item of record.runs){
+          if(item.jobStatus!=='completed')continue;
+          const active=session;
+          if(item.phase==='pending'&&!deliveryReads.has(item.id)){
+            deliveryReads.add(item.id);
+            void store.run(item.id).then(value=>{
+              if(active!==session||!value||value.batchId!==record?.batch?.id)return;
+              confirmedDelivery.add(item.id);
+              const target=record.runs.find(row=>row.id===item.id);
+              if(target?.phase==='pending'){
+                Object.assign(target,value);
+                if(run?.id===item.id&&!busy&&!historyView)run=target;
+              }
+              render();
+            }).catch(()=>{});
+          }
+          if(!visionReads.has(item.id))void verifiedVision(item.job).then(receipt=>{
+            if(active!==session||!contextReady())return;
+            if(run?.id===item.id&&!busy)vision=receipt;
             render();
-          }).catch(()=>{completedRuns.delete(id);});
+          }).catch(()=>{});
         }
       }
-      if (latest && !busy && !historyView && !['completed', 'failed', 'cancelled', 'expired'].includes(job?.status)) {
-        if (job?.status !== latest.status || job?.progress?.stage !== latest.progress?.stage) status(formatJobStatus(latest));
-        job = latest;
-      }
+      if(latest&&!busy&&!historyView&&(!['completed','failed','cancelled','expired'].includes(job?.status)||latest.status===job?.status))job=latest;
       render();
       autoStage();
     },

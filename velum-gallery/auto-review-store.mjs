@@ -49,7 +49,7 @@ export function createReviewStore({ sdk, db, workspace, check }) {
       const item = await read(runRef(id));
       if(!item)return null;
       const queued=await read(jobRef(id));
-      return { ...item, id, jobStatus:queued?.status, promptConfigId:queued?.review?.configId };
+      return { ...item, id, jobStatus:queued?.status, promptConfigId:queued?.review?.configId, job:queued&&{...queued,id} };
     }))).filter(Boolean) : [];
     return { activation, settings, prompt, current, run, batch, runs };
   }

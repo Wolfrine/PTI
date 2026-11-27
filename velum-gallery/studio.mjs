@@ -43,8 +43,9 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   let compareController=null;
   const autoReview=drive.review?mountAutoReview({root,sdk,db,drive,decodeResult,
     context:()=>({owner:uid==='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',unlocked:!locked&&!destroyed&&pageActive,workspace:workspace(),studio:state,studioBusy:studioBusy(state)}),
+    watchBatch:ids=>live.setReviewIds(ids),refreshBatch:()=>live.refreshReview(),
     compareSync:()=>compareController?.sync(),compareReset:()=>compareController?.reset()}):null;
-  const draw=()=>{state.phoneOnline=navigator.onLine;renderStudioState(root,{...state,now:Date.now()});compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
+  const draw=()=>{state.phoneOnline=navigator.onLine;renderStudioState(root,{...state,now:Date.now()});autoReview?.tick();compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
   const visibleViewerJobs=()=>visibleCreations(state.archiveJobs||[],{filter:state.archiveFilter,model:state.archiveModel,date:state.archiveDate,saves:state.saves||{},removed:state.removed||{}});
   function setViewerDetails(expanded,focus=false){
     const panel=root.querySelector('#studioDetailsPanel'),details=root.querySelector('#studioDetails'),information=details.querySelector('.studio-detail-information');
@@ -147,12 +148,13 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   const live=createStudioLive({sdk,db,deviceUid:PC_DEVICE_UID,onState:next=>{
     if(!uid||locked||destroyed||document.hidden||!pageActive)return;
     next.jobs=next.jobs.map(job=>{const previous=state.jobs.find(item=>item.id===job.id);return previous&&['completed','failed','cancelled','expired'].includes(previous.status)&&['uploading','queued','running'].includes(job.status)?previous:job;});
-    Object.assign(state,next);state.connected=navigator.onLine&&!next.liveError;
+    const {review,...studio}=next;
+    Object.assign(state,studio);state.connected=navigator.onLine&&!studio.liveError;
     const imports=state.jobs.filter(historicalCreation);
     for(const item of imports)if(creationReady(item)&&!creationReady(state.archiveJobs.find(previous=>previous.id===item.id)))thumbMissing.delete(item.id);
     if(state.mode==='creations'&&state.archiveFilter==='all'&&imports.length)state.archiveJobs=mergeArchivePage(state.archiveJobs,imports).sort((a,b)=>b.createdAt-a.createdAt);
     if(autoSelect&&!state.selectedId)state.selectedId=state.jobs.find(job=>!isReviewJob(job.id))?.id||'';
-    autoReview?.onStudioState(state.jobs);
+    autoReview?.onStudioState(state.jobs,review);
     syncLiveHints();draw();void loadResult();
   },onError:error=>{
     if(!uid||locked||destroyed)return;

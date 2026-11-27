@@ -190,7 +190,7 @@ export function createLocalModelAdapters({installed,infer,pins,assertRuntimeRead
   need(c.visionModel===(stage==='vision1'?AUTO_EDIT_MODELS.vision1:AUTO_EDIT_MODELS.vision2),'vision-model-mismatch');
   if(stage==='vision2')need(isHash(c.outputHash)&&await fileHash(local.targetPath)===c.outputHash,'comparison-identity-mismatch');
   const parentCreated=await parentCreation(python,c.signal);
-  const request={action:'vision',stage,sourcePath:local.sourcePath,sourceHash:c.sourceHash,consent:c.consent,pins:pinSnapshot,task:visionTask(stage,c),parentPid:process.pid,parentCreated,...(stage==='vision2'?{editedPath:local.targetPath,outputHash:c.outputHash}:{})};
+  const request={action:'vision',stage,sourcePath:local.sourcePath,sourceHash:c.sourceHash,consent:c.consent,pins:pinSnapshot,task:visionTask(stage,c),parentPid:process.pid,parentCreated,launcherPath:python,...(stage==='vision2'?{editedPath:local.targetPath,outputHash:c.outputHash}:{})};
   await currentClaim(c);
   const result=await runLocal(python,request,{signal:c.signal,timeoutMs:720000,maxOutput:262144});
   return stage==='vision1'?validateVision1(result):validateVision2(result);

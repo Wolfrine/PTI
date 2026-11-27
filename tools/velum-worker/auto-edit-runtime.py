@@ -119,6 +119,7 @@ def vision(request):
     import msvcrt
     import psutil
     from qwen_diagnostics import collect,evaluate
+    from auto_edit_lineage import worker_lineage
     stage=request.get('stage')
     require(stage in MODELS and request.get('consent') is True,'vision-authorization-required')
     source=local_image(request.get('sourcePath'),('source.png','source.jpg'),request.get('sourceHash'))
@@ -139,10 +140,13 @@ def vision(request):
     require(isinstance(text,str) and 0<len(text)<=16000,'invalid-vision-task')
     parent_pid=request.get('parentPid')
     parent_created=request.get('parentCreated')
-    require(type(parent_pid) is int and parent_pid==os.getppid() and psutil.Process(parent_pid).create_time()==parent_created,'parent-identity')
+    launcher_path=request.get('launcherPath')
+    require(type(parent_created) in (int,float) and parent_created>0,'parent-identity')
+    _, lineage=worker_lineage(psutil,parent_pid,launcher_path,parent_created)
     check_assets(stage,request.get('pins'))
     started=time.monotonic()
     def guard(startup=False):
+        worker_lineage(psutil,parent_pid,launcher_path,parent_created,lineage)
         sample=collect(psutil,parent_pid,parent_created,started)
         result=evaluate(sample,startup=startup)
         if result['failed']:

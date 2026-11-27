@@ -3,7 +3,7 @@
 import path from 'node:path';
 import {execFile} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {lstat,readFile,readdir,realpath} from 'node:fs/promises';
+import {lstat,open,readdir,realpath} from 'node:fs/promises';
 import {engineProfile} from './engine-profile.mjs';
 import {SOURCE_FOLDERS,isHash} from './auto-edit-contract.mjs';
 import {AutoEditFault} from './auto-edit-runner.mjs';
@@ -23,9 +23,21 @@ async function exact(file,kind){
 }
 async function readConfig(){
  const info=await exact(INSTALL,'file');need(info.size>0&&info.size<=32768,'auto-edit-installation-invalid');
- return readFile(INSTALL);
+ const sameFile=(a,b)=>a.isFile()&&b.isFile()&&a.dev===b.dev&&a.ino===b.ino&&a.size===b.size&&a.mtimeMs===b.mtimeMs;
+ const handle=await open(INSTALL,'r');
+ try{
+  const before=await handle.stat();need(sameFile(info,before),'auto-edit-installation-changed');
+  const data=Buffer.alloc(before.size);
+  let offset=0;
+  while(offset<data.length){
+   const {bytesRead}=await handle.read(data,offset,data.length-offset,offset);
+   need(bytesRead>0,'auto-edit-installation-changed');offset+=bytesRead;
+  }
+  need(sameFile(before,await handle.stat())&&sameFile(before,await exact(INSTALL,'file')),'auto-edit-installation-changed');
+  return data;
+ }finally{await handle.close();}
 }
-async function acl(checks,signal){
+async function acl(checks,signal,code='auto-edit-runtime-permissions-unverified'){
  const encoded=Buffer.from(JSON.stringify(checks),'utf8').toString('base64');
  // Values are encoded JSON, never interpolated as executable PowerShell.
  const script=[
@@ -48,8 +60,8 @@ async function acl(checks,signal){
  'Write-Output "OK"'
  ].join('\n');
  const arg=Buffer.from(script,'utf16le').toString('base64');
- const stdout=await new Promise((resolve,reject)=>execFile('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand',arg],{windowsHide:true,shell:false,encoding:'utf8',timeout:20000,maxBuffer:8192,signal},(error,out)=>error?reject(new AutoEditFault(signal?.aborted?'execution-interrupted':'auto-edit-runtime-permissions-unverified')):resolve(out)));
- need(stdout.trim()==='OK','auto-edit-runtime-permissions-unverified');
+ const stdout=await new Promise((resolve,reject)=>execFile('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand',arg],{windowsHide:true,shell:false,encoding:'utf8',timeout:20000,maxBuffer:8192,signal},(error,out)=>error?reject(new AutoEditFault(signal?.aborted?'execution-interrupted':code)):resolve(out)));
+ need(stdout.trim()==='OK',code);
 }
 function validatedFolder(value){
  need(typeof value==='string'&&path.isAbsolute(value)&&path.parse(value).root.toLowerCase()==='j:\\'&&path.resolve(value)===value,'drive-folder-mapping-required');
@@ -72,14 +84,18 @@ async function visionChecks(){
 export async function loadAutoEditInstallation(){
  need(process.platform==='win32','windows-required');
  try{await lstat(INSTALL);}catch(error){if(error.code==='ENOENT')return null;throw error;}
+ // Reading a bounded, explicitly disabled configuration is safe; it cannot
+ // enable listeners or adapters. Enabled configurations must pass the original
+ // full ACL checks before any work can start, and be read back after the check.
  await exact(ROOT,'dir');await exact(INSTALL,'file');
- const baseChecks=[{path:path.dirname(ROOT),mode:'parent'},{path:ROOT,mode:'private'},{path:INSTALL,mode:'private'}];
- await acl(baseChecks);
  const bytes=await readConfig(),fingerprint=hash(bytes);
  let config;
  try{config=JSON.parse(bytes.toString('utf8'));}catch{throw new AutoEditFault('auto-edit-installation-invalid');}
  need(config?.version===1&&typeof config.enabled==='boolean','auto-edit-installation-invalid');
  if(!config.enabled)return null;
+ const baseChecks=[{path:path.dirname(ROOT),mode:'parent'},{path:ROOT,mode:'private'},{path:INSTALL,mode:'private'}];
+ await acl(baseChecks,undefined,'auto-edit-workspace-permissions-unverified');
+ need(hash(await readConfig())===fingerprint,'auto-edit-installation-changed');
  need(config.visionPins&&PIN_FILES.every(name=>isHash(config.visionPins[name])),'vision-pins-required');
  const pins=Object.fromEntries(PIN_FILES.map(name=>[name,config.visionPins[name]]));
  const folders={
@@ -90,20 +106,20 @@ export async function loadAutoEditInstallation(){
  const privateRoot=folders[SOURCE_FOLDERS.private],referenceRoot=folders[SOURCE_FOLDERS.references];
  need(path.basename(privateRoot)==='Private'&&path.basename(referenceRoot)==='References'&&path.basename(stagingRoot)==='Review staging'&&same(path.dirname(referenceRoot),privateRoot)&&same(path.dirname(stagingRoot),privateRoot),'drive-folder-mapping-mismatch');
  for(const dir of [privateRoot,referenceRoot,stagingRoot])await exact(dir,'dir');
- await acl([...baseChecks,...await visionChecks()]);
+ await acl(await visionChecks(),undefined,'auto-edit-vision-permissions-unverified');
  async function assertWorkspaceReady({signal}={}){
   need(!signal?.aborted,'execution-interrupted');
-  await exact(ROOT,'dir');await acl(baseChecks,signal);
+  await exact(ROOT,'dir');await acl(baseChecks,signal,'auto-edit-workspace-permissions-unverified');
   need(hash(await readConfig())===fingerprint,'auto-edit-installation-changed');
  }
  async function assertRuntimeReady({stage,model,signal}){
   await assertWorkspaceReady({signal});
-  if(stage==='vision1'||stage==='vision2')await acl(await visionChecks(),signal);
+  if(stage==='vision1'||stage==='vision2')await acl(await visionChecks(),signal,'auto-edit-vision-permissions-unverified');
   else if(stage==='edit'){
    const output=engineProfile(model).outputRoot;
    await exact(output,'dir');
    // Existing engine path is reused only if private; never alter its ACL.
-   await acl([{path:path.dirname(output),mode:'parent'},{path:output,mode:'private'}],signal);
+   await acl([{path:path.dirname(output),mode:'parent'},{path:output,mode:'private'}],signal,'auto-edit-output-permissions-unverified');
   }else throw new AutoEditFault('invalid-runtime-stage');
  }
  return {pins,folders,stagingRoot,assertWorkspaceReady,assertRuntimeReady};

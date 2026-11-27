@@ -296,7 +296,7 @@ jobs:
            node --check velum-gallery/studio-recovery.mjs
           node --check tools/velum-worker/worker.mjs
           for file in tools/velum-worker/auto-edit-*.mjs; do node --check "$file"; done
-          python3 -B -c "import ast,pathlib; ast.parse(pathlib.Path('tools/velum-worker/auto-edit-runtime.py').read_text(encoding='utf-8'))"
+          python3 -B -c "import ast,pathlib; [ast.parse(pathlib.Path(p).read_text(encoding='utf-8'), filename=p) for p in ('tools/velum-worker/auto-edit-runtime.py','tools/velum-worker/auto_edit_lineage.py')]"
            node --check tools/velum-worker/recovery.mjs
            node --check tools/velum-worker/recovery-control.mjs
 

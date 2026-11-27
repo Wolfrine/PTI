@@ -755,9 +755,9 @@ async function autoGoogleJson(token:string,url:URL){
  if(!r.ok){await r.body?.cancel();throw new DriveError(r.status===404?404:r.status===403?403:503,'drive/auto-edit-google-rejected');}
  return r.json();
 }
-function autoFileSize(file:AutoMetadataFile){
+function autoFileSize(file:AutoMetadataFile,minimum=16){
  const bytes=Number(file.size);
- if(typeof file.size!=='string'||!/^\d+$/.test(file.size)||!Number.isSafeInteger(bytes)||bytes<16||bytes>AUTO_MAX_BYTES)throw new DriveError(409,'drive/auto-edit-size-invalid');
+ if(typeof file.size!=='string'||!/^\d+$/.test(file.size)||!Number.isSafeInteger(bytes)||bytes<minimum||bytes>AUTO_MAX_BYTES)throw new DriveError(409,'drive/auto-edit-size-invalid');
  return bytes;
 }
 function autoPrivateChild(file:AutoMetadataFile,id:string,parent:string,mime:string){
@@ -799,7 +799,15 @@ async function autoEditMetadata(req:Request,res:Response){
  const file=value.files[0];
  if(!autoDriveId(file.id)||file.name!==name)throw new DriveError(409,'drive/auto-edit-staging-identity-mismatch');
  autoPrivateChild(file,file.id,AUTO_STAGING,'image/png');
- if(autoFileSize(file)!==output.bytes||file.sha256Checksum!==output.sha256)throw new DriveError(409,'drive/auto-edit-staging-hash-mismatch');
+ const bytes=autoFileSize(file,0);
+ if(bytes<output.bytes){
+  // The same owned, unshared, exact-name staging file may be an interrupted
+  // desktop copy. Return only independently observed identity/checksum, never
+  // a success receipt. The PC checks these bytes against its verified output.
+  if(!autoHash(file.sha256Checksum))throw new DriveError(409,'drive/auto-edit-staging-checksum-unavailable');
+  res.json({status:'partial',verifiedIdentity:true,file:{fileId:file.id,name,parentId:AUTO_STAGING,bytes,sha256:file.sha256Checksum}});return;
+ }
+ if(bytes!==output.bytes||file.sha256Checksum!==output.sha256)throw new DriveError(409,'drive/auto-edit-staging-hash-mismatch');
  res.json({status:'saved',receipt:{key:intent.batchId+'-'+intent.itemId,fileId:file.id,parentId:AUTO_STAGING,sha256:output.sha256,verified:true}});
 }
 

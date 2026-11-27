@@ -25,14 +25,20 @@ const presentHash=s=>s!==null&&s!==undefined;
 // Use the existing Qwen diagnostics module and pinned Python environment.
 // No torch import, model load or change to the existing thresholds.
 const RESOURCE_PROBE=[
- 'import json, os, sys, time, psutil',
+ 'import json, sys, time, psutil',
  'from qwen_diagnostics import collect, evaluate',
+ 'from auto_edit_lineage import worker_lineage',
  'pid = int(sys.argv[1])',
- 'parent = psutil.Process(pid)',
- 'if os.getppid() != pid: raise RuntimeError("parent-identity")',
- 'sample = collect(psutil, pid, parent.create_time(), time.monotonic())',
- 'result = evaluate(sample, startup=sys.argv[2] == "startup")',
  'keys = ("ramAvailableBytes","ramTotalBytes","diskFreeFBytes","diskFreeHBytes","vramUsedMiB","gpuTempC")',
+ 'try:',
+ '    created, chain = worker_lineage(psutil, pid, sys.argv[3])',
+ '    sample = collect(psutil, pid, created, time.monotonic())',
+ '    worker_lineage(psutil, pid, sys.argv[3], created, chain)',
+ 'except ValueError as error:',
+ '    if str(error) != "parent-identity": raise',
+ '    print(json.dumps({"failed":["parent-identity"],"values":{k:None for k in keys}}))',
+ '    sys.exit(0)',
+ 'result = evaluate(sample, startup=sys.argv[2] == "startup")',
  'values = {k:sample["observed"].get(k) for k in keys}',
  'print(json.dumps({"failed":result["failed"],"values":values},allow_nan=False))'
 ].join('\n');
@@ -42,7 +48,7 @@ export async function probeAutoEditResources({startup=true,signal}={}){
  alive(signal);
  const python=engineProfile('qwen-image-2.1').python;
  const output=await new Promise((resolve,reject)=>{
-  execFile(python,['-B','-c',RESOURCE_PROBE,String(process.pid),startup?'startup':'runtime'],
+  execFile(python,['-B','-c',RESOURCE_PROBE,String(process.pid),startup?'startup':'runtime',python],
    {cwd:HERE,windowsHide:true,shell:false,encoding:'utf8',timeout:PROBE_TIMEOUT,maxBuffer:8192,signal},
    (error,stdout)=>error?reject(fault(signal?.aborted?'execution-interrupted':'resource-probe-unavailable')):resolve(stdout));
  });

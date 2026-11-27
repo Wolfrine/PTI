@@ -2,13 +2,13 @@
 // Only the worker's pinned Firebase identity is sent to the existing service;
 // original and edited bytes stay on the PC/Drive mount, not in Firestore.
 import path from 'node:path';
-import {createHash} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {createReadStream} from 'node:fs';
-import {open,lstat,readFile,realpath} from 'node:fs/promises';
+import {open,lstat,readFile,realpath,link,rename,rm} from 'node:fs/promises';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {createVerifiedOriginalReader} from './auto-edit-local.mjs';
 import {AutoEditFault} from './auto-edit-runner.mjs';
-import {SOURCE_FOLDERS,REVIEW_STAGING_ID,AUTO_EDIT_LIMITS,isAutoId,isHash,validateDeliveryReceipt} from './auto-edit-contract.mjs';
+import {SOURCE_FOLDERS,REVIEW_STAGING_ID,AUTO_EDIT_LIMITS,isAutoId,isDriveId,isHash,validateDeliveryReceipt} from './auto-edit-contract.mjs';
 
 const ENDPOINT='https://pti-app-2ab59-velum.web.app/api/drive/auto-edit-metadata';
 const ROOT='H:\\Workspace\\Generated\\Velum\\auto-edit-v1';
@@ -70,24 +70,69 @@ async function artifact(file,signal,expected){
  need(before.size===after.size&&before.mtimeMs===after.mtimeMs&&bytes===after.size&&sha256===expected,'delivery-byte-identity-mismatch');
  return {bytes,sha256};
 }
-async function copyNoReplace(source,target,{signal,expected}){
- const original=await artifact(source,signal,expected);
- // The mounted destination is created once. Interrupted partial copies are
- // deliberately retained and blocked, never overwritten or uploaded twice.
- let handle;
- try{handle=await open(target,'wx',0o600);}catch(error){if(error.code==='EEXIST')return artifact(target,signal,expected);throw error;}
- let written=0;
+// Read exactly the bounded, immutable H: artifact into memory once per
+// delivery attempt. Never append bytes from an unverified/changed source.
+async function deliveryBytes(file,signal,expected){
+ alive(signal);
+ const before=await lstat(file);
+ need(before.isFile()&&!before.isSymbolicLink()&&before.size>=16&&before.size<=AUTO_EDIT_LIMITS.imageBytes&&same(path.resolve(file),await realpath(file)),'invalid-delivery-artifact');
+ const handle=await open(file,'r');
  try{
-  for await(const chunk of createReadStream(source,{signal})){
-   let offset=0;
-   while(offset<chunk.length){
-    alive(signal);
-    const result=await handle.write(chunk,offset,chunk.length-offset,written);
-    need(result.bytesWritten>0,'drive-copy-incomplete');
-    offset+=result.bytesWritten;written+=result.bytesWritten;
-   }
+  const current=await handle.stat();
+  need(sameStat(before,current),'delivery-source-changed');
+  const data=Buffer.allocUnsafe(current.size);
+  let offset=0;
+  while(offset<data.length){
+   alive(signal);
+   const {bytesRead}=await handle.read(data,offset,Math.min(262144,data.length-offset),offset);
+   need(bytesRead>0,'delivery-source-changed');offset+=bytesRead;
   }
-  need(written===original.bytes,'drive-copy-incomplete');await handle.sync();
+  need(sameStat(current,await handle.stat())&&sameStat(current,await lstat(file))&&hash(data)===expected,'delivery-byte-identity-mismatch');
+  return data;
+ }finally{await handle.close();}
+}
+function sameStat(a,b){
+ return a.isFile()&&b.isFile()&&a.dev===b.dev&&a.ino===b.ino&&a.size===b.size&&a.mtimeMs===b.mtimeMs;
+}
+async function mountedFile(file,maximum){
+ const info=await lstat(file);
+ need(info.isFile()&&!info.isSymbolicLink()&&info.size>=0&&info.size<=maximum&&same(path.resolve(file),await realpath(file)),'delivery-local-file-invalid');
+ return info;
+}
+async function verifyPrefix(handle,initial,data,signal){
+ const buffer=Buffer.allocUnsafe(262144);
+ let offset=0;
+ while(offset<initial.size){
+  alive(signal);
+  const amount=Math.min(buffer.length,initial.size-offset);
+  const {bytesRead}=await handle.read(buffer,0,amount,offset);
+  need(bytesRead>0&&buffer.subarray(0,bytesRead).equals(data.subarray(offset,offset+bytesRead)),'delivery-local-prefix-mismatch');
+  offset+=bytesRead;
+ }
+ need(sameStat(initial,await handle.stat()),'delivery-local-file-changed');
+ return offset;
+}
+// Open an existing partial file without truncate or replace. A valid prefix
+// from the exact verified H: output is the only state eligible for continuation.
+async function appendVerified(target,data,{signal,expected,create,minimumBytes=0,checkClaim}){
+ alive(signal);await checkClaim();
+ const before=create?null:await mountedFile(target,data.length);
+ let handle;
+ try{handle=await open(target,create?'wx+':'r+');}
+ catch(error){if(error.code==='EEXIST'||error.code==='ENOENT')throw fault('delivery-outcome-unknown');throw error;}
+ try{
+  const initial=await handle.stat();
+  const onPath=await mountedFile(target,data.length);
+  need(sameStat(initial,onPath)&&(!before||sameStat(before,initial))&&initial.size>=minimumBytes&&(!create||initial.size===0),'delivery-local-file-changed');
+  let offset=await verifyPrefix(handle,initial,data,signal);
+  await checkClaim();alive(signal);
+  need(sameStat(initial,await handle.stat())&&sameStat(initial,await mountedFile(target,data.length)),'delivery-local-file-changed');
+  while(offset<data.length){
+   alive(signal);
+   const {bytesWritten}=await handle.write(data,offset,Math.min(262144,data.length-offset),offset);
+   need(bytesWritten>0,'drive-copy-incomplete');offset+=bytesWritten;
+  }
+  need((await handle.stat()).size===data.length,'drive-copy-incomplete');await handle.sync();
  }finally{await handle.close();}
  return artifact(target,signal,expected);
 }
@@ -99,14 +144,35 @@ async function contextPaths(c,stagingRoot){
  const name='Velum-auto-'+hash(c.batchId+':'+c.itemId).slice(0,32)+'.png';
  return {source,output:path.join(stagingRoot,name),intent:path.join(dir,'delivery-intent.json'),name};
 }
-async function readIntent(file){
+async function readIntent(file,c,paths,data){
  if(!await exists(file))return null;
  const st=await lstat(file);need(st.isFile()&&!st.isSymbolicLink()&&st.size<=4096,'delivery-intent-invalid');
- try{return JSON.parse(await readFile(file,'utf8'));}catch{throw fault('delivery-intent-invalid');}
+ let v;
+ try{v=JSON.parse(await readFile(file,'utf8'));}catch{throw fault('delivery-intent-invalid');}
+ need(v&&[1,2].includes(v.version)&&v.key===c.key&&v.name===paths.name&&v.outputHash===c.outputHash&&v.bytes===data.length&&v.parentId===REVIEW_STAGING_ID,'delivery-intent-invalid');
+ // The original version recorded intent before attempting a mount write.
+ // It must be treated as potentially started, never as permission to create again.
+ if(v.version===1)return {...v,version:2,phase:'started',driveFileId:null};
+ need(['prepared','started'].includes(v.phase)&&(v.driveFileId===null||isDriveId(v.driveFileId)),'delivery-intent-invalid');
+ return v;
 }
-async function createIntent(file,value){
- const handle=await open(file,'wx',0o600);
- try{await handle.writeFile(JSON.stringify(value),'utf8');await handle.sync();}finally{await handle.close();}
+async function writeIntent(file,value,{create=false}={}){
+ const tmp=path.join(path.dirname(file),'.delivery-intent-'+randomUUID()+'.tmp');
+ const handle=await open(tmp,'wx',0o600);
+ try{
+  await handle.writeFile(JSON.stringify(value),'utf8');await handle.sync();await handle.close();
+  // H: is the protected NTFS journal; the remote mount is never renamed,
+  // deleted, or replaced during recovery.
+  if(create)await link(tmp,file);else await rename(tmp,file);
+ }finally{await handle.close().catch(()=>{});await rm(tmp,{force:true}).catch(()=>{});}
+}
+async function bindFileId(intent,fileId,paths){
+ need(isDriveId(fileId)&&(!intent.driveFileId||intent.driveFileId===fileId),'delivery-drive-id-conflict');
+ if(intent.driveFileId!==fileId){
+  const next={...intent,driveFileId:fileId};
+  await writeIntent(paths.intent,next);return next;
+ }
+ return intent;
 }
 export function createDriveDesktopAdapters({queue,folders,stagingRoot}){
  need(queue&&typeof queue.token==='function'&&folders&&typeof stagingRoot==='string','drive-desktop-binding-not-ready');
@@ -120,44 +186,94 @@ export function createDriveDesktopAdapters({queue,folders,stagingRoot}){
   await exactDir(root);
   return {...value,localPath:path.join(root,filename(value.name))};
  }});
- async function cloudCheck(c,paths){
+ async function cloudCheck(c,paths,data){
   const value=await broker(queue,'delivery',c);
   if(value?.status==='saved')return {status:'saved',receipt:validateDeliveryReceipt(value.receipt,{key:c.key,outputHash:c.outputHash})};
+  if(value?.status==='partial'){
+   const f=value.file;
+   need(value.verifiedIdentity===true&&f&&f.name===paths.name&&f.parentId===REVIEW_STAGING_ID&&isDriveId(f.fileId)&&isHash(f.sha256)&&Number.isSafeInteger(f.bytes)&&f.bytes>=0&&f.bytes<data.length,'drive-delivery-status-invalid');
+   // This is an identity observation, NOT a delivery receipt. Check the
+   // independently reported cloud bytes against the exact local prefix.
+   need(hash(data.subarray(0,f.bytes))===f.sha256,'delivery-drive-prefix-mismatch');
+   return {status:'partial',fileId:f.fileId,bytes:f.bytes};
+  }
   need(value?.status==='not-found'&&value.confirmed===true&&value.name===paths.name&&value.parentId===REVIEW_STAGING_ID,'drive-delivery-status-invalid');
   return {status:'not-found'};
  }
- async function waitCloud(c,paths){
-  // Bounded active verification only, not an idle listener or a scheduled job.
+ async function waitCloud(c,paths,data,intent){
+  // Bounded active verification only. Preserve the observed Drive ID across
+  // delayed sync and retries, and never issue a receipt for a partial file.
   for(const delay of [0,2000,5000,10000]){
    if(delay)await sleep(delay,undefined,{signal:c.signal});
    await verifyClaim(c);
-   const result=await cloudCheck(c,paths);
-   if(result.status==='saved')return result;
+   const result=await cloudCheck(c,paths,data);
+   if(result.status==='saved'){
+    if(intent)await bindFileId(intent,result.receipt.fileId,paths);
+    return result;
+   }
+   if(result.status==='partial'){
+    need(intent?.phase==='started','delivery-outcome-unknown');
+    intent=await bindFileId(intent,result.fileId,paths);
+   }
   }
   throw fault('drive-sync-not-confirmed');
  }
- async function reconcile(c,paths){
+ async function reconcile(c,paths,data){
   await verifyClaim(c);
-  const result=await cloudCheck(c,paths);
-  if(result.status==='saved')return result;
-  const intent=await readIntent(paths.intent),present=await exists(paths.output);
-  if(!intent&&!present)return {status:'not-started',confirmed:true};
-  need(intent?.version===1&&intent.key===c.key&&intent.name===paths.name&&intent.outputHash===c.outputHash&&intent.parentId===REVIEW_STAGING_ID&&present,'delivery-outcome-unknown');
-  await artifact(paths.output,c.signal,c.outputHash);
-  return waitCloud(c,paths);
+  let intent=await readIntent(paths.intent,c,paths,data);
+  const result=await cloudCheck(c,paths,data);
+  if(result.status==='saved'){
+   if(intent)await bindFileId(intent,result.receipt.fileId,paths);
+   return result;
+  }
+  const present=await exists(paths.output);
+  if(!intent){
+   need(result.status==='not-found'&&!present,'delivery-outcome-unknown');
+   return {status:'not-started',confirmed:true};
+  }
+  if(intent.phase==='prepared'){
+   // No remote write is allowed until the durable started marker exists.
+   need(!present&&result.status==='not-found'&&!intent.driveFileId,'delivery-outcome-unknown');
+   return {status:'not-started',confirmed:true};
+  }
+  // A started attempt may be resumed only in the existing mounted file.
+  // A missing mount after an uncertain create is not evidence of absence.
+  need(present,'delivery-outcome-unknown');
+  const mounted=await mountedFile(paths.output,data.length);
+  if(result.status==='partial'){
+   intent=await bindFileId(intent,result.fileId,paths);
+   need(mounted.size>=result.bytes,'delivery-mount-behind-cloud');
+  }
+  if(mounted.size<data.length){
+   // If a previously identified cloud file disappeared, do not write.
+   need(!intent.driveFileId||result.status==='partial','delivery-drive-id-unverified');
+   await appendVerified(paths.output,data,{signal:c.signal,expected:c.outputHash,create:false,minimumBytes:result.bytes??0,checkClaim:()=>verifyClaim(c)});
+  }else await artifact(paths.output,c.signal,c.outputHash);
+  return waitCloud(c,paths,data,intent);
  }
  return {
   ...reader,
-  async reconcileDelivery(c){return reconcile(c,await contextPaths(c,stagingRoot));},
+  async reconcileDelivery(c){
+   const paths=await contextPaths(c,stagingRoot),data=await deliveryBytes(paths.source,c.signal,c.outputHash);
+   return reconcile(c,paths,data);
+  },
   async deliver(c){
-   const paths=await contextPaths(c,stagingRoot),previous=await reconcile(c,paths);
+   const paths=await contextPaths(c,stagingRoot),data=await deliveryBytes(paths.source,c.signal,c.outputHash);
+   const previous=await reconcile(c,paths,data);
    if(previous.status==='saved')return previous;
-   const original=await artifact(paths.source,c.signal,c.outputHash);
    await verifyClaim(c);
-   await createIntent(paths.intent,{version:1,key:c.key,name:paths.name,outputHash:c.outputHash,bytes:original.bytes,parentId:REVIEW_STAGING_ID});
+   let intent=await readIntent(paths.intent,c,paths,data);
+   if(!intent){
+    intent={version:2,key:c.key,name:paths.name,outputHash:c.outputHash,bytes:data.length,parentId:REVIEW_STAGING_ID,phase:'prepared',driveFileId:null};
+    await writeIntent(paths.intent,intent,{create:true});
+   }
+   need(intent.phase==='prepared'&&!intent.driveFileId,'delivery-outcome-unknown');
    await verifyClaim(c);
-   await copyNoReplace(paths.source,paths.output,{signal:c.signal,expected:c.outputHash});
-   return waitCloud(c,paths);
+   // Persist possible side effect before exclusive create. A crash after
+   // this point never authorizes a new mounted/Drive file on retry.
+   intent={...intent,phase:'started'};await writeIntent(paths.intent,intent);
+   await appendVerified(paths.output,data,{signal:c.signal,expected:c.outputHash,create:true,checkClaim:()=>verifyClaim(c)});
+   return waitCloud(c,paths,data,intent);
   }
  };
 }

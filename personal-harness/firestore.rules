@@ -396,6 +396,174 @@ service cloud.firestore {
     }
    }
    // Reversible removal: do not delete the job, input chunks, originals or Drive copy.
+   // Auto Edit v1: independent of manual Studio. Admission is closed by default.
+   function aeId(id) { return id is string && id.matches('[A-Za-z0-9_-]{8,80}'); }
+   function aeItemId(id) { return id is string && id.matches('item-[0-9]{3}'); }
+   function aeHash(h) { return h is string && h.matches('[a-f0-9]{64}'); }
+   function aeText(v,n) { return v is string && v.size() <= n; }
+   function aeInt(v,lo,hi) { return v is int && v >= lo && v <= hi; }
+   function aeState(s) { return s in ['queued','running','paused','blocked','completed','completed-with-failures','stopped']; }
+   function aeStage(s) { return s in ['source','vision1','prompt','edit','vision2','delivery','review-ready']; }
+   function aeAdmitted() {
+    let d = get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoEditControl/admission).data;
+    return d != null && d.version == 1 && d.enabled == true;
+   }
+   function aeCommand(c) {
+    return c is map && c.keys().hasOnly(['kind','revision','retryItemId'])
+     && c.kind in ['run','pause','stop'] && aeInt(c.revision,0,2147483647)
+     && (c.retryItemId == null || (c.kind == 'run' && aeItemId(c.retryItemId)));
+   }
+   function aeConfig(c) {
+    return c is map && c.keys().hasOnly(['instructions','visionGuidance','model','vision1','vision2','sourceScope','batchSize','revisionId','consent'])
+     && c.consent == true && aeText(c.instructions,3998) && c.instructions.size() > 0 && aeText(c.visionGuidance,4000)
+     && model(c.model) && c.vision1 == 'qwen3-vl-2b-instruct' && c.vision2 == 'qwen3-vl-4b-instruct'
+     && c.sourceScope in ['private','references','both'] && aeInt(c.batchSize,1,100) && aeId(c.revisionId);
+   }
+   function aePlan(p,id,d) {
+    return p is map && p.keys().hasOnly(['schemaVersion','batchId','deviceUid','createdAt','config','items'])
+     && p.schemaVersion == 1 && p.batchId == id && p.deviceUid == d.deviceUid && p.createdAt == d.createdAt
+     && aeConfig(p.config) && p.items is list && p.items.size() == p.config.batchSize;
+   }
+   function aeCounts(c,n) {
+    return c is map && c.keys().hasOnly(['total','ready','failed','cancelled'])
+     && c.total == n && aeInt(c.ready,0,n) && aeInt(c.failed,0,n) && aeInt(c.cancelled,0,n)
+     && c.ready+c.failed+c.cancelled <= n;
+   }
+   function aeExecution(e,d,prior,id) {
+    let previous = prior == null ? 0 : prior.publicationRevision;
+    let priorCommand = prior == null ? -1 : prior.commandRevision;
+    return e is map && e.keys().hasOnly(['batchId','publicationRevision','status','activeItemId','commandRevision','acknowledgedCommand','reason','counts','updatedAt','cancelledItemIds'])
+     && e.batchId == id && e.publicationRevision == previous+1 && aeState(e.status)
+     && (e.activeItemId == null || aeItemId(e.activeItemId))
+     && aeInt(e.commandRevision,priorCommand,d.command.revision)
+     && e.acknowledgedCommand in ['run','pause','stop']
+     && (e.commandRevision != d.command.revision || e.acknowledgedCommand == d.command.kind)
+     && (e.reason == null || aeText(e.reason,80)) && aeCounts(e.counts,d.plan.config.batchSize) && instant(e.updatedAt)
+     && (e.status != 'stopped' || (e.activeItemId == null && e.get('cancelledItemIds',[]) is list && e.get('cancelledItemIds',[]).size() == e.counts.cancelled))
+     && (e.status == 'stopped' || !('cancelledItemIds' in e))
+     && (e.status in ['running','queued'] || e.activeItemId == null)
+     && (!(e.status in ['completed','completed-with-failures','stopped']) || e.counts.ready+e.counts.failed+e.counts.cancelled == e.counts.total);
+   }
+   function aeAssigned(d) { return studioDevice() && d.deviceUid == request.auth.uid; }
+   function aeClaimed(d) { return aeAssigned(d) && d.claim != null && d.claim.deviceUid == request.auth.uid && d.claim.planHash == d.planHash; }
+   match /autoEditControl/admission {
+    allow get: if studioOwner() || studioDevice();
+    allow list, delete: if false;
+    allow create, update: if studioOwner() && request.resource.data.keys().hasOnly(['version','enabled','updatedAt'])
+     && request.resource.data.version == 1 && request.resource.data.enabled is bool && instant(request.resource.data.updatedAt);
+   }
+   match /autoBatches/{batchId} {
+    function batchPath() { return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/autoBatches/$(batchId); }
+    function parent() { return get(batchPath()).data; }
+    function nextParent() { return getAfter(batchPath()).data; }
+    function validNew(d) {
+     return aeId(batchId) && d.keys().hasOnly(['schemaVersion','deviceUid','createdAt','planHash','plan','command','dispatch','claim','execution'])
+      && d.schemaVersion == 1 && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22'
+      && instant(d.createdAt) && d.createdAt >= request.time.toMillis()-300000 && aeHash(d.planHash)
+      && aePlan(d.plan,batchId,d) && aeCommand(d.command) && d.command.revision == 0 && d.command.kind == 'run'
+      && d.command.retryItemId == null && d.dispatch == true && d.claim == null && d.execution == null
+      && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/devices/$(d.deviceUid)).data.status == 'approved';
+    }
+    function ownerCommand(d,old) {
+     let state = old.execution == null ? 'queued' : old.execution.status;
+     return d.diff(old).affectedKeys().hasOnly(['command','dispatch']) && aeCommand(d.command)
+      && d.command.revision == old.command.revision+1 && d.dispatch == true
+      && !(state in ['completed','stopped'])
+      && (state != 'completed-with-failures' || (d.command.kind == 'run' && d.command.retryItemId != null))
+      && (d.command.retryItemId == null || state in ['paused','blocked','completed-with-failures']);
+    }
+    function claimOnce(d,old) {
+     return d.diff(old).affectedKeys().hasOnly(['claim']) && old.claim == null && old.execution == null
+      && old.dispatch == true && d.claim is map && d.claim.keys().hasOnly(['deviceUid','planHash','claimedAt'])
+      && d.claim.deviceUid == request.auth.uid && d.claim.planHash == old.planHash && instant(d.claim.claimedAt);
+    }
+    function executionWrite(d,old) {
+     return aeClaimed(old) && d.diff(old).affectedKeys().hasOnly(['execution','dispatch'])
+      && aeExecution(d.execution,d,old.execution,batchId)
+      && d.dispatch == (d.command.revision > d.execution.commandRevision || d.execution.status in ['queued','running']);
+    }
+    allow get: if studioOwner() || aeAssigned(resource.data);
+    allow list: if (studioOwner() || aeAssigned(resource.data)) && request.query.limit != null && request.query.limit <= 100;
+    allow create: if studioOwner() && aeAdmitted() && validNew(request.resource.data);
+    allow update: if (studioOwner() && ownerCommand(request.resource.data,resource.data))
+     || (aeAssigned(resource.data) && (claimOnce(request.resource.data,resource.data) || executionWrite(request.resource.data,resource.data)));
+    allow delete: if false;
+    function artifact(a) {
+     return a == null || (a is map && a.keys().hasOnly(['mime','bytes','sha256','width','height'])
+      && a.mime in ['image/png','image/jpeg'] && aeInt(a.bytes,16,67108864) && aeHash(a.sha256)
+      && (a.mime != 'image/png' || (aeInt(a.width,1,65535) && aeInt(a.height,1,65535))));
+    }
+    function visionOne(v) {
+     return v == null || (v is map && v.keys().hasOnly(['addition','limitations']) && aeText(v.addition,2000) && aeText(v.limitations,2000));
+    }
+    function visionTwo(v) {
+     return v == null || (v is map && v.keys().hasOnly(['summary','observations','limitations'])
+      && aeText(v.summary,3000) && v.observations is list && v.observations.size() <= 20 && aeText(v.limitations,2000));
+    }
+    function duration(v,k) { return aeInt(v.get(k,0),0,604800000); }
+    function stageDurations(v) {
+     return v is map && v.keys().hasOnly(['source','vision1','prompt','edit','vision2','delivery'])
+      && duration(v,'source') && duration(v,'vision1') && duration(v,'prompt') && duration(v,'edit') && duration(v,'vision2') && duration(v,'delivery');
+    }
+    function editReceipt(r,i) {
+     return r == null || (r is map && r.keys().hasOnly(['status','model','seed','sourceHash','promptHash','sha256','engineRevision','width','height','steps'])
+      && r.status == 'saved' && r.model == i.model && r.seed == i.seed && i.sourceArtifact != null && r.sourceHash == i.sourceArtifact.sha256
+      && aeHash(r.promptHash) && aeHash(r.sha256) && aeText(r.engineRevision,160) && aeInt(r.width,1,8192) && aeInt(r.height,1,8192) && aeInt(r.steps,1,1000));
+    }
+    function stagingReceipt(r,i) {
+     return r == null || (r is map && r.keys().hasOnly(['key','fileId','parentId','sha256','verified'])
+      && r.key == batchId+'-'+i.itemId && r.fileId is string && r.fileId.matches('[A-Za-z0-9_-]{8,160}')
+      && r.parentId == '1o7mc6xUgh_oAWjQLxdZoZtpTZa66xwhE' && r.verified == true
+      && i.outputArtifact != null && r.sha256 == i.outputArtifact.sha256);
+    }
+    function itemLineage(i,p,itemId) {
+     let spec = p.plan.items[i.ordinal-1];
+     return aeItemId(itemId) && i.itemId == itemId && aeInt(i.ordinal,1,p.plan.config.batchSize)
+      && spec.itemId == itemId && i.source == spec.source && i.seed == spec.seed && i.model == p.plan.config.model && i.configurationRevision == p.plan.config.revisionId;
+    }
+    function itemShape(i,p,itemId) {
+     return i.keys().hasOnly(['itemId','ordinal','source','seed','model','configurationRevision','stage','status','attempt','inFlight','durations','sourceArtifact','vision1','prompt','outputArtifact','editReceipt','vision2','receipt','failure','publicationRevision'])
+      && itemLineage(i,p,itemId) && aeStage(i.stage) && i.status in ['queued','running','review-ready','failed','cancelled'] && aeInt(i.attempt,1,2147483647)
+      && (i.inFlight == null || (i.inFlight is map && i.inFlight.keys().hasOnly(['stage','startedAt']) && i.inFlight.stage == i.stage && instant(i.inFlight.startedAt)))
+      && stageDurations(i.durations) && artifact(i.sourceArtifact) && artifact(i.outputArtifact) && visionOne(i.vision1) && visionTwo(i.vision2)
+      && (i.prompt == null || aeText(i.prompt,6000)) && editReceipt(i.editReceipt,i) && stagingReceipt(i.receipt,i)
+      && (i.failure == null || (i.failure is map && i.failure.keys().hasOnly(['code','stage','uncertain']) && aeText(i.failure.code,80) && aeStage(i.failure.stage) && i.failure.uncertain is bool))
+      && ((i.status == 'review-ready') == (i.stage == 'review-ready'))
+      && (i.status != 'review-ready' || (i.inFlight == null && i.receipt != null && i.vision2 != null && i.editReceipt != null && i.outputArtifact.sha256 == i.editReceipt.sha256));
+    }
+    function itemWrite(i,itemId) {
+     let before = parent();
+     let after = nextParent();
+     let previous = before.execution == null ? 0 : before.execution.publicationRevision;
+     return aeClaimed(before) && after.execution != null && after.execution.publicationRevision == previous+1
+      && i.publicationRevision == after.execution.publicationRevision && itemShape(i,after,itemId);
+    }
+    match /items/{itemId} {
+     allow get: if studioOwner() || aeAssigned(parent());
+     allow list: if (studioOwner() || aeAssigned(parent())) && request.query.limit != null && request.query.limit <= 100;
+     allow create: if itemWrite(request.resource.data,itemId);
+     allow update: if (resource.data.status != 'review-ready' || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['publicationRevision']))
+      && resource.data.publicationRevision < request.resource.data.publicationRevision && itemWrite(request.resource.data,itemId);
+     allow delete: if false;
+    }
+    match /live/pc {
+     function validSample(d,p) {
+      let progress = d.progress;
+      return d.keys().hasOnly(['batchId','publicationRevision','itemId','progress'])
+       && p.execution != null && p.execution.status == 'running' && p.execution.activeItemId == d.itemId
+       && d.batchId == batchId && d.publicationRevision == p.execution.publicationRevision
+       && progress is map && progress.keys().hasOnly(['stage','stageStartedAt','updatedAt','resources'])
+       && aeStage(progress.stage) && progress.stage != 'review-ready' && instant(progress.stageStartedAt)
+       && instant(progress.updatedAt) && progress.stageStartedAt <= progress.updatedAt && studioResources();
+     }
+     allow get: if studioOwner() || aeAssigned(parent());
+     allow list, delete: if false;
+     allow create: if aeClaimed(parent()) && validSample(request.resource.data,parent());
+     allow update: if aeClaimed(parent()) && validSample(request.resource.data,parent())
+      && request.resource.data.progress.updatedAt >= resource.data.progress.updatedAt;
+    }
+   }
+
    match /removed/{jobId} {
     allow read: if studioOwner();
     allow create: if !retiredReviewId(jobId) && studioOwner() && jobId.matches('[A-Za-z0-9_-]{1,80}')

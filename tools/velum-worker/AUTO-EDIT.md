@@ -14,4 +14,10 @@ The worker must only reconcile an interrupted edit as saved when the exact outpu
 
 The journal stores only authorized batch metadata and original/output hashes. The original and edited image files remain in H: runtime storage; publication contains private metadata, never raw image bytes or local paths. Keep recovered artifacts until delivery/review needs are satisfied. No cleanup of private originals or staged outputs is performed by this foundation.
 
-Next: implement the authenticated Firestore adapter and current-worker dispatch binding, validate exact PC model and Drive adapter configuration, then run an authorized single-item roundtrip. Do not expose admission or activate the new workflow until those integration gates are satisfied.
+## Firestore bridge and live progress
+
+The new `auto-edit-firestore.mjs` uses the existing approved PC `Queue` session. Batch documents contain the immutable plan/hash, owner command and command revision, one device claim, dispatch flag, and worker execution snapshot. Item documents preserve exact prompt provenance, stages, durations, observations, model/seed, and verified output receipts. Parent and item publication is atomic and conditional on the current Firestore document version. A publication revision fences replays and prevents a missing/older local journal from silently re-running completed work.
+
+The optional server-snapshot queue listener wakes on new work or owner command revisions; ordinary progress updates do not wake it. The one-item dispatcher is designed to run under the existing worker lock, with manual-job arbitration. Resource samples use a separate revision-fenced document, every 25 seconds only during an active in-flight stage. The UI should show only samples matching the current execution revision and active item. Completed stage and prompt data remain available after the run.
+
+Rules source defines a new owner-scoped namespace and defaults to closed admission. Source changes have not been published to live Firestore. The current worker main loop is not yet activated for Auto Edit: concrete local model/Drive adapters and notification lifecycle binding still need verification. No model loading, image transfer, independent credentials, new services or idle polling are introduced. Do not enable admission until an authorized single-item roundtrip has been verified.

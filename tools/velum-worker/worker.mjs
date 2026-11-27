@@ -44,7 +44,7 @@ export class Queue {
   return this.session.idToken;
  }
  async request(relative,{method='GET',value,anonymous=false,allow=[]}={}){
-  const response=await fetch(`${BASE}/${relative}`,{method,headers:{'Content-Type':'application/json',...(anonymous?{}:{Authorization:`Bearer ${await this.token()}`})},
+  const response=await fetch(relative===':commit'?`${BASE}:commit`:`${BASE}/${relative}`,{method,headers:{'Content-Type':'application/json',...(anonymous?{}:{Authorization:`Bearer ${await this.token()}`})},
    body:value===undefined?undefined:JSON.stringify(value),signal:AbortSignal.timeout(20000),redirect:'error'});
   if(!response.ok&&!allow.includes(response.status)){
    await response.body?.cancel();

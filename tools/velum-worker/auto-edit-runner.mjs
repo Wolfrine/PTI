@@ -26,12 +26,12 @@ const fault=(code,scope)=>new AutoEditFault(code,scope);
 function must(value,code){if(!value)throw fault(code);}
 function samePath(a,b){return process.platform==='win32'?a.toLowerCase()===b.toLowerCase():a===b;}
 function newState(plan){
- return {schemaVersion:1,planHash:autoEditPlanHash(plan),batchId:plan.batchId,status:'queued',commandRevision:-1,command:null,commandRetryItemId:null,blockedRevision:null,activeItemId:null,reason:null,pendingPublication:null,updatedAt:Date.now(),
+ return {schemaVersion:1,planHash:autoEditPlanHash(plan),batchId:plan.batchId,status:'queued',commandRevision:-1,command:null,commandRetryItemId:null,blockedRevision:null,activeItemId:null,reason:null,pendingPublication:null,publicationRevision:0,updatedAt:Date.now(),
   items:plan.items.map(item=>({itemId:item.itemId,stage:'source',status:'queued',attempt:1,inFlight:null,durations:{},sourceArtifact:null,vision1:null,prompt:null,outputArtifact:null,editReceipt:null,vision2:null,receipt:null,failure:null}))};
 }
 function verifyState(state,plan){
  must(state?.schemaVersion===1&&state.batchId===plan.batchId&&state.planHash===autoEditPlanHash(plan)&&BATCH_STATES.has(state.status),'journal-plan-mismatch');
- must(Array.isArray(state.items)&&state.items.length===plan.items.length&&Number.isSafeInteger(state.commandRevision)&&state.commandRevision>=-1,'invalid-journal');
+ must(Array.isArray(state.items)&&state.items.length===plan.items.length&&Number.isSafeInteger(state.commandRevision)&&state.commandRevision>=-1&&Number.isSafeInteger(state.publicationRevision)&&state.publicationRevision>=0,'invalid-journal');
  must(state.pendingPublication===null||(state.pendingPublication&&('itemId' in state.pendingPublication)&&(state.pendingPublication.itemId===null||state.items.some(i=>i.itemId===state.pendingPublication.itemId))),'invalid-pending-publication');
  must(state.activeItemId===null||state.items.some(i=>i.itemId===state.activeItemId),'invalid-active-item');
  for(let i=0;i<state.items.length;i++){
@@ -71,7 +71,7 @@ export class AutoEditJournal{
   }catch(error){if(error?.code==='ENOENT')return newState(plan);throw error;}
  }
  async save(plan,state){
-  verifyState(state,plan);state.updatedAt=Date.now();
+  verifyState(state,plan);
   const dir=await this.directory(plan),filename=path.join(dir,'state.json'),temporary=path.join(dir,'.state-'+randomUUID()+'.tmp');
   const bytes=Buffer.from(JSON.stringify(state));
   must(bytes.length<=MAX_JOURNAL_BYTES,'journal-too-large');
@@ -106,8 +106,8 @@ function counts(state){
 }
 function summary(plan,state,item){
  const spec=item?plan.items.find(x=>x.itemId===item.itemId):null;
- return {batch:{batchId:state.batchId,status:state.status,activeItemId:state.activeItemId,commandRevision:state.commandRevision,acknowledgedCommand:state.command,reason:state.reason,counts:counts(state),updatedAt:state.updatedAt,...(state.status==='stopped'?{cancelledItemIds:state.items.filter(i=>i.status==='cancelled').map(i=>i.itemId)}:{})},
-  item:item?{...clone(item),source:clone(spec.source),seed:spec.seed,model:plan.config.model,configurationRevision:plan.config.revisionId}:null};
+ return {batch:{batchId:state.batchId,publicationRevision:state.publicationRevision,status:state.status,activeItemId:state.activeItemId,commandRevision:state.commandRevision,acknowledgedCommand:state.command,reason:state.reason,counts:counts(state),updatedAt:state.updatedAt,...(state.status==='stopped'?{cancelledItemIds:state.items.filter(i=>i.status==='cancelled').map(i=>i.itemId)}:{})},
+  item:item?{...clone(item),ordinal:spec.ordinal,source:clone(spec.source),seed:spec.seed,model:plan.config.model,configurationRevision:plan.config.revisionId}:null};
 }
 // All callbacks must be bound by an approved-device integration. In particular,
 // claim() is authoritative; adapters cannot substitute a cached owner decision.
@@ -119,7 +119,7 @@ export class AutoEditRunner{
   this.journal=journal;this.adapters=adapters;this.busy=false;
  }
  async claim(plan,state){
-  const c=await this.adapters.claim({batchId:plan.batchId,deviceUid:plan.deviceUid,planHash:state.planHash});
+  const c=await this.adapters.claim({batchId:plan.batchId,deviceUid:plan.deviceUid,planHash:state.planHash,publicationRevision:state.publicationRevision});
   must(c?.approved===true&&c?.owned===true&&COMMANDS.has(c.command)&&Number.isSafeInteger(c.revision)&&c.revision>=0,'claim-lost');
   const retryItemId=c.retryItemId??null;
   must(retryItemId===null||(c.command==='run'&&state.items.some(i=>i.itemId===retryItemId)),'invalid-retry-command');
@@ -136,6 +136,7 @@ export class AutoEditRunner{
   state.pendingPublication=null;await this.journal.save(plan,state);
  }
  async persist(plan,state,item){
+  state.publicationRevision++;state.updatedAt=Date.now();
   state.pendingPublication={itemId:item?.itemId??null};
   await this.journal.save(plan,state);
   await this.flushPublication(plan,state);

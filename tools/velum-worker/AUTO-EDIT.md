@@ -12,11 +12,15 @@ Bind the coordinator to the current approved worker's single-device dispatcher. 
 
 The worker must only reconcile an interrupted edit as saved when the exact output, model/seed, original hash, effective prompt hash, engine revision, dimensions and steps are confirmed. The coordinator validates the receipt and the local PNG hash/dimensions. A not-started recovery result must be explicitly confirmed; unknown outcomes block rather than resample. A delivery adapter must reserve a stable Drive file identity before uploading, verify the destination and content hash, and return the exact existing receipt on retry; unknown outcomes block rather than repeat side effects. The current staging folder is verified; accepted-output move and Auto Generated folder provisioning are separate owner-review work.
 
+Auto Edit checks for 18 GiB of available RAM before downloading a pilot source and again before starting new Turbo inference. The in-flight Qwen guard still stops at 5 GiB available. Manual Studio continues to use its existing preflight.
+
 The journal stores only authorized batch metadata and original/output hashes. The original and edited image files remain in H: runtime storage; publication contains private metadata, never raw image bytes or local paths. Keep recovered artifacts until delivery/review needs are satisfied. No cleanup of private originals or staged outputs is performed by this foundation.
 
 ## Firestore bridge and live progress
 
 The new `auto-edit-firestore.mjs` uses the existing approved PC `Queue` session. Batch documents contain the immutable plan/hash, owner command and command revision, one device claim, dispatch flag, and worker execution snapshot. Item documents preserve exact prompt provenance, stages, durations, observations, model/seed, and verified output receipts. Parent and item publication is atomic and conditional on the current Firestore document version. A publication revision fences replays and prevents a missing/older local journal from silently re-running completed work.
+
+Create rules validate the whole item against the plan. Update rules keep the source and configuration immutable and validate changed metadata, including any receipts affected by artifact changes, within the atomic write's rules expression limit.
 
 The optional server-snapshot queue listener wakes on new work or owner command revisions; ordinary progress updates do not wake it. The one-item dispatcher is designed to run under the existing worker lock, with manual-job arbitration. Resource samples use a separate revision-fenced document, every 25 seconds only during an active in-flight stage. The UI should show only samples matching the current execution revision and active item. Completed stage and prompt data remain available after the run.
 

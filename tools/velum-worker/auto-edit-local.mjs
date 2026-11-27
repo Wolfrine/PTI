@@ -7,12 +7,15 @@ import {createHash,randomUUID} from 'node:crypto';
 import {open,stat,lstat,realpath,link,rm} from 'node:fs/promises';
 import {engineProfile} from './engine-profile.mjs';
 import {AutoEditFault} from './auto-edit-runner.mjs';
-import {AUTO_EDIT_LIMITS,SOURCE_FOLDERS,isAutoId,isDriveId,isHash} from './auto-edit-contract.mjs';
+import {AUTO_EDIT_LIMITS,AUTO_EDIT_MODELS,SOURCE_FOLDERS,isAutoId,isDriveId,isHash} from './auto-edit-contract.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const RUNTIME_ROOT='H:\\Workspace\\Generated\\Velum\\auto-edit-v1';
 const MAX_BYTES=AUTO_EDIT_LIMITS.imageBytes;
 const PROBE_TIMEOUT=20000;
+// The pilot used over 11 GiB by early sampling. Reserve room above the
+// existing 5 GiB in-flight floor for both the edit and other PC activity.
+const AUTO_EDIT_TURBO_START_RAM_BYTES=18*1024**3;
 const SOURCE_MIMES=new Set(['image/png','image/jpeg']);
 const CHECK_NAMES=new Set(['parent-identity','ram-available','disk-f-free','disk-h-free','elapsed','vram-used','gpu-temperature','query-parent','query-ram','query-disk-f','query-disk-h','query-gpu']);
 const fault=(code,scope='batch')=>new AutoEditFault(code,scope);
@@ -63,7 +66,7 @@ export async function probeAutoEditResources({startup=true,signal}={}){
  need(value.failed.length>0||Object.values(readings).every(x=>x!==null),'resource-probe-invalid');
  return {ready:value.failed.length===0,failed:value.failed,readings};
 }
-export async function guardAutoEditStage({signal,checkClaim}={}){
+export async function guardAutoEditStage({stage,model,startingInference=false,signal,checkClaim}={}){
  need(typeof checkClaim==='function','claim-check-required');
  alive(signal);
  const c=await checkClaim();
@@ -73,6 +76,8 @@ export async function guardAutoEditStage({signal,checkClaim}={}){
   const error=fault('resource-'+result.failed[0]);
   error.predicates=result.failed;error.readings=result.readings;throw error;
  }
+ if(model===AUTO_EDIT_MODELS.image&&(stage==='source'||startingInference)
+   &&result.readings.ramAvailableBytes<AUTO_EDIT_TURBO_START_RAM_BYTES)throw fault('resource-ram-available');
  alive(signal);
  const current=await checkClaim();
  need(current?.command==='run','execution-interrupted');

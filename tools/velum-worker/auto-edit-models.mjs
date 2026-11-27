@@ -11,6 +11,7 @@ import {engineProfile,QWEN_REVISION} from './engine-profile.mjs';
 import {assertOutputIdentity} from './lifecycle.mjs';
 import {makeJob,validateJob,CHUNK_SIZE,isQwenModel} from '../../velum-gallery/studio-contract.mjs';
 import {AutoEditFault} from './auto-edit-runner.mjs';
+import {guardAutoEditStage} from './auto-edit-local.mjs';
 import {AUTO_EDIT_MODELS,isAutoId,isHash,isSeed,validateVision1,validateVision2} from './auto-edit-contract.mjs';
 import {QUALITY_CHANGES,validateLearningResult,proposalFor} from '../../velum-gallery/auto-edit-learning-contract.mjs';
 
@@ -247,7 +248,7 @@ export function createLocalModelAdapters({installed,infer,pins,assertRuntimeRead
    await verifyDirectory(paths.work);await verifyDirectory(paths.inputDir);
    const input=await readFile(path.join(local.dir,'engine-reference.jpg'));
    await writeExclusive(paths.input,input);
-   await currentClaim(c);
+   await guardAutoEditStage({...c,startingInference:true});
    await infer(paths.id,intent.job,()=>{},{signal:c.signal});
    return recoverResult(c,local,paths,intent);
   }

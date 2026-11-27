@@ -595,9 +595,15 @@ service cloud.firestore {
       && aeText(v.summary,3000) && v.observations is list && v.observations.size() <= 20 && aeText(v.limitations,2000));
     }
     function duration(v,k) { return aeInt(v.get(k,0),0,604800000); }
-    function stageDurations(v) {
+    function stageDurations(v,old) {
+     let changed = old == null ? v.keys() : v.diff(old).affectedKeys();
      return v is map && v.keys().hasOnly(['source','vision1','prompt','edit','vision2','delivery'])
-      && duration(v,'source') && duration(v,'vision1') && duration(v,'prompt') && duration(v,'edit') && duration(v,'vision2') && duration(v,'delivery');
+      && (!changed.hasAny(['source']) || duration(v,'source'))
+      && (!changed.hasAny(['vision1']) || duration(v,'vision1'))
+      && (!changed.hasAny(['prompt']) || duration(v,'prompt'))
+      && (!changed.hasAny(['edit']) || duration(v,'edit'))
+      && (!changed.hasAny(['vision2']) || duration(v,'vision2'))
+      && (!changed.hasAny(['delivery']) || duration(v,'delivery'));
     }
     function editReceipt(r,i) {
      return r == null || (r is map && r.keys().hasOnly(['status','model','seed','sourceHash','promptHash','sha256','engineRevision','width','height','steps'])
@@ -615,29 +621,46 @@ service cloud.firestore {
      return aeItemId(itemId) && i.itemId == itemId && aeInt(i.ordinal,1,p.plan.config.batchSize)
       && spec.itemId == itemId && i.source == spec.source && i.seed == spec.seed && i.model == p.plan.config.model && i.configurationRevision == p.plan.config.revisionId;
     }
-    function itemShape(i,p,itemId) {
-     return i.keys().hasOnly(['itemId','ordinal','source','seed','model','configurationRevision','stage','status','attempt','inFlight','durations','sourceArtifact','vision1','prompt','outputArtifact','editReceipt','vision2','receipt','failure','publicationRevision'])
-      && itemLineage(i,p,itemId) && aeStage(i.stage) && i.status in ['queued','running','review-ready','failed','cancelled'] && aeInt(i.attempt,1,2147483647)
+    function itemShape(i) {
+     let keys = ['itemId','ordinal','source','seed','model','configurationRevision','stage','status','attempt','inFlight','durations','sourceArtifact','vision1','prompt','outputArtifact','editReceipt','vision2','receipt','failure','publicationRevision'];
+     return i.keys().hasOnly(keys) && i.keys().size() == keys.size()
+      && aeStage(i.stage) && i.status in ['queued','running','review-ready','failed','cancelled'] && aeInt(i.attempt,1,2147483647)
       && (i.inFlight == null || (i.inFlight is map && i.inFlight.keys().hasOnly(['stage','startedAt']) && i.inFlight.stage == i.stage && instant(i.inFlight.startedAt)))
-      && stageDurations(i.durations) && artifact(i.sourceArtifact) && artifact(i.outputArtifact) && visionOne(i.vision1) && visionTwo(i.vision2)
-      && (i.prompt == null || aeText(i.prompt,6000)) && editReceipt(i.editReceipt,i) && stagingReceipt(i.receipt,i)
       && (i.failure == null || (i.failure is map && i.failure.keys().hasOnly(['code','stage','uncertain']) && aeText(i.failure.code,80) && aeStage(i.failure.stage) && i.failure.uncertain is bool))
       && ((i.status == 'review-ready') == (i.stage == 'review-ready'))
       && (i.status != 'review-ready' || (i.inFlight == null && i.receipt != null && i.vision2 != null && i.editReceipt != null && i.outputArtifact.sha256 == i.editReceipt.sha256));
     }
-    function itemWrite(i,itemId) {
+    // The atomic batch and item publication shares one rules expression budget.
+    // Validate changed values and recheck receipts whenever their inputs change.
+    function itemValues(i,old,changed) {
+     return (!changed.hasAny(['durations']) || stageDurations(i.durations,old == null ? null : old.durations))
+      && (!changed.hasAny(['sourceArtifact']) || artifact(i.sourceArtifact))
+      && (!changed.hasAny(['outputArtifact']) || artifact(i.outputArtifact))
+      && (!changed.hasAny(['vision1']) || visionOne(i.vision1))
+      && (!changed.hasAny(['vision2']) || visionTwo(i.vision2))
+      && (!changed.hasAny(['prompt']) || i.prompt == null || aeText(i.prompt,6000))
+      && (!changed.hasAny(['editReceipt','sourceArtifact']) || editReceipt(i.editReceipt,i))
+      && (!changed.hasAny(['receipt','outputArtifact']) || stagingReceipt(i.receipt,i));
+    }
+    function itemWrite(i,old,itemId,changed) {
      let before = parent();
      let after = nextParent();
      let previous = before.execution == null ? 0 : before.execution.publicationRevision;
      return aeClaimed(before) && aeAdmitted(batchId,before) && after.execution != null && after.execution.publicationRevision == previous+1
-      && i.publicationRevision == after.execution.publicationRevision && itemShape(i,after,itemId);
+      && i.publicationRevision == after.execution.publicationRevision && itemShape(i)
+      && (old == null ? itemLineage(i,after,itemId) : !changed.hasAny(['itemId','ordinal','source','seed','model','configurationRevision']))
+      && itemValues(i,old,changed);
+    }
+    function itemUpdate(i,old,itemId) {
+     let changed = i.diff(old).affectedKeys();
+     return (old.status != 'review-ready' || changed.hasOnly(['publicationRevision']))
+      && old.publicationRevision < i.publicationRevision && itemWrite(i,old,itemId,changed);
     }
     match /items/{itemId} {
      allow get: if studioOwner() || (aeAssigned(parent()) && aePilotBatch(batchId)) || (itemId == 'item-001' && aeLearningBatch(batchId));
      allow list: if (studioOwner() || (aeAssigned(parent()) && aePilotBatch(batchId))) && request.query.limit != null && request.query.limit <= 100;
-     allow create: if itemWrite(request.resource.data,itemId);
-     allow update: if (resource.data.status != 'review-ready' || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['publicationRevision']))
-      && resource.data.publicationRevision < request.resource.data.publicationRevision && itemWrite(request.resource.data,itemId);
+     allow create: if itemWrite(request.resource.data,null,itemId,request.resource.data.keys());
+     allow update: if itemUpdate(request.resource.data,resource.data,itemId);
      allow delete: if false;
     }
     match /live/pc {

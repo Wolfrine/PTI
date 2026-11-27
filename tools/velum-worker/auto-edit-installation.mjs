@@ -53,6 +53,9 @@ async function acl(checks,signal,code='auto-edit-runtime-permissions-unverified'
  '  if($trusted -notcontains $a.GetOwner($sidType).Value){throw "owner"}',
  '  foreach($ace in $a.GetAccessRules($true,$true,$sidType)){',
  '    if($ace.AccessControlType -ne "Allow" -or $trusted -contains $ace.IdentityReference.Value){continue}',
+ // Inherit-only entries do not grant rights on the parent itself. Keep
+ // private-directory and asset-integrity checks unchanged.
+ '    if($c.mode -eq "parent" -and ($ace.PropagationFlags -band [Security.AccessControl.PropagationFlags]::InheritOnly)){continue}',
  '    $rights=[int64]$ace.FileSystemRights',
  '    if($c.mode -eq "private" -or ($c.mode -eq "integrity" -and ($rights -band $integrity)) -or ($c.mode -eq "parent" -and ($rights -band $parent))){throw "access"}',
  '  }',

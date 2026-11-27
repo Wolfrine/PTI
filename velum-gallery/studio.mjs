@@ -1,6 +1,6 @@
 // Every local module inherits the published shell's release identity.
 const localModule = relative => { const url=new URL(relative,import.meta.url);url.search=new URL(import.meta.url).search;return import(url.href); };
-const {MODELS,makeJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,modelReferenceLimit}=await localModule('./studio-contract.mjs');
+const {MODELS,makeJob,workerOnline,deviceApproved,devicePending,deviceCanQueue,modelReferenceLimit,retiredReviewId}=await localModule('./studio-contract.mjs');
 const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
 const {renderStudioShell,renderStudioState,renderCreationDetails,selectedJob,pendingJob,studioBusy,formatJobStatus}=await localModule('./studio-view.mjs');
 const {ARCHIVE_PAGE_SIZE,archiveSource,mergeArchivePage,visibleCreations,decodeThumbnail,creationReady,historicalCreation}=await localModule('./studio-archive.mjs');
@@ -12,8 +12,6 @@ const {verifyOriginal}=await localModule('./studio-drive.mjs');
 const {createOriginalCompareController}=await localModule('./studio-compare.mjs');
 const {createStudioViewerController}=await localModule('./studio-viewer.mjs');
 const {createStudioLive}=await localModule('./studio-live.mjs');
-const {mountAutoReview}=await localModule('./auto-review.mjs');
-const {isReviewJob}=await localModule('./auto-review-store.mjs');
 export {renderStudioShell,renderStudioState,formatJobStatus};
 
 export async function decodeResult(result,chunks){
@@ -41,11 +39,7 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   state.referencePreviews={};state.driveJobs=[];
   const workspace=()=>['users',uid,'velumStudio','workspace'];
   let compareController=null;
-  const autoReview=drive.review?mountAutoReview({root,sdk,db,drive,decodeResult,
-    context:()=>({owner:uid==='5PbKbpGf3AbarNrp6pyqJ5C5Ziu2',unlocked:!locked&&!destroyed&&pageActive,workspace:workspace(),studio:state,studioBusy:studioBusy(state)}),
-    watchBatch:ids=>live.setReviewIds(ids),refreshBatch:()=>live.refreshReview(),
-    compareSync:()=>compareController?.sync(),compareReset:()=>compareController?.reset()}):null;
-  const draw=()=>{state.phoneOnline=navigator.onLine;renderStudioState(root,{...state,now:Date.now()});autoReview?.tick();compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
+  const draw=()=>{state.phoneOnline=navigator.onLine;renderStudioState(root,{...state,now:Date.now()});compareController?.sync();root.querySelector('#studioDriveQuality').disabled=Boolean(state.driveLoading);observeThumbs();};
   const visibleViewerJobs=()=>visibleCreations(state.archiveJobs||[],{filter:state.archiveFilter,model:state.archiveModel,date:state.archiveDate,saves:state.saves||{},removed:state.removed||{}});
   function setViewerDetails(expanded,focus=false){
     const panel=root.querySelector('#studioDetailsPanel'),details=root.querySelector('#studioDetails'),information=details.querySelector('.studio-detail-information');
@@ -72,7 +66,7 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   function clearResult(){compareController?.reset();if(state.resultUrl)URL.revokeObjectURL(state.resultUrl);for(const value of Object.values(state.referencePreviews||{}))URL.revokeObjectURL(value.url||value);state.referencePreviews={};state.resultUrl='';state.resultError='';state.feedback=null;state.saveMessage='';resultJob='';resultBlob=null;}
   function clearPose(){poseEpoch++;if(state.pose?.url)URL.revokeObjectURL(state.pose.url);state.pose=null;state.poseEnabled=false;state.poseLoading=false;state.poseError='';root.querySelector('#studioPoseEnabled').checked=false;}
   function clearReferences(){state.references.forEach(reference=>URL.revokeObjectURL(reference.url));state.references=[];state.parentJobId='';clearPose();}
-  function clearPrivateSession({cancelDrive=true,clearAccess=true}={}){autoReview?.close();viewerReturn=null;referencePicker.clear();clearPose();state.driveJobs=[];state.driveLoading=false;pendingUpload=null;state.canRetryUpload=false;state.uploadProgress='';state.message='';state.saveMessage='';state.referencePick=false;root.querySelector('#studioReferenceSources').hidden=true;root.querySelector('#studioReferenceOpen').setAttribute('aria-expanded','false');if(cancelDrive)drive.clear({clearAccess});}
+  function clearPrivateSession({cancelDrive=true,clearAccess=true}={}){viewerReturn=null;referencePicker.clear();clearPose();state.driveJobs=[];state.driveLoading=false;pendingUpload=null;state.canRetryUpload=false;state.uploadProgress='';state.message='';state.saveMessage='';state.referencePick=false;root.querySelector('#studioReferenceSources').hidden=true;root.querySelector('#studioReferenceOpen').setAttribute('aria-expanded','false');if(cancelDrive)drive.clear({clearAccess});}
   function switchMode(mode){state.mode=mode;draw();root.scrollTop=0;if(mode==='creations'&&!state.archiveJobs.length&&!state.archiveLoading)loadArchive(true);}
   function showDialog(id){const dialog=root.querySelector(id);if(!dialog.open){dialog.showModal();if(id==='#studioDetailsPanel')dialog.focus({preventScroll:true});}}
   function closeDialogs(){root.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());}
@@ -81,8 +75,15 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     if(!uid||locked||state.archiveLoading)return;if(reset){archiveEpoch++;archiveCursor=null;state.archiveJobs=[];state.archiveHasMore=true;root.querySelector('#studioArchiveGrid').dataset.signature='';}if(!state.archiveHasMore)return;
     const token=epoch,lane=archiveEpoch,source=archiveSource(state.archiveFilter);state.archiveLoading=true;state.archiveError='';draw();
     try{const constraints=[...(source.where?[where(...source.where)]:[]),orderBy(source.order,'desc'),...(archiveCursor?[startAfter(archiveCursor)]:[]),limit(ARCHIVE_PAGE_SIZE)];const snapshot=await getDocs(query(collection(db,...workspace(),source.collection),...constraints));if(token!==epoch||lane!==archiveEpoch||!uid)return;
-      let jobs;if(source.collection==='jobs')jobs=snapshot.docs.map(item=>({...item.data(),id:item.id}));else{jobs=(await Promise.all(snapshot.docs.map(async item=>{const entry=item.data(),jobId=entry.jobId||item.id;const job=await getDoc(doc(db,...workspace(),'jobs',jobId));return job.exists()?{...job.data(),id:job.id}:null;}))).filter(Boolean);}
-      jobs=jobs.filter(job=>!isReviewJob(job.id));
+      const records=snapshot.docs.filter(item=>!retiredReviewId(item.id));
+      let jobs;
+      if(source.collection==='jobs')jobs=records.map(item=>({...item.data(),id:item.id}));
+      else jobs=(await Promise.all(records.map(async item=>{
+        const jobId=item.data().jobId||item.id;
+        if(retiredReviewId(jobId))return null;
+        const job=await getDoc(doc(db,...workspace(),'jobs',jobId));
+        return job.exists()?{...job.data(),id:job.id}:null;
+      }))).filter(Boolean);
       const ids=jobs.map(job=>job.id);const [saves,feedback,removed]=await Promise.all([related('saves',ids),related('feedback',ids),related('removed',ids)]);if(token!==epoch||lane!==archiveEpoch||!uid)return;
       state.saves={...state.saves,...saves};state.feedbackMap={...state.feedbackMap,...feedback};for(const id of ids)if(!removed[id])delete state.removed[id];state.removed={...state.removed,...removed};state.archiveJobs=mergeArchivePage(state.archiveJobs,[...jobs,...(state.archiveFilter==='all'||state.archiveFilter==='saved'?state.driveJobs:[])]);archiveCursor=snapshot.docs.at(-1)||archiveCursor;state.archiveHasMore=snapshot.docs.length===ARCHIVE_PAGE_SIZE;
     }catch(error){if(token===epoch&&lane===archiveEpoch)state.archiveError=error?.code==='failed-precondition'?'This archive filter is waiting for its database index. Try All while it finishes.':'Archive could not load. Reconnect and retry; no originals were removed.';}
@@ -96,7 +97,7 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     finally{if(token===epoch){state.driveLoading=false;draw();}}
   }
   async function chooseJob(id,openDetails=false){
-    if(!uid||locked)return;
+    if(!uid||locked||retiredReviewId(id))return;
     const panel=root.querySelector('#studioDetailsPanel');
     if(openDetails&&!panel.open){
       viewerReturn=state.mode==='creations'?{uid,epoch,selectedId:state.selectedId,blob:resultBlob,signature:resultJob,feedback:state.feedback,error:state.resultError}:null;
@@ -138,8 +139,8 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     state.referencePreviews[reference.sha256]=URL.createObjectURL(blob);detailsDraw();
   }
   compareController=createOriginalCompareController(root,{
-    current:()=>autoReview?.open?autoReview.comparison():({job:selectedJob(state),generatedUrl:state.resultUrl,previews:state.referencePreviews,locked:locked||!uid}),
-    loadOriginal:()=>autoReview?.open?autoReview.loadOriginal():loadSourceReference(0)
+    current:()=>({job:selectedJob(state),generatedUrl:state.resultUrl,previews:state.referencePreviews,locked:locked||!uid}),
+    loadOriginal:()=>loadSourceReference(0)
   });
   createStudioViewerController(root,{
     isOpen:()=>Boolean(uid&&!locked&&root.querySelector('#studioDetailsPanel').open),
@@ -148,13 +149,11 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   const live=createStudioLive({sdk,db,deviceUid:PC_DEVICE_UID,onState:next=>{
     if(!uid||locked||destroyed||document.hidden||!pageActive)return;
     next.jobs=next.jobs.map(job=>{const previous=state.jobs.find(item=>item.id===job.id);return previous&&['completed','failed','cancelled','expired'].includes(previous.status)&&['uploading','queued','running'].includes(job.status)?previous:job;});
-    const {review,...studio}=next;
-    Object.assign(state,studio);state.connected=navigator.onLine&&!studio.liveError;
+    Object.assign(state,next);state.connected=navigator.onLine&&!next.liveError;
     const imports=state.jobs.filter(historicalCreation);
     for(const item of imports)if(creationReady(item)&&!creationReady(state.archiveJobs.find(previous=>previous.id===item.id)))thumbMissing.delete(item.id);
     if(state.mode==='creations'&&state.archiveFilter==='all'&&imports.length)state.archiveJobs=mergeArchivePage(state.archiveJobs,imports).sort((a,b)=>b.createdAt-a.createdAt);
-    if(autoSelect&&!state.selectedId)state.selectedId=state.jobs.find(job=>!isReviewJob(job.id))?.id||'';
-    autoReview?.onStudioState(state.jobs,review);
+    if(autoSelect&&!state.selectedId&&state.jobs.length)state.selectedId=state.jobs[0].id;
     syncLiveHints();draw();void loadResult();
   },onError:error=>{
     if(!uid||locked||destroyed)return;
@@ -324,7 +323,7 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
     clearPrivateSession({cancelDrive:false});clearResult();clearReferences();closeDialogs();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();thumbPending.clear();uid=user?.uid||'';
     Object.assign(state,{signedIn:Boolean(uid),jobs:[],archiveJobs:[],worker:null,binding:null,bindingBusy:false,recovery:null,recoveryBusy:false,selectedId:'',message:'',submitting:false,archiveLoading:false,archiveHasMore:true,archiveError:'',saves:{},feedbackMap:{},removed:{},lastRemovedId:'',saving:false});archiveCursor=null;autoSelect=true;
     if(!uid||previousUid!==uid){root.querySelector('#studioPrompt').value='';root.querySelector('#studioConsent').checked=false;root.querySelector('#studioSeed').value='';root.querySelector('#studioDetails').replaceChildren();}
-    autoReview?.onStudioState([]);draw();syncLive();
+    draw();syncLive();
   });
   listen(window,'velum:lock',()=>{
     live.stop();clearInterval(tick);tick=0;locked=true;epoch++;archiveEpoch++;clearTimeout(undoTimer);clearPrivateSession();closeDialogs();clearResult();clearReferences();observer?.disconnect();thumbQueue.length=0;thumbs.forEach(url=>URL.revokeObjectURL(url));thumbs.clear();thumbMissing.clear();state.jobs=[];state.archiveJobs=[];state.selectedId='';state.feedbackMap={};state.saves={};state.removed={};state.lastRemovedId='';state.submitting=false;state.saving=false;state.archiveLoading=false;
@@ -332,7 +331,7 @@ export async function mountStudio({app,auth,drive,canStart=()=>true}){
   });
   listen(window,'velum:unlock',()=>{locked=false;state.connected=navigator.onLine;draw();syncLive();});
   const onlineChanged=()=>{state.connected=navigator.onLine;draw();if(navigator.onLine)refresh();};listen(window,'online',onlineChanged);listen(window,'offline',onlineChanged);
-  listen(document,'visibilitychange',()=>{if(document.hidden)autoReview?.close();syncLive();});
+  listen(document,'visibilitychange',syncLive);
   listen(window,'pagehide',()=>{live.stop();clearInterval(tick);tick=0;pageActive=false;epoch++;clearPrivateSession({clearAccess:false});clearResult();closeDialogs();});
   listen(window,'pageshow',()=>{pageActive=true;draw();syncLive();});
   const visibilityObserver=typeof MutationObserver==='function'?new MutationObserver(syncLive):null;

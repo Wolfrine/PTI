@@ -118,12 +118,10 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   function closeDetail(){epoch++;active=null;if(dialog.open)dialog.close();dialog.replaceChildren();closeOptions();}
   function clear({preserveResume=false}={}){if(!preserveResume)clearConnectResume();moveSession++;recovery=null;offeredReceipt=null;busy=false;notice.hidden=true;closeDetail();regions.forEach(region=>{const label=region.querySelector('[data-folder-label]');if(label)label.textContent='';});showRecovery();}
  function message(value){const output=dialog.querySelector('[role=status]');if(output)output.textContent=value;}
- const canManage = file => [P,R].includes(file?.folderId);
   function setBusy(value){busy=value;dialog.querySelectorAll('button:not([data-close]):not([data-exit])').forEach(button=>button.disabled=value);document.querySelectorAll('.tile-quick-move').forEach(button=>button.disabled=value);showRecovery();}
  function draw(file,url){
   dialog.innerHTML=`<header><span>Private collection</span><div><button type="button" data-close>Close</button><button type="button" data-exit>Quick exit</button></div></header><div class="library-detail-body"><img src="${escape(url)}" alt="${escape(file.name)}"/><section><h2 id="libraryDetailTitle">${escape(file.name)}</h2><p data-location>${escape(file.folderLabel||'Private')}</p><small>Drive ID <code>${escape(file.id)}</code></small><div class="library-detail-actions"><button type="button" data-move>Move to ${file.folderId===R?'Private':'References'}</button><button type="button" data-more aria-expanded="false">More ···</button><button type="button" data-trash hidden>Move to Trash…</button></div><div data-confirm hidden><h3>Move this image to Trash?</h3><p>${escape(file.name)}</p><p>You can restore it from Drive Trash or Undo. The original file ID is preserved.</p><button type="button" data-cancel>Cancel</button><button type="button" data-confirm-trash>Move to Trash</button></div><p role="status"></p><button type="button" data-undo ${recovery?'':'hidden'}>Undo last action</button><a href="https://drive.google.com/drive/trash" target="_blank" rel="noopener">Open Drive Trash ↗</a></section></div>`;
-  dialog.querySelector('[data-move]').hidden=!file.mimeType?.startsWith('image/')||!canManage(file);
-  dialog.querySelector('[data-more]').hidden=!canManage(file);
+  dialog.querySelector('[data-move]').hidden=!file.mimeType?.startsWith('image/')||![P,R].includes(file.folderId);
   const button=document.createElement('button');button.type='button';button.dataset.reconnect='';button.textContent=notice.querySelector('[data-reconnect]').textContent;button.hidden=notice.querySelector('[data-reconnect]').hidden;
   dialog.querySelector('[role=status]').after(button);
  }
@@ -134,7 +132,7 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   draw(file,file.thumbnailLink||'');dialog.showModal();message('Loading preview…');
   const image=dialog.querySelector('img'),status=dialog.querySelector('[role=status]');
   const currentPreview=()=>generation===epoch&&session===moveSession&&owner===getOwner()&&dialog.open&&active?.id===file.id&&dialog.querySelector('img')===image;
-  try{const url=await getUrl(file.id);if(!currentPreview())return;image.src=url;if(!busy&&status.textContent==='Loading preview…')message(canManage(file)?'Moving preserves this file and its ID.':'');}
+  try{const url=await getUrl(file.id);if(!currentPreview())return;image.src=url;if(!busy&&status.textContent==='Loading preview…')message('Moving preserves this file and its ID.');}
   catch(error){if(currentPreview()&&!busy&&status.textContent==='Loading preview…')message(error.message||'Preview could not load.');}
  }
  function updateDetail(file,text){
@@ -364,13 +362,13 @@ export function mountGalleryLibrary({drive,connect,current,getUrl,onFilter,onCha
   const button=event.target.closest('button');if(!button)return;
    if(button.hasAttribute('data-close')){closeDetail();return;}
   if(button.hasAttribute('data-exit')){window.dispatchEvent(new CustomEvent('velum:quick-exit'));return;}
-  if(button.hasAttribute('data-more')&&canManage(active)){dialog.querySelector('[data-trash]').hidden=false;button.setAttribute('aria-expanded','true');return;}
-  if(button.hasAttribute('data-trash')&&canManage(active)){dialog.querySelector('[data-confirm]').hidden=false;dialog.querySelector('[data-cancel]').focus();return;}
+  if(button.hasAttribute('data-more')){dialog.querySelector('[data-trash]').hidden=false;button.setAttribute('aria-expanded','true');return;}
+  if(button.hasAttribute('data-trash')){dialog.querySelector('[data-confirm]').hidden=false;dialog.querySelector('[data-cancel]').focus();return;}
   if(button.hasAttribute('data-cancel')){dialog.querySelector('[data-confirm]').hidden=true;dialog.querySelector('[data-trash]').focus();return;}
   if(button.hasAttribute('data-reconnect'))return reconnect();
   if(button.hasAttribute('data-undo'))return undo();
   if(button.hasAttribute('data-move'))return moveQuick(active);
-   if(busy||!canManage(active)||!button.hasAttribute('data-confirm-trash'))return;
+   if(busy||!active||!button.hasAttribute('data-confirm-trash'))return;
    const generation=++epoch,session=moveSession,file=active;
   setBusy(true);
   try{

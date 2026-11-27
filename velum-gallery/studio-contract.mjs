@@ -6,6 +6,9 @@ export const QWEN_TURBO_MODEL='qwen-image-2.1-turbo';
 export const QWEN_TURBO_WORKER_VERSION='2.3.2';
 export const isQwenModel=model=>model===QWEN_MODEL||model===QWEN_TURBO_MODEL;
 
+// Auto Review records remain in private storage. They are never manual jobs.
+export const retiredReviewId=id=>typeof id==='string'&&/^(?:feedback-)?review-(?:v[123]-)?[a-f0-9]{32}$/.test(id);
+
 // Validate the owner's words; never rewrite or enhance them.
 export const MODELS = Object.freeze([
   {id:'zimage-nvfp4',label:'Z-Image Turbo',hint:'8 steps · detailed scenes · slower cold start'},
@@ -33,23 +36,12 @@ export function modelReferenceLimit(status,model) {
 }
 export const JOB_TTL = 7*24*60*60*1000, MAX_CHUNKS = 16, CHUNK_SIZE = 600000;
 export const REFERENCE_LIMITS = Object.freeze({count:10,legacyCount:2,bytes:2097152,edge:1024,pixels:1048576,chunks:5,inferencePixels:262144,width:512,height:768});
-export const ORIGINAL_REVIEW_LIMITS = Object.freeze({bytes:7200000,edge:8192,pixels:24000000});
-const reviewParents = new Set(['1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA','1yDt_5NSv8fDYhZvOdsihdJwKQJuTzx66']);
-export const safeOriginalName = name => typeof name==='string' && name.length>0 && name.length<=160 &&
-  !/[\\/:*?"<>|\u0000-\u001f]|[ .]$|^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(name);
-export function validateReference(reference,index,original = false) {
-  const limit=original?ORIGINAL_REVIEW_LIMITS:REFERENCE_LIMITS, source=reference?.source;
+export function validateReference(reference,index) {
+  const limit=REFERENCE_LIMITS, source=reference?.source;
   if (reference && Object.keys(reference).some(key=>!['index','mime','bytes','sha256','width','height','chunks','source','role'].includes(key))) throw new Error('Invalid reference image.');
   if(reference?.role!==undefined&&!['subject','pose'].includes(reference.role))throw new Error('Invalid reference role.');
   if (!reference || reference.index!==index || !['image/png','image/jpeg'].includes(reference.mime) || !Number.isSafeInteger(reference.bytes) || reference.bytes<100 || reference.bytes>limit.bytes || !/^[a-f0-9]{64}$/.test(reference.sha256)) throw new Error('Invalid reference image.');
-  if (![reference.width,reference.height].every(value=>Number.isSafeInteger(value)&&value>0&&value<=limit.edge) || reference.width*reference.height>limit.pixels) throw new Error('Reference exceeds the PC image limits.');
-  if(original){
-    if(reference.chunks!==0||reference.role!==undefined||reference.width>reference.height*8||reference.height>reference.width*8||source?.kind!=='drive'||!reviewParents.has(source.parentId)||
-      typeof source.id!=='string'||!/^[A-Za-z0-9_-]{8,160}$/.test(source.id)||!safeOriginalName(source.name)||
-      Object.keys(source).some(key=>!['kind','id','name','parentId'].includes(key)))throw new Error('Invalid original Drive provenance.');
-    return reference;
-  }
-  if (reference.chunks!==Math.ceil(4*Math.ceil(reference.bytes/3)/CHUNK_SIZE) || reference.chunks>limit.chunks) throw new Error('Reference exceeds the PC image limits.');
+  if (![reference.width,reference.height].every(value=>Number.isSafeInteger(value)&&value>0&&value<=limit.edge) || reference.width*reference.height>limit.pixels || reference.chunks!==Math.ceil(4*Math.ceil(reference.bytes/3)/CHUNK_SIZE) || reference.chunks>limit.chunks) throw new Error('Reference exceeds the PC image limits.');
   if (!source || !['file','studio','drive'].includes(source.kind) || typeof source.id!=='string' || source.id.length>160 || typeof source.name!=='string' || source.name.length>160) throw new Error('Invalid reference provenance.');
   if (Object.keys(source).some(key=>!['kind','id','name'].includes(key))) throw new Error('Invalid reference provenance.');
   return reference;
@@ -75,7 +67,7 @@ export function validatePose(pose,references) {
  if(references.filter(reference=>reference.role==='pose').length!==(pose.mode==='image'?1:0))throw new Error('Invalid pose reference role.');
  return pose;
 }
-export function validateJob(job,{driveOriginal=false}={}) {
+export function validateJob(job) {
   if (!job || ![2,3,4].includes(job.schemaVersion) || job.recordType!==undefined || job.deviceUid!==PC_DEVICE_UID || !MODEL_IDS.includes(job.model) || (isQwenModel(job.model)&&job.schemaVersion!==4)) throw new Error('Choose a verified local model on your approved PC.');
   if (typeof job.prompt!=='string' || !job.prompt.trim() || job.prompt.length>6000) throw new Error('Enter a prompt of 1–6,000 characters.');
   if (!Number.isSafeInteger(job.seed) || job.seed<0 || job.seed>2147483647) throw new Error('Seed must be between 0 and 2147483647.');
@@ -84,7 +76,7 @@ export function validateJob(job,{driveOriginal=false}={}) {
   if (job.schemaVersion===2 && (job.references!==undefined || job.inputsReady!==undefined || job.parentJobId!==undefined)) throw new Error('Invalid legacy job.');
   if ([3,4].includes(job.schemaVersion)) {
     if (!Array.isArray(job.references) || job.references.length>(job.schemaVersion===3?REFERENCE_LIMITS.legacyCount:REFERENCE_LIMITS.count) || typeof job.inputsReady!=='boolean' || typeof job.parentJobId!=='string' || (job.parentJobId && !/^[A-Za-z0-9_-]{1,80}$/.test(job.parentJobId))) throw new Error('Invalid reference job.');
-    job.references.forEach((reference,index)=>validateReference(reference,index,driveOriginal)); referenced=job.references.length>0;
+    job.references.forEach(validateReference); referenced=job.references.length>0;
     if(job.schemaVersion===3&&job.references.some(reference=>reference.role!==undefined))throw new Error('Invalid legacy reference role.');
     if (referenced && job.references.length>MODEL_REFERENCE_LIMITS[job.model]) throw new Error('This model supports fewer reference images.');
     if (job.status==='queued' && !job.inputsReady) throw new Error('Reference upload is incomplete.');
@@ -100,16 +92,14 @@ export function validateJob(job,{driveOriginal=false}={}) {
     hashes.add(reference.sha256);if(reference.source.kind==='drive'&&reference.source.id)driveIds.add(reference.source.id);
    }
   }
-  if(driveOriginal&&(job.schemaVersion!==4||job.references.length!==1||!job.inputsReady||job.pose!==undefined||job.parentJobId!==''))throw new Error('Invalid local Drive review job.');
   const size=jobDimensions(job.model,job.references);
   if (job.width!==size.width || job.height!==size.height || job.consent!==true) throw new Error('Confirm lawful, consensual adult use.');
   if (!Number.isSafeInteger(job.createdAt) || !Number.isSafeInteger(job.expiresAt) || job.expiresAt!==job.createdAt+JOB_TTL) throw new Error('Invalid job lifetime.');
   return job;
 }
-export function makeJob({model,prompt,seed,consent,references=[],parentJobId='',effectivePrompt,pose,driveOriginal=false}, now=Date.now()) {
+export function makeJob({model,prompt,seed,consent,references=[],parentJobId='',effectivePrompt,pose}, now=Date.now()) {
   const referenced=references.length>0, explicit=isQwenModel(model)||effectivePrompt!==undefined||pose!==undefined,modern=explicit||referenced||Boolean(parentJobId);
-  const inputsReady=driveOriginal||!referenced;
-  return validateJob({schemaVersion:explicit?4:modern?3:2,deviceUid:PC_DEVICE_UID,model,prompt,seed,...jobDimensions(model,references),status:inputsReady?'queued':'uploading',createdAt:now,expiresAt:now+JOB_TTL,consent,...(modern?{references:structuredClone(references),parentJobId,inputsReady}:{}),...(explicit?{effectivePrompt:effectivePrompt??composeEffectivePrompt(prompt,pose),...(pose===undefined?{}:{pose:structuredClone(pose)})}:{})},{driveOriginal});
+  return validateJob({schemaVersion:explicit?4:modern?3:2,deviceUid:PC_DEVICE_UID,model,prompt,seed,...jobDimensions(model,references),status:referenced?'uploading':'queued',createdAt:now,expiresAt:now+JOB_TTL,consent,...(modern?{references:structuredClone(references),parentJobId,inputsReady:!referenced}:{}),...(explicit?{effectivePrompt:effectivePrompt??composeEffectivePrompt(prompt,pose),...(pose===undefined?{}:{pose:structuredClone(pose)})}:{})});
 }
 export function deviceApproved(binding) {
   return Boolean(binding?.deviceUid===PC_DEVICE_UID && binding.status==='approved');

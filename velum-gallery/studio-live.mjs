@@ -1,21 +1,19 @@
+const contractUrl=new URL('./studio-contract.mjs',import.meta.url);
+contractUrl.search=new URL(import.meta.url).search;
+const {retiredReviewId}=await import(contractUrl.href);
+
 // One bounded owner-scoped listener set. SDK reconnects remain SDK-owned;
 // elapsed-time ticks and repeated lifecycle events never perform reads.
 export function createStudioLive({sdk,db,deviceUid,onState,onError=()=>{}}){
   const {doc,collection,query,where,orderBy,limit,onSnapshot}=sdk;
   let owner='',generation=0,worker=null,binding=null,recovery=null,hints={historicalIds:[],recovery:false};
   const slots=new Map(),recent=new Set(),pending=new Set(),displaced=new Set(),jobs=new Map();
-  let reviewIds=null,reviewBatch=null;
-  const reviewRuns=new Map(),serverReviewJobs=new Set();
   let scheduled=false,recentReady=false,pendingReady=false;
   const terminal=job=>['completed','failed','cancelled','expired'].includes(job?.status);
   const scope=()=>['users',owner,'velumStudio','workspace'];
   function ingest(snapshot){
-    if(!snapshot.exists())return;
+    if(!snapshot.exists()||retiredReviewId(snapshot.id))return;
     const next={...snapshot.data(),id:snapshot.id},previous=jobs.get(next.id);
-    if(/^(?:feedback-)?review-/.test(next.id)){
-      if((snapshot.metadata?.fromCache||snapshot.metadata?.hasPendingWrites)&&serverReviewJobs.has(next.id))return;
-      if(!snapshot.metadata?.fromCache&&!snapshot.metadata?.hasPendingWrites)serverReviewJobs.add(next.id);
-    }
     // Separate queries may deliver their cached initial snapshots in any order.
     // A terminal job can never be returned to the queue by an older query view.
     if(terminal(previous)&&!terminal(next))return;
@@ -27,13 +25,11 @@ export function createStudioLive({sdk,db,deviceUid,onState,onError=()=>{}}){
     if(terminal(next))displaced.delete(next.id);
   }
   function publish(){
-    const keep=new Set([...recent,...pending,...displaced,...hints.historicalIds,...reviewTargets(),worker?.activeJob].filter(Boolean));
+    const keep=new Set([...recent,...pending,...displaced,...hints.historicalIds,worker?.activeJob].filter(Boolean));
     // Retain terminal evidence for a stale active claim and recently selected
     // output, while keeping session memory bounded as recent windows advance.
-    while(jobs.size>64){const removable=[...jobs.keys()].find(id=>!keep.has(id));if(!removable)break;jobs.delete(removable);serverReviewJobs.delete(removable);}
-    const base=[...slots.values()].filter(slot=>!slot.review),review=[...slots.values()].filter(slot=>slot.review);
-    onState({worker,binding,recovery,liveError:base.some(slot=>slot.failed),liveCached:base.some(slot=>slot.cached),jobs:[...jobs.values()].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),
-      review:{batch:reviewBatch,runs:new Map(reviewRuns),cached:review.some(slot=>slot.cached),failed:review.some(slot=>slot.failed)}});
+    while(jobs.size>64){const removable=[...jobs.keys()].find(id=>!keep.has(id));if(!removable)break;jobs.delete(removable);}
+    onState({worker,binding,recovery,liveError:[...slots.values()].some(slot=>slot.failed),liveCached:[...slots.values()].some(slot=>slot.cached),jobs:[...jobs.values()].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))});
   }
   function schedule(){
     if(scheduled)return;scheduled=true;const token=generation;
@@ -41,28 +37,25 @@ export function createStudioLive({sdk,db,deviceUid,onState,onError=()=>{}}){
   }
   function watch(key,target,receive){
     if(slots.has(key))return;
-    const token=generation,slot={unsubscribe:null,failed:false,cached:true,review:key.startsWith('review:')};slots.set(key,slot);
+    const token=generation,slot={unsubscribe:null,failed:false,cached:true};slots.set(key,slot);
     try{
       slot.unsubscribe=onSnapshot(target,{includeMetadataChanges:true},snapshot=>{
         if(token!==generation||slots.get(key)!==slot||!owner)return;
         slot.cached=Boolean(snapshot.metadata?.fromCache);receive(snapshot);schedule();
       },error=>{
         if(token!==generation||slots.get(key)!==slot||!owner)return;
-        slot.failed=true;if(slot.review)schedule();else onError(error);
+        slot.failed=true;onError(error);
       });
-    }catch(error){slot.failed=true;if(slot.review)schedule();else onError(error);}
+    }catch(error){slot.failed=true;onError(error);}
   }
   function unwatch(key){const slot=slots.get(key);if(!slot)return;slots.delete(key);slot.unsubscribe?.();}
   function queryReceive(ids,snapshot){
     if(ids===recent)recentReady=true;else pendingReady=true;
-    const next=new Set(snapshot.docs.map(item=>item.id));
+    const next=new Set(snapshot.docs.map(item=>item.id).filter(id=>!retiredReviewId(id)));
     if(ids===pending)for(const id of ids)if(!next.has(id)&&!terminal(jobs.get(id)))displaced.add(id);
     // Pathological owner-side bulk enqueueing must not expand the fallback set.
     while(displaced.size>20)displaced.delete(displaced.values().next().value);
     ids.clear();next.forEach(id=>ids.add(id));snapshot.docs.forEach(ingest);
-  }
-  function reviewTargets(){
-    return (reviewIds||[]).flatMap(id=>reviewRuns.get(id)?.phase==='rejected'?[id,`feedback-${id}`]:[id]);
   }
   function reconcile(){
     if(!owner)return;
@@ -73,43 +66,18 @@ export function createStudioLive({sdk,db,deviceUid,onState,onError=()=>{}}){
     watch('pending',query(collection(db,...base,'jobs'),where('status','in',['uploading','queued','running']),limit(20)),snapshot=>queryReceive(pending,snapshot));
     if(hints.recovery)watch('recovery',doc(db,...base,'controls','worker-start'),snapshot=>{recovery=snapshot.exists()?snapshot.data():null;});
     else unwatch('recovery');
-    const targets=new Set([...(recentReady&&pendingReady?[worker?.activeJob,...displaced]:[]),...hints.historicalIds.slice(0,4)].filter(id=>typeof id==='string'&&id&&!recent.has(id)&&!pending.has(id)));
+    const targets=new Set([...(recentReady&&pendingReady?[worker?.activeJob,...displaced]:[]),...hints.historicalIds.slice(0,4)].filter(id=>typeof id==='string'&&id&&!retiredReviewId(id)&&!recent.has(id)&&!pending.has(id)));
     for(const key of [...slots.keys()])if(key.startsWith('job:')&&!targets.has(key.slice(4)))unwatch(key);
-    for(const id of targets)watch('job:'+id,doc(db,...base,'jobs',id),snapshot=>{if(snapshot.exists())ingest(snapshot);else{displaced.delete(id);jobs.delete(id);serverReviewJobs.delete(id);}});
-    const reviewKeys=new Set();
-    function reviewWatch(key,relative,receive){
-      reviewKeys.add(key);watch(key,doc(db,...base,...relative),receive);
-    }
-    if(reviewIds){
-      reviewWatch('review:batch',['autoReviewControl','batch'],snapshot=>{
-        if(!snapshot.metadata?.fromCache&&!snapshot.metadata?.hasPendingWrites)reviewBatch=snapshot.exists()?snapshot.data():null;
-      });
-      for(const id of reviewIds)reviewWatch('review:run:'+id,['autoReviewRuns',id],snapshot=>{
-        if(!snapshot.metadata?.fromCache&&!snapshot.metadata?.hasPendingWrites&&snapshot.exists())reviewRuns.set(id,{...snapshot.data(),id});
-      });
-      if(recentReady&&pendingReady)for(const id of reviewTargets()){
-        if(!targets.has(id)&&!recent.has(id)&&!pending.has(id))reviewWatch('review:job:'+id,['jobs',id],ingest);
-      }
-    }
-    for(const key of [...slots.keys()])if(key.startsWith('review:')&&!reviewKeys.has(key))unwatch(key);
+    for(const id of targets)watch('job:'+id,doc(db,...base,'jobs',id),snapshot=>{if(snapshot.exists())ingest(snapshot);else{displaced.delete(id);jobs.delete(id);}});
   }
   function stop(){
     generation++;owner='';scheduled=false;recentReady=false;pendingReady=false;for(const key of [...slots.keys()])unwatch(key);
-    recent.clear();pending.clear();displaced.clear();jobs.clear();serverReviewJobs.clear();reviewRuns.clear();reviewIds=null;reviewBatch=null;worker=null;binding=null;recovery=null;
+    recent.clear();pending.clear();displaced.clear();jobs.clear();worker=null;binding=null;recovery=null;
   }
   return {
     start(uid){if(!uid)return stop();if(uid===owner){reconcile();return;}stop();owner=uid;reconcile();},
     stop,
     setHints(next){hints={historicalIds:[...new Set(next.historicalIds||[])].slice(0,4),recovery:Boolean(next.recovery)};if(owner)reconcile();},
-    setReviewIds(ids){
-      const next=ids&&[...new Set(ids.filter(id=>/^review-(?:v[123]-)?[a-f0-9]{32}$/.test(id)))].slice(0,3);
-      if(JSON.stringify(next)===JSON.stringify(reviewIds))return;
-      reviewIds=next;
-      for(const key of reviewRuns.keys())if(!next?.includes(key))reviewRuns.delete(key);
-      if(!next)reviewBatch=null;
-      if(owner){reconcile();schedule();}
-    },
-    refreshReview(){if(!owner)return;for(const [key,slot] of slots)if(slot.review&&slot.failed)unwatch(key);reconcile();},
     refresh(){if(!owner)return;for(const [key,slot] of slots)if(slot.failed)unwatch(key);reconcile();},
     get size(){return slots.size;}
   };

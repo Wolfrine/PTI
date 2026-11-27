@@ -26,15 +26,6 @@ const SERVER_SCOPES=new Set([...BROWSER_SCOPES,MANAGEMENT_SCOPE]);
 const PRIVATE_FOLDER='1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA';
 const REFERENCES_FOLDER='1yDt_5NSv8fDYhZvOdsihdJwKQJuTzx66';
 const MOVE_LEASE_MS=2*60*1000;
-const REVIEW_DEVICE='f1bmD2SAJcQf25YwkhLcE0hJyS22';
-const REVIEW_WORKSPACE=`users/${OWNER}/velumStudio/workspace`;
-const REVIEW_BATCH_LIMIT=3;
-const REVIEW_MAX_BYTES=7200000;
-const REVIEW_DELIVERY_MS=60*60*1000;
-const originalReviewId=(value:unknown):boolean=>typeof value==='string'&&/^review-v3-[a-f0-9]{32}$/.test(value);
-const reviewJobId=(value:unknown):value is string=>typeof value==='string'&&/^review-v[23]-[a-f0-9]{32}$/.test(value);
-const reviewId=(value:unknown):value is string=>typeof value==='string'&&/^[a-f0-9]{32}$/.test(value);
-const driveId=(value:unknown):value is string=>typeof value==='string'&&/^[\w-]{8,160}$/.test(value);
 const COOKIE='__session'; // Firebase Hosting forwards only this cookie to rewritten Functions.
 const TTL=10*60*1000;
 // Activate after the two exact secrets, fixed redirect, private rules and deployed runtime IAM are verified.
@@ -328,11 +319,12 @@ async function managementReadiness(googleSub:string){
  if(!MANAGEMENT_CONFIGURED)return false;
  try{managementGrant(await sessionGrant('management'),googleSub);return true;}catch{return false;}
 }
-async function readGrantAccess(value:Grant|undefined,googleSub:string){
- const cfg=await config();
+async function session(req:Request,res:Response){
+ const identity=await owner(req),cfg=await config();
+ const value=await sessionGrant();
  if((value?.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/revocation-pending');
- if(!value?.enabled||!value.refresh||value.googleSub!==googleSub)throw new DriveError(409,'drive/reconnect-required');
- const refreshToken=unseal(value.refresh,cfg.key,refreshContext('read',googleSub));
+ if(!value?.enabled||!value.refresh||value.googleSub!==identity.googleSub)throw new DriveError(409,'drive/reconnect-required');
+ const refreshToken=unseal(value.refresh,cfg.key,refreshContext('read',identity.googleSub));
  let tokens;
  try{
    tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:CLIENT,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:refreshToken,scope:BROWSER_REQUEST_SCOPES.join(' ')}));
@@ -341,15 +333,10 @@ async function readGrantAccess(value:Grant|undefined,googleSub:string){
   throw error;
  }
  let access;
- try{access=await verifiedAccess(tokens.access_token,googleSub);}
+ try{access=await verifiedAccess(tokens.access_token,identity.googleSub);}
  catch(error){console.info(JSON.stringify({event:'velum-drive-session-rejected',code:error instanceof DriveError?error.code:'drive/unavailable',check:error instanceof DriveError?error.checkFailure:undefined}));throw error;}
  const current=await sessionGrant();
- if(!current?.enabled||current.revision!==value.revision||current.googleSub!==googleSub||(current.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/connection-changed');
- return access;
-}
-async function session(req:Request,res:Response){
- const identity=await owner(req);
- const access=await readGrantAccess(await sessionGrant(),identity.googleSub);
+ if(!current?.enabled||current.revision!==value.revision||current.googleSub!==identity.googleSub||(current.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/connection-changed');
  res.json({...access,owner:OWNER,googleSub:identity.googleSub,mode:'server',managementReady:await managementReadiness(identity.googleSub)});
 }
 async function expireInvalidRefresh(value:Grant,token:string,cfg:Config){
@@ -682,389 +669,6 @@ async function moveDiagnostic(req:Request,res:Response){
  }
  res.json({captured:true});
 }
-const studio=(collection:string,id:string)=>db().doc(`${REVIEW_WORKSPACE}/${collection}/${id}`);
-const batchGrant=(id:string)=>db().doc(`${ROOT}/reviewBatches/items/${id}`);
-const stageAttempt=(id:string)=>db().doc(`${ROOT}/reviewStages/items/${id}`);
-const reviewFields='id,name,mimeType,parents,ownedByMe,shared,trashed,version,size,sha256Checksum,isAppAuthorized,appProperties,capabilities(canAddChildren)';
-const reviewDriveBase='https://www.googleapis.com/drive/v3';
-const reviewPng=Buffer.from([137,80,78,71,13,10,26,10]);
-const privateItem=(item:any)=>item?.ownedByMe===true&&item.shared===false&&item.trashed===false;
-const singleParent=(item:any,id:string)=>item?.parents?.length===1&&item.parents[0]===id;
-type ReviewDriveItem={id?:string;name?:string;mimeType?:string;version?:string;size?:string;sha256Checksum?:string;
- isAppAuthorized?:boolean;appProperties?:Record<string,string>;capabilities?:{canAddChildren?:boolean}};
-
-async function reviewFetch(token:string,url:string,signal:AbortSignal,method='GET',body?:Buffer,headers:Record<string,string>={}){
- const timeout=AbortSignal.any([signal,AbortSignal.timeout(10000)]);
- try{return await fetch(url,{method,body,redirect:'error',signal:timeout,
-  headers:{Authorization:`Bearer ${token}`,...headers}});}
- catch{throw new DriveError(503,'drive/review-google-unavailable');}
-}
-async function reviewMetadata(token:string,id:string,signal:AbortSignal,missing=false):Promise<ReviewDriveItem|null>{
- const response=await reviewFetch(token,`${reviewDriveBase}/files/${id}?fields=${encodeURIComponent(reviewFields)}`,signal);
- if(response.status===404&&missing)return null;
- if(!response.ok)throw new DriveError(response.status===404?409:503,'drive/review-metadata-unavailable');
- return await response.json() as ReviewDriveItem;
-}
-async function reviewFolder(token:string,id:string,signal:AbortSignal){
- const parent=await reviewMetadata(token,PRIVATE_FOLDER,signal);
- if(parent?.id!==PRIVATE_FOLDER||!privateItem(parent)||parent.mimeType!=='application/vnd.google-apps.folder')throw new DriveError(409,'drive/review-private-changed');
- const parameters=new URLSearchParams({q:`'${PRIVATE_FOLDER}' in parents and trashed=false and name='Review staging'`,
-  fields:`nextPageToken,incompleteSearch,files(${reviewFields})`,pageSize:'2',spaces:'drive'});
- const response=await reviewFetch(token,`${reviewDriveBase}/files?${parameters}`,signal);
- if(!response.ok)throw new DriveError(503,'drive/review-folder-unavailable');
- const listing=await response.json() as {nextPageToken?:string;incompleteSearch?:boolean;files?:ReviewDriveItem[]},item=listing.files?.[0];
- if(listing.nextPageToken||listing.incompleteSearch||listing.files?.length!==1||item?.id!==id||!privateItem(item)||
-  !singleParent(item,PRIVATE_FOLDER)||item.mimeType!=='application/vnd.google-apps.folder'||item.capabilities?.canAddChildren!==true)
-  throw new DriveError(409,'drive/review-folder-changed');
- if(item.isAppAuthorized!==true)throw new DriveError(409,'drive/review-folder-grant');
-}
-
-async function confirmReviewBytes(token:string,file:ReviewDriveItem,id:string,bytes:number,sha256:string,signal:AbortSignal){
- if(file.sha256Checksum!==undefined)return file.sha256Checksum===sha256;
- const response=await reviewFetch(token,`${reviewDriveBase}/files/${id}?alt=media`,signal);
- if(!response.ok||!response.body){await response.body?.cancel();return false;}
- const reader=response.body.getReader(),hash=createHash('sha256');
- let length=0;
- try{
-  for(;;){
-   const chunk=await reader.read();
-   if(chunk.done)break;
-   length+=chunk.value.byteLength;
-   if(length>bytes)return false;
-   hash.update(chunk.value);
-  }
- }finally{await reader.cancel().catch(()=>{});}
- if(length!==bytes||hash.digest('hex')!==sha256)return false;
- const latest=await reviewMetadata(token,id,signal);
- return !!file.version&&latest?.version===file.version;
-}
-
-type ReviewOriginal={id:string;parentId:string;version:string;sha256:string};
-const reviewOriginKey=(source:ReviewOriginal)=>[source.parentId,source.id,source.version,source.sha256].join(':');
-function validReviewOriginal(source:unknown):source is ReviewOriginal{
- if(!source||typeof source!=='object')return false;
- const value=source as ReviewOriginal;
- return Object.keys(value).length===4&&driveId(value.id)&&[PRIVATE_FOLDER,REFERENCES_FOLDER].includes(value.parentId)&&
-  typeof value.version==='string'&&/^\d{1,24}$/.test(value.version)&&typeof value.sha256==='string'&&/^[a-f0-9]{64}$/.test(value.sha256);
-}
-async function verifyReferenceFolder(token:string,signal:AbortSignal){
- const folder=await reviewMetadata(token,REFERENCES_FOLDER,signal);
- if(folder?.id!==REFERENCES_FOLDER||folder.name!=='References'||!privateItem(folder)||
-  !singleParent(folder,PRIVATE_FOLDER)||folder.mimeType!=='application/vnd.google-apps.folder')
-  throw new DriveError(409,'drive/review-source-folder-changed');
-}
-async function verifyReviewOriginal(token:string,original:ReviewOriginal,signal:AbortSignal){
- const input=await reviewMetadata(token,original.id,signal);
- if(!input||input.id!==original.id||!privateItem(input)||!singleParent(input,original.parentId)||!Number.isSafeInteger(Number(input.size))||
-  input.version!==original.version||input.sha256Checksum!==original.sha256||
-  !['image/png','image/jpeg'].includes(input.mimeType||'')||Number(input.size)<100||Number(input.size)>REVIEW_MAX_BYTES)
-  throw new DriveError(409,'drive/review-source-changed');
- return input;
-}
-
-async function authorizeReviewBatch(req:Request,res:Response){
- const identity=await owner(req);
- const {id,ids,folder,originals}=req.body||{};
- if(!reviewId(id)||!driveId(folder)||!Array.isArray(ids)||
-  ids.length<1||ids.length>REVIEW_BATCH_LIMIT||!ids.every(reviewJobId)||new Set(ids).size!==ids.length)
-  throw new DriveError(400,'drive/review-invalid-batch');
- const originalBatch=ids.every(originalReviewId);
- if(Object.keys(req.body||{}).length!==(originalBatch?4:3)||(!originalBatch&&ids.some(originalReviewId))||
-  (originalBatch&&(!Array.isArray(originals)||originals.length!==ids.length||!originals.every(validReviewOriginal)||
-   new Set(originals.map(source=>source.id)).size!==ids.length)))throw new DriveError(400,'drive/review-invalid-batch');
- const sources=originalBatch?Object.fromEntries(ids.map((job,index)=>[job,reviewOriginKey(originals[index])])):undefined;
- const activation=studio('autoReviewControl','activation'),current=studio('autoReviewControl','current');
- const reservation=studio('autoReviewControl','batch');
- const [admission,counter,binding]=await db().getAll(activation,current,studio('devices',REVIEW_DEVICE));
- const window=admission.data(),device=binding.data(),started=counter.data()?.started||0;
- if(!Number.isSafeInteger(window?.maxRuns)||!Number.isSafeInteger(window?.until)||window!.until<=Date.now()||
-  started+ids.length>window!.maxRuns)throw new DriveError(403,'drive/review-admission-closed');
- if(device?.status!=='approved'||!Number.isSafeInteger(device.approvedAt))throw new DriveError(403,'drive/review-device-unapproved');
- const grant=await sessionGrant(),access=await readGrantAccess(grant,identity.googleSub);
- const signal=AbortSignal.timeout(35000);
- await reviewFolder(access.accessToken,folder,signal);
- if(originalBatch){
-  if(originals.some((source:ReviewOriginal)=>source.parentId===REFERENCES_FOLDER))await verifyReferenceFolder(access.accessToken,signal);
-  await Promise.all(originals.map((source:ReviewOriginal)=>verifyReviewOriginal(access.accessToken,source,signal)));
- }
- const expiresAt=Math.min(window!.until,Date.now()+24*60*60*1000);
- const authorizedUntil=await db().runTransaction(async tx=>{
-  const [latest,position,old,pc,connection]=await tx.getAll(activation,current,reservation,studio('devices',REVIEW_DEVICE),grantRef());
-  const limits=latest.data(),observedDevice=pc.data(),activeGrant=connection.data() as Grant|undefined;
-  if(limits?.until!==window!.until||limits?.maxRuns!==window!.maxRuns||expiresAt<=Date.now()||
-   (position.data()?.started||0)!==started||observedDevice?.status!=='approved'||observedDevice.approvedAt!==device.approvedAt||
-   !activeGrant?.enabled||activeGrant.revision!==grant!.revision||activeGrant.googleSub!==identity.googleSub||
-   (activeGrant.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/review-authorization-changed');
-  const before=old.data();
-  if(before?.id===id){
-   if(before.folder!==folder||JSON.stringify(before.ids)!==JSON.stringify(ids)||
-    (sources&&ids.some(key=>before.sources?.[key]!==sources[key])))throw new DriveError(409,'drive/review-batch-conflict');
-   if(before.expiresAt<=Date.now()||before.state!=='active')throw new DriveError(409,'drive/review-batch-inactive');
-   return before.expiresAt as number;
-  }
-  if(Array.isArray(before?.ids)&&before.ids.length<=REVIEW_BATCH_LIMIT){
-   const oldRuns=await tx.getAll(...before.ids.filter(reviewJobId).map((key:string)=>studio('autoReviewRuns',key)));
-   if(oldRuns.some(snapshot=>snapshot.exists&&!['accepted','rejected','closed'].includes(snapshot.data()?.phase))||
-    (before.expiresAt>Date.now()&&before.state!=='stopped'&&oldRuns.some(snapshot=>!snapshot.exists)))
-    throw new DriveError(409,'drive/review-batch-active');
-  }
-  const verifiedSources=sources?{sources}:{};
-  tx.create(batchGrant(id),{folder,ids,expiresAt,revision:grant!.revision,googleSub:identity.googleSub,approvedAt:device.approvedAt,...verifiedSources});
-  tx.set(reservation,{id,folder,ids,expiresAt,state:'active',...verifiedSources});
-  return expiresAt;
- },{maxAttempts:3});
- res.json({authorized:true,expiresAt:authorizedUntil});
-}
-
-async function reviewDevice(req:Request){
- const bearer=req.get('authorization')?.match(/^Bearer (\S+)$/)?.[1];
- if(!bearer||req.get('origin')||req.get('content-type')?.split(';')[0]!=='application/json')throw new DriveError(401,'drive/review-device-sign-in');
- try{
-  const token=await admin.auth().verifyIdToken(bearer,true);
-  if(token.uid!==REVIEW_DEVICE||token.firebase?.sign_in_provider!=='anonymous')throw new Error('device');
- }catch{throw new DriveError(401,'drive/review-device-sign-in');}
-}
-
-async function verifyReviewSourceAccess(req:Request,res:Response){
- const id=req.body?.id;
- if(Object.keys(req.body||{}).length!==1||!originalReviewId(id))throw new DriveError(400,'drive/review-invalid-run');
- await reviewDevice(req);
- const jobRef=studio('jobs',id),runRef=studio('autoReviewRuns',id),deviceRef=studio('devices',REVIEW_DEVICE),
-  control=studio('autoReviewControl','batch'),attempt=db().doc(`_velumDrivePrivate/reviewInputs/items/${id}`);
- const [jobDoc,runDoc]=await db().getAll(jobRef,runRef);
- const job=jobDoc.data(),run=runDoc.data(),reference=job?.references?.[0],source=reference?.source;
- const original={id:source?.id,parentId:source?.parentId,version:run?.sourceVersion,sha256:reference?.sha256};
- if(!validReviewOriginal(original)||!reviewId(run?.batchId)||run?.phase!=='pending'||run.nonIntimate!==true||
-  job?.status!=='running'||job.batchId!==run.batchId||job.workerId!==REVIEW_DEVICE||job.deviceUid!==REVIEW_DEVICE||
-  !Number.isSafeInteger(job.startedAt))throw new DriveError(409,'drive/review-source-not-authorized');
- const bound=batchGrant(run.batchId);
- const permits=(batch:any,pc:any,connection:any,current:any)=>current?.id===run.batchId&&batch?.sources?.[id]===reviewOriginKey(original)&&
-  job.batchExpiresAt===batch.expiresAt&&job.startedAt<batch.expiresAt&&job.startedAt+REVIEW_DELIVERY_MS>Date.now()&&
-  pc?.status==='approved'&&pc.approvedAt===batch.approvedAt&&connection?.enabled&&
-  connection.revision===batch.revision&&connection.googleSub===batch.googleSub&&(connection.revocationUntil||0)<=Date.now();
- const approval=await db().runTransaction(async tx=>{
-  const [batch,device,connection,current,prior]=await tx.getAll(bound,deviceRef,grantRef(),control,attempt);
-  const scope=batch.data(),count=prior.data()?.count||0;
-  if(!permits(scope,device.data(),connection.data(),current.data())||count>=2)
-   throw new DriveError(403,'drive/review-source-not-authorized');
-  tx.set(attempt,{count:count+1});
-  return scope!;
- },{maxAttempts:3});
- const grant=await sessionGrant();
- if(!grant||grant.revision!==approval.revision)throw new DriveError(409,'drive/connection-changed');
- const {accessToken}=await readGrantAccess(grant,approval.googleSub);
- const signal=AbortSignal.timeout(26000);
- const parent=await reviewMetadata(accessToken,PRIVATE_FOLDER,signal);
- if(parent?.id!==PRIVATE_FOLDER||!privateItem(parent)||parent.mimeType!=='application/vnd.google-apps.folder')
-  throw new DriveError(409,'drive/review-private-changed');
- if(original.parentId===REFERENCES_FOLDER)await verifyReferenceFolder(accessToken,signal);
- const item=await verifyReviewOriginal(accessToken,original,signal);
- if(item.name!==source.name||Number(item.size)!==reference.bytes||item.mimeType!==reference.mime)
-  throw new DriveError(409,'drive/review-source-changed');
- const [pc,connection,current]=await db().getAll(deviceRef,grantRef(),control);
- if(!permits(approval,pc.data(),connection.data(),current.data()))throw new DriveError(403,'drive/review-source-not-authorized');
- res.json({verified:true});
-}
-
-async function generatedReviewFolder(token:string,signal:AbortSignal):Promise<string|null>{
- const parent=await reviewMetadata(token,PRIVATE_FOLDER,signal);
- if(parent?.id!==PRIVATE_FOLDER||!privateItem(parent)||parent.mimeType!=='application/vnd.google-apps.folder'||
-  parent.capabilities?.canAddChildren!==true)throw new DriveError(409,'drive/review-private-changed');
- const query=new URLSearchParams({q:`'${PRIVATE_FOLDER}' in parents and trashed=false and name='Auto Generated'`,
-  fields:`nextPageToken,incompleteSearch,files(${reviewFields})`,pageSize:'2',spaces:'drive'});
- const response=await reviewFetch(token,`${reviewDriveBase}/files?${query}`,signal);
- if(!response.ok)throw new DriveError(503,'drive/review-folder-unavailable');
- const listing=await response.json() as {nextPageToken?:string;incompleteSearch?:boolean;files?:ReviewDriveItem[]};
- if(listing.nextPageToken||listing.incompleteSearch||!Array.isArray(listing.files)||listing.files.length>1)
-  throw new DriveError(409,'drive/review-generated-ambiguous');
- const item=listing.files[0];
- if(!item){
-  if(parent.isAppAuthorized!==true)throw new DriveError(409,'drive/review-private-grant');
-  return null;
- }
- if(!driveId(item.id)||!privateItem(item)||!singleParent(item,PRIVATE_FOLDER)||item.mimeType!=='application/vnd.google-apps.folder'||
-  item.capabilities?.canAddChildren!==true)throw new DriveError(409,'drive/review-generated-changed');
- if(item.isAppAuthorized!==true)throw new DriveError(409,'drive/review-generated-grant');
- return item.id;
-}
-
-async function ensureReviewTarget(req:Request,res:Response){
- const identity=await owner(req), id=req.body?.id;
- if(Object.keys(req.body||{}).length!==1||!originalReviewId(id))throw new DriveError(400,'drive/review-invalid-run');
- const run=studio('autoReviewRuns',id),job=studio('jobs',id);
- const [review,complete]=await db().getAll(run,job);
- const accepting=(run:any,job:any)=>run?.phase==='accepting'&&driveId(run.fileId)&&job?.status==='completed'&&job.batchId===run.batchId;
- if(!accepting(review.data(),complete.data()))throw new DriveError(409,'drive/review-acceptance-required');
- const grant=await sessionGrant(), {accessToken}=await readGrantAccess(grant,identity.googleSub);
- const signal=AbortSignal.timeout(35000);
- let folderId=await generatedReviewFolder(accessToken,signal);
- if(!folderId){
-  const reservation=db().doc('_velumDrivePrivate/autoGenerated');
-  const prior=(await reservation.get()).data()?.id;
-  let candidate=prior;
-  if(!driveId(candidate)){
-   const generated=await reviewFetch(accessToken,`${reviewDriveBase}/files/generateIds?count=1&space=drive&type=files`,signal);
-   if(!generated.ok)throw new DriveError(503,'drive/review-reservation-unavailable');
-   candidate=(await generated.json() as {ids?:string[]}).ids?.[0];
-  }
-  if(!driveId(candidate))throw new DriveError(503,'drive/review-reservation-invalid');
-  const reserved=await db().runTransaction(async tx=>{
-   const [saved,connection,evidence,finished]=await tx.getAll(reservation,grantRef(),run,job);
-   const current=connection.data() as Grant|undefined;
-   if(!current?.enabled||current.revision!==grant!.revision||current.googleSub!==identity.googleSub||
-    (current.revocationUntil||0)>Date.now()||!accepting(evidence.data(),finished.data()))
-    throw new DriveError(409,'drive/review-acceptance-changed');
-   const known=saved.data();
-   if(known){
-    if(known.googleSub!==identity.googleSub||!driveId(known.id))throw new DriveError(409,'drive/review-reservation-conflict');
-    return known.id as string;
-   }
-   tx.create(reservation,{id:candidate,googleSub:identity.googleSub});
-   return candidate as string;
-  },{maxAttempts:3});
-  const response=await reviewFetch(accessToken,`${reviewDriveBase}/files`,signal,'POST',Buffer.from(JSON.stringify({
-   id:reserved,name:'Auto Generated',mimeType:'application/vnd.google-apps.folder',parents:[PRIVATE_FOLDER],
-  })),{'Content-Type':'application/json; charset=UTF-8'});
-  await response.body?.cancel();
-  if(!response.ok&&response.status!==409)throw new DriveError(response.status>=500?503:409,'drive/review-generated-create-failed');
-  folderId=await generatedReviewFolder(accessToken,signal);
-  if(folderId!==reserved)throw new DriveError(409,'drive/review-generated-unconfirmed');
- }
- res.json({folderId});
-}
-
-async function stageReview(req:Request,res:Response){
- const id=req.body?.id;
- if(Object.keys(req.body||{}).length!==1||!reviewJobId(id))throw new DriveError(400,'drive/review-invalid-run');
- await reviewDevice(req);
- const signal=AbortSignal.timeout(48000);
- const jobRef=studio('jobs',id),runRef=studio('autoReviewRuns',id),deviceRef=studio('devices',REVIEW_DEVICE),
-  visionRef=studio('autoReviewVision',id),reservation=studio('uploads',id),attemptRef=stageAttempt(id);
- const [jobDoc,runDoc,visionDoc]=await db().getAll(jobRef,runRef,visionRef);
- const job=jobDoc.data(),run=runDoc.data(),result=job?.result,vision=visionDoc.data(),reference=job?.references?.[0],source=reference?.source;
- const original=originalReviewId(id)?{id:source?.id,parentId:source?.parentId,version:run?.sourceVersion,sha256:reference?.sha256}:null;
- if(!reviewId(run?.batchId)||!driveId(run?.stageFolderId)||job?.status!=='running'||run?.phase!=='pending'||
-  job.batchId!==run.batchId||run.nonIntimate!==true||
-  job?.workerId!==REVIEW_DEVICE||job?.deviceUid!==REVIEW_DEVICE||!Number.isSafeInteger(job.startedAt)||
-  !driveId(source?.id)||source.kind!=='drive'||typeof run.sourceVersion!=='string'||
-  result?.mime!=='image/png'||!Number.isInteger(result.bytes)||result.bytes<100||result.bytes>REVIEW_MAX_BYTES||
-  !Number.isInteger(result.chunks)||result.chunks<1||result.chunks>16||!/^[a-f0-9]{64}$/.test(result.sha256)||
-  vision?.outputSha256!==result.sha256||vision?.sourceSha256!==reference.sha256||
-  (original&&(!validReviewOriginal(original)||vision?.schema!==2||vision?.seed!==job.prompt)))
-  throw new DriveError(409,'drive/review-result-not-ready');
- const batchRef=batchGrant(run.batchId),control=studio('autoReviewControl','batch');
- const permitted=(batch:any,pc:any,connection:any)=>batch?.ids?.includes(id)&&batch.folder===run.stageFolderId&&
-  (!original||batch.sources?.[id]===reviewOriginKey(original))&&
-  job.batchExpiresAt===batch.expiresAt&&job.startedAt<batch.expiresAt&&job.startedAt+REVIEW_DELIVERY_MS>Date.now()&&
-  pc?.status==='approved'&&pc.approvedAt===batch.approvedAt&&
-  connection?.enabled&&connection.googleSub===batch.googleSub&&connection.revision===batch.revision&&
-  (connection.revocationUntil||0)<=Date.now();
- const claim=random();
- const intent=await db().runTransaction(async tx=>{
-  const [batch,pc,connection,attempt,ownerBatch]=await tx.getAll(batchRef,deviceRef,grantRef(),attemptRef,control);
-  const approval=batch.data(),prior=attempt.data(),ownerBatchData=ownerBatch.data();
-  // Pause and stop bar new claims in Rules. This job already holds its claim.
-  if(ownerBatchData?.id!==run.batchId||
-   !permitted(approval,pc.data(),connection.data()))throw new DriveError(403,'drive/review-stage-not-authorized');
-  if((prior?.attempts||0)>=2||prior?.leaseUntil>Date.now())throw new DriveError(409,'drive/review-stage-limit');
-  tx.set(attemptRef,{lease:claim,leaseUntil:Date.now()+65000,attempts:(prior?.attempts||0)+1});
-  return approval!;
- },{maxAttempts:3});
- let confirmed=false;
- try{
-  const active=await sessionGrant();
-  if(!active||active.revision!==intent.revision)throw new DriveError(409,'drive/connection-changed');
-  const {accessToken}=await readGrantAccess(active,intent.googleSub);
-  await reviewFolder(accessToken,run.stageFolderId,signal);
-  if(!original||original.parentId===REFERENCES_FOLDER)await verifyReferenceFolder(accessToken,signal);
-  if(original){
-   const input=await verifyReviewOriginal(accessToken,original,signal);
-   if(input.name!==source.name||Number(input.size)!==reference.bytes||input.mimeType!==reference.mime)
-    throw new DriveError(409,'drive/review-source-changed');
-  }else{
-   const input=await reviewMetadata(accessToken,source.id,signal);
-   if(!input||input.id!==source.id||!privateItem(input)||!singleParent(input,REFERENCES_FOLDER)||
-    input.version!==run.sourceVersion||!['image/png','image/jpeg'].includes(input.mimeType||''))throw new DriveError(409,'drive/review-source-changed');
-  }
-  const current=await reservation.get();
-  let candidate=current.data()?.fileId;
-  if(!candidate){
-   const response=await reviewFetch(accessToken,`${reviewDriveBase}/files/generateIds?count=1&space=drive&type=files`,signal);
-   if(!response.ok)throw new DriveError(503,'drive/review-reservation-unavailable');
-   candidate=(await response.json() as {ids?:string[]}).ids?.[0];
-  }
-  if(!driveId(candidate))throw new DriveError(503,'drive/review-reservation-invalid');
-  const fileId=await db().runTransaction(async tx=>{
-   const [saved,gate,latest,pc,grant,ownerBatch]=await tx.getAll(reservation,attemptRef,runRef,deviceRef,grantRef(),control);
-   if(gate.data()?.lease!==claim||latest.data()?.phase!=='pending'||ownerBatch.data()?.id!==run.batchId||
-    !permitted(intent,pc.data(),grant.data()))
-    throw new DriveError(409,'drive/review-stage-changed');
-   const data=saved.data();
-   if(data){
-    if(!driveId(data.fileId)||data.sha256!==result.sha256||data.bytes!==result.bytes||data.jobId!==id)
-     throw new DriveError(409,'drive/review-reservation-conflict');
-    return data.fileId;
-   }
-   tx.create(reservation,{jobId:id,fileId:candidate,sha256:result.sha256,bytes:result.bytes,createdAt:Date.now()});
-   return candidate as string;
-  },{maxAttempts:3});
-  let file=await reviewMetadata(accessToken,fileId,signal,true);
-  const matches=(value:any)=>value?.id===fileId&&privateItem(value)&&singleParent(value,run.stageFolderId)&&value.mimeType==='image/png'&&
-   Number(value.size)===result.bytes&&value.appProperties?.velumJobId===id&&value.appProperties?.velumSha256===result.sha256;
-  if(!file){
-   const chunks=await db().getAll(...Array.from({length:result.chunks},(_,index)=>jobRef.collection('chunks').doc(String(index))));
-   const encoded=chunks.map((snapshot,index)=>{
-    const item=snapshot.data();
-    if(item?.index!==index||typeof item.data!=='string'||item.data.length<1||item.data.length>600000||
-     (index<result.chunks-1&&item.data.length!==600000)||!/^[A-Za-z0-9+/]+={0,2}$/.test(item.data))
-     throw new DriveError(409,'drive/review-result-invalid');
-    return item.data;
-   }).join('');
-   const bytes=Buffer.from(encoded,'base64');
-   if(bytes.length!==result.bytes||bytes.toString('base64')!==encoded||!bytes.subarray(0,8).equals(reviewPng)||
-    createHash('sha256').update(bytes).digest('hex')!==result.sha256)throw new DriveError(409,'drive/review-result-invalid');
-   await reviewFolder(accessToken,run.stageFolderId,signal);
-   const metadata={id:fileId,name:`Velum-${id}.png`,mimeType:'image/png',parents:[run.stageFolderId],
-    appProperties:{velumJobId:id,velumSha256:result.sha256}};
-   const created=await reviewFetch(accessToken,'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',signal,
-    'POST',Buffer.from(JSON.stringify(metadata)),{'Content-Type':'application/json; charset=UTF-8',
-     'X-Upload-Content-Type':'image/png','X-Upload-Content-Length':String(result.bytes)});
-   await created.body?.cancel();
-   if(created.ok){
-    const location=created.headers.get('location');
-    const address=location&&URL.canParse(location)?new URL(location):null;
-    if(!address||address.origin!=='https://www.googleapis.com'||address.pathname!=='/upload/drive/v3/files'||
-      address.username||address.password||!address.searchParams.get('upload_id'))throw new DriveError(409,'drive/review-upload-unconfirmed');
-    const [pc,connection,batchCurrent]=await db().getAll(deviceRef,grantRef(),control);
-    if(!permitted(intent,pc.data(),connection.data())||batchCurrent.data()?.id!==run.batchId)
-     throw new DriveError(409,'drive/review-stage-changed');
-    const uploaded=await reviewFetch(accessToken,address.href,signal,'PUT',bytes,{'Content-Type':'image/png'});
-    await uploaded.body?.cancel();
-    if(!uploaded.ok&&uploaded.status!==409)throw new DriveError(uploaded.status>=500||uploaded.status===429?503:409,'drive/review-upload-unconfirmed');
-   }else if(created.status!==409){
-    throw new DriveError(created.status>=500||created.status===429?503:409,'drive/review-upload-unconfirmed');
-   }
-   file=await reviewMetadata(accessToken,fileId,signal);
-  }
-  if(!file||!matches(file)||!await confirmReviewBytes(accessToken,file,fileId,result.bytes,result.sha256,signal))
-   throw new DriveError(409,'drive/review-upload-unconfirmed');
-  await reviewFolder(accessToken,run.stageFolderId,signal);
-  await db().runTransaction(async tx=>{
-   const [latest,gate,pc,connection,batchCurrent]=await tx.getAll(runRef,attemptRef,deviceRef,grantRef(),control);
-   if(latest.data()?.phase!=='pending'||gate.data()?.lease!==claim||!permitted(intent,pc.data(),connection.data())||
-    batchCurrent.data()?.id!==run.batchId)throw new DriveError(409,'drive/review-stage-changed');
-   tx.update(runRef,{phase:'staged',fileId});
-   tx.update(attemptRef,{leaseUntil:0,confirmedAt:Date.now()});
-  },{maxAttempts:3});
-  confirmed=true;
-  res.json({staged:true});
- }finally{
-  if(!confirmed)await db().runTransaction(async tx=>{
-   if((await tx.get(attemptRef)).data()?.lease===claim)tx.update(attemptRef,{leaseUntil:0});
-  },{maxAttempts:3}).catch(()=>{});
- }
-}
-
 export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_SERVICE_ACCOUNT,memory:'256MiB',timeoutSeconds:60,maxInstances:2,invoker:'public',cors:false},async(req,res)=>{
  res.set({'Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Vary':'Origin, Authorization, Cookie'});
  const path=req.path.replace(/^\/api\/drive/,'');
@@ -1073,17 +677,13 @@ export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_S
    const optionalManagement=managementHealth();
    if(OFFLINE_ENABLED)await config();
    const managementConfigured=await optionalManagement;
-   res.json({service:'velum-drive',version:'offline-v3.1',autoReviewProtocol:4,ready:OFFLINE_ENABLED,managementProxy:true,managementConfigured,managementClientId:managementConfigured?MANAGEMENT_CLIENT:''});return;
+   res.json({service:'velum-drive',version:'offline-v3.1',ready:OFFLINE_ENABLED,managementProxy:true,managementConfigured,managementClientId:managementConfigured?MANAGEMENT_CLIENT:''});return;
   }
   if(req.method==='GET'&&path==='/callback'){await callback(req,res);return;}
   if(req.method!=='POST'){res.status(405).json({code:'drive/method-not-allowed'});return;}
   if(Number(req.get('content-length')||0)>2048)throw new DriveError(413,'drive/invalid-request');
   if(path==='/start')await start(req,res);
   else if(path==='/session')await session(req,res);
-  else if(path==='/review-authorize')await authorizeReviewBatch(req,res);
-  else if(path==='/review-stage')await stageReview(req,res);
-  else if(path==='/review-source')await verifyReviewSourceAccess(req,res);
-  else if(path==='/review-target')await ensureReviewTarget(req,res);
    else if(path==='/move')await move(req,res);
    else if(path==='/move-status')await moveStatus(req,res);
   else if(path==='/disconnect')await disconnect(req,res);

@@ -35,6 +35,9 @@ service cloud.firestore {
   }
   // Private Studio drafts, reference inputs, thumbnails and explicit Drive save receipts.
   match /users/{uid}/velumStudio/workspace {
+   function retiredReviewId(id) {
+    return id.matches('(feedback-)?review-(v[123]-)?[a-f0-9]{32}');
+   }
    function studioOwner() { return owner(uid) && uid == '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2'; }
    // Public identity pin provisioned by trusted installation, never a bearer token.
    function pinnedDevice() { return uid == '5PbKbpGf3AbarNrp6pyqJ5C5Ziu2' && request.auth != null
@@ -55,13 +58,6 @@ service cloud.firestore {
    function instant(t) { return t is int && t > 0 && t <= request.time.toMillis() + 300000; }
    // Current measurements only. No arbitrary telemetry, identifiers or history.
    function studioStage(s) { return s in ['preparing','loading-model','encoding-references','encoding-prompt','loading-diffusion','sampling','decoding','publishing']; }
-   function reviewStage(p,id) {
-    return configuredReviewJob(id) && 'batchId' in resource.data && resource.data.workerId == request.auth.uid
-     && p.jobStartedAt == resource.data.startedAt && p.updatedAt is int && p.stageDurations is map && p.resources is map
-     && p.get('step',null) == null && p.get('total',null) == null
-     && p.stage in ['review-vision-1','review-vision-2','review-staging','review-source-changed','review-source-connection',
-       'review-vision-1-unavailable','review-stage-unconfirmed','review-stage-connection','review-stage-folder'];
-   }
    function studioDurations() {
     let d = request.resource.data.progress.stageDurations;
     let a = d.get('preparing',0);
@@ -107,7 +103,7 @@ service cloud.firestore {
      && (vu == null || (vu is number && vu >= 0 && vu <= 16777216))
      && (vu == null || vt == null || vu <= vt);
    }
-   function studioProgress(id) {
+   function studioProgress() {
     let p = request.resource.data.get('progress',{});
     let keys = p.keys();
     let s = p.get('step',null);
@@ -117,7 +113,7 @@ service cloud.firestore {
     let updatedAt = p.get('updatedAt',null);
     return p is map
      && keys.hasOnly(['step','total','stage','jobStartedAt','stageStartedAt','updatedAt','stageDurations','resources'])
-     && (!('stage' in p) || studioStage(p.stage) || reviewStage(p,id))
+     && (!('stage' in p) || studioStage(p.stage))
      && (t == null || (t is int && t >= 0 && t <= 10000))
      && (s == null || (s is int && s >= 0 && t is int && s <= t))
      && (!keys.hasAny(['jobStartedAt','stageStartedAt','updatedAt','stageDurations','resources']) || (
@@ -266,9 +262,7 @@ service cloud.firestore {
      && instant(request.resource.data.updatedAt) && approvedModels(request.resource.data)
      && request.resource.data.state in ['idle','running','offline'] && request.resource.data.activeJob is string && request.resource.data.activeJob.size() <= 80
       && request.resource.data.version in ['2.0.0','2.1.0','2.2.0','2.3.0','2.3.1','2.3.2']
-      && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight','recoveryControl','qwenMaxReferences','promptSchema','referenceLimits','autoReviewVision'])
-      && (!('autoReviewVision' in request.resource.data.capabilities) ||
-       (request.resource.data.version in ['2.3.1','2.3.2'] && request.resource.data.capabilities.autoReviewVision in [1,2,3,4]))
+      && (!('capabilities' in request.resource.data) || (request.resource.data.capabilities.keys().hasOnly(['referenceModel','maxReferences','referenceModels','referenceOutputWidth','referenceOutputHeight','recoveryControl','qwenMaxReferences','promptSchema','referenceLimits'])
       && request.resource.data.capabilities.referenceModel == 'flux2-klein-fp8' && request.resource.data.capabilities.maxReferences == 2
       && request.resource.data.capabilities.referenceOutputWidth == 512 && request.resource.data.capabilities.referenceOutputHeight == 768
       && (request.resource.data.version == '2.0.0' ? !('referenceModels' in request.resource.data.capabilities) :
@@ -299,297 +293,22 @@ service cloud.firestore {
        && instant(request.resource.data.attemptedAt)
        && request.resource.data.attemptedAt >= request.time.toMillis() - 300000);
     }
-   // Auto Review runs only within an explicit owner-administered usage window.
-   function reviewPath(collection, id) {
-    return /databases/$(database)/documents/users/$(uid)/velumStudio/workspace/$(collection)/$(id);
-   }
-   function reviewJob(id) { return id.matches('review-(v[123]-)?[a-f0-9]{32}'); }
-   function visionReviewJob(id) { return id.matches('review-v[123]-[a-f0-9]{32}'); }
-   function configuredReviewJob(id) { return id.matches('review-v[23]-[a-f0-9]{32}'); }
-   function originalReviewJob(id) { return id.matches('review-v3-[a-f0-9]{32}'); }
-   function reviewRevisionId(id) { return id is string && id.matches('[a-f0-9]{32}'); }
-   function reviewDriveId(id) { return id is string && id.matches('[A-Za-z0-9_-]{8,160}'); }
-   function reviewActivation() { return get(reviewPath('autoReviewControl','activation')).data; }
-   function reviewEnabled() {
-    let a = reviewActivation();
-    return a != null && a.until is int && a.until > request.time.toMillis() && a.maxRuns is int && a.maxRuns > 0;
-   }
-   function reviewTerminal(d) { return d.phase in ['accepted','rejected','closed']; }
-   function batchControl() { return getAfter(reviewPath('autoReviewControl','batch')).data; }
-   function batchContains(batch, id, batchId) {
-    return batch != null && batch.id == batchId && id in batch.ids;
-   }
-   function batchIsActive(batch, id, batchId) {
-    return batchContains(batch,id,batchId) && batch.state == 'active' && batch.expiresAt > request.time.toMillis();
-   }
-   function batchActive(id, batchId) { return batchIsActive(batchControl(),id,batchId); }
-   function reviewLinked(id) {
-    let run = getAfter(reviewPath('autoReviewRuns',id)).data;
-    return run != null && ('batchId' in run ? batchContains(batchControl(),id,run.batchId) :
-     getAfter(reviewPath('autoReviewControl','current')).data.runId == id);
-   }
-   function originalReference(ref) {
-    let source = ref.source;
-    return ref.keys().hasOnly(['index','mime','bytes','sha256','width','height','chunks','source'])
-     && ref.index == 0 && ref.mime in ['image/png','image/jpeg'] && ref.chunks == 0
-     && ref.bytes is int && ref.bytes >= 100 && ref.bytes <= 7200000
-     && ref.sha256 is string && ref.sha256.matches('[a-f0-9]{64}')
-     && ref.width is int && ref.height is int && ref.width > 0 && ref.height > 0
-     && ref.width <= 8192 && ref.height <= 8192 && ref.width*ref.height <= 24000000
-     && ref.width <= ref.height*8 && ref.height <= ref.width*8
-     && source.keys().hasOnly(['kind','id','name','parentId']) && source.kind == 'drive' && reviewDriveId(source.id)
-     && source.name is string && source.name.size() > 0 && source.name.size() <= 160
-     && source.parentId in ['1AedezVcOlOB-cdv00j1HQ7Sy-EZntHgA','1yDt_5NSv8fDYhZvOdsihdJwKQJuTzx66'];
-   }
-   function reviewSettings(id, d, run, batch) {
-    let settings = get(reviewPath('autoReviewControl','settings')).data;
-    let ref = d.references[0];
-    return settings.id == run.configId && settings.model == d.model && settings.seed == d.prompt
-     && (originalReviewJob(id) ?
-      settings.sourceScope == 'private-and-references' && originalReference(ref)
-      && batch.sources[id] == ref.source.parentId + ':' + ref.source.id + ':' + run.sourceVersion + ':' + ref.sha256 :
-      settings.sources.hasAny([ref.source.id + ':' + run.sourceVersion]));
-   }
-   function approvedPrompt(id, d, run) {
-    let prompt = get(reviewPath('autoReviewControl','prompt')).data;
-    return d.review is map && d.review.keys().hasOnly(['configId','seedId','promptGuidance'])
-     && d.review.configId == prompt.id && d.review.seedId == run.configId && d.review.promptGuidance == prompt.guidance
-     && (!originalReviewJob(id) || prompt.scope == 'visible-description');
-   }
-   function promptGuidance(value) { return value is string && value.size() > 0 && value.size() <= 400; }
-   function reviewCapability(status, id) {
-    let version = status.capabilities.get('autoReviewVision',0);
-    return originalReviewJob(id) ? version == 4 : configuredReviewJob(id) ? version in [2,3,4] : version in [1,2,3,4];
-   }
-   function reviewBatchCapability(status, id) {
-    let version = status.capabilities.get('autoReviewVision',0);
-    return originalReviewJob(id) ? version == 4 : version in [3,4];
-   }
-   function reviewSource(value) { return value is string && value.matches('[A-Za-z0-9_-]{8,160}:[0-9]{1,24}'); }
-   function reviewConfiguration(d) {
-    let s = d.get('sources',[]);
-    return model(d.model) && d.seed is string && d.seed.size() > 0 && d.seed.size() <= 800
-     && ('sourceScope' in d ? d.sourceScope == 'private-and-references' && !('sources' in d) :
-      s is list && s.size() >= 1 && s.size() <= 6 && s.toSet().size() == s.size()
-      && reviewSource(s[0]) && (s.size() < 2 || reviewSource(s[1])) && (s.size() < 3 || reviewSource(s[2]))
-      && (s.size() < 4 || reviewSource(s[3])) && (s.size() < 5 || reviewSource(s[4])) && (s.size() < 6 || reviewSource(s[5])));
-   }
-   function reviewWorker(d, id) {
-    let status = get(reviewPath('status','pc')).data;
-    let device = get(reviewPath('devices',d.deviceUid)).data;
-    return status != null && device != null && device.deviceUid == d.deviceUid && device.status == 'approved'
-     && status.deviceUid == d.deviceUid && status.version in ['2.3.0','2.3.1','2.3.2']
-     && (d.model != turboModel() || status.version == '2.3.2')
-     && status.state in ['idle','running'] && status.updatedAt >= request.time.toMillis() - 90000
-     && status.updatedAt <= request.time.toMillis() + 30000 && d.model in status.installed
-     && status.capabilities.promptSchema == 4 && d.model in status.capabilities.referenceModels
-     && ('batchId' in d ? reviewBatchCapability(status,id) : (!visionReviewJob(id) || reviewCapability(status,id)));
-   }
-   function reviewJobAdmission(id, d) {
-    let run = getAfter(reviewPath('autoReviewRuns',id)).data;
-    let pointer = getAfter(reviewPath('autoReviewControl','current')).data;
-    let batch = batchControl();
-    return configuredReviewJob(id) && reviewEnabled() && batchIsActive(batch,id,run.batchId) && run.batchId == d.batchId
-     && d.batchExpiresAt == batch.expiresAt && pointer.runId == id && pointer.batchId == run.batchId
-     && run.nonIntimate == true && run.createdAt == d.createdAt
-     && run.phase == 'pending' && d.schemaVersion == 4 && d.references.size() == 1
-     && (originalReviewJob(id) ? d.status == 'queued' && d.inputsReady == true : d.status == 'uploading')
-     && d.references[0].source.kind == 'drive' && d.effectivePrompt == d.prompt && !('pose' in d)
-     && d.parentJobId == '' && reviewSettings(id,d,run,batch) && approvedPrompt(id,d,run) && reviewWorker(d,id);
-   }
-   // The original-byte lane has one fixed request shape. Checking it directly
-   // avoids evaluating the general Studio schema and repeating those checks.
-   function originalReviewAdmission(id, d) {
-    let run = getAfter(reviewPath('autoReviewRuns',id)).data;
-    let pointer = getAfter(reviewPath('autoReviewControl','current')).data;
-    return d.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent',
-       'references','parentJobId','inputsReady','effectivePrompt','review','batchId','batchExpiresAt'])
-     && d.schemaVersion == 4 && d.deviceUid == 'f1bmD2SAJcQf25YwkhLcE0hJyS22' && model(d.model)
-     && d.consent == true && d.seed is int && d.seed >= 0 && d.seed <= 2147483647
-     && instant(d.createdAt) && d.expiresAt == d.createdAt + 604800000 && d.expiresAt > request.time.toMillis()
-     && d.prompt is string && d.prompt.size() > 0 && d.prompt.size() <= 800 && d.effectivePrompt == d.prompt
-     && d.parentJobId == '' && d.status == 'queued' && d.inputsReady == true && d.references is list && d.references.size() == 1
-     && (qwenModel(d.model) ? reviewQwenDimensions(d) : d.width == 512 && d.height == 768)
-     // The newly created companion run checks the live batch, source and owner approvals.
-     && run != null && run.batchId == d.batchId && !exists(reviewPath('autoReviewRuns',id))
-     && pointer.runId == id && pointer.batchId == d.batchId && reviewWorker(d,id);
-   }
-   function reviewQwenDimensions(d) {
-    return d.width is int && d.height is int && d.width >= 32 && d.width <= 3072 && d.height >= 32 && d.height <= 3072
-     && d.width % 32 == 0 && d.height % 32 == 0 && d.width*d.height >= 950000 && d.width*d.height <= 1150000;
-   }
+   // Keep retired Auto Review records private and prevent stale clients from
+   // reopening the workflow. The owner can still read the audit records.
    match /autoReviewControl/{key} {
-    function nextRun(d, count) {
-     return d.keys().hasOnly(['runId','started','batchId']) && d.runId is string && configuredReviewJob(d.runId)
-      && batchActive(d.runId,d.batchId)
-      && d.started == count && d.started <= reviewActivation().maxRuns
-      && !exists(reviewPath('autoReviewRuns',d.runId)) && existsAfter(reviewPath('autoReviewRuns',d.runId));
-    }
-    function nextSettings(d, previous) {
-     let approved = getAfter(reviewPath('autoReviewRevisions',d.id)).data;
-     return d.keys().hasOnly(['id','model','seed','sources','sourceScope']) && reviewRevisionId(d.id) && reviewConfiguration(d)
-      && !exists(reviewPath('autoReviewRevisions',d.id)) && approved.kind == 'configuration'
-      && approved.model == d.model && approved.seed == d.seed && approved.get('sources',[]) == d.get('sources',[])
-      && approved.get('sourceScope','') == d.get('sourceScope','') && approved.previous == previous;
-    }
-    function nextPrompt(d, previous) {
-     let approved = getAfter(reviewPath('autoReviewRevisions',d.id)).data;
-     return d.keys().hasOnly(['id','guidance','scope']) && reviewRevisionId(d.id) && promptGuidance(d.guidance)
-      && d.get('scope','') in ['', 'visible-description']
-      && !exists(reviewPath('autoReviewRevisions',d.id)) && approved.kind == 'prompt'
-      && approved.guidance == d.guidance && approved.get('scope','') == d.get('scope','') && approved.previous == previous;
-    }
-    function changeBatch(d) {
-     return d.diff(resource.data).affectedKeys().hasOnly(['state','changedAt'])
-      && instant(d.changedAt) && d.changedAt >= request.time.toMillis() - 300000
-      && ((d.state == 'stopped' && resource.data.state in ['active','paused'])
-       || (d.expiresAt > request.time.toMillis() && reviewEnabled()
-        && ((resource.data.state == 'active' && d.state == 'paused') || (resource.data.state == 'paused' && d.state == 'active'))));
-    }
-    allow get: if studioOwner() && key in ['activation','current','settings','prompt','batch'];
-    allow update: if studioOwner() && key == 'batch' && changeBatch(request.resource.data);
-    allow create: if studioOwner() && reviewEnabled() &&
-     ((key == 'current' && nextRun(request.resource.data,1)) || (key == 'settings' && nextSettings(request.resource.data,'')));
-    allow create: if studioOwner() && key == 'prompt' && reviewActivation() != null && nextPrompt(request.resource.data,'');
-    allow update: if studioOwner() && reviewEnabled() &&
-     ((key == 'current' && (resource.data.get('batchId','') == request.resource.data.batchId
-       || reviewTerminal(get(reviewPath('autoReviewRuns',resource.data.runId)).data))
-       && nextRun(request.resource.data,resource.data.started + 1)) ||
-      (key == 'settings' && nextSettings(request.resource.data,resource.data.id)));
-    allow update: if studioOwner() && key == 'prompt' && reviewActivation() != null && nextPrompt(request.resource.data,resource.data.id);
+    allow read, write: if false;
    }
    match /autoReviewRuns/{id} {
-    function reviewRun(d) {
-     let requestJob = getAfter(reviewPath('jobs',id)).data;
-     let batch = batchControl();
-     return d.keys().hasOnly(['phase','createdAt','configId','sourceVersion','nonIntimate','stageFolderId','batchId'])
-      && requestJob.batchId == d.batchId && batchIsActive(batch,id,d.batchId) && batch.folder == d.stageFolderId
-      && d.phase == 'pending' && d.nonIntimate == true && d.createdAt == requestJob.createdAt
-      && requestJob.status == (originalReviewJob(id) ? 'queued' : 'uploading') && !exists(reviewPath('jobs',id))
-      && (d.configId == '' || reviewRevisionId(d.configId))
-      && d.sourceVersion is string && d.sourceVersion.matches('[0-9]{1,24}') && reviewDriveId(d.stageFolderId)
-      && (!originalReviewJob(id) || (requestJob.batchExpiresAt == batch.expiresAt
-        && reviewSettings(id,requestJob,d,batch) && approvedPrompt(id,requestJob,d)));
-    }
-    function textLength(t, size) { return t is string && t.size() > 0 && t.size() <= size; }
-    function changed(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
-    function closeRun(d) {
-     let p = getAfter(reviewPath('jobs',id)).data;
-     return d.phase == 'closed' && changed(['phase','finishedAt']) && instant(d.finishedAt)
-      && (p.status in ['failed','cancelled','expired','completed'] || (p.status == 'queued' && p.expiresAt <= request.time.toMillis()));
-    }
-    function rejectRun(d) {
-     return d.phase == 'rejected' && changed(['phase','finishedAt','reason','note','analysis','draft','learningId'])
-      && instant(d.finishedAt) && d.reason in ['intent','preservation','artifact','scope','other']
-      && (originalReviewJob(id) ? d.note is string && d.note.size() <= 2000 : textLength(d.note,2000)) && textLength(d.analysis,800) && textLength(d.draft,3000) && d.learningId == ''
-      && (!('batchId' in resource.data) || existsAfter(reviewPath('jobs','feedback-' + id)));
-    }
-    function approveLearning(d) {
-     let revision = getAfter(reviewPath('autoReviewRevisions',d.learningId)).data;
-     return reviewRevisionId(d.learningId) && !exists(reviewPath('autoReviewRevisions',d.learningId))
-      && revision.kind == 'learning' && revision.runId == id && revision.text == d.draft && revision.previous == resource.data.get('learningId','');
-    }
-    function reviewChange(d) {
-     return (resource.data.phase == 'pending' && reviewLinked(id) && (closeRun(d) ||
-       (d.phase == 'staged' && changed(['phase','fileId']) && reviewDriveId(d.fileId)
-        && get(reviewPath('jobs',id)).data.status == 'completed' && get(reviewPath('uploads',id)).data.fileId == d.fileId))) ||
-      (resource.data.phase == 'staged' && reviewLinked(id) && ((d.phase == 'accepting' && changed(['phase'])) || rejectRun(d))) ||
-      (resource.data.phase == 'accepting' && reviewLinked(id) && d.phase == 'accepted' && changed(['phase','finishedAt']) && instant(d.finishedAt)) ||
-      (resource.data.phase in ['accepted','rejected'] && changed(['draft','learningId']) && textLength(d.draft,3000)
-       && (d.get('learningId','') == resource.data.get('learningId','') || approveLearning(d)));
-    }
     allow get: if studioOwner();
-    allow list: if studioOwner() && request.query.limit <= 12;
-    allow create: if studioOwner() && reviewEnabled() && configuredReviewJob(id) && reviewRun(request.resource.data);
-    allow update: if studioOwner() && reviewChange(request.resource.data);
+    allow list: if studioOwner() && request.query.limit <= 30;
    }
    match /autoReviewRevisions/{id} {
-    function reviewRevision(d) {
-     return d.id == id && (d.previous == '' || reviewRevisionId(d.previous)) && instant(d.approvedAt)
-      && ((d.kind == 'configuration' && d.keys().hasOnly(['id','kind','model','seed','sources','sourceScope','previous','approvedAt']) && reviewConfiguration(d)
-        && getAfter(reviewPath('autoReviewControl','settings')).data.id == id)
-       || (d.kind == 'prompt' && d.keys().hasOnly(['id','kind','guidance','scope','previous','approvedAt']) && promptGuidance(d.guidance)
-        && d.get('scope','') in ['', 'visible-description']
-        && reviewActivation() != null && getAfter(reviewPath('autoReviewControl','prompt')).data.id == id)
-       || (d.kind == 'learning' && d.keys().hasOnly(['id','kind','runId','text','previous','approvedAt'])
-        && d.runId is string && reviewJob(d.runId) && d.text is string && d.text.size() > 0 && d.text.size() <= 3000
-        && getAfter(reviewPath('autoReviewRuns',d.runId)).data.learningId == id));
-    }
     allow get: if studioOwner();
-    allow create: if studioOwner() && reviewRevisionId(id) && reviewRevision(request.resource.data);
    }
    match /autoReviewVision/{id} {
-    function reviewing() {
-     let j = get(reviewPath('jobs',id)).data;
-     return visionReviewJob(id) && studioDevice() && j.deviceUid == request.auth.uid && j.workerId == request.auth.uid && j.status == 'running';
-    }
-    function validVision(d) {
-     let j = get(reviewPath('jobs',id)).data;
-     return d.keys().hasOnly(['schema','promptModel','comparisonModel','prompt','sourceSha256','outputSha256','state','observation','learning','nextSeed','seed','addition'])
-      && d.promptModel == 'qwen3-vl-2b-instruct' && d.comparisonModel == 'qwen3-vl-4b-instruct'
-      && d.prompt is string && d.prompt.size() > 0
-      && (originalReviewJob(id) ? d.schema == 2 && d.seed == j.prompt && d.addition is string && d.addition.size() <= 420
-       && d.prompt == (d.addition == '' ? d.seed : d.seed + '\n\n' + d.addition) :
-       d.schema == 1 && d.prompt.size() <= 420 && !d.keys().hasAny(['seed','addition']))
-      && j.references[0].sha256 == d.sourceSha256
-      && d.outputSha256 is string && d.outputSha256.matches('[a-f0-9]{64}')
-      && d.observation is string && d.observation.size() <= 700 && d.learning is string && d.learning.size() <= 800
-      && d.nextSeed is string && d.nextSeed.size() <= 800
-      && ((d.state == 'ready' && d.observation.size() > 0 && d.learning.size() > 0
-       && ('batchId' in get(reviewPath('jobs',id)).data ? d.nextSeed == '' : d.nextSeed.size() > 0))
-       || (d.state == 'unavailable' && d.observation == '' && d.learning == '' && d.nextSeed == ''));
-    }
-    allow get: if studioOwner() || reviewing();
-    allow create: if reviewing() && validVision(request.resource.data);
+    allow get: if studioOwner();
    }
    match /jobs/{id} {
-    // Keep progress validation separate so admission/completion does not
-    // revalidate the unchanged immutable request, or the whole metrics map.
-    allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress'])
-     && studioDevice() && resource.data.deviceUid == request.auth.uid
-     && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data)
-     && resource.data.status == 'running' && request.resource.data.status == 'running'
-     && studioProgress(id);
-    function batchJobControl(d) {
-     let batch = batchControl();
-     return resource.data.diff(d).affectedKeys().hasOnly(['status'])
-      && batchContains(batch,id,resource.data.batchId)
-      && ((batch.state == 'stopped' && d.status == 'cancelled' && resource.data.status in ['queued','paused','uploading'])
-       || (batch.state == 'paused' && d.status == 'paused' && resource.data.status == 'queued')
-       || (batch.state == 'active' && d.status == 'queued' && resource.data.status == 'paused'
-        && batch.expiresAt > request.time.toMillis() && resource.data.expiresAt > request.time.toMillis() && reviewEnabled()));
-    }
-    function feedbackRequest(d) {
-     let original = get(reviewPath('jobs',d.reviewJobId)).data;
-     let run = getAfter(reviewPath('autoReviewRuns',d.reviewJobId)).data;
-     return d.keys().hasOnly(['recordType','reviewJobId','deviceUid','status','createdAt','expiresAt','feedback','reason'])
-      && d.recordType == 'review-feedback' && configuredReviewJob(d.reviewJobId) && id == 'feedback-' + d.reviewJobId
-      && d.status == 'queued' && instant(d.createdAt) && d.createdAt >= request.time.toMillis() - 300000
-      && d.expiresAt == d.createdAt + 86400000 && d.expiresAt > request.time.toMillis()
-      && d.deviceUid == original.deviceUid && original.status == 'completed' && 'batchId' in run
-      && run.phase == 'rejected' && run.note == d.feedback && run.reason == d.reason && d.feedback is string
-      && (originalReviewJob(d.reviewJobId) || d.feedback.size() > 0) && d.feedback.size() <= 2000
-      && get(reviewPath('autoReviewRuns',d.reviewJobId)).data.phase == 'staged';
-    }
-    function feedbackResult(d) {
-     let previous = resource.data;
-     let proposal = d.get('improvement',{});
-     return previous.recordType == 'review-feedback' && previous.deviceUid == request.auth.uid
-      && id == 'feedback-' + previous.reviewJobId
-      && d.diff(previous).affectedKeys().hasOnly(['status','startedAt','workerId','finishedAt','improvement'])
-      && ((previous.status == 'queued' && d.status == 'running' && previous.expiresAt > request.time.toMillis()
-        && d.workerId == request.auth.uid && instant(d.startedAt) && !('improvement' in d) && !('finishedAt' in d)
-        && reviewBatchCapability(get(reviewPath('status','pc')).data,previous.reviewJobId))
-       || (d.diff(previous).affectedKeys().hasOnly(['status','finishedAt','improvement']) && instant(d.finishedAt)
-        && ((previous.status in ['queued','running'] && d.status == 'failed' && !('improvement' in d))
-         || (previous.status == 'running' && previous.workerId == request.auth.uid && d.status == 'completed'
-          && proposal.keys().hasOnly(['observation','guidance','model']) && proposal.model == 'qwen3-vl-4b-instruct'
-          && promptGuidance(proposal.guidance) && proposal.observation is string
-          && proposal.observation.size() > 0 && proposal.observation.size() <= 700))));
-    }
-    allow create: if studioOwner() && id.matches('feedback-review-v[23]-[a-f0-9]{32}') && feedbackRequest(request.resource.data);
-    allow update: if studioDevice() && id.matches('feedback-review-v[23]-[a-f0-9]{32}') && feedbackResult(request.resource.data);
-    allow update: if studioOwner() && 'batchId' in resource.data && batchJobControl(request.resource.data);
     // Only the approved pinned PC may import the four cataloged historical outputs.
     allow create: if studioDevice() && historicalRecord(id,request.resource.data) && request.resource.data.importState == 'staging';
     allow update: if studioDevice() && historical(resource.data) && resource.data.deviceUid == request.auth.uid
@@ -597,52 +316,48 @@ service cloud.firestore {
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['importState'])
      && historicalBytesPresent(id,request.resource.data);
     allow read: if studioOwner() || (studioDevice() && resource.data.deviceUid == request.auth.uid);
-    allow delete: if studioOwner();
-    allow create: if studioOwner() && originalReviewJob(id) && originalReviewAdmission(id,request.resource.data);
-    allow create: if studioOwner() && !originalReviewJob(id) && id.matches('[A-Za-z0-9_-]{1,80}') && !id.matches('feedback-review-v[23]-[a-f0-9]{32}') && job(request.resource.data)
-     && (reviewJob(id) ? reviewJobAdmission(id,request.resource.data) :
-      (request.resource.data.model != turboModel() || turboReady(request.resource.data.deviceUid)))
-     && request.resource.data.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent','references','parentJobId','inputsReady','effectivePrompt','pose','review','batchId','batchExpiresAt'])
-     && (!request.resource.data.keys().hasAny(['review','batchId','batchExpiresAt']) || configuredReviewJob(id))
+    allow delete: if !retiredReviewId(id) && studioOwner();
+    allow create: if !retiredReviewId(id) && studioOwner() && id.matches('[A-Za-z0-9_-]{1,80}') && job(request.resource.data)
+     && (request.resource.data.model != turboModel() || turboReady(request.resource.data.deviceUid))
+     && request.resource.data.keys().hasOnly(['schemaVersion','deviceUid','model','prompt','seed','width','height','status','createdAt','expiresAt','consent','references','parentJobId','inputsReady','effectivePrompt','pose'])
      && ((request.resource.data.schemaVersion == 2 && !request.resource.data.keys().hasAny(['references','parentJobId','inputsReady']) && request.resource.data.status == 'queued')
       || (request.resource.data.schemaVersion in [3,4] && ((request.resource.data.references.size() > 0 && request.resource.data.status == 'uploading' && request.resource.data.inputsReady == false)
        || (request.resource.data.references.size() == 0 && request.resource.data.status == 'queued' && request.resource.data.inputsReady == true))))
      && request.resource.data.expiresAt > request.time.toMillis();
-    allow update: if studioOwner() && resource.data.schemaVersion == 3 && resource.data.status == 'uploading'
+    allow update: if !retiredReviewId(id) && studioOwner() && resource.data.schemaVersion == 3 && resource.data.status == 'uploading'
      && resource.data.inputsReady == false && request.resource.data.inputsReady == true && request.resource.data.status == 'queued'
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','inputsReady']) && resource.data.expiresAt > request.time.toMillis()
      && completeInput(id,resource.data.references[0]) && (resource.data.references.size() < 2 || completeInput(id,resource.data.references[1]));
     // Ten ready records, rather than up to fifty chunk reads in one request.
-    allow update: if studioOwner() && resource.data.schemaVersion == 4 && resource.data.status == 'uploading'
-     && (!reviewJob(id) || (reviewEnabled() && reviewLinked(id) && reviewWorker(resource.data,id)
-      && (!('batchId' in resource.data) || batchActive(id,resource.data.batchId))))
+    allow update: if !retiredReviewId(id) && studioOwner() && resource.data.schemaVersion == 4 && resource.data.status == 'uploading'
      && resource.data.inputsReady == false && request.resource.data.inputsReady == true && request.resource.data.status == 'queued'
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','inputsReady'])
      && resource.data.expiresAt > request.time.toMillis() && allReady(id,resource.data)
      && (resource.data.model != turboModel() || turboReady(resource.data.deviceUid));
     // Abandon an incomplete transfer without deleting any input bytes or originals.
-    allow update: if studioOwner() && resource.data.status == 'uploading' && resource.data.schemaVersion in [3,4]
+    allow update: if !retiredReviewId(id) && studioOwner() && resource.data.status == 'uploading' && resource.data.schemaVersion in [3,4]
      && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
-    allow update: if studioDevice() && resource.data.deviceUid == request.auth.uid
+    // Creation validated the immutable request. Revalidating every reference on
+    // each progress/completion write exhausts the 1000-expression rules budget.
+    // The affected-key allowlist below keeps the entire request immutable.
+    // Validate expanded progress separately, so completion never pays for the
+    // immutable request AND metrics again within the 1000-expression ceiling.
+    allow update: if !retiredReviewId(id) && studioDevice() && resource.data.deviceUid == request.auth.uid
+     && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data)
+     && resource.data.status == 'running' && request.resource.data.status == 'running'
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress'])
+     && studioProgress();
+    allow update: if !retiredReviewId(id) && studioDevice() && resource.data.deviceUid == request.auth.uid
      && resource.data.schemaVersion in [2,3,4] && !('recordType' in resource.data) && model(resource.data.model)
      && (resource.data.schemaVersion == 2 || resource.data.inputsReady == true)
      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startedAt','finishedAt','workerId','progress','result','error'])
      && ((resource.data.status == 'queued' && request.resource.data.status in ['running','failed'])
       || (resource.data.status == 'running' && request.resource.data.status in ['running','completed','failed']))
-     && (!visionReviewJob(id) || resource.data.status != 'queued' || request.resource.data.status != 'running'
-      || (reviewCapability(get(reviewPath('status','pc')).data,id)
-       && (!('batchId' in resource.data) || (reviewEnabled() && batchActive(id,resource.data.batchId)
-        && reviewBatchCapability(get(reviewPath('status','pc')).data,id)
-        && instant(request.resource.data.startedAt) && request.resource.data.startedAt < resource.data.batchExpiresAt))))
-     && (!('batchId' in resource.data) || resource.data.status != 'running'
-      || (request.resource.data.startedAt == resource.data.startedAt && request.resource.data.workerId == resource.data.workerId))
      && (request.resource.data.status != 'running' || (request.resource.data.workerId == request.auth.uid
       && (resource.data.status != 'queued' || resource.data.expiresAt > request.time.toMillis())))
      && request.resource.data.get('error','') in ['', 'expired','interrupted','resource-guard','inference-failed','invalid-output','output-too-large','model-unavailable','invalid-input','invalid-reference']
      && (request.resource.data.get('progress',{}) == resource.data.get('progress',{})
-      || (resource.data.status == 'queued' && studioProgress('')))
-     && (!visionReviewJob(id) || request.resource.data.status != 'completed'
-      || get(reviewPath('autoReviewVision',id)).data.outputSha256 == request.resource.data.result.sha256)
+      || (resource.data.status == 'queued' && studioProgress()))
      && request.resource.data.get('result',{}).keys().hasOnly(['mime','bytes','chunks','sha256','settings','seconds','localPath','referenceMethod'])
      && (!('localPath' in request.resource.data.get('result',{})) || (request.resource.data.result.localPath == 'H:\\AI-ImageGen\\portrait-pilot\\velum-studio\\' + id + '\\image.png' || (resource.data.model == 'qwen-image-2.1' && request.resource.data.result.localPath == 'F:\\Workspace\\Programs\\Independent-Products\\PTI\\tools\\velum-worker\\.runtime\\qwen21\\' + id + '\\image.png')))
      && (!('referenceMethod' in request.resource.data.get('result',{})) || request.resource.data.result.referenceMethod in ['','flux2-reference-latent','vae-img2img','qwen21-native-multireference'])
@@ -652,9 +367,9 @@ service cloud.firestore {
       && request.resource.data.result.sha256.matches('[a-f0-9]{64}') && request.resource.data.result.settings is map
       && request.resource.data.result.settings.model == resource.data.model && request.resource.data.result.settings.seed == resource.data.seed));
     match /chunks/{chunkId} {
-     allow read: if studioOwner() || (studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.deviceUid == request.auth.uid);
-     allow delete: if studioOwner();
-     allow create: if studioDevice() && (get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.get('status','') == 'running' || (historical(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data) && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.importState == 'staging' && request.resource.data.index < get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.result.chunks))
+     allow read: if studioOwner() || (!retiredReviewId(id) && studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.deviceUid == request.auth.uid);
+     allow delete: if !retiredReviewId(id) && studioOwner();
+     allow create: if !retiredReviewId(id) && studioDevice() && (get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.get('status','') == 'running' || (historical(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data) && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.importState == 'staging' && request.resource.data.index < get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.result.chunks))
       && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data.deviceUid == request.auth.uid
       && request.resource.data.keys().hasOnly(['data','index']) && request.resource.data.index is int && request.resource.data.index >= 0 && request.resource.data.index < 16
       && chunkId == string(request.resource.data.index) && request.resource.data.data is string && request.resource.data.data.size() > 0 && request.resource.data.data.size() <= 600000;
@@ -662,9 +377,8 @@ service cloud.firestore {
     }
     match /inputs/{inputId} {
      function parent() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data; }
-     allow read: if studioOwner() || (studioDevice() && parent().deviceUid == request.auth.uid);
-     allow create: if studioOwner() && parent().schemaVersion == 4 && parent().status == 'uploading' && parent().inputsReady == false
-      && (!reviewJob(id) || reviewEnabled())
+     allow read: if studioOwner() || (!retiredReviewId(id) && studioDevice() && parent().deviceUid == request.auth.uid);
+     allow create: if !retiredReviewId(id) && studioOwner() && parent().schemaVersion == 4 && parent().status == 'uploading' && parent().inputsReady == false
       && parent().expiresAt > request.time.toMillis() && inputId in ['0','1','2','3','4','5','6','7','8','9'] && int(inputId) < parent().references.size()
       && request.resource.data == {'index':int(inputId),'sha256':parent().references[int(inputId)].sha256,'bytes':parent().references[int(inputId)].bytes,'chunks':parent().references[int(inputId)].chunks}
       && reference(parent().references[int(inputId)],int(inputId)) && completeInput(id,parent().references[int(inputId)]);
@@ -672,9 +386,8 @@ service cloud.firestore {
     }
     match /inputs/{inputId}/chunks/{chunkId} {
      function parent() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(id)).data; }
-     allow read: if studioOwner() || (studioDevice() && parent().deviceUid == request.auth.uid);
-     allow create: if studioOwner() && parent().schemaVersion in [3,4] && parent().status == 'uploading' && parent().inputsReady == false
-      && (!reviewJob(id) || reviewEnabled())
+     allow read: if studioOwner() || (!retiredReviewId(id) && studioDevice() && parent().deviceUid == request.auth.uid);
+     allow create: if !retiredReviewId(id) && studioOwner() && parent().schemaVersion in [3,4] && parent().status == 'uploading' && parent().inputsReady == false
       && parent().expiresAt > request.time.toMillis() && inputId in ['0','1','2','3','4','5','6','7','8','9'] && int(inputId) < parent().references.size()
       && request.resource.data.keys().hasOnly(['index','data']) && request.resource.data.index is int && request.resource.data.index >= 0
       && request.resource.data.index < parent().references[int(inputId)].chunks && chunkId == string(request.resource.data.index)
@@ -685,23 +398,24 @@ service cloud.firestore {
    // Reversible removal: do not delete the job, input chunks, originals or Drive copy.
    match /removed/{jobId} {
     allow read: if studioOwner();
-    allow create: if studioOwner() && jobId.matches('[A-Za-z0-9_-]{1,80}')
+    allow create: if !retiredReviewId(jobId) && studioOwner() && jobId.matches('[A-Za-z0-9_-]{1,80}')
      && exists(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId))
      && request.resource.data.keys().hasOnly(['jobId','removedAt'])
      && request.resource.data.jobId == jobId && instant(request.resource.data.removedAt)
      && request.resource.data.removedAt >= request.time.toMillis() - 300000;
-    allow delete: if studioOwner();
+    allow delete: if !retiredReviewId(jobId) && studioOwner();
     allow update: if false;
    }
    match /feedback/{jobId} {
-    allow read, delete: if studioOwner();
-    allow create, update: if studioOwner() && readyCreation(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data)
+    allow read: if studioOwner();
+    allow delete: if !retiredReviewId(jobId) && studioOwner();
+    allow create, update: if !retiredReviewId(jobId) && studioOwner() && readyCreation(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data)
      && request.resource.data.keys().hasOnly(['verdict','note','updatedAt']) && request.resource.data.verdict in ['keep','iterate','reject']
      && request.resource.data.note is string && request.resource.data.note.size() <= 2000 && instant(request.resource.data.updatedAt);
    }
    match /thumbs/{jobId} {
-    allow read: if studioOwner() || (studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid);
-    allow create: if studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid
+    allow read: if studioOwner() || (!retiredReviewId(jobId) && studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid);
+    allow create: if !retiredReviewId(jobId) && studioDevice() && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.deviceUid == request.auth.uid
      && (get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.get('status','') in ['running','completed'] || (historical(get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data) && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data.importState == 'staging'))
      && request.resource.data.keys().hasOnly(['jobId','mime','data','sha256','bytes','width','height','createdAt']) && request.resource.data.jobId == jobId
      && request.resource.data.mime == 'image/jpeg' && request.resource.data.data is string && request.resource.data.data.size() <= 87384
@@ -714,7 +428,7 @@ service cloud.firestore {
    match /saves/{jobId} {
     function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
     allow read: if studioOwner();
-    allow create: if studioOwner() && !reviewJob(jobId) && readyCreation(original())
+    allow create: if !retiredReviewId(jobId) && studioOwner() && readyCreation(original())
      && request.resource.data.keys().hasOnly(['jobId','fileId','name','webViewLink','savedAt','mime','sha256','bytes','folderId'])
      && request.resource.data.jobId == jobId && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
      && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
@@ -723,14 +437,14 @@ service cloud.firestore {
      && request.resource.data.sha256 == original().result.sha256 && request.resource.data.bytes == original().result.bytes && instant(request.resource.data.savedAt)
      && get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/uploads/$(jobId)).data.fileId == request.resource.data.fileId;
     // Receipts are immutable. A retry verifies Drive before recovering the same receipt.
-    allow update: if studioOwner() && request.resource.data == resource.data;
+    allow update: if !retiredReviewId(jobId) && studioOwner() && request.resource.data == resource.data;
     allow delete: if false;
    }
    match /uploads/{jobId} {
     function original() { return get(/databases/$(database)/documents/users/$(uid)/velumStudio/workspace/jobs/$(jobId)).data; }
-    allow read: if studioOwner();
-    allow create: if studioOwner() && readyCreation(original())
-     && (!reviewJob(jobId) || (reviewLinked(jobId) && get(reviewPath('autoReviewRuns',jobId)).data.phase == 'pending'))
+    allow get: if !retiredReviewId(jobId) && studioOwner();
+    allow list: if studioOwner();
+    allow create: if !retiredReviewId(jobId) && studioOwner() && readyCreation(original())
      && request.resource.data.keys().hasOnly(['jobId','fileId','sha256','bytes','createdAt']) && request.resource.data.jobId == jobId
      && request.resource.data.fileId is string && request.resource.data.fileId.matches('[A-Za-z0-9_-]{8,160}')
      && request.resource.data.sha256 == original().result.sha256 && request.resource.data.bytes == original().result.bytes && instant(request.resource.data.createdAt);

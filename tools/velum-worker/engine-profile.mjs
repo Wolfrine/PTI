@@ -23,13 +23,12 @@ export const QWEN_OUTPUT_ROOT=(()=>{
   return outputRoot;
  }catch{return null;}
 })();
-export function engineProfile(model,{driveOriginal=false}={}){
+export function engineProfile(model){
  if(isQwenModel(model)){
   if(!QWEN_OUTPUT_ROOT)throw new Error('model-unavailable');
   return {python:path.join(QWEN_ENGINE,'venv','Scripts','python.exe'),script:path.join(HERE,'infer-qwen.py'),outputRoot:QWEN_OUTPUT_ROOT,timeoutMs:7200000,parentTimeoutMs:7230000};
  }
- const python=driveOriginal?path.join(QWEN_ENGINE,'venv','Scripts','python.exe'):'F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe';
- return {python,script:path.join(HERE,'infer.py'),outputRoot:'H:\\AI-ImageGen\\portrait-pilot\\velum-studio',timeoutMs:1800000,parentTimeoutMs:1830000};
+ return {python:'F:\\Workspace\\Support\\tools\\local-image-gen\\venv\\Scripts\\python.exe',script:path.join(HERE,'infer.py'),outputRoot:'H:\\AI-ImageGen\\portrait-pilot\\velum-studio',timeoutMs:1800000,parentTimeoutMs:1830000};
 }
 // Presence/size/runtime-source checks only. No imports, downloads or GPU loads.
 export async function qwenInstalled({statFile=stat,read=readFile}={}){

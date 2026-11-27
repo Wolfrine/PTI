@@ -3,7 +3,6 @@ import {spawn,execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomBytes} from 'node:crypto';
-import {setTimeout as delay} from 'node:timers/promises';
 import {DeviceStore,restoreDevice,refreshSession,enrollment,secureDirectory,OWNER_UID,PROJECT} from './session.mjs';
 import {PC_DEVICE_UID} from '../../velum-gallery/device-config.mjs';
 import {finishClaimed,retryDelay,assertOutputIdentity,ownsClaim} from './lifecycle.mjs';
@@ -14,11 +13,8 @@ import {ThumbnailBackfill} from './thumbnail-backfill.mjs';
 import {pendingRecovery} from '../../velum-gallery/studio-recovery.mjs';
 import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
 import {engineProfile,qwenInstalled,qwenTurboInstalled,workerCapabilities} from './engine-profile.mjs';
-import {QWEN_MODEL,QWEN_TURBO_MODEL,QWEN_TURBO_WORKER_VERSION,isQwenModel,validateJob} from '../../velum-gallery/studio-contract.mjs';
+import {QWEN_MODEL,QWEN_TURBO_MODEL,QWEN_TURBO_WORKER_VERSION,isQwenModel,validateJob,retiredReviewId} from '../../velum-gallery/studio-contract.mjs';
 import {LiveProgress} from './live-progress.mjs';
-import {reviewVision,reviewVisionVersion} from './review-vision.mjs';
-import {isVisionReviewJob,isConfiguredVisionReviewJob,isReviewFeedbackJob,isOriginalReviewJob} from '../../velum-gallery/auto-review-store.mjs';
-import {readLocalReviewSource} from './local-review-source.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -73,14 +69,14 @@ export class Queue {
  }
  async jobs(status){
   const response=await this.request(`${ROOT}:runQuery`,{method:'POST',value:{structuredQuery:{from:[{collectionId:'jobs'}],where:{compositeFilter:{op:'AND',filters:[{fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:encode(status)}},{fieldFilter:{field:{fieldPath:'deviceUid'},op:'EQUAL',value:encode(this.session.uid)}}]}},limit:20}}});
-  return (response.value||[]).filter(item=>item.document).map(({document})=>({id:document.name.split('/').at(-1),updateTime:document.updateTime,job:decode({mapValue:{fields:document.fields}})})).sort((a,b)=>a.job.createdAt-b.job.createdAt);
+  return (response.value||[]).filter(item=>item.document).map(({document})=>({id:document.name.split('/').at(-1),updateTime:document.updateTime,job:decode({mapValue:{fields:document.fields}})})).filter(item=>!retiredReviewId(item.id)).sort((a,b)=>a.job.createdAt-b.job.createdAt);
  }
  async archivePage(cursor=''){
   const prefix=`projects/${PROJECT}/databases/(default)/documents/${ROOT}/jobs/`;
   if(cursor&&(!cursor.startsWith(prefix)||!/^[A-Za-z0-9_-]{1,80}$/.test(cursor.slice(prefix.length))))throw new Error('invalid-thumbnail-backfill');
   const response=await this.request(`${ROOT}:runQuery`,{method:'POST',value:{structuredQuery:{from:[{collectionId:'jobs'}],where:{fieldFilter:{field:{fieldPath:'deviceUid'},op:'EQUAL',value:encode(this.session.uid)}},orderBy:[{field:{fieldPath:'__name__'},direction:'ASCENDING'}],limit:24,...(cursor?{startAt:{values:[{referenceValue:cursor}],before:false}}:{})}}});
   const documents=(response.value||[]).filter(item=>item.document).map(item=>item.document);
-  return {count:documents.length,cursor:documents.at(-1)?.name||cursor,items:documents.map(document=>({id:document.name.split('/').at(-1),job:decode({mapValue:{fields:document.fields}})}))};
+  return {count:documents.length,cursor:documents.at(-1)?.name||cursor,items:documents.map(document=>({id:document.name.split('/').at(-1),job:decode({mapValue:{fields:document.fields}})})).filter(item=>!retiredReviewId(item.id))};
  }
  async binding(){
   const response=await this.request(`${ROOT}/devices/${this.session.uid}`,{allow:[404]});
@@ -103,25 +99,22 @@ async function installedModels(){
  }
  await stat(PYTHON);return installed;
 }
-async function loadThumbnail(directory,metadata,python=PYTHON){
+async function loadThumbnail(directory,metadata){
  let thumbnail=metadata.thumbnail;
  try{await stat(path.join(directory,'thumbnail.jpg'));}catch(error){if(error.code==='ENOENT')thumbnail=null;else throw error;}
- if(!thumbnail)thumbnail=JSON.parse(execFileSync(python,['-B',path.join(HERE,'media.py'),'thumbnail',directory],{windowsHide:true,encoding:'utf8',timeout:15000}));
+ if(!thumbnail)thumbnail=JSON.parse(execFileSync(PYTHON,['-B',path.join(HERE,'media.py'),'thumbnail',directory],{windowsHide:true,encoding:'utf8',timeout:15000}));
  return {...thumbnail,bytes:await readFile(path.join(directory,'thumbnail.jpg'))};
 }
 export async function infer(id,job,onProgress=()=>{},{signal,onEvent=()=>{}}={}){
  // No shell, client-supplied path, ComfyUI port, network-capable model process or warmup.
  if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-job');
- const driveOriginal=isOriginalReviewJob(id);
- validateJob(job,{driveOriginal});
- const profile=engineProfile(job.model,{driveOriginal});
- const logs=isVisionReviewJob(id)?path.join(profile.outputRoot,id,'inputs','review','logs'):path.join(profile.outputRoot,'logs');
- await mkdir(logs,{recursive:true});
+ validateJob(job);
+ const profile=engineProfile(job.model);
+ const logs=path.join(profile.outputRoot,'logs');await mkdir(logs,{recursive:true});
  const parentCreated=execFileSync(profile.python,['-B','-c',`import psutil; print(psutil.Process(${process.pid}).create_time())`],{windowsHide:true,encoding:'utf8',timeout:15000}).trim();
  return new Promise((resolve,reject)=>{
-  const child=spawn(profile.python,['-B',profile.script],{cwd:driveOriginal?logs:HERE,windowsHide:true,shell:false,
-   env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated,
-    ...(driveOriginal?{TEMP:logs,TMP:logs,TMPDIR:logs}:{}),...(isQwenModel(job.model)?{VELUM_QWEN_OUTPUT_ROOT:profile.outputRoot}:{})},stdio:['pipe','pipe','pipe']});
+  const child=spawn(profile.python,['-B',profile.script],{cwd:HERE,windowsHide:true,shell:false,
+   env:{...process.env,PYTHONDONTWRITEBYTECODE:'1',VELUM_PARENT_PID:String(process.pid),VELUM_PARENT_CREATED:parentCreated,...(isQwenModel(job.model)?{VELUM_QWEN_OUTPUT_ROOT:profile.outputRoot}:{})},stdio:['pipe','pipe','pipe']});
   const abort=()=>child.kill();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
   let buffer='',diagnostic='',failure='inference-failed',saved=false,guardEvents=[];
   const timer=setTimeout(()=>{failure='resource-guard';guardEvents.push({event:'guard-trip',failed:['parent-timeout'],timeoutMs:profile.parentTimeoutMs});child.kill();},profile.parentTimeoutMs);
@@ -155,42 +148,28 @@ async function main(){
  const lock=await acquireWorkerLock(lockPath,fileURLToPath(import.meta.url));
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
- let installed=[],visionProtocol=0,version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
+ let installed=[],version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
  const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,autoReviewVision:Boolean(visionProtocol),visionProtocol,reviewProgressVersion:1,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
-  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:{...workerCapabilities(installed,recoveryInstalled),...(visionProtocol?{autoReviewVision:visionProtocol}:{})}});lastPublish=Date.now();lastState=state;}};
+  await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
  const fail=async(item,error)=>{await progress?.stop();return queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()});};
  const load=async (id,job)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))throw new Error('invalid-output');
   try{
-   const profile=engineProfile(job?.model,{driveOriginal:isOriginalReviewJob(id)});
-   const output=path.join(profile.outputRoot,id),bytes=await readFile(path.join(output,'image.png'));
+   const output=path.join(engineProfile(job?.model).outputRoot,id),bytes=await readFile(path.join(output,'image.png'));
    const metadata=JSON.parse(await readFile(path.join(output,'result.json'),'utf8')),payload=imagePayload(bytes);
    if(payload.result.sha256!==metadata.sha256)throw new Error('invalid-output');
-   return {...payload,metadata,thumbnail:await loadThumbnail(output,metadata,isOriginalReviewJob(id)?profile.python:PYTHON)};
+   return {...payload,metadata,thumbnail:await loadThumbnail(output,metadata)};
   }catch(error){if(error.code==='ENOENT')return null;throw error;}
  };
- const upload=async(item,output,vision)=>{
-  const expected=vision?await vision.executionJob():item.job,actual=output.metadata;
-  const batchedReview=vision&&item.job.batchId;
+ const upload=async(item,output)=>{
+  const expected=item.job,actual=output.metadata;
   assertOutputIdentity(expected,actual);
-  if(batchedReview&&!progress.started)progress.stage('publishing');
   await progress.start();
-  if(vision){
-   const relative=`autoReviewVision/${item.id}`;
-   const receipt=await vision.compare(output,expected.prompt,()=>progress.stage(batchedReview?'review-vision-2':'publishing'));
-   await approved();
-   const prior=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
-   if(prior.status===404)await queue.write(relative,receipt,{create:true});
-   else {
-    const current=decode({mapValue:{fields:prior.value.fields}});
-    if(Object.keys(receipt).some(key=>receipt[key]!==current[key]))throw new Error('invalid-output');
-   }
-  }
   void progress.stage('publishing');
   for(let index=0;index<output.chunks.length;index++){
    await approved();const relative=`jobs/${item.id}/chunks/${index}`;
@@ -203,50 +182,16 @@ async function main(){
   const prior=await queue.request(`${ROOT}/thumbs/${item.id}`,{allow:[404]});
   if(prior.status===404)await queue.write(`thumbs/${item.id}`,thumb,{create:true});
   else if(decode({mapValue:{fields:prior.value.fields}}).sha256!==thumb.sha256)throw new Error('invalid-output');
-  await approved();if(!batchedReview)await progress.stop();
+  await approved();await progress.stop();
   // Shared production rules allow this field to be omitted and still require
   // the verified result identity. Qwen's migrated H: path is retained in its
   // local result.json; do not publish the retired F: path or change shared rules.
   const reportedPath=isQwenModel(expected.model)?{}:{localPath:path.join(engineProfile(expected.model).outputRoot,item.id,'image.png')};
-  const result={...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,...reportedPath};
-  if(batchedReview){
-   await queue.write(`jobs/${item.id}`,{result});
-   const journal=path.join(engineProfile(expected.model).outputRoot,item.id,'inputs','review');
-   let staged=false,attempted=false,issue='stage-unconfirmed';
-   for(const number of [1,2]){
-    controller.signal.throwIfAborted();
-    if(number===2){
-     const first=await stat(path.join(journal,'drive-stage-1.attempt'));
-     // A lost upstream response may leave the first Function invocation and its lease alive.
-     const wait=Math.min(130000,Math.max(0,first.mtimeMs+130000-Date.now()));
-     if(wait)await delay(wait,undefined,{signal:controller.signal});
-    }
-    try{await writeFile(path.join(journal,`drive-stage-${number}.attempt`),'',{flag:'wx'});}
-    catch(error){if(error.code==='EEXIST')continue;throw error;}
-    attempted=true;
-    void progress.stage('review-staging');
-    try{
-     const response=await fetch('https://pti-app-2ab59-velum.web.app/api/drive/review-stage',{
-      method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${await queue.token()}`},
-      body:JSON.stringify({id:item.id}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(62000)])
-     });
-     const {staged:confirmed,code}=(await response.json().catch(()=>null))??{};
-     if(response.ok&&confirmed===true){staged=true;break;}
-     if(['drive/review-folder-grant','drive/connection-changed','drive/reconnect-required','drive/review-stage-not-authorized'].includes(code))issue='stage-connection';
-     else if(['drive/review-folder-changed','drive/review-private-changed'].includes(code))issue='stage-folder';
-     if(response.status<500&&response.status!==429)break;
-    }catch{controller.signal.throwIfAborted();}
-   }
-   controller.signal.throwIfAborted();
-   await approved();
-   if(attempted&&!staged)progress.reportReviewIssue(issue);
-   await progress.stop();
-  }
-  await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result});
+  await queue.write(`jobs/${item.id}`,{status:'completed',finishedAt:Date.now(),result:{...output.result,settings:output.metadata.settings,seconds:output.metadata.seconds,...reportedPath}});
  };
  const backfill=new ThumbnailBackfill(path.join(STATE,'thumbnail-backfill.json'),{
   page:cursor=>queue.archivePage(cursor),
-  hasThumbnail:async id=>(await queue.request(`${ROOT}/thumbs/${id}`,{allow:[404]})).status===200,
+  hasThumbnail:async id=>retiredReviewId(id)||(await queue.request(`${ROOT}/thumbs/${id}`,{allow:[404]})).status===200,
   load:async(id,job)=>{
    if(!/^[A-Za-z0-9_-]{1,80}$/.test(id))return null;
    const directory=path.join(engineProfile(job.model).outputRoot,id);
@@ -265,117 +210,34 @@ async function main(){
  const run=async(item,resumed)=>{
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(item.id))throw new Error('invalid-job');
   activeJob=item.id;controller=new AbortController();await publish('running');
-  progress=new LiveProgress({jobStartedAt:item.job.startedAt,
-   stageDurations:resumed&&item.job.batchId?item.job.progress?.stageDurations:undefined,publish:async value=>{
+  progress=new LiveProgress({jobStartedAt:item.job.startedAt,publish:async value=>{
    const current=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});
    if(current.status===404||!ownsClaim(item,decode({mapValue:{fields:current.value.fields}}),queue.session.uid))return false;
    // Progress never writes a status. The claim read + update-time precondition
    // also refuse a terminal/replaced generation racing this compact snapshot.
    await queue.write(`jobs/${item.id}`,{progress:value},{updateTime:current.value.updateTime});
   }});
-  try{
-   const claim=async()=>{
-    const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});
-    if(response.status===404)return null;
-    return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid)?response.value:null;
-   };
-   const reviewFailure=async(item,error)=>{
-    await progress.stop();
-    const current=await claim();
-    if(current)await queue.write(`jobs/${item.id}`,{status:'failed',error,finishedAt:Date.now()},{updateTime:current.updateTime});
-   };
-   let vision;
-   try{vision=reviewVision(item,controller.signal);}
-   catch(error){if(error.message!=='invalid-reference')throw error;await reviewFailure(item,error.message);return;}
-   await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload:(item,output)=>upload(item,output,vision),
-   fail:vision?reviewFailure:fail,approved,claimed:async()=>Boolean(await claim()),
+  try{await finishClaimed(item,{resumed,load:id=>load(id,item.job),upload,fail,approved,
+   claimed:async()=>{const response=await queue.request(`${ROOT}/jobs/${item.id}`,{allow:[404]});if(response.status===404)return false;return ownsClaim(item,decode({mapValue:{fields:response.value.fields}}),queue.session.uid);},
    canResumeInference:async()=>{
     if(!installed.includes(item.job.model)||!item.job.references?.length)return false;
     try{await stat(path.join(engineProfile(item.job.model).outputRoot,item.id,'inference-started.json'));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}
    },
-   prepare:async()=>{
-    await progress.start();
-    const root=engineProfile(item.job.model).outputRoot;
-    if(vision){
-     const directory=path.join(root,item.id);
-     await mkdir(directory,{recursive:true});secureDirectory(directory);
-    }
-    if(isOriginalReviewJob(item.id)){
-     await approved();
-     try{
-      const response=await fetch('https://pti-app-2ab59-velum.web.app/api/drive/review-source',{
-       method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:`Bearer ${await queue.token()}`},
-       body:JSON.stringify({id:item.id}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(45000)])
-      });
-      if(!response.ok){
-       const {code}=(await response.json().catch(()=>null))??{};
-       if(['drive/review-source-changed','drive/review-source-folder-changed','drive/review-private-changed'].includes(code))progress.reportReviewIssue('source-changed');
-       else if(['drive/connection-changed','drive/reconnect-required','drive/review-source-not-authorized'].includes(code))progress.reportReviewIssue('source-connection');
-       throw new Error('invalid-reference');
-      }
-      if((await response.json()).verified!==true)throw new Error('invalid-reference');
-     }catch{controller.signal.throwIfAborted();throw new Error('invalid-reference');}
-     return readLocalReviewSource(item.id,item.job.references[0],{outputRoot:root,signal:controller.signal});
-    }
-    return downloadReferences(item.id,item.job,{root,approved,fetchManifest:async reference=>{
+   prepare:async()=>{await progress.start();return downloadReferences(item.id,item.job,{root:engineProfile(item.job.model).outputRoot,approved,fetchManifest:async reference=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}`);return decode({mapValue:{fields:response.value.fields}});
    },fetchChunk:async(reference,index)=>{
     const response=await queue.request(`${ROOT}/jobs/${item.id}/inputs/${reference}/chunks/${index}`);return decode({mapValue:{fields:response.value.fields}});
    }});},infer:async()=>{
-   const batchedReview=vision&&item.job.batchId;
-   if(vision&&!batchedReview)void progress.stage('encoding-prompt');
-   let execution=item.job;
-   if(vision){
-    try{execution=await vision.executionJob(true,batchedReview?()=>progress.stage('review-vision-1'):undefined);}
-    catch(error){
-     if(batchedReview&&['vision-timeout','vision-model-unavailable','vision-runtime-unavailable','vision-response-unavailable','vision-interrupted'].includes(error.message)){
-      progress.reportReviewIssue('vision-1-unavailable');
-     }
-     throw error;
-    }
-    controller.signal.throwIfAborted();await approved();if(!await claim())return;
-   }
-   if(!vision||batchedReview)void progress.stage('loading-model');
-   await infer(item.id,execution,value=>progress.counter(value),{signal:controller.signal,onEvent:event=>{
+   void progress.stage('loading-model');
+   await infer(item.id,item.job,value=>progress.counter(value),{signal:controller.signal,onEvent:event=>{
     if(event.event==='stage')void progress.stage(event.stage);
    }});
   }});}finally{await progress.stop();progress=null;activeJob='';controller=null;await publish('idle').catch(()=>{});}
  };
  const stop=()=>{stopping=true;controller?.abort();wakeup.wake();};
- const runFeedback=async(item,resumed)=>{
-  const relative=`jobs/${item.id}`,referenceId=item.job.reviewJobId;
-  if(!isConfiguredVisionReviewJob(referenceId)||item.id!=='feedback-'+referenceId||
-    item.job.recordType!=='review-feedback'||typeof item.job.feedback!=='string')return;
-  if(!resumed){
-   if(visionProtocol<(isOriginalReviewJob(referenceId)?4:3)||item.job.expiresAt<=Date.now()){
-    await queue.write(relative,{status:'failed',finishedAt:Date.now()},{updateTime:item.updateTime});return;
-   }
-   const claim={status:'running',startedAt:Date.now(),workerId:queue.session.uid};
-   try{await queue.write(relative,claim,{updateTime:item.updateTime});}
-   catch(error){if(['firebase-409','firebase-412'].includes(error.message))return;throw error;}
-   item.job={...item.job,...claim};
-  }
-  activeJob=item.id;controller=new AbortController();
-  try{
-   await publish('running');await approved();
-   let improvement=null;
-   try{
-    const original=await queue.request(`${ROOT}/jobs/${referenceId}`);
-    const source=decode({mapValue:{fields:original.value.fields}});
-    if(source.status!=='completed'||source.deviceUid!==queue.session.uid)throw new Error('invalid-output');
-    improvement=await reviewVision({id:referenceId,job:source},controller.signal).refine(item.job.feedback,item.job.reason);
-   }catch(error){if(/^firebase-5\d\d$|^firebase-429$/.test(error.message))throw error;}
-   await approved();
-   const pending=await queue.request(`${ROOT}/${relative}`,{allow:[404]});
-   if(pending.status===404||!ownsClaim(item,decode({mapValue:{fields:pending.value.fields}}),queue.session.uid))return;
-   await queue.write(relative,{status:improvement?'completed':'failed',finishedAt:Date.now(),
-    ...(improvement?{improvement}:{})},{updateTime:pending.value.updateTime});
-  }finally{activeJob='';controller=null;await publish('idle').catch(()=>{});}
- };
  process.on('SIGINT',stop);process.on('SIGTERM',stop);
  try{
   installed=await installedModels();
-  visionProtocol=await reviewVisionVersion().catch(()=>0);
   if(installed.includes(QWEN_TURBO_MODEL))version=QWEN_TURBO_WORKER_VERSION;
   await local({state:'restoring-device',installed});
   let checking=false;
@@ -406,25 +268,14 @@ async function main(){
        recoveryChecked=true;
       }
      if(sweep.due(notified,notifications.connected)){
-      for(const item of await queue.jobs('running')){if(stopping)break;if(isReviewFeedbackJob(item.id))await runFeedback(item,true);else await run(item,true);}
+      for(const item of await queue.jobs('running')){if(stopping)break;await run(item,true);}
       for(const item of await queue.jobs('queued')){
        if(stopping)break;await approved();
-       if(isReviewFeedbackJob(item.id)){await runFeedback(item,false);continue;}
-       if(!runnable(item.job,Date.now(),{driveOriginal:isOriginalReviewJob(item.id)})||
-        (item.job.batchId&&item.job.batchExpiresAt<=Date.now())){await fail(item,'expired');continue;}
+       if(!runnable(item.job)){await fail(item,'expired');continue;}
        if(!installed.includes(item.job.model)){await fail(item,'model-unavailable');continue;}
-       if(isVisionReviewJob(item.id)&&visionProtocol<(isOriginalReviewJob(item.id)?4:item.job.batchId?3:isConfiguredVisionReviewJob(item.id)?2:1)){await fail(item,'model-unavailable');continue;}
        const claim={status:'running',workerId:queue.session.uid,startedAt:Date.now()};
        try{await queue.write(`jobs/${item.id}`,claim,{updateTime:item.updateTime});item.job={...item.job,...claim};}
-       catch(error){
-        if(['firebase-409','firebase-412'].includes(error.message))continue;
-        if(error.message==='firebase-403'&&item.job.batchId){
-         await approved();
-         await local({state:'review-claim-deferred',installed,activeJob:''});
-         continue;
-        }
-        throw error;
-       }
+       catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
        await run(item,false);
       }
      }

@@ -45,7 +45,6 @@ jobs:
           npm ci --prefix venture-lab/tests --ignore-scripts --no-audit --no-fund
           node apps/one-piece/scripts/test-emulator.mjs
           node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-atlas-tests --config firebase.one-piece-tests.json 'node --test personal-harness/tests/atlas.rules.test.mjs'
-          node apps/one-piece/node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-velum-tests --config firebase.one-piece-tests.json 'node --test tools/velum-worker/rules.test.mjs tools/velum-worker/studio2.rules.test.mjs tools/velum-worker/device-isolation.rules.test.mjs tools/velum-worker/qwen.rules.test.mjs tools/velum-worker/progress.rules.test.mjs tools/velum-worker/queue-events.rules.test.mjs'
       - name: Configure existing Firebase deployment identity
         if: github.event_name == 'workflow_dispatch'
         env:

@@ -178,10 +178,10 @@ export class AutoEditRunner{
   if((await checkClaim()).command!=='run')throw fault('execution-interrupted');
   // Guard includes current resource availability and serialization with manual jobs.
   await a.guard({batchId:plan.batchId,itemId:item.itemId,stage,model:plan.config.model,signal,checkClaim});
-  const source=await a.verifySource({source:clone(spec.source),batchId:plan.batchId,itemId:item.itemId,signal});
+  const source=await a.verifySource({source:clone(spec.source),batchId:plan.batchId,itemId:item.itemId,sourcePath:sourceFile,sourceHash:item.sourceArtifact?.sha256??null,signal});
   if(source?.authorized!==true||source.fileId!==spec.source.fileId||source.folderId!==spec.source.folderId||source.mime!==spec.source.mime||source.trashed!==false)throw fault('source-authorization-or-identity-changed','item');
   if((await checkClaim()).command!=='run')throw fault('execution-interrupted');
-  const context={batchId:plan.batchId,itemId:item.itemId,key,source:clone(spec.source),model:plan.config.model,seed:spec.seed,configurationRevision:plan.config.revisionId,signal,checkClaim};
+  const context={batchId:plan.batchId,itemId:item.itemId,key,source:clone(spec.source),sourceHash:item.sourceArtifact?.sha256??null,outputHash:item.outputArtifact?.sha256??null,consent:plan.config.consent,model:plan.config.model,seed:spec.seed,configurationRevision:plan.config.revisionId,signal,checkClaim};
   if(stage==='source'){
    await a.download({...context,targetPath:sourceFile});
    item.sourceArtifact=await imageArtifact(sourceFile,spec.source.mime,spec.source.sha256);return;

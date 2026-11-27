@@ -669,6 +669,140 @@ async function moveDiagnostic(req:Request,res:Response){
  }
  res.json({captured:true});
 }
+// Fresh Auto Edit: metadata-only broker for the existing approved PC and
+// Drive for desktop. It never transfers image bytes or owner OAuth credentials.
+const AUTO_DEVICE='f1bmD2SAJcQf25YwkhLcE0hJyS22';
+const AUTO_WORKSPACE='users/'+OWNER+'/velumStudio/workspace';
+const AUTO_STAGING='1o7mc6xUgh_oAWjQLxdZoZtpTZa66xwhE';
+const AUTO_MAX_BYTES=67108864;
+const autoId=(v:unknown):v is string=>typeof v==='string'&&/^[A-Za-z0-9_-]{8,80}$/.test(v);
+const autoItemId=(v:unknown):v is string=>typeof v==='string'&&/^item-\d{3}$/.test(v);
+const autoHash=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
+const autoDriveId=(v:unknown):v is string=>typeof v==='string'&&/^[A-Za-z0-9_-]{8,160}$/.test(v);
+const autoStages=['source','vision1','prompt','edit','vision2','delivery'];
+type AutoMetadataFile=DriveFile&{name?:string;size?:string;shared?:boolean;sha256Checksum?:string;md5Checksum?:string};
+type AutoMetadataIntent={action:'source'|'delivery';batchId:string;itemId:string};
+function autoIntent(value:unknown):AutoMetadataIntent{
+ const v=value as Partial<AutoMetadataIntent>|null;
+ if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).length!==3||!['source','delivery'].includes(String(v.action))||!autoId(v.batchId)||!autoItemId(v.itemId))throw new DriveError(400,'drive/invalid-auto-edit-request');
+ return v as AutoMetadataIntent;
+}
+async function autoDevice(req:Request){
+ if(req.get('content-type')?.split(';')[0]!=='application/json'||(req.get('origin')&&req.get('origin')!==ORIGIN))throw new DriveError(403,'drive/auto-edit-origin-denied');
+ const bearer=req.get('authorization')?.match(/^Bearer (\S+)$/)?.[1];
+ if(!bearer)throw new DriveError(401,'drive/auto-edit-device-required');
+ try{
+  const token=await admin.auth().verifyIdToken(bearer,true);
+  if(token.uid!==AUTO_DEVICE||token.firebase?.sign_in_provider!=='anonymous')throw new Error('device');
+  const user=await admin.auth().getUser(OWNER),google=user.providerData.find(p=>p.providerId==='google.com');
+  if(user.disabled||!google?.uid)throw new Error('owner');
+  return google.uid;
+ }catch{throw new DriveError(401,'drive/auto-edit-device-required');}
+}
+async function autoAssigned(intent:AutoMetadataIntent){
+ const root=db();
+ const result=await root.runTransaction(async tx=>{
+  const [admission,binding,batch,item]=await Promise.all([
+   tx.get(root.doc(AUTO_WORKSPACE+'/autoEditControl/admission')),
+   tx.get(root.doc(AUTO_WORKSPACE+'/devices/'+AUTO_DEVICE)),
+   tx.get(root.doc(AUTO_WORKSPACE+'/autoBatches/'+intent.batchId)),
+   tx.get(root.doc(AUTO_WORKSPACE+'/autoBatches/'+intent.batchId+'/items/'+intent.itemId))
+  ]);
+  return {admission:admission.data(),binding:binding.data(),batch:batch.data(),item:item.data()};
+ });
+ const {admission,binding,batch,item}=result;
+ if(admission?.version!==1||admission.enabled!==true||binding?.status!=='approved'||binding.deviceUid!==AUTO_DEVICE)throw new DriveError(403,'drive/auto-edit-admission-closed');
+ if(!batch||!item||batch.schemaVersion!==1||batch.deviceUid!==AUTO_DEVICE||batch.claim?.deviceUid!==AUTO_DEVICE||
+  !autoHash(batch.planHash)||batch.claim.planHash!==batch.planHash||batch.plan?.batchId!==intent.batchId||
+  batch.plan?.deviceUid!==AUTO_DEVICE||batch.plan?.config?.consent!==true||batch.command?.kind!=='run'||
+  batch.execution?.status!=='running'||batch.execution.activeItemId!==intent.itemId||
+  batch.execution.commandRevision!==batch.command.revision||batch.execution.publicationRevision!==item.publicationRevision||
+  item.status!=='running'||item.itemId!==intent.itemId||item.inFlight?.stage!==item.stage||!autoStages.includes(item.stage))throw new DriveError(403,'drive/auto-edit-claim-required');
+ const source=item.source,ordinal=item.ordinal;
+ const spec=Number.isSafeInteger(ordinal)&&ordinal>0&&ordinal<=100?batch.plan?.items?.[ordinal-1]:null;
+ if(!source||source.authorized!==true||!spec||spec.itemId!==intent.itemId||spec.source?.authorized!==true||
+  spec.source.fileId!==source.fileId||spec.source.folderId!==source.folderId||spec.source.mime!==source.mime||
+  spec.source.sha256!==source.sha256||!autoDriveId(source.fileId)||!['image/jpeg','image/png'].includes(source.mime)||
+  ![PRIVATE_FOLDER,REFERENCES_FOLDER].includes(source.folderId)||(source.sha256!==null&&!autoHash(source.sha256)))throw new DriveError(403,'drive/auto-edit-source-not-authorized');
+ if(intent.action==='source')return {source,publicationRevision:item.publicationRevision,output:null};
+ const output=item.outputArtifact;
+ if(item.stage!=='delivery'||!output||output.mime!=='image/png'||!autoHash(output.sha256)||output.sha256!==item.editReceipt?.sha256||
+  !Number.isSafeInteger(output.bytes)||output.bytes<100||output.bytes>AUTO_MAX_BYTES||!item.vision2)throw new DriveError(403,'drive/auto-edit-output-not-ready');
+ return {source,publicationRevision:item.publicationRevision,output:{sha256:output.sha256 as string,bytes:output.bytes as number}};
+}
+let autoCachedAccess:{googleSub:string;revision:number;until:number;accessToken:string}|null=null;
+async function autoReadAccess(googleSub:string){
+ const cfg=await config(),grant=await sessionGrant();
+ if(!grant?.enabled||!grant.refresh||grant.googleSub!==googleSub||(grant.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/reconnect-required');
+ if(autoCachedAccess?.googleSub===googleSub&&autoCachedAccess.revision===grant.revision&&autoCachedAccess.until>Date.now())return autoCachedAccess.accessToken;
+ const refreshToken=unseal(grant.refresh,cfg.key,refreshContext('read',googleSub));
+ let tokens;
+ try{tokens=await googlePost('https://oauth2.googleapis.com/token',new URLSearchParams({client_id:CLIENT,client_secret:cfg.clientSecret,grant_type:'refresh_token',refresh_token:refreshToken,scope:BROWSER_REQUEST_SCOPES.join(' ')}));}
+ catch(error){if(error instanceof InvalidGrantError)await expireInvalidRefresh(grant,refreshToken,cfg);throw error;}
+ const access=await verifiedAccess(tokens.access_token,googleSub);
+ const current=await sessionGrant();
+ if(!current?.enabled||current.revision!==grant.revision||current.googleSub!==googleSub||(current.revocationUntil||0)>Date.now())throw new DriveError(409,'drive/connection-changed');
+ autoCachedAccess={googleSub,revision:grant.revision,until:Math.min(Date.now()+300000,access.expiresAt),accessToken:access.accessToken};
+ return access.accessToken;
+}
+const AUTO_METADATA_FIELDS='id,name,mimeType,parents,ownedByMe,trashed,shared,size,sha256Checksum,md5Checksum';
+async function autoGoogleJson(token:string,url:URL){
+ // All URLs are constructed below on the fixed Google Drive API origin.
+ if(url.origin!=='https://www.googleapis.com'||!url.pathname.startsWith('/drive/v3/files'))throw new DriveError(400,'drive/auto-edit-url-denied');
+ let r;
+ try{r=await fetch(url,{headers:{Authorization:'Bearer '+token},redirect:'error',signal:AbortSignal.timeout(10000)});}
+ catch{throw new DriveError(503,'drive/auto-edit-google-unavailable');}
+ if(!r.ok){await r.body?.cancel();throw new DriveError(r.status===404?404:r.status===403?403:503,'drive/auto-edit-google-rejected');}
+ return r.json();
+}
+function autoFileSize(file:AutoMetadataFile){
+ const bytes=Number(file.size);
+ if(typeof file.size!=='string'||!/^\d+$/.test(file.size)||!Number.isSafeInteger(bytes)||bytes<16||bytes>AUTO_MAX_BYTES)throw new DriveError(409,'drive/auto-edit-size-invalid');
+ return bytes;
+}
+function autoPrivateChild(file:AutoMetadataFile,id:string,parent:string,mime:string){
+ if(file.id!==id||file.ownedByMe!==true||file.trashed!==false||file.shared!==false||file.mimeType!==mime||!Array.isArray(file.parents)||file.parents.length!==1||file.parents[0]!==parent)throw new DriveError(409,'drive/auto-edit-file-identity-mismatch');
+}
+async function autoEditMetadata(req:Request,res:Response){
+ const intent=autoIntent(req.body),googleSub=await autoDevice(req),initial=await autoAssigned(intent);
+ const token=await autoReadAccess(googleSub);
+ if(intent.action==='source'){
+  const {source}=initial,url=new URL('https://www.googleapis.com/drive/v3/files/'+source.fileId);
+  url.searchParams.set('fields',AUTO_METADATA_FIELDS);
+  const file=await autoGoogleJson(token,url) as AutoMetadataFile;
+  autoPrivateChild(file,source.fileId,source.folderId,source.mime);
+  const sha256=autoHash(file.sha256Checksum)?file.sha256Checksum:null;
+  const md5=typeof file.md5Checksum==='string'&&/^[a-f0-9]{32}$/.test(file.md5Checksum)?file.md5Checksum:null;
+  if((!sha256&&!md5)||(source.sha256&&sha256&&source.sha256!==sha256)||typeof file.name!=='string'||file.name.length<1||file.name.length>255)throw new DriveError(409,'drive/auto-edit-source-checksum-unavailable');
+  const current=await autoAssigned(intent);
+  if(current.publicationRevision!==initial.publicationRevision)throw new DriveError(409,'drive/auto-edit-claim-changed');
+  res.json({verified:true,authorized:true,trashed:false,fileId:source.fileId,folderId:source.folderId,mime:source.mime,name:file.name,bytes:autoFileSize(file),sha256,md5});return;
+ }
+ const output=initial.output!;
+ // Deterministic filename scoped to this one item. A mount copy is not proof
+ // of cloud delivery. Verify its actual ID, parent and independently reported hash.
+ const name='Velum-auto-'+digest(intent.batchId+':'+intent.itemId).slice(0,32)+'.png';
+ const folderUrl=new URL('https://www.googleapis.com/drive/v3/files/'+AUTO_STAGING);
+ folderUrl.searchParams.set('fields','id,mimeType,parents,ownedByMe,trashed,shared,capabilities(canAddChildren)');
+ const folder=await autoGoogleJson(token,folderUrl) as AutoMetadataFile;
+ autoPrivateChild(folder,AUTO_STAGING,PRIVATE_FOLDER,'application/vnd.google-apps.folder');
+ if(folder.capabilities?.canAddChildren!==true)throw new DriveError(403,'drive/auto-edit-staging-denied');
+ const url=new URL('https://www.googleapis.com/drive/v3/files');
+ url.searchParams.set('q',"'"+AUTO_STAGING+"' in parents and trashed=false and name='"+name+"'");
+ url.searchParams.set('fields','nextPageToken,files('+AUTO_METADATA_FIELDS+')');
+ url.searchParams.set('pageSize','2');
+ const value=await autoGoogleJson(token,url) as {files?:AutoMetadataFile[];nextPageToken?:string};
+ if(!Array.isArray(value.files)||value.nextPageToken||value.files.length>1)throw new DriveError(409,'drive/auto-edit-ambiguous-staging-file');
+ const current=await autoAssigned(intent);
+ if(current.publicationRevision!==initial.publicationRevision||current.output?.sha256!==output.sha256)throw new DriveError(409,'drive/auto-edit-claim-changed');
+ if(!value.files.length){res.json({status:'not-found',confirmed:true,name,parentId:AUTO_STAGING});return;}
+ const file=value.files[0];
+ if(!autoDriveId(file.id)||file.name!==name)throw new DriveError(409,'drive/auto-edit-staging-identity-mismatch');
+ autoPrivateChild(file,file.id,AUTO_STAGING,'image/png');
+ if(autoFileSize(file)!==output.bytes||file.sha256Checksum!==output.sha256)throw new DriveError(409,'drive/auto-edit-staging-hash-mismatch');
+ res.json({status:'saved',receipt:{key:intent.batchId+'-'+intent.itemId,fileId:file.id,parentId:AUTO_STAGING,sha256:output.sha256,verified:true}});
+}
+
 export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_SERVICE_ACCOUNT,memory:'256MiB',timeoutSeconds:60,maxInstances:2,invoker:'public',cors:false},async(req,res)=>{
  res.set({'Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Vary':'Origin, Authorization, Cookie'});
  const path=req.path.replace(/^\/api\/drive/,'');
@@ -684,6 +818,7 @@ export const velumDrive=onRequest({region:'us-central1',serviceAccount:RUNTIME_S
   if(Number(req.get('content-length')||0)>2048)throw new DriveError(413,'drive/invalid-request');
   if(path==='/start')await start(req,res);
   else if(path==='/session')await session(req,res);
+  else if(path==='/auto-edit-metadata')await autoEditMetadata(req,res);
    else if(path==='/move')await move(req,res);
    else if(path==='/move-status')await moveStatus(req,res);
   else if(path==='/disconnect')await disconnect(req,res);

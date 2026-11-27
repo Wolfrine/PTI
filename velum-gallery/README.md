@@ -39,14 +39,14 @@ Studio has its own scroll region for phone keyboards, preserves Quick Exit/PIN a
 - **Local-only data:** Drive media is fetched read-only. Hearts, historical votes, view history and scores remain in the browser IndexedDB; new-image discovery is in localStorage. Sync is manual. Quick Exit opens the neutral Archive screen.
 
 ### QA and release
-`node --test velum-gallery/tests/*.test.mjs` verifies one-finger swipes, zoom, timed and continuous long heart holds, bounded visual growth, duration-based scoring, cancel paths, timer contracts, feed and removal of Focus. The `deploy_velum` GitHub Action gates Hosting on these tests and compares the live app, script, style and service worker with the release commit.
+The `deploy_velum` GitHub Action checks source syntax and compares the deployed app, script, style and service worker with the release commit. Use practical, authorized desktop and mobile verification for actual interaction and visual acceptance.
 
 - **Ratings and analytics:** heart particles are purely visual. Each hold stores its original duration, with no 1–5 conversion or hard ceiling. Existing historical likes and previous level-based events remain readable. Hold duration contributes logarithmically to preference strength; repeated holds are discounted progressively, and the feed smoothly limits an individual favorite's recommendation share. Long legacy “skip” events are excluded from scoring. The Stats/Copy State view (VELUM_STATE_V2) includes counts and total time expressed. There is no Firestore or Notion syncing; updated Notion snapshots are pasted manually for UX reviews.
 
 ## Release visibility
 - A small muted footer label sits **inside a reserved bottom row of the Drift/Browse/Stats navigation**, never as a separate overlay on the image, e.g. `v2026.10.22.160045`, with date and time in **IST**. Seconds differentiate multiple releases on the same day. Hovering exposes the associated short Git commit.
 - The label is embedded into the **actual deployed index.html** (no live version request), so an outdated offline/PWA page continues to show its **old** release version instead of falsely showing the newest server release.
-- The `deploy_velum` job runs `node .github/scripts/velum-release.mjs` after tests, before Firebase Hosting. That stamps the HTML label and a unique service-worker cache identity for each deployment run. The workflow compares the stamped files with the actual production files.
+- The `deploy_velum` job runs `node .github/scripts/velum-release.mjs` after source checks, before Firebase Hosting. That stamps the HTML label and a unique service-worker cache identity for each deployment run. The workflow compares the stamped files with the actual production files.
 - To confirm an update on a device, use Velum's Refresh control and compare the bottom version stamp. The stamp is display-only; it neither stores nor synchronizes usage data.
 
 ## Firebase

@@ -162,6 +162,11 @@ export function createVerifiedOriginalReader({folders,lookup}){
  return {
   async verifySource(context){
    const x=await resolve(context);
+   if(context.sourceHash){
+    need(isHash(context.sourceHash)&&(!x.sha256||x.sha256===context.sourceHash),'source-identity-changed','item');
+    const cached=await checkedTarget(context.sourcePath,context.batchId,context.itemId,context.source.mime);
+    await inspectFile(cached,{signal:context.signal,expected:{...x,sha256:context.sourceHash}});
+   }
    return {fileId:x.fileId,folderId:x.folderId,mime:x.mime,authorized:true,trashed:false};
   },
   async download(context){

@@ -29,7 +29,7 @@ export class WorkWakeup {
 
 // Export the narrow subscription adapter so tests can exercise the same paths
 // with emulator contexts. Never return job bodies to notification callbacks.
-export function subscribeForWork(db,uid,{sdk,changed,binding,connection,failed}){
+export function subscribeForWork(db,uid,{sdk,changed,binding,connection,failed,autoEdit}){
  const {doc,collection,query,where,limit,onSnapshot}=sdk;
  const root=`users/${OWNER_UID}/velumStudio/workspace`;
  let closed=false,bindingOnline=false,approved=false,jobStops=[],generation=0;
@@ -51,6 +51,9 @@ export function subscribeForWork(db,uid,{sdk,changed,binding,connection,failed})
     if(!wasOnline||!previous||[...ids].some(id=>!previous.has(id)))changed();
    },error=>{if(!closed&&current===generation){online.set(status,false);report();failed(error);}}));
   }
+  if(autoEdit?.enabled()){
+   try{jobStops.push(autoEdit.subscribe(db,uid,sdk));}catch(error){autoEdit.failed?.(error);}
+  }
  };
  const stopBinding=onSnapshot(doc(db,`${root}/devices/${uid}`),{includeMetadataChanges:true},snapshot=>{
   if(closed)return;
@@ -68,7 +71,7 @@ export function subscribeForWork(db,uid,{sdk,changed,binding,connection,failed})
 
 // Firestore runs as the same verified anonymous device, under the same rules as
 // REST. The SDK receives only an ID token; refresh rotation stays in DeviceStore.
-export async function listenForWork({idToken,uid,changed,binding,connection,failed}){
+export async function listenForWork({idToken,uid,changed,binding,connection,failed,autoEdit}){
  if(uid!==PC_DEVICE_UID)throw new Error('device-identity-mismatch');
  const [appSdk,authSdk,firestoreSdk]=await Promise.all([import('firebase/app'),import('firebase/auth'),import('firebase/firestore')]);
  const app=appSdk.initializeServerApp({projectId:PROJECT,apiKey:nativeAuthKey()},{authIdToken:idToken});
@@ -79,7 +82,7 @@ export async function listenForWork({idToken,uid,changed,binding,connection,fail
   await Promise.race([auth.authStateReady(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('device-auth-unavailable')),20000);})]);
   clearTimeout(timer);
   if(auth.currentUser?.uid!==uid||!auth.currentUser.isAnonymous)throw new Error('device-identity-mismatch');
-  stop=subscribeForWork(db,uid,{sdk:firestoreSdk,changed,binding,connection,failed});
+  stop=subscribeForWork(db,uid,{sdk:firestoreSdk,changed,binding,connection,failed,autoEdit});
   return close;
  }catch(error){clearTimeout(timer);await close();throw error;}
 }
@@ -88,8 +91,8 @@ export async function listenForWork({idToken,uid,changed,binding,connection,fail
 // reconnects are also handled by the SDK; a disconnected listener permits the
 // bounded REST fallback. Generation guards ignore callbacks from retired tokens.
 export class QueueNotifications {
- constructor({listen=listenForWork,changed,revoked,now=Date.now}={}){
-  this.listen=listen;this.changed=changed;this.revoked=revoked;this.now=now;
+ constructor({listen=listenForWork,changed,revoked,now=Date.now,autoEdit}={}){
+  this.listen=listen;this.changed=changed;this.revoked=revoked;this.now=now;this.autoEdit=autoEdit;
   this.connected=false;this.closed=false;this.failed=false;this.attempt=0;this.retryAt=0;this.generation=0;this.token='';this.stop=null;this.starting=null;
  }
  async ensure({idToken,uid}){
@@ -106,7 +109,7 @@ export class QueueNotifications {
   const current=()=>!this.closed&&generation===this.generation;
   const failed=()=>{if(current()&&!this.failed){this.failed=true;this.connected=false;this.retryAt=this.now()+retryDelay(this.attempt++);}};
   try{
-   const stop=await this.listen({idToken,uid,
+   const stop=await this.listen({idToken,uid,autoEdit:this.autoEdit,
     changed:()=>{if(current())this.changed();},
     binding:status=>{if(current()&&status!=='approved')this.revoked();},
     connection:connected=>{if(current()&&!this.failed){this.connected=connected;if(connected)this.attempt=0;}},failed});

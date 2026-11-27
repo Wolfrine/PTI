@@ -15,6 +15,11 @@ import {WorkWakeup,QueueNotifications,QueueSweep} from './queue-events.mjs';
 import {engineProfile,qwenInstalled,qwenTurboInstalled,workerCapabilities} from './engine-profile.mjs';
 import {QWEN_MODEL,QWEN_TURBO_MODEL,QWEN_TURBO_WORKER_VERSION,isQwenModel,validateJob,retiredReviewId} from '../../velum-gallery/studio-contract.mjs';
 import {LiveProgress} from './live-progress.mjs';
+import {loadAutoEditInstallation} from './auto-edit-installation.mjs';
+import {createLocalModelAdapters} from './auto-edit-models.mjs';
+import {createDriveDesktopAdapters} from './auto-edit-drive.mjs';
+import {guardAutoEditStage} from './auto-edit-local.mjs';
+import {AutoEditDispatcher,subscribeAutoEditQueue} from './auto-edit-firestore.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const STATE=path.join(HERE,'.runtime');
@@ -149,10 +154,24 @@ async function main(){
  const store=new DeviceStore(path.join(STATE,'device.dpapi'));
  const recoveryInstalled=(()=>{try{return execFileSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',"$t=Get-ScheduledTask -TaskName 'PTI Velum Studio Recovery' -ErrorAction SilentlyContinue; if ($t -and $t.State -ne 'Disabled') {'yes'}"],{windowsHide:true,encoding:'utf8',timeout:15000}).trim()==='yes';}catch{return false;}})();
  let installed=[],version=BASE_WORKER_VERSION,queue,activeJob='',stopping=false,controller,heartbeat,lastPublish=0,lastState='',attempt=0,recoveryChecked=false,progress;
+ let autoInstallation=null,autoDispatcher=null,autoAdmitted=false,autoConnected=false,autoPending=false,autoError='',autoAttempt=0,autoRetryAt=0;
+ const autoFailure=error=>{autoError=/^[a-z0-9-]{1,80}$/.test(error?.message||'')?error.message:'auto-edit-unavailable';};
  const wakeup=new WorkWakeup(),sweep=new QueueSweep();
- const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:()=>controller?.abort()});
+ const revoke=()=>{controller?.abort();autoDispatcher?.abort();};
+ const autoNotifications={
+  enabled:()=>Boolean(autoDispatcher),
+  failed:error=>{autoFailure(error);autoDispatcher?.abort();autoConnected=false;autoAdmitted=false;autoPending=false;},
+  subscribe:(db,uid,sdk)=>subscribeAutoEditQueue(db,uid,{
+   sdk,wake:()=>{autoPending=true;wakeup.wake();},
+   command:value=>autoDispatcher?.command(value),
+   connected:value=>{autoConnected=value;if(!value)autoDispatcher?.abort();},
+   admission:value=>{autoAdmitted=value;if(!value){autoPending=false;autoDispatcher?.abort();}},
+   error:error=>autoNotifications.failed(error)
+  })
+ };
+ const notifications=new QueueNotifications({changed:()=>wakeup.wake(),revoked:revoke,autoEdit:autoNotifications});
  const listen=async()=>{await notifications.ensure({idToken:await queue.token(),uid:queue.session.uid});};
- const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,...values}));
+ const local=values=>writeFile(path.join(STATE,'status.json'),JSON.stringify({version,qwenDiagnosticsVersion:3,pid:process.pid,deviceUid:queue?.session.uid||PC_DEVICE_UID,updatedAt:Date.now(),startup:'interactive-logon-and-minute-recovery',transport:'firestore-listener',listenerConnected:notifications.connected,autoEdit:{configured:Boolean(autoInstallation),admitted:autoAdmitted,connected:autoConnected,error:autoError},...values}));
  const publish=async(state)=>{await local({state,activeJob,installed});if(queue&&(Date.now()-lastPublish>=60000||lastState!==state)){
   await queue.write('status/pc',{deviceUid:queue.session.uid,updatedAt:Date.now(),installed,state,activeJob,version,capabilities:workerCapabilities(installed,recoveryInstalled)});lastPublish=Date.now();lastState=state;}};
  const approved=async()=>{if((await queue.binding())?.status!=='approved')throw new Error('device-not-approved');};
@@ -234,22 +253,38 @@ async function main(){
    }});
   }});}finally{await progress.stop();progress=null;activeJob='';controller=null;await publish('idle').catch(()=>{});}
  };
- const stop=()=>{stopping=true;controller?.abort();wakeup.wake();};
+ const stop=()=>{stopping=true;revoke();wakeup.wake();};
  process.on('SIGINT',stop);process.on('SIGTERM',stop);
  try{
   installed=await installedModels();
+  // Explicit local provisioning is required. A missing/invalid installation
+  // never prevents manual Studio or creates Auto Edit cloud listeners.
+  try{autoInstallation=await loadAutoEditInstallation();}catch(error){autoFailure(error);}
   if(installed.includes(QWEN_TURBO_MODEL))version=QWEN_TURBO_WORKER_VERSION;
   await local({state:'restoring-device',installed});
   let checking=false;
   heartbeat=setInterval(async()=>{
    if(process.env.VELUM_HOST_PID){try{process.kill(Number(process.env.VELUM_HOST_PID),0);}catch{stop();}}
    if(!activeJob||checking)return;checking=true;
-   try{await approved();listen().catch(()=>{});await publish('running');}catch(error){if(error.message==='device-not-approved'||error.message==='firebase-403')controller?.abort();}finally{checking=false;}
+   try{await approved();listen().catch(()=>{});await publish('running');}catch(error){if(error.message==='device-not-approved'||error.message==='firebase-403')revoke();}finally{checking=false;}
   },15000);
   while(!stopping){
    const notified=await wakeup.wait();if(stopping)break;
    try{
     if(!queue){const session=await restoreDevice(store);if(session.uid!==PC_DEVICE_UID)throw new Error('device-identity-mismatch');const candidate=new Queue(session,{store});await candidate.privacy();queue=candidate;}
+    if(autoInstallation&&!autoDispatcher){
+     try{
+      const modelAdapters=createLocalModelAdapters({installed,infer,pins:autoInstallation.pins,assertRuntimeReady:autoInstallation.assertRuntimeReady});
+      const driveAdapters=createDriveDesktopAdapters({queue,folders:autoInstallation.folders,stagingRoot:autoInstallation.stagingRoot});
+      autoDispatcher=new AutoEditDispatcher({queue,adapters:{...modelAdapters,...driveAdapters,guard:async context=>{
+       await autoInstallation.assertWorkspaceReady(context);
+       return guardAutoEditStage(context);
+      }},onError:autoFailure,onActive:async batchId=>{
+       activeJob=batchId?'auto-edit':'';
+       if(batchId)await publish('running');else await publish('idle').catch(()=>{});
+      }});
+     }catch(error){autoFailure(error);autoInstallation=null;}
+    }
     await listen();
     let binding=await queue.binding();
     if(!binding){queue.session.saved={...queue.session.saved,grant:randomBytes(32).toString('hex'),grantCreatedAt:Date.now()};await store.save(queue.session.saved);await queue.write(`devices/${queue.session.uid}`,enrollment(queue.session.saved),{create:true});binding=await queue.binding();}
@@ -278,6 +313,17 @@ async function main(){
        catch(error){if(['firebase-409','firebase-412'].includes(error.message))continue;throw error;}
        await run(item,false);
       }
+     }
+     // Manual queue is drained before each Auto Edit item. Auto work is
+     // event-driven; no Auto Edit query runs when disabled or idle.
+     if(!stopping&&autoDispatcher&&autoAdmitted&&autoConnected&&autoPending&&Date.now()>=autoRetryAt){
+      autoPending=false;
+      try{
+       const result=await autoDispatcher.runOne();
+       autoAttempt=0;autoRetryAt=0;autoError='';
+       if(result.needsMore)autoPending=true;
+       if(autoPending&&autoAdmitted&&autoConnected)wakeup.wake();
+      }catch(error){autoFailure(error);autoPending=true;autoRetryAt=Date.now()+retryDelay(autoAttempt++);}
      }
      if(!stopping){await publish('idle');await backfill.step().catch(()=>backfill.recordError().catch(()=>{}));}
      attempt=0;

@@ -45,6 +45,12 @@ export class AutoEditQueue {
   if(result.status===404)return null;
   return {id,updateTime:result.value.updateTime,data:unwrap(result.value)};
  }
+ async admission(){
+  check(this.uid===PC_DEVICE_UID,'device-identity-mismatch');
+  const r=await this.queue.request(ROOT+'/autoEditControl/admission',{allow:[404]});
+  if(r.status===404)return false;
+  const data=unwrap(r.value);return data.version===1&&data.enabled===true;
+ }
  async ready(){
   check(this.uid===PC_DEVICE_UID,'device-identity-mismatch');
   const result=await this.queue.request(ROOT+':runQuery',{method:'POST',value:{structuredQuery:{
@@ -69,7 +75,8 @@ export class AutoEditQueue {
  }
  async claim({batchId,deviceUid,planHash,publicationRevision}){
   check(deviceUid===this.uid&&this.uid===PC_DEVICE_UID,'claim-lost');
-  const current=await this.read(batchId);
+  const [current,admitted]=await Promise.all([this.read(batchId),this.admission()]);
+  check(admitted,'auto-edit-admission-closed');
   check(current&&current.data.deviceUid===deviceUid&&current.data.planHash===planHash&&current.data.claim?.deviceUid===deviceUid&&current.data.claim.planHash===planHash,'claim-lost');
   // Missing/behind-cloud journal is not permission to run inference again.
   check(Number.isSafeInteger(publicationRevision)&&remoteRevision(current.data)<=publicationRevision,'local-journal-behind-cloud');
@@ -120,37 +127,51 @@ export class AutoEditQueue {
 }
 // This optional listener attaches to the existing authenticated SDK instance.
 // Never start it until concrete adapters are installed and admission is enabled.
-export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,error}){
+export function subscribeAutoEditQueue(db,uid,{sdk,wake,command,connected,admission,error}){
  check(uid===PC_DEVICE_UID,'device-identity-mismatch');
- const {collection,query,where,limit,onSnapshot}=sdk;
- let closed=false,seen=new Map(),online=false;
- const target=query(collection(db,ROOT+'/'+COLLECTION),where('deviceUid','==',uid),where('dispatch','==',true),limit(MAX_READY));
- const stop=onSnapshot(target,{includeMetadataChanges:true},snapshot=>{
+ const {doc,collection,query,where,limit,onSnapshot}=sdk;
+ let closed=false,queueStop=null,generation=0,admitted=false;
+ function stopQueue(){
+  generation++;queueStop?.();queueStop=null;connected?.(false);
+ }
+ function startQueue(){
+  const current=++generation;
+  let seen=new Map(),online=false;
+  const target=query(collection(db,ROOT+'/'+COLLECTION),where('deviceUid','==',uid),where('dispatch','==',true),limit(MAX_READY));
+  queueStop=onSnapshot(target,{includeMetadataChanges:true},snapshot=>{
+   if(closed||current!==generation||!admitted)return;
+   const wasOnline=online;online=!snapshot.metadata.fromCache;connected?.(online);
+   if(!online)return;
+   const next=new Map();let changed=!wasOnline;
+   for(const entry of snapshot.docs){
+    const c=entry.data().command;
+    if(!c||!COMMANDS.has(c.kind)||!Number.isSafeInteger(c.revision))continue;
+    next.set(entry.id,c.revision);
+    if(seen.get(entry.id)!==c.revision){changed=true;command?.({batchId:entry.id,kind:c.kind,revision:c.revision});}
+   }
+   seen=next;if(changed&&next.size)wake();
+  },cause=>{if(!closed&&current===generation){stopQueue();admitted=false;admission?.(false);error?.(cause);}});
+ }
+ const stopAdmission=onSnapshot(doc(db,ROOT+'/autoEditControl/admission'),{includeMetadataChanges:true},snapshot=>{
   if(closed)return;
-  const wasOnline=online;online=!snapshot.metadata.fromCache;connected?.(online);
-  if(!online)return;
-  const next=new Map();let changed=!wasOnline;
-  for(const doc of snapshot.docs){
-   const c=doc.data().command;
-   if(!c||!COMMANDS.has(c.kind)||!Number.isSafeInteger(c.revision))continue;
-   next.set(doc.id,c.revision);
-   if(seen.get(doc.id)!==c.revision){changed=true;command?.({batchId:doc.id,kind:c.kind,revision:c.revision});}
-  }
-  seen=next;if(changed)wake();
- },cause=>{if(!closed){online=false;connected?.(false);error?.(cause);}});
- return ()=>{closed=true;stop();connected?.(false);};
+  const next=!snapshot.metadata.fromCache&&snapshot.exists()&&snapshot.data().version===1&&snapshot.data().enabled===true;
+  if(next===admitted)return;
+  admitted=next;admission?.(next);
+  if(next)startQueue();else stopQueue();
+ },cause=>{if(!closed){admitted=false;stopQueue();admission?.(false);error?.(cause);}});
+ return ()=>{closed=true;admitted=false;stopAdmission();stopQueue();admission?.(false);};
 }
 // One slice, under the existing worker lock. No independent GPU scheduler.
 export class AutoEditDispatcher{
- constructor({queue,adapters,journal=new AutoEditJournal(),onError=()=>{}}){
+ constructor({queue,adapters,journal=new AutoEditJournal(),onError=()=>{},onActive=async()=>{}}){
   check(adapters&&ADAPTERS.every(key=>typeof adapters[key]==='function'),'incomplete-auto-edit-adapters');
-  this.store=new AutoEditQueue(queue);this.adapters=adapters;this.journal=journal;this.onError=onError;this.active=null;
+  this.store=new AutoEditQueue(queue);this.adapters=adapters;this.journal=journal;this.onError=onError;this.onActive=onActive;this.active=null;
  }
  command({batchId,kind}){if(kind==='stop'&&this.active?.batchId===batchId)this.active.controller.abort();}
  abort(){this.active?.controller.abort();}
  async runOne({signal}={}){
   check(!this.active,'auto-dispatch-already-running');
-  if(signal?.aborted)return {ran:false,needsMore:false};
+  if(signal?.aborted||!await this.store.admission())return {ran:false,needsMore:false};
   const rows=await this.store.ready();let reservation=null;
   for(const row of rows){
    try{reservation=await this.store.reserve(row);break;}
@@ -170,6 +191,7 @@ export class AutoEditDispatcher{
   };
   const timer=setInterval(sample,TELEMETRY_MS);
   try{
+   await this.onActive(plan.batchId);
    const runner=new AutoEditRunner({journal:this.journal,adapters:{
     ...this.adapters,claim:details=>this.store.claim(details),
     publish:async summary=>{await this.store.publish(plan,summary);latest=summary;}
@@ -180,6 +202,7 @@ export class AutoEditDispatcher{
   }finally{
    clearInterval(timer);controller.abort();await sampling;
    signal?.removeEventListener('abort',abort);this.active=null;
+   await this.onActive(null);
   }
  }
 }

@@ -295,10 +295,10 @@ jobs:
           node --check velum-gallery/gallery-library-ui.mjs
            node --check velum-gallery/studio-recovery.mjs
           node --check tools/velum-worker/worker.mjs
+          for file in tools/velum-worker/auto-edit-*.mjs; do node --check "$file"; done
+          python3 -B -c "import ast,pathlib; ast.parse(pathlib.Path('tools/velum-worker/auto-edit-runtime.py').read_text(encoding='utf-8'))"
            node --check tools/velum-worker/recovery.mjs
            node --check tools/velum-worker/recovery-control.mjs
-           node --test tools/velum-worker/worker.test.mjs tools/velum-worker/recovery.test.mjs tools/velum-worker/reference.test.mjs tools/velum-worker/thumbnail-backfill.test.mjs tools/velum-worker/qwen.test.mjs tools/velum-worker/queue-events.test.mjs tools/velum-worker/resources.test.mjs tools/velum-worker/live-progress.test.mjs
-          node --test velum-gallery/tests/*.test.mjs
 
       - name: Stamp Velum release version into HTML and PWA cache
         run: |

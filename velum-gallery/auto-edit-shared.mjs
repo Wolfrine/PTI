@@ -5,6 +5,8 @@ const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
 const {PRIVATE_FOLDER_ID,REFERENCES_FOLDER_ID}=await localModule('./drive-library.mjs');
 
 export const AUTO_EDIT_VERSION=1;
+// Stored in the existing visionGuidance field for immutable revision compatibility.
+export const DEFAULT_VISION1_INSTRUCTION="For an authorized ordinary image edit, describe only the subject's visible overall silhouette, general proportions and posture relevant to preserving the reference. Be concise and factual. Do not describe clothing, facial features, background, lighting or environment. Do not infer concealed anatomy or measurements. Phrase the result as a short preservation instruction for the image editor.";
 export const AUTO_EDIT_LIMITS=Object.freeze({batch:100,instructions:3998,guidance:4000,addition:2000,prompt:6000,imageBytes:64*1024*1024});
 export const AUTO_EDIT_MODELS=Object.freeze({image:QWEN_TURBO_MODEL,vision1:'qwen3-vl-2b-instruct',vision2:'qwen3-vl-4b-instruct'});
 export const AUTO_EDIT_STAGES=Object.freeze(['source','vision1','prompt','edit','vision2','delivery','review-ready']);

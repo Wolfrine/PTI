@@ -1,6 +1,6 @@
 // Owner-only Auto Edit pilot UI. No image processing or credentials in the browser queue.
 const localModule=relative=>{const url=new URL(relative,import.meta.url);url.search=new URL(import.meta.url).search;return import(url.href);};
-const {AUTO_EDIT_MODELS,AUTO_EDIT_STAGES,SOURCE_FOLDERS,REVIEW_STAGING_ID,isAutoId,isDriveId,isHash,validateAutoEditPlan,planJson}=await localModule('./auto-edit-shared.mjs');
+const {DEFAULT_VISION1_INSTRUCTION,AUTO_EDIT_MODELS,AUTO_EDIT_STAGES,SOURCE_FOLDERS,REVIEW_STAGING_ID,isAutoId,isDriveId,isHash,validateAutoEditPlan,planJson}=await localModule('./auto-edit-shared.mjs');
 const {PC_DEVICE_UID}=await localModule('./device-config.mjs');
 const {deviceApproved,workerOnline,workerHasModel}=await localModule('./studio-contract.mjs');
 const {formatDuration}=await localModule('./studio-progress.mjs');
@@ -23,7 +23,7 @@ function renderShell(root){
  '<div class="ae-status" role="status" data-ae="readiness">Checking worker and release…</div>'+
  '<form class="ae-card ae-setup"><div class="ae-heading"><div><span class="studio-eyebrow">Configuration</span><h3>Editing instructions</h3></div></div>'+
  '<label class="studio-label">Your edit<textarea class="studio-input" name="instructions" rows="4" maxlength="3998" required placeholder="Describe an ordinary change to the image…"></textarea></label>'+
- '<details class="ae-guidance"><summary>Vision guidance</summary><label class="studio-label">Vision 1 guidance<textarea class="studio-input" name="guidance" rows="3" maxlength="4000" placeholder="Relevant visible details to preserve or describe"></textarea></label><p class="studio-hint">Vision 1 adds only relevant observations. Vision 2 compares the result with the original.</p></details>'+
+ '<details class="ae-guidance" open><summary>Vision 1 instruction</summary><label class="studio-label">What Vision 1 should describe<textarea class="studio-input" name="guidance" rows="6" maxlength="4000" placeholder="Describe only the visible details needed for an ordinary authorized edit.">'+h(DEFAULT_VISION1_INSTRUCTION)+'</textarea></label><div class="ae-actions"><button type="button" data-ae-action="reset-vision">Reset to default</button></div><p class="studio-hint">This editable task defines the observation scope. Vision 1 appends a short preservation description after your edit instructions, without rewriting them. Leave blank to skip the addition. Fixed authorization, privacy and output limits remain in force.</p></details>'+
  '<div class="ae-settings"><label class="studio-label">Image model<select class="studio-input" name="model"><option value="qwen-image-2.1-turbo">Qwen Image 2.1 Turbo</option></select></label><label class="studio-label">Images<input class="studio-input" type="number" value="1" min="1" max="1" readonly name="count"/></label><label class="studio-label">Source folder<select class="studio-input" name="scope"><option value="both">Private + References</option><option value="private">Private</option><option value="references">References</option></select></label></div>'+
  '<div class="ae-original"><span class="studio-label">Approved original</span><p data-ae="original">No image selected</p><button type="button" data-ae-action="choose">Choose original</button></div>'+
  '<label class="studio-consent"><input type="checkbox" name="consent" required/><span>I authorize editing this exact non-personal image for this pilot. The intended edit is lawful and appropriate; the original must stay unchanged.</span></label>'+
@@ -140,7 +140,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
    '<ol class="ae-stages">'+AUTO_EDIT_STAGES.map((s,i)=>'<li data-state="'+(i<index||stage==='review-ready'?'done':i===index&&status==='running'?'current':'pending')+'"><span>'+h(LABELS[s])+'</span><strong>'+h(Number.isFinite(item?.durations?.[s])?formatDuration(item.durations[s]):i===index&&item?.inFlight&&valid?formatDuration(Math.max(0,(fresh?Date.now():p.updatedAt)-item.inFlight.startedAt)):'—')+'</strong></li>').join('')+'</ol>'+
    (status==='running'?'<div class="ae-resource"><span>'+h(fresh?'PC now':resources?'Last reported PC':'Awaiting resource report')+'</span><dl>'+metrics.map(([k,v])=>'<div><dt>'+h(k)+'</dt><dd>'+h(v)+'</dd></div>').join('')+'</dl></div>':'')+
    (failure?'<div class="ae-failure"><strong>'+h(failure.stage)+'</strong><p>'+h(failure.code)+'</p><small>'+h(failure.uncertain?'The previous attempt may have started. The worker must reconcile before retrying.':'The worker stopped before completion.')+'</small></div>':'')+
-   '<details class="ae-lineage"><summary>Prompt and provenance</summary><dl><dt>Instruction seed</dt><dd>'+h(config.instructions||'—')+'</dd><dt>Vision 1 addition</dt><dd>'+h(item?.vision1?.addition||'—')+'</dd><dt>Effective prompt</dt><dd>'+h(item?.prompt||'—')+'</dd><dt>Model / numeric seed</dt><dd>'+h(config.model||'—')+' · '+h(item?.seed??batch.plan?.items?.[0]?.seed??'—')+'</dd><dt>Vision 2</dt><dd>'+h(item?.vision2?.summary||'—')+'</dd>'+(item?.vision2?.observations?.length?'<dt>Observations</dt><dd><ul>'+item.vision2.observations.map(v=>'<li>'+h(v)+'</li>').join('')+'</ul></dd>':'')+'<dt>Limitations</dt><dd>'+h([item?.vision1?.limitations,item?.vision2?.limitations].filter(Boolean).join('\n')||'—')+'</dd></dl></details>';
+   '<details class="ae-lineage"><summary>Prompt and provenance</summary><dl><dt>Instruction seed</dt><dd>'+h(config.instructions||'—')+'</dd><dt>Vision 1 instruction</dt><dd>'+h(config.visionGuidance||'(No additional observation requested)')+'</dd><dt>Vision 1 addition</dt><dd>'+h(item?.vision1?.addition||'—')+'</dd><dt>Effective prompt</dt><dd>'+h(item?.prompt||'—')+'</dd><dt>Model / numeric seed</dt><dd>'+h(config.model||'—')+' · '+h(item?.seed??batch.plan?.items?.[0]?.seed??'—')+'</dd><dt>Vision 2</dt><dd>'+h(item?.vision2?.summary||'—')+'</dd>'+(item?.vision2?.observations?.length?'<dt>Observations</dt><dd><ul>'+item.vision2.observations.map(v=>'<li>'+h(v)+'</li>').join('')+'</ul></dd>':'')+'<dt>Limitations</dt><dd>'+h([item?.vision1?.limitations,item?.vision2?.limitations].filter(Boolean).join('\n')||'—')+'</dd></dl></details>';
  }
  function updateMarkup(el,markup){
   if(el.dataset.signature===markup)return;
@@ -155,6 +155,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
   for(const key of ['instructions','guidance','model','count','scope','consent'])form.elements[key].disabled=busy||Boolean(draft);
   $('start').disabled=!canStart();
   form.querySelector('[data-ae-action="choose"]').disabled=busy||Boolean(draft)||activeAdmission(admission);
+  form.querySelector('[data-ae-action="reset-vision"]').disabled=busy||Boolean(draft)||Boolean(learningController?.busy);
   $('start').textContent=busy&&draft?'Confirming request…':'Start single-image pilot';
   const records=new Map(history.map(v=>[v.id,v]));
   if(batchId&&batch)records.set(batchId,{id:batchId,...batch});
@@ -334,6 +335,7 @@ export function mountAutoEdit(root,{sdk,db,drive,auth,context}){
  listen(batchSelect,'change',()=>{if(batchSelect.value)selectBatch(batchSelect.value);draw();});
  listen(root,'click',event=>{
   const action=event.target.closest('[data-ae-action]')?.dataset.aeAction;if(!action)return;
+  if(action==='reset-vision'){if(!busy&&!draft&&!learningController?.busy){form.elements.guidance.value=DEFAULT_VISION1_INSTRUCTION;notice='Default Vision 1 instruction restored in the draft. Save a revision or submit an authorized pilot to use it.';draw();}return;}
   if(action==='choose'){if(draft){notice='Refresh the pending request before choosing another original.';draw();return;}void runAction(choose);}
   else if(action==='refresh')void runAction(async token=>{await refreshHistory();check(token);if(!admissionKnown){unwatch('admission');watching=false;startWatching();}if(draft){const existing=await getDocFromServer(ref('autoBatches',draft.plan.batchId));check(token);if(existing.exists()){if(existing.data().planHash!==draft.planHash)throw new Error('Previous request identity conflict.');selectBatch(draft.plan.batchId);draft=null;form.elements.consent.checked=false;notice='Previous request confirmed.';}else if(Date.now()-draft.plan.createdAt>240000){draft=null;notice='Previous request did not start. Confirm a new request.';}}});
   else if(action==='current'&&activePilot(admission)){selectBatch(admission.batchId);draw();}

@@ -137,6 +137,21 @@ export function createAutoReviewDrive({ readRequest, manageRequest, getOperation
     return originals.slice(start, end).concat(originals.slice(0, Math.max(0, end - originals.length)));
   }
 
+  async function reservedOriginals(batch, ids, signal) {
+    const send = operation(readRequest, signal);
+    await verifyReferences(send);
+    return Promise.all(ids.map(async id => {
+      const saved = batch.sources?.[id];
+      const sourceId = typeof saved === 'string' ? saved.split(':')[1] : null;
+      const current = originalDescriptor((await get(send, sourceId, ORIGINAL_FIELDS)).file);
+      if (!current || [current.reference.source.parentId, current.reference.source.id, current.version,
+        current.reference.sha256].join(':') !== saved) {
+        throw new Error('A reserved original has changed or is no longer eligible.');
+      }
+      return { id, ...current };
+    }));
+  }
+
   async function readOriginal(reference, version, signal) {
     const active = getOperationGuard();
     const send = operation(readRequest, signal);
@@ -183,6 +198,7 @@ export function createAutoReviewDrive({ readRequest, manageRequest, getOperation
   return {
     stageFolder,
     listOriginals,
+    reservedOriginals,
     readOriginal,
     async listSources(options) {
       await verifyReferences(operation(readRequest, options.signal));

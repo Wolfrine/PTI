@@ -102,6 +102,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
         <section class="review-queue" hidden aria-label="Batch review queue">
           <h3>Review queue</h3>
           <div class="review-actions">
+            <button type="button" data-review="queue-reserved" hidden>Queue reserved edits</button>
             <button type="button" data-review="pause">Pause remaining</button>
             <button type="button" data-review="resume-batch" hidden>Resume batch</button>
             <button type="button" data-review="stop">Stop remaining</button>
@@ -152,6 +153,14 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
   };
   const model = () => record?.settings?.model || INITIAL_REVIEW_MODEL;
   const admissionOpen = () => record?.activation.until > Date.now();
+  const reservationMatchesApprovals = () => record.runs.every(item =>
+    item.configId === record.settings?.id && item.promptConfigId === record.prompt?.id);
+  const reservedIds = () => {
+    const batch = record?.batch;
+    if (batch?.state !== 'active' || batch.expiresAt <= Date.now() || !Array.isArray(batch.ids) ||
+        batch.ids.length > REVIEW_BATCH_LIMIT || !batch.ids.every(id => isOriginalReviewJob(id) && typeof batch.sources?.[id] === 'string')) return [];
+    return batch.ids.filter(id => !record.runs.some(run => run.id === id));
+  };
   const contextReady = () => Boolean(context().owner && context().unlocked && !document.hidden);
   function verifySession(active) {
     if (active !== session || !contextReady() || !dialog.open) throw new DOMException('Review closed', 'AbortError');
@@ -207,6 +216,13 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     const starting = !historyView && batchSettled && (!current || (reviewFinished(current) && newEdit));
     const showBatch=Boolean(batch)&&!starting;
     $('.review-queue').hidden=!showBatch;
+    const reserved = reservedIds();
+    const resumeQueue = action('queue-reserved');
+    resumeQueue.hidden = !reserved.length;
+    resumeQueue.textContent = `Queue ${reserved.length} reserved ${reserved.length === 1 ? 'edit' : 'edits'}`;
+    $('.review-queue .studio-hint').textContent = reserved.length ?
+      'Uses the approved seed and the original reserved Drive versions.' :
+      'The current edit may finish while the remaining items are paused or stopped.';
     action('pause').hidden=batch?.state!=='active'||batchSettled||batch.expiresAt<=Date.now();
     action('resume-batch').hidden=batch?.state!=='paused'||batch.expiresAt<=Date.now();
     action('stop').hidden=batch?.state==='stopped'||batchSettled;
@@ -267,6 +283,8 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     $('.review-config').textContent = record.settings?.sourceScope===REVIEW_SOURCE_SCOPE ? `Approved for later runs · ${modelName(model())}` : `Approve automatic selection · ${modelName(model())}`;
     settingsForm.elements.model.value ||= model();
     for (const button of dialog.querySelectorAll('.review-run button, .review-queue button, .review-secondary button, .review-start [data-review="grant-batch"]')) button.disabled = busy;
+    resumeQueue.disabled = busy || !admissionOpen() || !readyModel(model()) || reserved.length > remaining ||
+      record.settings?.sourceScope !== REVIEW_SOURCE_SCOPE || record.prompt?.scope !== REVIEW_GUIDANCE_SCOPE || !reservationMatchesApprovals();
     settingsForm.querySelector('[type="submit"]').disabled = busy || !admissionOpen() || !readyModel(settingsForm.elements.model.value);
     promptForm.querySelector('button').disabled = busy;
     compareSync();
@@ -359,24 +377,58 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
     grantBatchFolder='';
     newEdit = false;
     vision = null;
-    record.batch={id:batchId,folder:stageFolderId,ids,state:'active',expiresAt};
+    const sources = Object.fromEntries(originals.map(({parentId,id,version,sha256}, index) =>
+      [ids[index], [parentId,id,version,sha256].join(':')]));
+    const batch = {id:batchId,folder:stageFolderId,ids,state:'active',expiresAt,sources};
+    record.batch = batch;
     record.runs=[];
+    await queuePrepared(active, prepared, batch, configuration, promptConfig);
+  }
+
+  async function queueReserved(active) {
+    const expected = record.batch.id;
+    const configId = record.settings?.id;
+    const promptId = record.prompt?.id;
+    await reload(active);
+    const { batch, settings, prompt, activation } = record;
+    if (batch?.id !== expected || settings?.id !== configId || prompt?.id !== promptId ||
+        settings?.sourceScope !== REVIEW_SOURCE_SCOPE || prompt?.scope !== REVIEW_GUIDANCE_SCOPE || !reservationMatchesApprovals()) {
+      throw new Error('The reservation or approved settings changed. Review the current state before retrying.');
+    }
+    const ids = reservedIds();
+    if (!ids.length) return;
+    if (!admissionOpen() || ids.length > activation.maxRuns - (record.current?.started || 0) ||
+        !readyModel(settings.model)) throw new Error('The reserved edits are waiting for an open admission window and the approved PC.');
+    await drive.authorize();
+    verifySession(active);
+    status('Checking reserved Drive originals…');
+    const signal = AbortSignal.any([active.signal, AbortSignal.timeout(90000)]);
+    await drive.review.stageFolder(signal, batch.folder);
+    const prepared = await drive.review.reservedOriginals(batch, ids, signal);
+    await queuePrepared(active, prepared, batch, settings, prompt);
+  }
+
+  async function queuePrepared(active, prepared, batch, configuration, promptConfig) {
+    const { model: approvedModel, seed: intent } = configuration;
+    const { id: batchId, folder: stageFolderId, expiresAt } = batch;
+    let created = 0;
     for(const {id,reference,version} of prepared){
       verifySession(active);
       const request={...makeJob({model:approvedModel,prompt:intent,effectivePrompt:intent,consent:true,driveOriginal:true,
         seed:crypto.getRandomValues(new Uint32Array(1))[0]&0x7fffffff,references:[reference]}),batchId,batchExpiresAt:expiresAt,
         review:{configId:promptConfig.id,seedId:configuration.id,promptGuidance:promptConfig.guidance}};
       const agreement={createdAt:request.createdAt,phase:'pending',configId:configuration.id,sourceVersion:version,nonIntimate:true,stageFolderId,batchId};
-      await store.start(id,request,agreement);
+      if (!await store.start(id,request,agreement)) continue;
+      created++;
       current=run={...agreement,id};
       job={...request,id};
-      record.runs.push({...run,jobStatus:'queued'});
+      record.runs.push({...run,jobStatus:'queued',promptConfigId:promptConfig.id});
       record.current={runId:id,batchId,started:(record.current?.started||0)+1};
       render();
-      status(`Queued ${record.runs.length} of ${prepared.length} edits…`);
+      status(`Queued ${created} of ${prepared.length} edits…`);
     }
     await reload(active);
-    status(`${prepared.length} approved edits queued. The PC and Drive can finish them while Studio is closed.`);
+    status(created ? `${created} approved ${created === 1 ? 'edit' : 'edits'} queued. The PC and Drive can finish while Studio is closed.` : 'These reserved edits are already in the queue.');
   }
 
   async function resume(active) {
@@ -575,7 +627,7 @@ export function mountAutoReview({ root, sdk, db, drive, context, decodeResult, c
       return;
     }
     const handlers = {
-      resume, accept, load: reload, result: active => showResult(active, true),
+      resume, accept, load: reload, result: active => showResult(active, true), 'queue-reserved': queueReserved,
       grant: grantStage,'grant-batch':grantBatch,'grant-target':grantAcceptance,
       pause: async()=>{await store.controlBatch(record.batch.id,'paused');await reload(session);},
       'resume-batch':async()=>{await store.controlBatch(record.batch.id,'active');await reload(session);},

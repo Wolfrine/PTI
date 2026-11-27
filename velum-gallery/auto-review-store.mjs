@@ -49,35 +49,28 @@ export function createReviewStore({ sdk, db, workspace, check }) {
       const item = await read(runRef(id));
       if(!item)return null;
       const queued=await read(jobRef(id));
-      return { ...item, id, jobStatus:queued?.status };
+      return { ...item, id, jobStatus:queued?.status, promptConfigId:queued?.review?.configId };
     }))).filter(Boolean) : [];
     return { activation, settings, prompt, current, run, batch, runs };
   }
 
   async function start(id, job, run) {
-    await transact(async tx => {
+    const created = await transact(async tx => {
       const pointer = await txRead(tx, control('current'));
-      const active = pointer ? await txRead(tx, runRef(pointer.runId)) : null;
-      const settings = await txRead(tx, control('settings'));
-      const prompt = await txRead(tx, control('prompt'));
-      const batch = await txRead(tx, control('batch'));
-      if (active && pointer.runId === id) return;
-      if (batch?.id !== run.batchId || batch.state !== 'active' || !batch.ids.includes(id)) {
-        throw new Error('The batch authorization expired, paused, or changed.');
+      const [existingRun, existingJob] = await Promise.all([txRead(tx, runRef(id)), txRead(tx, jobRef(id))]);
+      if (existingRun || existingJob) {
+        if (existingRun?.batchId === run.batchId && existingJob?.batchId === run.batchId) return false;
+        throw new Error('The reserved edit does not match the existing job and review.');
       }
-      if (pointer && pointer.batchId !== run.batchId && !reviewFinished(active)) {
-        throw new Error('Finish the current review before starting another batch.');
-      }
-      if (settings?.id !== run.configId || settings.model !== job.model || settings.seed !== job.prompt ||
-          settings.sourceScope !== REVIEW_SOURCE_SCOPE || prompt?.scope !== REVIEW_GUIDANCE_SCOPE || prompt.id !== job.review.configId ||
-          prompt.guidance !== job.review.promptGuidance || settings.id !== job.review.seedId) {
-        throw new Error('The approved seed or prompt configuration changed. Refresh Auto Review.');
-      }
+      // Rules check the current batch, last decision and both owner approvals
+      // on commit. Reading them here adds redundant transaction verify writes.
       tx.set(jobRef(id), job);
       tx.set(runRef(id), run);
       tx.set(control('current'), { runId: id, batchId: run.batchId, started: (pointer?.started || 0) + 1 });
+      return true;
     });
     check();
+    return created;
   }
 
   async function queue(id, job, chunks) {

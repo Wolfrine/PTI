@@ -2,6 +2,12 @@
 
 Use official browser/Computer Use tools available in the executing native turn. Enter through their documented normal entry point and permission checks. Runtime Full Access, installed Chrome, extension health, a connected relay or environment metadata alone does not establish browser control.
 
+## Review an owner-operated app
+
+When the request is to review a public or local app and any suitable browser will do, use the requesting chat’s available browser if it can reach the target. When the Windows build, GPU, or responsive rendering matters, the PTI checkout already provides [the one-shot browser verifier](https://github.com/Wolfrine/PTI/blob/main/tools/browser-verify/README.md). Give the native worker the exact authorized route, the visible action and the result the reviewer needs to observe. Check the guide for supported origins and actions. It uses a fresh signed-out Chromium profile and supports desktop and touch-emulated viewports. For reviews requiring a particular profile, private data, or a physical device, use the authorized session or device that has it. A site or action denial continues to apply.
+
+Have the reviewer inspect the rendered state after the action. Return the route, known revision, viewport, observed result and any limitation to the requesting chat. If the owner needs to see the pixels, verify that the image opens in the approved destination. A receipt path on the PC establishes where the capture was saved.
+
 ## Browser requests through Local Codex
 
 Dispatch a PC browser request through the private connection to the selected native worker. Include the requested site, action and observable outcome. Use the same instructions for a newly created native thread and for a continuation. Return the worker's observations through `get_task` in the originating ChatGPT chat.

@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'pti-app/**'
+      - '!pti-app/public/new-home-lab/**'
       - 'functions/**'
       - 'apps/one-piece/**'
       - 'food-app/legacy-*'

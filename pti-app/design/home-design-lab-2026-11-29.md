@@ -1,0 +1,5 @@
+# PTI Home design lab — 29 November 2026
+
+Owner requested a working prototype on PTI Hosting after the ChatGPT Page rendering failed on mobile. Keep /home unchanged until explicit owner selection. The separate /new-home-lab/index.html is public-safe, with sample data, seven selectable directions, source-style reference, day/night simulation, app search, category filters, pin toggles and inert preview dialogs. Artwork is the existing Living Horizon gouache asset; no network requests to weather providers or private account data, no auth changes, no new resources. The profile is a neutral outline. GitHub counts have no invented quota percentage. Focus counters are synthetic. The mobile layout uses a real viewport meta tag and normal media-query fallback, independent of the Page embed.
+
+Scope: source preview only; no production Home integration. Existing Hosting-only release workflow is used to avoid unrelated Functions/sub-app deploys. Visual acceptance requires the owner and fresh mobile/desktop captures. No tests added.

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'pti-app/public/new-home-lab/**'
       - 'pti-app/public/living-horizon/**'
       - 'pti-app/public/assets/images/living-horizon/**'
       - 'pti-app/src/app/components/new-home/**'
@@ -84,7 +85,7 @@ jobs:
         run: |
           set -euo pipefail
           origin=https://pti-app-2ab59.web.app
-          for relative in living-horizon/main.js living-horizon/index.html one-piece/index.html food/index.html; do
+          for relative in living-horizon/main.js living-horizon/index.html new-home-lab/index.html one-piece/index.html food/index.html; do
             expected="pti-app/dist/pti-app/browser/$relative"
             matched=0
             for attempt in 1 2 3 4 5 6 7 8; do

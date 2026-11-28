@@ -1,11 +1,13 @@
 ---
 name: delegate-local-codex
-description: Give one native Codex lead an authorized local outcome and continue that thread through implementation, review, recovery and verification.
+description: Browser appearance reviews and Local Codex work. Use when asked to check how an owner-operated site or landing page looks or behaves in a browser, or to delegate Windows project work and follow it through implementation and verification.
 ---
 
 # Local Codex
 
-When acceptance depends on a browser, read [browser control](references/browser-control.md) before dispatch. It covers public or local app reviews as well as work in the owner’s Windows browser. When the owner asks Local Codex to use their PC browser, dispatch the URL, requested interaction and the result to observe through the private connection. For unattended work, tell the native worker to use the official browser tools available to it. On this standalone Windows worker, the Windows Computer Use skill in node_repl can operate Chrome through its normal desktop permissions when the browser host is unavailable. Ask the worker to inspect the actual page and return its observations through get_task to this chat. Use PTI Owner Chrome only when the owner asks to share a tab manually. Respect site and action denials. For a direct caller-side browser request, use its connected browser when available. Honor requests to exercise a particular native thread or executor. Use the private connection for work that needs the local checkout or native Codex. Check bridge_status and select the authorized checkout with list_projects. Find the existing task or thread for the same outcome before starting fresh.
+For a browser review, read [browser control](references/browser-control.md) before choosing an executor. Start from the requested site, action and visual evidence. Follow the requesting chat’s Browser guidance. Use the private connection when the work needs native Codex or the authorized Windows environment.
+
+For native tasks, check bridge_status and select the authorized checkout with list_projects. Find the existing task or thread for the same outcome before starting fresh. Honor the requested native thread or executor. For PC browser work, send the site, requested interaction and observable outcome to the selected worker and return its observations via get_task.
 
 Give the lead one compact contract:
 
